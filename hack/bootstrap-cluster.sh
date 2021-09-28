@@ -10,7 +10,8 @@ kubectl create namespace cluster-argocd
 kustomize build $ROOT/argo-cd/ | kubectl apply -f -
 #kubectl apply -f $ROOT/../../argo-cd-secret.yaml
 
-echo Waiting for default project to exist
+echo
+echo "Waiting for default project to exist:"
 
 while : ; do
   kubectl get appproject/default -n cluster-argocd && break
