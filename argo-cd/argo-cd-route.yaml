@@ -1,0 +1,17 @@
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: argocd-server-ingress
+  namespace: cluster-argocd
+spec:
+  subdomain: argocd
+  to:
+    kind: Service
+    name: argocd-server
+    weight: 100
+  port:
+    targetPort: https
+  tls:
+    termination: passthrough
+    insecureEdgeTerminationPolicy: Redirect
+  wildcardPolicy: None
