@@ -34,7 +34,6 @@ done
 # Add Argo CD Applications
 kustomize build  $ROOT/argo-cd-apps/overlays/staging | kubectl apply -f -
 
-
 ADMIN_SECRET=`oc get secret argocd-initial-admin-secret -n cluster-argocd -o jsonpath='{.data.password}' | base64 -d`
 echo
 echo "========================================================================="
@@ -42,7 +41,7 @@ echo
 echo "Argo CD Route is:"
 kubectl get routes -n cluster-argocd	
 echo
-echo "(It may take a few moments for the route to become available)"
+echo "(NOTE: It may take a few moments for the route to become available)"
 echo
 echo
 echo "Argo CD admin login is: admin"

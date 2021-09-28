@@ -1,5 +1,5 @@
 
-# AppStudio Infrastructure Deploments
+# AppStudio Infrastructure Deployments
 
 This repository is an initial bootstrap of an Argo-CD-based deployment of AppStudio components to a cluster, plus a script to bootstrap Argo CD onto that cluster (to drive these Argo-CD-based deployments).
 
