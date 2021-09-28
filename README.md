@@ -22,8 +22,9 @@ These are the steps to add your own component:
     - The `.spec.destination.namespace` should match the target namespace you wish to deploy your resources to.
     - The `metadata.namespace` must be `cluster-argocd` (do not change it).
     - The `metadata.name` should correspond to your `(team-name)`
-4) Add a reference to this YAML to the `kustomization.yaml` in the same directory (under `resources:` field of the YAML).
-5) Open a PR for all of the above.
+4) Add a reference to your new `(team-name).yaml` file, to `argo-cd-apps/base/kustomization.yaml` (the reference to your YAML file should be in the `resources:` list field).
+5) Run `kustomize build (repo root)/argo-cd-apps/overlays/staging` and ensure it passes, and displays your new Argo CD Application CR.
+6) Open a PR for all of the above.
 
 More examples of using Kustomize to drive deployments with GitOps can be [found here](https://github.com/redhat-cop/gitops-catalog).
 
