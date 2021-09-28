@@ -54,7 +54,7 @@ Other questions? Ask on `#wg-developer-appstudio`.
 
 As long as your resources are declaratively defined, they will eventually be reconciled with the cluster (it just may take Argo CD a few retries). For example, the CRs might fail before the CRDs are applied, but on retry the CRDs will now exist (as they were applied during the previous retry). So now those CRs can progress.
 
-However, for finer-grained control use Argo CD [Sync waves])(https://argoproj.github.io/argo-cd/user-guide/sync-waves/). ([Example](https://github.com/argoproj/argocd-example-apps/tree/master/sync-waves)).
+However, for finer-grained control use Argo CD [Sync waves](https://argoproj.github.io/argo-cd/user-guide/sync-waves/) (Here is an [example](https://github.com/argoproj/argocd-example-apps/tree/master/sync-waves)).
 
 
 ### Q: What if I want my service's K8s resources in a separate Git repository? (ie not this one)
