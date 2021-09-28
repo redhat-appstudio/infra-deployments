@@ -18,7 +18,33 @@ while : ; do
   sleep 1
 done
 
+echo "Waiting for Argo CD Route"
+while : ; do
+  kubectl get routes -n cluster-argocd | grep "argocd-server" && break
+  sleep 1
+done
+
+
+echo "Waiting for Argo CD Admin Secret"
+while : ; do
+  oc get secret argocd-initial-admin-secret -n cluster-argocd -o jsonpath='{.data.password}' && break
+  sleep 1
+done
+
 # Add Argo CD Applications
 kustomize build  $ROOT/argo-cd-apps/overlays/staging | kubectl apply -f -
+
+
+ADMIN_SECRET=`oc get secret argocd-initial-admin-secret -n cluster-argocd -o jsonpath='{.data.password}' | base64 -d`
+echo
+echo "========================================================================="
+echo
+echo "Argo CD Route is:"
+kubectl get routes -n cluster-argocd	
+echo
+echo "Argo CD admin login is: admin"
+echo "Argo CD admin password is: $ADMIN_SECRET" 
+echo
+
 
 

@@ -20,7 +20,9 @@ spec:
     # Comment this out if you want to manually trigger deployments (using the 
     # Argo CD Web UI or Argo CD CLI), rather than automatically deploying on
     # every new Git commit to your directory.
-    automated: {}
+    automated: 
+      prune: true
+      selfHeal: true
 
     syncOptions:
     - CreateNamespace=true
