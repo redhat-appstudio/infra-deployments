@@ -8,7 +8,7 @@ kubectl create namespace cluster-argocd
 
 # Install Argo CD
 kustomize build $ROOT/argo-cd/ | kubectl apply -f -
-#kubectl apply -f $ROOT/../../argo-cd-secret.yaml
+
 
 echo
 echo "Waiting for default project to exist:"
@@ -41,6 +41,9 @@ echo "========================================================================="
 echo
 echo "Argo CD Route is:"
 kubectl get routes -n cluster-argocd	
+echo
+echo "(It may take a few moments for the route to become available)"
+echo
 echo
 echo "Argo CD admin login is: admin"
 echo "Argo CD admin password is: $ADMIN_SECRET" 
