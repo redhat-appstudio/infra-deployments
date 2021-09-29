@@ -1,9 +1,9 @@
 
 # AppStudio Infrastructure Deployments
 
-This repository is an initial bootstrap of an Argo-CD-based deployment of AppStudio components to a cluster, plus a script to bootstrap Argo CD onto that cluster (to drive these Argo-CD-based deployments).
+This repository is an initial set of Argo-CD-based deployments of AppStudio components to a cluster, plus a script to bootstrap Argo CD onto that cluster (to drive these Argo-CD-based deployments).
 
-This repository is structured as a GitOps monorepo (eg the repository contains the K8s resources for *multiple* applications), using [Kustomize](https://kustomize.io/).
+This repository is structured as a GitOps monorepo (e.g. the repository contains the K8s resources for *multiple* applications), using [Kustomize](https://kustomize.io/).
 
 The contents of this repository are not owned by any single individual, and should instead be collectively managed and maintained through PRs by individual teams.
 
@@ -57,7 +57,7 @@ As long as your resources are declaratively defined, they will eventually be rec
 However, for finer-grained control use Argo CD [Sync waves](https://argoproj.github.io/argo-cd/user-guide/sync-waves/) (Here is an [example](https://github.com/argoproj/argocd-example-apps/tree/master/sync-waves)).
 
 
-### Q: What if I want my service's K8s resources in a separate Git repository? (ie not this one)
+### Q: What if I want my service's K8s resources in a separate Git repository? (i.e. not this one)
 
 Ultimately, as a team, we should decide on a resource deployment strategy going forward, however, it is easiest to coordinate deployments across a single Git repository (such as this one), rather than multiple independent repositories.
 
