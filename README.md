@@ -38,7 +38,7 @@ Simply update the files under `components/(team-name)`, and open a PR with the c
 
 The pre-requisities are:
 - You must have `kubectl` and `kustomize` installed. 
-- You must have `kubectl` pointing to an existing K8s cluster, that you wish to deploy to.
+- You must have `kubectl` pointing to an existing OpenShift cluster, that you wish to deploy to.
 
 Steps:
 1) Run `hack/bootstrap-cluster.sh` which will bootstrap Argo CD and setup the Argo CD `Application` CRs for each component.
