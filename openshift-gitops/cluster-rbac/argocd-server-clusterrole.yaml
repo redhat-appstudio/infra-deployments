@@ -1,0 +1,26 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: appstudio-openshift-gitops-argocd-server
+rules:
+- apiGroups:
+  - '*'
+  resources:
+  - '*'
+  verbs:
+  - delete  # supports deletion a live object in UI
+  - get     # supports viewing live object manifest in UI
+  - patch   # supports `argocd app patch`
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - list    # supports listing events in UI
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  - pods/log
+  verbs:
+  - get     # supports viewing pod logs from UI
