@@ -1,7 +1,7 @@
 
 # AppStudio Infrastructure Deployments
 
-This repository is an initial set of Argo-CD-based deployments of AppStudio components to a cluster, plus a script to bootstrap Argo CD onto that cluster (to drive these Argo-CD-based deployments).
+This repository is an initial set of Argo-CD-based deployments of AppStudio components to a cluster, plus a script to bootstrap Argo CD onto that cluster (to drive these Argo-CD-based deployments, via OpenShift GitOps).
 
 This repository is structured as a GitOps monorepo (e.g. the repository contains the K8s resources for *multiple* applications), using [Kustomize](https://kustomize.io/).
 
@@ -22,10 +22,10 @@ These are the steps to add your own component:
     - The `.spec.destination.namespace` should match the target namespace you wish to deploy your resources to.
     - The `.metadata.name` should correspond to your `(team-name)`
 4) Add a reference to your new `(team-name).yaml` file, to `argo-cd-apps/base/kustomization.yaml` (the reference to your YAML file should be in the `resources:` list field).
-5) Run `kustomize build (repo root)/argo-cd-apps/overlays/staging` and ensure it passes, and displays your new Argo CD Application CR.
+5) Run `kustomize build (repo root)/argo-cd-apps/overlays/staging` and ensure it passes, and outputs your new Argo CD Application CR.
 6) Open a PR for all of the above.
 
-More examples of using Kustomize to drive deployments with GitOps can be [found here](https://github.com/redhat-cop/gitops-catalog).
+More examples of using Kustomize to drive deployments using GitOps can be [found here](https://github.com/redhat-cop/gitops-catalog).
 
 ## Maintaining your components
 
@@ -40,9 +40,9 @@ The prerequisites are:
 - You must have `kubectl` pointing to an existing OpenShift cluster, that you wish to deploy to.
 
 Steps:
-1) Run `hack/bootstrap-cluster.sh` which will bootstrap Argo CD and setup the Argo CD `Application` CRs for each component.
+1) Run `hack/bootstrap-cluster.sh` which will bootstrap Argo CD (using OpenShift GitOps) and setup the Argo CD `Application` CRs for each component.
 2) Retrieve the Argo CD Web UI URL using `kubectl get routes`.
-2) Retrieve the `admin` password using `oc get secret argocd-initial-admin-secret -n cluster-argocd -o jsonpath='{.data.password}' | base64 -d`. Username is `admin`
+3) Log-in to the Web UI using your OpenShift credentials (using 'Login with OpenShift' button).
 3) View the Argo CD UI to see the status of deployments.
 
 ## FAQ
@@ -58,8 +58,6 @@ However, for finer-grained control use Argo CD [Sync waves](https://argoproj.git
 
 ### Q: What if I want my service's K8s resources in a separate Git repository? (i.e. not this one)
 
-Ultimately, as a team, we should decide on a resource deployment strategy going forward, however, it is easiest to coordinate deployments across a single Git repository (such as this one), rather than multiple independent repositories.
+Ultimately, as a team, we should decide on a resource deployment strategy going forward: whether we want every team's K8s resources to be defined within this repository (as a GitOps monorepo), or within individual team's Git repositories. IMHO it is easiest to coordinate deployments within a single Git repository (such as this one), rather than multiple independent repositories.
 
-If one or more services want to split off their K8s resource into independent repositories, they would modify the `Application` for their service (created in step 3, above) to point to their new repository.
-
-
+However, if one or more services want to split off their K8s resource into independent repositories owned by those teams, they can modify the Argo CD `Application` CR for their service (created in 'How to add your own component' step 3, above) to point to their new repository.
