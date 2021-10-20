@@ -61,3 +61,9 @@ However, for finer-grained control use Argo CD [Sync waves](https://argoproj.git
 Ultimately, as a team, we should decide on a resource deployment strategy going forward: whether we want every team's K8s resources to be defined within this repository (as a GitOps monorepo), or within individual team's Git repositories. IMHO it is easiest to coordinate deployments within a single Git repository (such as this one), rather than multiple independent repositories.
 
 However, if one or more services want to split off their K8s resource into independent repositories owned by those teams, they can modify the Argo CD `Application` CR for their service (created in 'How to add your own component' step 3, above) to point to their new repository.
+
+### Q: How can I install an Operator to the cluster using Argo CD?
+
+To install an operator, you only need to include the OLM `Subscription` CR for the operator under your deployed resources folder within this repository.
+
+For an example of this, see the [Red Hat CoP GitOps catalog](https://github.com/redhat-cop/gitops-catalog), for example the [Web Terminal operator example](https://github.com/redhat-cop/gitops-catalog/blob/main/web-terminal-operator/base/operator/web-terminal-subscription.yaml).
