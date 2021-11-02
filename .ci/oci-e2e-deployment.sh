@@ -38,3 +38,4 @@ command -v kubectl >/dev/null 2>&1 || { echo "kubectl is not installed. Aborting
 
 export -f checkApplicationHealth
 timeout --foreground 10m bash -c checkApplicationHealth
+###
