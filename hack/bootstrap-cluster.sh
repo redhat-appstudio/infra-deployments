@@ -26,8 +26,8 @@ echo "Add Role/RoleBindings for OpenShift GitOps:"
 kustomize build $ROOT/openshift-gitops/cluster-rbac | kubectl apply -f -
 
 echo
-echo "Add Argo CD Applications:"
-kustomize build  $ROOT/argo-cd-apps/overlays/staging | kubectl apply -f -
+echo "Add parent Argo CD Application:"
+kubectl apply -f $ROOT/argo-cd-apps/app-of-apps/all-applications-staging.yaml
 
 echo
 echo "========================================================================="
