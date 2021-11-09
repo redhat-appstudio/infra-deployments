@@ -6,7 +6,8 @@ ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/..
 
 echo
 echo "Remove Argo CD Applications:"
-kustomize build  $ROOT/argo-cd-apps/overlays/staging | kubectl delete -f -
+kubectl delete -f $ROOT/argo-cd-apps/app-of-apps/all-applications-staging.yaml
+#kustomize build  $ROOT/argo-cd-apps/overlays/staging | kubectl delete -f -
 
 echo
 echo "Remove RBAC for OpenShift GitOps:"
@@ -23,6 +24,8 @@ while : ; do
   kubectl patch argocd/openshift-gitops -n openshift-gitops -p '{"metadata":{"finalizers":null}}' --type=merge
   kubectl delete csv/openshift-gitops-operator.v1.3.0 -n openshift-operators
   kubectl delete csv/openshift-gitops-operator.v1.3.0 -n openshift-gitops
+  kubectl delete csv/openshift-gitops-operator.v1.3.1 -n openshift-operators
+  kubectl delete csv/openshift-gitops-operator.v1.3.1 -n openshift-gitops
   kubectl delete namespace --timeout=30s openshift-gitops
 
   kubectl get namespace/openshift-gitops
