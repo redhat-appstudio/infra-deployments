@@ -64,6 +64,6 @@ However, if one or more services want to split off their K8s resource into indep
 
 ### Q: How can I install an Operator to the cluster using Argo CD?
 
-To install an operator, you only need to include the OLM `Subscription` CR for the operator under your deployed resources folder within this repository.
+To install an operator, you only need to include the OLM `Subscription` and `OperatorGroup` CRs for the operator under your deployed resources folder within this repository. If the operator is not available in OperatorHub, then you need to include also the OLM `CatalogSource` CR.
 
 For an example of this, see the [Red Hat CoP GitOps catalog](https://github.com/redhat-cop/gitops-catalog), for example the [Web Terminal operator example](https://github.com/redhat-cop/gitops-catalog/blob/main/web-terminal-operator/base/operator/web-terminal-subscription.yaml).
