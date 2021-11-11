@@ -1,0 +1,70 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: grant-argocd
+  namespace: openshift-config
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: admin
+subjects:
+- kind: ServiceAccount
+  name: openshift-gitops-argocd-application-controller
+  namespace: openshift-gitops
+---
+## Role for creating externalsecrets
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: external-secret-creation
+  namespace: openshift-config
+rules:
+- apiGroups: ["kubernetes-client.io"]
+  resources: ["externalsecrets"]
+  verbs: ["create","list", "get", "patch", "delete"]
+---
+## Rolebinding to create externalsecrets
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: grant-argocd-external-secrets
+  namespace: openshift-config
+subjects:
+- kind: ServiceAccount
+  name: openshift-gitops-argocd-application-controller
+  namespace: openshift-gitops
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: external-secret-creation
+---
+apiVersion: kubernetes-client.io/v1
+kind: ExternalSecret
+metadata:
+  name: github-client-secret-cp
+  namespace: openshift-config
+spec:
+  backendType: akeyless
+  data:
+    - key: clientSecret
+      name: clientSecret
+  template:
+    type: Opaque
+---
+apiVersion: config.openshift.io/v1
+kind: OAuth
+metadata:
+  name: cluster
+spec:
+  identityProviders:
+    - github:
+        clientID: d484f9f0227090067258
+        clientSecret:
+          name: github-client-secret-cp
+        hostname: ''
+        organizations:
+          - redhat-developer
+        teams: []
+      mappingMethod: claim
+      name: github
+      type: GitHub 
