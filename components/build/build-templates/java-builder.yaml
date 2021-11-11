@@ -1,0 +1,74 @@
+## Sample Pipeline for a Java s2i build provided ootb.
+#
+## If changed by a user, the App Studio HAS service should push the modified 
+## Pipeline definition into the user's repository.
+
+
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: java-builder
+  namespace: build-templates
+spec:
+  params:
+    - description: Output image
+      name: IMAGE
+      type: string
+    - description: The git repository URL containing source code to be build
+      name: GIT_REPO
+      type: string
+    - default: .
+      description: The path to your source code
+      name: PATH_CONTEXT
+      type: string
+  tasks:
+    - name: git-clone
+      params:
+        - name: url
+          value: $(params.GIT_REPO)
+        - name: submodules
+          value: 'true'
+        - name: depth
+          value: '1'
+        - name: sslVerify
+          value: 'true'
+        - name: deleteExisting
+          value: 'true'
+        - name: verbose
+          value: 'true'
+        - name: gitInitImage
+          value: >-
+            registry.redhat.io/openshift-pipelines/pipelines-git-init-rhel8@sha256:da1aedf0b17f2b9dd2a46edc93ff1c0582989414b902a28cd79bad8a035c9ea4
+        - name: userHome
+          value: /tekton/home
+      taskRef:
+        kind: ClusterTask
+        name: git-clone
+      workspaces:
+        - name: output
+          workspace: java-source-code
+    - name: s2i-java-1-5-0
+      params:
+        - name: VERSION
+          value: openjdk-11-ubi8
+        - name: PATH_CONTEXT
+          value: $(params.PATH_CONTEXT)
+        - name: TLSVERIFY
+          value: 'true'
+        - name: MAVEN_CLEAR_REPO
+          value: 'false'
+        - name: IMAGE
+          value: $(params.IMAGE)
+        - name: BUILDER_IMAGE
+          value: >-
+            registry.redhat.io/rhel8/buildah@sha256:99cae35f40c7ec050fed3765b2b27e0b8bbea2aa2da7c16408e2ca13c60ff8ee
+      runAfter:
+        - git-clone
+      taskRef:
+        kind: ClusterTask
+        name: s2i-java-1-5-0
+      workspaces:
+        - name: source
+          workspace: java-source-code
+  workspaces:
+    - name: java-source-code

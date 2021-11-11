@@ -1,0 +1,21 @@
+## This must not be used in this namespace.
+## This is a "sample" that should be used for users' pipelines.
+## In the long-term, every tenant namespace should have PVCs based on the
+## 'size' authorized to the user.
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: as-default-workspace 
+  namespace: build-templates
+  labels:
+    "pipelines.openshift.io/used-by" : "build-cloud"
+  finalizers:
+    - kubernetes.io/pvc-protection
+spec:
+  accessModes:
+    - ReadWriteOnce
+  volumeMode: Filesystem
+  resources:
+    requests:
+      storage: 1Gi
