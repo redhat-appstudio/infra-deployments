@@ -7,6 +7,10 @@
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
+  labels:
+    "pipelines.openshift.io/used-by" : "build-cloud"
+    "pipelines.openshift.io/runtime" : "java"
+    "pipelines.openshift.io/strategy" : "s2i"
   name: java-builder
   namespace: build-templates
 spec:
