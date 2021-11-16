@@ -1,3 +1,6 @@
+### Enable Argo CD to modify objects. 
+### This may not be needed if we find that OpenShift GitOps already provides this permission.
+
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
@@ -12,45 +15,6 @@ subjects:
   name: openshift-gitops-argocd-application-controller
   namespace: openshift-gitops
 ---
-## Role for creating externalsecrets
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: external-secret-creation
-  namespace: openshift-config
-rules:
-- apiGroups: ["kubernetes-client.io"]
-  resources: ["externalsecrets"]
-  verbs: ["create","list", "get", "patch", "delete"]
----
-## Rolebinding to create externalsecrets
-kind: RoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: grant-argocd-external-secrets
-  namespace: openshift-config
-subjects:
-- kind: ServiceAccount
-  name: openshift-gitops-argocd-application-controller
-  namespace: openshift-gitops
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: external-secret-creation
----
-apiVersion: kubernetes-client.io/v1
-kind: ExternalSecret
-metadata:
-  name: github-client-secret-cp
-  namespace: openshift-config
-spec:
-  backendType: akeyless
-  data:
-    - key: clientSecret
-      name: clientSecret
-  template:
-    type: Opaque
----
 apiVersion: config.openshift.io/v1
 kind: OAuth
 metadata:
@@ -58,12 +22,12 @@ metadata:
 spec:
   identityProviders:
     - github:
-        clientID: d484f9f0227090067258
+        clientID: 6eb113c35c61ae10ccd5
         clientSecret:
-          name: github-client-secret-cp
+          name: github-client-secret-cp # needs to be made available on the cluster
         hostname: ''
         organizations:
-          - redhat-developer
+          - redhat-appstudio
         teams: []
       mappingMethod: claim
       name: github
