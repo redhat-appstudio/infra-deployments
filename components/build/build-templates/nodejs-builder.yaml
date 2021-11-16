@@ -1,0 +1,98 @@
+## Sample Pipeline for a NodeJs s2i build provided ootb.
+#
+## If changed by a user, the App Studio HAS service should push the modified 
+## Pipeline definition into the user's repository.
+
+## Sample usage by client
+##
+# apiVersion: tekton.dev/v1beta1
+# kind: PipelineRun
+# metadata:
+#   name: new-pipeline-7vae74
+#   namespace: default
+# spec:
+#   params:
+#     - name: url
+#       value: 'https://github.com/openshift/console'
+#     - name: IMAGE
+#       value: 'docker.io/sbose78/sample-nodejs:fooo'
+#     - name: PATH_CONTEXT
+#       value: frontend
+#   pipelineRef:
+#     name: new-pipeline
+#   serviceAccountName: pipeline
+#   timeout: 1h0m0s
+#   workspaces:
+#     - name: nodejs-source-code
+#       persistentVolumeClaim:
+#         claimName: as-default-workspace
+
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: nodejs-builder
+  namespace: build-templates
+  labels:
+    "pipelines.openshift.io/used-by" : "build-cloud"
+    "pipelines.openshift.io/runtime" : "nodejs"
+    "pipelines.openshift.io/strategy" : "s2i"
+spec:
+  params: 
+    - name: IMAGE
+      type: string
+      description: "Output image"
+    - name: GIT_REPO
+      type: string
+      description: "The git repository URL containing source code to be build"
+    - name: PATH_CONTEXT
+      type: string
+      description: "The path to your source code"
+  tasks:
+    - name: s2i-nodejs-1-5-0
+      params:
+        - name: VERSION
+          value: 14-ubi8
+        - name: PATH_CONTEXT
+          value: "$(params.PATH_CONTEXT)"
+        - name: TLSVERIFY
+          value: 'true'
+        - name: IMAGE
+          value: "$(params.IMAGE)"
+        - name: BUILDER_IMAGE
+          value: >-
+            registry.redhat.io/rhel8/buildah@sha256:99cae35f40c7ec050fed3765b2b27e0b8bbea2aa2da7c16408e2ca13c60ff8ee
+      runAfter:
+        - git-clone-1-5-0
+      taskRef:
+        kind: ClusterTask
+        name: s2i-nodejs-1-5-0
+      workspaces:
+        - name: source
+          workspace: nodejs-source-code
+    - name: git-clone-1-5-0
+      params:
+        - name: url
+          value: "$(params.GIT_REPO)"
+        - name: submodules
+          value: 'true'
+        - name: depth
+          value: '1'
+        - name: sslVerify
+          value: 'true'
+        - name: deleteExisting
+          value: 'true'
+        - name: verbose
+          value: 'true'
+        - name: gitInitImage
+          value: >-
+            registry.redhat.io/openshift-pipelines/pipelines-git-init-rhel8@sha256:da1aedf0b17f2b9dd2a46edc93ff1c0582989414b902a28cd79bad8a035c9ea4
+        - name: userHome
+          value: /tekton/home
+      taskRef:
+        kind: ClusterTask
+        name: git-clone-1-5-0
+      workspaces:
+        - name: output
+          workspace: nodejs-source-code
+  workspaces:
+    - name: nodejs-source-code
