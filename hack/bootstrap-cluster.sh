@@ -21,6 +21,9 @@ while : ; do
   sleep 1
 done
 
+# Switch the Route to use re-encryption
+kubectl patch argocd/openshift-gitops -n openshift-gitops -p '{"spec": {"server": {"route": {"enabled": true, "tls": {"termination": "reencrypt"}}}}}' --type=merge
+
 echo 
 echo "Add Role/RoleBindings for OpenShift GitOps:"
 kustomize build $ROOT/openshift-gitops/cluster-rbac | kubectl apply -f -
@@ -39,6 +42,3 @@ echo "(NOTE: It may take a few moments for the route to become available)"
 echo
 echo "Login/password uses your OpenShift credentials ('Login with OpenShift' button)"
 echo
-
-
-
