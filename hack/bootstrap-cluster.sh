@@ -21,8 +21,14 @@ while : ; do
   sleep 1
 done
 
+echo "Patching OpenShift GitOps ArgoCD CR"
+
 # Switch the Route to use re-encryption
 kubectl patch argocd/openshift-gitops -n openshift-gitops -p '{"spec": {"server": {"route": {"enabled": true, "tls": {"termination": "reencrypt"}}}}}' --type=merge
+
+# Allow any authenticated users to be admin on the Argo CD instance
+# - Once we have a proper access policy in place, this should be updated to be consistent with that policy.
+kubectl patch argocd/openshift-gitops -n openshift-gitops -p '{"spec":{"rbac":{"policy":"g, system:authenticated, role:admin"}}}' --type=merge
 
 echo 
 echo "Add Role/RoleBindings for OpenShift GitOps:"
