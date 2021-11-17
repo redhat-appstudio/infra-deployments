@@ -53,7 +53,9 @@ Other questions? Ask on `#wg-developer-appstudio`.
 
 As long as your resources are declaratively defined, they will eventually be reconciled with the cluster (it just may take Argo CD a few retries). For example, the CRs might fail before the CRDs are applied, but on retry the CRDs will now exist (as they were applied during the previous retry). So now those CRs can progress.
 
-_However_, this is not true if you are installing an Operator (e.g. Tekton), and then using an operand of that operator (e.g. `Pipeline` CRs). In this case, you will need to add the `argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true` annotation to the operands (or add it to the parent `kustomization.yaml`). See the FAQ question '_the server could not find the requested resource_' below for details.
+_However_, this is not true if you are installing an Operator (e.g. Tekton) via OLM `Subscription`, and then using an operand of that operator (e.g. `Pipeline` CRs), at the same time. In this case, you will need to add the `argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true` annotation to the operands (or add it to the parent `kustomization.yaml`). 
+
+See the FAQ question '_the server could not find the requested resource_' below for details.
 
 For finer-grained control of resource apply ordering, use Argo CD [Sync waves](https://argoproj.github.io/argo-cd/user-guide/sync-waves/) (Here is an [example](https://github.com/argoproj/argocd-example-apps/tree/master/sync-waves)).
 
@@ -74,9 +76,9 @@ For an example of this, see the [Red Hat CoP GitOps catalog](https://github.com/
 
 Before Argo CD attempts a synchronize operation (syncing your Git repository with the K8s cluster), it performs a dry-run to ensure that all the K8s resources in your Git repository are valid. If your repository contains custom resources which are not yet defined (for example, Tekton `Pipeline` CRs), it will refuse to begin the synchronize operation.
 
-This most often occurs when the Git repository contains both the OLM `Subscription` (which will install the desired operator, e.g. Tekton), and also the operands (the `Pipeline` CRs).
+This most often occurs when a Git repository contains both the OLM `Subscription` (which will install the desired operator, e.g. Tekton), and also the operands of that operator (the `Pipeline` CRs).
 
-The easiest way to solve this is to add this annotation to your custom resources operands:  `argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true` (see Argo CD docs [for more on this sync option](https://argo-cd.readthedocs.io/en/stable/user-guide/sync-options/#skip-dry-run-for-new-custom-resources-types))
+The easiest way to solve this is to add this annotation to your custom resources operands:  `argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true`.
 
 For example, we would add this annotation to _all of our_ Pipeline CRs:
 ```yaml
@@ -99,3 +101,5 @@ resources:
 commonAnnotations: 
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 ```
+
+See the Argo CD docs [for more on this sync option](https://argo-cd.readthedocs.io/en/stable/user-guide/sync-options/#skip-dry-run-for-new-custom-resources-types). See the [redhat-cop/gitops-catalog](https://github.com/redhat-cop/gitops-catalog) for examples of this option used with Kustomize and OLM-installed operators.
