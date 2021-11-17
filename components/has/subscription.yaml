@@ -1,0 +1,12 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: has-operator
+  namespace: application-service
+spec:
+  channel: alpha
+  installPlanApproval: Automatic
+  name: application-service
+  source: has-operator-catalog
+  sourceNamespace: openshift-marketplace
+  startingCSV: application-service.v0.0.1
