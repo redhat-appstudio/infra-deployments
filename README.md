@@ -43,7 +43,7 @@ Steps:
 1) Run `hack/bootstrap-cluster.sh` which will bootstrap Argo CD (using OpenShift GitOps) and setup the Argo CD `Application` CRs for each component.
 2) Retrieve the Argo CD Web UI URL using `kubectl get routes`.
 3) Log-in to the Web UI using your OpenShift credentials (using 'Login with OpenShift' button).
-3) View the Argo CD UI to see the status of deployments.
+3) View the Argo CD UI to see the status of deployments. If your deployment was successful, you should see several applications running, such as "all-components-staging", "gitops", and so on.
 
 ## FAQ
 
@@ -103,3 +103,27 @@ commonAnnotations:
 ```
 
 See the Argo CD docs [for more on this sync option](https://argo-cd.readthedocs.io/en/stable/user-guide/sync-options/#skip-dry-run-for-new-custom-resources-types). See the [redhat-cop/gitops-catalog](https://github.com/redhat-cop/gitops-catalog) for examples of this option used with Kustomize and OLM-installed operators.
+
+### Q: When using CodeReady Containers for development purposes, I am getting an error message similar to: `0/1 nodes available: insufficient memory`.
+
+The default worker node memory allocation of 8192 MiB insufficient to run App Studio. Increase the memory to 16 MiB using `crc config set memory 16384` and then create a new CRC VM to apply your changes, using `crc delete` and `crc start`. Finally, repeat the cluster bootstrapping process.
+
+See the CodeReady Containers docs [for more on this configuration option](https://access.redhat.com/documentation/en-us/red_hat_codeready_containers/1.7/html/getting_started_guide/configuring-codeready-containers_gsg).
+
+### Q: When using CodeReady Containers for development purposes, I am getting an error message similar to: `0/1 nodes available: insufficient cpu`.
+
+The default 4-CPU allocation will not be sufficient for the CPU resource requests in this repo. Increase number of cores, for example, `crc config set cpus 6` if your hardware supports it, and then create a new CRC VM to apply your changes, using `crc delete` and `crc start`. Finally, repeat the cluster bootstrapping process.
+
+See the CodeReady Containers docs [for more on this configuration option](https://access.redhat.com/documentation/en-us/red_hat_codeready_containers/1.7/html/getting_started_guide/configuring-codeready-containers_gsg).
+
+Alternatively, adjust the resource requests for each App Studio application. Using `kubectl edit argocd/openshift-gitops -n openshift-gitops`, reduce the resources.requests.cpu values from 250m to 100m or less. For example, change each line with
+```
+requests:
+    cpu: 250m
+```
+to
+```
+requests:
+    cpu: 100m
+```
+Then save and exit the VIM editor (`Control-C` `Shift-ZZ`). The updates will be applied to the cluster immediately, and the App Studio deployment should complete within a few minutes.
