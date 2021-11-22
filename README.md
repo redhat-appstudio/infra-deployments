@@ -45,6 +45,31 @@ Steps:
 3) Log-in to the Web UI using your OpenShift credentials (using 'Login with OpenShift' button).
 3) View the Argo CD UI to see the status of deployments.
 
+## Development mode for your own clusters
+
+Once you bootstrap a cluster above, the root ArgoCD Application and all of the component applications will each point to the upstream repository.
+
+To enable development for a team or individual to test changes on your own cluster, you need to replace the references to `https://github.com/redhat-appstudio/infra-deployments.git` with references to your own fork.
+
+There are a set of scripts that help with this, and minimize the changes needed in your forks.
+
+There is a development configuration in `overlays/development` which includes a kustomize overlay that can redirect the default components individual repositorys to your fork. 
+
+Steps:
+1) in your forked repository run `hack/development-mode.sh` and this will update the root application on the cluster and all of the git repo references in `argo-cd-apps/overlays/development/repo-overlay.yaml`
+2) you will need to push the updated references in `argo-cd-apps/overlays/development/repo-overlay.yaml` to your fork. Argo will now sync all the changes from your fork into the cluster
+3) You can now make changes to your forked repository and test them via the gitops
+
+4) To submit changes back to the upstream make sure you do not include the modified file `argo-cd-apps/overlays/development/repo-overlay.yaml`. 
+
+One option to prevent accidentally including this modified file, you can run the script `hack/upstream-mode.sh` to reset everything including your cluster to `https://github.com/redhat-appstudio/infra-deployments.git` and match the upstream config. You can also checkout the current upstream 
+` git fetch upstream; git checkout upstream/main -- argo-cd-apps/overlays/development/repo-overlay.yaml` to ensure you have the original file.  
+
+After you commit your changes you can rerun to `hack/development-mode.sh` and reset your repo to point back to the fork. 
+
+Note running these scripts in a clone repo will have no effect as the repo will remain `https://github.com/redhat-appstudio/infra-deployments.git`
+
+ 
 ## FAQ
 
 Other questions? Ask on `#wg-developer-appstudio`.
