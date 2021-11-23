@@ -15,12 +15,20 @@ ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/..
 MANIFEST=$ROOT/argo-cd-apps/app-of-apps/all-applications-staging.yaml
 GITURL=$1
 OVERLAYDIR=argo-cd-apps/overlays/$2  
-
+BRANCH=$3 
+if [ -z "$BRANCH" ]
+then
+      echo No Branch specified, setting all overlays targetRevisions to main  
+else  
+      echo Setting all overlays targetRevisions to $BRANCH  
+fi
 echo
 echo In dev mode, verify that argo-cd-apps/overlays/development includes a kustomization that points to this repo
 echo If you want to reset to the default upstream run the upstream-mode.sh script  
 
 PATCH="$(printf '.spec.source.repoURL="%q"' $GITURL)" 
+yq  e "$PATCH" $OVERLAYDIR/repo-overlay.yaml -i  
+PATCH="$(printf '.spec.source.targetRevision="%q"' $BRANCH)" 
 yq  e "$PATCH" $OVERLAYDIR/repo-overlay.yaml -i 
 
 echo
