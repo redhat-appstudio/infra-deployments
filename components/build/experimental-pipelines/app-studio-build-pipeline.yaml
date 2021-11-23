@@ -1,0 +1,78 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: app-studio-build-pipeline
+  namespace: build-templates
+  labels:
+    "pipelines.openshift.io/used-by" : "build-cloud"
+    "pipelines.openshift.io/runtime" : "generic"
+    "pipelines.openshift.io/strategy" : "docker" 
+spec:
+  params:
+    - description: 'Source Repository URL'
+      name: git-url
+      type: string
+    - description: 'Fully Qualified Output Image'
+      name: output-image
+      type: string
+  tasks:
+    - name: clone-repository
+      params:
+        - name: url
+          value: $(params.git-url)
+      taskRef:
+        kind: ClusterTask
+        name: git-clone
+      workspaces:
+        - name: output
+          workspace: workspace
+    - name: build-container 
+      params:
+        - name: IMAGE
+          value: >-
+            $(params.output-image)
+        - name: BUILDER_IMAGE
+          value: >-
+            registry.redhat.io/rhel8/buildah@sha256:99cae35f40c7ec050fed3765b2b27e0b8bbea2aa2da7c16408e2ca13c60ff8ee
+        - name: STORAGE_DRIVER
+          value: vfs
+        - name: DOCKERFILE
+          value: ./Dockerfile
+        - name: CONTEXT
+          value: /workspace/source
+        - name: TLSVERIFY
+          value: 'true'
+        - name: FORMAT
+          value: oci
+      runAfter:
+        - clone-repository
+      taskRef:
+        kind: ClusterTask
+        name: buildah
+      workspaces:
+        - name: source
+          workspace: workspace
+    - name: show-summary
+      runAfter:
+        - build-container 
+      taskRef:
+        kind: ClusterTask
+        name: openshift-client
+      params:
+        - name: SCRIPT 
+          value: |
+            #!/usr/bin/env bash
+            echo  
+            echo Build Summary
+            echo "Build for git reposisory: $(params.git-url)" 
+            echo "Generated Image is in : $(params.output-image)"  
+            echo 
+            echo "Environment" 
+            oc get pipelines 
+            echo 
+            echo End Summary  
+      workspaces:
+        - name: manifest-dir 
+          workspace: workspace
+  workspaces:
+    - name: workspace

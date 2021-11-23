@@ -9,12 +9,23 @@ components:
 
 
 ## Usage
-
+ 
 As a non-admin user, one would have access to the Pipeline definitions in `build-templates`. 
 
-To be able to use them in one's personal namespace, the UI or the client would need to run the equivalent of the following command:
+To be able to use them in one's personal namespace, you can run the following script:
 
 ```
-oc get pipelines -n build-templates -o yaml | sed 's/namespace: .*/namespace: YOUR-NAMESPACE/' | oc apply -f -
+./components/build/hack/install-pipelines.sh
+```
+This will install the default set of build pipelines into your namespace. 
+
+To validate the pipelines are installed and working, you can run this script which will run a simple single container docker build. 
+```
+./components/build/hack/test-known-build.sh
 ```
 
+To run any repository with dockerfile in the root of the git repo
+
+```
+./components/build/hack/build.sh  <git url>
+```
