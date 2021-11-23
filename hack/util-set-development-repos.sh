@@ -18,9 +18,10 @@ OVERLAYDIR=argo-cd-apps/overlays/$2
 BRANCH=$3 
 if [ -z "$BRANCH" ]
 then
-      echo No Branch specified, setting all overlays targetRevisions to main  
+      echo No Branch specified, setting all overlays targetRevisions to main 
+      BRANCH=main 
 else  
-      echo Setting all overlays targetRevisions to $BRANCH  
+      echo Setting all overlays targetRevisions to $BRANCH 
 fi
 echo
 echo In dev mode, verify that argo-cd-apps/overlays/development includes a kustomization that points to this repo
