@@ -9,7 +9,7 @@ ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/..
 REPO=https://github.com/redhat-appstudio/infra-deployments.git
 
 #set the local cluster to point back to the upstream  
-$ROOT/hack/util-update-app-of-apps.sh $REPO staging
+$ROOT/hack/util-update-app-of-apps.sh $REPO staging main
 #reset the default content in the development directory to be the upstream
-$ROOT/hack/util-set-development-repos.sh $REPO development
+$ROOT/hack/util-set-development-repos.sh $REPO development main
  
