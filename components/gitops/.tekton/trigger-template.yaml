@@ -1,0 +1,42 @@
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: TriggerTemplate
+metadata:
+  name: gitops-service-cluster-agent
+spec:
+  params:
+    - name: git-revision
+    - name: git-commit-message
+    - name: git-repo-url
+    - name: git-repo-name
+    - name: content-type
+    - name: pusher-name
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1beta1
+      kind: PipelineRun
+      metadata:
+        generateName: gitops-service-cluster-agent-
+      spec:
+        params:
+          - name: git-url
+            value: 'https://github.com/redhat-appstudio/managed-gitops'
+          - name: revision
+            value: $(tt.params.git-revision)
+          - name: output-image
+            value: 'quay.io/redhat-appstudio/gitops-service:$(tt.params.git-revision)'
+          - name: context
+            value: cluster-agent
+          - name: dockerfile
+            value: cluster-agent/Dockerfile
+        pipelineRef:
+          name: appstudio-dockerfile-builder
+        workspaces:
+          - name: workspace
+            volumeClaimTemplate:
+              spec:
+                accessModes:
+                  - ReadWriteOnce
+                resources:
+                  requests:
+                    storage: 10Mi
+                #storageClassName: gp2
+                volumeMode: Filesystem
