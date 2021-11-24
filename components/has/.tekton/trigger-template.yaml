@@ -1,0 +1,42 @@
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: TriggerTemplate
+metadata:
+  name: application-service
+spec:
+  params:
+    - name: git-revision
+    - name: git-commit-message
+    - name: git-repo-url
+    - name: git-repo-name
+    - name: content-type
+    - name: pusher-name
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1beta1
+      kind: PipelineRun
+      metadata:
+        generateName: application-service-
+      spec:
+        params:
+          - name: git-url
+            value: 'https://github.com/redhat-appstudio/application-service'
+          - name: revision
+            value: $(tt.params.git-revision)
+          - name: output-image
+            value: 'quay.io/redhat-appstudio/application-service:$(tt.params.git-revision)'
+          - name: context
+            value: .
+          - name: dockerfile
+            value: Dockerfile
+        pipelineRef:
+          name: appstudio-dockerfile-builder
+        workspaces:
+          - name: workspace
+            volumeClaimTemplate:
+              spec:
+                accessModes:
+                  - ReadWriteOnce
+                resources:
+                  requests:
+                    storage: 10Mi
+                #storageClassName: gp2
+                volumeMode: Filesystem
