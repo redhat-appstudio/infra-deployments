@@ -35,15 +35,30 @@ Simply update the files under `components/(team-name)`, and open a PR with the c
 
 ## Bootstrapping a cluster
 
+### Required prerequisites
 The prerequisites are:
 - You must have `kubectl` and `kustomize` installed. 
 - You must have `kubectl` pointing to an existing OpenShift cluster, that you wish to deploy to.
 
+### Optional: CodeReady Containers Setup
+If you don't already have a test OpenShift cluster available, CodeReady Containers is a popular option. It runs a small OpenShift cluster in a single VM on your local workstation.
+1) Create or log in using your free Red Hat account, and [install CodeReady Containers (CRC)](https://console.redhat.com/openshift/create/local).
+2) Make sure you have the latest version of CRC: `crc version`
+3) Set up your workstation and command line tools: `crc setup`
+4) Configure the VM using the minimum supported values. You can further increase these values if your workstation can support it: `crc config set memory 16384` and `crc config set cpus 6`
+5) Create a new VM after you adjust the memory and cpu allocation: `crc delete` and confirm with a `y`.
+6) Start the OpenShift cluster: `crc start` This command will output the OpenShift web console URL as well as the developer and kubeadmin credentials when it's finished.
+7) Set up your command line: `eval $(crc oc-env)`
+8) Configure kubectl to use the CRC administrator account: `kubectl config use-context crc-admin`
+
+### Bootstrap App Studio
 Steps:
-1) Run `hack/bootstrap-cluster.sh` which will bootstrap Argo CD (using OpenShift GitOps) and setup the Argo CD `Application` CRs for each component.
-2) Retrieve the Argo CD Web UI URL using `kubectl get routes`.
-3) Log-in to the Web UI using your OpenShift credentials (using 'Login with OpenShift' button).
+1) Run `hack/bootstrap-cluster.sh` which will bootstrap Argo CD (using OpenShift GitOps) and setup the Argo CD `Application` Custom Resources (CRs) for each component. This command will output the Argo CD Web UI URL when it's finished.
+2) Log-in to the Argo CD Web UI using your OpenShift credentials (using 'Login with OpenShift' button).
 3) View the Argo CD UI to see the status of deployments. If your deployment was successful, you should see several applications running, such as "all-components-staging", "gitops", and so on.
+
+### Optional: CodeReady Containers Post-Bootstrap Configuration
+Even with 6 CPU cores, you will need to reduce the CPU resource requests for each App Studio application. Using `kubectl edit argocd/openshift-gitops -n openshift-gitops`, reduce the resources.requests.cpu values from 250m to 100m or less. More details are in the FAQ below.
 
 ## Development mode for your own clusters
 
@@ -75,7 +90,7 @@ Note running these scripts in a clone repo will have no effect as the repo will 
 
 Other questions? Ask on `#wg-developer-appstudio`.
 
-### Q: How do I deliver K8s resources in stages? For example, installing a CRD first, then installing the CR (for that CRD).
+### Q: How do I deliver K8s resources in stages? For example, installing a Custom Resource Definition (CRD) first, then installing the Custom Resource (CR) for that CRD.
 
 As long as your resources are declaratively defined, they will eventually be reconciled with the cluster (it just may take Argo CD a few retries). For example, the CRs might fail before the CRDs are applied, but on retry the CRDs will now exist (as they were applied during the previous retry). So now those CRs can progress.
 
@@ -142,7 +157,7 @@ The default 4-CPU allocation will not be sufficient for the CPU resource request
 
 See the CodeReady Containers docs [for more on this configuration option](https://access.redhat.com/documentation/en-us/red_hat_codeready_containers/1.7/html/getting_started_guide/configuring-codeready-containers_gsg).
 
-Alternatively, adjust the resource requests for each App Studio application. Using `kubectl edit argocd/openshift-gitops -n openshift-gitops`, reduce the resources.requests.cpu values from 250m to 100m or less. For example, change each line with
+Even with 6 CPU cores, you will need to reduce the CPU resource requests for each App Studio application. Using `kubectl edit argocd/openshift-gitops -n openshift-gitops`, reduce the resources.requests.cpu values from 250m to 100m or less. For example, change each line with
 ```
 requests:
     cpu: 250m
@@ -152,4 +167,4 @@ to
 requests:
     cpu: 100m
 ```
-Then save and exit the VIM editor (`Control-C` `Shift-ZZ`). The updates will be applied to the cluster immediately, and the App Studio deployment should complete within a few minutes.
+Then [save and exit the editor](https://vim.rtorr.com/). The updates will be applied to the cluster immediately, and the App Studio deployment should complete within a few minutes.
