@@ -14,14 +14,19 @@ As a non-admin user, one would have access to the Pipeline definitions in `build
 
 To be able to use them in one's personal namespace, you can run the following script:
 
-```
-./components/build/hack/install-pipelines.sh
-```
-This will install the default set of build pipelines into your namespace. 
+Pipelines will be automatically installed in the namespace when running a build
 
 To validate the pipelines are installed and working, you can run this script which will run a simple single container docker build. 
+
+
 ```
 ./components/build/hack/test-known-build.sh
+```
+
+The above script runs a known docker-build from a sample repository
+
+```
+hack/build.sh https://github.com/jduimovich/single-container-app
 ```
 
 To run any repository with dockerfile in the root of the git repo
