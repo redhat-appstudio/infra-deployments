@@ -53,9 +53,10 @@ If you don't already have a test OpenShift cluster available, CodeReady Containe
 
 ### Bootstrap App Studio
 Steps:
-1) Run `hack/bootstrap-cluster.sh` which will bootstrap Argo CD (using OpenShift GitOps) and setup the Argo CD `Application` Custom Resources (CRs) for each component. This command will output the Argo CD Web UI URL when it's finished.
-2) Log-in to the Argo CD Web UI using your OpenShift credentials (using 'Login with OpenShift' button).
-3) View the Argo CD UI to see the status of deployments. If your deployment was successful, you should see several applications running, such as "all-components-staging", "gitops", and so on.
+1) Run `hack/bootstrap-cluster.sh` which will bootstrap Argo CD (using OpenShift GitOps) and setup the Argo CD `Application` Custom Resources (CRs) for each component. This command will output the Argo CD Web UI route when it's finished.
+2) Open the Argo CD Web UI to see the status of your deployments. You can use the route from the previous step and login using your OpenShift credentials (using the 'Login with OpenShift' button), or login to the OpenShift Console and navigate to Argo CD using the OpenShift Gitops menu in the Applications pulldown.
+![OpenShift Gitops menu with Cluster Argo CD menu option](documentation/images/argo-cd-login.png?raw=true "OpenShift Gitops menu")
+3) If your deployment was successful, you should see several applications running, such as "all-components-staging", "gitops", and so on.
 
 ### Optional: CodeReady Containers Post-Bootstrap Configuration
 Even with 6 CPU cores, you will need to reduce the CPU resource requests for each App Studio application. Using `kubectl edit argocd/openshift-gitops -n openshift-gitops`, reduce the resources.requests.cpu values from 250m to 100m or less. More details are in the FAQ below.
