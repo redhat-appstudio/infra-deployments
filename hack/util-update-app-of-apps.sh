@@ -31,7 +31,7 @@ PATCHBRANCH="$(printf '.spec.source.targetRevision="%q"' $BRANCH)"
 # to replace the specific component they are evolving  
 
 echo
-echo "Setting the application repo to $GITURL, branch BRANCH in overlay $OVERLAYDIR"  
+echo "Setting the application repo to $GITURL, branch $BRANCH in overlay $OVERLAYDIR"
 yq  e "$PATCHOVERLAY" $MANIFEST | \
  yq  e "$PATCHREPO" - | \
  yq  e "$PATCHBRANCH" - | \
