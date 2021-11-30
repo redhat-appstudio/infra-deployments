@@ -1,0 +1,91 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: noop
+  namespace: build-templates
+  labels:
+    "pipelines.openshift.io/used-by" : "build-cloud"
+    "pipelines.openshift.io/runtime" : "generic"
+    "pipelines.openshift.io/strategy" : "docker" 
+spec:
+  params:
+    - description: 'Source Repository URL'
+      name: git-url
+      type: string
+    - description: 'Fully Qualified Output Image'
+      name: output-image
+      type: string
+  tasks:
+    - name: start 
+      taskRef:
+        kind: ClusterTask
+        name: openshift-client
+      params:
+        - name: SCRIPT 
+          value: |
+            #!/usr/bin/env bash 
+            echo "Simple Pipeline "  
+            echo "GIT URL: $(params.git-url)" 
+            echo "Image URL: $(params.output-image)" 
+      workspaces:
+        - name: manifest-dir 
+          workspace: workspace
+    - name: task1 
+      taskRef:
+        kind: ClusterTask
+        name: openshift-client
+      params:
+        - name: SCRIPT 
+          value: |
+            #!/usr/bin/env bash 
+            echo "task1"  
+      runAfter:
+        - start 
+      workspaces:
+        - name: manifest-dir 
+          workspace: workspace
+    - name: task2 
+      taskRef:
+        kind: ClusterTask
+        name: openshift-client
+      params:
+        - name: SCRIPT 
+          value: |
+            #!/usr/bin/env bash 
+            echo "task2"     
+      runAfter:
+        - start 
+      workspaces:
+        - name: manifest-dir 
+          workspace: workspace
+    - name: task3 
+      taskRef:
+        kind: ClusterTask
+        name: openshift-client
+      params:
+        - name: SCRIPT 
+          value: | 
+            #!/usr/bin/env bash 
+            echo "task3"       
+      runAfter:
+        - task2 
+      workspaces:
+        - name: manifest-dir 
+          workspace: workspace
+    - name: merge 
+      taskRef:
+        kind: ClusterTask
+        name: openshift-client
+      params:
+        - name: SCRIPT 
+          value: |
+            #!/usr/bin/env bash  
+            echo "Wait for other tasks done"   
+      runAfter:
+        - task1 
+        - task3
+      workspaces:
+        - name: manifest-dir 
+          workspace: workspace
+  workspaces:
+    - name: workspace
