@@ -1,10 +1,7 @@
 resources:
 - allow-argocd-to-manage.yaml
 - https://github.com/redhat-appstudio/application-service/config/default
-#- catalogsource.yaml
-#- operatorgroup.yaml
-#- subscription.yaml
-#- .tekton/
+- .tekton/
 
 
 apiVersion: kustomize.config.k8s.io/v1beta1
@@ -14,3 +11,5 @@ images:
 - name: quay.io/redhat-appstudio/application-service
   newName: quay.io/redhat-appstudio/application-service
   newTag: 4c6f591d80c60574c826e7660e4794d27e1e074a
+
+namespace: application-service
