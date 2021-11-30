@@ -14,13 +14,30 @@
 
 SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-PIPELINE_RUN=$SCRIPTDIR/default-build.yaml  
-PIPELINE_NAME=$(yq e '.spec.pipelineRef.name' $PIPELINE_RUN) 
-oc get pipeline  $PIPELINE_NAME > /dev/null 2>&1
-ERR=$? 
-if (( $ERR != 0 )); then 
-  $SCRIPTDIR/install-pipelines.sh
+GITREPO=$1 
+if [ -z "$GITREPO" ]
+then
+      echo Missing parameter Git URL to Build
+      exit -1 
+fi
+PIPELINE_NAME=$2   
+if [ -z "$PIPELINE_NAME" ]
+then
+      PIPELINE_NAME=$($SCRIPTDIR/repo-to-pipeline.sh $GITREPO) 
+      if [ "$PIPELINE_NAME" == "none" ]
+      then 
+            echo Pipeline name  $PIPELINE_NAME - exiting build 
+            exit 0
+      else 
+            echo Pipeline name computed from git repo $PIPELINE_NAME
+      fi
 fi 
+
+PIPELINE_RUN=$SCRIPTDIR/default-build.yaml  
+#PIPELINE_NAME=$(yq e '.spec.pipelineRef.name' $PIPELINE_RUN) 
+
+$SCRIPTDIR/install-single-pipeline.sh $PIPELINE_NAME
+
 oc get pipeline  $PIPELINE_NAME > /dev/null 2>&1
 ERR=$? 
 if (( $ERR != 0 )); then
@@ -28,28 +45,26 @@ if (( $ERR != 0 )); then
   exit -1
 fi 
 
-GITREPO=$1 
-if [ -z "$GITREPO" ]
-then
-      echo Missing parameter Git URL to Build
-      exit -1 
-fi
 
-APPNAME=$(basename $GITREPO)
-TAG=$(date +"%Y-%m-%d-%H%M%S") 
+APPNAME=$(basename $GITREPO) 
+IMAGE_FULL_TAG=$(git ls-remote $GITREPO HEAD)
+IMAGE_SHORT_TAG=${IMAGE_FULL_TAG:position:7}
+BUILD_TAG=$(date +"%Y-%m-%d-%H%M%S") 
 NS=$(oc config view --minify -o "jsonpath={..namespace}")
-IMG=image-registry.openshift-image-registry.svc:5000/$NS/$APPNAME
-
+ 
+IMG=image-registry.openshift-image-registry.svc:5000/$NS/$APPNAME:$IMAGE_SHORT_TAG
 echo
 echo "Building $GITREPO"
-echo "Build Name: build-$TAG"
+echo "Build Name: build-$BUILD_TAG"
 echo "Namespace: " $NS
 echo "Image: " $IMG
 echo "Pipeline: " $PIPELINE_NAME 
 
 yq -M e ".spec.params[0].value=\"$GITREPO\"" $PIPELINE_RUN | \
   yq -M e ".spec.params[1].value=\"$IMG\"" - | \
-  yq -M e ".metadata.name=\"build-$TAG\"" - | \
+  yq -M e ".metadata.name=\"$PIPELINE_NAME-$BUILD_TAG\"" - | \
+  yq -M e ".spec.pipelineRef.name=\"$PIPELINE_NAME\"" - | \
+  yq -M e ".spec.workspaces[0].subPath=\"$PIPELINE_NAME-$BUILD_TAG\"" - | \
   oc apply -f -
 
 echo

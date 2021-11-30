@@ -23,7 +23,7 @@
 #   serviceAccountName: pipeline
 #   timeout: 1h0m0s
 #   workspaces:
-#     - name: nodejs-source-code
+#     - name: workspace
 #       persistentVolumeClaim:
 #         claimName: app-studio-default-workspace
 
@@ -38,26 +38,27 @@ metadata:
     "pipelines.openshift.io/strategy" : "s2i"
 spec:
   params: 
-    - name: IMAGE
+    - description: 'Source Repository URL'
+      name: git-url
       type: string
-      description: "Output image"
-    - name: GIT_REPO
+    - description: 'Fully Qualified Output Image'
+      name: output-image
       type: string
-      description: "The git repository URL containing source code to be build"
-    - name: PATH_CONTEXT
+    - default: .
+      description: The path to your source code
+      name: path-context 
       type: string
-      description: "The path to your source code"
   tasks:
     - name: s2i-nodejs-1-5-0
       params:
         - name: VERSION
           value: 14-ubi8
         - name: PATH_CONTEXT
-          value: "$(params.PATH_CONTEXT)"
+          value: "$(params.path-context)"
         - name: TLSVERIFY
           value: 'true'
         - name: IMAGE
-          value: "$(params.IMAGE)"
+          value: "$(params.output-image)"
         - name: BUILDER_IMAGE
           value: >-
             registry.redhat.io/rhel8/buildah@sha256:99cae35f40c7ec050fed3765b2b27e0b8bbea2aa2da7c16408e2ca13c60ff8ee
@@ -68,11 +69,11 @@ spec:
         name: s2i-nodejs-1-5-0
       workspaces:
         - name: source
-          workspace: nodejs-source-code
+          workspace: workspace
     - name: git-clone-1-5-0
       params:
         - name: url
-          value: "$(params.GIT_REPO)"
+          value: "$(params.git-url)"
         - name: submodules
           value: 'true'
         - name: depth
@@ -93,6 +94,26 @@ spec:
         name: git-clone-1-5-0
       workspaces:
         - name: output
-          workspace: nodejs-source-code
+          workspace: workspace
+    - name: show-summary
+      runAfter:
+        - s2i-nodejs-1-5-0
+      taskRef:
+        kind: ClusterTask
+        name: openshift-client
+      params:
+        - name: SCRIPT 
+          value: |
+            #!/usr/bin/env bash
+            echo  
+            echo "Build Summary:"
+            echo
+            echo "Build repository: $(params.git-url)" 
+            echo "Generated Image is in : $(params.output-image)"  
+            echo 
+            echo End Summary  
+      workspaces:
+        - name: manifest-dir 
+          workspace: workspace
   workspaces:
-    - name: nodejs-source-code
+    - name: workspace
