@@ -15,6 +15,10 @@ spec:
     - description: 'Fully Qualified Output Image'
       name: output-image
       type: string
+    - default: .
+      description: The path to your source code
+      name: PATH_CONTEXT
+      type: string
   tasks:
     - name: clone-repository
       params:
@@ -67,7 +71,7 @@ spec:
             echo
             echo "Build repository: $(params.git-url)" 
             echo "Generated Image is in : $(params.output-image)"  
-            echo 
+            echo  
             echo End Summary  
       workspaces:
         - name: manifest-dir 
