@@ -49,7 +49,7 @@ spec:
       name: path-context 
       type: string
   tasks:
-    - name: s2i-nodejs-1-5-0
+    - name: s2i-nodejs
       params:
         - name: VERSION
           value: 14-ubi8
@@ -63,14 +63,14 @@ spec:
           value: >-
             registry.redhat.io/rhel8/buildah@sha256:99cae35f40c7ec050fed3765b2b27e0b8bbea2aa2da7c16408e2ca13c60ff8ee
       runAfter:
-        - git-clone-1-5-0
+        - git-clone
       taskRef:
         kind: ClusterTask
-        name: s2i-nodejs-1-5-0
+        name: s2i-nodejs
       workspaces:
         - name: source
           workspace: workspace
-    - name: git-clone-1-5-0
+    - name: git-clone
       params:
         - name: url
           value: "$(params.git-url)"
@@ -91,13 +91,13 @@ spec:
           value: /tekton/home
       taskRef:
         kind: ClusterTask
-        name: git-clone-1-5-0
+        name: git-clone
       workspaces:
         - name: output
           workspace: workspace
     - name: show-summary
       runAfter:
-        - s2i-nodejs-1-5-0
+        - s2i-nodejs
       taskRef:
         kind: ClusterTask
         name: openshift-client
@@ -111,6 +111,17 @@ spec:
             echo "Build repository: $(params.git-url)" 
             echo "Generated Image is in : $(params.output-image)"  
             echo 
+            oc annotate pipelinerun $(context.pipelineRun.name) build.appstudio.io/repo=$(params.git-url)
+            oc annotate pipelinerun $(context.pipelineRun.name) build.appstudio.io/image=$(params.output-image)
+
+            echo "Output is in the following annotations:"
+            
+            echo "Build Repo is in 'build.appstudio.io/repo' "
+            echo 'oc get pr $(context.pipelineRun.name) -o jsonpath="{.metadata.annotations.build\.appstudio\.io/repo}"' 
+            
+            echo "Build Image is in 'build.appstudio.io/image' "
+            echo 'oc get pr $(context.pipelineRun.name) -o jsonpath="{.metadata.annotations.build\.appstudio\.io/image}"' 
+
             echo End Summary  
       workspaces:
         - name: manifest-dir 
