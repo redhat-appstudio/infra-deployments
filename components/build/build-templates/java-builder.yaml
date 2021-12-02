@@ -51,7 +51,7 @@ spec:
       workspaces:
         - name: output
           workspace: workspace
-    - name: s2i-java-1-5-0
+    - name: s2i-java
       params:
         - name: VERSION
           value: openjdk-11-ubi8
@@ -70,13 +70,13 @@ spec:
         - git-clone
       taskRef:
         kind: ClusterTask
-        name: s2i-java-1-5-0
+        name: s2i-java
       workspaces:
         - name: source
           workspace: workspace
     - name: show-summary
       runAfter:
-        - s2i-java-1-5-0 
+        - s2i-java 
       taskRef:
         kind: ClusterTask
         name: openshift-client
@@ -90,6 +90,17 @@ spec:
             echo "Build repository: $(params.git-url)" 
             echo "Generated Image is in : $(params.output-image)"  
             echo 
+            oc annotate pipelinerun $(context.pipelineRun.name) build.appstudio.io/repo=$(params.git-url)
+            oc annotate pipelinerun $(context.pipelineRun.name) build.appstudio.io/image=$(params.output-image)
+
+            echo "Output is in the following annotations:"
+            
+            echo "Build Repo is in 'build.appstudio.io/repo' "
+            echo 'oc get pr $(context.pipelineRun.name) -o jsonpath="{.metadata.annotations.build\.appstudio\.io/repo}"' 
+            
+            echo "Build Image is in 'build.appstudio.io/image' "
+            echo 'oc get pr $(context.pipelineRun.name) -o jsonpath="{.metadata.annotations.build\.appstudio\.io/image}"' 
+
             echo End Summary  
       workspaces:
         - name: manifest-dir 

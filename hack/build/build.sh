@@ -64,7 +64,7 @@ yq -M e ".spec.params[0].value=\"$GITREPO\"" $PIPELINE_RUN | \
   yq -M e ".spec.params[1].value=\"$IMG\"" - | \
   yq -M e ".metadata.name=\"$PIPELINE_NAME-$BUILD_TAG\"" - | \
   yq -M e ".spec.pipelineRef.name=\"$PIPELINE_NAME\"" - | \
-  yq -M e ".spec.workspaces[0].subPath=\"$PIPELINE_NAME-$BUILD_TAG\"" - | \
+  yq -M e ".spec.workspaces[0].subPath=\"pv-$PIPELINE_NAME-$BUILD_TAG\"" - | \
   oc apply -f -
 
 echo
