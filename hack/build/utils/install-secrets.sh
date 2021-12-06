@@ -1,4 +1,6 @@
 
+# deprecated util for installing secrets for git repo
+
 must_exist () {
     ENAME=$1
     if [ -z "${!ENAME}" ]

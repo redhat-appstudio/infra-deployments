@@ -1,0 +1,49 @@
+apiVersion: tekton.dev/v1beta1
+kind: ClusterTask
+metadata:
+  name: analyze-devfile
+spec:
+  description: >-
+    Analyze a devfile and output container and path in results
+  results:
+    - name: dockerfile
+      description: Digest of the image just built.
+    - name: path
+      description: Path of the image to be built.
+    - name: deploy
+      description: Contents of deployment yaml.
+  workspaces:
+    - name: source
+  steps:
+    - name: analyze-devfile
+      image: quay.io/redhat-appstudio/analyze-devfile:v0.1
+      script: |
+        #!/usr/bin/env bash  
+        cd ./workspace/source 
+        yq e '.components | with_entries(select(.[].name=="outerloop-build"))' devfile.yaml |  yq e '.[]' - > tmp.outerloop-build.yaml
+        echo
+        echo "outerloop-build section of devfile."
+        cat tmp.outerloop-build.yaml 
+        yq e '.components | with_entries(select(.[].name=="outerloop-deploy"))' devfile.yaml| yq e '.[]' - > tmp.outerloop-deploy.yaml
+        echo
+        echo "outerloop-deploy section of devfile."
+        cat tmp.outerloop-deploy.yaml 
+        echo 
+
+        DOCKERFILE="$(yq e '.image.dockerfile.uri' tmp.outerloop-build.yaml)"
+        BC="$(yq e '.image.dockerfile.buildContext' tmp.outerloop-build.yaml)"
+        DEPLOYFILE="$(yq e '.kubernetes.uri' tmp.outerloop-deploy.yaml)"
+
+        echo "Devfile Analysis:"
+        echo "Dockerfile: $DOCKERFILE"  
+        echo "BuildContext: $BC"   
+        echo "Deploy: $DEPLOYFILE"
+        echo   
+        echo "Deploy contents:"
+        cat "$DEPLOYFILE"
+        echo   
+  
+        echo -n "$DOCKERFILE" >  /tekton/results/dockerfile  
+        echo -n "$BC" > /tekton/results/path
+        echo -n "$DEPLOYFILE" > /tekton/results/deploy
+  
