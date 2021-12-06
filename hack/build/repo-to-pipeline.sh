@@ -2,7 +2,9 @@
 
 # Peek the git repo to determine which pipeline to use
 # This is a temp script until HAS Component Detection Query is completed
-# Returns "error-no-pipeline-name" if no pipeline can be determined
+# Returns "noop" if no pipeline cannot be determined
+# A noop pipeline will run but not produce an image or build
+# Note if a devfile is present, the build will use a devfile builder
 
 GITREPO=$1 
 if [ -z "$GITREPO" ]
@@ -37,8 +39,8 @@ repo_marker_to_pipeline () {
 
 # need to understand dev files mapping 
 repo_marker_to_pipeline $GITREPO "noop"          "noop"  
+repo_marker_to_pipeline $GITREPO "devfile.yaml"  "devfile-build" 
 repo_marker_to_pipeline $GITREPO "Dockerfile"    "docker-build" 
 repo_marker_to_pipeline $GITREPO "package.json"  "nodejs-builder"
 repo_marker_to_pipeline $GITREPO "pom.xml"       "java-builder" 
-#echo "error-no-pipeline-name" 
 echo "noop" 

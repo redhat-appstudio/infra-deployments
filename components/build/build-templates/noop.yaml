@@ -82,16 +82,16 @@ spec:
             #!/usr/bin/env bash  
             echo "Noop Test, this step will wait for parallel tasks to be"    
 
-            oc annotate pipelinerun $(context.pipelineRun.name) build.appstudio.io/repo=none
-            oc annotate pipelinerun $(context.pipelineRun.name) build.appstudio.io/image=none
+            oc annotate pipelinerun $(context.pipelineRun.name) build.appstudio.openshift.io/repo=none
+            oc annotate pipelinerun $(context.pipelineRun.name) build.appstudio.openshift.io/image=none
 
             echo "Output is in the following annotations:"
             
-            echo "Build Repo is in 'build.appstudio.io/repo' "
-            echo 'oc get pr $(context.pipelineRun.name) -o jsonpath="{.metadata.annotations.build\.appstudio\.io/repo}"' 
+            echo "Build Repo is in 'build.appstudio.openshift.io/repo' "
+            echo 'oc get pr $(context.pipelineRun.name) -o jsonpath="{.metadata.annotations.build\.appstudio\.openshift\.io/repo}"' 
             
-            echo "Build Image is in 'build.appstudio.io/image' "
-            echo 'oc get pr $(context.pipelineRun.name) -o jsonpath="{.metadata.annotations.build\.appstudio\.io/image}"' 
+            echo "Build Image is in 'build.appstudio.openshift.io/image' "
+            echo 'oc get pr $(context.pipelineRun.name) -o jsonpath="{.metadata.annotations.build\.appstudio\.openshift\.io/image}"' 
 
       runAfter:
         - task1 
