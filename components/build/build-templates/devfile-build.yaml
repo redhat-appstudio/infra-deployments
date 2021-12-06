@@ -1,18 +1,12 @@
-## Sample Pipeline for a Java s2i build provided ootb.
-#
-## If changed by a user, the App Studio HAS service should push the modified 
-## Pipeline definition into the user's repository.
-
-
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
+  name: devfile-build 
+  namespace: build-templates
   labels:
     "pipelines.openshift.io/used-by" : "build-cloud"
-    "pipelines.openshift.io/runtime" : "java"
-    "pipelines.openshift.io/strategy" : "s2i"
-  name: java-builder
-  namespace: build-templates
+    "pipelines.openshift.io/runtime" : "generic"
+    "pipelines.openshift.io/strategy" : "docker" 
 spec:
   params:
     - description: 'Source Repository URL'
@@ -23,60 +17,57 @@ spec:
       type: string
     - default: .
       description: The path to your source code
-      name: path-context 
+      name: PATH_CONTEXT
       type: string
   tasks:
-    - name: git-clone
+    - name: clone-repository
       params:
         - name: url
           value: $(params.git-url)
-        - name: submodules
-          value: 'true'
-        - name: depth
-          value: '1'
-        - name: sslVerify
-          value: 'true'
-        - name: deleteExisting
-          value: 'true'
-        - name: verbose
-          value: 'true'
-        - name: gitInitImage
-          value: >-
-            registry.redhat.io/openshift-pipelines/pipelines-git-init-rhel8@sha256:da1aedf0b17f2b9dd2a46edc93ff1c0582989414b902a28cd79bad8a035c9ea4
-        - name: userHome
-          value: /tekton/home
       taskRef:
         kind: ClusterTask
         name: git-clone
       workspaces:
         - name: output
           workspace: workspace
-    - name: s2i-java
+    - name: analyze-devfile
+      runAfter:
+        - clone-repository
+      taskRef:
+        kind: ClusterTask
+        name: analyze-devfile
+      workspaces:
+        - name: source
+          workspace: workspace
+    - name: build-container 
       params:
-        - name: VERSION
-          value: openjdk-11-ubi8
-        - name: PATH_CONTEXT
-          value: $(params.path-context)
-        - name: TLSVERIFY
-          value: 'true'
-        - name: MAVEN_CLEAR_REPO
-          value: 'false'
         - name: IMAGE
-          value: "$(params.output-image)"
+          value: >-
+            $(params.output-image)
         - name: BUILDER_IMAGE
           value: >-
             registry.redhat.io/rhel8/buildah@sha256:99cae35f40c7ec050fed3765b2b27e0b8bbea2aa2da7c16408e2ca13c60ff8ee
+        - name: STORAGE_DRIVER
+          value: vfs
+        - name: DOCKERFILE
+          value: $(tasks.analyze-devfile.results.dockerfile)
+        - name: CONTEXT
+          value: /workspace/source
+        - name: TLSVERIFY
+          value: 'true'
+        - name: FORMAT
+          value: oci
       runAfter:
-        - git-clone
+        - analyze-devfile
       taskRef:
         kind: ClusterTask
-        name: s2i-java
+        name: buildah
       workspaces:
         - name: source
           workspace: workspace
     - name: show-summary
       runAfter:
-        - s2i-java 
+        - build-container 
       taskRef:
         kind: ClusterTask
         name: openshift-client
@@ -86,12 +77,27 @@ spec:
             #!/usr/bin/env bash
             echo  
             echo "Build Summary:"
-            echo
+            echo  
             echo "Build repository: $(params.git-url)" 
             echo "Generated Image is in : $(params.output-image)"  
+            echo  
+            echo from Devfile 
+            echo "Dockerfile: $(tasks.analyze-devfile.results.dockerfile)" 
+            echo "Build repository: $(tasks.analyze-devfile.results.path)" 
             echo 
+
+            echo "encoding deploy yaml"
+            DEPLOYFILE="$(tasks.analyze-devfile.results.deploy)"
+            echo "Deploy Yaml: $(DEPLOYFILE)"
+            cat "$DEPLOYFILE"
+            echo "-----"
+            DEPLOY=$(cat $DEPLOYFILE | base64)
+            echo "$DEPLOY"
+
             oc annotate pipelinerun $(context.pipelineRun.name) build.appstudio.openshift.io/repo=$(params.git-url)
             oc annotate pipelinerun $(context.pipelineRun.name) build.appstudio.openshift.io/image=$(params.output-image)
+            #this should be put into a gitops repo but will be passed thru to enable deploy 
+            oc annotate pipelinerun $(context.pipelineRun.name) build.appstudio.openshift.io/deploy="$DEPLOY"
 
             echo "Output is in the following annotations:"
             
@@ -100,6 +106,9 @@ spec:
             
             echo "Build Image is in 'build.appstudio.openshift.io/image' "
             echo 'oc get pr $(context.pipelineRun.name) -o jsonpath="{.metadata.annotations.build\.appstudio\.openshift\.io/image}"' 
+ 
+            echo "Deploy Yaml Image is in 'build.appstudio.openshift.io/deploy' "
+            echo 'oc get pr $(context.pipelineRun.name) -o jsonpath="{.metadata.annotations.build\.appstudio\.openshift\.io/deploy}"' 
 
             echo End Summary  
       workspaces:

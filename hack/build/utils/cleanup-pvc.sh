@@ -56,6 +56,7 @@ yq -M e ".metadata.name=\"$PRNAME\"" tmp-cleanup.yaml   |  oc apply -f -
 rm -rf tmp-cleanup.yaml tmp-pipeline.yaml 
 tkn pipelinerun logs $PRNAME -f
 tkn pipelinerun delete $PRNAME -f
+tkn pipeline delete cleanup -f
 
 
  

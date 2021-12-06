@@ -21,7 +21,8 @@ if (( $ERR != 0 )); then
     echo No Pipeline named $PIPELINE_NAME found in current project, exiting
     rm -f pipelines.yaml err 
     exit -1
-  fi  
+  fi 
+  rm -f pipelines.yaml err  
   echo "Warning using Pipeline $PIPELINE_NAME already found in user project"
   echo "This pipeline was not installed via the gitops method in App Studio Build"
   echo "Ensure your pipeline is in a git repo to ensure you won't lose it."

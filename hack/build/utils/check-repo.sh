@@ -6,5 +6,5 @@ if [ -z "$1" ]
       echo "Need parameter with git repo url"
       exit -1 
 fi
-echo  "$1   -> $($SCRIPTDIR/repo-to-pipeline.sh $1)" 
+echo  "$1   -> $($SCRIPTDIR/../repo-to-pipeline.sh $1)" 
  
