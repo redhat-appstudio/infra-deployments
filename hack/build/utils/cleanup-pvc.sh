@@ -7,7 +7,7 @@ kind: Pipeline
 metadata:
   name: cleanup  
 spec: 
-  tasks:
+  tasks: 
     - name: cleanup 
       taskRef:
         kind: ClusterTask
@@ -15,14 +15,17 @@ spec:
       params:
         - name: SCRIPT 
           value: |
-            #!/usr/bin/env bash 
-            echo "Pre-Cleanup PVC Root Contents"
-            ls -al
-            rm -rf .*
-            rm -rf ./*
-            rm -rf *build*
-            echo "Post-Cleanup PVC Root Contents"
-            ls -al 
+            #!/usr/bin/env bash  
+            echo "Cleanup PVC for non-existant PipelineRuns" 
+            echo "Pre-Cleanup Directories"
+            ls -al    
+            mkdir keep
+            kubectl get pipelineruns --no-headers -o custom-columns=":metadata.name" | xargs -n 1 -I {} mv pv-{} keep  2> /dev/null
+            rm -rf pv-*
+            mv keep/* .
+            rm -rf keep
+            echo "Post-Cleanup Directories"
+            ls -al    
       workspaces:
         - name: manifest-dir 
           workspace: workspace
@@ -46,10 +49,14 @@ spec:
 ENV-INLINE-PR-DECL
 
 oc apply -f tmp-pipeline.yaml   
-BUILD_TAG=$(date +"%Y-%m-%d-%H%M%S") 
-yq -M e ".metadata.name=\"cleanup-$BUILD_TAG\"" tmp-cleanup.yaml   |  oc apply -f -
-
-oc apply -f tmp-cleanup.yaml  
+BUILD_TAG=$(date +"%Y-%m-%d-%H%M%S")
+PRNAME=cleanup-$BUILD_TAG
+yq -M e ".metadata.name=\"$PRNAME\"" tmp-cleanup.yaml   |  oc apply -f -
+  
 rm -rf tmp-cleanup.yaml tmp-pipeline.yaml 
+tkn pipelinerun logs $PRNAME -f
+tkn pipelinerun delete $PRNAME -f
+tkn pipeline delete cleanup -f
+
 
  
