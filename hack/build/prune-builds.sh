@@ -7,6 +7,9 @@ then
       KEEP=5  
 fi  
 tkn pr delete --keep $KEEP -f
-$SCRIPTDIR/utils/cleanup-pvc.sh 
+$SCRIPTDIR/utils/cleanup-pvc.sh  
+ISADMIN=$(oc whoami)
+if [ $ISADMIN = "kubeadmin" ]; then 
 oc adm prune images --confirm --registry-url  default-route-openshift-image-registry.apps-crc.testing
+fi 
 

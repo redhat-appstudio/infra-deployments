@@ -1,9 +1,16 @@
 #!/bin/bash
 SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-# install each pipeline found in the templates 
-# Used to validate all pipelines can be installed.
-# otherwise, use build.sh which will auto-install the pipeline computed for the repo
-# deprecated when bundles are used
- oc get pipelines -n build-templates -o yaml | \
-  yq e '.items[].metadata.name' - | \
-  xargs -n 1 $SCRIPTDIR/install-single-pipeline.sh
+# install the a local namespace bundle to contain oci bundle.
+
+CM=$(mktemp)
+cat > $CM <<OCILOCATION
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: build-pipelines-defaults 
+data: 
+  default_build_bundle: "Your Bundle Here" 
+OCILOCATION
+
+yq -M e ".data.default_build_bundle=\"$1\"" $CM | oc apply -f -
+
