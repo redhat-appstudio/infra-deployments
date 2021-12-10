@@ -53,7 +53,7 @@ If you don't already have a test OpenShift cluster available, CodeReady Containe
 
 ### Bootstrap App Studio
 Steps:
-1) Run `hack/bootstrap-cluster.sh` which will bootstrap Argo CD (using OpenShift GitOps) and setup the Argo CD `Application` Custom Resources (CRs) for each component. This command will output the Argo CD Web UI route when it's finished.
+1) Run `./hack/bootstrap-cluster.sh` which will bootstrap Argo CD (using OpenShift GitOps) and setup the Argo CD `Application` Custom Resources (CRs) for each component. This command will output the Argo CD Web UI route when it's finished.
 2) Open the Argo CD Web UI to see the status of your deployments. You can use the route from the previous step and login using your OpenShift credentials (using the 'Login with OpenShift' button), or login to the OpenShift Console and navigate to Argo CD using the OpenShift Gitops menu in the Applications pulldown.
 ![OpenShift Gitops menu with Cluster Argo CD menu option](documentation/images/argo-cd-login.png?raw=true "OpenShift Gitops menu")
 3) If your deployment was successful, you should see several applications running, such as "all-components-staging", "gitops", and so on.
@@ -73,16 +73,16 @@ There is a development configuration in `overlays/development` which includes a 
 The script also supports branches automatically. If you work in a checked out branch, each of the components in the overlays will mapped to that branch by setting `targetRevision:`.  
 
 Steps:
-1) in your forked repository run `hack/development-mode.sh` and this will update the root application on the cluster and all of the git repo references in `argo-cd-apps/overlays/development/repo-overlay.yaml`
+1) in your forked repository run `./hack/development-mode.sh` and this will update the root application on the cluster and all of the git repo references in `argo-cd-apps/overlays/development/repo-overlay.yaml`
 2) you will need to push the updated references in `argo-cd-apps/overlays/development/repo-overlay.yaml` to your fork. Argo will now sync all the changes from your fork into the cluster
 3) You can now make changes to your forked repository and test them via the gitops
 
 4) To submit changes back to the upstream make sure you do not include the modified file `argo-cd-apps/overlays/development/repo-overlay.yaml`. 
 
-One option to prevent accidentally including this modified file, you can run the script `hack/upstream-mode.sh` to reset everything including your cluster to `https://github.com/redhat-appstudio/infra-deployments.git` and match the upstream config. You can also checkout the current upstream 
+One option to prevent accidentally including this modified file, you can run the script `./hack/upstream-mode.sh` to reset everything including your cluster to `https://github.com/redhat-appstudio/infra-deployments.git` and match the upstream config. You can also checkout the current upstream 
 ` git fetch upstream; git checkout upstream/main -- argo-cd-apps/overlays/development/repo-overlay.yaml` to ensure you have the original file.  
 
-After you commit your changes you can rerun to `hack/development-mode.sh` and reset your repo to point back to the fork. 
+After you commit your changes you can rerun to `./hack/development-mode.sh` and reset your repo to point back to the fork. 
 
 Note running these scripts in a clone repo will have no effect as the repo will remain `https://github.com/redhat-appstudio/infra-deployments.git`
  
@@ -112,11 +112,11 @@ A sample script `build.sh` is provided which uses the App Studio Build Service A
 As a proof-of-concept, an optional `build-deploy.sh` script is included to take the build image and run it. . 
 
 ```
-hack/build/build.sh  git-repo-url <optional-pipeline-name>
+./hack/build/build.sh  git-repo-url <optional-pipeline-name>
 ```
 also the equivalent build but with an associated deploy. 
 ```
-hack/build/build-deploy.sh  git-repo-url <optional-pipeline-name>
+./hack/build/build-deploy.sh  git-repo-url <optional-pipeline-name>
 ```
 
 The `git-repo-url` is the git repository with your source code.
@@ -127,13 +127,13 @@ The current build types supported are: `devfile-build, `docker-build`, `java-bui
 
 For a quick "do nothing pipeline" run you can specify the `noop` buider and have a quick pipeline run that does nothing except print some logs. 
 
-`.hack/build/build.sh  https://github.com/jduimovich/single-container-app  noop`
+`./hack/build/build.sh  https://github.com/jduimovich/single-container-app  noop`
 
 Pipelines will be automatically installed when running a build via an OCI bundle mechanism. 
 
 To see what builds you have run, use the following examples.
 
-Use `.hack/build/ls-builds.sh` to show all builds in the system, and `.hack/build/ls-builds.sh <build-name>` to get the stats for a specific build.
+Use `./hack/build/ls-builds.sh` to show all builds in the system, and `./hack/build/ls-builds.sh <build-name>` to get the stats for a specific build.
 
 ## Testing 
 
@@ -144,14 +144,14 @@ To deploy all the builds as they complete, add the `-deploy` option.
 ./hack/build/m2-builds -deploy
 
 ```
-You can also run the noop build `hack/build/quick-noop-build.sh`, that executes in couple seconds to validate a working install.
+You can also run the noop build `./hack/build/quick-noop-build.sh`, that executes in couple seconds to validate a working install.
  
 ## Other Build utilties 
 
-The build type is identified via temporary hack until the Component Detection Query is available which maps files in your git repo to known build types. See `hack/build/repo-to-pipeline.sh`  which will print the repo name and computed builder type.
+The build type is identified via temporary hack until the Component Detection Query is available which maps files in your git repo to known build types. See `./hack/build/repo-to-pipeline.sh`  which will print the repo name and computed builder type.
 
 The system will fill with builds and logs so a utility is provided to prune pipelines and cleanup the associated storage. This is for dev mode only and will be done autatically by App Studio builds.
-Use `hack/build/prune-builds.sh` for a single cleanup pass, and `hack/build/prune-builds-loop.sh` to run a continous loop to cleanup extra resources. 
+Use `./hack/build/prune-builds.sh` for a single cleanup pass, and `./hack/build/prune-builds-loop.sh` to run a continous loop to cleanup extra resources. 
 
 Use `./hack/build/util/check-repo.sh` to test your what auto-detect build will return.  
 ```
