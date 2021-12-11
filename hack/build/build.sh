@@ -47,21 +47,33 @@ IMAGE_FULL_TAG=$(git ls-remote $GITREPO HEAD)
 IMAGE_SHORT_TAG=${IMAGE_FULL_TAG:position:7}
 BUILD_TAG=$(date +"%Y-%m-%d-%H%M%S") 
 NS=$(oc config view --minify -o "jsonpath={..namespace}")
- 
+
+# local bundle overide for dev purposes 
+BUNDLE=$(oc get cm build-pipelines-defaults -o=jsonpath='{.data.default_build_bundle}' 2> /dev/null)
+if [ -z "$BUNDLE" ]
+then
+      BUNDLE=$(oc get cm -n build-templates build-pipelines-defaults -o=jsonpath='{.data.default_build_bundle}')
+      if [ -z "$BUNDLE" ]
+      then
+            BUNDLE=$(yq -M e ".spec.pipelineRef.bundle"  $PIPELINE_RUN)
+            echo "Warning missing bundle name configmap in current namespace and build-templates, using default" 
+      fi 
+fi 
+
 IMG=image-registry.openshift-image-registry.svc:5000/$NS/$APPNAME:$IMAGE_SHORT_TAG
 echo
 echo "Building $GITREPO"
 echo "Build Name: build-$BUILD_TAG"
 echo "Namespace: " $NS
 echo "Image: " $IMG
-echo "Pipeline: " $PIPELINE_NAME 
-
-oc patch cm feature-flags -n openshift-pipelines  -p '{"data":{"enable-tekton-oci-bundles":"true"}}'
+echo "Bundle: " $BUNDLE
+echo "Pipeline: " $PIPELINE_NAME  
 
 yq -M e ".spec.params[0].value=\"$GITREPO\"" $PIPELINE_RUN | \
   yq -M e ".spec.params[1].value=\"$IMG\"" - | \
   yq -M e ".metadata.name=\"$PIPELINE_NAME-$BUILD_TAG\"" - | \
   yq -M e ".spec.pipelineRef.name=\"$PIPELINE_NAME\"" - | \
+  yq -M e ".spec.pipelineRef.bundle=\"$BUNDLE\"" - | \
   yq -M e ".spec.workspaces[0].subPath=\"pv-$PIPELINE_NAME-$BUILD_TAG\"" - | \
   oc apply -f -
 
