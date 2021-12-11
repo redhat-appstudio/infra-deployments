@@ -1,0 +1,24 @@
+apiVersion: tekton.dev/v1beta1
+kind: ClusterTask
+metadata:
+  name: appstudio-utils 
+spec:
+  description: >-
+    Utilities 
+  params:
+    - name: SCRIPT
+      description: Run a Script 
+      default: "echo no-script-passed" 
+  workspaces:
+    - name: source
+      optional: true
+  steps:
+    - name: script 
+      image: quay.io/redhat-appstudio/appstudio-utils:v0.1
+      script: |
+        { set +x ;} 2> /dev/null 
+        echo "App Studio Utility Task $(context.task.name)"     
+        { set +x ;} 2> /dev/null   
+        echo "$(params.SCRIPT)" | bash
+        
+         

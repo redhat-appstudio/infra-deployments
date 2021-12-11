@@ -1,8 +1,8 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: pipeline-reader
+  name: cm-reader
 rules:
-- apiGroups: ["tekton.dev"]
-  resources: ["pipelines"]
+- apiGroups: [""]
+  resources: ["configmaps"]
   verbs: ["list", "get"]
