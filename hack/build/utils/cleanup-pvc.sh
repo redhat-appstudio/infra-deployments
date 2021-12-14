@@ -11,23 +11,9 @@ spec:
     - name: cleanup 
       taskRef:
         kind: ClusterTask
-        name: openshift-client
-      params:
-        - name: SCRIPT 
-          value: |
-            #!/usr/bin/env bash  
-            echo "Cleanup PVC for non-existant PipelineRuns" 
-            echo "Pre-Cleanup Directories"
-            ls -al    
-            mkdir keep
-            kubectl get pipelineruns --no-headers -o custom-columns=":metadata.name" | xargs -n 1 -I {} mv pv-{} keep  2> /dev/null
-            rm -rf pv-*
-            mv keep/* .
-            rm -rf keep
-            echo "Post-Cleanup Directories"
-            ls -al    
+        name: cleanup-build-directories 
       workspaces:
-        - name: manifest-dir 
+        - name: source 
           workspace: workspace
   workspaces:
     - name: workspace
