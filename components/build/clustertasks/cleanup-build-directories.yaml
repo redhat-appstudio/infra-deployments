@@ -1,0 +1,20 @@
+apiVersion: tekton.dev/v1beta1
+kind: ClusterTask
+metadata:
+  name: cleanup-build-directories
+spec:
+  description: >-
+    Utility to remove unused builds directories, with no corresponding build
+  results:
+    - name: status
+      description: Simple status line of storage usage saved and kept. 
+  workspaces:
+    - name: source
+  steps:
+    - name: cleanup-build-directories
+      image: quay.io/redhat-appstudio/appstudio-utils:v0.1.1
+      script: |
+        #!/usr/bin/env bash   
+        { set +x ;} 2> /dev/null 
+        echo "App Studio Utility Task $(context.task.name)"     
+        /appstudio-utils/util-scripts/$(context.task.name).sh  /tekton/results
