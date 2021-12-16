@@ -1,0 +1,22 @@
+---
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  name: service-registry-staging
+  namespace: service-registry-staging
+spec:
+  targetNamespaces:
+  - service-registry-staging
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: keycloak-operator
+  namespace: service-registry-staging
+spec:
+  channel: alpha
+  installPlanApproval: Automatic
+  name: keycloak-operator
+  source: community-operators
+  sourceNamespace: openshift-marketplace
+  startingCSV: keycloak-operator.v15.0.2
