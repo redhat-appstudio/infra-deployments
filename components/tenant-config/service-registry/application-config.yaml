@@ -3,6 +3,8 @@ kind: Application
 metadata:
   name: service-registry-apps
   namespace: service-registry-staging
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
 spec:
   destination:
     server: 'https://kubernetes.default.svc'
