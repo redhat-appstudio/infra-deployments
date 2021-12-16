@@ -29,7 +29,7 @@ function catchFinish() {
 
 function waitAppStudioToBeReady() {
     while [ "$(kubectl get applications.argoproj.io ${APPLICATION_NAME} -n ${APPLICATION_NAMESPACE} -o jsonpath='{.status.health.status}')" != "Healthy" ]; do
-        sleep 2m
+        sleep 3m
         echo "[INFO] Waiting for AppStudio to be ready."
     done
 }
