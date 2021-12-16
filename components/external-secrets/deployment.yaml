@@ -1,0 +1,66 @@
+---
+# Source: kubernetes-external-secrets/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: appstudio-kubernetes-external-secrets
+  namespace: "external-secrets"
+  labels:
+    app.kubernetes.io/name: kubernetes-external-secrets
+    helm.sh/chart: kubernetes-external-secrets-8.4.0
+    app.kubernetes.io/instance: appstudio
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kubernetes-external-secrets
+      app.kubernetes.io/instance: appstudio
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: kubernetes-external-secrets
+        app.kubernetes.io/instance: appstudio
+    spec:
+      serviceAccountName: appstudio-kubernetes-external-secrets
+      containers:
+        - name: kubernetes-external-secrets
+          image: "ghcr.io/external-secrets/kubernetes-external-secrets:8.4.0"
+          ports:
+          - name: prometheus
+            containerPort: 3001
+          imagePullPolicy: IfNotPresent
+          resources: 
+           {}
+          env:
+          - name: "AKEYLESS_API_ENDPOINT"
+            value: "https://api.akeyless.io"
+          - name: "AWS_DEFAULT_REGION"
+            value: "us-east-2"
+          - name: "AWS_REGION"
+            value: "us-east-2"
+          - name: "LOG_LEVEL"
+            value: "info"
+          - name: "LOG_MESSAGE_KEY"
+            value: "msg"
+          - name: "METRICS_PORT"
+            value: "3001"
+          - name: "POLLER_INTERVAL_MILLISECONDS"
+            value: "10000"
+          - name: "VAULT_ADDR"
+            value: "http://127.0.0.1:8200"
+          - name: "WATCH_TIMEOUT"
+            value: "60000"
+          # Params for env vars populated from k8s secrets
+          - name: AWS_ACCESS_KEY_ID
+            valueFrom:
+              secretKeyRef:
+                name: "aws-credentials"
+                key: "id"
+          - name: AWS_SECRET_ACCESS_KEY
+            valueFrom:
+              secretKeyRef:
+                name: "aws-credentials"
+                key: "key"
+      securityContext:
+        runAsNonRoot: true

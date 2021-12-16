@@ -1,0 +1,66 @@
+---
+# Source: kubernetes-external-secrets/templates/rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: appstudio-kubernetes-external-secrets
+  labels:
+    app.kubernetes.io/name: kubernetes-external-secrets
+    helm.sh/chart: kubernetes-external-secrets-8.4.0
+    app.kubernetes.io/instance: appstudio
+    app.kubernetes.io/managed-by: Helm
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["create", "update", "get"]
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get", "watch", "list"]
+  - apiGroups: ["apiextensions.k8s.io"]
+    resources: ["customresourcedefinitions"]
+    resourceNames: ["externalsecrets.kubernetes-client.io"]
+    verbs: ["get", "update"]
+  - apiGroups: ["kubernetes-client.io"]
+    resources: ["externalsecrets"]
+    verbs: ["get", "watch", "list"]
+  - apiGroups: ["kubernetes-client.io"]
+    resources: ["externalsecrets/status"]
+    verbs: ["get", "update"]
+---
+# Source: kubernetes-external-secrets/templates/rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: appstudio-kubernetes-external-secrets
+  labels:
+    app.kubernetes.io/name: kubernetes-external-secrets
+    helm.sh/chart: kubernetes-external-secrets-8.4.0
+    app.kubernetes.io/instance: appstudio
+    app.kubernetes.io/managed-by: Helm
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: appstudio-kubernetes-external-secrets
+subjects:
+  - name: appstudio-kubernetes-external-secrets
+    namespace: "external-secrets"
+    kind: ServiceAccount
+---
+# Source: kubernetes-external-secrets/templates/rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: appstudio-kubernetes-external-secrets-auth
+  labels:
+    app.kubernetes.io/name: kubernetes-external-secrets
+    helm.sh/chart: kubernetes-external-secrets-8.4.0
+    app.kubernetes.io/instance: appstudio
+    app.kubernetes.io/managed-by: Helm
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:auth-delegator
+subjects:
+- name: appstudio-kubernetes-external-secrets
+  namespace: "external-secrets"
+  kind: ServiceAccount
