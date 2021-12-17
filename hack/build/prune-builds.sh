@@ -1,11 +1,17 @@
 #!/bin/bash
 SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
+KEEP_LAST_N=10
 
 # Print the Pruning Configuration 
 ISADMIN=$(oc whoami)
 if [ "$ISADMIN" = "kubeadmin" ]; then 
 KEEP=$( oc get TektonConfig config -n openshift-pipelines -o 'jsonpath={.spec.pruner.keep}')
+#TODO - move this config to gitops
+if (( $KEEP_LAST_N != $KEEP )); then
+kubectl patch TektonConfig config -n openshift-pipelines -p '{"spec":{"pruner":{"keep":'$KEEP_LAST_N'}}}' --type=merge
+KEEP=$( oc get TektonConfig config -n openshift-pipelines -o 'jsonpath={.spec.pruner.keep}')
+fi
 echo
 echo "PipelineRuns will be pruned to last $KEEP"
 echo "Full Config:"
