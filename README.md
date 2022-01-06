@@ -53,7 +53,7 @@ If you don't already have a test OpenShift cluster available, CodeReady Containe
 
 ### Bootstrap App Studio
 Steps:
-1) Run `hack/bootstrap-cluster.sh` which will bootstrap Argo CD (using OpenShift GitOps) and setup the Argo CD `Application` Custom Resources (CRs) for each component. This command will output the Argo CD Web UI route when it's finished.
+1) Run `./hack/bootstrap-cluster.sh` which will bootstrap Argo CD (using OpenShift GitOps) and setup the Argo CD `Application` Custom Resources (CRs) for each component. This command will output the Argo CD Web UI route when it's finished.
 2) Open the Argo CD Web UI to see the status of your deployments. You can use the route from the previous step and login using your OpenShift credentials (using the 'Login with OpenShift' button), or login to the OpenShift Console and navigate to Argo CD using the OpenShift Gitops menu in the Applications pulldown.
 ![OpenShift Gitops menu with Cluster Argo CD menu option](documentation/images/argo-cd-login.png?raw=true "OpenShift Gitops menu")
 3) If your deployment was successful, you should see several applications running, such as "all-components-staging", "gitops", and so on.
@@ -73,16 +73,16 @@ There is a development configuration in `overlays/development` which includes a 
 The script also supports branches automatically. If you work in a checked out branch, each of the components in the overlays will mapped to that branch by setting `targetRevision:`.  
 
 Steps:
-1) in your forked repository run `hack/development-mode.sh` and this will update the root application on the cluster and all of the git repo references in `argo-cd-apps/overlays/development/repo-overlay.yaml`
+1) in your forked repository run `./hack/development-mode.sh` and this will update the root application on the cluster and all of the git repo references in `argo-cd-apps/overlays/development/repo-overlay.yaml`
 2) you will need to push the updated references in `argo-cd-apps/overlays/development/repo-overlay.yaml` to your fork. Argo will now sync all the changes from your fork into the cluster
 3) You can now make changes to your forked repository and test them via the gitops
 
 4) To submit changes back to the upstream make sure you do not include the modified file `argo-cd-apps/overlays/development/repo-overlay.yaml`. 
 
-One option to prevent accidentally including this modified file, you can run the script `hack/upstream-mode.sh` to reset everything including your cluster to `https://github.com/redhat-appstudio/infra-deployments.git` and match the upstream config. You can also checkout the current upstream 
+One option to prevent accidentally including this modified file, you can run the script `./hack/upstream-mode.sh` to reset everything including your cluster to `https://github.com/redhat-appstudio/infra-deployments.git` and match the upstream config. You can also checkout the current upstream 
 ` git fetch upstream; git checkout upstream/main -- argo-cd-apps/overlays/development/repo-overlay.yaml` to ensure you have the original file.  
 
-After you commit your changes you can rerun to `hack/development-mode.sh` and reset your repo to point back to the fork. 
+After you commit your changes you can rerun to `./hack/development-mode.sh` and reset your repo to point back to the fork. 
 
 Note running these scripts in a clone repo will have no effect as the repo will remain `https://github.com/redhat-appstudio/infra-deployments.git`
  
@@ -92,69 +92,77 @@ The App Studio Build System is composed of the following components:
 
 1. OpenShift Pipelines. 
 2. AppStudio-specific Pipeline Definitions in `build-templates` for building images.
-3. AppStudio-specific `ClusterTasks`. 
+3. AppStudio-specific `ClusterTasks`.
 
-## Usage
- 
-As a non-admin user, one would have access to the Pipeline definitions in `build-templates`. 
+This repository installs all the components and includes a set of example scripts that simplify usage and provide examples of a working system. There are no additiona components needed to use the build system API, however some utilities and scripts are provided to demonstrate functionality. 
 
-To be able to use them in one's personal namespace, you can run the following script:
+## Quickstart 
 
-```
-hack/build/build.sh  git-repo-url <optional-pipeline-name>
-```
-
-The `git-repo-url` is the git repository with your source code.
-The `<optional-pipeline-name>` is the name of one of the pipelines in `build-templates`. In normal operation this would be automatically by a mapping from a devfile to the type of build needed (by the Component Detection Query). The build currently uses a shim `repo-to-pipeline.sh` to map file markers to a pipeline type. For testing and experiments the  `optional-pipeline-name`  parameter can override the default pipeline name. 
-The current pipeline types are  `docker-build`, `java-buider` and `node-js-builder`.
-
-For a quick "do nothing pipeline" run you can specify the `noop` buider and have a quick pipeline run that does nothing except print some logs. 
-
-`hack/build/build.sh  https://github.com/jduimovich/single-container-app  noop`
-
-Pipelines will be automatically installed when running a build
-
-To validate the pipelines are installed and working, you can run this script which will run a simple single container docker build. 
-
-```
-hack/build/test-known-build.sh  
-```
-You can also run the noop build, that executes in couple seconds to validate a working install.
-
-```
-hack/build/quick-noop-build.sh  
-```
-
-The above script runs a known docker-build from a sample repository
-
-To try these builds, follow these steps. 
+To try out a pre-configured, follow these steps. 
 
 | Steps    |    |
 | ----------- | ----------- | 
 | 1.  Create project for your pipelines execution. This can be run as any non-admin user (or admin)  and is needed to hold your execution pipelines.  |  oc new-project demo     |  
-| 2.  Run a build on this repo. |  hack/build/build.sh  https://github.com/jduimovich/single-container-app       |
-| 3.  View your build on the OpenShift Console under the pipelines page or view the logs via CLI. |  `tkn.exe pipelinerun logs`      |
+| 2.  Run build-deploy example with a quarkus app. |  ./hack/build/build-deploy.sh  https://github.com/devfile-samples/devfile-sample-code-with-quarkus
+| 3.  View your build on the OpenShift Console under the pipelines page or view the logs via CLI. | `./hack/build/ls-builds.sh` or  `tkn.exe pipelinerun logs`      |
 
-The build type is identified via temporary hack until the Component Detection Query is available which maps files in your git repo to known build types. See `hack/build/repo-to-pipeline.sh`  which will print the repo name.
-
-If you want to test your own repos and see what can be built, there is a script ` ./hack/build/check-repo.sh` which will run the `hack/build/repo-to-pipeline.sh`  and determine the build type.  You need to set you github id `export MY_GITHUB_USER=your-username` and it will test your repo for buildable content.  
-
-Examples 
+## Usage
+ 
+A sample script `build.sh` is provided which uses the App Studio Build Service API to demonstrate launching a build and inspecting the results.
+As a proof-of-concept, an optional `build-deploy.sh` script is included to take the build image and run it. . 
 
 ```
-./hack/build/check-repo.sh  https://github.com/jduimovich/single-container-app
-https://github.com/jduimovich/single-container-app   -> docker-build 
+./hack/build/build.sh  git-repo-url <optional-pipeline-name>
+```
+also the equivalent build but with an associated deploy. 
+```
+./hack/build/build-deploy.sh  git-repo-url <optional-pipeline-name>
+```
 
-./hack/build/check-repo.sh  https://github.com/jduimovich/single-java-app
+The `git-repo-url` is the git repository with your source code.
+The `<optional-pipeline-name>` is the name of one of the pipelines documented in the App Studio API Contract <url here>. This pipeline name can be provide when the automatic build type detection does not find a supported build type. 
+Note: Normally the build type would be done automatically by (by the Component Detection Query) which maps devfile or other markers to a type of build needed. The build currently uses a shim `repo-to-pipeline.sh` to map file markers to a pipeline type. For testing and experiments the  `optional-pipeline-name`  parameter can override the default pipeline name. 
+
+The current build types supported are: `devfile-build`, `docker-build`, `java-buider` and `node-js-builder`.
+
+For a quick "do nothing pipeline" run you can specify the `noop` buider and have a quick pipeline run that does nothing except print some logs. 
+
+`./hack/build/build.sh  https://github.com/jduimovich/single-container-app  noop`
+
+Pipelines will be automatically installed when running a build via an OCI bundle mechanism. 
+
+To see what builds you have run, use the following examples.
+
+Use `./hack/build/ls-builds.sh` to show all builds in the system, and `./hack/build/ls-builds.sh <build-name>` to get the stats for a specific build.
+
+## Testing 
+
+To validate the pipelines are installed and working, you can run `./hack/build/m2-builds`  script which will build all the samples planned for milestone 2. 
+
+To deploy all the builds as they complete, add the `-deploy` option.
+```
+./hack/build/m2-builds -deploy
+
+```
+You can also run the noop build `./hack/build/quick-noop-build.sh`, that executes in couple seconds to validate a working install.
+ 
+## Other Build utilties 
+
+The build type is identified via temporary hack until the Component Detection Query is available which maps files in your git repo to known build types. See `./hack/build/repo-to-pipeline.sh`  which will print the repo name and computed builder type.
+
+The system will fill with builds and logs so a utility is provided to prune pipelines and cleanup the associated storage. This is for dev mode only and will be done autatically by App Studio builds.
+Use `./hack/build/prune-builds.sh` for a single cleanup pass, and `./hack/build/prune-builds-loop.sh` to run a continuous loop to cleanup extra resources. 
+
+Use `./hack/build/utils/check-repo.sh` to test your what auto-detect build will return.  
+```
+./hack/build/utils/check-repo.sh  https://github.com/jduimovich/single-java-app
 https://github.com/jduimovich/single-java-app   -> java-builder
-
-./hack/build/check-repo.sh  https://github.com/jduimovich/single-nodejs-app
-https://github.com/jduimovich/single-nodejs-app   -> nodejs-builder
+  
 ```
+If you want to check all your repos to see which ones may build you can use this script. You need to set you github id `export MY_GITHUB_USER=your-username` and it will test your repo for buildable content.  
 
-If you want to check all your repos to see which ones may build use this script. If you replaced the `check-repo` with `build`, all your git repositories will be built (don't do it). 
 ```
-./hack/build/ls-all-my-repos.sh | xargs -n 1 ./hack/build/check-repo.sh
+./hack/build/utils/ls-all-my-repos.sh | xargs -n 1 ./hack/build/utils/check-repo.sh
 ```
 
 ## FAQ
