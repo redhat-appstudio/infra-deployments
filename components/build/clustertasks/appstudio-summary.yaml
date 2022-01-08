@@ -1,0 +1,50 @@
+apiVersion: tekton.dev/v1beta1
+kind: ClusterTask
+metadata:
+  name: appstudio-summary
+spec:
+  description: >-
+    App Studio Summary Pipeline Task.
+  params: 
+    - name: pipeline-run-name
+      description: pipeline-run to annotate 
+    - name: git-url
+      description: Git URL 
+    - name: image-url
+      description: Image URL 
+    - name: deploy-yaml
+      description: Deployment Yaml from dev-file
+      default: ''
+  workspaces:
+    - name: source
+      optional: true
+  steps:
+    - name: appstudio-summary  
+      image: quay.io/redhat-appstudio/appstudio-utils:v0.1.2
+      script: |
+        #!/usr/bin/env bash    
+        echo  
+        echo "App Studio Build Summary:"
+        echo
+        echo "Build repository: $(params.git-url)" 
+        echo "Generated Image is in : $(params.image-url)"  
+        echo  
+        oc annotate pipelinerun $(params.pipeline-run-name) build.appstudio.openshift.io/repo=$(params.git-url)
+        oc annotate pipelinerun $(params.pipeline-run-name) build.appstudio.openshift.io/image=$(params.image-url)
+        if [ -z "$(params.deploy-yaml)" ]
+        then
+          echo "No Deployment Yaml Found in this Build"    
+        else  
+          echo "Deployment Yaml Found in this Build"    
+          oc annotate pipelinerun $(params.pipeline-run-name) build.appstudio.openshift.io/deploy="$(params.deploy-yaml)"
+        fi
+     
+        echo "Output is in the following annotations:"
+
+        echo "Build Repo is in 'build.appstudio.openshift.io/repo' "
+        echo 'oc get pr $(params.pipeline-run-name) -o jsonpath="{.metadata.annotations.build\.appstudio\.openshift\.io/repo}"' 
+
+        echo "Build Image is in 'build.appstudio.openshift.io/image' "
+        echo 'oc get pr $(params.pipeline-run-name) -o jsonpath="{.metadata.annotations.build\.appstudio\.openshift\.io/image}"' 
+        
+        echo End Summary

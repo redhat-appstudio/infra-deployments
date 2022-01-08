@@ -1,0 +1,55 @@
+apiVersion: tekton.dev/v1beta1
+kind: ClusterTask
+metadata:
+  name: appstudio-configure-build
+spec:
+  description: >-
+    App Studio Configure Build Secrets in Source. 
+  results: 
+    - name: registry-auth
+      description: docker config location
+    - name: buildah-auth-param
+      description: pass this to the build optional params to conifigure secrets
+    - name: git-auth
+      description: git for registry.  
+  workspaces:
+    - name: source
+      optional: true
+    - name: registry-auth
+      optional: true
+    - name: git-auth 
+      optional: true
+  steps:
+    - name: appstudio-configure-build  
+      image: quay.io/redhat-appstudio/appstudio-utils:v0.1.2
+      script: | 
+        #!/usr/bin/env bash    
+        echo "App Studio Configure Build" 
+
+        AUTH=/workspace/registry-auth/.dockerconfigjson
+        DEST=/workspace/source/.dockerconfigjson
+        echo "Looking for Registry Auth Config: $AUTH"
+        if [ -f "$AUTH" ]; then
+          echo "$AUTH found" 
+          echo
+          cat $AUTH
+          echo
+
+          cp $AUTH $DEST
+
+          echo -n $DEST > /tekton/results/registry-auth  
+          echo -n "--authfile $DEST"  >  /tekton/results/buildah-auth-param
+          echo 
+        else  
+          echo "No $AUTH found." 
+          echo -n " " > /tekton/results/registry-auth  
+          echo -n " " > /tekton/results/buildah-auth-param
+          echo 
+        fi
+
+        if [ -f "/workspace/git-auth/.gitconfig" ]; then 
+          echo
+          echo "Git Auth found /workspace/git-auth/.gitconfig"
+          echo -n "/workspace/git-auth/.gitconfig" >  /tekton/results/git-auth  
+          echo
+        fi

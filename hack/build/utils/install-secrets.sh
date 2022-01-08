@@ -12,14 +12,32 @@ must_exist () {
 must_exist MY_GITHUB_USER
 must_exist MY_GITHUB_TOKEN
 must_exist MY_QUAY_USER
-must_exist MY_QUAY_TOKEN 
+must_exist MY_QUAY_TOKEN  
 
-oc create secret generic git-secret \
-    --from-literal=username=$MY_GITHUB_USER \
-    --from-literal=password=$MY_GITHUB_TOKEN \
-    --type=kubernetes.io/basic-auth
+NS=$(oc project --short)
+echo "$NS for Secrets"
+echo "Creating git-repo-secret and quay-registry-secret for auth workspaces"
 
-oc create secret generic registry-secret \
-    --from-literal=username=$MY_QUAY_USER \
-    --from-literal=password=$MY_QUAY_TOKEN \
-    --type=kubernetes.io/basic-auth
+read -r -d '' GITSECRET <<'GITSECRET'
+kind: Secret
+apiVersion: v1
+metadata:
+  name: git-repo-secret
+type: Opaque
+stringData:
+  .gitconfig: |
+    [credential "https://github.com"]
+      helper = store
+  .git-credentials: |
+    https://<user>:<pass>@github.com
+GITSECRET
+
+oc delete secret -n $NS git-repo-secret   
+PATCH="$(printf '.stringData.".git-credentials"="https://%q:%q@github.com"' $MY_GITHUB_USER $MY_GITHUB_TOKEN)" 
+echo "$GITSECRET" | yq e $PATCH -  | oc apply -f -
+
+oc delete secret -n $NS quay-registry-secret
+oc create secret -n $NS  docker-registry quay-registry-secret \
+  --docker-server="https://quay.io" \
+  --docker-username=$MY_QUAY_USER \
+  --docker-password=$MY_QUAY_TOKEN 

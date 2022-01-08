@@ -22,5 +22,11 @@ spec:
     - name: workspace
       persistentVolumeClaim:
         claimName: app-studio-default-workspace
-      subPath: DIR_NAME_PLACEHOLDER 
+      subPath: DIR_NAME_PLACEHOLDER
+    - name: registry-auth
+      secret:
+        secretName: quay-registry-secret  
+    - name: git-auth
+      secret:
+        secretName: git-repo-secret 
  

@@ -9,6 +9,11 @@ if [ "$ISADMIN" = "kubeadmin" ]; then
 KEEP=$( oc get TektonConfig config -n openshift-pipelines -o 'jsonpath={.spec.pruner.keep}')
 #TODO - move this config to gitops
 if (( $KEEP_LAST_N != $KEEP )); then
+
+oc get TektonConfig config -n openshift-pipelines -o yaml | \
+    yq e '.spec.pruner.schedule="0/5 * * * *"' -  | \
+    oc apply -f -  >/dev/null 2>&1
+
 kubectl patch TektonConfig config -n openshift-pipelines -p '{"spec":{"pruner":{"keep":'$KEEP_LAST_N'}}}' --type=merge
 KEEP=$( oc get TektonConfig config -n openshift-pipelines -o 'jsonpath={.spec.pruner.keep}')
 fi

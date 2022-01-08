@@ -41,6 +41,7 @@ fi
 PIPELINE_RUN=$SCRIPTDIR/templates/default-build-bundle.yaml   
 
 $SCRIPTDIR/utils/install-pvc.sh $PIPELINE_NAME
+$SCRIPTDIR/utils/install-secrets.sh  
 
 APPNAME=$(basename $GITREPO) 
 IMAGE_FULL_TAG=$(git ls-remote $GITREPO HEAD)
@@ -79,7 +80,7 @@ else
    export  GIT_PATCH="git-auth" 
 fi   
  
-IMG=image-registry.openshift-image-registry.svc:5000/$NS/$APPNAME:$IMAGE_SHORT_TAG
+IMG=quay.io/$MY_QUAY_USER/$APPNAME:$IMAGE_SHORT_TAG
 echo
 echo "Building $GITREPO"
 echo "Build Name: build-$BUILD_TAG"
