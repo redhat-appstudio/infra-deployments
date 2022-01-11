@@ -1,0 +1,41 @@
+apiVersion: tekton.dev/v1beta1
+kind: ClusterTask
+metadata:
+  name: appstudio-init
+spec:
+  description: >-
+    App Studio Initialize Pipeline Task, include flags for rebuild and auth.
+  params:
+    - name: image-url
+      description: Image URL for testing  
+  results:
+    - name: rebuild-if-exists
+      description: true if rebuild needs
+    - name: exists
+      description: true if exists false otherwise 
+    - name: registry-auth
+      description: docker config location
+    - name: git-auth
+      description: git for registry.  
+  workspaces:
+    - name: source
+      optional: true
+    - name: registry-auth
+      optional: true
+    - name: git-auth 
+      optional: true
+  steps:
+    - name: appstudio-init  
+      image: quay.io/redhat-appstudio/appstudio-utils:v0.1.2
+      script: | 
+        #!/usr/bin/env bash    
+        echo "App Studio Build Initialize: $(params.image-url)" 
+        echo 
+        echo "Determine if Image Already Exists"
+        bash /appstudio-utils/util-scripts/image-exists.sh $(params.image-url) /tekton/results
+        
+        echo "Rebuild if Image Already Exists set to false."
+        # TODO allow external configuration to force rebuilds
+        echo -n "false"   /tekton/results/rebuild-if-exists
+        echo
+ 
