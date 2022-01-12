@@ -69,6 +69,28 @@ Both of the scripts will:
 3. Print:
     - The landing-page URL that you can use for signing-up for the Sandbox environment that is running in your cluster.
     - Proxy URL. 
+    
+#### SSO
+
+In development mode, the Toolchain Operators are configured to use Keycloak instance that is internally used by the Sandbox team. If you want to reconfigure it to use your own Keycloak instance, you need to add a few parameters to `ToolchainConfig` resource in `toolchain-host-operator` namespace. 
+This is an example of the needed parameters and their values:
+```yaml
+spec:
+  host:
+    registrationService:
+      auth:
+        authClientConfigRaw: '{
+                  "realm": "sandbox-dev",
+                  "auth-server-url": "https://sso.devsandbox.dev/auth",
+                  "ssl-required": "none",
+                  "resource": "sandbox-public",
+                  "clientId": "sandbox-public",
+                  "public-client": true
+                }'
+        authClientLibraryURL: https://sso.devsandbox.dev/auth/js/keycloak.js
+        authClientPublicKeysURL: https://sso.devsandbox.dev/auth/realms/sandbox-dev/protocol/openid-connect/certs
+      registrationServiceURL: <The landing page URL>
+```  
 
 ### Optional: CodeReady Containers Post-Bootstrap Configuration
 Even with 6 CPU cores, you will need to reduce the CPU resource requests for each App Studio application. Either run `./hack/reduce-gitops-cpu-requests.sh` which will set resources.requests.cpu values to 50m or use `kubectl edit argocd/openshift-gitops -n openshift-gitops` to reduce the values to some other value. More details are in the FAQ below.
