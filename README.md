@@ -37,8 +37,8 @@ Simply update the files under `components/(team-name)`, and open a PR with the c
 
 ### Required prerequisites
 The prerequisites are:
-- You must have `kubectl` and `kustomize` installed. 
-- You must have `kubectl` pointing to an existing OpenShift cluster, that you wish to deploy to.
+- You must have `kubectl`, `oc`, `jq` and `kustomize` installed. 
+- You must have `kubectl` and `oc` pointing to an existing OpenShift cluster, that you wish to deploy to.
 
 ### Optional: CodeReady Containers Setup
 If you don't already have a test OpenShift cluster available, CodeReady Containers is a popular option. It runs a small OpenShift cluster in a single VM on your local workstation.
@@ -58,8 +58,17 @@ Steps:
 ![OpenShift Gitops menu with Cluster Argo CD menu option](documentation/images/argo-cd-login.png?raw=true "OpenShift Gitops menu")
 3) If your deployment was successful, you should see several applications running, such as "all-components-staging", "gitops", and so on.
 
+### Install Toolchain (Sandbox) Operators
+There are two scripts which you can use:
+- `./hack/sandbox-development-mode.sh` for development mode
+- `./hack/sandbox-e2e-mode.sh` for E2E mode
+
+Both of the scripts will:
+1. Automatically reduce the resources.requests.cpu values in argocd/openshift-gitops resource.
+2. Install & configure the Toolchain (Sandbox) operators in the corresponding mode.
+
 ### Optional: CodeReady Containers Post-Bootstrap Configuration
-Even with 6 CPU cores, you will need to reduce the CPU resource requests for each App Studio application. Using `kubectl edit argocd/openshift-gitops -n openshift-gitops`, reduce the resources.requests.cpu values from 250m to 100m or less. More details are in the FAQ below.
+Even with 6 CPU cores, you will need to reduce the CPU resource requests for each App Studio application. Either run `./hack/reduce-gitops-cpu-requests.sh` which will set resources.requests.cpu values to 50m or use `kubectl edit argocd/openshift-gitops -n openshift-gitops` to reduce the values to some other value. More details are in the FAQ below.
 
 ## Development mode for your own clusters
 
