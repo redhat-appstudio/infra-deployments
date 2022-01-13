@@ -2,6 +2,7 @@ resources:
 - openshift-pipelines/
 - build-templates/ 
 - pipelines-as-code/
+- .tekton/
 
 generatorOptions:
  disableNameSuffixHash: true
@@ -10,7 +11,7 @@ configMapGenerator:
 - name: build-pipelines-defaults
   namespace: build-templates
   literals:
-  - default_build_bundle=quay.io/redhat-appstudio/build-templates-bundle:v0.1.4
+  - default_build_bundle=quay.io/redhat-appstudio/build-templates-bundle:v0.1.5
 
 # Skip applying the Tekton operands while the Tekton operator is being installed.
 # See more information about this option, here:
