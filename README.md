@@ -37,7 +37,7 @@ Simply update the files under `components/(team-name)`, and open a PR with the c
 
 ### Required prerequisites
 The prerequisites are:
-- You must have `kubectl`, `oc`, `jq` and `kustomize` installed. 
+- You must have `kubectl`, `oc`, `jq`, `yq` and `kustomize` installed. 
 - You must have `kubectl` and `oc` pointing to an existing OpenShift cluster, that you wish to deploy to.
 
 ### Optional: CodeReady Containers Setup
