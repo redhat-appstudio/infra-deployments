@@ -119,7 +119,26 @@ One option to prevent accidentally including this modified file, you can run the
 After you commit your changes you can rerun to `./hack/development-mode.sh` and reset your repo to point back to the fork. 
 
 Note running these scripts in a clone repo will have no effect as the repo will remain `https://github.com/redhat-appstudio/infra-deployments.git`
- 
+
+### Optional: Configure HAS GitHub Organization
+
+After deployment `has` application is failing to start. It's trying to connect to default github organization and credentials are not set.
+
+To run HAS in development mode, you need to set custom GitHub organization and token.
+
+Steps:
+1) Create organization in GitHub
+2) Create user token with permissions:
+    - `repo`
+    - `delete_repo`
+3) Set environment variables:
+    - `MY_GITHUB_ORG`
+    - `MY_GITHUB_TOKEN`
+4) Run `./hack/development-mode.sh`
+5) Push changes, trigger update in ArgoCD and delete `application-service-controller-manager` pod manually or run `oc rollout restart -n application-service deployment/application-service-controller-manager`
+
+Do not include GitHub Organization change in merge requests. You can reset organization back by running `./hack/util-set-github-org` without arguments. `./hack/upstream-mode.sh` also resets organization.
+
 # App Studio Build System
 
 The App Studio Build System is composed of the following components:
@@ -180,7 +199,7 @@ To deploy all the builds as they complete, add the `-deploy` option.
 ```
 You can also run the noop build `./hack/build/quick-noop-build.sh`, that executes in couple seconds to validate a working install.
  
-## Other Build utilties 
+## Other Build utilities
 
 The build type is identified via temporary hack until the Component Detection Query is available which maps files in your git repo to known build types. See `./hack/build/repo-to-pipeline.sh`  which will print the repo name and computed builder type.
 
