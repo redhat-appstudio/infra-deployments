@@ -1,6 +1,7 @@
 #!/bin/bash
 
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/..
+TOOLCHAIN_E2E_TEMP_DIR=/tmp/toolchain-e2e
 
 # Remove resources in the reverse order from bootstrapping
 
@@ -36,6 +37,12 @@ while : ; do
 
   echo $RC
 done
+
+echo
+echo "Remove Toolchain (Sandbox) Operators with the user data:"
+rm -rf ${TOOLCHAIN_E2E_TEMP_DIR} 2>/dev/null || true
+git clone --depth=1 https://github.com/codeready-toolchain/toolchain-e2e.git ${TOOLCHAIN_E2E_TEMP_DIR}
+make -C ${TOOLCHAIN_E2E_TEMP_DIR} appstudio-cleanup
 
 echo 
 echo "Complete."
