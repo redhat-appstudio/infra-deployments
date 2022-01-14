@@ -27,6 +27,23 @@ function catchFinish() {
     exit $JOB_EXIT_CODE
 }
 
+# More info at: https://github.com/redhat-appstudio/application-service#creating-a-github-secret-for-has
+function createHASSecret() {
+    kubectl create namespace application-service || true
+    export HAS_SECRET=$(
+      kubectl create -f - -o jsonpath='{.metadata.name}' <<EOF
+apiVersion: v1
+kind: Secret
+metadata:
+  name: has-github-token
+  namespace: application-service
+data:
+  token: test
+EOF
+)
+    echo -e "[INFO] Creating secret ${HAS_SECRET}"
+}
+
 function waitAppStudioToBeReady() {
     while [ "$(kubectl get applications.argoproj.io ${APPLICATION_NAME} -n ${APPLICATION_NAMESPACE} -o jsonpath='{.status.health.status}')" != "Healthy" ]; do
         sleep 3m
@@ -44,6 +61,7 @@ command -v yq >/dev/null 2>&1 || { echo "yq is not installed. Aborting."; exit 1
 command -v kubectl >/dev/null 2>&1 || { echo "kubectl is not installed. Aborting."; exit 1; }
 command -v e2e-appstudio >/dev/null 2>&1 || { echo "e2e-appstudio bin is not installed. Please install it from: https://github.com/redhat-appstudio/e2e-tests."; exit 1; }
 
+createHASSecret
 /bin/bash "$WORKSPACE"/hack/bootstrap-cluster.sh
 
 export -f waitAppStudioToBeReady
