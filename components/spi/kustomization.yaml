@@ -1,5 +1,5 @@
 resources:
-  - https://github.com/redhat-appstudio/service-provider-integration-operator/config/default?ref=4f8d0b4d4e9980518f9a759f7683639e025bc32c
+  - https://github.com/sparkoo/service-provider-integration-operator/config/default?ref=8fe8880f193165a551c39c29aaf10b3b512ac673
 
 
 apiVersion: kustomize.config.k8s.io/v1beta1
@@ -7,10 +7,10 @@ kind: Kustomization
 
 images:
   - name:  quay.io/redhat-appstudio/service-provider-integration-operator
-    newName: quay.io/redhat-appstudio/service-provider-integration-operator
+    newName: quay.io/mvala/spi-operator:svpi48
     newTag: v0.2.0
   - name: quay.io/redhat-appstudio/service-provider-integration-oauth
-    newName: quay.io/redhat-appstudio/service-provider-integration-oauth
+    newName: quay.io/mvala/spi-oauth:svpi48
     newTag: v0.2.0
 
 namespace: spi-system
