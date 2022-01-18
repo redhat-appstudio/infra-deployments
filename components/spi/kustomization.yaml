@@ -1,3 +1,5 @@
+namePrefix: spi-
+
 resources:
   - https://github.com/sparkoo/service-provider-integration-operator/config/default?ref=2d90b1b95a148574d6a38da44385811e92d282b6
   - oauth_route.yaml
@@ -12,6 +14,18 @@ secretGenerator:
   - name: oauth-config
     files:
       - config.yaml
+
+replacements:
+  - source:
+      kind: Route
+      name: oauth-route
+      fieldPath: spec.host
+    targets:
+      - select:
+          kind: Deployment
+        fieldPaths:
+          - spec.template.spec.containers.[name=oauth].env.[name=OAUTH_BASE_URL].value
+          - spec.template.spec.containers.[name=manager].env.[name=OAUTH_BASE_URL].value
 
 images:
   - name:  quay.io/redhat-appstudio/service-provider-integration-operator
