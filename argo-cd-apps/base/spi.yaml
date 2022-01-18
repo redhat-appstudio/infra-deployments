@@ -16,8 +16,10 @@ spec:
     server: https://kubernetes.default.svc
 
   ignoreDifferences:
-  - kind: Secret
+  - group: ""
+    kind: Secret
     name: spi-oauth-config
+    namespace: spi-system
     jsonPointers:
     - /data/config.yaml
 
