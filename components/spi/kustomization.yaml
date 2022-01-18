@@ -1,9 +1,14 @@
 resources:
-  - https://github.com/sparkoo/service-provider-integration-operator/config/default?ref=8fe8880f193165a551c39c29aaf10b3b512ac673
+  - https://github.com/sparkoo/service-provider-integration-operator/config/default?ref=6830ae7ecdb248ae8b9c088a49efa5f9383a2f38
 
 
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+
+secretGenerator:
+  - name: oauth-config
+    files:
+      - config.yaml
 
 images:
   - name:  quay.io/redhat-appstudio/service-provider-integration-operator
