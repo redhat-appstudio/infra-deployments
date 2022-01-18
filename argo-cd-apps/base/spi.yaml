@@ -15,6 +15,12 @@ spec:
     namespace: spi-system
     server: https://kubernetes.default.svc
 
+  ignoreDifferences:
+  - kind: Secret
+    name: oauth-config
+    jsonPointers:
+    - /data
+
   syncPolicy:
 
     # Comment this out if you want to manually trigger deployments (using the
