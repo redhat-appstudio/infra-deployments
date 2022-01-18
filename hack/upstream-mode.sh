@@ -12,4 +12,5 @@ REPO=https://github.com/redhat-appstudio/infra-deployments.git
 $ROOT/hack/util-update-app-of-apps.sh $REPO staging main
 #reset the default content in the development directory to be the upstream
 $ROOT/hack/util-set-development-repos.sh $REPO development main
- 
+#reset Application Service GitHub organization
+$ROOT/hack/util-set-github-org ""

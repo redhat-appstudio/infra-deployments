@@ -12,4 +12,10 @@ images:
   newName: quay.io/redhat-appstudio/application-service
   newTag: a7d0420d5c5a45f1240bf51618256194f2f5dfc4
 
+configMapGenerator:
+- literals:
+  - GITHUB_ORG=""
+  name: github-config
+  behavior: replace
+
 namespace: application-service
