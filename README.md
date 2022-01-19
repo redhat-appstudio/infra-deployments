@@ -37,8 +37,8 @@ Simply update the files under `components/(team-name)`, and open a PR with the c
 
 ### Required prerequisites
 The prerequisites are:
-- You must have `kubectl` and `kustomize` installed. 
-- You must have `kubectl` pointing to an existing OpenShift cluster, that you wish to deploy to.
+- You must have `kubectl`, `oc`, `jq`, `yq` and `kustomize` installed. 
+- You must have `kubectl` and `oc` pointing to an existing OpenShift cluster, that you wish to deploy to.
 
 ### Optional: CodeReady Containers Setup
 If you don't already have a test OpenShift cluster available, CodeReady Containers is a popular option. It runs a small OpenShift cluster in a single VM on your local workstation.
@@ -58,8 +58,42 @@ Steps:
 ![OpenShift Gitops menu with Cluster Argo CD menu option](documentation/images/argo-cd-login.png?raw=true "OpenShift Gitops menu")
 3) If your deployment was successful, you should see several applications running, such as "all-components-staging", "gitops", and so on.
 
+### Install Toolchain (Sandbox) Operators
+There are two scripts which you can use:
+- `./hack/sandbox-development-mode.sh` for development mode
+- `./hack/sandbox-e2e-mode.sh` for E2E mode
+
+Both of the scripts will:
+1. Automatically reduce the resources.requests.cpu values in argocd/openshift-gitops resource.
+2. Install & configure the Toolchain (Sandbox) operators in the corresponding mode.
+3. Print:
+    - The landing-page URL that you can use for signing-up for the Sandbox environment that is running in your cluster.
+    - Proxy URL. 
+    
+#### SSO
+
+In development mode, the Toolchain Operators are configured to use Keycloak instance that is internally used by the Sandbox team. If you want to reconfigure it to use your own Keycloak instance, you need to add a few parameters to `ToolchainConfig` resource in `toolchain-host-operator` namespace. 
+This is an example of the needed parameters and their values:
+```yaml
+spec:
+  host:
+    registrationService:
+      auth:
+        authClientConfigRaw: '{
+                  "realm": "sandbox-dev",
+                  "auth-server-url": "https://sso.devsandbox.dev/auth",
+                  "ssl-required": "none",
+                  "resource": "sandbox-public",
+                  "clientId": "sandbox-public",
+                  "public-client": true
+                }'
+        authClientLibraryURL: https://sso.devsandbox.dev/auth/js/keycloak.js
+        authClientPublicKeysURL: https://sso.devsandbox.dev/auth/realms/sandbox-dev/protocol/openid-connect/certs
+      registrationServiceURL: <The landing page URL>
+```  
+
 ### Optional: CodeReady Containers Post-Bootstrap Configuration
-Even with 6 CPU cores, you will need to reduce the CPU resource requests for each App Studio application. Using `kubectl edit argocd/openshift-gitops -n openshift-gitops`, reduce the resources.requests.cpu values from 250m to 100m or less. More details are in the FAQ below.
+Even with 6 CPU cores, you will need to reduce the CPU resource requests for each App Studio application. Either run `./hack/reduce-gitops-cpu-requests.sh` which will set resources.requests.cpu values to 50m or use `kubectl edit argocd/openshift-gitops -n openshift-gitops` to reduce the values to some other value. More details are in the FAQ below.
 
 ## Development mode for your own clusters
 
@@ -85,7 +119,26 @@ One option to prevent accidentally including this modified file, you can run the
 After you commit your changes you can rerun to `./hack/development-mode.sh` and reset your repo to point back to the fork. 
 
 Note running these scripts in a clone repo will have no effect as the repo will remain `https://github.com/redhat-appstudio/infra-deployments.git`
- 
+
+### Optional: Configure HAS GitHub Organization
+
+After deployment `has` application is failing to start. It's trying to connect to default github organization and credentials are not set.
+
+To run HAS in development mode, you need to set custom GitHub organization and token.
+
+Steps:
+1) Create organization in GitHub
+2) Create user token with permissions:
+    - `repo`
+    - `delete_repo`
+3) Set environment variables:
+    - `MY_GITHUB_ORG`
+    - `MY_GITHUB_TOKEN`
+4) Run `./hack/development-mode.sh`
+5) Push changes, trigger update in ArgoCD and delete `application-service-controller-manager` pod manually or run `oc rollout restart -n application-service deployment/application-service-controller-manager`
+
+Do not include GitHub Organization change in merge requests. You can reset organization back by running `./hack/util-set-github-org` without arguments. `./hack/upstream-mode.sh` also resets organization.
+
 # App Studio Build System
 
 The App Studio Build System is composed of the following components:
@@ -94,7 +147,7 @@ The App Studio Build System is composed of the following components:
 2. AppStudio-specific Pipeline Definitions in `build-templates` for building images.
 3. AppStudio-specific `ClusterTasks`.
 
-This repository installs all the components and includes a set of example scripts that simplify usage and provide examples of a working system. There are no additiona components needed to use the build system API, howvever some utilities and scripts are provided to demonstrate functionality. 
+This repository installs all the components and includes a set of example scripts that simplify usage and provide examples of a working system. There are no additiona components needed to use the build system API, however some utilities and scripts are provided to demonstrate functionality. 
 
 ## Quickstart 
 
@@ -123,7 +176,7 @@ The `git-repo-url` is the git repository with your source code.
 The `<optional-pipeline-name>` is the name of one of the pipelines documented in the App Studio API Contract <url here>. This pipeline name can be provide when the automatic build type detection does not find a supported build type. 
 Note: Normally the build type would be done automatically by (by the Component Detection Query) which maps devfile or other markers to a type of build needed. The build currently uses a shim `repo-to-pipeline.sh` to map file markers to a pipeline type. For testing and experiments the  `optional-pipeline-name`  parameter can override the default pipeline name. 
 
-The current build types supported are: `devfile-build, `docker-build`, `java-buider` and `node-js-builder`.
+The current build types supported are: `devfile-build`, `docker-build`, `java-buider` and `node-js-builder`.
 
 For a quick "do nothing pipeline" run you can specify the `noop` buider and have a quick pipeline run that does nothing except print some logs. 
 
@@ -146,23 +199,23 @@ To deploy all the builds as they complete, add the `-deploy` option.
 ```
 You can also run the noop build `./hack/build/quick-noop-build.sh`, that executes in couple seconds to validate a working install.
  
-## Other Build utilties 
+## Other Build utilities
 
 The build type is identified via temporary hack until the Component Detection Query is available which maps files in your git repo to known build types. See `./hack/build/repo-to-pipeline.sh`  which will print the repo name and computed builder type.
 
 The system will fill with builds and logs so a utility is provided to prune pipelines and cleanup the associated storage. This is for dev mode only and will be done autatically by App Studio builds.
-Use `./hack/build/prune-builds.sh` for a single cleanup pass, and `./hack/build/prune-builds-loop.sh` to run a continous loop to cleanup extra resources. 
+Use `./hack/build/prune-builds.sh` for a single cleanup pass, and `./hack/build/prune-builds-loop.sh` to run a continuous loop to cleanup extra resources. 
 
-Use `./hack/build/util/check-repo.sh` to test your what auto-detect build will return.  
+Use `./hack/build/utils/check-repo.sh` to test your what auto-detect build will return.  
 ```
-./hack/build/check-repo.sh  https://github.com/jduimovich/single-java-app
+./hack/build/utils/check-repo.sh  https://github.com/jduimovich/single-java-app
 https://github.com/jduimovich/single-java-app   -> java-builder
   
 ```
 If you want to check all your repos to see which ones may build you can use this script. You need to set you github id `export MY_GITHUB_USER=your-username` and it will test your repo for buildable content.  
 
 ```
-./hack/build/ls-all-my-repos.sh | xargs -n 1 ./hack/build/check-repo.sh
+./hack/build/utils/ls-all-my-repos.sh | xargs -n 1 ./hack/build/utils/check-repo.sh
 ```
 
 ## FAQ
