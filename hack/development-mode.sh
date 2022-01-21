@@ -3,7 +3,7 @@
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/.. 
 
 if [ -z "${MY_GIT_REPO_URL}" ]; then
-    MY_GIT_REPO_URL=$(git config --get remote.origin.url)
+    MY_GIT_REPO_URL=$(git ls-remote --get-url | sed 's|^git@github.com:|https://github.com/|')
 fi
 if [ -z "${MY_GIT_BRANCH}" ]; then
     MY_GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
