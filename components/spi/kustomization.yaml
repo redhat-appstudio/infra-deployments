@@ -1,5 +1,5 @@
 resources:
-  - https://github.com/sparkoo/service-provider-integration-operator/config/default?ref=9a408591e6e7b7023b018a2685c9e35a795fed52
+  - https://github.com/sparkoo/service-provider-integration-operator/config/default?ref=c36682a4fd7dbac2e7303637e0cc4c5ff958cfd4
   - oauth_route.yaml
 
 apiVersion: kustomize.config.k8s.io/v1beta1
@@ -7,10 +7,10 @@ kind: Kustomization
 
 images:
   - name:  quay.io/redhat-appstudio/service-provider-integration-operator
-    newName: quay.io/mvala/spi-operator
-    newTag: svpi48-config
+    newName: quay.io/redhat-appstudio/service-provider-integration-operator
+    newTag: next
   - name: quay.io/redhat-appstudio/service-provider-integration-oauth
-    newName: quay.io/mvala/spi-oauth
-    newTag: svpi48-config
+    newName: quay.io/redhat-appstudio/service-provider-integration-oauth
+    newTag: next
 
 namespace: spi-system
