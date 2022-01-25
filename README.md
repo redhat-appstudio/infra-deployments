@@ -58,6 +58,12 @@ Steps:
 ![OpenShift Gitops menu with Cluster Argo CD menu option](documentation/images/argo-cd-login.png?raw=true "OpenShift Gitops menu")
 3) If your deployment was successful, you should see several applications running, such as "all-components-staging", "gitops", and so on.
 
+#### Post-bootstrap Service Provider Integration(SPI) Configuration
+SPI components fails to start right after the bootstrap. It requires manual configuration in order to work properly:
+1) Edit `./components/spi/config.yaml` [see SPI Configuraton Documentation](https://github.com/redhat-appstudio/service-provider-integration-operator#configuration)
+2) Create a `oauth-config` Secret (`kubectl create secret generic oauth-config --from-file=components/spi/config.yaml -n spi-system`)
+3) In few moments, SPI pods should start
+
 ### Install Toolchain (Sandbox) Operators
 There are two scripts which you can use:
 - `./hack/sandbox-development-mode.sh` for development mode
