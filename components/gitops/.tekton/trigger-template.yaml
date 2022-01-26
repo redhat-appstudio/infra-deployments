@@ -24,9 +24,9 @@ spec:
           - name: output-image
             value: 'quay.io/redhat-appstudio/gitops-service:$(tt.params.git-revision)'
           - name: context
-            value: cluster-agent
+            value: .
           - name: dockerfile
-            value: cluster-agent/Dockerfile
+            value: Dockerfile
         pipelineRef:
           name: appstudio-dockerfile-builder
         workspaces:
