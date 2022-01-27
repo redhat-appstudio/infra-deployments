@@ -19,3 +19,9 @@ rules:
       - ''
     resources:
       - secrets
+  - verbs:
+      - delete # needed till we figure out how to cleanup workspaces.
+    apiGroups:
+      - tekton.dev
+    resources:
+      - pipelineruns
