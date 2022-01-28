@@ -31,12 +31,6 @@ spec:
           name: appstudio-dockerfile-builder
         workspaces:
           - name: workspace
-            volumeClaimTemplate:
-              spec:
-                accessModes:
-                  - ReadWriteOnce
-                resources:
-                  requests:
-                    storage: 10Mi
-                #storageClassName: gp2
-                volumeMode: Filesystem
+            persistentVolumeClaim:
+              claimName: app-studio-default-workspace
+            subPath: gitops-service-$(tt.params.git-revision)
