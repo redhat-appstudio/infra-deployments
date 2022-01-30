@@ -78,6 +78,10 @@ set +e
 # Now use cosign to verify the signed payload
 title Verification
 cosign verify-blob --key $SIG_KEY --signature $SIG_FILE $PAYLOAD_FILE
+COSIGN_EXIT_CODE=$?
 
 # Clean up
 rm $SIG_FILE $PAYLOAD_FILE
+
+# Use the exit code from cosign
+exit $COSIGN_EXIT_CODE
