@@ -1,7 +1,10 @@
 #!/bin/bash
 
+SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
 TASKRUN_NAME=$1
 QUIET_OPT=$2
+SIG_KEY=$COSIGN_SIG_KEY
 
 # Preserve sanity while hacking
 set -ue
@@ -43,13 +46,15 @@ PAYLOAD_FILE=$( mktemp )
 echo -n "$PAYLOAD" > $PAYLOAD_FILE
 echo -n "$SIGNATURE" > $SIG_FILE
 
-# Requires that you're authenticated with an account that can access
-# the signing-secret, i.e. kubeadmin but not developer
-SIG_KEY=k8s://tekton-chains/signing-secrets
+if [[ -z $SIG_KEY ]]; then
+  # Requires that you're authenticated with an account that can access
+  # the signing-secret, i.e. kubeadmin but not developer
+  SIG_KEY=k8s://tekton-chains/signing-secrets
 
-# If you have the public key locally because you created it
-# (Presumably real public keys can be published somewhere in future)
-#SIG_KEY=./cosign.pub
+  # If you have the public key locally because you created it
+  # (Presumably real public keys can be published somewhere in future)
+  #SIG_KEY=$SCRIPTDIR/../../cosign.pub
+fi
 
 title() {
   $ECHO
