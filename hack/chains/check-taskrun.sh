@@ -1,6 +1,7 @@
 #!/bin/bash
 
 TASKRUN_NAME=$1
+QUIET_OPT=$2
 
 # Preserve sanity while hacking
 set -ue
@@ -11,6 +12,14 @@ if [[ -z $TASKRUN_NAME ]]; then
   TASKRUN_NAME=$(
     kubectl get taskrun -o name --sort-by=.metadata.creationTimestamp |
       tail -1 | cut -d/ -f2 )
+fi
+
+if [[ $QUIET_OPT == "--quiet" ]]; then
+  ECHO=:
+  QUIET=1
+else
+  ECHO=echo
+  QUIET=
 fi
 
 # Helper for jsonpath
@@ -43,20 +52,20 @@ SIG_KEY=k8s://tekton-chains/signing-secrets
 #SIG_KEY=./cosign.pub
 
 title() {
-  echo
-  echo "🔗 ---- $* ----"
+  $ECHO
+  $ECHO "🔗 ---- $* ----"
 }
 
 # Show details about this taskrun
 title Taskrun name
-echo $TASKRUN_NAME
+$ECHO $TASKRUN_NAME
 
 title Signature
-echo $SIGNATURE
+$ECHO $SIGNATURE
 
 title Payload
-#echo "$PAYLOAD" | jq
-echo "$PAYLOAD" | yq e -P -
+#[[ -z $QUIET ]] && echo "$PAYLOAD" | jq
+[[ -z $QUIET ]] && echo "$PAYLOAD" | yq e -P -
 
 # Keep going if the verify fails
 set +e
