@@ -1,15 +1,6 @@
 resources:
 - openshift-pipelines/
 - build-templates/ 
-- https://github.com/redhat-appstudio/build-definitions/tasks/appstudio-utils/util-tasks?ref=v0.1.3
-
-patches:
-- target:
-    kind: ClusterTask
-  patch: |-
-    - op: replace
-      path: /spec/steps/0/image
-      value: quay.io/redhat-appstudio/appstudio-utils:v0.1.3
 
 generatorOptions:
  disableNameSuffixHash: true
@@ -18,7 +9,7 @@ configMapGenerator:
 - name: build-pipelines-defaults
   namespace: build-templates
   literals:
-  - default_build_bundle=quay.io/redhat-appstudio/build-templates-bundle:v0.1.3
+  - default_build_bundle=quay.io/redhat-appstudio/build-templates-bundle:v0.1.4
 
 # Skip applying the Tekton operands while the Tekton operator is being installed.
 # See more information about this option, here:
