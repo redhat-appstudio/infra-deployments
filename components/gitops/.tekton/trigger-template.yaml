@@ -23,12 +23,13 @@ spec:
             value: $(tt.params.git-revision)
           - name: output-image
             value: 'quay.io/redhat-appstudio/gitops-service:$(tt.params.git-revision)'
-          - name: context
+          - name: path-context
             value: .
           - name: dockerfile
             value: Dockerfile
         pipelineRef:
-          name: appstudio-dockerfile-builder
+          name: docker-build
+          bundle: quay.io/redhat-appstudio/build-templates-bundle:v0.1.4
         workspaces:
           - name: workspace
             persistentVolumeClaim:
