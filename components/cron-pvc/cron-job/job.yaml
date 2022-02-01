@@ -1,0 +1,46 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cleanup-pvc-pipelinerun
+spec:
+  schedule: "* * * * *"
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: pvc-cleaner
+          containers:
+          - name: cleanup-pvc-pipelinerun
+            image: docker.io/openshift/origin-cli
+            imagePullPolicy: IfNotPresent
+            command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Clean up pvc subpaths..."
+
+              NAMESPACE=$(cat "/var/run/secrets/kubernetes.io/serviceaccount/namespace")
+
+              oc apply -f - <<EOF
+              apiVersion: tekton.dev/v1beta1
+              kind: TaskRun
+              metadata:
+                name: cleanup-build-directories-run
+                namespace: ${NAMESPACE}
+              spec:
+                serviceAccountName: pipeline
+                taskRef:
+                  kind: ClusterTask
+                  name: cleanup-build-directories
+                timeout: 1h0m0s
+                workspaces:
+                  - name: source
+                    persistentVolumeClaim:
+                      claimName: app-studio-default-workspace
+              EOF
+
+              oc wait --for=condition=succeeded taskrun cleanup-build-directories-run -n "${NAMESPACE}" --timeout=120s
+              oc delete taskrun cleanup-build-directories-run -n ${NAMESPACE}
+          restartPolicy: OnFailure
