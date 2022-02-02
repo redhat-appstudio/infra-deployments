@@ -27,6 +27,20 @@ These are the steps to add your own component:
 
 More examples of using Kustomize to drive deployments using GitOps can be [found here](https://github.com/redhat-cop/gitops-catalog).
 
+## Component testing and building of images
+To test and run builds for a component, create the necessary Tekton resources and define a pipeline.
+The `gitops` component can be used as an example.
+
+These are the steps to create a component pipeline:
+1) Create a `.tekton` directory under the component directory. Example: `components/(team-name)/.tekton`.
+2) Create the Tekton resources to trigger and run the pipeline.
+    - EventListener: The EventListener processes an incoming request and executes a Trigger. This will bind to a ClusterTriggerBinding.
+    - PersistentVolumeClaim: A workspace for the pipeline. 
+    - ServiceAccount: This will be the service account the pipeline will run as.
+    - TriggerTemplate: The trigger template will dynamically generate a PipelineRun resource. This is also where the pipeline is defined.
+    - Route: The route will be used as the github webhook address.
+    - Kustomization: This is necessary to install the component resources defined above.
+
 ## Maintaining your components
 
 Simply update the files under `components/(team-name)`, and open a PR with the changes. 
