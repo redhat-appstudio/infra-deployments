@@ -61,9 +61,14 @@ command -v yq >/dev/null 2>&1 || { echo "yq is not installed. Aborting."; exit 1
 command -v kubectl >/dev/null 2>&1 || { echo "kubectl is not installed. Aborting."; exit 1; }
 command -v e2e-appstudio >/dev/null 2>&1 || { echo "e2e-appstudio bin is not installed. Please install it from: https://github.com/redhat-appstudio/e2e-tests."; exit 1; }
 
-createHASSecret
 /bin/bash "$WORKSPACE"/hack/bootstrap-cluster.sh
+
 
 export -f waitAppStudioToBeReady
 timeout --foreground 10m bash -c waitAppStudioToBeReady
-executeE2ETests
+export MY_GITHUB_ORG="redhat-appstudio-qe"
+export MY_GITHUB_TOKEN="test"
+/bin/bash "$WORKSPACE"/hack/development-mode.sh
+oc rollout restart -n application-service deployment/application-service-controller-manager
+
+#executeE2ETests
