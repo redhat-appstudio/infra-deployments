@@ -2,6 +2,12 @@
 
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/..
 
+if [ "$(oc auth can-i '*' '*' --all-namespaces)" != "yes" ]; then
+  echo
+  echo "[ERROR] User '$(oc whoami)' does not have the required 'cluster-admin' role." 1>&2
+  echo "Log into the cluster with a user with the required privileges (e.g. kubeadmin) and retry."
+  exit 1
+fi
 
 echo 
 echo "Installing the OpenShift GitOps operator subscription:"
@@ -38,11 +44,13 @@ echo
 echo "Add parent Argo CD Application:"
 kubectl apply -f $ROOT/argo-cd-apps/app-of-apps/all-applications-staging.yaml
 
+ARGO_CD_ROUTE="$(kubectl get route/openshift-gitops-server -n openshift-gitops)"
+
 echo
 echo "========================================================================="
 echo
 echo "Argo CD Route is:"
-kubectl get route/openshift-gitops-server -n openshift-gitops
+echo "$ARGO_CD_ROUTE"
 echo
 echo "(NOTE: It may take a few moments for the route to become available)"
 echo
