@@ -1,0 +1,9 @@
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: patch-tekton-config-role
+rules:
+- apiGroups: ["operator.tekton.dev/v1alpha1", "operator.tekton.dev"] 
+  resources: ["tektonconfig", "tektonconfigs"] 
+  verbs: [ "list", "get", "watch", "patch" ]
