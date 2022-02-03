@@ -1,0 +1,12 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: patch-tekton-config-rb 
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: patch-tekton-config-role
+subjects:
+- kind: ServiceAccount
+  name: patch-tekton-config-sa
+  namespace: locker-patch-tekton-ns
