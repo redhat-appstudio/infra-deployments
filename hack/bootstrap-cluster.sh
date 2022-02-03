@@ -44,15 +44,21 @@ echo
 echo "Add parent Argo CD Application:"
 kubectl apply -f $ROOT/argo-cd-apps/app-of-apps/all-applications-staging.yaml
 
-ARGO_CD_ROUTE="$(kubectl get route/openshift-gitops-server -n openshift-gitops)"
+ARGO_CD_URL="https://$(kubectl get route/openshift-gitops-server -n openshift-gitops -o template --template={{.spec.host}})"
 
 echo
 echo "========================================================================="
 echo
-echo "Argo CD Route is:"
-echo "$ARGO_CD_ROUTE"
+echo "Argo CD URL is: $ARGO_CD_URL"
 echo
 echo "(NOTE: It may take a few moments for the route to become available)"
+echo
+echo -n "Waiting for the route: "
+while ! curl --fail --insecure --output /dev/null --silent "$ARGO_CD_URL"; do
+  echo -n .
+  sleep 3
+done
+echo "OK"
 echo
 echo "Login/password uses your OpenShift credentials ('Login with OpenShift' button)"
 echo
