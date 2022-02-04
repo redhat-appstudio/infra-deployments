@@ -1,0 +1,198 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: crd-manager
+rules:
+- apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - patch
+  - get
+  - list
+  - create
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: pipeline-maintainer
+rules:
+- apiGroups:
+  - ""
+  resourceNames:
+  - pipeline
+  resources:
+  - serviceaccounts
+  verbs:
+  - patch
+  - get
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - create
+  - delete
+- apiGroups:
+  - tekton.dev
+  resources:
+  - pipelineruns
+  verbs:
+  - '*'
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: gitops-service-ci-maintainers
+  namespace: application-service
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: pipeline-maintainer
+subjects:
+- apiGroup: rbac.authorization.k8s.io
+  kind: User
+  name: sbose78
+- apiGroup: rbac.authorization.k8s.io
+  kind: User
+  name: johnmcollier
+- apiGroup: rbac.authorization.k8s.io
+  kind: User
+  name: jduimovich
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: read-has
+  namespace: application-service
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view
+subjects:
+- kind: User
+  name: johnmcollier
+- kind: User
+  name: sbose78
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: read-build-templates
+  namespace: build-templates
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view
+subjects:
+- kind: User
+  name: jduimovich
+- kind: User
+  name: sbose78
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: gitops-service-ci-maintainers
+  namespace: gitops
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: pipeline-maintainer
+subjects:
+- apiGroup: rbac.authorization.k8s.io
+  kind: User
+  name: sbose78
+- apiGroup: rbac.authorization.k8s.io
+  kind: User
+  name: jduimovich
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: read-gitops-service
+  namespace: gitops
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view
+subjects:
+- kind: User
+  name: jgwest
+- kind: User
+  name: sbose78
+- kind: User
+  name: samyak-jn
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: read-build
+  namespace: openshift-pipelines
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view
+subjects:
+- kind: User
+  name: vdemeester
+- kind: User
+  name: guillaumerose
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: read-shbose
+  namespace: shbose
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view
+subjects:
+- kind: User
+  name: sbose78
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: read-spi
+  namespace: spi-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view
+subjects:
+- kind: User
+  name: skabashnyuk
+- kind: User
+  name: sbose78
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: spi-service-ci-maintainers
+  namespace: spi-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: pipeline-maintainer
+subjects:
+- kind: User
+  name: skabashnyuk
+- kind: User
+  name: sbose78
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: grant-argocd-crd-permissions
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: crd-manager
+subjects:
+- kind: ServiceAccount
+  name: openshift-gitops-argocd-application-controller
+  namespace: openshift-gitops
