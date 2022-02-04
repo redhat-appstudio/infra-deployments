@@ -24,7 +24,7 @@ else
 fi
 
 PATCHREPO="$(printf '.spec.source.repoURL="%q"' $GITURL)" 
-PATCHOVERLAY="$(printf '.spec.source.path="%q"' $OVERLAYDIR)"  
+PATCHOVERLAY="$(printf '.spec.source.path="%q"' "$ROOT/$OVERLAYDIR")"  
 PATCHBRANCH="$(printf '.spec.source.targetRevision="%q"' $BRANCH)"  
 
 # the overlay content can be updated selectively per user in their fork

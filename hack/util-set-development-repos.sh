@@ -28,15 +28,15 @@ echo In dev mode, verify that argo-cd-apps/overlays/development includes a kusto
 echo If you want to reset to the default upstream run the upstream-mode.sh script  
 
 PATCH="$(printf '.spec.source.repoURL="%q"' $GITURL)" 
-yq  e "$PATCH" $OVERLAYDIR/repo-overlay.yaml -i  
+yq  e "$PATCH" "$ROOT/$OVERLAYDIR/repo-overlay.yaml" -i  
 PATCH="$(printf '.spec.source.targetRevision="%q"' $BRANCH)" 
-yq  e "$PATCH" $OVERLAYDIR/repo-overlay.yaml -i 
+yq  e "$PATCH" "$ROOT/$OVERLAYDIR/repo-overlay.yaml" -i 
 
 echo
 echo The list of components which will be patched is
-yq  e '.metadata.name' $OVERLAYDIR/repo-overlay.yaml
+yq  e '.metadata.name' "$ROOT/$OVERLAYDIR/repo-overlay.yaml"
 
 echo
 echo Each component above is set to the following repositories
 echo if you do not see your component in the list, please send a PR update to $OVERLAYDIR/repo-overlay.yaml
-yq  e '.spec.source.repoURL' $OVERLAYDIR/repo-overlay.yaml
+yq  e '.spec.source.repoURL' "$ROOT/$OVERLAYDIR/repo-overlay.yaml"
