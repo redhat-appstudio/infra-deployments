@@ -3,9 +3,11 @@ kind: CronJob
 metadata:
   name: cleanup-pvc-pipelinerun
 spec:
-  schedule: "* * * * *"
+  # Repeat each 5 min
+  schedule: "*/5 * * * *"
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 1
+  suspend: false
   jobTemplate:
     spec:
       template:

@@ -1,6 +1,10 @@
 #!/bin/bash
-PROJECT=$(oc config view --minify -o 'jsonpath={..namespace}')
-  
+
+PROJECT="${1}"
+if [ -z "${PROJECT}" ]; then
+  PROJECT=$(oc config view --minify -o 'jsonpath={..namespace}')
+fi
+
 read -r -d '' BASE_TASKRUN <<'BASE_TASKRUN' 
 apiVersion: tekton.dev/v1beta1
 kind: TaskRun
@@ -42,9 +46,9 @@ echo "$2"
 echo "---"
 
   echo "$COMBINED" | \
-  yq -M e ".metadata.name=\"$PRNAME\"" - |  oc apply -f - 
-  tkn taskrun logs $PRNAME -f
-  tkn taskrun delete $PRNAME -f 
+  yq -M e ".metadata.name=\"$PRNAME\" | .metadata.namespace=\"${PROJECT}\"" - | oc apply -f - 
+  tkn taskrun logs -n "${PROJECT}" $PRNAME -f
+  tkn taskrun delete -n "${PROJECT}" $PRNAME -f 
 }
  
 run_task "$BASE_TASKRUN" "$WORKSPACE" 

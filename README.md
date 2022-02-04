@@ -37,7 +37,7 @@ Simply update the files under `components/(team-name)`, and open a PR with the c
 
 ### Required prerequisites
 The prerequisites are:
-- You must have `kubectl`, `oc`, `jq`, `yq` and `kustomize` installed. 
+- You must have `kubectl`, `oc`, `jq`, `yq`(https://github.com/mikefarah/yq  , but not https://github.com/kislyuk/yq.) and `kustomize` installed. 
 - You must have `kubectl` and `oc` pointing to an existing OpenShift cluster, that you wish to deploy to.
 
 ### Optional: CodeReady Containers Setup
@@ -166,7 +166,7 @@ To try out a pre-configured, follow these steps.
 | 3.  View your build on the OpenShift Console under the pipelines page or view the logs via CLI. | `./hack/build/ls-builds.sh` or  `tkn.exe pipelinerun logs`      |
 
 ## Usage
- 
+
 A sample script `build.sh` is provided which uses the App Studio Build Service API to demonstrate launching a build and inspecting the results.
 As a proof-of-concept, an optional `build-deploy.sh` script is included to take the build image and run it. . 
 
