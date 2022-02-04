@@ -17,7 +17,12 @@ else
     fi 
 fi
 
-CMD=$SCRIPTDIR/build$DEPLOY.sh 
+CMD=$SCRIPTDIR/build$DEPLOY.sh
+
+if [ -z "${MY_GITHUB_USER}" ]; then
+    MY_GITHUB_USER=$(git ls-remote --get-url | sed 's|^git@github.com:|https://github.com/|' | cut -d/ -f4)
+fi
+
 
 # devfile based builds 
 $CMD https://github.com/devfile-samples/devfile-sample-java-springboot-basic
@@ -26,8 +31,8 @@ $CMD https://github.com/devfile-samples/devfile-sample-code-with-quarkus
 $CMD https://github.com/devfile-samples/devfile-sample-python-basic 
 
 # auto-detect base builds
-$CMD https://github.com/jduimovich/single-container-app
-$CMD https://github.com/jduimovich/single-nodejs-app
-$CMD https://github.com/jduimovich/spring-petclinic  java-builder
+$CMD https://github.com/${MY_GITHUB_USER}/single-container-app
+$CMD https://github.com/${MY_GITHUB_USER}/single-nodejs-app
+$CMD https://github.com/${MY_GITHUB_USER}/spring-petclinic  java-builder
  
 echo "Run this to show running builds $SCRIPTDIR/ls-builds.sh"
