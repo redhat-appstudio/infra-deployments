@@ -60,10 +60,11 @@ If you don't already have a test OpenShift cluster available, CodeReady Containe
 2) Make sure you have the latest version of CRC: `crc version`
 3) Set up your workstation and command line tools: `crc setup`
 4) Configure the VM using the minimum supported values. You can further increase these values if your workstation can support it: `crc config set memory 16384` and `crc config set cpus 6`
-5) Create a new VM after you adjust the memory and cpu allocation: `crc delete` and confirm with a `y`.
-6) Start the OpenShift cluster: `crc start` This command will output the OpenShift web console URL as well as the developer and kubeadmin credentials when it's finished.
-7) Set up your command line: `eval $(crc oc-env)`
-8) Configure kubectl to use the CRC administrator account: `kubectl config use-context crc-admin`
+5) Make sure the Cluster has the nodemetrics enabled so that sandbox installer can find allocatable resources it needs : `crc config set enable-cluster-monitoring true`
+6) Create a new VM after you adjust the memory and cpu allocation: `crc delete` and confirm with a `y`.
+7) Start the OpenShift cluster: `crc start` This command will output the OpenShift web console URL as well as the developer and kubeadmin credentials when it's finished.
+8) Set up your command line: `eval $(crc oc-env)`
+9) Configure kubectl to use the CRC administrator account: `kubectl config use-context crc-admin`
 
 ### Bootstrap App Studio
 Steps:
@@ -76,7 +77,8 @@ Steps:
 SPI components fails to start right after the bootstrap. It requires manual configuration in order to work properly:
 1) Edit `./components/spi/config.yaml` [see SPI Configuraton Documentation](https://github.com/redhat-appstudio/service-provider-integration-operator#configuration)
 2) Create a `oauth-config` Secret (`kubectl create secret generic oauth-config --from-file=components/spi/config.yaml -n spi-system`)
-3) In few moments, SPI pods should start
+3) In CRC setup add a random string for value of `sharedSecret`
+4) In few moments, SPI pods should start
 
 ### Install Toolchain (Sandbox) Operators
 There are two scripts which you can use:
