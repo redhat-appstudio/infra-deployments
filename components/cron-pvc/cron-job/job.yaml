@@ -15,7 +15,7 @@ spec:
           serviceAccountName: pvc-cleaner
           containers:
           - name: cleanup-pvc-pipelinerun
-            image: docker.io/openshift/origin-cli
+            image: registry.redhat.io/openshift4/ose-cli
             imagePullPolicy: IfNotPresent
             command:
             - /bin/sh
@@ -23,19 +23,16 @@ spec:
             - |
               echo "Clean up pvc subpaths..."
 
-              NAMESPACE=$(cat "/var/run/secrets/kubernetes.io/serviceaccount/namespace")
-
               oc apply -f - <<EOF
               apiVersion: tekton.dev/v1beta1
               kind: TaskRun
               metadata:
                 name: cleanup-build-directories-run
-                namespace: ${NAMESPACE}
               spec:
                 serviceAccountName: pipeline
                 taskRef:
-                  kind: ClusterTask
                   name: cleanup-build-directories
+                  bundle: quay.io/redhat-appstudio/appstudio-tasks:cleanup-build-directories-v0.1.4
                 timeout: 1h0m0s
                 workspaces:
                   - name: source
@@ -43,6 +40,6 @@ spec:
                       claimName: app-studio-default-workspace
               EOF
 
-              oc wait --for=condition=succeeded taskrun cleanup-build-directories-run -n "${NAMESPACE}" --timeout=120s
-              oc delete taskrun cleanup-build-directories-run -n ${NAMESPACE}
+              oc wait --for=condition=succeeded taskrun cleanup-build-directories-run --timeout=120s
+              oc delete taskrun cleanup-build-directories-run
           restartPolicy: OnFailure
