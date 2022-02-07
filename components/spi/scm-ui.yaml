@@ -1,0 +1,13 @@
+resources:
+  - https://github.com/redhat-appstudio/service-provider-integration-scm-file-retriever/server/config/default?ref=056d45eaaaf99c507716ed0ea399a00ca4eb5c9b
+  - scm_route.yaml
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+images:
+  - name: quay.io/redhat-appstudio/service-provider-integration-scm-file-retriever-server
+    newName:  quay.io/redhat-appstudio/service-provider-integration-scm-file-retriever-server
+    newTag: 0.2.5
+
+namespace: spi-scm
