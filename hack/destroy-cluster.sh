@@ -5,6 +5,8 @@ TOOLCHAIN_E2E_TEMP_DIR=/tmp/toolchain-e2e
 
 # Remove resources in the reverse order from bootstrapping
 
+# Todo: Is there anything related to tekton-chains that needs removing here?
+
 echo
 echo "Remove Argo CD Applications:"
 kubectl delete -f $ROOT/argo-cd-apps/app-of-apps/all-applications-staging.yaml

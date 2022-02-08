@@ -6,6 +6,7 @@ The App Studio Build System is composed of the following components:
 1. OpenShift Pipelines. 
 2. AppStudio-specific Pipeline Definitions in `build-templates` for building images.
 3. AppStudio-specific `ClusterTasks`.
+4. Tekton Chains.
 
 This repository installs all the components and includes a set of example scripts that simplify usage and provide examples of a working system. There are no additiona components needed to use the build system API, howvever some utilities and scripts are provided to demonstrate functionality. 
 
