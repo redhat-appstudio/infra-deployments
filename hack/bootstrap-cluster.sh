@@ -62,6 +62,11 @@ fi
 ARGO_CD_URL="https://$(kubectl get route/openshift-gitops-server -n openshift-gitops -o template --template={{.spec.host}})"
 
 echo
+echo "Configuring service account for Tekton Chains:"
+oc new-project tekton-chains
+oc adm policy add-scc-to-user anyuid -z tekton-chains-controller
+
+echo
 echo "========================================================================="
 echo
 echo "Argo CD URL is: $ARGO_CD_URL"
