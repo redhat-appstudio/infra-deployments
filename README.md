@@ -151,7 +151,7 @@ Note running these scripts in a clone repo will have no effect as the repo will 
 ### Preview mode
 
 Steps:
-1) Copy `hack/preview.env` to `hack/preview.env` and update new file based on instructions. File `hack/preview.env` should never be included in commit.
+1) Copy `hack/preview-template.env` to `hack/preview.env` and update new file based on instructions. File `hack/preview.env` should never be included in commit.
 2) Work on your changes in a feature branch
 3) Run `./hack/preview.sh`, which will do:
   a) New branch is created from your current branch, the name of new branch is `preview-<name-of-current-branch>`
