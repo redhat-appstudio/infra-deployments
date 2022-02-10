@@ -1,21 +1,23 @@
 #!/bin/bash
 
+##
+## Fixme: This works with the default chains config which is
+## to use 'tekton' for storage and 'tekton' for the format. I can't
+## make the verify-blob work with the storage configured to use 'oci'
+## but I'll keep this script to help figure it out.
+##
+
 SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-TASKRUN_NAME=$1
+# Use a specific taskrun if provided, otherwise use the latest
+TASKRUN_NAME=${1:-$( tkn taskrun describe --last -o name )}
+TASKRUN_NAME=taskrun/$( echo $TASKRUN_NAME | sed 's#.*/##' )
+
 QUIET_OPT=$2
 SIG_KEY=$COSIGN_SIG_KEY
 
 # Preserve sanity while hacking
 set -ue
-
-if [[ -z $TASKRUN_NAME ]]; then
-  # Use the most recently created taskrun
-  # (Fixme: Would be better to exclude running tasks)
-  TASKRUN_NAME=$(
-    kubectl get taskrun -o name --sort-by=.metadata.creationTimestamp |
-      tail -1 | cut -d/ -f2 )
-fi
 
 if [[ $QUIET_OPT == "--quiet" ]]; then
   ECHO=:
@@ -27,7 +29,7 @@ fi
 
 # Helper for jsonpath
 get-jsonpath() {
-  kubectl get taskrun/$TASKRUN_NAME -o jsonpath={.$1}
+  kubectl get $TASKRUN_NAME -o jsonpath={.$1}
 }
 
 # Helper for reading chains values
