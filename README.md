@@ -68,7 +68,7 @@ If you don't already have a test OpenShift cluster available, CodeReady Containe
 
 ### Bootstrap App Studio
 Steps:
-1) Run `./hack/bootstrap-cluster.sh` which will bootstrap Argo CD (using OpenShift GitOps) and setup the Argo CD `Application` Custom Resources (CRs) for each component. This command will output the Argo CD Web UI route when it's finished.
+1) Run `./hack/bootstrap-cluster.sh [$MODE]` which will bootstrap Argo CD (using OpenShift GitOps) and setup the Argo CD `Application` Custom Resources (CRs) for each component. This command will output the Argo CD Web UI route when it's finished. For upstream mode keep the $MODE empty or "upstream". For development mode and preview mode set `$MODE` to `development` or `preview`, the modes are described in section 'Development modes for your own clusters'.
 2) Open the Argo CD Web UI to see the status of your deployments. You can use the route from the previous step and login using your OpenShift credentials (using the 'Login with OpenShift' button), or login to the OpenShift Console and navigate to Argo CD using the OpenShift Gitops menu in the Applications pulldown.
 ![OpenShift Gitops menu with Cluster Argo CD menu option](documentation/images/argo-cd-login.png?raw=true "OpenShift Gitops menu")
 3) If your deployment was successful, you should see several applications running, such as "all-components-staging", "gitops", and so on.
@@ -121,7 +121,7 @@ Even with 6 CPU cores, you will need to reduce the CPU resource requests for eac
 
 ## Development modes for your own clusters
 
-Once you bootstrap a cluster above, the root ArgoCD Application and all of the component applications will each point to the upstream repository.
+Once you bootstrap a cluster above, the root ArgoCD Application and all of the component applications will each point to the upstream repository. Or you can bootstrap cluster directly in mode which you need.
 
 To enable development for a team or individual to test changes on your own cluster, you need to replace the references to `https://github.com/redhat-appstudio/infra-deployments.git` with references to your own fork.
 
