@@ -14,19 +14,24 @@ echo "Installing the OpenShift GitOps operator subscription:"
 kubectl apply -f $ROOT/openshift-gitops/subscription-openshift-gitops.yaml
 
 echo
-echo "Waiting for default project (and namespace) to exist:"
+echo -n "Waiting for default project (and namespace) to exist: "
 while : ; do
-  kubectl get appproject/default -n openshift-gitops && break
+  kubectl get appproject/default -n openshift-gitops >/dev/null 2>&1 && break
+  echo -n .
   sleep 1
 done
+echo "OK"
 
 echo
-echo "Waiting for OpenShift GitOps Route:"
+echo -n "Waiting for OpenShift GitOps Route: "
 while : ; do
-  kubectl get route/openshift-gitops-server -n openshift-gitops && break
+  kubectl get route/openshift-gitops-server -n openshift-gitops >/dev/null 2>&1 && break
+  echo -n .
   sleep 1
 done
+echo "OK"
 
+echo
 echo "Patching OpenShift GitOps ArgoCD CR"
 
 # Switch the Route to use re-encryption
