@@ -40,3 +40,19 @@ echo
 echo Each component above is set to the following repositories
 echo if you do not see your component in the list, please send a PR update to $OVERLAYDIR/repo-overlay.yaml
 yq  e '.spec.source.repoURL' $OVERLAYDIR/repo-overlay.yaml
+
+if [ -n "$DEPLOY_ONLY" ]; then
+    for APP in $(yq e -N '.metadata.name' $OVERLAYDIR/repo-overlay.yaml); do
+        if ! grep "\b$APP\b" <<< $DEPLOY_ONLY; then
+           echo Disabling $APP based on DEPLOY_ONLY variable
+           cat >> $OVERLAYDIR/delete-applications.yaml <<EOF
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: $APP
+\$patch: delete
+EOF
+        fi
+    done
+fi
