@@ -60,10 +60,11 @@ If you don't already have a test OpenShift cluster available, CodeReady Containe
 2) Make sure you have the latest version of CRC: `crc version`
 3) Set up your workstation and command line tools: `crc setup`
 4) Configure the VM using the minimum supported values. You can further increase these values if your workstation can support it: `crc config set memory 16384` and `crc config set cpus 6`
-5) Create a new VM after you adjust the memory and cpu allocation: `crc delete` and confirm with a `y`.
-6) Start the OpenShift cluster: `crc start` This command will output the OpenShift web console URL as well as the developer and kubeadmin credentials when it's finished.
-7) Set up your command line: `eval $(crc oc-env)`
-8) Configure kubectl to use the CRC administrator account: `kubectl config use-context crc-admin`
+5) Make sure the Cluster has the nodemetrics enabled so that sandbox installer can find allocatable resources it needs : `crc config set enable-cluster-monitoring true`
+6) Create a new VM after you adjust the memory and cpu allocation: `crc delete` and confirm with a `y`.
+7) Start the OpenShift cluster: `crc start` This command will output the OpenShift web console URL as well as the developer and kubeadmin credentials when it's finished.
+8) Set up your command line: `eval $(crc oc-env)`
+9) Configure kubectl to use the CRC administrator account: `kubectl config use-context crc-admin`
 
 ### Bootstrap App Studio
 Steps:
@@ -76,7 +77,8 @@ Steps:
 SPI components fails to start right after the bootstrap. It requires manual configuration in order to work properly:
 1) Edit `./components/spi/config.yaml` [see SPI Configuraton Documentation](https://github.com/redhat-appstudio/service-provider-integration-operator#configuration)
 2) Create a `oauth-config` Secret (`kubectl create secret generic oauth-config --from-file=components/spi/config.yaml -n spi-system`)
-3) In few moments, SPI pods should start
+3) In CRC setup add a random string for value of `sharedSecret`
+4) In few moments, SPI pods should start
 
 ### Install Toolchain (Sandbox) Operators
 There are two scripts which you can use:
@@ -115,7 +117,7 @@ spec:
 ### Optional: CodeReady Containers Post-Bootstrap Configuration
 Even with 6 CPU cores, you will need to reduce the CPU resource requests for each App Studio application. Either run `./hack/reduce-gitops-cpu-requests.sh` which will set resources.requests.cpu values to 50m or use `kubectl edit argocd/openshift-gitops -n openshift-gitops` to reduce the values to some other value. More details are in the FAQ below.
 
-## Development mode for your own clusters
+## Development modes for your own clusters
 
 Once you bootstrap a cluster above, the root ArgoCD Application and all of the component applications will each point to the upstream repository.
 
@@ -125,6 +127,12 @@ There are a set of scripts that help with this, and minimize the changes needed 
 
 There is a development configuration in `overlays/development` which includes a kustomize overlay that can redirect the default components individual repositorys to your fork. 
 The script also supports branches automatically. If you work in a checked out branch, each of the components in the overlays will mapped to that branch by setting `targetRevision:`.  
+
+There are two workflows for develompent provided:
+1) Development mode - work in the feature branch, apply changes related to your fork, revert the changes when the work is done
+2) Preview mode - work in a feature branch, apply script which creates new preview branch and create additional commit with for customization
+
+### Development mode
 
 Steps:
 1) in your forked repository run `./hack/development-mode.sh` and this will update the root application on the cluster and all of the git repo references in `argo-cd-apps/overlays/development/repo-overlay.yaml`
@@ -140,6 +148,22 @@ After you commit your changes you can rerun to `./hack/development-mode.sh` and 
 
 Note running these scripts in a clone repo will have no effect as the repo will remain `https://github.com/redhat-appstudio/infra-deployments.git`
 
+### Preview mode
+
+Steps:
+1) Copy `hack/preview-template.env` to `hack/preview.env` and update new file based on instructions. File `hack/preview.env` should never be included in commit.
+2) Work on your changes in a feature branch
+3) Run `./hack/preview.sh`, which will do:
+  a) New branch is created from your current branch, the name of new branch is `preview-<name-of-current-branch>`
+  b) Commit with changes related to your environment is added into preview branch
+  c) Preview branch is pushed into your fork
+  d) ArgoCD is set to point to your fork and the preview branch
+  e) User is switched back to feature branch to create additional changes
+
+If you want to reset your enviroment you can run the script `./hack/upstream-mode.sh` to reset everything including your cluster to `https://github.com/redhat-appstudio/infra-deployments.git` and match the upstream config.
+
+Note running these scripts in a clone repo will have no effect as the repo will remain `https://github.com/redhat-appstudio/infra-deployments.git`
+
 ### Optional: Configure HAS GitHub Organization
 
 After deployment `has` application is failing to start. It's trying to connect to default github organization and credentials are not set.
@@ -151,13 +175,11 @@ Steps:
 2) Create user token with permissions:
     - `repo`
     - `delete_repo`
-3) Set environment variables:
+3) Set environment variables (for preview mode in `hack/preview.env`):
     - `MY_GITHUB_ORG`
     - `MY_GITHUB_TOKEN`
-4) Run `./hack/development-mode.sh`
-5) Push changes, trigger update in ArgoCD and delete `application-service-controller-manager` pod manually or run `oc rollout restart -n application-service deployment/application-service-controller-manager`
-
-Do not include GitHub Organization change in merge requests. You can reset organization back by running `./hack/util-set-github-org` without arguments. `./hack/upstream-mode.sh` also resets organization.
+4) Run `./hack/development-mode.sh` or `./hack/preview.sh`
+5) Trigger update in ArgoCD and delete `application-service-controller-manager` pod manually or run `oc rollout restart -n application-service deployment/application-service-controller-manager`
 
 # App Studio Build System
 

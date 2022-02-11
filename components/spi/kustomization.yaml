@@ -1,6 +1,9 @@
 resources:
+  - argocd-permissions.yaml
   - https://github.com/redhat-appstudio/service-provider-integration-operator/config/default?ref=53e870e32db78603485621337f57c09793bcf06f
   - oauth_route.yaml
+  - https://github.com/redhat-appstudio/service-provider-integration-scm-file-retriever/server/config/default?ref=381f7746b88019ea13d4aa42e71b01ac9bb2ec1e
+  - scm_route.yaml
 
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
@@ -11,6 +14,20 @@ images:
     newTag: 0.2.3
   - name: quay.io/redhat-appstudio/service-provider-integration-oauth
     newName: quay.io/redhat-appstudio/service-provider-integration-oauth
-    newTag: 0.2.2
+    newTag: 0.3.0
+  - name: quay.io/redhat-appstudio/service-provider-integration-scm-file-retriever-server
+    newName:  quay.io/redhat-appstudio/service-provider-integration-scm-file-retriever-server
+    newTag: 0.3.0
 
 namespace: spi-system
+
+
+patches:
+  - target:
+      kind: ClusterRoleBinding
+      name: spi-scm-kube-rbac-proxy
+    path: cluster-rb-patch.json
+  - target:
+      kind: ClusterRoleBinding
+      name: spi-scm-spiaccesstokens-for-file-retriever-server-sa
+    path: cluster-rb-patch.json
