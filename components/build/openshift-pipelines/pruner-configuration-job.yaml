@@ -1,0 +1,35 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pruner-configuration
+  namespace: openshift-operators
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+spec:
+  template:
+    spec:
+      containers:
+        - image: registry.redhat.io/openshift4/ose-cli:v4.9
+          command:
+            - /bin/bash
+            - -c
+            - |
+              echo "Waiting for TektonConfig config to be present"
+              until oc get TektonConfig config -n openshift-operators
+              do
+                sleep $SLEEP;
+              done
+ 
+              echo "Patching TektonConfig config patameters"
+              oc patch TektonConfig config -n openshift-pipelines -p '{"spec":{"pruner":{"keep": 10, "schedule": "0/10 * * * *"}}}' --type=merge
+          imagePullPolicy: Always
+          name: patch-tekton-config
+          env:
+            - name: SLEEP
+              value: "5"
+      dnsPolicy: ClusterFirst
+      restartPolicy: OnFailure
+      terminationGracePeriodSeconds: 30
+      serviceAccount: patch-tekton-config
+      serviceAccountName: patch-tekton-config
