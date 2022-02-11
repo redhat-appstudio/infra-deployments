@@ -1,5 +1,7 @@
 #!/bin/bash
 
+MODE=$1
+
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/..
 
 if [ "$(oc auth can-i '*' '*' --all-namespaces)" != "yes" ]; then
@@ -46,8 +48,16 @@ echo "Add Role/RoleBindings for OpenShift GitOps:"
 kustomize build $ROOT/openshift-gitops/cluster-rbac | kubectl apply -f -
 
 echo
-echo "Add parent Argo CD Application:"
-kubectl apply -f $ROOT/argo-cd-apps/app-of-apps/all-applications-staging.yaml
+if [ "$MODE" == "" ] || [ "$MODE" == "upstream" ]; then
+    echo "Setting Cluster Mode: Upstream"
+    kubectl apply -f $ROOT/argo-cd-apps/app-of-apps/all-applications-staging.yaml
+elif [ "$MODE" == "development" ]; then
+    echo "Setting Cluster Mode: Development"
+    $ROOT/hack/development-mode.sh
+elif [ "$MODE" == "preview" ]; then
+    echo "Setting Cluster Mode: Preview"
+    $ROOT/hack/preview.sh
+fi
 
 ARGO_CD_URL="https://$(kubectl get route/openshift-gitops-server -n openshift-gitops -o template --template={{.spec.host}})"
 
