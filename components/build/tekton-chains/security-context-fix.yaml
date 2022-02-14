@@ -1,0 +1,28 @@
+#
+# The default install of chains includes the following
+# which (iiuc) works in kubernetes but not openshift.
+#
+#    # User 65532 is the distroless nonroot user ID
+#    runAsUser: 65532
+#    runAsGroup: 65532
+#
+# The suggested workaround is to run this command:
+#   oc adm policy add-scc-to-user anyuid -z tekton-chains-controller
+#
+# but instead of that workaround we'll remove the runAsUser and
+# runAsGroup config.
+#
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tekton-chains-controller
+  namespace: tekton-chains
+spec:
+  template:
+    spec:
+      containers:
+      - name: tekton-chains-controller
+        securityContext:
+          # Clear these two fields
+          runAsGroup:
+          runAsUser:
