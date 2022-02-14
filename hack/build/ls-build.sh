@@ -8,7 +8,7 @@ if (( $ERR != 0 )); then
    exit -1
 fi
 STATUS=$(oc get pr $1 -o jsonpath='{.status.conditions[0].status}') 
-if [ $STATUS = "False" ]; then 
+if [ "$STATUS" = "False" ]; then 
    printf "\nBuild %20s Failed\n" "$1"   
             exit 1
 fi 

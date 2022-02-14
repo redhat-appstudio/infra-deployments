@@ -27,6 +27,20 @@ These are the steps to add your own component:
 
 More examples of using Kustomize to drive deployments using GitOps can be [found here](https://github.com/redhat-cop/gitops-catalog).
 
+## Component testing and building of images
+To test and run builds for a component, create the necessary Tekton resources and define a pipeline.
+The `gitops` component can be used as an example.
+
+These are the steps to create a component pipeline:
+1) Create a `.tekton` directory under the component directory. Example: `components/(team-name)/.tekton`.
+2) Create the Tekton resources to trigger and run the pipeline.
+    - EventListener: The EventListener processes an incoming request and executes a Trigger. This will bind to a ClusterTriggerBinding.
+    - PersistentVolumeClaim: A workspace for the pipeline. 
+    - ServiceAccount: This will be the service account the pipeline will run as.
+    - TriggerTemplate: The trigger template will dynamically generate a PipelineRun resource. This is also where the pipeline is defined.
+    - Route: The route will be used as the github webhook address.
+    - Kustomization: This is necessary to install the component resources defined above.
+
 ## Maintaining your components
 
 Simply update the files under `components/(team-name)`, and open a PR with the changes. 
@@ -37,8 +51,8 @@ Simply update the files under `components/(team-name)`, and open a PR with the c
 
 ### Required prerequisites
 The prerequisites are:
-- You must have `kubectl` and `kustomize` installed. 
-- You must have `kubectl` pointing to an existing OpenShift cluster, that you wish to deploy to.
+- You must have `kubectl`, `oc`, `jq`, `yq` and `kustomize` installed. 
+- You must have `kubectl` and `oc` pointing to an existing OpenShift cluster, that you wish to deploy to.
 
 ### Optional: CodeReady Containers Setup
 If you don't already have a test OpenShift cluster available, CodeReady Containers is a popular option. It runs a small OpenShift cluster in a single VM on your local workstation.
@@ -46,10 +60,11 @@ If you don't already have a test OpenShift cluster available, CodeReady Containe
 2) Make sure you have the latest version of CRC: `crc version`
 3) Set up your workstation and command line tools: `crc setup`
 4) Configure the VM using the minimum supported values. You can further increase these values if your workstation can support it: `crc config set memory 16384` and `crc config set cpus 6`
-5) Create a new VM after you adjust the memory and cpu allocation: `crc delete` and confirm with a `y`.
-6) Start the OpenShift cluster: `crc start` This command will output the OpenShift web console URL as well as the developer and kubeadmin credentials when it's finished.
-7) Set up your command line: `eval $(crc oc-env)`
-8) Configure kubectl to use the CRC administrator account: `kubectl config use-context crc-admin`
+5) Make sure the Cluster has the nodemetrics enabled so that sandbox installer can find allocatable resources it needs : `crc config set enable-cluster-monitoring true`
+6) Create a new VM after you adjust the memory and cpu allocation: `crc delete` and confirm with a `y`.
+7) Start the OpenShift cluster: `crc start` This command will output the OpenShift web console URL as well as the developer and kubeadmin credentials when it's finished.
+8) Set up your command line: `eval $(crc oc-env)`
+9) Configure kubectl to use the CRC administrator account: `kubectl config use-context crc-admin`
 
 ### Bootstrap App Studio
 Steps:
@@ -58,10 +73,51 @@ Steps:
 ![OpenShift Gitops menu with Cluster Argo CD menu option](documentation/images/argo-cd-login.png?raw=true "OpenShift Gitops menu")
 3) If your deployment was successful, you should see several applications running, such as "all-components-staging", "gitops", and so on.
 
-### Optional: CodeReady Containers Post-Bootstrap Configuration
-Even with 6 CPU cores, you will need to reduce the CPU resource requests for each App Studio application. Using `kubectl edit argocd/openshift-gitops -n openshift-gitops`, reduce the resources.requests.cpu values from 250m to 100m or less. More details are in the FAQ below.
+#### Post-bootstrap Service Provider Integration(SPI) Configuration
+SPI components fails to start right after the bootstrap. It requires manual configuration in order to work properly:
+1) Edit `./components/spi/config.yaml` [see SPI Configuraton Documentation](https://github.com/redhat-appstudio/service-provider-integration-operator#configuration)
+2) Create a `oauth-config` Secret (`kubectl create secret generic oauth-config --from-file=components/spi/config.yaml -n spi-system`)
+3) In CRC setup add a random string for value of `sharedSecret`
+4) In few moments, SPI pods should start
 
-## Development mode for your own clusters
+### Install Toolchain (Sandbox) Operators
+There are two scripts which you can use:
+- `./hack/sandbox-development-mode.sh` for development mode
+- `./hack/sandbox-e2e-mode.sh` for E2E mode
+
+Both of the scripts will:
+1. Automatically reduce the resources.requests.cpu values in argocd/openshift-gitops resource.
+2. Install & configure the Toolchain (Sandbox) operators in the corresponding mode.
+3. Print:
+    - The landing-page URL that you can use for signing-up for the Sandbox environment that is running in your cluster.
+    - Proxy URL. 
+    
+#### SSO
+
+In development mode, the Toolchain Operators are configured to use Keycloak instance that is internally used by the Sandbox team. If you want to reconfigure it to use your own Keycloak instance, you need to add a few parameters to `ToolchainConfig` resource in `toolchain-host-operator` namespace. 
+This is an example of the needed parameters and their values:
+```yaml
+spec:
+  host:
+    registrationService:
+      auth:
+        authClientConfigRaw: '{
+                  "realm": "sandbox-dev",
+                  "auth-server-url": "https://sso.devsandbox.dev/auth",
+                  "ssl-required": "none",
+                  "resource": "sandbox-public",
+                  "clientId": "sandbox-public",
+                  "public-client": true
+                }'
+        authClientLibraryURL: https://sso.devsandbox.dev/auth/js/keycloak.js
+        authClientPublicKeysURL: https://sso.devsandbox.dev/auth/realms/sandbox-dev/protocol/openid-connect/certs
+      registrationServiceURL: <The landing page URL>
+```  
+
+### Optional: CodeReady Containers Post-Bootstrap Configuration
+Even with 6 CPU cores, you will need to reduce the CPU resource requests for each App Studio application. Either run `./hack/reduce-gitops-cpu-requests.sh` which will set resources.requests.cpu values to 50m or use `kubectl edit argocd/openshift-gitops -n openshift-gitops` to reduce the values to some other value. More details are in the FAQ below.
+
+## Development modes for your own clusters
 
 Once you bootstrap a cluster above, the root ArgoCD Application and all of the component applications will each point to the upstream repository.
 
@@ -71,6 +127,12 @@ There are a set of scripts that help with this, and minimize the changes needed 
 
 There is a development configuration in `overlays/development` which includes a kustomize overlay that can redirect the default components individual repositorys to your fork. 
 The script also supports branches automatically. If you work in a checked out branch, each of the components in the overlays will mapped to that branch by setting `targetRevision:`.  
+
+There are two workflows for develompent provided:
+1) Development mode - work in the feature branch, apply changes related to your fork, revert the changes when the work is done
+2) Preview mode - work in a feature branch, apply script which creates new preview branch and create additional commit with for customization
+
+### Development mode
 
 Steps:
 1) in your forked repository run `./hack/development-mode.sh` and this will update the root application on the cluster and all of the git repo references in `argo-cd-apps/overlays/development/repo-overlay.yaml`
@@ -85,7 +147,40 @@ One option to prevent accidentally including this modified file, you can run the
 After you commit your changes you can rerun to `./hack/development-mode.sh` and reset your repo to point back to the fork. 
 
 Note running these scripts in a clone repo will have no effect as the repo will remain `https://github.com/redhat-appstudio/infra-deployments.git`
- 
+
+### Preview mode
+
+Steps:
+1) Copy `hack/preview-template.env` to `hack/preview.env` and update new file based on instructions. File `hack/preview.env` should never be included in commit.
+2) Work on your changes in a feature branch
+3) Run `./hack/preview.sh`, which will do:
+  a) New branch is created from your current branch, the name of new branch is `preview-<name-of-current-branch>`
+  b) Commit with changes related to your environment is added into preview branch
+  c) Preview branch is pushed into your fork
+  d) ArgoCD is set to point to your fork and the preview branch
+  e) User is switched back to feature branch to create additional changes
+
+If you want to reset your enviroment you can run the script `./hack/upstream-mode.sh` to reset everything including your cluster to `https://github.com/redhat-appstudio/infra-deployments.git` and match the upstream config.
+
+Note running these scripts in a clone repo will have no effect as the repo will remain `https://github.com/redhat-appstudio/infra-deployments.git`
+
+### Optional: Configure HAS GitHub Organization
+
+After deployment `has` application is failing to start. It's trying to connect to default github organization and credentials are not set.
+
+To run HAS in development mode, you need to set custom GitHub organization and token.
+
+Steps:
+1) Create organization in GitHub
+2) Create user token with permissions:
+    - `repo`
+    - `delete_repo`
+3) Set environment variables (for preview mode in `hack/preview.env`):
+    - `MY_GITHUB_ORG`
+    - `MY_GITHUB_TOKEN`
+4) Run `./hack/development-mode.sh` or `./hack/preview.sh`
+5) Trigger update in ArgoCD and delete `application-service-controller-manager` pod manually or run `oc rollout restart -n application-service deployment/application-service-controller-manager`
+
 # App Studio Build System
 
 The App Studio Build System is composed of the following components:
@@ -94,7 +189,7 @@ The App Studio Build System is composed of the following components:
 2. AppStudio-specific Pipeline Definitions in `build-templates` for building images.
 3. AppStudio-specific `ClusterTasks`.
 
-This repository installs all the components and includes a set of example scripts that simplify usage and provide examples of a working system. There are no additiona components needed to use the build system API, howvever some utilities and scripts are provided to demonstrate functionality. 
+This repository installs all the components and includes a set of example scripts that simplify usage and provide examples of a working system. There are no additiona components needed to use the build system API, however some utilities and scripts are provided to demonstrate functionality. 
 
 ## Quickstart 
 
@@ -123,7 +218,7 @@ The `git-repo-url` is the git repository with your source code.
 The `<optional-pipeline-name>` is the name of one of the pipelines documented in the App Studio API Contract <url here>. This pipeline name can be provide when the automatic build type detection does not find a supported build type. 
 Note: Normally the build type would be done automatically by (by the Component Detection Query) which maps devfile or other markers to a type of build needed. The build currently uses a shim `repo-to-pipeline.sh` to map file markers to a pipeline type. For testing and experiments the  `optional-pipeline-name`  parameter can override the default pipeline name. 
 
-The current build types supported are: `devfile-build, `docker-build`, `java-buider` and `node-js-builder`.
+The current build types supported are: `devfile-build`, `docker-build`, `java-buider` and `node-js-builder`.
 
 For a quick "do nothing pipeline" run you can specify the `noop` buider and have a quick pipeline run that does nothing except print some logs. 
 
@@ -146,23 +241,23 @@ To deploy all the builds as they complete, add the `-deploy` option.
 ```
 You can also run the noop build `./hack/build/quick-noop-build.sh`, that executes in couple seconds to validate a working install.
  
-## Other Build utilties 
+## Other Build utilities
 
 The build type is identified via temporary hack until the Component Detection Query is available which maps files in your git repo to known build types. See `./hack/build/repo-to-pipeline.sh`  which will print the repo name and computed builder type.
 
 The system will fill with builds and logs so a utility is provided to prune pipelines and cleanup the associated storage. This is for dev mode only and will be done autatically by App Studio builds.
-Use `./hack/build/prune-builds.sh` for a single cleanup pass, and `./hack/build/prune-builds-loop.sh` to run a continous loop to cleanup extra resources. 
+Use `./hack/build/prune-builds.sh` for a single cleanup pass, and `./hack/build/prune-builds-loop.sh` to run a continuous loop to cleanup extra resources. 
 
-Use `./hack/build/util/check-repo.sh` to test your what auto-detect build will return.  
+Use `./hack/build/utils/check-repo.sh` to test your what auto-detect build will return.  
 ```
-./hack/build/check-repo.sh  https://github.com/jduimovich/single-java-app
+./hack/build/utils/check-repo.sh  https://github.com/jduimovich/single-java-app
 https://github.com/jduimovich/single-java-app   -> java-builder
   
 ```
 If you want to check all your repos to see which ones may build you can use this script. You need to set you github id `export MY_GITHUB_USER=your-username` and it will test your repo for buildable content.  
 
 ```
-./hack/build/ls-all-my-repos.sh | xargs -n 1 ./hack/build/check-repo.sh
+./hack/build/utils/ls-all-my-repos.sh | xargs -n 1 ./hack/build/utils/check-repo.sh
 ```
 
 ## FAQ

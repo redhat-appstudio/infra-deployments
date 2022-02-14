@@ -23,20 +23,15 @@ spec:
             value: $(tt.params.git-revision)
           - name: output-image
             value: 'quay.io/redhat-appstudio/application-service:$(tt.params.git-revision)'
-          - name: context
+          - name: path-context
             value: .
           - name: dockerfile
             value: Dockerfile
         pipelineRef:
-          name: appstudio-dockerfile-builder
+          name: docker-build
+          bundle: quay.io/redhat-appstudio/build-templates-bundle:v0.1.4
         workspaces:
           - name: workspace
-            volumeClaimTemplate:
-              spec:
-                accessModes:
-                  - ReadWriteOnce
-                resources:
-                  requests:
-                    storage: 10Mi
-                #storageClassName: gp2
-                volumeMode: Filesystem
+            persistentVolumeClaim:
+              claimName: app-studio-default-workspace
+            subPath: application-service-$(tt.params.git-revision)

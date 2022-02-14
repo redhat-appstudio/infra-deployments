@@ -60,6 +60,25 @@ then
       fi 
 fi 
 
+oc get secret quay-registry-secret  2> /dev/null  > /dev/null 
+ERR=$?  
+if (( $ERR == 0 )); then    
+   echo "Using Secret: quay-registry-secret"
+   export QUAY_PATCH="keep-secrets" 
+else  
+   echo "Warning - No Registry Secrets installed, only internal registry repos will work."
+   export  QUAY_PATCH="registry-auth" 
+fi 
+oc get secret git-repo-secret   2> /dev/null  > /dev/null 
+ERR=$?  
+if (( $ERR == 0 )); then
+   echo "Using Secret: git-repo-secret"
+   export GIT_PATCH="keep-secrets" 
+else 
+   echo "Warning - No Git Secrets installed, only public git repos will work."
+   export  GIT_PATCH="git-auth" 
+fi   
+ 
 IMG=image-registry.openshift-image-registry.svc:5000/$NS/$APPNAME:$IMAGE_SHORT_TAG
 echo
 echo "Building $GITREPO"
@@ -69,12 +88,18 @@ echo "Image: " $IMG
 echo "Bundle: " $BUNDLE
 echo "Pipeline: " $PIPELINE_NAME  
 
+PATCHQ=$(printf "del(.spec.workspaces[] | select (.name == \"%q\"))" "$QUAY_PATCH") 
+PATCHR=$(printf "del(.spec.workspaces[] | select (.name == \"%q\"))" "$GIT_PATCH") 
+
+APPLY=$(mktemp)
 yq -M e ".spec.params[0].value=\"$GITREPO\"" $PIPELINE_RUN | \
   yq -M e ".spec.params[1].value=\"$IMG\"" - | \
   yq -M e ".metadata.name=\"$PIPELINE_NAME-$BUILD_TAG\"" - | \
   yq -M e ".spec.pipelineRef.name=\"$PIPELINE_NAME\"" - | \
   yq -M e ".spec.pipelineRef.bundle=\"$BUNDLE\"" - | \
   yq -M e ".spec.workspaces[0].subPath=\"pv-$PIPELINE_NAME-$BUILD_TAG\"" - | \
-  oc apply -f -
+  yq -M e "$PATCHR" - | yq -M e "$PATCHQ" - > $APPLY
 
-echo
+#cat $APPLY 
+oc apply -f $APPLY
+ 
