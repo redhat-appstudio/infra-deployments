@@ -80,6 +80,8 @@ SPI components fails to start right after the bootstrap. It requires manual conf
 3) In CRC setup add a random string for value of `sharedSecret`
 4) In few moments, SPI pods should start
 
+This process is automated in `preview mode` see below.
+
 ### Install Toolchain (Sandbox) Operators
 There are two scripts which you can use:
 - `./hack/sandbox-development-mode.sh` for development mode
