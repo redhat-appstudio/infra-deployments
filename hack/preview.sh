@@ -40,6 +40,19 @@ if [ -n "$MY_GITHUB_ORG" ]; then
     $ROOT/hack/util-set-github-org $MY_GITHUB_ORG
 fi
 
+if [ -n "$SHARED_SECRET" ] && [ -n "$SPI_TYPE" ] && [ -n "$SPI_CLIENT_ID" ] && [ -n "$SPI_CLIENT_SECRET" ]; then
+    TMP_FILE=$(mktemp)
+    ROUTE="https://$(oc get routes -n spi-system spi-oauth-route -o yaml -o jsonpath='{.spec.host}')"
+    yq e ".sharedSecret=\"$SHARED_SECRET\"" $ROOT/components/spi/config.yaml | \
+        yq e ".serviceProviders[0].type=\"$SPI_TYPE\"" - | \
+        yq e ".serviceProviders[0].clientId=\"$SPI_CLIENT_ID\"" - | \
+        yq e ".serviceProviders[0].clientSecret=\"$SPI_CLIENT_SECRET\"" - | \
+        yq e ".baseUrl=\"$ROUTE\"" - > $TMP_FILE
+    oc create -n spi-system secret generic oauth-config --from-file=config.yaml=$TMP_FILE --dry-run=client -o yaml | oc apply -f -
+    echo "SPI configurared, set Authorization callback URL to $ROUTE"
+    rm $TMP_FILE
+fi
+
 if ! git diff --exit-code --quiet; then
     git commit -a -m "Preview mode, do not merge into main"
     git push -f --set-upstream $MY_GIT_FORK_REMOTE $PREVIEW_BRANCH
