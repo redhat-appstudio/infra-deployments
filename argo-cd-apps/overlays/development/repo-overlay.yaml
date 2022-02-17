@@ -41,3 +41,15 @@ spec:
   source:
     repoURL: https://github.com/redhat-appstudio/infra-deployments.git
     targetRevision: main
+
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: infra-deployments-ci
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  source:
+    repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+    targetRevision: main

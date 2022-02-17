@@ -1,0 +1,38 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: verify-taskrun-signature
+spec:
+  params:
+    - name: task-url
+      type: string
+      description: The url to a task to run
+      default:  https://raw.githubusercontent.com/tektoncd/chains/main/examples/taskruns/task-output-image.yaml
+  workspaces:
+    - name: source
+  steps:
+    - name: cosign-taskrun
+      image: quay.io/jstuart/appstudio-utils:latest
+      script: |
+        #!/usr/bin/env bash
+        oc create -f $(params.task-url)
+
+        counter=0
+        timeout=30
+        while [ `tkn tr describe --last -o  jsonpath='{.status.conditions[0].reason}'` != 'Succeeded' ] || [ $counter -gt $timeout ];
+        do
+          echo "waiting for taskRun to finish"
+          sleep 1
+          counter=$((counter+1))
+        done
+
+        if [ $counter -gt $timeout ]; then
+          echo "exiting with error"
+          exit 1
+        fi
+        
+        export TASKRUN_UID=$(tkn tr describe --last -o  jsonpath='{.metadata.uid}')
+        tkn tr describe --last -o jsonpath="{.metadata.annotations.chains\.tekton\.dev/signature-taskrun-$TASKRUN_UID}" > signature
+        tkn tr describe --last -o jsonpath="{.metadata.annotations.chains\.tekton\.dev/payload-taskrun-$TASKRUN_UID}" | base64 -d > payload
+        cosign verify-blob --key k8s://tekton-chains/signing-secrets --signature ./signature ./payload
+        
