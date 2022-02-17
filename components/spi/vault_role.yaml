@@ -5,6 +5,7 @@ metadata:
 rules:
   - verbs:
       - get
+      - delete
     apiGroups:
       - ''
     resources:
@@ -15,3 +16,11 @@ rules:
       - ''
     resources:
       - pods/exec
+  - verbs:
+      - get
+      - delete
+      - create
+    apiGroups:
+      - ''
+    resources:
+      - secrets
