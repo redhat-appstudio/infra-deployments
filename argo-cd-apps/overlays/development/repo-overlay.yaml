@@ -2,6 +2,8 @@ apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: build
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
 spec:
   source: # This will be replaced with a reference to your fork of this repo (see hack/patch-apps-for-dev.sh)
     repoURL: https://github.com/redhat-appstudio/infra-deployments.git
@@ -11,6 +13,8 @@ apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: gitops
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
 spec:
   source:
     repoURL: https://github.com/redhat-appstudio/infra-deployments.git
@@ -20,6 +24,8 @@ apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: has
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
 spec:
   source:
     repoURL: https://github.com/redhat-appstudio/infra-deployments.git
@@ -29,6 +35,8 @@ apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: spi
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
 spec:
   source:
     repoURL: https://github.com/redhat-appstudio/infra-deployments.git
