@@ -31,15 +31,15 @@ spec:
         workspaces:
           - name: output
             workspace: source
-      - name: test-tekton-chains
-        runAfter:
-          - git-clone
-        taskRef:
-          kind: Task
-          name: verify-taskrun-signature
-        workspaces:
-          - name: source
-            workspace: source
+      - name: everything-passes
+        taskSpec:
+          runAfter:
+            - git-clone
+          steps:
+            - name: echo
+              image: quay.io/redhat-appstudio/appstudio-utils:v0.1.5
+              script: |
+                echo "everything passes"
     workspaces:
       - name: source
   serviceAccountName: pipeline
