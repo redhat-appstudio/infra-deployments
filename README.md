@@ -82,6 +82,11 @@ SPI components fails to start right after the bootstrap. It requires manual conf
 
 This process is automated in `preview mode` see below.
 
+SPI Vault instance has to be manually initialized. There is a script to help with that:
+1) Make sure that your cluster user has at least permissions `./components/spi/vault_role.yaml`
+2) Clone SPI operator repo `git clone https://github.com/redhat-appstudio/service-provider-integration-operator && cd service-provider-integration-operator`
+3) run `vault-init.sh` script from repo root directory `./hack/vault-init.sh`
+
 ### Install Toolchain (Sandbox) Operators
 There are two scripts which you can use:
 - `./hack/sandbox-development-mode.sh` for development mode
