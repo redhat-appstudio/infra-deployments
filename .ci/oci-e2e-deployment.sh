@@ -1,5 +1,5 @@
 # exit immediately when a command fails
-set -e
+set -ex
 # only exit with zero if all commands of the pipeline exit successfully
 set -o pipefail
 # error on unset variables
@@ -62,8 +62,19 @@ command -v kubectl >/dev/null 2>&1 || { echo "kubectl is not installed. Aborting
 command -v e2e-appstudio >/dev/null 2>&1 || { echo "e2e-appstudio bin is not installed. Please install it from: https://github.com/redhat-appstudio/e2e-tests."; exit 1; }
 
 createHASSecret
-/bin/bash "$WORKSPACE"/hack/bootstrap-cluster.sh
 
+git config --global user.name 'flacatus'
+git config --global user.email 'flacatus@redhat.com'
+git remote add qe https://github.com/redhat-appstudio-qe/infra-deployments.git
+
+export MY_GIT_FORK_REMOTE=qe
+export MY_GITHUB_ORG="redhat-appstudio-qe"
+export MY_GITHUB_TOKEN="test"
+/bin/bash "$WORKSPACE"/hack/bootstrap-cluster.sh preview
 export -f waitAppStudioToBeReady
+
 timeout --foreground 10m bash -c waitAppStudioToBeReady
+
+git remote -v
+
 executeE2ETests
