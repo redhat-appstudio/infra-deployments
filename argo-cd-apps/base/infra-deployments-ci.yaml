@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: pipelines-as-code
+  name: infra-deployments-ci
   
 spec:
   project: default
@@ -10,7 +10,7 @@ spec:
     path: .ci/pipelines-as-code
     repoURL: https://github.com/redhat-appstudio/infra-deployments.git
   destination:
-    namespace: pipelines-as-code
+    namespace: infra-deployments-ci
     server: https://kubernetes.default.svc
 
   syncPolicy:
