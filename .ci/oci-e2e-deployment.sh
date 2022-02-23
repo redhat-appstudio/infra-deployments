@@ -9,8 +9,16 @@ export WORKSPACE=$(dirname $(dirname $(readlink -f "$0")));
 export APPLICATION_NAMESPACE="openshift-gitops"
 export APPLICATION_NAME="all-components-staging"
 
+export MY_GIT_FORK_REMOTE="qe"
+export MY_GITHUB_ORG="redhat-appstudio-qe"
+export MY_GITHUB_TOKEN="${GITHUB_TOKEN}"
+
 # Available openshift ci environments https://docs.ci.openshift.org/docs/architecture/step-registry/#available-environment-variables
 export ARTIFACTS_DIR=${ARTIFACT_DIR:-"/tmp/appstudio"}
+
+command -v yq >/dev/null 2>&1 || { echo "yq is not installed. Aborting."; exit 1; }
+command -v kubectl >/dev/null 2>&1 || { echo "kubectl is not installed. Aborting."; exit 1; }
+command -v e2e-appstudio >/dev/null 2>&1 || { echo "e2e-appstudio bin is not installed. Please install it from: https://github.com/redhat-appstudio/e2e-tests."; exit 1; }
 
 #Stop execution on any error
 trap "catchFinish" EXIT SIGINT
@@ -30,18 +38,50 @@ function catchFinish() {
 # More info at: https://github.com/redhat-appstudio/application-service#creating-a-github-secret-for-has
 function createHASSecret() {
     kubectl create namespace application-service || true
-    export HAS_SECRET=$(
-      kubectl create -f - -o jsonpath='{.metadata.name}' <<EOF
+    ENCODE_TOKEN=$(echo ${GITHUB_TOKEN} | base64)
+
+    export HAS_SECRET=$(kubectl create -f - -o jsonpath='{.metadata.name}' <<EOF
 apiVersion: v1
 kind: Secret
 metadata:
   name: has-github-token
   namespace: application-service
 data:
-  token: test
+  token: ${ENCODE_TOKEN}
 EOF
 )
     echo -e "[INFO] Creating secret ${HAS_SECRET}"
+}
+
+# Secrets used by pipelines to push component containers to quay.io
+function createQuayPullSecrets() {
+    export REGISTRY_PULL_SECRET=$(kubectl create -f - -o jsonpath='{.metadata.name}' <<EOF
+kind: Secret
+apiVersion: v1
+metadata:
+  name: redhat-appstudio-registry-pull-secret
+  namespace: application-service
+data:
+  .dockerconfigjson: >-
+    ${QUAY_TOKEN}
+type: kubernetes.io/dockerconfigjson
+EOF
+)
+    echo -e "[INFO] Creating secret ${REGISTRY_PULL_SECRET}"
+
+    export STAGINGUSER_PULL_SECRET=$(kubectl create -f - -o jsonpath='{.metadata.name}' <<EOF
+kind: Secret
+apiVersion: v1
+metadata:
+  name: redhat-appstudio-staginguser-pull-secret
+  namespace: application-service
+data:
+  .dockerconfigjson: >-
+    ${QUAY_TOKEN}
+type: kubernetes.io/dockerconfigjson
+EOF
+)
+    echo -e "[INFO] Creating secret ${STAGINGUSER_PULL_SECRET}"
 }
 
 function waitAppStudioToBeReady() {
@@ -57,13 +97,17 @@ function executeE2ETests() {
     e2e-appstudio --ginkgo.junit-report="${ARTIFACTS_DIR}"/e2e-report.xml
 }
 
-command -v yq >/dev/null 2>&1 || { echo "yq is not installed. Aborting."; exit 1; }
-command -v kubectl >/dev/null 2>&1 || { echo "kubectl is not installed. Aborting."; exit 1; }
-command -v e2e-appstudio >/dev/null 2>&1 || { echo "e2e-appstudio bin is not installed. Please install it from: https://github.com/redhat-appstudio/e2e-tests."; exit 1; }
-
 createHASSecret
-/bin/bash "$WORKSPACE"/hack/bootstrap-cluster.sh
+createQuayPullSecrets
+
+git remote add ${MY_GIT_FORK_REMOTE} https://${GITHUB_USER}@github.com/redhat-appstudio-qe/infra-deployments.git
+
+/bin/bash "$WORKSPACE"/hack/bootstrap-cluster.sh preview
 
 export -f waitAppStudioToBeReady
-timeout --foreground 10m bash -c waitAppStudioToBeReady
-executeE2ETests
+sleep 2m
+
+#export -f checkHASGithubOrg || true
+
+timeout --foreground 10m bash -c checkHASGithubOrg
+#executeE2ETests
