@@ -1,10 +1,11 @@
 #!/bin/bash
 
 MODE=$1
+shift $#
 
-ROOT=$( realpath "${BASH_SOURCE[0]%/*}/.." )
+ROOT="$(realpath --canonicalize-missing --quiet -- ${BASH_SOURCE[0]}/../..)"
 
-if [[ "$(oc auth can-i '*' '*' --all-namespaces)" != "yes" ]]; then
+if [ "$(oc auth can-i '*' '*' --all-namespaces)" != "yes" ]; then
   echo
   echo "[ERROR] User '$(oc whoami)' does not have the required 'cluster-admin' role." 1>&2
   echo "Log into the cluster with a user with the required privileges (e.g. kubeadmin) and retry."
