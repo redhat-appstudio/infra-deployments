@@ -1,13 +1,15 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
+  # generateName: apply-gitops-service-db-schema-
   name: apply-gitops-service-db-schema
   namespace: gitops
   annotations:
-    argocd.argoproj.io/hook: Sync
-    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
 spec:
-  ttlSecondsAfterFinished: 600
+  ttlSecondsAfterFinished: 3600
+
   template:
     spec:
       volumes:
