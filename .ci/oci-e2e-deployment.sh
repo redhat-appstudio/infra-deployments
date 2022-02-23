@@ -32,6 +32,7 @@ function catchFinish() {
     fi
     /bin/bash "$WORKSPACE"/hack/destroy-cluster.sh
 
+    git remote rm $MY_GIT_FORK_REMOTE
     exit $JOB_EXIT_CODE
 }
 
@@ -91,6 +92,13 @@ function waitAppStudioToBeReady() {
     done
 }
 
+function checkHASGithubOrg() {
+    while [[ "$(kubectl get configmap application-service-github-config -n application-service -o jsonpath='{.data.GITHUB_ORG}')" != "${MY_GITHUB_ORG}" ]]; do
+        sleep 3m
+        echo "[INFO] Waiting for HAS to be ready."
+    done
+}
+
 function executeE2ETests() {
     # E2E instructions can be found: https://github.com/redhat-appstudio/e2e-tests
     # The e2e binary is included in Openshift CI test container from the dockerfile: https://github.com/redhat-appstudio/infra-deployments/blob/main/.ci/openshift-ci/Dockerfile
@@ -100,14 +108,13 @@ function executeE2ETests() {
 createHASSecret
 createQuayPullSecrets
 
-git remote add ${MY_GIT_FORK_REMOTE} https://${GITHUB_USER}@github.com/redhat-appstudio-qe/infra-deployments.git
+git remote add ${MY_GIT_FORK_REMOTE} https://github.com/redhat-appstudio-qe/infra-deployments.git
 
 /bin/bash "$WORKSPACE"/hack/bootstrap-cluster.sh preview
 
 export -f waitAppStudioToBeReady
-sleep 2m
+export -f checkHASGithubOrg
 
-#export -f checkHASGithubOrg || true
-
-timeout --foreground 10m bash -c checkHASGithubOrg
-#executeE2ETests
+timeout --foreground 10m bash -c waitAppStudioToBeReady
+timeout --foreground 3m bash -c checkHASGithubOrg
+executeE2ETests
