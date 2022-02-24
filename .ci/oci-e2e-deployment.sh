@@ -9,6 +9,7 @@ export WORKSPACE=$(dirname $(dirname $(readlink -f "$0")));
 export APPLICATION_NAMESPACE="openshift-gitops"
 export APPLICATION_NAME="all-components-staging"
 
+export TEST_BRANCH_ID=$(date +%s)
 export MY_GIT_FORK_REMOTE="qe"
 export MY_GITHUB_ORG="redhat-appstudio-qe"
 export MY_GITHUB_TOKEN="${GITHUB_TOKEN}"
@@ -20,9 +21,18 @@ command -v yq >/dev/null 2>&1 || { echo "yq is not installed. Aborting."; exit 1
 command -v kubectl >/dev/null 2>&1 || { echo "kubectl is not installed. Aborting."; exit 1; }
 command -v e2e-appstudio >/dev/null 2>&1 || { echo "e2e-appstudio bin is not installed. Please install it from: https://github.com/redhat-appstudio/e2e-tests."; exit 1; }
 
+if [[ -z "${GITHUB_TOKEN}" ]]; then
+  echo - e "[ERROR] GITHUB_TOKEN env is not set. Aborting."
+fi
+
+if [[ -z "${QUAY_TOKEN}" ]]; then
+  echo - e "[ERROR] QUAY_TOKEN env is not set. Aborting."
+fi
+
 #Stop execution on any error
 trap "catchFinish" EXIT SIGINT
 
+# Don't remove appstudio. Can broke development cluster
 function catchFinish() {
     JOB_EXIT_CODE=$?
     if [[ "$JOB_EXIT_CODE" != "0" ]]; then
@@ -30,59 +40,25 @@ function catchFinish() {
     else
         echo "[INFO] Job completed successfully."
     fi
-    /bin/bash "$WORKSPACE"/hack/destroy-cluster.sh
 
-    git remote rm $MY_GIT_FORK_REMOTE
+    git push $MY_GIT_FORK_REMOTE --delete review-main-${TEST_BRANCH_ID}
     exit $JOB_EXIT_CODE
 }
 
 # More info at: https://github.com/redhat-appstudio/application-service#creating-a-github-secret-for-has
 function createHASSecret() {
-    kubectl create namespace application-service || true
-    ENCODE_TOKEN=$(echo ${GITHUB_TOKEN} | base64)
+    echo -e "[INFO] Creating has github token secret"
 
-    export HAS_SECRET=$(kubectl create -f - -o jsonpath='{.metadata.name}' <<EOF
-apiVersion: v1
-kind: Secret
-metadata:
-  name: has-github-token
-  namespace: application-service
-data:
-  token: ${ENCODE_TOKEN}
-EOF
-)
-    echo -e "[INFO] Creating secret ${HAS_SECRET}"
+    kubectl create namespace application-service || true
+    kubectl create secret generic has-github-token -n application-service --from-literal token=$GITHUB_TOKEN || true
 }
 
 # Secrets used by pipelines to push component containers to quay.io
 function createQuayPullSecrets() {
-    export REGISTRY_PULL_SECRET=$(kubectl create -f - -o jsonpath='{.metadata.name}' <<EOF
-kind: Secret
-apiVersion: v1
-metadata:
-  name: redhat-appstudio-registry-pull-secret
-  namespace: application-service
-data:
-  .dockerconfigjson: >-
-    ${QUAY_TOKEN}
-type: kubernetes.io/dockerconfigjson
-EOF
-)
-    echo -e "[INFO] Creating secret ${REGISTRY_PULL_SECRET}"
-
-    export STAGINGUSER_PULL_SECRET=$(kubectl create -f - -o jsonpath='{.metadata.name}' <<EOF
-kind: Secret
-apiVersion: v1
-metadata:
-  name: redhat-appstudio-staginguser-pull-secret
-  namespace: application-service
-data:
-  .dockerconfigjson: >-
-    ${QUAY_TOKEN}
-type: kubernetes.io/dockerconfigjson
-EOF
-)
-    echo -e "[INFO] Creating secret ${STAGINGUSER_PULL_SECRET}"
+    echo "$QUAY_TOKEN" | base64 --decode > docker.config
+    kubectl create secret docker-registry redhat-appstudio-registry-pull-secret -n  application-service --from-file=.dockerconfigjson=docker.config
+    kubectl create secret docker-registry redhat-appstudio-staginguser-pull-secret -n  application-service --from-file=.dockerconfigjson=docker.config
+    rm docker.config
 }
 
 function waitAppStudioToBeReady() {
@@ -116,5 +92,7 @@ export -f waitAppStudioToBeReady
 export -f checkHASGithubOrg
 
 timeout --foreground 10m bash -c waitAppStudioToBeReady
+# Just a sleep before starting the tests
+sleep 2m
 timeout --foreground 3m bash -c checkHASGithubOrg
 executeE2ETests
