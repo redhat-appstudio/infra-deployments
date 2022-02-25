@@ -1,9 +1,8 @@
 #!/bin/bash
 
 MODE=$1
-shift $#
 
-ROOT="$(realpath --canonicalize-missing --quiet -- ${BASH_SOURCE[0]}/../..)"
+ROOT="$(realpath -mq ${BASH_SOURCE[0]}/../..)"
 
 if [ "$(oc auth can-i '*' '*' --all-namespaces)" != "yes" ]; then
   echo
