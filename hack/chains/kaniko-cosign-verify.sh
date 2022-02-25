@@ -1,7 +1,6 @@
 #!/bin/bash
 
-SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-source $SCRIPTDIR/_helpers.sh
+source $(dirname $0)/_helpers.sh
 set -ue
 
 # Use a specific taskrun if provided, otherwise use the latest
@@ -15,38 +14,35 @@ IMAGE_REGISTRY=$( echo $IMAGE_URL | cut -d/ -f1 )
 
 SIG_KEY="k8s://tekton-chains/signing-secrets"
 
+title "Make sure we're logged in to the registry"
 # Make sure we have a docker credential since cosign will need it
 # (Todo: Probably shouldn't assume kubeadmin user here)
 oc whoami -t | docker login -u kubeadmin --password-stdin $IMAGE_REGISTRY
 
-title "Inspecting $TASKRUN_NAME metadata"
-echo "(Beware long lines are truncated)"
+title "Inspect $TASKRUN_NAME annotations"
 # Just want to show the chains related fields
-# Truncating to avoid a whole screen full of base64 encoded data
-oc get $TASKRUN_NAME -o yaml | yq e .metadata -C - | cut -c -150
+oc get $TASKRUN_NAME -o yaml | yq-pretty .metadata.annotations
 pause
+
+title "Image url from task result"
+kubectl get $TASKRUN_NAME -o jsonpath="{.status.taskResults[?(@.name == \"IMAGE_URL\")].value}"
+
+title "Image digest from task result"
+kubectl get $TASKRUN_NAME -o jsonpath="{.status.taskResults[?(@.name == \"IMAGE_DIGEST\")].value}"
+echo
 
 title "Cosign verify the image"
 # Save the output data to a file so we can look at it later
+# (Actually we could just pipe it to jq because the text goes to stderr I think..?)
 show-then-run "cosign verify --key $SIG_KEY $IMAGE_URL --output-file /tmp/verify.out"
-pause
-
-# The output files are json, but let's show as yaml for readability
-
-title "Inspect the cosign verify output"
-yq e . -P /tmp/verify.out
+yq e -P /tmp/verify.out
 pause
 
 title "Cosign verify the image's attestation"
 show-then-run "cosign verify-attestation --key $SIG_KEY $IMAGE_URL --output-file /tmp/verify-att.out"
-pause
-
-# If you build the same build more than once there will be multiple
-# attestations and hence multiple lines in this file, which makes it
-# invalid json. For the sake of the demo we'll be lazy and ignore
+# There can be multiple attestations for some reason and hence multiple lines in
+# this file, which makes it invalid json. For the sake of the demo we'll ignore
 # all but the last line.
-#
-title "Inspect the cosign verify attestation output"
 tail -1 /tmp/verify-att.out | yq e . -P -
 pause
 

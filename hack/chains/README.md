@@ -20,7 +20,7 @@ Then (assuming you're in this branch on your own fork):
 
 A "go make some coffee" one liner:
 
-    crc delete; crc start; `crc console --credentials | tail -1 | cut -d\' -f2`; hack/bootstrap-cluster.sh preview
+    cd $(git rev-parse --show-toplevel); crc delete; crc start; `crc console --credentials | tail -1 | cut -d\' -f2`; hack/bootstrap-cluster.sh preview
 
 Wait a while until you see mostly healthy/synced at [Argo CD](https://openshift-gitops-server-openshift-gitops.apps-crc.testing/applications).
 
@@ -33,26 +33,68 @@ demonstrate chains.)
     cd hack/chains
     ./create-signing-secret.sh
 
-### Apply some CA cert related hacks to make SSL work
+### Apply some CA cert related hacks to make SSL work for the internal registry
 
     ./trust-local-cert.sh
     ./setup-controller-certs.sh
 
 ## Demos
 
+Note: All these demos have been tested in local CRC cluster. They haven't yet
+been confirmed working in a cluster-bot cluster.
+
 ### Kaniko build demo
 
-Currently this works well in a local CRC cluster, but has some problems
-running on a cluster-bot cluster in AWS.
+- Trigger a taskrun that builds an image using kaniko and pushes it to
+    the cluster's internal registry
+- Verify the image in the internal registry using cosign
+- Verify the image's attestation in the internal registry using cosign
+- Using rekor-cli verify the rekor record of the taskrun (and/or image?)
 
-    ./kaniko-demo-build.sh
-    ./kaniko-demo-cosign.sh
-    ./kaniko-demo-rekor.sh
+Because we're using the cluster registry, the trust-local-cert and
+setup-controller-certs are needed.
 
-### S2I pipeline build demo
+This uses the default configuration so there's no need to change the config if
+your Argo CD is in sync.
 
-Todo
+    ./gitops-sync.sh off
+    ./config.sh default
+    ./kaniko-demo.sh
 
-### Buildah pipeline build demo
+### Simple demo
 
-Todo
+- Trigger a taskrun
+- Verify the taskrun using cosign verify-blob
+
+The taskrun does not build an image but it does create a fake digest that
+chains seems to interact with. I don't understand what's going on with that
+digest, but the focus here is the taskrun verification using tekton storage.
+
+Note that it uses the deprecated tekon format instead of in-toto, like the
+official basic getting started guide.
+
+    ./gitops-sync.sh off
+    ./config.sh simple
+    ./simple-demo.sh
+
+### Pipeline S2I build and push to quay.io demo
+
+- Configure a clustertask that can build an nodejs image using S2I
+- Configure a pvc and a pipeline with that task
+- Trigger a pipeline run which builds an image and pushes it to the
+    (probably) quay.io registry specified
+- Use cosign to verify the image in the registry
+- Use rekor-cli to verify the taskrun that built the image
+
+For this demo you need to provide your own registry image url and a k8s
+secret. To do that, go to 'User and Robot Permissions' to create a read/write
+robot account permission for your repo in quay.io, and then download the
+kubernetes secret for the bot.
+
+Since we're not using the internal registry, this demo should work without
+running the trust-local-cert.sh and setup-controller-certs.sh scripts.
+
+    ./gitops-sync.sh off
+    ./config.sh quay
+    kubectl create -f your-downloaded-quay-secret.yml
+    ./pipeline-quay-demo.sh quay.io/your-user/your-repo your-quay-secret-name
