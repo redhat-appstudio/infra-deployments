@@ -56,13 +56,13 @@ case $MODE in
         $ROOT/hack/preview.sh ;;
 esac
 
-printf -v ARGO_CD_URL "https://%s" \
-    $(
-        kubectl get route/openshift-gitops-server \
-        -n openshift-gitops \
-	-o template \
-	--template={{.spec.host}}
-    )
+ARGO_CD_ROUTE=$(kubectl get \
+                 -n openshift-gitops \
+                 -o template \
+                 --template={{.spec.host}} \
+                 route/openshift-gitops-server \
+               )
+ARGO_CD_URL="https://$ARGO_CD_ROUTE"
 
 echo
 echo "========================================================================="
