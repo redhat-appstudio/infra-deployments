@@ -1,11 +1,17 @@
 #!/bin/bash
 
-SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-source $SCRIPTDIR/_helpers.sh
+source $(dirname $0)/_helpers.sh
 set -ue
 
-echo "To watch the chains controller logs:"
-echo "  kubectl logs -f -l app=tekton-chains-controller -n tekton-chains"
+title "Suggested config for this demo:"
+$SCRIPTDIR/config.sh default --dry-run
+
+title "Current config:"
+$SCRIPTDIR/config.sh
+
+title "To watch the chains controller logs:"
+echo "  kubectl logs -f -l app=tekton-chains-controller -n tekton-chains | sed G"
+
 pause
 
 title "Set project"
@@ -30,3 +36,14 @@ tkn task start kaniko-chains \
   --workspace name=source,emptyDir= \
   --workspace name=dockerconfig,secret=$DOCKERCFG \
   --showlog
+
+title "Wait a few seconds for chains finalizers to complete"
+sleep 10
+
+# This will use cosign to verify the new build
+$SCRIPTDIR/kaniko-cosign-verify.sh
+
+pause
+
+# This will use rekor-cli to verify the new build
+$SCRIPTDIR/rekor-verify-taskrun.sh

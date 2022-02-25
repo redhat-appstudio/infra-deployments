@@ -49,8 +49,20 @@ case "$1" in
     $0 '{
       "artifacts.taskrun.format": "tekton",
       "artifacts.taskrun.storage": "tekton",
-      "artifacts.oci.storage": "",
+      "artifacts.oci.storage": "tekton",
       "transparency.enabled": "false"
+      }' $2
+
+    ;;
+
+  quay )
+    # Currently quay.io doesn't support oci storage for
+    # attestations so fall back to tekton storage
+    $0 '{
+      "artifacts.taskrun.format": "in-toto",
+      "artifacts.taskrun.storage": "tekton",
+      "artifacts.oci.storage": "oci",
+      "transparency.enabled": "true"
       }' $2
 
     ;;

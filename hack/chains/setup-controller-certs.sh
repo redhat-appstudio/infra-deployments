@@ -11,8 +11,7 @@
 # to be exposed to the chains controller.
 #
 
-SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-source $SCRIPTDIR/_helpers.sh
+source $(dirname $0)/_helpers.sh
 set -u
 
 TMP_DIR=$( mktemp -d )
