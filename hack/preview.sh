@@ -26,7 +26,7 @@ if ! git diff --exit-code --quiet; then
 fi
 
 # Create preview branch for preview configuration
-PREVIEW_BRANCH=preview-${MY_GIT_BRANCH}
+PREVIEW_BRANCH=preview-${MY_GIT_BRANCH}${TEST_BRANCH_ID+-$TEST_BRANCH_ID}
 if git rev-parse --verify $PREVIEW_BRANCH; then
     git branch -D $PREVIEW_BRANCH
 fi
