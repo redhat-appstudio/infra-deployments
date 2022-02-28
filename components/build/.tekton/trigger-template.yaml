@@ -1,0 +1,94 @@
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: TriggerTemplate
+metadata:
+  name: build-service
+spec:
+  params:
+    - name: git-revision
+    - name: git-commit-message
+    - name: git-repo-url
+    - name: git-repo-name
+    - name: content-type
+    - name: pusher-name
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1beta1
+      kind: PipelineRun
+      metadata:
+        generateName: build-service-bundles-
+      spec:
+        params:
+          - name: git-url
+            value: 'https://github.com/redhat-appstudio/build-definitions'
+          - name: revision
+            value: $(tt.params.git-revision)
+        pipelineSpec:
+          params:
+            - description: 'Source Repository URL'
+              name: git-url
+              type: string
+            - description: 'Revision of the Source Repository'
+              name: revision
+              type: string
+            - description: 'Fully Qualified Output Image'
+              name: output-image
+              type: string
+          tasks:
+            - name: clone-repository
+              params:
+                - name: url
+                  value: $(params.git-url)
+                - name: revision
+                  value: "$(params.revision)"
+              taskRef:
+                kind: ClusterTask
+                name: git-clone
+              workspaces:
+                - name: output
+                  workspace: workspace
+            - name: build-bundles
+              runAfter:
+                - clone-repository
+              workspaces:
+                - name: source
+                  workspace: workspace
+              taskSpec:
+                workspaces:
+                  - name: source
+                steps:
+                  - name: build-bundles
+                    image: quay.io/redhat-appstudio/appstudio-utils:748fdc355f0595119e5dd7aa08722288df2ed1aa
+                    workingDir: $(workspaces.source.path)
+                    script: |
+                      #!/usr/bin/env bash
+                      MY_QUAY_USER=redhat-appstudio BUILD_TAG=$(params.revision) SKIP_BUILD=1 SKIP_INSTALL=1 hack/build-and-push.sh
+        workspaces:
+          - name: registry-auth
+            secret:
+              secretName: quay-registry-secret
+          - name: workspace
+            persistentVolumeClaim:
+              claimName: app-studio-default-workspace
+            subPath: application-service-$(tt.params.git-revision)
+
+    - apiVersion: tekton.dev/v1beta1
+      kind: PipelineRun
+      metadata:
+        generateName: build-service-utils-
+      spec:
+        params:
+          - name: git-url
+            value: 'https://github.com/redhat-appstudio/build-definitions'
+          - name: revision
+            value: $(tt.params.git-revision)
+          - name: output-image
+            value: 'quay.io/redhat-appstudio/appstudio-utils:$(tt.params.git-revision)'
+          - name: path-context
+            value: appstudio-utils
+        pipelineRef:
+          name: docker-build
+          bundle: quay.io/redhat-appstudio/build-templates-bundle:748fdc355f0595119e5dd7aa08722288df2ed1aa
+        workspaces:
+          - name: workspace
+            persistentVolumeClaim:
+              claimName: app-studio-default-workspace
+            subPath: appstudio-utils-$(tt.params.git-revision)
