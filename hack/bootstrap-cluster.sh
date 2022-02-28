@@ -2,7 +2,7 @@
 
 MODE=$1
 
-ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/..
+ROOT="$(realpath -mq ${BASH_SOURCE[0]}/../..)"
 
 if [ "$(oc auth can-i '*' '*' --all-namespaces)" != "yes" ]; then
   echo
@@ -17,8 +17,7 @@ kubectl apply -f $ROOT/openshift-gitops/subscription-openshift-gitops.yaml
 
 echo
 echo -n "Waiting for default project (and namespace) to exist: "
-while : ; do
-  kubectl get appproject/default -n openshift-gitops >/dev/null 2>&1 && break
+while ! kubectl get appproject/default -n openshift-gitops &> /dev/null ; do
   echo -n .
   sleep 1
 done
@@ -26,8 +25,7 @@ echo "OK"
 
 echo
 echo -n "Waiting for OpenShift GitOps Route: "
-while : ; do
-  kubectl get route/openshift-gitops-server -n openshift-gitops >/dev/null 2>&1 && break
+while ! kubectl get route/openshift-gitops-server -n openshift-gitops &> /dev/null ; do
   echo -n .
   sleep 1
 done
@@ -45,21 +43,26 @@ kubectl patch argocd/openshift-gitops -n openshift-gitops -p '{"spec":{"rbac":{"
 
 echo 
 echo "Add Role/RoleBindings for OpenShift GitOps:"
-kustomize build $ROOT/openshift-gitops/cluster-rbac | kubectl apply -f -
+kubectl apply --kustomize $ROOT/openshift-gitops/cluster-rbac
 
 echo
-if [ "$MODE" == "" ] || [ "$MODE" == "upstream" ]; then
-    echo "Setting Cluster Mode: Upstream"
-    kubectl apply -f $ROOT/argo-cd-apps/app-of-apps/all-applications-staging.yaml
-elif [ "$MODE" == "development" ]; then
-    echo "Setting Cluster Mode: Development"
-    $ROOT/hack/development-mode.sh
-elif [ "$MODE" == "preview" ]; then
-    echo "Setting Cluster Mode: Preview"
-    $ROOT/hack/preview.sh
-fi
+echo "Setting Cluster Mode: ${MODE:-Upstream}"
+case $MODE in
+    ""|"upstream")
+        kubectl apply -f $ROOT/argo-cd-apps/app-of-apps/all-applications-staging.yaml ;;
+    "development")
+        $ROOT/hack/development-mode.sh ;;
+    "preview")
+        $ROOT/hack/preview.sh ;;
+esac
 
-ARGO_CD_URL="https://$(kubectl get route/openshift-gitops-server -n openshift-gitops -o template --template={{.spec.host}})"
+ARGO_CD_ROUTE=$(kubectl get \
+                 -n openshift-gitops \
+                 -o template \
+                 --template={{.spec.host}} \
+                 route/openshift-gitops-server \
+               )
+ARGO_CD_URL="https://$ARGO_CD_ROUTE"
 
 echo
 echo "========================================================================="
