@@ -1,0 +1,37 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: chains-certs-configuration
+  namespace: tekton-chains
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+spec:
+  template:
+    spec:
+      containers:
+        - image: registry.redhat.io/openshift4/ose-cli:v4.9
+          command:
+            - /bin/bash
+            - -c
+            - |
+              echo "Waiting for chains-ca-cert to be present"
+              until oc get secret chains-ca-cert -n tekton-chains
+              do
+                sleep 5;
+              done
+
+              echo "Update certificate"
+              TRUSTED_CA=$(mktemp)
+              KUBE_CA=$(mktemp)
+              oc get cm config-trusted-cabundle -n tekton-chains -o jsonpath="{.data.ca-bundle\.crt}" > $TRUSTED_CA
+              oc get cm kube-root-ca.crt -n tekton-chains -o jsonpath="{.data.ca\.crt}" > $KUBE_CA
+              cat $TRUSTED_CA $KUBE_CA > /tmp/ca-certificates.crt
+              oc create secret generic chains-ca-cert --from-file=/tmp/ca-certificates.crt --dry-run=client -o yaml -n tekton-chains | oc replace -f -
+          imagePullPolicy: Always
+          name: patch-chains-certs
+      dnsPolicy: ClusterFirst
+      restartPolicy: OnFailure
+      terminationGracePeriodSeconds: 30
+      serviceAccount: chains-secrets-admin
+      serviceAccountName: chains-secrets-admin
