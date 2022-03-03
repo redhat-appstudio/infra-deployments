@@ -1,0 +1,10 @@
+resources:
+- ../../base
+
+namespace: infra-deployments-ci
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+patchesStrategicMerge:
+  - pipelines-as-code-overlay.yaml
+
+

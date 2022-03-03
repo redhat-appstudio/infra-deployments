@@ -56,3 +56,13 @@ EOF
         fi
     done
 fi
+
+# update components
+# add the full path to the development overlay directory to each component
+# each component will require an overlay_update.sh script
+component_dirs=( ".ci/pipelines-as-code/overlays/development" )
+for dir in "${component_dirs[@]}"
+do
+    ${ROOT}/${dir}/overlay_update.sh $GITURL $BRANCH
+done
+    
