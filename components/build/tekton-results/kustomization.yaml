@@ -1,0 +1,16 @@
+resources:
+- db-execution-configmap.yaml
+- https://github.com/tektoncd/results/releases/download/v0.4.0/release.yaml
+- route.yaml
+- ingress-annotation-role.yaml
+- ingress-annotation-sa.yaml
+- ingress-annotation-rb.yaml
+- ingress-annotation-job.yaml
+
+patchesStrategicMerge:
+- patch-postgres-redhat-statefulset.yaml
+
+namespace: tekton-pipelines
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
