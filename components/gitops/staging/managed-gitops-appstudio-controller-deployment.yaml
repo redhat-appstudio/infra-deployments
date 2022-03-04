@@ -1,10 +1,9 @@
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
     control-plane: controller-manager
-  name: managed-gitops-backend-service
+  name: appstudio-controller-controller-manager
   namespace: gitops
 spec:
   replicas: 1
@@ -13,6 +12,8 @@ spec:
       control-plane: controller-manager
   template:
     metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
       labels:
         control-plane: controller-manager
     spec:
@@ -21,29 +22,26 @@ spec:
         - --secure-listen-address=0.0.0.0:8443
         - --upstream=http://127.0.0.1:8080/
         - --logtostderr=true
-        - --v=10
+        - --v=0
         image: gcr.io/kubebuilder/kube-rbac-proxy:v0.8.0
         name: kube-rbac-proxy
         ports:
         - containerPort: 8443
           name: https
           protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+          requests:
+            cpu: 5m
+            memory: 64Mi
       - args:
         - --health-probe-bind-address=:8081
         - --metrics-bind-address=127.0.0.1:8080
         - --leader-elect
         command:
-        - gitops-service-backend
-        env:
-          - name: ARGO_CD_NAMESPACE
-            value: gitops-service-argocd
-          - name: DB_ADDR
-            value: gitops-postgresql-staging.gitops
-          - name: DB_PASS
-            valueFrom:
-              secretKeyRef:
-                name: gitops-postgresql-staging
-                key: postgresql-password
+        - appstudio-controller
         image: quay.io/redhat-appstudio/gitops-service:39630b97a060ebe2cadd2540d4675c6343f688e4
         livenessProbe:
           httpGet:
@@ -60,14 +58,14 @@ spec:
           periodSeconds: 10
         resources:
           limits:
-            cpu: 200m
-            memory: 100Mi
+            cpu: 500m
+            memory: 128Mi
           requests:
-            cpu: 100m
-            memory: 20Mi
+            cpu: 10m
+            memory: 64Mi
         securityContext:
           allowPrivilegeEscalation: false
       securityContext:
         runAsNonRoot: true
-      serviceAccountName: managed-gitops-backend-controller-manager
+      serviceAccountName: appstudio-controller-controller-manager
       terminationGracePeriodSeconds: 10
