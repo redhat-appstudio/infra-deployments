@@ -133,38 +133,42 @@ data:
     Possible values:\n\t-- * Healthy\n\t-- * Progressing\n\t-- * Degraded\n\t-- *
     Suspended\n\t-- * Missing\n\t-- * Unknown (this is returned by Argo CD, but is
     also used when Argo CD's health field is \"\")\n\thealth VARCHAR (30) NOT NULL,\n\n\t--
-    health field comes directly from Argo CD Application CR's .status.syncStatus field\n\t--
-    Possible values:\n\t-- * Synced\n\t-- * OutOfSync\n\t-- * Unknown (this is used
-    when Argo CD's status field is \"\")\n\tsync_status VARCHAR (30) NOT NULL\n\n);\n\n--
-    Represents the relationship from GitOpsDeployment CR in the API namespace (workspace),
-    to an Application table row.\n-- This means: if we see a change in a GitOpsDeployment
-    CR, we can easily find the corresponding database entry\n-- by looking for a DeploymentToApplicationMapping
-    that captures the relationship (and vice versa)\nCREATE TABLE DeploymentToApplicationMapping
-    (\n\t\n\t-- uid of our gitops deployment CR within the K8s namespace (or KCP control
-    plane)\n\tdeploymenttoapplicationmapping_uid_id VARCHAR(48) UNIQUE NOT NULL PRIMARY
-    KEY,\n\t\n\t-- name of the GitOpsDeployment CR in the API namespace (workspace)\n\tname
-    VARCHAR ( 256 ),\n\t-- name of the API namespace (workspace)\n\tnamespace VARCHAR
-    ( 96 ),\n\t-- uid of the API namespace (workspace)\n\tworkspace_uid VARCHAR (
-    48 ), \n\n\t-- The Application DB entry that corresponds to this GitOpsDeployment
-    CR\n\t-- (For example, deleting the GitOpsDeployment CR should delete the corresponding
-    Application DB table, and likewise\n\t-- should delete this table's entry)\n\t--
-    Foreign key to: Application.application_id\n\tapplication_id VARCHAR ( 48 ) NOT
-    NULL UNIQUE,\n\tCONSTRAINT fk_app_id FOREIGN KEY (application_id) REFERENCES Application(application_id)
-    ON DELETE NO ACTION ON UPDATE NO ACTION,\n\n\tseq_id serial\n\n);\n\n-- Represents
-    a generic relationship between: Kubernetes CR <->  Database table\n-- The Kubernetes
-    CR can be either in the workspace, or in/on a GitOpsEngine cluster namespace.\n--\n--
-    Example: when the cluster agent sees an Argo CD Application CR change within a
-    namespace, it needs a way\n-- to know which GitOpsEngineInstance database entries
-    corresponds to the Argo CD namespace.\n-- \n-- For this we would use:\n-- - kubernetes_resource_type:
-    Namespace\n-- - kubernetes_resource_uid: (uid of namespace)\n-- - db_relation_type:
-    GitOpsEngineInstance\n-- - db_relation_key: (primary key of gitops engine instance)\n--\n--
-    Later, we can query this table to determine 'Argo CD instance namespace' <=> 'GitopsEngineInstance
-    database row'\n--\n-- This is also useful for tracking the lifecycle between CRs
-    <-> database table.\nCREATE TABLE KubernetesToDBResourceMapping  (\n\n\t-- kubernetes
-    CR resource (example: Namespace)\n\t-- As of this writing (Jan 2022), Namespace
-    is the only supported value for this field.\n\t-- - See 'kubernetesresourcetodbresousemapping.go'
-    for latest list.\n\tkubernetes_resource_type VARCHAR(64) NOT NULL,\n\n\t-- UID
-    of the CR (from the .metadata.UID field)\n\tkubernetes_resource_uid  VARCHAR(64)
+    message field comes directly from Argo CD Application CR's .status.healthStatus.Message\n
+    \   message VARCHAR (1024),\n\n    -- revision field comes directly from Argo
+    CD Application CR's .status.SyncStatus.Revision field\n    revision VARCHAR (1024),\n\n\t--
+    sync_status field comes directly from Argo CD Application CR's .status.SyncStatus
+    field\n\t-- Possible values:\n\t-- * Synced\n\t-- * OutOfSync\n\t-- * Unknown
+    (this is used when Argo CD's status field is \"\")\n\tsync_status VARCHAR (30)
+    NOT NULL\n\n);\n\n-- Represents the relationship from GitOpsDeployment CR in the
+    API namespace (workspace), to an Application table row.\n-- This means: if we
+    see a change in a GitOpsDeployment CR, we can easily find the corresponding database
+    entry\n-- by looking for a DeploymentToApplicationMapping that captures the relationship
+    (and vice versa)\nCREATE TABLE DeploymentToApplicationMapping (\n\t\n\t-- uid
+    of our gitops deployment CR within the K8s namespace (or KCP control plane)\n\tdeploymenttoapplicationmapping_uid_id
+    VARCHAR(48) UNIQUE NOT NULL PRIMARY KEY,\n\t\n\t-- name of the GitOpsDeployment
+    CR in the API namespace (workspace)\n\tname VARCHAR ( 256 ),\n\t-- name of the
+    API namespace (workspace)\n\tnamespace VARCHAR ( 96 ),\n\t-- uid of the API namespace
+    (workspace)\n\tworkspace_uid VARCHAR ( 48 ), \n\n\t-- The Application DB entry
+    that corresponds to this GitOpsDeployment CR\n\t-- (For example, deleting the
+    GitOpsDeployment CR should delete the corresponding Application DB table, and
+    likewise\n\t-- should delete this table's entry)\n\t-- Foreign key to: Application.application_id\n\tapplication_id
+    VARCHAR ( 48 ) NOT NULL UNIQUE,\n\tCONSTRAINT fk_app_id FOREIGN KEY (application_id)
+    REFERENCES Application(application_id) ON DELETE NO ACTION ON UPDATE NO ACTION,\n\n\tseq_id
+    serial\n\n);\n\n-- Represents a generic relationship between: Kubernetes CR <->
+    \ Database table\n-- The Kubernetes CR can be either in the workspace, or in/on
+    a GitOpsEngine cluster namespace.\n--\n-- Example: when the cluster agent sees
+    an Argo CD Application CR change within a namespace, it needs a way\n-- to know
+    which GitOpsEngineInstance database entries corresponds to the Argo CD namespace.\n--
+    \n-- For this we would use:\n-- - kubernetes_resource_type: Namespace\n-- - kubernetes_resource_uid:
+    (uid of namespace)\n-- - db_relation_type: GitOpsEngineInstance\n-- - db_relation_key:
+    (primary key of gitops engine instance)\n--\n-- Later, we can query this table
+    to determine 'Argo CD instance namespace' <=> 'GitopsEngineInstance database row'\n--\n--
+    This is also useful for tracking the lifecycle between CRs <-> database table.\nCREATE
+    TABLE KubernetesToDBResourceMapping  (\n\n\t-- kubernetes CR resource (example:
+    Namespace)\n\t-- As of this writing (Jan 2022), Namespace is the only supported
+    value for this field.\n\t-- - See 'kubernetesresourcetodbresousemapping.go' for
+    latest list.\n\tkubernetes_resource_type VARCHAR(64) NOT NULL,\n\n\t-- UID of
+    the CR (from the .metadata.UID field)\n\tkubernetes_resource_uid  VARCHAR(64)
     NOT NULL,\n\n\t-- name of database table\n\t-- As of this writing (Jan 2022),
     ManagedEnvironment, GitopsEngineCluster, and GitopsEngineInstance are the only
     supported values for this field.\n\t-- - See 'kubernetesresourcetodbresousemapping.go'
