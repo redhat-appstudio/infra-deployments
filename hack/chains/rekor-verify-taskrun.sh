@@ -1,7 +1,6 @@
 #!/bin/bash
 
-SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-source $SCRIPTDIR/_helpers.sh
+source $(dirname $0)/_helpers.sh
 set -ue
 
 # Use a specific taskrun if provided, otherwise use the latest
@@ -9,14 +8,21 @@ TASKRUN_NAME=${1:-$( tkn taskrun describe --last -o name )}
 TASKRUN_NAME=taskrun/$( echo $TASKRUN_NAME | sed 's#.*/##' )
 
 # Let's not hard code the image url or the registry
-IMAGE_URL=$( oc get $TASKRUN_NAME -o json | jq -r '.status.taskResults[1].value' )
+IMAGE_URL=$( kubectl get $TASKRUN_NAME -o json | jq -r '.status.taskResults[1].value' )
 IMAGE_REGISTRY=$( echo $IMAGE_URL | cut -d/ -f1 )
 
+title "Image url"
+echo https://$IMAGE_URL
+
 TRANSPARENCY_URL=$(
-  oc get $TASKRUN_NAME -o jsonpath='{.metadata.annotations.chains\.tekton\.dev/transparency}' )
+  kubectl get $TASKRUN_NAME -o jsonpath='{.metadata.annotations.chains\.tekton\.dev/transparency}' )
 
 # Extract the log index from the url
 LOG_INDEX=$( echo $TRANSPARENCY_URL | cut -d= -f2 )
+
+# Todo: We're reading the transparency url from the taskrun annotations.
+# Is there another way to get it? How else can we link the image in the
+# registry to its rekor entry?
 
 # In the future we might use our own rekor servers, so let's not hard code that
 REKOR_SERVER=$( echo $TRANSPARENCY_URL | cut -d/ -f1-3 )
