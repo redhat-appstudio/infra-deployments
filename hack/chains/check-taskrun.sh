@@ -1,31 +1,21 @@
 #!/bin/bash
+#
+# This script is only for use with chains configured with
+# 'tekton' taskrun storage, which means the chains data is
+# stored in the taskrun annotations.
+#
+# It's probably not useful for 'oci' taskrun storage.
+#
 
-##
-## Fixme: This works with the default chains config which is
-## to use 'tekton' for storage and 'tekton' for the format. I can't
-## make the verify-blob work with the storage configured to use 'oci'
-## but I'll keep this script to help figure it out.
-##
-
-SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+source $(dirname $0)/_helpers.sh
+set -ue
 
 # Use a specific taskrun if provided, otherwise use the latest
 TASKRUN_NAME=${1:-$( tkn taskrun describe --last -o name )}
-TASKRUN_NAME=taskrun/$( echo $TASKRUN_NAME | sed 's#.*/##' )
+TASKRUN_NAME=taskrun/$( trim-name $TASKRUN_NAME )
 
-QUIET_OPT=$2
-SIG_KEY=$COSIGN_SIG_KEY
-
-# Preserve sanity while hacking
-set -ue
-
-if [[ $QUIET_OPT == "--quiet" ]]; then
-  ECHO=:
-  QUIET=1
-else
-  ECHO=echo
-  QUIET=
-fi
+title Taskrun name
+say $TASKRUN_NAME
 
 # Helper for jsonpath
 get-jsonpath() {
@@ -37,50 +27,113 @@ get-chainsval() {
   get-jsonpath metadata.annotations.chains\\.tekton\\.dev/$1
 }
 
-# Fetch signature and payload
+# Helper for reading a task result
+get-taskresult() {
+  kubectl get $TASKRUN_NAME \
+    -o jsonpath="{.status.taskResults[?(@.name == \"$1\")].value}"
+}
+
+# Helper for reading a resources result
+get-resourcesresult() {
+  kubectl get $TASKRUN_NAME \
+    -o jsonpath="{.status.resourcesResult[?(@.key == \"$1\")].value}"
+}
+
+# Fetch task run signature and payload
 TASKRUN_UID=$( get-jsonpath metadata.uid )
 SIGNATURE=$( get-chainsval signature-taskrun-$TASKRUN_UID )
 PAYLOAD=$( get-chainsval payload-taskrun-$TASKRUN_UID | base64 --decode )
 
-# Cosign wants files on disk afaict
+# For a task that builds an image, image digest should be available
+# in the task results
+IMAGE_DIGEST=$( get-taskresult IMAGE_DIGEST )
+
+# Another place we might find it..?
+# (The taskrun created by simple-demo.sh produces a digest here.)
+[[ -z $IMAGE_DIGEST ]] && IMAGE_DIGEST=$( get-resourcesresult digest )
+
+if [[ -n $IMAGE_DIGEST ]]; then
+  SHORT_IMAGE_DIGEST=$( echo "$IMAGE_DIGEST" | cut -d: -f2 | head -c 12 )
+
+  # For tekton storage, we should then be able to grab these
+  IMAGE_SIGNATURE=$( get-chainsval signature-$SHORT_IMAGE_DIGEST )
+  IMAGE_PAYLOAD=$( get-chainsval payload-$SHORT_IMAGE_DIGEST | base64 --decode)
+
+  title "Image digest found in taskrun"
+  say "Image digest: $IMAGE_DIGEST"
+
+  if [[ -n $IMAGE_SIGNATURE ]] || [[ -n $IMAGE_PAYLOAD ]]; then
+    say "Image signature: $IMAGE_SIGNATURE"
+    say "Image signed payload:"
+    [[ -z $QUIET ]] && echo "$IMAGE_PAYLOAD" | yq-pretty
+  fi
+
+  # Todo: How to verify these also?
+fi
+
+# Try to detect and then handle different formats
+# (It seems like it would be better if the format was available
+# explicitly but afaict it is not.)
+# In the longer term, we won't care about tekton format, so let's
+# not worry too much.
+
+# If the signature is 96 chars then we might be using tekton format
+if [[ ${#SIGNATURE} == 96 ]]; then
+  title "Assuming tekton format"
+  # The signature is just the signature, continue
+
+else
+  title "Assuming in-toto format for taskrun"
+
+  # The signature value is actually encoded json with a payload and
+  # signature list inside it
+  SIG_DATA=$( echo $SIGNATURE | base64 --decode )
+  SIGNATURE=$( echo $SIG_DATA | jq -r '.signatures[0].sig' )
+
+  # Looks like the same payload can be found in both places...
+  # Not sure if feature or bug
+  OTHER_PAYLOAD=$( echo $SIG_DATA | jq -r .payload | base64 --decode )
+
+  if [[ "$PAYLOAD" != "$OTHER_PAYLOAD" ]]; then
+    # Seems like we'll never get here
+    echo "The two payloads are unexpectedly different!"
+    exit 1
+  fi
+
+fi
+
+# Cosign needs files on disk to do a verify-blob afaict
 SIG_FILE=$( mktemp )
 PAYLOAD_FILE=$( mktemp )
 echo -n "$PAYLOAD" > $PAYLOAD_FILE
 echo -n "$SIGNATURE" > $SIG_FILE
 
-if [[ -z $SIG_KEY ]]; then
-  # Requires that you're authenticated with an account that can access
-  # the signing-secret, i.e. kubeadmin but not developer
-  SIG_KEY=k8s://tekton-chains/signing-secrets
+title Taskrun signature
+say $SIGNATURE
 
-  # If you have the public key locally because you created it
-  # (Presumably real public keys can be published somewhere in future)
-  #SIG_KEY=$SCRIPTDIR/../../cosign.pub
-fi
+pause
 
-title() {
-  $ECHO
-  $ECHO "🔗 ---- $* ----"
-}
+title Taskrun payload
+[[ -z $QUIET ]] && echo "$PAYLOAD" | yq-pretty
 
-# Show details about this taskrun
-title Taskrun name
-$ECHO $TASKRUN_NAME
-
-title Signature
-$ECHO $SIGNATURE
-
-title Payload
-#[[ -z $QUIET ]] && echo "$PAYLOAD" | jq
-[[ -z $QUIET ]] && echo "$PAYLOAD" | yq e -P -
+pause
 
 # Keep going if the verify fails
 set +e
 
+##
+## Fixme: This only works with artifacts.taskrun.format set to 'tekton'.
+## I've never been able to use cosign verify-blob to verify a task's
+## payload and signature using the 'in-toto' format and I don't know why.
+##
 # Now use cosign to verify the signed payload
-title Verification
-cosign verify-blob --key $SIG_KEY --signature $SIG_FILE $PAYLOAD_FILE
+title Taskrun verification
+show-then-run cosign verify-blob --key $SIG_KEY --signature $SIG_FILE $PAYLOAD_FILE
 COSIGN_EXIT_CODE=$?
+
+# For debugging...
+title "To view taskrun"
+say " env EDITOR=view kubectl edit $TASKRUN_NAME"
 
 # Clean up
 rm $SIG_FILE $PAYLOAD_FILE
