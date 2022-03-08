@@ -10,11 +10,11 @@ TOOLCHAIN_E2E_TEMP_DIR=/tmp/toolchain-e2e
 echo
 echo "Remove Argo CD Applications:"
 kubectl delete -f $ROOT/argo-cd-apps/app-of-apps/all-applications-staging.yaml
-#kustomize build  $ROOT/argo-cd-apps/overlays/staging | kubectl delete -f -
+#kubectl -k $ROOT/argo-cd-apps/overlays/staging
 
 echo
 echo "Remove RBAC for OpenShift GitOps:"
-kustomize build $ROOT/openshift-gitops/cluster-rbac | kubectl delete -f -
+kubectl delete -k $ROOT/openshift-gitops/cluster-rbac
 
 echo 
 echo "Remove the OpenShift GitOps operator subscription:"
