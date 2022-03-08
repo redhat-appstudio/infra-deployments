@@ -156,6 +156,23 @@ spec:
 ### Optional: CodeReady Containers Post-Bootstrap Configuration
 Even with 6 CPU cores, you will need to reduce the CPU resource requests for each App Studio application. Either run `./hack/reduce-gitops-cpu-requests.sh` which will set resources.requests.cpu values to 50m or use `kubectl edit argocd/openshift-gitops -n openshift-gitops` to reduce the values to some other value. More details are in the FAQ below.
 
+### Optional: Configure HAS GitHub Organization
+
+After deployment `has` application is failing to start. It's trying to connect to default github organization and credentials are not set.
+
+To run HAS in development mode, you need to set custom GitHub organization and token.
+
+Steps:
+1) Create organization in GitHub
+2) Create user token with permissions:
+    - `repo`
+    - `delete_repo`
+3) Set environment variables (for preview mode in `hack/preview.env`):
+    - `MY_GITHUB_ORG`
+    - `MY_GITHUB_TOKEN`
+4) Run `./hack/development-mode.sh` or `./hack/preview.sh`
+5) Trigger update in ArgoCD and delete `application-service-controller-manager` pod manually or run `oc rollout restart -n application-service deployment/application-service-controller-manager`
+
 ## Development modes for your own clusters
 
 Once you bootstrap a cluster above, the root ArgoCD Application and all of the component applications will each point to the upstream repository. Or you can bootstrap cluster directly in mode which you need.
@@ -202,23 +219,6 @@ Steps:
 If you want to reset your enviroment you can run the script `./hack/upstream-mode.sh` to reset everything including your cluster to `https://github.com/redhat-appstudio/infra-deployments.git` and match the upstream config.
 
 Note running these scripts in a clone repo will have no effect as the repo will remain `https://github.com/redhat-appstudio/infra-deployments.git`
-
-### Optional: Configure HAS GitHub Organization
-
-After deployment `has` application is failing to start. It's trying to connect to default github organization and credentials are not set.
-
-To run HAS in development mode, you need to set custom GitHub organization and token.
-
-Steps:
-1) Create organization in GitHub
-2) Create user token with permissions:
-    - `repo`
-    - `delete_repo`
-3) Set environment variables (for preview mode in `hack/preview.env`):
-    - `MY_GITHUB_ORG`
-    - `MY_GITHUB_TOKEN`
-4) Run `./hack/development-mode.sh` or `./hack/preview.sh`
-5) Trigger update in ArgoCD and delete `application-service-controller-manager` pod manually or run `oc rollout restart -n application-service deployment/application-service-controller-manager`
 
 # App Studio Build System
 
