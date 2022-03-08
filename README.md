@@ -115,8 +115,7 @@ data:
 
 3) `kubectl apply -f postgresql-staging-secret.yaml`  to apply the Secret YAML.
 
-4) You may need to hit 'Synchronize' on the `gitops` application, in Argo CD, in order to trigger the updated Application deployment.
-    - (I'm not 100% sure if this is required, more data are needed, but it can't hurt! - @jgwest)
+4) Argo CD should automatically update the gitops Application deployment, once it synchronizes.
 
 
 ### Install Toolchain (Sandbox) Operators
