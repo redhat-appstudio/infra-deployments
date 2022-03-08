@@ -58,7 +58,10 @@ if ! kubectl get secret -n tekton-pipelines tekton-results-tls &>/dev/null; then
     -days 3650 \
     -nodes \
     -subj "/CN=tekton-results-api-service.tekton-pipelines.svc.cluster.local" \
-    -addext "subjectAltName = DNS:tekton-results-api-service.tekton-pipelines.svc.cluster.local, DNS:$ROUTE"
+    -reqexts SAN \
+    -extensions SAN \
+    -config <(cat /etc/pki/tls/openssl.cnf \
+        <(printf "\n[SAN]\nsubjectAltName=DNS:tekton-results-api-service.tekton-pipelines.svc.cluster.local, DNS:$ROUTE"))
   kubectl create secret tls -n tekton-pipelines tekton-results-tls --cert=cert.pem --key=key.pem
   rm cert.pem key.pem
 fi
