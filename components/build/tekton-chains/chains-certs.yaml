@@ -1,3 +1,46 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: chains-ca-cert
+  namespace: tekton-chains
+type: Opaque
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: chains-secrets-admin
+  namespace: tekton-chains
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: chains-secret-admin
+  namespace: tekton-chains
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - list
+  - create
+  - get
+  - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: chains-secret-admin
+  namespace: tekton-chains
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: chains-secret-admin
+subjects:
+- kind: ServiceAccount
+  name: chains-secrets-admin
+  namespace: tekton-chains
+---
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -15,7 +58,7 @@ spec:
             - /bin/bash
             - -c
             - |
-              echo "Waiting for chains-ca-cert to be present"
+              echo "Waiting for secret and configmaps to be present"
               until oc get secret chains-ca-cert -n tekton-chains
               do
                 sleep 5;
