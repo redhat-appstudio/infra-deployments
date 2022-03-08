@@ -164,7 +164,7 @@ To run HAS in development mode, you need to set custom GitHub organization and t
 
 Steps:
 1) Create organization in GitHub
-2) Create user token with permissions:
+2) Create [user token](https://github.com/settings/tokens) with permissions:
     - `repo`
     - `delete_repo`
 3) Set environment variables (for preview mode in `hack/preview.env`):
