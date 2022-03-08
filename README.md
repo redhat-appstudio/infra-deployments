@@ -164,8 +164,8 @@ To enable development for a team or individual to test changes on your own clust
 
 There are a set of scripts that help with this, and minimize the changes needed in your forks.
 
-There is a development configuration in `overlays/development` which includes a kustomize overlay that can redirect the default components individual repositorys to your fork. 
-The script also supports branches automatically. If you work in a checked out branch, each of the components in the overlays will mapped to that branch by setting `targetRevision:`.  
+There is a development configuration in `argo-cd-apps/overlays/development` which includes a kustomize overlay that can redirect the default components individual repositorys to your fork.
+The script also supports branches automatically. If you work in a checked out branch, each of the components in the overlays will mapped to that branch by setting `targetRevision:`.
 
 There are two workflows for develompent provided:
 1) Development mode - work in the feature branch, apply changes related to your fork, revert the changes when the work is done
