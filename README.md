@@ -51,7 +51,7 @@ Simply update the files under `components/(team-name)`, and open a PR with the c
 
 ### Required prerequisites
 The prerequisites are:
-- You must have `kubectl`, `oc`, `jq`, `yq` and `kustomize` installed. 
+- You must have `kubectl`, `oc`, `jq and `yq` installed.
 - You must have `kubectl` and `oc` pointing to an existing OpenShift cluster, that you wish to deploy to.
 
 ### Optional: CodeReady Containers Setup
@@ -86,6 +86,38 @@ SPI Vault instance has to be manually initialized. There is a script to help wit
 1) Make sure that your cluster user has at least permissions `./components/spi/vault_role.yaml`
 2) Clone SPI operator repo `git clone https://github.com/redhat-appstudio/service-provider-integration-operator && cd service-provider-integration-operator`
 3) run `vault-init.sh` script from repo root directory `./hack/vault-init.sh`
+
+#### Post-bootstrap GitOps Service Configuration
+
+GitOps service components will not be functional right after bootstrap. It requires manual configuration in order to work properly:
+
+1) `wget https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/main/manifests/postgresql-staging/postgresql-staging-secret.yaml`
+
+2) Edit `postgresql-staging-secret.yaml`, and update the password field:
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: gitops-postgresql-staging
+  labels:
+    app.kubernetes.io/name: postgresql
+    helm.sh/chart: postgresql-10.16.1
+    app.kubernetes.io/instance: gitops-postgresql-staging
+    app.kubernetes.io/managed-by: Helm
+  namespace: gitops
+type: Opaque
+data:
+  postgresql-password: "(your password here)" # Edit this line
+```
+
+*Note*: You will need to use a [Base 64 value](https://www.base64encode.org/) for the password field. (Note: this password is *not* required after this step, so you may safely discard it after editing the secret.)
+
+3) `kubectl apply -f postgresql-staging-secret.yaml`  to apply the Secret YAML.
+
+4) You may need to hit 'Synchronize' on the `gitops` application, in Argo CD, in order to trigger the updated Application deployment.
+    - (I'm not 100% sure if this is required, more data are needed, but it can't hurt! - @jgwest)
+
 
 ### Install Toolchain (Sandbox) Operators
 There are two scripts which you can use:
@@ -132,8 +164,8 @@ To enable development for a team or individual to test changes on your own clust
 
 There are a set of scripts that help with this, and minimize the changes needed in your forks.
 
-There is a development configuration in `overlays/development` which includes a kustomize overlay that can redirect the default components individual repositorys to your fork. 
-The script also supports branches automatically. If you work in a checked out branch, each of the components in the overlays will mapped to that branch by setting `targetRevision:`.  
+There is a development configuration in `argo-cd-apps/overlays/development` which includes a kustomize overlay that can redirect the default components individual repositorys to your fork.
+The script also supports branches automatically. If you work in a checked out branch, each of the components in the overlays will mapped to that branch by setting `targetRevision:`.
 
 There are two workflows for develompent provided:
 1) Development mode - work in the feature branch, apply changes related to your fork, revert the changes when the work is done
@@ -267,7 +299,49 @@ If you want to check all your repos to see which ones may build you can use this
 ./hack/build/utils/ls-all-my-repos.sh | xargs -n 1 ./hack/build/utils/check-repo.sh
 ```
 
-## FAQ
+# Invoking the API
+
+## GitOps Service
+
+Once the cluster is successfully bootstrapped, create a Namespace with the `argocd.argoproj.io/managed-by: gitops-service-argocd` label, for example:
+
+```yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: (your-user-name)
+  labels:
+    argocd.argoproj.io/managed-by: gitops-service-argocd
+```
+
+The `argocd.argoproj.io/managed-by: gitops-service-argocd` label gives 'permission' to Argo CD (specifically, the instance in `gitops-service-argocd`) to deploy to your namespace.
+
+You may now create `GitOpsDeployment` resources, which the GitOps Service will respond to, deploying resources to your namespace:
+```yaml
+apiVersion: managed-gitops.redhat.com/v1alpha1
+kind: GitOpsDeployment
+
+metadata:
+  name: gitops-depl
+  namespace: (your-user-name)
+
+spec:
+
+  # Application/component to deploy
+  source:
+    repoURL: https://github.com/redhat-appstudio/gitops-repository-template
+    path: environments/overlays/dev
+
+  # destination: {}  # destination is user namespace if empty
+
+  # Only 'automated' type is currently supported: changes to the GitOps repo immediately take effect (as soon as Argo CD detects them).
+  type: automated
+```
+
+
+See the [GitOps Service M2 Demo script for more details](https://github.com/redhat-appstudio/managed-gitops/tree/main/examples/m2-demo#run-the-demo).
+
+# FAQ
 
 Other questions? Ask on `#wg-developer-appstudio`.
 

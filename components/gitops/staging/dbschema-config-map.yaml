@@ -1,0 +1,245 @@
+apiVersion: v1
+data:
+  db-schema.sql: "\n-- ClusterCredentials contains the credentials required to access
+    a K8s cluster. \n-- The credentials may be in one of two forms:\n-- 1) Kubeconfig
+    state: Kubeconfig file, plus a reference to a specific context within the\n--
+    \    - This is the same content as can be found in your local '~/.kube/config'
+    file\n--     - This is what the user would initially provide via the Service/Web
+    UI/CLI\n--     - There may be (likely is) a better way of doing this, but this
+    works for now.\n-- 2) ServiceAccount state: A bearer token for a service account
+    on the target cluster\n--     - Same mechanism Argo CD users for accessing remote
+    clusters\n--\n-- You can tell which state the credentials are in, based on whether
+    'serviceaccount_bearer_token' is null. \n--\n-- It is the job of the cluster agent
+    to convert state 1 (kubeconfig) into a service account \n-- bearer token on the
+    target cluster (state 2).\n--     - This is the same operation as the `argocd
+    cluster add` command, and is the same\n--       technique used by Argo CD to interface
+    with remove clusters.\n--     - See https://github.com/argoproj/argo-cd/blob/a894d4b128c724129752bac9971c903ab6c650ba/cmd/argocd/commands/cluster.go#L116\nCREATE
+    TABLE ClusterCredentials (\n\t\n\t-- Primary key for the credentials (UID), is
+    a random UUID\n\tclustercredentials_cred_id VARCHAR (48) UNIQUE PRIMARY KEY,\n\n\t--
+    API URL for the cluster \n\t-- Example: https://api.ci-ln-dlfw0qk-f76d1.origin-ci-int-gce.dev.openshift.com:6443\n\thost
+    VARCHAR (512),\n\n\t-- State 1) kube_config containing a token to a service account
+    that has the permissions we need.\n\tkube_config VARCHAR (65000),\n\n\t-- State
+    1) The name of a context within the kube_config \n\tkube_config_context VARCHAR
+    (64),\n\n\t-- State 2) ServiceAccount bearer token from the target manager cluster\n\tserviceaccount_bearer_token
+    VARCHAR (128),\n\n\t-- State 2) The namespace of the ServiceAccount\n\tserviceaccount_ns
+    VARCHAR (128),\n\n\tseq_id serial\n);\n\n-- GitopsEngineCluster\n-- A cluster
+    that hosts Argo CD instances\n-- Note: I use the term GitOpsEngine to refer to
+    Argo CD, so as not to marry us to Argo CD at the database level.\nCREATE TABLE
+    GitopsEngineCluster (\n\n\t-- Primary key for the GitopsEngineCluster (UID), is
+    a random UUID\n\tgitopsenginecluster_id  VARCHAR (48) UNIQUE PRIMARY KEY,\n\t\n\tseq_id
+    serial, \n\n\t-- pointer to credentials for the cluster\n\t-- Foreign key to:
+    ClusterCredentials.clustercredentials_cred_id\n\tclustercredentials_id VARCHAR
+    (48) NOT NULL,\n\tCONSTRAINT fk_cluster_credential FOREIGN KEY(clustercredentials_id)
+    REFERENCES ClusterCredentials(clustercredentials_cred_id) ON DELETE NO ACTION
+    ON UPDATE NO ACTION\n\n);\n\n-- GitopsEngineInstance\n-- Represents an Argo CD
+    instance on a cluster; the specific cluster is pointed to by the enginecluster
+    field, and the\n-- namespace of the Argo CD install is listed here.\nCREATE TABLE
+    GitopsEngineInstance (\n\n\t-- Primary key for the GitopsEngineInstance (UID),
+    is a random UUID\n\tgitopsengineinstance_id VARCHAR (48) UNIQUE PRIMARY KEY,\n\n\tseq_id
+    serial,\n\n\t-- An Argo CD cluster may host multiple Argo CD instances; these
+    fields\n\t-- indicate which namespace this specific instance lives in (and uid
+    of the namespace)\n\tnamespace_name VARCHAR (48) NOT NULL,\n\tnamespace_uid VARCHAR
+    (48) NOT NULL,\n\n\t-- Reference to the Argo CD cluster containing the instance\n\t--
+    Foreign key to: GitopsEngineCluster.gitopsenginecluster_id\n\tenginecluster_id
+    VARCHAR(48) NOT NULL,\n\tCONSTRAINT fk_gitopsengine_cluster FOREIGN KEY (enginecluster_id)
+    REFERENCES GitopsEngineCluster(gitopsenginecluster_id) ON DELETE NO ACTION ON
+    UPDATE NO ACTION\n\t\n);\n\n\n-- ManagedEnvironment\n-- An environment (cluster)
+    that the user wants to deploy applications to, using Argo CD\nCREATE TABLE ManagedEnvironment
+    (\n\n\t-- Primary key for the ManagedEnvironment (UID), is a random UUID\n\tmanagedenvironment_id
+    VARCHAR (48) UNIQUE PRIMARY KEY,\n\tseq_id serial, \n\t\n\t-- human readable name\n\tname
+    VARCHAR ( 256 ) NOT NULL,\n\n\t-- pointer to credentials for the cluster\n\t--
+    Foreign key to: ClusterCredentials.clustercredentials_cred_id\n\tclustercredentials_id
+    VARCHAR (48) NOT NULL,\n\tCONSTRAINT fk_cluster_credential FOREIGN KEY (clustercredentials_id)
+    REFERENCES ClusterCredentials(clustercredentials_cred_id) ON DELETE NO ACTION
+    ON UPDATE NO ACTION\n);\n\n\n-- ClusterUser\n-- An individual user/customer\n--\n--
+    Note: This is basically placeholder: a real implementation would need to be way
+    more complex.\nCREATE TABLE ClusterUser (\n\t\n\t-- Primary key for the ClusterUser
+    (UID), is a random UUID\n\tclusteruser_id VARCHAR (48) PRIMARY KEY,\n\n\t-- A
+    generic string representing a user; this likely need to be replaced with a field\n\t--
+    more consistent with the user configuration we are operating within.\n\tuser_name
+    VARCHAR (256) NOT NULL UNIQUE,\n\n\tseq_id serial\n);\n\n\n\n-- ClusterAccess\n--\n--
+    This table answers the questions:\n-- - What managed clusters does a user have?\n--
+    - What argo cd instance is managing those clusters?\nCREATE TABLE ClusterAccess
+    (\n\n\t-- Describes whose cluster this is (UID)\n\t-- Foreign key to: ClusterUser.clusteruser_id\n\tclusteraccess_user_id
+    VARCHAR (48),\n\tCONSTRAINT fk_clusteruser_id FOREIGN KEY (clusteraccess_user_id)
+    REFERENCES ClusterUser(clusteruser_id) ON DELETE NO ACTION ON UPDATE NO ACTION,\n\n\t--
+    Describes which managed environment the user has access to (UID)\n\t-- Foreign
+    key to: ManagedEnvironment.managedenvironment_id\n\tclusteraccess_managed_environment_id
+    VARCHAR (48),\n\tCONSTRAINT fk_managedenvironment_id FOREIGN KEY (clusteraccess_managed_environment_id)
+    REFERENCES ManagedEnvironment(managedenvironment_id) ON DELETE NO ACTION ON UPDATE
+    NO ACTION,\n\n\t-- Which Argo CD instance is managing the cluster?\n\t-- Foreign
+    key to: GitopsEngineInstance.gitopsengineinstance_id\n\tclusteraccess_gitops_engine_instance_id
+    VARCHAR (48),\n\tCONSTRAINT fk_gitopsengineinstance_id FOREIGN KEY (clusteraccess_gitops_engine_instance_id)
+    REFERENCES GitopsEngineInstance(gitopsengineinstance_id) ON DELETE NO ACTION ON
+    UPDATE NO ACTION,\n\t\n\tseq_id serial,\n\t\n\t-- All fields of the cluster are
+    part of the primary key (not seq_uid), and in addition we have indexes\n\t-- below
+    for quickly locating a subset of the table.\n\tPRIMARY KEY(clusteraccess_user_id,
+    clusteraccess_managed_environment_id, clusteraccess_gitops_engine_instance_id)\n);\n--
+    Add an index on user_id+managed_cluster, and userid+gitops_manager_instance_Id\nCREATE
+    INDEX idx_userid_cluster ON ClusterAccess(clusteraccess_user_id, clusteraccess_managed_environment_id);\nCREATE
+    INDEX idx_userid_instance ON ClusterAccess(clusteraccess_user_id, clusteraccess_gitops_engine_instance_id);\n\n\n\n--
+    Operation\n-- Operations are used to by the backend to communicate database changes
+    to the cluster-agent.\n-- It is the reponsibility of the cluster agent to respond
+    to operations, to read the database\n-- to discover what database changes occurred,
+    and to ensure that Argo CD is consistent with\n-- the database state.\n-- \n--
+    See https://docs.google.com/document/d/1e1UwCbwK-Ew5ODWedqp_jZmhiZzYWaxEvIL-tqebMzo/edit#heading=h.9tzaobsoav27\n--
+    for description of Operation\nCREATE TABLE Operation (\n\t\n\t-- Primary key for
+    the Operation (UID), is a random UUID\n\toperation_id  VARCHAR (48) PRIMARY KEY,\n\n\tseq_id
+    serial,\n\n\t-- Specifies which Argo CD instance is this operation against\n\t--
+    Foreign key to: GitopsEngineInstance.gitopsengineinstance_id\n\tinstance_id VARCHAR(48)
+    NOT NULL,\n\tCONSTRAINT fk_gitopsengineinstance_id FOREIGN KEY (instance_id) REFERENCES
+    GitopsEngineInstance(gitopsengineinstance_id) ON DELETE NO ACTION ON UPDATE NO
+    ACTION,\n\n\t-- ID of the database resource that was modified (usually this field
+    contains a primary key of another database table )\n\tresource_id VARCHAR(48)
+    NOT NULL,\n\n\t-- The user that initiated the operation.\n\t-- Foreign key to:
+    ClusterUser.clusteruser_id\n\toperation_owner_user_id VARCHAR(48),\n\tCONSTRAINT
+    fk_clusteruser_id FOREIGN KEY (operation_owner_user_id) REFERENCES ClusterUser(clusteruser_id)
+    ON DELETE NO ACTION ON UPDATE NO ACTION,\n\n\t-- Resource type of the resource
+    that was modified\n\t-- This value lets the operation know which table contains
+    the resource.\n\t-- \n\t-- possible values:\n\t-- * ManagedEnvironment (specified
+    when we want Argo CD to C/R/U/D a user's cluster credentials)\n\t-- * GitopsEngineInstance
+    (specified to CRUD an Argo instance, for example to create a new namespace and
+    put Argo CD in it, then signal when it's done)\n\t-- * Application (user creates
+    a new Application via service/web UI)\n\t-- * SyncOperation (user wants a GitOps
+    engine sync operation performed)\n\tresource_type VARCHAR(32) NOT NULL,\n\n\t--
+    When the operation was created. Used for garbage collection, as operations should
+    be short lived.\n\tcreated_on TIMESTAMP NOT NULL,\n\n\t-- last_state_update is
+    set whenever state changes\n\t-- (initial value should be equal to created_on)\n\tlast_state_update
+    TIMESTAMP NOT NULL,\n\n\t-- possible values:\n\t-- * Waiting\n\t-- * In_Progress\n\t--
+    * Completed\n\t-- * Failed\n\tstate VARCHAR ( 30 ) NOT NULL,\n\t\n\t-- If there
+    is an error message from the operation, it is passed via this field.\n\thuman_readable_state
+    VARCHAR ( 1024 )\n\n);\n\n-- Application represents an Argo CD Application CR
+    within an Argo CD namespace.\nCREATE TABLE Application (\n\tapplication_id VARCHAR
+    ( 48 ) NOT NULL UNIQUE PRIMARY KEY,\n\n\t-- Name of the Application CR within
+    the namespace\n\tname VARCHAR ( 256 ) NOT NULL,\n\n\t-- resource_uid VARCHAR (
+    48 ) NOT NULL UNIQUE,\n\n\t-- '.spec' field of the Application CR\n\t-- Note:
+    Rather than converting individual JSON fields into SQL Table fields, we just pull
+    the whole spec field. \n\t-- In the future, it might be beneficial to pull out
+    SOME of the fields, to reduce CPU time spent on json parsing\n\tspec_field VARCHAR
+    ( 16384 ) NOT NULL,\n\n\t-- Which Argo CD instance it's hosted on\n\t-- Foreign
+    key to: GitopsEngineInstance.gitopsengineinstance_id\n\tengine_instance_inst_id
+    VARCHAR(48) NOT NULL,\n\tCONSTRAINT fk_gitopsengineinstance_id FOREIGN KEY (engine_instance_inst_id)
+    REFERENCES GitopsEngineInstance(gitopsengineinstance_id) ON DELETE NO ACTION ON
+    UPDATE NO ACTION,\n\n\t-- Which managed environment it is targetting\n\t-- Foreign
+    key to: ManagedEnvironment.managedenvironment_id\n\tmanaged_environment_id VARCHAR(48)
+    NOT NULL,\n\tCONSTRAINT fk_managedenvironment_id FOREIGN KEY (managed_environment_id)
+    REFERENCES ManagedEnvironment(managedenvironment_id) ON DELETE NO ACTION ON UPDATE
+    NO ACTION,\n\t\n\tseq_id serial\n\n);\n\n-- ApplicationState is the Argo CD health/sync
+    state of the Application\n-- (Redis may be better suited for this in the future)\nCREATE
+    TABLE ApplicationState (\n\n\t-- Foreign key to Application.application_id\n\tapplicationstate_application_id
+    \ VARCHAR ( 48 ) PRIMARY KEY,\n\tCONSTRAINT fk_app_id FOREIGN KEY (applicationstate_application_id)
+    REFERENCES Application(application_id) ON DELETE NO ACTION ON UPDATE NO ACTION,\n\n\t--
+    health field comes directly from Argo CD Application CR's .status.health field\n\t--
+    Possible values:\n\t-- * Healthy\n\t-- * Progressing\n\t-- * Degraded\n\t-- *
+    Suspended\n\t-- * Missing\n\t-- * Unknown (this is returned by Argo CD, but is
+    also used when Argo CD's health field is \"\")\n\thealth VARCHAR (30) NOT NULL,\n\n\t--
+    message field comes directly from Argo CD Application CR's .status.healthStatus.Message\n
+    \   message VARCHAR (1024),\n\n    -- revision field comes directly from Argo
+    CD Application CR's .status.SyncStatus.Revision field\n    revision VARCHAR (1024),\n\n\t--
+    sync_status field comes directly from Argo CD Application CR's .status.SyncStatus
+    field\n\t-- Possible values:\n\t-- * Synced\n\t-- * OutOfSync\n\t-- * Unknown
+    (this is used when Argo CD's status field is \"\")\n\tsync_status VARCHAR (30)
+    NOT NULL\n\n);\n\n-- Represents the relationship from GitOpsDeployment CR in the
+    API namespace (workspace), to an Application table row.\n-- This means: if we
+    see a change in a GitOpsDeployment CR, we can easily find the corresponding database
+    entry\n-- by looking for a DeploymentToApplicationMapping that captures the relationship
+    (and vice versa)\nCREATE TABLE DeploymentToApplicationMapping (\n\t\n\t-- uid
+    of our gitops deployment CR within the K8s namespace (or KCP control plane)\n\tdeploymenttoapplicationmapping_uid_id
+    VARCHAR(48) UNIQUE NOT NULL PRIMARY KEY,\n\t\n\t-- name of the GitOpsDeployment
+    CR in the API namespace (workspace)\n\tname VARCHAR ( 256 ),\n\t-- name of the
+    API namespace (workspace)\n\tnamespace VARCHAR ( 96 ),\n\t-- uid of the API namespace
+    (workspace)\n\tworkspace_uid VARCHAR ( 48 ), \n\n\t-- The Application DB entry
+    that corresponds to this GitOpsDeployment CR\n\t-- (For example, deleting the
+    GitOpsDeployment CR should delete the corresponding Application DB table, and
+    likewise\n\t-- should delete this table's entry)\n\t-- Foreign key to: Application.application_id\n\tapplication_id
+    VARCHAR ( 48 ) NOT NULL UNIQUE,\n\tCONSTRAINT fk_app_id FOREIGN KEY (application_id)
+    REFERENCES Application(application_id) ON DELETE NO ACTION ON UPDATE NO ACTION,\n\n\tseq_id
+    serial\n\n);\n\n-- Represents a generic relationship between: Kubernetes CR <->
+    \ Database table\n-- The Kubernetes CR can be either in the workspace, or in/on
+    a GitOpsEngine cluster namespace.\n--\n-- Example: when the cluster agent sees
+    an Argo CD Application CR change within a namespace, it needs a way\n-- to know
+    which GitOpsEngineInstance database entries corresponds to the Argo CD namespace.\n--
+    \n-- For this we would use:\n-- - kubernetes_resource_type: Namespace\n-- - kubernetes_resource_uid:
+    (uid of namespace)\n-- - db_relation_type: GitOpsEngineInstance\n-- - db_relation_key:
+    (primary key of gitops engine instance)\n--\n-- Later, we can query this table
+    to determine 'Argo CD instance namespace' <=> 'GitopsEngineInstance database row'\n--\n--
+    This is also useful for tracking the lifecycle between CRs <-> database table.\nCREATE
+    TABLE KubernetesToDBResourceMapping  (\n\n\t-- kubernetes CR resource (example:
+    Namespace)\n\t-- As of this writing (Jan 2022), Namespace is the only supported
+    value for this field.\n\t-- - See 'kubernetesresourcetodbresousemapping.go' for
+    latest list.\n\tkubernetes_resource_type VARCHAR(64) NOT NULL,\n\n\t-- UID of
+    the CR (from the .metadata.UID field)\n\tkubernetes_resource_uid  VARCHAR(64)
+    NOT NULL,\n\n\t-- name of database table\n\t-- As of this writing (Jan 2022),
+    ManagedEnvironment, GitopsEngineCluster, and GitopsEngineInstance are the only
+    supported values for this field.\n\t-- - See 'kubernetesresourcetodbresousemapping.go'
+    for latest list.\n\tdb_relation_type  VARCHAR(64) NOT NULL,\n\n\t-- primary key
+    of database table\n\tdb_relation_key  VARCHAR(64) NOT NULL,\n\n\tseq_id serial,\n\n\tPRIMARY
+    KEY(kubernetes_resource_type, kubernetes_resource_uid, db_relation_type, db_relation_key)\n\n);\n\nCREATE
+    INDEX idx_db_relation_uid ON KubernetesToDBResourceMapping(kubernetes_resource_type,
+    kubernetes_resource_uid, db_relation_type);\n-- Used by: GetDBResourceMappingForKubernetesResource\n\n--
+    Maps API custom resources on the workspace (such as GitOpsDeploymentSyncRun),
+    to a corresponding entry in the database.\n-- This allows us to quickly go from
+    API CR <-to-> Database entry, and also to identify database entries even when
+    the API CR has been\n-- deleted from the workspace.\nCREATE TABLE APICRToDatabaseMapping
+    \ (\n\n\t-- The custom resource type of the K8S custom resource being referenced
+    in the mapping\n\t-- As of this writing (Jan 2022), the only supported value for
+    this field is GitOpsDeploymentSyncRun.\n\t-- See APICRToDatabaseMapping_ResourceType_*
+    constants for latest list.\n\tapi_resource_type VARCHAR(64) NOT NULL,\n\t\n\t--
+    The UID (from .metadata.uid field) of the K8s resource\n\tapi_resource_uid VARCHAR(64)
+    NOT NULL,\n\t\n\t-- The name of the k8s resource (from .metadata.name field) of
+    the K8s resource\n\tapi_resource_name VARCHAR(256) NOT NULL,\n\n\t-- The namespace
+    containing the k8s resource\n\tapi_resource_namespace VARCHAR(256) NOT NULL,\n\t\n\t--
+    The UID (from .metadata.uid field) of the namespace containing the k8s resource\n\tapi_resource_workspace_uid
+    VARCHAR(64) NOT NULL,\n\n\t-- The name of the database table being referenced.
+    \n\t-- As of this writing (Jan 2022), the only supported value for this field
+    is SyncOperation.\n\t-- See APICRToDatabaseMapping_DBRelationType_ constants for
+    latest list.\n\tdb_relation_type VARCHAR(32) NOT NULL,\n\n\t-- The primary key
+    of the row in the database table being referenced.\n\tdb_relation_key VARCHAR(64)
+    NOT NULL,\n\n\tseq_id serial,\n\n\tPRIMARY KEY(api_resource_type, api_resource_uid,
+    db_relation_type, db_relation_key)\n\n);\n-- TODO: GITOPS-1702 - PERF - Add index
+    to APICRToDatabaseMapping to correspond to the access patterns we are using.\n\n--
+    Sync Operation tracks a sync request from the API, \nCREATE TABLE SyncOperation
+    (\n\n\t-- Primary key for the SyncOperation (UID), is a random UUID\n\tsyncoperation_id
+    \ VARCHAR(48) NOT NULL PRIMARY KEY,\n\n\t-- The target Application that is being
+    synchronized\n\t-- Foreign key to: Application.application_id\n\tapplication_id
+    VARCHAR(48),\n\tCONSTRAINT fk_so_app_id FOREIGN KEY (application_id) REFERENCES
+    Application(application_id) ON DELETE NO ACTION ON UPDATE NO ACTION,\n\n\t-- The
+    Operation which contains the state of the sync operation\n\t-- Foreign key to:
+    Operation.operation_id\n\toperation_id VARCHAR(48) NOT NULL,\n\t-- CONSTRAINT
+    fk_so_operation_id FOREIGN KEY (operation_id) REFERENCES Operation(operation_id)
+    ON DELETE NO ACTION ON UPDATE NO ACTION\n\n\t-- The 'gitopsDeploymentName' field
+    of the GitOpsDeploymentSyncRun CR\n\tdeployment_name VARCHAR(256) NOT NULL,\n\n\t--
+    The 'revisionID'  field of the GitOpsDeploymentSyncRun CR\n\trevision VARCHAR(256)
+    NOT NULL,\n\n\t-- Whether we want the SyncOperation to continue running, or to
+    be terminated.\n\t-- values: Running, Terminated\n\tdesired_state VARCHAR(16)
+    NOT NULL,\t\n\n\tseq_id serial\n\n);\n\n/*\n-------------------------------------------------------------------------------\n\nSchema
+    Design Guidelines:\n\n- All primary keys (PKs) should include the name of the
+    table, in the field name.\n    - Example:\n\t    - initial field name: infcluster_id\n\t\t-
+    table: GitopsEngineCluster\n\t\t- field name is thus: gitopsenginecluster_infcluster_id
+    \ \n\t\t    - (eg [table]_[initial file name])\n\t- Why? This makes it easy to
+    track usage of the PK, and refactor at a later date. \n    - Foreign keys (FKs)
+    to PKs do NOT need to include the table name\n\n- No other tables should use a
+    field with the same name as the PK of another table.\n\t- Why? This makes it easy
+    to track usage of the PK, and refactor at a later date. \n\n- Use UUIDs for table
+    PK, rather than seqids:\n\t- Why? Unlike seqids:\n\t    - UUIDS do not leak information
+    on # of users\n\t\t- UUIDs are not vulnerable to increment by one attacks\n\t\t-
+    Allows the contents of two RDBMS databases to be easily merged (no need to fix
+    all the seqids)\n\t\t- Give flexibility over underlying database store (Other
+    RDBMS-es, other DB technologies)\n\t\t- Prevents accidental erasure of table rows
+    (collisions between uuids is much less likely than between integers)\n\n- Name
+    case:\n    - For tables: CamelCase\n    - For fields: lowercase_snake_case\n\n-------------------------------------------------------------------------------\n\n\nForeign
+    key relationships between tables, as of this writing:\n(Tables entries must be
+    deleted in this order, from top to bottom, and created in reverse order)\n\nMiro
+    Diagram: https://miro.com/app/board/o9J_lgiqJAs=/?moveToWidget=3458764513858646837&cot=14\n\nApplicationState
+    ->  Application\n\nDeploymentToApplicationMapping -> Application\n\nOperation
+    -> ClusterUser\nOperation -> GitopsEngineInstance\n\nApplication -> ManagedEnviroment\nApplication
+    ->  GitopsEngineInstance\n\nClusterAccess -> ClusterUser\nClusterAccess -> ManagedEnvironment\nClusterAccess
+    -> GitopsEngineInstance\n\nGitopsEngineInstance -> GitopsEngineCluster\n\nGitopsEngineCluster
+    -> ClusterCredentials\nManagedEnvironment -> ClusterCredentials\n\n\nClusterCredentials
+    -> .\n\nClusterUser -> .\n\nKubernetesToDBResourceMapping -> .\n\n\n-------------------------------------------------------------------------------\n\nExtra
+    thoughts:\n\nNotes:\n\nseq_id is for debugging purposes only, and should not be
+    used as a key\n\n\n-------------------------------------------------------------------------------\n*/\n"
+kind: ConfigMap
+metadata:
+  name: gitops-service-dbschema
+  namespace: gitops
