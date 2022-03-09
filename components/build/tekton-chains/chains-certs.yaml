@@ -47,7 +47,7 @@ metadata:
   name: chains-certs-configuration
   namespace: tekton-chains
   annotations:
-    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook: Sync
     argocd.argoproj.io/hook-delete-policy: HookSucceeded
 spec:
   template:
@@ -59,7 +59,9 @@ spec:
             - -c
             - |
               echo "Waiting for secret and configmaps to be present"
-              until oc get secret chains-ca-cert -n tekton-chains
+              until oc get secret chains-ca-cert -n tekton-chains &&\
+                oc get cm config-trusted-cabundle -n tekton-chains &&\
+                oc get cm kube-root-ca.crt -n tekton-chains
               do
                 sleep 5;
               done
