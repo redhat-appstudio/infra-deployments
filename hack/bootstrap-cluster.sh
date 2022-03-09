@@ -49,6 +49,9 @@ echo "Setting secrets for Tekton Results"
 if ! kubectl get namespace tekton-pipelines &>/dev/null; then
   kubectl create namespace tekton-pipelines
 fi
+
+OPENSSLDIR=`openssl version -d | cut -f2 -d'"'`
+ 
 if ! kubectl get secret -n tekton-pipelines tekton-results-tls &>/dev/null; then
   ROUTE=$(oc whoami --show-console | sed 's|https://console-openshift-console|api-tekton-pipelines|')
   openssl req -x509 \
@@ -60,7 +63,7 @@ if ! kubectl get secret -n tekton-pipelines tekton-results-tls &>/dev/null; then
     -subj "/CN=tekton-results-api-service.tekton-pipelines.svc.cluster.local" \
     -reqexts SAN \
     -extensions SAN \
-    -config <(cat /etc/pki/tls/openssl.cnf \
+    -config <(cat ${OPENSSLDIR:-/etc/pki/tls}/openssl.cnf \
         <(printf "\n[SAN]\nsubjectAltName=DNS:tekton-results-api-service.tekton-pipelines.svc.cluster.local, DNS:$ROUTE"))
   kubectl create secret tls -n tekton-pipelines tekton-results-tls --cert=cert.pem --key=key.pem
   rm cert.pem key.pem
