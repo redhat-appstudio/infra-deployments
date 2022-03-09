@@ -1,3 +1,13 @@
+# This trigger template creates pipelines for building images:
+#      - redhat-appstudio/build-templates-bundle
+#      - redhat-appstudio/appstudio-tasks
+#      - redhat-appstudio/appstudio-utils
+# MR request to redhat-appstudio/infra-deployments is created.
+# There has to be fork repository for pushing changes and token to create MR.
+# Fork repository has to have set Deploy key
+# Secret has to be created:
+# oc create -n build-templates secret generic build-definitions-deploy-key --from-file=id_rsa=$PATH_TO_KEY --from-literal=token=$GITHUB_TOKEN
+
 apiVersion: triggers.tekton.dev/v1alpha1
 kind: TriggerTemplate
 metadata:
@@ -63,14 +73,53 @@ spec:
                     script: |
                       #!/usr/bin/env bash
                       MY_QUAY_USER=redhat-appstudio BUILD_TAG=$(params.revision) SKIP_BUILD=1 SKIP_INSTALL=1 hack/build-and-push.sh
+            - name: update-infra-repo
+              runAfter:
+                - build-bundles
+              params:
+                - name: BASE_IMAGE
+                  value: registry.redhat.io/openshift-pipelines/pipelines-git-init-rhel8@sha256:af7dd5b3b1598a980f17d5f5d3d8a4b11ab4f5184677f7f17ad302baa36bd3c1
+                - name: GIT_USER_NAME
+                  value: Build deployer
+                - name: GIT_SCRIPT
+                  value: |
+                    ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
+                    git clone https://github.com/redhat-appstudio/infra-deployments
+                    cd infra-deployments
+                    git remote add push git@github.com:redhat-appstudio-mr-creation/infra-deployments.git
+                    git checkout -b build-definitions-update
+                    BUNDLE=quay.io/redhat-appstudio/build-templates-bundle
+                    for file in $(git grep -l $BUNDLE); do
+                      sed -i "s|\($BUNDLE\):.*|\1:$(params.revision)|g" $file
+                    done
+                    git commit -a -m "Build definitions update" -m "from $(params.git-url) $(params.revision)"
+                    git push -f --set-upstream push build-definitions-update
+
+                    set +x
+                    curl -H "Authorization: token $(cat /root/.ssh/token)" \
+                      -X POST \
+                      -H "Accept: application/vnd.github.v3+json" \
+                      https://api.github.com/repos/redhat-appstudio/infra-deployments/pulls \
+                      -d '{"head":"redhat-appstudio-mr-creation:build-definitions-update","base":"main","title":"Build definitions update"}'
+              taskRef:
+                kind: ClusterTask
+                name: git-cli
+              workspaces:
+                - name: source
+                  workspace: workspace
+                - name: ssh-directory
+                  workspace: deploy-key
           workspaces:
             - name: workspace
+            - name: deploy-key
         workspaces:
           - name: workspace
             persistentVolumeClaim:
               claimName: app-studio-default-workspace
             subPath: application-service-$(tt.params.git-revision)
-
+          - name: deploy-key
+            secret:
+              secretName: build-definitions-deploy-key
     - apiVersion: tekton.dev/v1beta1
       kind: PipelineRun
       metadata:
