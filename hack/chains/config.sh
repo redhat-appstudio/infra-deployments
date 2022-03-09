@@ -78,29 +78,54 @@ case "$1" in
 
     ;;
 
+  rekor-local )
+    REKOR_SERVER=$(kubectl get ingress -n rekor-server -o yaml|yq e '.items[.spec].spec.rules[.host].host')
+    $0 "transparency.url: \"$REKOR_SERVER\"" $2
+
+    ;;
+
   * )
     # Avoid clearing all config if no param is given
     [[ -z $1 ]] && $0 get && exit
+
 
     # Use yq to convert the input to a single line of json
     # so we can use yaml or json for the input
     PATCH=$( echo "$1" | yq -o=json --indent=0 e - )
 
     if [[ $2 == "--dry-run" ]]; then
-      # Just show the desired config
-      echo "$PATCH" | yq e -P 'sort_keys(..)' -
+      if [[ $1 == "rekor-default" ]]; then
+        echo $($0 get | yq -o=json --indent=0 e 'del(."transparency.url")' - )
+      else
+        # Just show the desired config
+        echo "$PATCH" | yq e -P 'sort_keys(..)' -
+      fi
 
     else
-      # Apply the patch
-      set -x
-      kubectl patch $CHAINS_CONFIG --patch "{\"data\":$PATCH}"
+      # if setting rekor-default we should ensure we don't have a transparency.url value
+      if [[ $1 == "rekor-default" ]]; then
+        # Remove the transparency.url key from the data section
+        set -x
+        kubectl patch $CHAINS_CONFIG --type=json -p='[{"op": "remove", "path":"/data/transparency.url"}]'
 
-      # Restart the controller to make sure the new config takes effect
-      kubectl delete pod -n tekton-chains -l app=tekton-chains-controller
+        # Restart the controller to make sure the new config takes effect
+        kubectl delete pod -n tekton-chains -l app=tekton-chains-controller
 
-      # Show the config as a confirmation
-      $0 get
+        # Show the config as a confirmation
+        $0 get
 
+      else
+        # Apply the patch
+        set -x
+        kubectl patch $CHAINS_CONFIG --patch "{\"data\":$PATCH} --type=merge"
+
+        # Restart the controller to make sure the new config takes effect
+        kubectl delete pod -n tekton-chains -l app=tekton-chains-controller
+
+        # Show the config as a confirmation
+        $0 get
+
+      fi
     fi
 
     ;;
