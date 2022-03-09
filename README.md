@@ -299,6 +299,17 @@ If you want to check all your repos to see which ones may build you can use this
 ./hack/build/utils/ls-all-my-repos.sh | xargs -n 1 ./hack/build/utils/check-repo.sh
 ```
 
+### Tekton Results integration
+
+[Tekton Results](https://github.com/tektoncd/results) is installed in the cluster. Helper script `hack/build/set-tkn-results.sh` is provided to set configuration of for `tkn results` command.
+
+```
+# ./hack/build/set-tkn-results.sh
+Configuration written to /home/myuser/.config/tkn/results.yaml
+
+Try it: tkn results list default
+```
+
 # Invoking the API
 
 ## GitOps Service

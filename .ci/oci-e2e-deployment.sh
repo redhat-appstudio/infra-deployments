@@ -64,9 +64,18 @@ function createQuayPullSecrets() {
 }
 
 function waitAppStudioToBeReady() {
-    while [ "$(kubectl get applications.argoproj.io ${APPLICATION_NAME} -n ${APPLICATION_NAMESPACE} -o jsonpath='{.status.health.status}')" != "Healthy" ]; do
-        sleep 3m
+    while [ "$(kubectl get applications.argoproj.io ${APPLICATION_NAME} -n ${APPLICATION_NAMESPACE} -o jsonpath='{.status.health.status}')" != "Healthy" ] ||
+          [ "$(kubectl get applications.argoproj.io ${APPLICATION_NAME} -n ${APPLICATION_NAMESPACE} -o jsonpath='{.status.sync.status}')" != "Synced" ]; do
+        sleep 1m
         echo "[INFO] Waiting for AppStudio to be ready."
+    done
+}
+
+function waitBuildToBeReady() {
+    while [ "$(kubectl get applications.argoproj.io build -n ${APPLICATION_NAMESPACE} -o jsonpath='{.status.health.status}')" != "Healthy" ] ||
+          [ "$(kubectl get applications.argoproj.io build -n ${APPLICATION_NAMESPACE} -o jsonpath='{.status.sync.status}')" != "Synced" ]; do
+        sleep 1m
+        echo "[INFO] Waiting for Build to be ready."
     done
 }
 
@@ -91,9 +100,11 @@ git remote add ${MY_GIT_FORK_REMOTE} https://github.com/redhat-appstudio-qe/infr
 /bin/bash "$WORKSPACE"/hack/bootstrap-cluster.sh preview
 
 export -f waitAppStudioToBeReady
+export -f waitBuildToBeReady
 export -f checkHASGithubOrg
 
 timeout --foreground 10m bash -c waitAppStudioToBeReady
+timeout --foreground 10m bash -c waitBuildToBeReady
 # Just a sleep before starting the tests
 sleep 2m
 timeout --foreground 3m bash -c checkHASGithubOrg
