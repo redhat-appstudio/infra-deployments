@@ -8,5 +8,6 @@ sed -i "s/GITHUB_ORG=.*/GITHUB_ORG=\"$1\"/" $ROOT/components/has/kustomization.y
 if [ -n "$MY_GITHUB_TOKEN" ]; then
     echo
     echo "Setting gitHub token"
+    oc create namespace application-service --dry-run=client -o yaml | oc apply -f -
     oc create -n application-service secret generic has-github-token --from-literal=token="$MY_GITHUB_TOKEN" --dry-run=client -o yaml | oc apply -f -
 fi
