@@ -36,7 +36,6 @@ demonstrate chains.)
 ### Apply some CA cert related hacks to make SSL work for the internal registry
 
     ./trust-local-cert.sh
-    ./setup-controller-certs.sh
 
 ## Demos
 
