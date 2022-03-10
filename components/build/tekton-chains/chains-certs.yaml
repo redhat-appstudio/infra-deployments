@@ -28,6 +28,19 @@ rules:
   - update
 ---
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: secret-reader
+  namespace: openshift-ingress-operator
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: chains-secret-admin
@@ -36,6 +49,20 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: chains-secret-admin
+subjects:
+- kind: ServiceAccount
+  name: chains-secrets-admin
+  namespace: tekton-chains
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: chains-secret-reader
+  namespace: openshift-ingress-operator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: secret-reader
 subjects:
 - kind: ServiceAccount
   name: chains-secrets-admin
@@ -66,12 +93,17 @@ spec:
                 sleep 5;
               done
 
-              echo "Update certificate"
+              # Update the chains-ca-cert secret with cluster certs, trusted-ca's and ingress cert.
+              # The configmaps are injected by the Cluster Network Operator.
+              # Once https://github.com/tektoncd/operator/pull/648 changes are released, we can remove/review this hook.
+              echo "Build the certificate and replace secret/chains-ca-cert"
               TRUSTED_CA=$(mktemp)
               KUBE_CA=$(mktemp)
+              INGRESS_CA=$(mktemp)
               oc get cm config-trusted-cabundle -n tekton-chains -o jsonpath="{.data.ca-bundle\.crt}" > $TRUSTED_CA
               oc get cm kube-root-ca.crt -n tekton-chains -o jsonpath="{.data.ca\.crt}" > $KUBE_CA
-              cat $TRUSTED_CA $KUBE_CA > /tmp/ca-certificates.crt
+              oc get secret router-ca -n openshift-ingress-operator -o jsonpath="{.data.tls\.crt}" | base64 -d > $INGRESS_CA
+              cat $TRUSTED_CA $KUBE_CA $INGRESS_CA > /tmp/ca-certificates.crt
               oc create secret generic chains-ca-cert --from-file=/tmp/ca-certificates.crt --dry-run=client -o yaml -n tekton-chains | oc replace -f -
           imagePullPolicy: Always
           name: patch-chains-certs
