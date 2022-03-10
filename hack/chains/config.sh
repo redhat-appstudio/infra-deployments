@@ -84,48 +84,48 @@ case "$1" in
 
     ;;
 
+  rekor-default )
+    # if setting rekor-default we should ensure we don't have a transparency.url value
+    $0 remove-key 'transparency.url' $2
+
+    ;;
+
+  remove-key )
+    # Remove the given key from the data section
+    set -x
+    kubectl patch $CHAINS_CONFIG --type=json -p='[{"op": "remove", "path":"'"/data/$2"'"}]'
+    $0 restart-controller
+    $0 get
+
+    ;;
+
+  restart-controller )
+    # Restart the controller to make sure the new config takes effect
+    kubectl delete pod -n tekton-chains -l app=tekton-chains-controller
+    
+    ;;
+
   * )
     # Avoid clearing all config if no param is given
     [[ -z $1 ]] && $0 get && exit
-
 
     # Use yq to convert the input to a single line of json
     # so we can use yaml or json for the input
     PATCH=$( echo "$1" | yq -o=json --indent=0 e - )
 
     if [[ $2 == "--dry-run" ]]; then
-      if [[ $1 == "rekor-default" ]]; then
-        echo $($0 get | yq -o=json --indent=0 e 'del(."transparency.url")' - )
-      else
-        # Just show the desired config
-        echo "$PATCH" | yq e -P 'sort_keys(..)' -
-      fi
-
+      # Just show the desired config
+      echo "$PATCH" | yq e -P 'sort_keys(..)' -
     else
-      # if setting rekor-default we should ensure we don't have a transparency.url value
-      if [[ $1 == "rekor-default" ]]; then
-        # Remove the transparency.url key from the data section
-        set -x
-        kubectl patch $CHAINS_CONFIG --type=json -p='[{"op": "remove", "path":"/data/transparency.url"}]'
+      # Apply the patch
+      set -x
+      kubectl patch $CHAINS_CONFIG --patch "{\"data\":$PATCH} --type=merge"
 
-        # Restart the controller to make sure the new config takes effect
-        kubectl delete pod -n tekton-chains -l app=tekton-chains-controller
+      # Restart the controller to ensure new config takes effect
+      $0 restart-controller
 
-        # Show the config as a confirmation
-        $0 get
-
-      else
-        # Apply the patch
-        set -x
-        kubectl patch $CHAINS_CONFIG --patch "{\"data\":$PATCH} --type=merge"
-
-        # Restart the controller to make sure the new config takes effect
-        kubectl delete pod -n tekton-chains -l app=tekton-chains-controller
-
-        # Show the config as a confirmation
-        $0 get
-
-      fi
+      # Show the config as a confirmation
+      $0 get
     fi
 
     ;;
