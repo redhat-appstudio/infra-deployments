@@ -92,10 +92,16 @@ case "$1" in
 
   remove-key )
     # Remove the given key from the data section
-    set -x
-    kubectl patch $CHAINS_CONFIG --type=json -p='[{"op": "remove", "path":"'"/data/$2"'"}]'
-    $0 restart-controller
-    $0 get
+    PATCH=$(echo '[{"op": "remove", "path":"'"/data/$2"'"}]' | yq -o=json --indent=0 e - )
+
+    if [[ $3 == '--dry-run' ]]; then
+      echo "$PATCH" | yq e -P 'sort_keys(..)' -
+    else
+      set -x
+      kubectl patch $CHAINS_CONFIG --type=json -p='[{"op": "remove", "path":"'"/data/$2"'"}]'
+      $0 restart-controller
+      $0 get
+    fi
 
     ;;
 
