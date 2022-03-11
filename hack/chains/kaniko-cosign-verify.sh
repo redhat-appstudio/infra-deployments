@@ -35,7 +35,7 @@ title "Cosign verify the image"
 # Save the output data to a file so we can look at it later
 # (Actually we could just pipe it to jq because the text goes to stderr I think..?)
 show-then-run "cosign verify --key $SIG_KEY $IMAGE_URL --output-file /tmp/verify.out"
-yq e -P /tmp/verify.out
+yq e . -P - < /tmp/verify.out
 pause
 
 title "Cosign verify the image's attestation"
