@@ -20,11 +20,33 @@ oc project tekton-chains
 
 title "Ensure we have the demo kaniko build task"
 kubectl apply -f https://raw.githubusercontent.com/tektoncd/chains/main/examples/kaniko/kaniko.yaml
-
-# Tweak it to avoid TLS failures
-# Fixme: Make it work without --skip-tls-verify
-kubectl patch task/kaniko-chains --type=json \
-  --patch='[{"op": "add", "path": "/spec/steps/1/args/5", "value":"--skip-tls-verify=true"}]'
+# Patch the above task to add the volume with CA certificates from the chains-ca-cert secret and to add the volume mount
+# Go will try several paths to load the CA certificates, the key in the secret is 'ca-certificates.crt' and it matches
+# the /etc/ssl/certs/ca-certificates.crt path (see https://go.dev/src/crypto/x509/root_linux.go)
+kubectl patch task kaniko-chains --type=json --patch='[
+  {
+    "op": "add",
+    "path": "/spec/volumes",
+    "value": [
+      {
+        "name": "ca-certificates",
+        "secret": {
+          "secretName":"chains-ca-cert"
+        }
+      }
+    ]
+  },
+  {
+    "op": "add",
+    "path": "/spec/steps/1/volumeMounts",
+    "value": [
+      {
+        "name": "ca-certificates",
+        "mountPath": "/etc/ssl/certs/"
+      }
+    ]
+  }
+]'
 
 IMAGE_REGISTRY=$( oc registry info )
 DOCKERCFG=$( oc get sa tekton-chains-controller -o json | jq -r '.secrets[1].name' )
