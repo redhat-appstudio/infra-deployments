@@ -51,7 +51,7 @@ Simply update the files under `components/(team-name)`, and open a PR with the c
 
 ### Required prerequisites
 The prerequisites are:
-- You must have `kubectl`, `oc`, `jq and `yq` installed.
+- You must have `kubectl`, `oc`, `jq and [`yq`](https://github.com/mikefarah/yq) installed.
 - You must have `kubectl` and `oc` pointing to an existing OpenShift cluster, that you wish to deploy to.
 
 ### Optional: CodeReady Containers Setup
@@ -300,6 +300,17 @@ If you want to check all your repos to see which ones may build you can use this
 
 ```
 ./hack/build/utils/ls-all-my-repos.sh | xargs -n 1 ./hack/build/utils/check-repo.sh
+```
+
+### Tekton Results integration
+
+[Tekton Results](https://github.com/tektoncd/results) is installed in the cluster. Helper script `hack/build/set-tkn-results.sh` is provided to set configuration of for `tkn results` command.
+
+```
+# ./hack/build/set-tkn-results.sh
+Configuration written to /home/myuser/.config/tkn/results.yaml
+
+Try it: tkn results list default
 ```
 
 # Invoking the API
