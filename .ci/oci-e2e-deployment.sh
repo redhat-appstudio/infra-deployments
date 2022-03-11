@@ -47,26 +47,28 @@ function catchFinish() {
     exit $JOB_EXIT_CODE
 }
 
-# More info at: https://github.com/redhat-appstudio/application-service#creating-a-github-secret-for-has
-function createHASSecret() {
-    echo -e "[INFO] Creating has github token secret"
-
-    kubectl create namespace application-service || true
-    kubectl create secret generic has-github-token -n application-service --from-literal token=$GITHUB_TOKEN || true
-}
-
 # Secrets used by pipelines to push component containers to quay.io
 function createQuayPullSecrets() {
     echo "$QUAY_TOKEN" | base64 --decode > docker.config
+    oc create namespace application-service --dry-run=client -o yaml | oc apply -f -
     kubectl create secret docker-registry redhat-appstudio-registry-pull-secret -n  application-service --from-file=.dockerconfigjson=docker.config
     kubectl create secret docker-registry redhat-appstudio-staginguser-pull-secret -n  application-service --from-file=.dockerconfigjson=docker.config
     rm docker.config
 }
 
 function waitAppStudioToBeReady() {
-    while [ "$(kubectl get applications.argoproj.io ${APPLICATION_NAME} -n ${APPLICATION_NAMESPACE} -o jsonpath='{.status.health.status}')" != "Healthy" ]; do
-        sleep 3m
+    while [ "$(kubectl get applications.argoproj.io ${APPLICATION_NAME} -n ${APPLICATION_NAMESPACE} -o jsonpath='{.status.health.status}')" != "Healthy" ] ||
+          [ "$(kubectl get applications.argoproj.io ${APPLICATION_NAME} -n ${APPLICATION_NAMESPACE} -o jsonpath='{.status.sync.status}')" != "Synced" ]; do
+        sleep 1m
         echo "[INFO] Waiting for AppStudio to be ready."
+    done
+}
+
+function waitBuildToBeReady() {
+    while [ "$(kubectl get applications.argoproj.io build -n ${APPLICATION_NAMESPACE} -o jsonpath='{.status.health.status}')" != "Healthy" ] ||
+          [ "$(kubectl get applications.argoproj.io build -n ${APPLICATION_NAMESPACE} -o jsonpath='{.status.sync.status}')" != "Synced" ]; do
+        sleep 1m
+        echo "[INFO] Waiting for Build to be ready."
     done
 }
 
@@ -83,7 +85,6 @@ function executeE2ETests() {
     e2e-appstudio --ginkgo.junit-report="${ARTIFACTS_DIR}"/e2e-report.xml
 }
 
-createHASSecret
 createQuayPullSecrets
 
 git remote add ${MY_GIT_FORK_REMOTE} https://github.com/redhat-appstudio-qe/infra-deployments.git
@@ -91,9 +92,11 @@ git remote add ${MY_GIT_FORK_REMOTE} https://github.com/redhat-appstudio-qe/infr
 /bin/bash "$WORKSPACE"/hack/bootstrap-cluster.sh preview
 
 export -f waitAppStudioToBeReady
+export -f waitBuildToBeReady
 export -f checkHASGithubOrg
 
 timeout --foreground 10m bash -c waitAppStudioToBeReady
+timeout --foreground 10m bash -c waitBuildToBeReady
 # Just a sleep before starting the tests
 sleep 2m
 timeout --foreground 3m bash -c checkHASGithubOrg
