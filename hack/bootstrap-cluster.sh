@@ -76,6 +76,17 @@ if ! kubectl get secret -n tekton-pipelines tekton-results-postgres &>/dev/null;
 fi
 
 echo
+echo "Setting secrets for GitOps"
+if ! kubectl get namespace gitops &>/dev/null; then
+  kubectl create namespace gitops
+fi
+if ! kubectl get secret -n gitops gitops-postgresql-staging &>/dev/null; then
+  kubectl create secret generic gitops-postgresql-staging \
+    --namespace=gitops \
+    --from-literal=postgresql-password=$(openssl rand -base64 20)
+fi
+
+echo
 echo "Setting Cluster Mode: ${MODE:-Upstream}"
 case $MODE in
     ""|"upstream")
