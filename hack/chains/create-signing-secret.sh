@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # Show a message and exit gracefully if cosign isn't installed
-! which cosign >/dev/null 2>&1 && echo "Please install cosign!" && exit
+! which cosign >/dev/null 2>&1 &&\
+  echo "Please install cosign as per https://docs.sigstore.dev/cosign/installation/" && exit
 
 # Once the key-pair has been set it's marked as immutable so it can't be updated.
 # Try to handle that nicely. The object is expected to always exist so check the data.
