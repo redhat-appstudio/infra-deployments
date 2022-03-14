@@ -78,6 +78,37 @@ case "$1" in
 
     ;;
 
+  rekor-local )
+    REKOR_SERVER=$(kubectl get ingress -n rekor-server -o yaml|yq e '.items[.spec].spec.rules[.host].host')
+    $0 "transparency.url: \"$REKOR_SERVER\"" $2
+
+    ;;
+
+  rekor-default )
+    # if setting rekor-default we should ensure we don't have a transparency.url value
+    $0 remove-key 'transparency.url' $2
+
+    ;;
+
+  remove-key )
+    PATCH=$(echo "[{"op": "remove", "path": "/data/$2"}]" | yq -o=json --indent=0 e - )
+    if [[ $3 == '--dry-run' ]]; then
+      echo "$PATCH" | yq e -P 'sort_keys(..)' -
+    else
+      set -x
+      kubectl patch $CHAINS_CONFIG --type=json --patch $PATCH 
+      $0 restart-controller
+      $0 get
+    fi
+
+    ;;
+
+  restart-controller )
+    # Restart the controller to make sure the new config takes effect
+    kubectl delete pod -n tekton-chains -l app=tekton-chains-controller
+    
+    ;;
+
   * )
     # Avoid clearing all config if no param is given
     [[ -z $1 ]] && $0 get && exit
@@ -89,18 +120,16 @@ case "$1" in
     if [[ $2 == "--dry-run" ]]; then
       # Just show the desired config
       echo "$PATCH" | yq e -P 'sort_keys(..)' -
-
     else
       # Apply the patch
       set -x
-      kubectl patch $CHAINS_CONFIG --patch "{\"data\":$PATCH}"
+      kubectl patch $CHAINS_CONFIG --patch "{\"data\":$PATCH} --type=merge"
 
-      # Restart the controller to make sure the new config takes effect
-      kubectl delete pod -n tekton-chains -l app=tekton-chains-controller
+      # Restart the controller to ensure new config takes effect
+      $0 restart-controller
 
       # Show the config as a confirmation
       $0 get
-
     fi
 
     ;;
