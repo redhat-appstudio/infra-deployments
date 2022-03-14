@@ -53,6 +53,18 @@ if [ -n "$SHARED_SECRET" ] && [ -n "$SPI_TYPE" ] && [ -n "$SPI_CLIENT_ID" ] && [
     rm $TMP_FILE
 fi
 
+if [ -n "$DOCKER_IO_AUTH" ]; then
+    AUTH=$(mktemp)
+    # Set global pull secret
+    oc get secret/pull-secret -n openshift-config --template='{{index .data ".dockerconfigjson" | base64decode}}' > $AUTH
+    oc registry login --registry=docker.io --auth-basic=$DOCKER_IO_AUTH --to=$AUTH
+    oc set data secret/pull-secret -n openshift-config --from-file=.dockerconfigjson=$AUTH
+    # Set current namespace pipeline serviceaccount which is used by buildah
+    oc create secret docker-registry docker-io-pull --from-file=.dockerconfigjson=$AUTH -o yaml --dry-run=client | oc apply -f-
+    oc secrets link pipeline docker-io-pull
+    rm $AUTH
+fi
+
 if ! git diff --exit-code --quiet; then
     git commit -a -m "Preview mode, do not merge into main"
     git push -f --set-upstream $MY_GIT_FORK_REMOTE $PREVIEW_BRANCH
