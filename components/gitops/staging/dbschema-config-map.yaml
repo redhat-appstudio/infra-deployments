@@ -196,8 +196,8 @@ data:
     latest list.\n\tdb_relation_type VARCHAR(32) NOT NULL,\n\n\t-- The primary key
     of the row in the database table being referenced.\n\tdb_relation_key VARCHAR(64)
     NOT NULL,\n\n\tseq_id serial,\n\n\tPRIMARY KEY(api_resource_type, api_resource_uid,
-    db_relation_type, db_relation_key)\n\n);\n-- TODO: GITOPS-1702 - PERF - Add index
-    to APICRToDatabaseMapping to correspond to the access patterns we are using.\n\n--
+    db_relation_type, db_relation_key)\n\n);\n-- TODO: GITOPSRVCE-68 - PERF - Add
+    index to APICRToDatabaseMapping to correspond to the access patterns we are using.\n\n--
     Sync Operation tracks a sync request from the API, \nCREATE TABLE SyncOperation
     (\n\n\t-- Primary key for the SyncOperation (UID), is a random UUID\n\tsyncoperation_id
     \ VARCHAR(48) NOT NULL PRIMARY KEY,\n\n\t-- The target Application that is being
