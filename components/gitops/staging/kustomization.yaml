@@ -1,4 +1,5 @@
-
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
 resources:
 - allow-argocd-to-manage.yaml
 - appstudio-controller-rbac.yaml
@@ -10,31 +11,27 @@ resources:
 - managed-gitops-backend-controller-manager-metrics-service.yaml
 - managed-gitops-backend-controller-manager_serviceaccount.yaml
 - managed-gitops-backend-deployment.yaml
-- managed-gitops-backend-leader-election-rolebinding.yaml
 - managed-gitops-backend-leader-election-role.yaml
+- managed-gitops-backend-leader-election-rolebinding.yaml
 - managed-gitops-backend-manager-config.yaml
-- managed-gitops-backend-manager-rolebinding.yaml
 - managed-gitops-backend-manager-role.yaml
+- managed-gitops-backend-manager-rolebinding.yaml
 - managed-gitops-backend-metrics-leader.yaml
-- managed-gitops-backend-proxy-rolebinding.yaml
 - managed-gitops-backend-proxy-role.yaml
+- managed-gitops-backend-proxy-rolebinding.yaml
 - managed-gitops-clusteragent-controller-manager-metrics-service.yaml
 - managed-gitops-clusteragent-controller-manager_serviceaccount.yaml
 - managed-gitops-clusteragent-deployment.yaml
-- managed-gitops-clusteragent-leader-election-rolebinding.yaml
 - managed-gitops-clusteragent-leader-election-role.yaml
+- managed-gitops-clusteragent-leader-election-rolebinding.yaml
 - managed-gitops-clusteragent-manager-config.yaml
-- managed-gitops-clusteragent-manager-rolebinding.yaml
 - managed-gitops-clusteragent-manager-role.yaml
+- managed-gitops-clusteragent-manager-rolebinding.yaml
 - managed-gitops-clusteragent-metrics-leader.yaml
-- managed-gitops-clusteragent-proxy-rolebinding.yaml
 - managed-gitops-clusteragent-proxy-role.yaml
+- managed-gitops-clusteragent-proxy-rolebinding.yaml
 - managed-gitops.redhat.com_gitopsdeployments.yaml
 - managed-gitops.redhat.com_gitopsdeploymentsyncruns.yaml
 - managed-gitops.redhat.com_operations.yaml
 - postgresql-staging.yaml
 - routes.yaml
-
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-
