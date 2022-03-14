@@ -1,7 +1,7 @@
 #!/bin/bash
 #This script sets up the pre-requisites for setting up app-studio in redhat based machines.
 # mainly setting up pip3,yq, kubectl, kustomize
-# Firsly it checks which type of system is running this
+# Firstly it checks which type of system is running this
 # Then it installs the dependencies one by one
 
 sudo yum -y install pip3
