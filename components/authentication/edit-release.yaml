@@ -1,0 +1,40 @@
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: edit-release
+rules:
+  - verbs:
+      - list
+      - get
+      - delete
+      - update
+      - patch
+    apiGroups:
+      - 'appstudio.redhat.com'
+    resources:
+      - releasestrategies
+  - verbs:
+      - '*' # needed till we figure out how to cleanup workspaces.
+    apiGroups:
+      - 'tekton.dev'
+    resources:
+      - 'pipelineruns'
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: release-edit-rolebinding
+subjects:
+  - kind: User
+    apiGroup: rbac.authorization.k8s.io
+    name: damoreno
+  - kind: User
+    apiGroup: rbac.authorization.k8s.io
+    name: sbose78
+  - kind: User
+    apiGroup: rbac.authorization.k8s.io
+    name: shebert
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: edit-release
