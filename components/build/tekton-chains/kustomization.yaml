@@ -1,0 +1,24 @@
+resources:
+#
+# For now we'll use the official release directly rather than downloading
+# it and checking it in.
+#
+# To list available releases:
+#  curl -s https://storage.googleapis.com/tekton-releases/ | xq | grep -E 'chains/.*/release.yaml'
+#
+- https://storage.googleapis.com/tekton-releases/chains/previous/v0.8.0/release.yaml
+- chains-certs.yaml
+
+patchesStrategicMerge:
+#
+# Add some chains configuration
+- chains-config.yaml
+#
+# Remove runAsUser and runAsGroup from security context
+- security-context-fix.yaml
+
+# Mount the secrets volume
+- chains-controller-cert.yaml
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
