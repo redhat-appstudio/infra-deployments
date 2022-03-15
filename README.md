@@ -87,36 +87,6 @@ SPI Vault instance has to be manually initialized. There is a script to help wit
 2) Clone SPI operator repo `git clone https://github.com/redhat-appstudio/service-provider-integration-operator && cd service-provider-integration-operator`
 3) run `vault-init.sh` script from repo root directory `./hack/vault-init.sh`
 
-#### Post-bootstrap GitOps Service Configuration
-
-GitOps service components will not be functional right after bootstrap. It requires manual configuration in order to work properly:
-
-1) `wget https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/main/manifests/postgresql-staging/postgresql-staging-secret.yaml`
-
-2) Edit `postgresql-staging-secret.yaml`, and update the password field:
-
-```yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: gitops-postgresql-staging
-  labels:
-    app.kubernetes.io/name: postgresql
-    helm.sh/chart: postgresql-10.16.1
-    app.kubernetes.io/instance: gitops-postgresql-staging
-    app.kubernetes.io/managed-by: Helm
-  namespace: gitops
-type: Opaque
-data:
-  postgresql-password: "(your password here)" # Edit this line
-```
-
-*Note*: You will need to use a [Base 64 value](https://www.base64encode.org/) for the password field. (Note: this password is *not* required after this step, so you may safely discard it after editing the secret.)
-
-3) `kubectl apply -f postgresql-staging-secret.yaml`  to apply the Secret YAML.
-
-4) You may need to hit 'Synchronize' on the `gitops` application, in Argo CD, in order to trigger the updated Application deployment.
-    - (I'm not 100% sure if this is required, more data are needed, but it can't hurt! - @jgwest)
 
 #### Post-bootstrap Tekton Chains Configuration
 
