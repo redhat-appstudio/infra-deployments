@@ -81,7 +81,7 @@ function checkHASGithubOrg() {
 
 function executeE2ETests() {
     # E2E instructions can be found: https://github.com/redhat-appstudio/e2e-tests
-    # The e2e binary is included in Openshift CI test container from the dockerfile: https://github.com/redhat-appstudio/infra-deployments/blob/main/.ci/openshift-ci/Dockerfile
+    # The e2e binary is included in Openshift CI test container from the dockerfile: https://github.com/davidmogar/infra-deployments/blob/main/.ci/openshift-ci/Dockerfile
     e2e-appstudio --ginkgo.junit-report="${ARTIFACTS_DIR}"/e2e-report.xml
 }
 

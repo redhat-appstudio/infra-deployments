@@ -133,7 +133,7 @@ Even with 6 CPU cores, you will need to reduce the CPU resource requests for eac
 
 Once you bootstrap a cluster above, the root ArgoCD Application and all of the component applications will each point to the upstream repository. Or you can bootstrap cluster directly in mode which you need.
 
-To enable development for a team or individual to test changes on your own cluster, you need to replace the references to `https://github.com/redhat-appstudio/infra-deployments.git` with references to your own fork.
+To enable development for a team or individual to test changes on your own cluster, you need to replace the references to `https://github.com/davidmogar/infra-deployments.git` with references to your own fork.
 
 There are a set of scripts that help with this, and minimize the changes needed in your forks.
 
@@ -153,12 +153,12 @@ Steps:
 
 4) To submit changes back to the upstream make sure you do not include the modified file `argo-cd-apps/overlays/development/repo-overlay.yaml`. 
 
-One option to prevent accidentally including this modified file, you can run the script `./hack/upstream-mode.sh` to reset everything including your cluster to `https://github.com/redhat-appstudio/infra-deployments.git` and match the upstream config. You can also checkout the current upstream 
+One option to prevent accidentally including this modified file, you can run the script `./hack/upstream-mode.sh` to reset everything including your cluster to `https://github.com/davidmogar/infra-deployments.git` and match the upstream config. You can also checkout the current upstream 
 ` git fetch upstream; git checkout upstream/main -- argo-cd-apps/overlays/development/repo-overlay.yaml` to ensure you have the original file.  
 
 After you commit your changes you can rerun to `./hack/development-mode.sh` and reset your repo to point back to the fork. 
 
-Note running these scripts in a clone repo will have no effect as the repo will remain `https://github.com/redhat-appstudio/infra-deployments.git`
+Note running these scripts in a clone repo will have no effect as the repo will remain `https://github.com/davidmogar/infra-deployments.git`
 
 ### Preview mode
 
@@ -172,9 +172,9 @@ Steps:
   d) ArgoCD is set to point to your fork and the preview branch
   e) User is switched back to feature branch to create additional changes
 
-If you want to reset your enviroment you can run the script `./hack/upstream-mode.sh` to reset everything including your cluster to `https://github.com/redhat-appstudio/infra-deployments.git` and match the upstream config.
+If you want to reset your enviroment you can run the script `./hack/upstream-mode.sh` to reset everything including your cluster to `https://github.com/davidmogar/infra-deployments.git` and match the upstream config.
 
-Note running these scripts in a clone repo will have no effect as the repo will remain `https://github.com/redhat-appstudio/infra-deployments.git`
+Note running these scripts in a clone repo will have no effect as the repo will remain `https://github.com/davidmogar/infra-deployments.git`
 
 ### Optional: Configure HAS GitHub Organization
 

@@ -6,7 +6,7 @@ ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/..
 # this prevents accidental pull requests referencing forked repos used in dev
 # note, could use $(git config --get remote.upstream.url) but hardcoded for now
 # not everyone may have an upstream set
-REPO=https://github.com/redhat-appstudio/infra-deployments.git
+REPO=https://github.com/davidmogar/infra-deployments.git
 
 #set the local cluster to point back to the upstream  
 $ROOT/hack/util-update-app-of-apps.sh $REPO staging main
