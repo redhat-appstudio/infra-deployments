@@ -22,7 +22,7 @@ title "Push a fresh sha to ensure a rebuild occurs"
 #
 title "Install latest pipeline bundle"
 $ROOT/hack/build/utils/install-pipelines.sh \
-  quay.io/redhat-appstudio/build-templates-bundle:b6d060ca46c0976251a8af6cc41c7dcb39d28da0
+  quay.io/redhat-appstudio/build-templates-bundle:08f2a927923ede328bdaa2f9a115e7fd2a8044fa
 
 title "Run the build pipeline and wait for it to complete"
 $ROOT/hack/build/build.sh $APP_URL
