@@ -14,3 +14,20 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: view
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: read-gitops-service
+  namespace: gitops-service-argocd
+subjects:
+  - kind: User
+    name: jgwest
+  - kind: User
+    name: sbose78
+  - kind: User
+    name: samyak-jn
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view
