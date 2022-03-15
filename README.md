@@ -118,6 +118,9 @@ data:
 4) You may need to hit 'Synchronize' on the `gitops` application, in Argo CD, in order to trigger the updated Application deployment.
     - (I'm not 100% sure if this is required, more data are needed, but it can't hurt! - @jgwest)
 
+#### Post-bootstrap Tekton Chains Configuration
+
+For Chains to work a key pair signing secret is required. You can use `cosign` to generate one and add it to the cluster by running `./hack/chains/create-signing-secret.sh`.
 
 ### Install Toolchain (Sandbox) Operators
 There are two scripts which you can use:
