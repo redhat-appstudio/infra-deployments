@@ -1,21 +1,25 @@
 #!/bin/bash
+#
+# A wrapper for hack/build/build.sh to help exercise
+# chains for an example S2I nodejs pipeline build
+#
+# Example usage:
+#  ./default-pipelines-demo.sh
+#  ./default-pipelines-demo.sh https://github.com/someuser/some-app
+#  NO_FORCE_REBUILD=1 ./default-pipelines-demo.sh https://github.com/someuser/some-app
+#
 
 source $(dirname $0)/_helpers.sh
 set -ue
 
 APP_URL=${1:-https://github.com/simonbaird/single-nodejs-app}
+APP_NAME=$( basename $APP_URL )
 
-# Assume you have the repo checked out locally in this location
-# with origin pointing at your fork and with main as the default branch
-# (Use awk to extract the most likely directory name from the url)
-#
-APP_LOCAL_DIR=$ROOT/../$( echo "$APP_URL" | awk -F/ '{print $NF}' )
-
-# The pipeline will skip the build if the sha was already built
-# so make sure we have a fresh sha.
-#
-title "Push a fresh sha to ensure a rebuild occurs"
-( cd $APP_LOCAL_DIR && git commit --amend --no-edit && git push -f origin main )
+# Set NO_FORCE_REBUILD if you don't want to nuke the imagestream before building
+if [[ -z ${NO_FORCE_REBUILD:-} ]]; then
+  title "Delete previous builds to force a rebuild"
+  oc delete is $APP_NAME --ignore-not-found=true
+fi
 
 title "Run the build pipeline and wait for it to complete"
 $ROOT/hack/build/build.sh $APP_URL
