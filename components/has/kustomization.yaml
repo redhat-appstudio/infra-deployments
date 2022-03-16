@@ -1,6 +1,7 @@
 resources:
 - allow-argocd-to-manage.yaml
-- https://github.com/redhat-appstudio/application-service/config/default?ref=7861066f76f46825b2b84c669c67a5cb6742b65c
+- argocd-permissions.yaml
+- https://github.com/redhat-appstudio/application-service/config/default?ref=c7f42f12f29fa7c2a711c6be659120138de1d22f 
 - .tekton/
 
 
@@ -10,7 +11,7 @@ kind: Kustomization
 images:
 - name: quay.io/redhat-appstudio/application-service
   newName: quay.io/redhat-appstudio/application-service
-  newTag: 7861066f76f46825b2b84c669c67a5cb6742b65c
+  newTag: c7f42f12f29fa7c2a711c6be659120138de1d22f
 
 configMapGenerator:
 - literals:
