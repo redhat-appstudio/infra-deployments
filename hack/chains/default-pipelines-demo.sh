@@ -17,13 +17,6 @@ APP_LOCAL_DIR=$ROOT/../$( echo "$APP_URL" | awk -F/ '{print $NF}' )
 title "Push a fresh sha to ensure a rebuild occurs"
 ( cd $APP_LOCAL_DIR && git commit --amend --no-edit && git push -f origin main )
 
-# Make sure we have the chains hinting in the cluster tasks
-# (Remove later when build-pipelines-defaults is updated in components/build/kustomization)
-#
-title "Install latest pipeline bundle"
-$ROOT/hack/build/utils/install-pipelines.sh \
-  quay.io/redhat-appstudio/build-templates-bundle:93dac682ee16a08634d593b836758e1d4fa8d967
-
 title "Run the build pipeline and wait for it to complete"
 $ROOT/hack/build/build.sh $APP_URL
 
