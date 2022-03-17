@@ -103,7 +103,8 @@ spec:
               oc get cm config-trusted-cabundle -n tekton-chains -o jsonpath="{.data.ca-bundle\.crt}" > $TRUSTED_CA
               oc get cm kube-root-ca.crt -n tekton-chains -o jsonpath="{.data.ca\.crt}" > $KUBE_CA
               oc get secret router-ca -n openshift-ingress-operator -o jsonpath="{.data.tls\.crt}" | base64 -d > $INGRESS_CA
-              cat $TRUSTED_CA $KUBE_CA $INGRESS_CA > /tmp/ca-certificates.crt
+              SERVICE_CA=/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt
+              cat $TRUSTED_CA $KUBE_CA $INGRESS_CA $SERVICE_CA > /tmp/ca-certificates.crt
               oc create secret generic chains-ca-cert --from-file=/tmp/ca-certificates.crt --dry-run=client -o yaml -n tekton-chains | oc replace -f -
           imagePullPolicy: Always
           name: patch-chains-certs
