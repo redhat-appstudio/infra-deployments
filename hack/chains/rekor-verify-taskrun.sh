@@ -5,7 +5,7 @@ set -ue
 
 # Use a specific taskrun if provided, otherwise use the latest
 TASKRUN_NAME=${1:-$( tkn taskrun describe --last -o name )}
-TASKRUN_NAME=taskrun/$( echo $TASKRUN_NAME | sed 's#.*/##' )
+TASKRUN_NAME=taskrun/$( trim-name $TASKRUN_NAME )
 
 # Let's not hard code the image url or the registry
 IMAGE_URL=$( kubectl get $TASKRUN_NAME -o json | jq -r '.status.taskResults[1].value' )
@@ -32,11 +32,11 @@ echo $TRANSPARENCY_URL
 pause
 
 title "Take a look at it"
-curl-json $TRANSPARENCY_URL | yq e . -P -
+curl-json $TRANSPARENCY_URL | yq-pretty
 pause
 
 title "Extract the rekor body"
-curl -s -H "Accept: application/json" $TRANSPARENCY_URL | jq -r 'values[].body' | base64 -d | yq e . -PC -
+curl-json $TRANSPARENCY_URL | jq -r 'values[].body' | base64 -d | yq-pretty
 pause
 
 # Comment this out because there is no attestation data in the kaniko build task
@@ -49,7 +49,7 @@ show-then-run "rekor-cli get --log-index $LOG_INDEX --rekor_server $REKOR_SERVER
 pause
 
 title "There's also a --format json option:"
-rekor-cli get --log-index $LOG_INDEX --rekor_server $REKOR_SERVER --format json | yq e . -P -
+rekor-cli get --log-index $LOG_INDEX --rekor_server $REKOR_SERVER --format json | yq-pretty
 pause
 
 title "Try a rekor-cli verify"
