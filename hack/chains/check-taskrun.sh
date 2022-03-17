@@ -42,7 +42,8 @@ get-resourcesresult() {
 # Fetch task run signature and payload
 TASKRUN_UID=$( get-jsonpath metadata.uid )
 SIGNATURE=$( get-chainsval signature-taskrun-$TASKRUN_UID )
-PAYLOAD=$( get-chainsval payload-taskrun-$TASKRUN_UID | base64 --decode )
+RAW_PAYLOAD=$( get-chainsval payload-taskrun-$TASKRUN_UID | base64 --decode )
+PAYLOAD=$RAW_PAYLOAD
 
 # For a task that builds an image, image digest should be available
 # in the task results
@@ -100,11 +101,20 @@ else
     exit 1
   fi
 
+  # Data given to signature verification via verify-blob needs to be in DSSE protocol format
+  # See https://github.com/secure-systems-lab/dsse/blob/master/protocol.md
+  PAYLOAD_TYPE=$( echo $SIG_DATA | jq -r .payloadType )
+  PAYLOAD="DSSEv1 ${#PAYLOAD_TYPE} ${PAYLOAD_TYPE} ${#PAYLOAD} $PAYLOAD"
+
 fi
 
 # Cosign needs files on disk to do a verify-blob afaict
 SIG_FILE=$( mktemp )
 PAYLOAD_FILE=$( mktemp )
+function cleanup() {
+  rm -f "$SIG_FILE" "$PAYLOAD_FILE"
+}
+trap cleanup EXIT
 echo -n "$PAYLOAD" > $PAYLOAD_FILE
 echo -n "$SIGNATURE" > $SIG_FILE
 
@@ -114,22 +124,13 @@ say $SIGNATURE
 pause
 
 title Taskrun payload
-[[ -z $QUIET ]] && echo "$PAYLOAD" | yq-pretty
+[[ -z $QUIET ]] && echo "$RAW_PAYLOAD" | yq-pretty
 
 pause
 
-# Keep going if the verify fails
-set +e
-
-##
-## Fixme: This only works with artifacts.taskrun.format set to 'tekton'.
-## I've never been able to use cosign verify-blob to verify a task's
-## payload and signature using the 'in-toto' format and I don't know why.
-##
 # Now use cosign to verify the signed payload
 title Taskrun verification
 show-then-run cosign verify-blob --key $SIG_KEY --signature $SIG_FILE $PAYLOAD_FILE
-COSIGN_EXIT_CODE=$?
 
 # For debugging...
 title "To view taskrun"
@@ -137,6 +138,3 @@ say " env EDITOR=view kubectl edit $TASKRUN_NAME"
 
 # Clean up
 rm $SIG_FILE $PAYLOAD_FILE
-
-# Use the exit code from cosign
-exit $COSIGN_EXIT_CODE
