@@ -58,6 +58,11 @@ case "$1" in
   quay )
     # Currently quay.io doesn't support oci storage for
     # attestations so fall back to tekton storage
+    #
+    # See https://issues.redhat.com/browse/PROJQUAY-3386
+    # Once that's done then quay can use the default config
+    # and we can delete this.
+    #
     $0 '{
       "artifacts.taskrun.format": "in-toto",
       "artifacts.taskrun.storage": "tekton",

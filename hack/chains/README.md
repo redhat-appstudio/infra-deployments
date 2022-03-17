@@ -1,46 +1,70 @@
-# hack/chains
+hack/chains
+===========
 
 Some bash scripts to help configure and demonstrate [Tekton
 Chains](https://github.com/tektoncd/chains) in an infra-deployments managed
 cluster.
 
-## To set up an environment from scratch
+
+To set up an environment from scratch
+-------------------------------------
 
 ### Bootstrap
 
-For CRC users:
+For CRC:
 
     crc delete
     crc start
     `crc console --credentials | tail -1 | cut -d\' -f2`
 
-Then (assuming you're in this branch on your own fork):
+For cluster-bot (in slack):
+
+    launch 4.9.15 # or launch latest ?
+    # ...and follow the instructions to authenticate once it's ready
+
+The full Gitops/ArgoCD install includes applications that are not needed if
+you're just testing build pipelines and tasks with tekton chains. So you can
+save some time and reduce cluster resourcing requirements by installing only
+the 'build' application.
+
+    DEPLOY_ONLY=build
+
+(The DEPLOY_ONLY var takes a comma separated list, so you can add other
+applications if required.)
+
+Then (assuming you're working in a branch in your own fork
+of this repo):
 
     hack/bootstrap-cluster.sh preview
 
-A "go make some coffee" one liner:
+A "go make some coffee" one liner for CRC:
 
-    cd $(git rev-parse --show-toplevel); crc delete; crc start; `crc console --credentials | tail -1 | cut -d\' -f2`; hack/bootstrap-cluster.sh preview
+    cd $(git rev-parse --show-toplevel); crc delete; crc start; `crc console --credentials | tail -1 | cut -d\' -f2`; DEPLOY_ONLY=build hack/bootstrap-cluster.sh preview
 
-Wait a while until you see mostly healthy/synced at [Argo CD](https://openshift-gitops-server-openshift-gitops.apps-crc.testing/applications).
+Wait until you see healthy/synced at [Argo CD](https://openshift-gitops-server-openshift-gitops.apps-crc.testing/applications).
 
-(I have degraded 'has' and 'spi' related to GitHub auth and I don't think it
-matters for the basic pipeline functionality needed to do builds and
-demonstrate chains.)
+If you installed all the applications, there are other steps required to get
+them all to go green. See [this
+guide](https://coreos.slack.com/files/T027F3GAJ/F036QJ81LLU) for details.
+
 
 ### Create a key-pair signing secret for chains
 
     cd hack/chains
     ./create-signing-secret.sh
 
-### Apply some CA cert related hacks to make SSL work for the internal registry
+
+### Trust the cluster's SSL cert (optional)
+
+Some of the demos expect that cosign running on your workstation can use SSL
+to connect to the cluster's internal registry. This script should will help
+make that work.
 
     ./trust-local-cert.sh
 
-## Demos
 
-Note: All these demos have been tested in local CRC cluster. They haven't yet
-been confirmed working in a cluster-bot cluster.
+Demos
+-----
 
 ### Kaniko build demo
 
@@ -48,10 +72,11 @@ been confirmed working in a cluster-bot cluster.
     the cluster's internal registry
 - Verify the image in the internal registry using cosign
 - Verify the image's attestation in the internal registry using cosign
-- Using rekor-cli verify the rekor record of the taskrun (and/or image?)
+- Use rekor-cli to verify the rekor record of the taskrun
 
-Because we're using the cluster registry, the trust-local-cert and
-setup-controller-certs are needed.
+Because we're using the cluster's internal registry, the demo will work better
+if your workstation trusts the cluster CA cert. This can be achieved by
+running `trust-local-cert.sh`.
 
 This uses the default configuration so there's no need to change the config if
 your Argo CD is in sync.
@@ -59,6 +84,7 @@ your Argo CD is in sync.
     ./gitops-sync.sh off
     ./config.sh default
     ./kaniko-demo.sh
+
 
 ### Simple demo
 
@@ -76,6 +102,19 @@ official basic getting started guide.
     ./config.sh simple
     ./simple-demo.sh
 
+You can also run this with `in-toto` taskrun format.
+
+    ./config.sh 'artifacts.taskrun.format: in-toto'
+    ./simple-demo.sh
+
+And you can run it with the transparency log enabled and look at the log
+entry.
+
+    ./config.sh rekor-on
+    ./simple-demo.sh
+    ./rekor-verify-taskrun.sh
+
+
 ### Pipeline S2I build and push to quay.io demo
 
 - Configure a clustertask that can build an nodejs image using S2I
@@ -92,6 +131,10 @@ kubernetes secret for the bot.
 
 Since we're not using the internal registry, this demo should work without
 running the trust-local-cert.sh and setup-controller-certs.sh scripts.
+
+Note that quay.io doesn't currently support storing attestations, but see
+[PROJQUAY-3386](https://issues.redhat.com/browse/PROJQUAY-3386) which aims to
+change that.
 
     ./gitops-sync.sh off
     ./config.sh quay
