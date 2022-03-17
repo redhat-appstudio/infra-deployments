@@ -33,10 +33,6 @@ demonstrate chains.)
     cd hack/chains
     ./create-signing-secret.sh
 
-### Apply some CA cert related hacks to make SSL work for the internal registry
-
-    ./trust-local-cert.sh
-
 ## Demos
 
 Note: All these demos have been tested in local CRC cluster. They haven't yet

@@ -1,0 +1,23 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: verify-attestation-signature
+spec:
+  params:
+    - name: TASK_LABEL
+      type: string
+      description: The label to identify the task
+      default:  kaniko-chains
+  steps:
+    - name: cosign-verify
+      image: quay.io/redhat-appstudio/appstudio-utils:93dac682ee16a08634d593b836758e1d4fa8d967
+      command: ["bash"]
+      args: ["/appstudio-utils/util-scripts/tekton-chains/kaniko-cosign-verify-task.sh", "$(params.TASK_LABEL)"]
+      volumeMounts:
+        - mountPath: /etc/ssl/certs
+          name: chains-ca-cert
+  volumes:
+    - name: chains-ca-cert
+      secret:
+        secretName: chains-ca-cert
+

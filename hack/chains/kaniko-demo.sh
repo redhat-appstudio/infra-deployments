@@ -40,10 +40,13 @@ tkn task start kaniko-chains \
 title "Wait a few seconds for chains finalizers to complete"
 sleep 10
 
-# This will use cosign to verify the new build
-$SCRIPTDIR/kaniko-cosign-verify.sh
+title "Create and run the verification task"
+oc apply -f verify-attestation-task.yaml
+tkn task start verify-attestation-signature \
+  --use-param-defaults \
+  --showlog
 
 pause
 
 # This will use rekor-cli to verify the new build
-$SCRIPTDIR/rekor-verify-taskrun.sh
+#$SCRIPTDIR/rekor-verify-taskrun.sh
