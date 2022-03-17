@@ -12,8 +12,6 @@ IMAGE_URL=$( oc get $TASKRUN_NAME -o json | jq -r '.status.taskResults[1].value'
 IMAGE_REGISTRY=$( echo $IMAGE_URL | cut -d/ -f1 )
 #IMAGE_REGISTRY=$( oc registry info )
 
-SIG_KEY="k8s://tekton-chains/signing-secrets"
-
 title "Make sure we're logged in to the registry"
 # Make sure we have a docker credential since cosign will need it
 # (Todo: Probably shouldn't assume kubeadmin user here)
