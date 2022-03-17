@@ -36,3 +36,48 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: release-service-releasestrategy-editor-role
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: gitopsdeployment-manager
+rules:
+  - apiGroups:
+      - managed-gitops.redhat.com
+    resources:
+      - gitopsdeployments
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - managed-gitops.redhat.com
+    resources:
+      - gitopsdeployments/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - managed-gitops.redhat.com
+    resources:
+      - gitopsdeployments/status
+    verbs:
+      - get
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: create-gitops-manager-sbose78
+  namespace: shbose
+subjects:
+  - kind: User
+    name: sbose78
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: gitopsdeployment-manager
+
+
