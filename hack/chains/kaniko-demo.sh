@@ -45,5 +45,5 @@ $SCRIPTDIR/kaniko-cosign-verify.sh
 
 pause
 
-# This will use rekor-cli to verify the new build
+# This will use rekor-cli to verify the taskrun and the image
 $SCRIPTDIR/rekor-verify-taskrun.sh
