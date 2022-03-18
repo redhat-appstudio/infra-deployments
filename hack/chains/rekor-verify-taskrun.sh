@@ -5,14 +5,21 @@ set -ue
 
 # Use a specific taskrun if provided, otherwise use the latest
 TASKRUN_NAME=${1:-$( tkn taskrun describe --last -o name )}
-TASKRUN_NAME=taskrun/$( echo $TASKRUN_NAME | sed 's#.*/##' )
+TASKRUN_NAME=taskrun/$( trim-name $TASKRUN_NAME )
 
 # Let's not hard code the image url or the registry
 IMAGE_URL=$( kubectl get $TASKRUN_NAME -o json | jq -r '.status.taskResults[1].value' )
 IMAGE_REGISTRY=$( echo $IMAGE_URL | cut -d/ -f1 )
 
-title "Image url"
-echo https://$IMAGE_URL
+if [[ $IMAGE_URL != null ]]; then
+  title "Image url"
+  # This link might not work but never mind
+  echo https://$IMAGE_URL
+
+  title "Lookup the transparency log entry for the image itself"
+  # Which is different to the transparency log entry for the taskrun
+  $SCRIPTDIR/rekor-image-lookup.sh $IMAGE_URL
+fi
 
 TRANSPARENCY_URL=$(
   kubectl get $TASKRUN_NAME -o jsonpath='{.metadata.annotations.chains\.tekton\.dev/transparency}' )
@@ -32,24 +39,35 @@ echo $TRANSPARENCY_URL
 pause
 
 title "Take a look at it"
-curl-json $TRANSPARENCY_URL | yq e . -P -
+curl-json $TRANSPARENCY_URL | yq-pretty
 pause
+
+# Todo: Should probably use rekor-cli here instead, e.g.:
+#   rekor-cli get --log-index $LOG_INDEX --format json | jq ...
+# The keys and format are slightly different.
+#
+BODY_DATA=$( curl-json $TRANSPARENCY_URL | jq -r 'values[].body' )
+ATTESTATION_DATA=$( curl-json $TRANSPARENCY_URL | jq -r 'values[].attestation' )
 
 title "Extract the rekor body"
-curl -s -H "Accept: application/json" $TRANSPARENCY_URL | jq -r 'values[].body' | base64 -d | yq e . -PC -
+echo "$BODY_DATA" | base64 -d | yq-pretty
 pause
 
-# Comment this out because there is no attestation data in the kaniko build task
-#title "Extract the rekor attestation"
-#curl -s -H "Accept: application/json" $TRANSPARENCY_URL | jq -r 'values[].attestation.data' | base64 -d | base64 -d | yq e . -PC -
-#pause
+if [[ $ATTESTATION_DATA = '{}' ]]; then
+  title "No attestation found"
+else
+  title "Extract the rekor attestation"
+  # It really is base64 encoded twice here
+  echo $ATTESTATION_DATA | jq -r .data | base64 -d | base64 -d | yq-pretty
+  pause
+fi
 
 title "Using the rekor-cli"
 show-then-run "rekor-cli get --log-index $LOG_INDEX --rekor_server $REKOR_SERVER"
 pause
 
 title "There's also a --format json option:"
-rekor-cli get --log-index $LOG_INDEX --rekor_server $REKOR_SERVER --format json | yq e . -P -
+rekor-cli get --log-index $LOG_INDEX --rekor_server $REKOR_SERVER --format json | yq-pretty
 pause
 
 title "Try a rekor-cli verify"
