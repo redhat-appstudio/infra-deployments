@@ -49,4 +49,4 @@ tkn task start verify-attestation-signature \
 pause
 
 # This will use rekor-cli to verify the new build
-#$SCRIPTDIR/rekor-verify-taskrun.sh
+$SCRIPTDIR/rekor-verify-taskrun.sh
