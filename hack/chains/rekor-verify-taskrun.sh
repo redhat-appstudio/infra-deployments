@@ -13,7 +13,12 @@ IMAGE_REGISTRY=$( echo $IMAGE_URL | cut -d/ -f1 )
 
 if [[ $IMAGE_URL != null ]]; then
   title "Image url"
+  # This link might not work but never mind
   echo https://$IMAGE_URL
+
+  title "Lookup the transparency log entry for the image itself"
+  # Which is different to the transparency log entry for the taskrun
+  $SCRIPTDIR/rekor-image-lookup.sh $IMAGE_URL
 fi
 
 TRANSPARENCY_URL=$(
