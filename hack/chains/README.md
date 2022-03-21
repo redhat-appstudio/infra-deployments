@@ -28,6 +28,19 @@ Wait a while until you see mostly healthy/synced at [Argo CD](https://openshift-
 matters for the basic pipeline functionality needed to do builds and
 demonstrate chains.)
 
+### (Optional) Deploy local cluster rekor server
+
+    cd hack/chains
+    ./deploy-local-rekor.sh
+
+To enable the use of a locally deployed rekor instance:
+
+    ./config.sh rekor-local
+
+To return to using the default, public rekor instance:
+
+   ./config.sh rekor-default
+
 ### Create a key-pair signing secret for chains
 
     cd hack/chains
