@@ -84,8 +84,8 @@ case "$1" in
     ;;
 
   rekor-local )
-    REKOR_SERVER=$(kubectl get ingress -n rekor-server -o yaml|yq e '.items[.spec].spec.rules[.host].host')
-    $0 "transparency.url: \"$REKOR_SERVER\"" $2
+    REKOR_SERVER=$(kubectl get ingress -n rekor-server -o yaml|yq e '.items[.spec].spec.rules[.host].host' -)
+    $0 "transparency.url: \"https://$REKOR_SERVER\"" $2
 
     ;;
 
