@@ -3,6 +3,8 @@
 #It cofigures the CRC to have better memory and CPUs 
 #It also configures CRC to have required addons.
 
+ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+echo $ROOT
 CRCBINARY=$(readlink -f ~/.crc/bin/crc)
 
 echo $CRCBINARY
@@ -28,4 +30,4 @@ kubectl config use-context crc-admin
 
 #Reduce cpu resource request for each AppStudio Application
 #TODO: Set the file path properly
-./hack/reduce-gitops-cpu-requests.sh
+../../hack/reduce-gitops-cpu-requests.sh
