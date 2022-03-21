@@ -5,6 +5,12 @@ resources:
 - pipelines-as-code/
 - tekton-chains/
 - .tekton/
+- https://github.com/redhat-appstudio/pvc-cleaner/infra-deployments/common?ref=f0d5f7ee979a451f9c0cd8c7dffba6ee9d86d400
+
+bases:
+  - ./pvc-cleaner/pipeline-applications
+  - ./pvc-cleaner/has
+  - ./pvc-cleaner/gitops
 
 generatorOptions:
  disableNameSuffixHash: true
