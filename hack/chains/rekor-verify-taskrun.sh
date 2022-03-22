@@ -8,7 +8,8 @@ TASKRUN_NAME=${1:-$( tkn taskrun describe --last -o name )}
 TASKRUN_NAME=taskrun/$( trim-name $TASKRUN_NAME )
 
 # Let's not hard code the image url or the registry
-IMAGE_URL=$( kubectl get $TASKRUN_NAME -o json | jq -r '.status.taskResults[1].value' )
+IMAGE_DIGEST=$( kubectl get $TASKRUN_NAME -o jsonpath='{.status.taskResults[?(@.name == "IMAGE_DIGEST")].value}' )
+IMAGE_URL=$( kubectl get $TASKRUN_NAME -o jsonpath='{.status.taskResults[?(@.name == "IMAGE_URL")].value}' )
 IMAGE_REGISTRY=$( echo $IMAGE_URL | cut -d/ -f1 )
 
 TRANSPARENCY_URL=$(
@@ -23,8 +24,10 @@ if [[ $IMAGE_URL != null ]]; then
   echo https://$IMAGE_URL
 
   title "Lookup the transparency log entry for the image itself"
-  # Which is different to the transparency log entry for the taskrun
+  # ...which is different to the transparency log entry for the taskrun
   $SCRIPTDIR/rekor-image-lookup.sh $IMAGE_URL $REKOR_SERVER
+  # This should work also
+  #$SCRIPTDIR/rekor-image-lookup.sh $IMAGE_DIGEST $REKOR_SERVER
 fi
 
 # Extract the log index from the url
