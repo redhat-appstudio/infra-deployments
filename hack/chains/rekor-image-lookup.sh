@@ -5,8 +5,13 @@ IMAGE_URL=${1:-$DEFAULT_URL}
 DEFAULT_REKOR_SERVER=https://rekor.sigstore.dev
 REKOR_SERVER=${2:-$DEFAULT_REKOR_SERVER}
 
-# In reality we might know the digest already, but let's look it up
-IMAGE_DIGEST=$( skopeo inspect --no-tags docker://$IMAGE_URL | jq -r .Digest )
+if [[ $IMAGE_URL =~ ^(sha256:)?[0-9a-fA-F]{64}$ ]]; then
+  # Assume the param is already an image digest
+  IMAGE_DIGEST="$IMAGE_URL"
+else
+  # Assume the param is an image url and look up the digest with skopeo
+  IMAGE_DIGEST=$( skopeo inspect --no-tags docker://$IMAGE_URL | jq -r .Digest )
+fi
 
 # Use the digest to do a rekor search
 UUIDS=$( rekor-cli search --sha "$IMAGE_DIGEST" --rekor_server $REKOR_SERVER 2>/dev/null )
