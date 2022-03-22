@@ -11,6 +11,12 @@ TASKRUN_NAME=taskrun/$( trim-name $TASKRUN_NAME )
 IMAGE_URL=$( kubectl get $TASKRUN_NAME -o json | jq -r '.status.taskResults[1].value' )
 IMAGE_REGISTRY=$( echo $IMAGE_URL | cut -d/ -f1 )
 
+TRANSPARENCY_URL=$(
+  kubectl get $TASKRUN_NAME -o jsonpath='{.metadata.annotations.chains\.tekton\.dev/transparency}' )
+
+# In the future we might use our own rekor servers, so let's not hard code that
+REKOR_SERVER=$( echo $TRANSPARENCY_URL | cut -d/ -f1-3 )
+
 if [[ $IMAGE_URL != null ]]; then
   title "Image url"
   # This link might not work but never mind
@@ -18,11 +24,8 @@ if [[ $IMAGE_URL != null ]]; then
 
   title "Lookup the transparency log entry for the image itself"
   # Which is different to the transparency log entry for the taskrun
-  $SCRIPTDIR/rekor-image-lookup.sh $IMAGE_URL
+  $SCRIPTDIR/rekor-image-lookup.sh $IMAGE_URL $REKOR_SERVER
 fi
-
-TRANSPARENCY_URL=$(
-  kubectl get $TASKRUN_NAME -o jsonpath='{.metadata.annotations.chains\.tekton\.dev/transparency}' )
 
 # Extract the log index from the url
 LOG_INDEX=$( echo $TRANSPARENCY_URL | cut -d= -f2 )
@@ -30,9 +33,6 @@ LOG_INDEX=$( echo $TRANSPARENCY_URL | cut -d= -f2 )
 # Todo: We're reading the transparency url from the taskrun annotations.
 # Is there another way to get it? How else can we link the image in the
 # registry to its rekor entry?
-
-# In the future we might use our own rekor servers, so let's not hard code that
-REKOR_SERVER=$( echo $TRANSPARENCY_URL | cut -d/ -f1-3 )
 
 title "Transparency url for $TASKRUN_NAME found in the annotations"
 echo $TRANSPARENCY_URL
