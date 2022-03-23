@@ -87,6 +87,9 @@ function executeE2ETests() {
 
 createQuayPullSecrets
 
+# create signing secret to test tekton-chains
+/bin/bash "$WORKSPACE"/hack/chains/create-signing-secret.sh
+
 git remote add ${MY_GIT_FORK_REMOTE} https://github.com/redhat-appstudio-qe/infra-deployments.git
 
 /bin/bash "$WORKSPACE"/hack/bootstrap-cluster.sh preview
