@@ -23,7 +23,11 @@ rm $SECRET
 
 oc delete --ignore-not-found -f $SCRIPTDIR/templates/application.yaml
 oc create -f $SCRIPTDIR/templates/application.yaml
-oc wait --for=condition=Created application/test-application
+if ! oc wait --for=condition=Created application/test-application; then
+  echo "Application was not created sucessfully, check:"
+  echo "oc get applications test-application -o yaml"
+  exit 1
+fi
 
 function create-component {
   GIT_URL=$1
@@ -39,8 +43,5 @@ oc get application/test-application -o jsonpath='{.status.devfile}' | grep appMo
 create-component https://github.com/devfile-samples/devfile-sample-java-springboot-basic
 create-component https://github.com/devfile-samples/devfile-sample-code-with-quarkus
 create-component https://github.com/devfile-samples/devfile-sample-python-basic
-create-component https://github.com/jduimovich/single-container-app
-create-component https://github.com/jduimovich/single-nodejs-app
-create-component https://github.com/jduimovich/spring-petclinic
  
 echo "Run this to show running builds $SCRIPTDIR/ls-builds.sh"
