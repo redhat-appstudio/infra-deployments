@@ -75,12 +75,11 @@ oc create namespace openshift-nfs-storage
 oc label namespace openshift-nfs-storage "openshift.io/cluster-monitoring=true" --overwrite=true
 oc project openshift-nfs-storage
 NAMESPACE=`oc project -q`
-sed -i'' "s/namespace:.*/namespace: $NAMESPACE/g" rbac.yaml deployment.yaml
-oc create -f rbac.yaml
-oc adm policy add-scc-to-user hostmount-anyuid system:serviceaccount:$NAMESPACE:nfs-client-provisioner --overwrite=true
-echo -e "$(eval "echo -e \"$(<deployment.yaml)\"")"|oc create -f -
+oc create -f templates/rbac.yaml
+oc adm policy add-scc-to-user hostmount-anyuid system:serviceaccount:$NAMESPACE:nfs-client-provisioner
+echo -e "$(eval "echo -e \"$(<templates/deployment.yaml)\"")"|oc create -f -
 sleep 10
-oc create -f storageClass.yaml
+oc create -f templates/storageClass.yaml
 oc patch storageclass managed-nfs-storage -p '{"metadata": {"annotations": {"storageclass.kubernetes.io/is-default-class": "true"}}}'
 set -e
 

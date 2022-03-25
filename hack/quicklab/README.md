@@ -31,7 +31,16 @@ Once the scripts executes, run the following command to test the setup:
 
 ```
 % export KUBECONFIG=/tmp/kubeconfig
-% oc new-project test-pvc`
-% oc create -f hack/quicklab/template/test-pvc.yaml
+% oc new-project test-pvc
+% oc create -f templates/test-pvc.yaml
 % oc get pvc
 ```
+
+The status should be *Bound*
+
+```
+NAME         STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS          AGE
+test-claim   Bound    pvc-1392e83f-60ec-4caf-b71b-8d040b8becd5   100Mi      RWX            managed-nfs-storage   6s
+```
+
+You may now run the bootstrap scripts.
