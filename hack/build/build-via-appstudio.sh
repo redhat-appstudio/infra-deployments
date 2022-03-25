@@ -7,13 +7,17 @@ if [ -z "$MY_QUAY_USER" ]; then
   exit 1
 fi
 
-if ! grep -q quay.io ~/.docker/config.json; then
+AUTH_FILE="${XDG_RUNTIME_DIR}/containers/auth.json"
+if [ ! -f $AUTH_FILE ]; then
+  AUTH_FILE=~/.docker/config.json
+fi
+if ! grep -q quay.io $AUTH_FILE; then
   echo "No token for quay.io registry, please login using docker/podman command"
   exit 1
 fi
 
 SECRET=$(mktemp)
-echo '{"auths": {' $(yq eval '.auths | with_entries(select(.key == "quay.io"))' ~/.docker/config.json) '}}' > $SECRET
+echo '{"auths": {' $(yq eval '.auths | with_entries(select(.key == "quay.io"))' $AUTH_FILE) '}}' > $SECRET
 oc create secret docker-registry redhat-appstudio-registry-pull-secret --from-file=.dockerconfigjson=$SECRET --dry-run=client -o yaml | oc apply -f-
 rm $SECRET
 
