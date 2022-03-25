@@ -2,13 +2,7 @@
 
 MODE=$1
 
-
-if which realpath > /dev/null; then
-  ROOT="$(realpath -mq ${BASH_SOURCE[0]}/../..)"
-else
-  ROOT="$( cd "$(dirname "$0"/..)" >/dev/null 2>&1 ; pwd -P )"
-fi
-
+ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/..
 
 if [ "$(oc auth can-i '*' '*' --all-namespaces)" != "yes" ]; then
   echo
