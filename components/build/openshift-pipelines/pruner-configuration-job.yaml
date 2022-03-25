@@ -2,10 +2,9 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: pruner-configuration
-  namespace: openshift-operators
+  namespace: openshift-pipelines
   annotations:
     argocd.argoproj.io/hook: PostSync
-    argocd.argoproj.io/hook-delete-policy: HookSucceeded
 spec:
   template:
     spec:
@@ -16,13 +15,13 @@ spec:
             - -c
             - |
               echo "Waiting for TektonConfig config to be present"
-              until oc get TektonConfig config -n openshift-operators
+              until oc get TektonConfig config
               do
                 sleep $SLEEP;
               done
  
               echo "Patching TektonConfig config patameters"
-              oc patch TektonConfig config -n openshift-pipelines -p '{"spec":{"pruner":{"keep": 10, "schedule": "0/10 * * * *"}}}' --type=merge
+              oc patch TektonConfig config -p '{"spec":{"pruner":{"keep": 10, "schedule": "0/10 * * * *"}}}' --type=merge
           imagePullPolicy: Always
           name: patch-tekton-config
           env:
