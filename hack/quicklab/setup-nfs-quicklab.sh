@@ -35,7 +35,7 @@ else
 fi
 
 # default to 1 PV
-[[ -z $2 ]] && PVN="1" || PVN=$3
+[[ -z $2 ]] && PVN="1" || PVN=$2
 PORT=2049
 
 wget -q https://gitlab.cee.redhat.com/cee_ops/quicklab/raw/master/docs/quicklab.key -O $QUICKLABKEY
@@ -75,12 +75,11 @@ oc create namespace openshift-nfs-storage
 oc label namespace openshift-nfs-storage "openshift.io/cluster-monitoring=true" --overwrite=true
 oc project openshift-nfs-storage
 NAMESPACE=`oc project -q`
-oc create -f templates/rbac.yaml
+oc apply -f templates/rbac.yaml
 oc adm policy add-scc-to-user hostmount-anyuid system:serviceaccount:$NAMESPACE:nfs-client-provisioner
 echo -e "$(eval "echo -e \"$(<templates/deployment.yaml)\"")"|oc create -f -
-sleep 10
-oc create -f templates/storageClass.yaml
-oc patch storageclass managed-nfs-storage -p '{"metadata": {"annotations": {"storageclass.kubernetes.io/is-default-class": "true"}}}'
+oc -n $NAMESPACE wait --for=condition=ready pod --all
+oc apply -f templates/storageClass.yaml
 set -e
 
 unset QUICKLABKEY

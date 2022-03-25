@@ -1,5 +1,12 @@
 # Configuring NFS storage provisioner on Quicklab clusters 
 
+This document and script are based on the following documents:
+
+- https://two-oes.medium.com/openshift-4-8-and-above-with-nfs-subdir-external-provisioner-9b6b614194b7
+- https://source.redhat.com/groups/public/api-management-sbr/cee_sd_api_management_wiki/configuring_nfs_for_persistent_volumes
+
+This procedure will essentially deploy a new storage provisioner to your cluster.
+
 ###### Requiremements 
 
 This script can only be executed once:
