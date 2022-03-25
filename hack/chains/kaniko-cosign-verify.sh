@@ -8,7 +8,8 @@ TASKRUN_NAME=${1:-$( tkn taskrun describe --last -o name )}
 TASKRUN_NAME=taskrun/$( trim-name $TASKRUN_NAME )
 
 # Let's not hard code the image url or the registry
-IMAGE_URL=$( oc get $TASKRUN_NAME -o json | jq -r '.status.taskResults[1].value' )
+IMAGE_DIGEST=$( kubectl get $TASKRUN_NAME -o jsonpath='{.status.taskResults[?(@.name == "IMAGE_DIGEST")].value}' )
+IMAGE_URL=$( kubectl get $TASKRUN_NAME -o jsonpath='{.status.taskResults[?(@.name == "IMAGE_URL")].value}' )
 IMAGE_REGISTRY=$( echo $IMAGE_URL | cut -d/ -f1 )
 #IMAGE_REGISTRY=$( oc registry info )
 
@@ -23,10 +24,11 @@ oc get $TASKRUN_NAME -o yaml | yq-pretty .metadata.annotations
 pause
 
 title "Image url from task result"
-kubectl get $TASKRUN_NAME -o jsonpath="{.status.taskResults[?(@.name == \"IMAGE_URL\")].value}"
+echo "$IMAGE_URL"
+
 
 title "Image digest from task result"
-kubectl get $TASKRUN_NAME -o jsonpath="{.status.taskResults[?(@.name == \"IMAGE_DIGEST\")].value}"
+echo "$IMAGE_DIGEST"
 echo
 
 title "Cosign verify the image"
