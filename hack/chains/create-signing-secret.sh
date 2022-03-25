@@ -1,6 +1,6 @@
 #!/bin/bash
 ###
-### NB: There is hook that runs this after Gitops sync so you
+### NB: There is a hook that runs this after Gitops sync so you
 ### should not generally need to run this script manually.
 ### See components/build/tekton-chains/chains-secrets-config.yaml
 ###
