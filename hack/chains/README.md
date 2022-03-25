@@ -61,11 +61,6 @@ To return to using the default, public rekor instance:
 
    ./config.sh rekor-default
 
-### Create a key-pair signing secret for chains
-
-    cd hack/chains
-    ./create-signing-secret.sh
-
 
 ### Trust the cluster's SSL cert (optional)
 
