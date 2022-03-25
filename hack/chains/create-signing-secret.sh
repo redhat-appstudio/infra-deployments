@@ -1,4 +1,9 @@
 #!/bin/bash
+###
+### NB: There is a hook that runs this after Gitops sync so you
+### should not generally need to run this script manually.
+### See components/build/tekton-chains/chains-secrets-config.yaml
+###
 
 # Show a message and exit gracefully if cosign isn't installed
 ! which cosign >/dev/null 2>&1 &&\
