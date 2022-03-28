@@ -31,7 +31,7 @@ title "Image push secret name"
 echo $QUAY_SECRET_NAME
 
 title "Suggested config for this demo:"
-$SCRIPTDIR/config.sh quay --dry-run
+$SCRIPTDIR/config.sh default --dry-run
 
 title "Current config:"
 $SCRIPTDIR/config.sh
