@@ -1,6 +1,6 @@
 resources:
   - argocd-permissions.yaml
-  - https://github.com/sparkoo/service-provider-integration-operator/config/default?ref=fbff599c61ee996b3e54cc0c0c1d045e73eb6f66
+  - https://github.com/redhat-appstudio/service-provider-integration-operator/config/default?ref=bee68d736312be7af23176ccc588edca5b6bf612
   - oauth_route.yaml
   - https://github.com/redhat-appstudio/service-provider-integration-scm-file-retriever/server/config/default?ref=381f7746b88019ea13d4aa42e71b01ac9bb2ec1e
   - scm_route.yaml
@@ -13,11 +13,11 @@ kind: Kustomization
 
 images:
   - name:  quay.io/redhat-appstudio/service-provider-integration-operator
-    newName: quay.io/mvala/spi-operator
-    newTag: svpi61-vaultTokenStorage
+    newName: quay.io/redhat-appstudio/service-provider-integration-operator
+    newTag: 0.3.0
   - name: quay.io/redhat-appstudio/service-provider-integration-oauth
-    newName: quay.io/mvala/spi-oauth
-    newTag: svpi61-vaultTokenStorage
+    newName: quay.io/redhat-appstudio/service-provider-integration-operator
+    newTag: 0.3.0
   - name: quay.io/redhat-appstudio/service-provider-integration-scm-file-retriever-server
     newName:  quay.io/redhat-appstudio/service-provider-integration-scm-file-retriever-server
     newTag: 0.3.0
