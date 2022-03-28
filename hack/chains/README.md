@@ -140,11 +140,10 @@ kubernetes secret for the bot.
 Since we're not using the internal registry, this demo should work without
 running the trust-local-cert.sh and setup-controller-certs.sh scripts.
 
-Note that quay.io doesn't currently support storing attestations, but see
-[PROJQUAY-3386](https://issues.redhat.com/browse/PROJQUAY-3386) which aims to
-change that.
+This uses the default configuration so there's no need to change the config if
+your Argo CD is in sync.
 
     ./gitops-sync.sh off
-    ./config.sh quay
+    ./config.sh default
     kubectl create -f your-downloaded-quay-secret.yml
     ./pipeline-quay-demo.sh quay.io/your-user/your-repo your-quay-secret-name
