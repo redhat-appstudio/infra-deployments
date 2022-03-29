@@ -30,5 +30,3 @@ case $OSTYPE in
     esac
     ;;
 esac
-$ROOT/prepare-crc.sh
-
