@@ -136,6 +136,29 @@ save-all-for-taskrun() {
   true
 }
 
+create-demo-policy() {
+  #
+  # We discussed the idea of having a configmap or a CRD
+  # for configuring policies.
+  #
+  # This is temporary hack to demonstrate how it might work.
+  #
+  echo "
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: example-config
+data:
+  # Can't put a list in a ConfigMap..?
+  policy_config: |
+    non_blocking_checks:
+    - not_useful
+" | kubectl apply -f -
+
+  local file=$( data-file config policy data )
+  kubectl get ConfigMap/example-config -o jsonpath='{.data.policy_config}' > $file
+}
+
 # Clean out old data
 rm -rf $DATA_DIR
 
@@ -145,6 +168,7 @@ k8s-save-data PipelineRun $PR_NAME
 for tr in $( pr-get-tr-names $PR_NAME ); do
   save-all-for-taskrun $tr
 done
+create-demo-policy
 
 # Show what we created
 find data -name '*.yaml'
