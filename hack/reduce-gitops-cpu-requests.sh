@@ -1,4 +1,3 @@
-
 #!/bin/bash
 
 OPENSHIFT_GITOPS=$(kubectl get argocd/openshift-gitops -n openshift-gitops -o json)
