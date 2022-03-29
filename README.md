@@ -52,19 +52,14 @@ Simply update the files under `components/(team-name)`, and open a PR with the c
 ### Required prerequisites
 The prerequisites are:
 - You must have `kubectl`, `oc`, `jq and [`yq`](https://github.com/mikefarah/yq) installed.
-- You must have `kubectl` and `oc` pointing to an existing OpenShift cluster, that you wish to deploy to.
+- You must have `kubectl` and `oc` pointing to an existing OpenShift cluster, that you wish to deploy to. Alternatively, you can configure a local CodeReady Containers VM to deploy to.
+- The script `./hack/setup/install-pre-req.sh` will install these prerequisites for you, if they're not already installed.
 
 ### Optional: CodeReady Containers Setup
 If you don't already have a test OpenShift cluster available, CodeReady Containers is a popular option. It runs a small OpenShift cluster in a single VM on your local workstation.
 1) Create or log in using your free Red Hat account, and [install CodeReady Containers (CRC)](https://console.redhat.com/openshift/create/local).
 2) Make sure you have the latest version of CRC: `crc version`
-3) Set up your workstation and command line tools: `crc setup`
-4) Configure the VM using the minimum supported values. You can further increase these values if your workstation can support it: `crc config set memory 16384` and `crc config set cpus 6`
-5) Make sure the Cluster has the nodemetrics enabled so that sandbox installer can find allocatable resources it needs : `crc config set enable-cluster-monitoring true`
-6) Create a new VM after you adjust the memory and cpu allocation: `crc delete` and confirm with a `y`.
-7) Start the OpenShift cluster: `crc start` This command will output the OpenShift web console URL as well as the developer and kubeadmin credentials when it's finished.
-8) Set up your command line: `eval $(crc oc-env)`
-9) Configure kubectl to use the CRC administrator account: `kubectl config use-context crc-admin`
+3) Run `./hack/setup/prepare-crc.sh` to configure CodeReady Containers with the minimum memory (16 GiB) and CPUs (6) required for App Studio. You can edit that script to increase the memory or CPUs for the VM before running it, if you prefer. The script will also enable cluster monitoring and log you in as the cluster administrator.
 
 ### Bootstrap App Studio
 Steps:
