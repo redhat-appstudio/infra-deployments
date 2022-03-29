@@ -2,7 +2,7 @@
 
 MODE=$1
 
-ROOT="$(realpath -mq ${BASH_SOURCE[0]}/../..)"
+ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/..
 
 if [ "$(oc auth can-i '*' '*' --all-namespaces)" != "yes" ]; then
   echo
@@ -11,7 +11,7 @@ if [ "$(oc auth can-i '*' '*' --all-namespaces)" != "yes" ]; then
   exit 1
 fi
 
-echo 
+echo
 echo "Installing the OpenShift GitOps operator subscription:"
 kubectl apply -f $ROOT/openshift-gitops/subscription-openshift-gitops.yaml
 
@@ -41,7 +41,7 @@ kubectl patch argocd/openshift-gitops -n openshift-gitops -p '{"spec": {"server"
 # - Once we have a proper access policy in place, this should be updated to be consistent with that policy.
 kubectl patch argocd/openshift-gitops -n openshift-gitops -p '{"spec":{"rbac":{"policy":"g, system:authenticated, role:admin"}}}' --type=merge
 
-echo 
+echo
 echo "Add Role/RoleBindings for OpenShift GitOps:"
 kubectl apply --kustomize $ROOT/openshift-gitops/cluster-rbac
 
@@ -51,7 +51,7 @@ if ! kubectl get namespace tekton-pipelines &>/dev/null; then
 fi
 
 OPENSSLDIR=`openssl version -d | cut -f2 -d'"'`
- 
+
 if ! kubectl get secret -n tekton-pipelines tekton-results-tls &>/dev/null; then
   ROUTE=$(oc whoami --show-console | sed 's|https://console-openshift-console|api-tekton-pipelines|')
   openssl req -x509 \
