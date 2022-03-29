@@ -29,5 +29,5 @@ eval $($CRCBINARY oc-env)
 kubectl config use-context crc-admin
 
 #Reduce cpu resource request for each AppStudio Application
-#TODO: Set the file path properly
-$ROOT_DIR/../../hack/reduce-gitops-cpu-requests.sh
+#TODO: Check when to run the reduce gitops cpu requests
+#TODO: $ROOT_DIR/../../hack/reduce-gitops-cpu-requests.sh
