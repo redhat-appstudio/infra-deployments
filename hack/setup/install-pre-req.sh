@@ -11,6 +11,7 @@ echo $ROOT
 case $OSTYPE in
   *"darwin"*)
     echo "I am in Macos"
+    $ROOT/macos-based.sh
     ;;
   *"linux"*)
     OSNAME=$(grep '^NAME=' /etc/os-release)
