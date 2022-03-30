@@ -82,7 +82,25 @@ function checkHASGithubOrg() {
 function executeE2ETests() {
     # E2E instructions can be found: https://github.com/redhat-appstudio/e2e-tests
     # The e2e binary is included in Openshift CI test container from the dockerfile: https://github.com/redhat-appstudio/infra-deployments/blob/main/.ci/openshift-ci/Dockerfile
-    e2e-appstudio --ginkgo.junit-report="${ARTIFACTS_DIR}"/e2e-report.xml
+    e2e-appstudio --ginkgo.junit-report="${ARTIFACTS_DIR}"/e2e-report.xml -webhookConfigPath="./webhookConfig.yml"
+}
+
+function prepareWebhookVariables() {
+    # Download config file
+    wget https://raw.githubusercontent.com/redhat-appstudio/e2e-tests/main/webhookConfig.yml
+    #Export variables
+    export webhook_salt=123456789
+    export webhook_target=https://smee.io/JgVqn2oYFPY1CF
+    export webhook_repositoryURL=https://github.com/redhat-appstudio-qe/infra-deployments
+    export webhook_repositoryFullName=redhat-appstudio-qe/infra-deployments
+    # Delete temp file
+    rm -f temp.yml
+    # Rewrite variables in webhookConfig.yml
+    ( echo "cat <<EOF >webhookConfig.yml";
+    cat webhookConfig.yml;
+    echo "EOF";
+    ) >temp.yml
+    . temp.yml
 }
 
 createQuayPullSecrets
@@ -100,4 +118,5 @@ timeout --foreground 10m bash -c waitBuildToBeReady
 # Just a sleep before starting the tests
 sleep 2m
 timeout --foreground 3m bash -c checkHASGithubOrg
+prepareWebhookVariables
 executeE2ETests
