@@ -13,21 +13,23 @@ import future.keywords.every
 #
 #
 deny[{ "msg": msg }] {
-
-  # Extract attestations from the rekor log entries
-  # It skips log entries without an attestation,
-  # (but I'm not sure how or why..)
-  #
-  some rekor_host, log_index
-  log_entry := data.rekor[rekor_host].logIndex[log_index]
-  attestation := decode_attestation(log_entry.Attestation)
-
+  attestation := all_attestations[_]
   # An example, not sure if we would do this check for real:
-  attestation._type != "https://in-toto.io/Statement/v0.1"
+  attestation.data._type != "https://in-toto.io/Statement/v0.1"
 
   msg := sprintf(
     "Unexpected attestation type '%s' in log index %s on %s",
-    [attestation._type, log_index, rekor_host])
+    [attestation.data._type, attestation.log_index, attestation.rekor_host])
+}
+
+all_attestations = attestations {
+  attestations := [attestation | rekor_hosts := data.rekor[rekor_host]
+                                 log_entry := rekor_hosts.logIndex[log_index]
+                                 attestation := {
+                                   "rekor_host" : rekor_host,
+                                   "log_index"  : log_index,
+                                   "data": decode_attestation(log_entry.Attestation)
+                                 }]
 }
 
 # Extract an attestation from the logIndex
@@ -37,15 +39,10 @@ decode_attestation(encoded_attestation) = result {
 
 deny[{ "msg": msg }] {
 
-  # Fixme: This is copy pasted from above. There should be a
-  # way to reuse this between different rules.
-  #
-  some rekor_host, log_index
-  log_entry := data.rekor[rekor_host].logIndex[log_index]
-  attestation := decode_attestation(log_entry.Attestation)
+  attestation := all_attestations[_]
 
   some step_index
-  step = attestation.predicate.buildConfig.steps[step_index]
+  step = attestation.data.predicate.buildConfig.steps[step_index]
   registry := concat("/", array.slice(split(step.environment.image, "/"), 0, 2))
   not registry_is_allowed(registry)
 
