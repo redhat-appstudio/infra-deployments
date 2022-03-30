@@ -46,7 +46,8 @@ deny[{ "msg": msg }] {
   registry := concat("/", array.slice(split(step.environment.image, "/"), 0, 2))
   not registry_is_allowed(registry)
 
-  msg := sprintf("Step %d has disallowed registry '%s'", [step_index, registry])
+  msg := sprintf("Step %d has disallowed registry '%s' for log index %s on %s",
+    [step_index, registry, attestation.log_index, attestation.rekor_host])
 }
 
 registry_is_allowed(registry) {
