@@ -16,14 +16,15 @@ These are the steps to add your own component:
 2) Add a `kustomization.yaml` file under that directory, which points to the individual K8s YAML resources you wish to deploy.
     - You may also structure your deployment into directories and files. See the Kustomize documentation for more information, and/or examples below.
     - See `components/gitops/backend` for an example of this.
-3) Create an Argo CD `Application` resource in `argo-cd-apps/base/(team-name).yaml`). 
+3) Create an Argo CD `Application` resource in `argo-cd-apps/base/(team-name).yaml`).
     - See `gitops.yaml` for a template of how this should look.
     - The `.spec.source.path` value should point to the directory you created in previous step.
     - The `.spec.destination.namespace` should match the target namespace you wish to deploy your resources to.
     - The `.metadata.name` should correspond to your `(team-name)`
 4) Add a reference to your new `(team-name).yaml` file, to `argo-cd-apps/base/kustomization.yaml` (the reference to your YAML file should be in the `resources:` list field).
 5) Run `kustomize build (repo root)/argo-cd-apps/overlays/staging` and ensure it passes, and outputs your new Argo CD Application CR.
-6) Open a PR for all of the above.
+6) Add an entry in `argo-cd-apps/overlays/development/repo-overlay.yaml` for your new component so you can use the development and preview modes for testing. 
+7) Open a PR for all of the above.
 
 More examples of using Kustomize to drive deployments using GitOps can be [found here](https://github.com/redhat-cop/gitops-catalog).
 
@@ -35,7 +36,7 @@ These are the steps to create a component pipeline:
 1) Create a `.tekton` directory under the component directory. Example: `components/(team-name)/.tekton`.
 2) Create the Tekton resources to trigger and run the pipeline.
     - EventListener: The EventListener processes an incoming request and executes a Trigger. This will bind to a ClusterTriggerBinding.
-    - PersistentVolumeClaim: A workspace for the pipeline. 
+    - PersistentVolumeClaim: A workspace for the pipeline.
     - ServiceAccount: This will be the service account the pipeline will run as.
     - TriggerTemplate: The trigger template will dynamically generate a PipelineRun resource. This is also where the pipeline is defined.
     - Route: The route will be used as the github webhook address.
@@ -43,7 +44,7 @@ These are the steps to create a component pipeline:
 
 ## Maintaining your components
 
-Simply update the files under `components/(team-name)`, and open a PR with the changes. 
+Simply update the files under `components/(team-name)`, and open a PR with the changes.
 
 **TIP**: For development purposes, you can use `kustomize build .` to output the K8s resources that are being generated for your folder.
 
@@ -97,11 +98,11 @@ Both of the scripts will:
 2. Install & configure the Toolchain (Sandbox) operators in the corresponding mode.
 3. Print:
     - The landing-page URL that you can use for signing-up for the Sandbox environment that is running in your cluster.
-    - Proxy URL. 
-    
+    - Proxy URL.
+
 #### SSO
 
-In development mode, the Toolchain Operators are configured to use Keycloak instance that is internally used by the Sandbox team. If you want to reconfigure it to use your own Keycloak instance, you need to add a few parameters to `ToolchainConfig` resource in `toolchain-host-operator` namespace. 
+In development mode, the Toolchain Operators are configured to use Keycloak instance that is internally used by the Sandbox team. If you want to reconfigure it to use your own Keycloak instance, you need to add a few parameters to `ToolchainConfig` resource in `toolchain-host-operator` namespace.
 This is an example of the needed parameters and their values:
 ```yaml
 spec:
@@ -146,12 +147,12 @@ Steps:
 2) you will need to push the updated references in `argo-cd-apps/overlays/development/repo-overlay.yaml` to your fork. Argo will now sync all the changes from your fork into the cluster
 3) You can now make changes to your forked repository and test them via the gitops
 
-4) To submit changes back to the upstream make sure you do not include the modified file `argo-cd-apps/overlays/development/repo-overlay.yaml`. 
+4) To submit changes back to the upstream make sure you do not include the modified file `argo-cd-apps/overlays/development/repo-overlay.yaml`.
 
-One option to prevent accidentally including this modified file, you can run the script `./hack/upstream-mode.sh` to reset everything including your cluster to `https://github.com/redhat-appstudio/infra-deployments.git` and match the upstream config. You can also checkout the current upstream 
+One option to prevent accidentally including this modified file, you can run the script `./hack/upstream-mode.sh` to reset everything including your cluster to `https://github.com/redhat-appstudio/infra-deployments.git` and match the upstream config. You can also checkout the current upstream
 ` git fetch upstream; git checkout upstream/main -- argo-cd-apps/overlays/development/repo-overlay.yaml` to ensure you have the original file.  
 
-After you commit your changes you can rerun to `./hack/development-mode.sh` and reset your repo to point back to the fork. 
+After you commit your changes you can rerun to `./hack/development-mode.sh` and reset your repo to point back to the fork.
 
 Note running these scripts in a clone repo will have no effect as the repo will remain `https://github.com/redhat-appstudio/infra-deployments.git`
 
@@ -192,54 +193,54 @@ Steps:
 
 The App Studio Build System is composed of the following components:
 
-1. OpenShift Pipelines. 
+1. OpenShift Pipelines.
 2. AppStudio-specific Pipeline Definitions in `build-templates` for building images.
 3. AppStudio-specific `ClusterTasks`.
 
-This repository installs all the components and includes a set of example scripts that simplify usage and provide examples of a working system. There are no additiona components needed to use the build system API, however some utilities and scripts are provided to demonstrate functionality. 
+This repository installs all the components and includes a set of example scripts that simplify usage and provide examples of a working system. There are no additiona components needed to use the build system API, however some utilities and scripts are provided to demonstrate functionality.
 
-## Quickstart 
+## Quickstart
 
-To try out a pre-configured, follow these steps. 
+To try out a pre-configured, follow these steps.
 
 | Steps    |    |
-| ----------- | ----------- | 
+| ----------- | ----------- |
 | 1.  Create project for your pipelines execution. This can be run as any non-admin user (or admin)  and is needed to hold your execution pipelines.  |  oc new-project demo     |  
 | 2.  Run build-deploy example with a quarkus app. |  ./hack/build/build-deploy.sh  https://github.com/devfile-samples/devfile-sample-code-with-quarkus
 | 3.  View your build on the OpenShift Console under the pipelines page or view the logs via CLI. | `./hack/build/ls-builds.sh` or  `tkn.exe pipelinerun logs`      |
 
 ## Usage
- 
+
 A sample script `build.sh` is provided which uses the App Studio Build Service API to demonstrate launching a build and inspecting the results.
-As a proof-of-concept, an optional `build-deploy.sh` script is included to take the build image and run it. . 
+As a proof-of-concept, an optional `build-deploy.sh` script is included to take the build image and run it. .
 
 ```
 ./hack/build/build.sh  git-repo-url <optional-pipeline-name>
 ```
-also the equivalent build but with an associated deploy. 
+also the equivalent build but with an associated deploy.
 ```
 ./hack/build/build-deploy.sh  git-repo-url <optional-pipeline-name>
 ```
 
 The `git-repo-url` is the git repository with your source code.
-The `<optional-pipeline-name>` is the name of one of the pipelines documented in the App Studio API Contract <url here>. This pipeline name can be provide when the automatic build type detection does not find a supported build type. 
-Note: Normally the build type would be done automatically by (by the Component Detection Query) which maps devfile or other markers to a type of build needed. The build currently uses a shim `repo-to-pipeline.sh` to map file markers to a pipeline type. For testing and experiments the  `optional-pipeline-name`  parameter can override the default pipeline name. 
+The `<optional-pipeline-name>` is the name of one of the pipelines documented in the App Studio API Contract <url here>. This pipeline name can be provide when the automatic build type detection does not find a supported build type.
+Note: Normally the build type would be done automatically by (by the Component Detection Query) which maps devfile or other markers to a type of build needed. The build currently uses a shim `repo-to-pipeline.sh` to map file markers to a pipeline type. For testing and experiments the  `optional-pipeline-name`  parameter can override the default pipeline name.
 
 The current build types supported are: `devfile-build`, `docker-build`, `java-buider` and `node-js-builder`.
 
-For a quick "do nothing pipeline" run you can specify the `noop` buider and have a quick pipeline run that does nothing except print some logs. 
+For a quick "do nothing pipeline" run you can specify the `noop` buider and have a quick pipeline run that does nothing except print some logs.
 
 `./hack/build/build.sh  https://github.com/jduimovich/single-container-app  noop`
 
-Pipelines will be automatically installed when running a build via an OCI bundle mechanism. 
+Pipelines will be automatically installed when running a build via an OCI bundle mechanism.
 
 To see what builds you have run, use the following examples.
 
 Use `./hack/build/ls-builds.sh` to show all builds in the system, and `./hack/build/ls-builds.sh <build-name>` to get the stats for a specific build.
 
-## Testing 
+## Testing
 
-To validate the pipelines are installed and working, you can run `./hack/build/m2-builds`  script which will build all the samples planned for milestone 2. 
+To validate the pipelines are installed and working, you can run `./hack/build/m2-builds`  script which will build all the samples planned for milestone 2.
 
 To deploy all the builds as they complete, add the `-deploy` option.
 ```
@@ -247,19 +248,19 @@ To deploy all the builds as they complete, add the `-deploy` option.
 
 ```
 You can also run the noop build `./hack/build/quick-noop-build.sh`, that executes in couple seconds to validate a working install.
- 
+
 ## Other Build utilities
 
 The build type is identified via temporary hack until the Component Detection Query is available which maps files in your git repo to known build types. See `./hack/build/repo-to-pipeline.sh`  which will print the repo name and computed builder type.
 
 The system will fill with builds and logs so a utility is provided to prune pipelines and cleanup the associated storage. This is for dev mode only and will be done autatically by App Studio builds.
-Use `./hack/build/prune-builds.sh` for a single cleanup pass, and `./hack/build/prune-builds-loop.sh` to run a continuous loop to cleanup extra resources. 
+Use `./hack/build/prune-builds.sh` for a single cleanup pass, and `./hack/build/prune-builds-loop.sh` to run a continuous loop to cleanup extra resources.
 
 Use `./hack/build/utils/check-repo.sh` to test your what auto-detect build will return.  
 ```
 ./hack/build/utils/check-repo.sh  https://github.com/jduimovich/single-java-app
 https://github.com/jduimovich/single-java-app   -> java-builder
-  
+
 ```
 If you want to check all your repos to see which ones may build you can use this script. You need to set you github id `export MY_GITHUB_USER=your-username` and it will test your repo for buildable content.  
 
@@ -328,7 +329,7 @@ Other questions? Ask on `#wg-developer-appstudio`.
 
 As long as your resources are declaratively defined, they will eventually be reconciled with the cluster (it just may take Argo CD a few retries). For example, the CRs might fail before the CRDs are applied, but on retry the CRDs will now exist (as they were applied during the previous retry). So now those CRs can progress.
 
-_However_, this is not true if you are installing an Operator (e.g. Tekton) via OLM `Subscription`, and then using an operand of that operator (e.g. `Pipeline` CRs), at the same time. In this case, you will need to add the `argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true` annotation to the operands (or add it to the parent `kustomization.yaml`). 
+_However_, this is not true if you are installing an Operator (e.g. Tekton) via OLM `Subscription`, and then using an operand of that operator (e.g. `Pipeline` CRs), at the same time. In this case, you will need to add the `argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true` annotation to the operands (or add it to the parent `kustomization.yaml`).
 
 See the FAQ question '_the server could not find the requested resource_' below for details.
 
@@ -362,7 +363,7 @@ kind: Pipeline
 metadata:
   # Add this annotation to your CRs:
   annotations:
-    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true 
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 ```
 
 If you are using Kustomize, you can place the following in your `kustomization.yaml` file to automatically add it to all resources:
@@ -373,7 +374,7 @@ resources:
 - # (your resources)
 
 # Add these lines to your kustomization.yaml:
-commonAnnotations: 
+commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 ```
 
