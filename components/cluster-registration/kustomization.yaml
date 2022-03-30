@@ -1,7 +1,15 @@
 resources:
-- installer.yaml
+- https://raw.githubusercontent.com/stolostron/cluster-registration-operator/main/config/rbac/service_account.yaml
+- https://raw.githubusercontent.com/stolostron/cluster-registration-operator/main/config/rbac/role.yaml
+- https://raw.githubusercontent.com/stolostron/cluster-registration-operator/main/config/rbac/role_binding.yaml
+- https://raw.githubusercontent.com/stolostron/cluster-registration-operator/main/config/rbac/leader_election_role.yaml
+- https://raw.githubusercontent.com/stolostron/cluster-registration-operator/main/config/rbac/leader_election_role_binding.yaml
+- https://raw.githubusercontent.com/stolostron/cluster-registration-operator/main/config/installer/installer.yaml
+#- installer.yaml
+
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+
 images:
 - name: controller
   newName: quay.io/leena_ibm/cluster-registration-operator
