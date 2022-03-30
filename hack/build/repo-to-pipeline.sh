@@ -20,21 +20,16 @@ repo_marker_to_pipeline () {
   FILE=$2 
   PIPELINE=$3
   USER=$(echo $REPO | cut -d '/' -f 4)
-  PROJECT=$(echo $REPO | cut -d '/' -f 5)
-  BRANCH=main 
-  URL="https://raw.githubusercontent.com/$USER/$PROJECT/$BRANCH/$FILE" 
-  if curl  -H "Cache-Control: no-cache" --output /dev/null --silent --head --fail "$URL"; then
-    # echo "Marker  $URL  exists"
-    echo $PIPELINE
-    exit 0;  
-  fi 
-  BRANCH=master
-  URL="https://raw.githubusercontent.com/$USER/$PROJECT/$BRANCH/$FILE" 
-  if curl  -H "Cache-Control: no-cache" --output /dev/null --silent --head --fail "$URL"; then
-    # echo Marker "https://raw.githubusercontent.com/$USER/$PROJECT/$BRANCH/$FILE" exists
-    echo $PIPELINE
-    exit 0;  
-  fi  
+  PROJECT=$(echo $REPO | cut -d '/' -f 5) 
+  for BRANCH in main master
+  do    
+    URL="https://raw.githubusercontent.com/$USER/$PROJECT/$BRANCH/$FILE" 
+    if curl  -H "Cache-Control: no-cache" --output /dev/null --silent --head --fail "$URL"; then
+      # echo "Marker  $URL  exists"
+      echo $PIPELINE
+      exit 0;  
+    fi 
+  done 
 }   
 
 # need to understand dev files mapping 
