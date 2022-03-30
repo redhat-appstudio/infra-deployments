@@ -63,3 +63,14 @@ spec:
   source:
     repoURL: https://github.com/chrisahl/infra-deployments.git
     targetRevision: cluster-registration
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cluster-registration
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  source:
+    repoURL: https://github.com/chrisahl/infra-deployments.git
+    targetRevision: cluster-registration
