@@ -5,6 +5,8 @@ set -e
 trap 'last_command=$current_command; current_command=$BASH_COMMAND' DEBUG
 trap 'echo "\"${last_command}\" command failed with exit code $?."' EXIT
 
+ROOT="$(realpath -mq ${BASH_SOURCE[0]}/../../..)"
+
 export QUICKLABKEY=/tmp/quicklab.key
 export NAMESPACE=openshift-nfs-storage
 PORT=2049
@@ -61,7 +63,7 @@ else
 fi
 
 #CREATE DIRS AND ADD IT TO /etc/exports
-$SSH -C 'sudo mkdir -p /opt/nfs ; sudo mkdir /opt/nfs/pv0001 > /dev/null 2>&1;'
+$SSH -C 'sudo mkdir -p /opt/nfs ; sudo mkdir -p /opt/nfs/pv0001 > /dev/null 2>&1;'
 $SSH -C 'sudo chmod -R 0777 /opt/nfs/*'
 $SSH -C 'cp /etc/exports ./exports; echo "/opt/nfs/pv0001 *(no_root_squash,rw,sync)" >> ./exports ; sudo cp ./exports /etc/exports ; rm ./exports'
 
@@ -73,12 +75,12 @@ oc create namespace $NAMESPACE
 oc label namespace $NAMESPACE "openshift.io/cluster-monitoring=true" --overwrite=true
 oc project $NAMESPACE
 
-oc apply -f templates/rbac.yaml
+oc apply -f $ROOT/hack/quicklab/templates/rbac.yaml
 oc adm policy add-scc-to-user hostmount-anyuid system:serviceaccount:$NAMESPACE:nfs-client-provisioner
 export REMOTE
-envsubst < templates/deployment.yaml | oc apply -f -
+envsubst < $ROOT/hack/quicklab/templates/deployment.yaml | oc apply -f -
 oc -n $NAMESPACE wait --for=condition=ready pod --all
-oc apply -f templates/storageClass.yaml
+oc apply -f $ROOT/hack/quicklab/templates/storageClass.yaml
 set -e
 
 unset NAMESPACE
