@@ -93,7 +93,7 @@ echo "Client ID: <value from prior step>"
 echo "Client secret: <value from prior step>"
 echo "mappingMethod: add"
 echo "org: <your GitHub organization>"
-``` 
+```
 2) In CRC setup add a random string for value of `sharedSecret`
 3) Create a `oauth-config` Secret (`kubectl create secret generic oauth-config --from-file=components/spi/config.yaml -n spi-system`)
 4) In few moments, SPI pods should start
@@ -401,6 +401,23 @@ commonAnnotations:
 ```
 
 See the Argo CD docs [for more on this sync option](https://argo-cd.readthedocs.io/en/stable/user-guide/sync-options/#skip-dry-run-for-new-custom-resources-types). See the [redhat-cop/gitops-catalog](https://github.com/redhat-cop/gitops-catalog) for examples of this option used with Kustomize and OLM-installed operators.
+
+### Q: Logging into ArgoCD stops working and shows message: Failed to query provider.
+If you stopped and started your cluster, a timing issue might cause the following message to appear
+when you try logging into ArgoCD with `Log In Via OpenShift`:
+```
+Failed to query provider "https://openshift-gitops-server-openshift-gitops.apps.myserver.mydomain.com/api/dex": Get "http://openshift-gitops-dex-server.openshift-gitops.svc.cluster.local:5556/api/dex/.well-known/openid-configuration": dial tcp 1##.###.###.###:5556: connect: connection refused
+```
+To correct this problem:
++ List the pods:
+```
+oc get pods -n openshift-gitops
+```
++ Delete the openshift-gitops-dex-server-* pod:
+```
+oc delete pods -n openshift-gitops openshift-gitops-dex-server-########-####
+```
++ The pod will automatically restart and ArgoCD `Log In Via OpenShift` should be working again.
 
 
 ### Q: What is the recommended memory and CPU allocation for CodeReady Containers for development purposes?
