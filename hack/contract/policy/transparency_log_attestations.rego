@@ -37,6 +37,10 @@ decode_attestation(encoded_attestation) = result {
   result := json.unmarshal(base64.decode(encoded_attestation))
 }
 
+#
+# An example rule where we check the image used by a particular
+# task step and ensure it comes from an allowed repo
+#
 deny[{ "msg": msg }] {
 
   attestation := all_attestations[_]

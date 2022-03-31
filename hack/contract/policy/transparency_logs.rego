@@ -75,3 +75,56 @@ all_urls_match {
   # If the set size is one then they all match
   count(url_base_set) == 1
 }
+
+#
+# Ensure that we can see the data from the log entry
+#
+# If it's missing we can assume it isn't available or somehow
+# rekor-cli didn't confirm its validity
+#
+# TODO:
+# - How to pass back a more useful error message including the specific
+#   reason for the failure. Not sure how to do that when using "every" like this
+# - Could we convert the logic from "not every true" to "any not true" and
+#   stop using every entirely? (Better write some tests before trying that.)
+#
+deny[{ "msg": msg }] {
+  not all_transparency_log_entries_are_present
+  msg := "One or more transparency log entries were unavailable!"
+}
+
+deny[{ "msg": msg }] {
+  not all_transparency_log_entries_appear_sane
+  msg := "One or more transparency log entries seems to be invalid!"
+}
+
+all_transparency_log_entries_are_present {
+  every tr in data.k8s.TaskRun {
+    url := tr.metadata.annotations["chains.tekton.dev/transparency"]
+    rekor_host := split(url, "/")[2]
+    log_index := split(url, "=")[1]
+
+    # This should be true only if log entry is present
+    data.rekor[rekor_host].logIndex[log_index]
+  }
+}
+
+all_transparency_log_entries_appear_sane {
+  #
+  # TODO: This is mostly copy pasted from above. Refactor so we
+  # aren't repeating the code
+  #
+  every tr in data.k8s.TaskRun {
+    url := tr.metadata.annotations["chains.tekton.dev/transparency"]
+    rekor_host := split(url, "/")[2]
+    log_index := split(url, "=")[1]
+    log_entry_data := data.rekor[rekor_host].logIndex[log_index]
+
+    # The log index in the data matches what we expected
+    # (Not sure if there's a better way to compare the int and the string, but this works)
+    log_index == sprintf("%d",[log_entry_data.LogIndex])
+
+    # It has a body at least
+    log_entry_data.Body
+  }
+}
