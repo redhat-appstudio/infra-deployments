@@ -23,7 +23,7 @@ These are the steps to add your own component:
     - The `.metadata.name` should correspond to your `(team-name)`
 4) Add a reference to your new `(team-name).yaml` file, to `argo-cd-apps/base/kustomization.yaml` (the reference to your YAML file should be in the `resources:` list field).
 5) Run `kustomize build (repo root)/argo-cd-apps/overlays/staging` and ensure it passes, and outputs your new Argo CD Application CR.
-6) Add an entry in `argo-cd-apps/overlays/development/repo-overlay.yaml` for your new component so you can use the development and preview modes for testing. 
+6) Add an entry in `argo-cd-apps/overlays/development/repo-overlay.yaml` for your new component so you can use the development and preview modes for testing.
 7) Open a PR for all of the above.
 
 More examples of using Kustomize to drive deployments using GitOps can be [found here](https://github.com/redhat-cop/gitops-catalog).
@@ -71,9 +71,31 @@ Steps:
 
 #### Post-bootstrap Service Provider Integration(SPI) Configuration
 SPI components fails to start right after the bootstrap. It requires manual configuration in order to work properly:
-1) Edit `./components/spi/config.yaml` [see SPI Configuraton Documentation](https://github.com/redhat-appstudio/service-provider-integration-operator#configuration)
-2) Create a `oauth-config` Secret (`kubectl create secret generic oauth-config --from-file=components/spi/config.yaml -n spi-system`)
-3) In CRC setup add a random string for value of `sharedSecret`
+1) Edit `./components/spi/config.yaml` [see SPI Configuraton Documentation](https://github.com/redhat-appstudio/service-provider-integration-operator#configuration).  For example, if using a GitHub OAuth App, the values needed when creating the [GitHub OAuth App](https://github.com/settings/developers) can be gathered by running the following after ensuring you are logged into the cluster:
+```
+export OAUTH_NAME=github
+export APPS=$(oc get infrastructure cluster -ojsonpath='{.status.apiServerURL}' | cut -d':' -f2 | sed 's/\/\/api/apps/g')
+echo ""
+echo "GitHub OAuth application values:"
+echo "   Visit https://github.com/settings/developers"
+echo "   New OAuth App"
+echo "Application name: AppStudio"
+echo "Homepage URL: https://console-openshift-console.${APPS}"
+echo "Authorization callback URL: https://oauth-openshift.${APPS}/oauth2callback/${OAUTH_NAME}"
+echo "After pressing Register application, copy the Client ID, generate new client secret and copy the secret."
+echo "These client ID and client secret will be needed later."
+echo ""
+echo "OpenShift OAuth values for GitHub:"
+echo "   Visit https://console-openshift-console.${APPS}/k8s/cluster/config.openshift.io~v1~OAuth/cluster"
+echo "   Scroll to the bottom of page, Add > GitHub"
+echo "OAuth name: ${OAUTH_NAME}"
+echo "Client ID: <value from prior step>"
+echo "Client secret: <value from prior step>"
+echo "mappingMethod: add"
+echo "org: <your GitHub organization>"
+``` 
+2) In CRC setup add a random string for value of `sharedSecret`
+3) Create a `oauth-config` Secret (`kubectl create secret generic oauth-config --from-file=components/spi/config.yaml -n spi-system`)
 4) In few moments, SPI pods should start
 
 This process is automated in `preview mode` see below.
