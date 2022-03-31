@@ -8,8 +8,8 @@ metadata:
   name: REPLACE
 spec: 
   taskRef:
-    name: appstudio-utils
-    kind: ClusterTask  
+    name: utils-task
+    bundle: quay.io/redhat-appstudio/appstudio-tasks:utils-task-v0.1.5 
   params:
     - name: SCRIPT  
       value: |
@@ -20,7 +20,7 @@ spec:
         ls /workspace 
         echo  
         echo "du -a /workspace"
-        du -a /workspace 
+        du -a /workspace
         echo
   workspaces:
 BASE_TASKRUN
@@ -46,5 +46,5 @@ echo "---"
   tkn taskrun logs $PRNAME -f
   tkn taskrun delete $PRNAME -f 
 }
- 
+
 run_task "$BASE_TASKRUN" "$WORKSPACE" 
