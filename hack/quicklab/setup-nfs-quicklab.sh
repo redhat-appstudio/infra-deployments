@@ -3,7 +3,7 @@
 set -e
 
 trap 'last_command=$current_command; current_command=$BASH_COMMAND' DEBUG
-trap 'echo "\"${last_command}\" command failed with exit code $?."' EXIT
+trap 'echo "\"${last_command}\" command completed with exit code $?."' EXIT
 
 ROOT="$(realpath -mq ${BASH_SOURCE[0]}/../../..)"
 
@@ -81,7 +81,6 @@ export REMOTE
 envsubst < $ROOT/hack/quicklab/templates/deployment.yaml | oc apply -f -
 oc -n $NAMESPACE wait --for=condition=ready pod --all
 oc apply -f $ROOT/hack/quicklab/templates/storageClass.yaml
-set -e
 
 unset NAMESPACE
 unset QUICKLABKEY
@@ -90,3 +89,5 @@ unset DZONE
 unset ip
 unset SSH
 unset PORT
+
+exit 0

@@ -66,6 +66,11 @@ If you don't already have a test OpenShift cluster available, CodeReady Containe
 8) Set up your command line: `eval $(crc oc-env)`
 9) Configure kubectl to use the CRC administrator account: `kubectl config use-context crc-admin`
 
+### Optional: Quicklab storage setup for clusters
+If you are using Quicklab to provision your development cluster, you will need to setup storage prior to running the bootstrap script.
+
+See `hack/quicklab/README.md`
+
 ### Bootstrap App Studio
 Steps:
 1) Run `./hack/bootstrap-cluster.sh [$MODE]` which will bootstrap Argo CD (using OpenShift GitOps) and setup the Argo CD `Application` Custom Resources (CRs) for each component. This command will output the Argo CD Web UI route when it's finished. For upstream mode keep the $MODE empty or "upstream". For development mode and preview mode set `$MODE` to `development` or `preview`, the modes are described in section 'Development modes for your own clusters'.
