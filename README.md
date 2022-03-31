@@ -59,7 +59,7 @@ The prerequisites are:
 If you don't already have a test OpenShift cluster available, CodeReady Containers is a popular option. It runs a small OpenShift cluster in a single VM on your local workstation.
 1) Create or log in using your free Red Hat account, and [install CodeReady Containers (CRC)](https://console.redhat.com/openshift/create/local).
 2) Make sure you have the latest version of CRC: `crc version`
-3) Run `./hack/setup/prepare-crc.sh` to configure CodeReady Containers with the minimum memory (16 GiB) and CPUs (6) required for App Studio. You can edit that script to increase the memory or CPUs for the VM before running it, if you prefer. The script will also enable cluster monitoring and log you in as the cluster administrator.
+3) Run `./hack/setup/prepare-crc.sh` to configure CodeReady Containers with the recommended minimum memory (16 GiB) and CPUs (6) for App Studio. The script has optional parameters for customizing `memory` and `cpu` allowance. It also supports `force delete` of existing cluster. Run `./hack/setup/prepare-crc.sh --help` to see the options. The script will also enable cluster monitoring and log you in as the cluster administrator.
 
 ### Bootstrap App Studio
 Steps:
