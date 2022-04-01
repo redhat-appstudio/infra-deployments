@@ -252,6 +252,15 @@ To deploy all the builds as they complete, add the `-deploy` option.
 
 ```
 You can also run the noop build `./hack/build/quick-noop-build.sh`, that executes in couple seconds to validate a working install.
+
+### Tests via AppStudio
+
+To validate execution via AppStudio you can run `./hacb/build/build-via-appstudio.sh` script which sets credentials and AppStudio application and components. Without parameters it creates example components.
+
+```
+export MY_QUAY_USER=mkovarik
+./hack/build/build-via-appstudio.sh https://github.com/devfile-samples/devfile-sample-java-springboot-basic
+```
  
 ## Other Build utilities
 
