@@ -1,0 +1,13 @@
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: gitops-service-ci-maintainers
+  namespace: application-service
+subjects:
+  - kind: User
+    apiGroup: rbac.authorization.k8s.io
+    name: scoheb
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: pipeline-maintainer
