@@ -31,12 +31,10 @@ stringData:
   .git-credentials: |
     https://<user>:<pass>@github.com
 GITSECRET
-
-oc delete secret -n $NS git-repo-secret   
+ 
 PATCH="$(printf '.stringData.".git-credentials"="https://%q:%q@github.com"' $MY_GITHUB_USER $MY_GITHUB_TOKEN)" 
 echo "$GITSECRET" | yq e $PATCH -  | oc apply -f -
-
-oc delete secret -n $NS quay-registry-secret
+ 
 oc create secret -n $NS  docker-registry quay-registry-secret \
   --docker-server="https://quay.io" \
   --docker-username=$MY_QUAY_USER \
