@@ -3,6 +3,7 @@ SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
   
 LOG=$(mktemp)
 $SCRIPTDIR/build.sh $1 $2| tee $LOG 
+cat $LOG
 BUILDNAME=$(cat $LOG | grep "pipelinerun.tekton.dev" | cut -d '/' -f 2 | cut -d ' ' -f 1)
 echo  
 echo  "Waiting for build  $BUILDNAME:"  
