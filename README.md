@@ -52,7 +52,7 @@ Simply update the files under `components/(team-name)`, and open a PR with the c
 
 ### Required prerequisites
 The prerequisites are:
-- You must have `kubectl`, `oc`, `jq and [`yq`](https://github.com/mikefarah/yq) installed.
+- You must have `kubectl`, `oc`, `jq` and [`yq`](https://github.com/mikefarah/yq) installed.
 - You must have `kubectl` and `oc` pointing to an existing OpenShift cluster, that you wish to deploy to. Alternatively, you can configure a local CodeReady Containers VM to deploy to.
 - The script `./hack/setup/install-pre-req.sh` will install these prerequisites for you, if they're not already installed.
 
