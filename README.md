@@ -61,6 +61,11 @@ If you don't already have a test OpenShift cluster available, CodeReady Containe
 2) Make sure you have the latest version of CRC: `crc version`
 3) Run `./hack/setup/prepare-crc.sh` to configure CodeReady Containers with the recommended minimum memory (16 GiB) and CPUs (6) for App Studio. The script has optional parameters for customizing `memory` and `cpu` allowance. It also supports `force delete` of existing cluster. Run `./hack/setup/prepare-crc.sh --help` to see the options. The script will also enable cluster monitoring and log you in as the cluster administrator.
 
+### Optional: Quicklab storage setup for clusters
+If you are using Quicklab to provision your development cluster, you will need to setup storage prior to running the bootstrap script.
+
+See `hack/quicklab/README.md`
+
 ### Bootstrap App Studio
 Steps:
 1) Run `./hack/bootstrap-cluster.sh [$MODE]` which will bootstrap Argo CD (using OpenShift GitOps) and setup the Argo CD `Application` Custom Resources (CRs) for each component. This command will output the Argo CD Web UI route when it's finished. For upstream mode keep the $MODE empty or "upstream". For development mode and preview mode set `$MODE` to `development` or `preview`, the modes are described in section 'Development modes for your own clusters'.
