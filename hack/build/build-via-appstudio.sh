@@ -1,6 +1,7 @@
 #!/bin/bash
 SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )" 
 
+COMPONENT=$1
 
 if [ -z "$MY_QUAY_USER" ]; then
   echo "Missing MY_QUAY_USER variable"
@@ -40,8 +41,11 @@ function create-component {
 echo Git Repo created:
 oc get application/test-application -o jsonpath='{.status.devfile}' | grep appModelRepository.url | cut -f2- -d':'
 
-create-component https://github.com/devfile-samples/devfile-sample-java-springboot-basic
-create-component https://github.com/devfile-samples/devfile-sample-code-with-quarkus
-create-component https://github.com/devfile-samples/devfile-sample-python-basic
- 
+if [ -z "$COMPONENT" ]; then
+  create-component https://github.com/devfile-samples/devfile-sample-java-springboot-basic
+  create-component https://github.com/devfile-samples/devfile-sample-code-with-quarkus
+  create-component https://github.com/devfile-samples/devfile-sample-python-basic
+else
+  create-component $COMPONENT
+fi
 echo "Run this to show running builds $SCRIPTDIR/ls-builds.sh"
