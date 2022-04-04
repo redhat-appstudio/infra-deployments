@@ -219,7 +219,7 @@ The App Studio Build System is composed of the following components:
 2. AppStudio-specific Pipeline Definitions in `build-templates` for building images.
 3. AppStudio-specific `ClusterTasks`.
 
-This repository installs all the components and includes a set of example scripts that simplify usage and provide examples of a working system. There are no additiona components needed to use the build system API, however some utilities and scripts are provided to demonstrate functionality.
+This repository installs all the components and includes a set of example scripts that simplify usage and provide examples of a working system. There are no additional components needed to use the build system API, however some utilities and scripts are provided to demonstrate functionality.
 
 ## Quickstart
 
