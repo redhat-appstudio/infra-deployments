@@ -284,7 +284,7 @@ To validate execution via AppStudio you can run `./hacb/build/build-via-appstudi
 export MY_QUAY_USER=mkovarik
 ./hack/build/build-via-appstudio.sh https://github.com/devfile-samples/devfile-sample-java-springboot-basic
 ```
- 
+
 ## Other Build utilities
 
 The build type is identified via temporary hack until the Component Detection Query is available which maps files in your git repo to known build types. See `./hack/build/repo-to-pipeline.sh`  which will print the repo name and computed builder type.
@@ -423,13 +423,9 @@ when you try logging into ArgoCD with `Log In Via OpenShift`:
 Failed to query provider "https://openshift-gitops-server-openshift-gitops.apps.myserver.mydomain.com/api/dex": Get "http://openshift-gitops-dex-server.openshift-gitops.svc.cluster.local:5556/api/dex/.well-known/openid-configuration": dial tcp 1##.###.###.###:5556: connect: connection refused
 ```
 To correct this problem:
-+ List the pods:
-```
-oc get pods -n openshift-gitops
-```
 + Delete the openshift-gitops-dex-server-* pod:
 ```
-oc delete pods -n openshift-gitops openshift-gitops-dex-server-########-####
+oc delete pods -n openshift-gitops -l app.kubernetes.io/name=openshift-gitops-dex-server
 ```
 + The pod will automatically restart and ArgoCD `Log In Via OpenShift` should be working again.
 
