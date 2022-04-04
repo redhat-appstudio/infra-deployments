@@ -60,7 +60,12 @@ The prerequisites are:
 If you don't already have a test OpenShift cluster available, CodeReady Containers is a popular option. It runs a small OpenShift cluster in a single VM on your local workstation.
 1) Create or log in using your free Red Hat account, and [install CodeReady Containers (CRC)](https://console.redhat.com/openshift/create/local).
 2) Make sure you have the latest version of CRC: `crc version`
-3) Run `./hack/setup/prepare-crc.sh` to configure CodeReady Containers with the minimum memory (16 GiB) and CPUs (6) required for App Studio. You can edit that script to increase the memory or CPUs for the VM before running it, if you prefer. The script will also enable cluster monitoring and log you in as the cluster administrator.
+3) Run `./hack/setup/prepare-crc.sh` to configure CodeReady Containers with the recommended minimum memory (16 GiB) and CPUs (6) for App Studio. The script has optional parameters for customizing `memory` and `cpu` allowance. It also supports `force delete` of existing cluster. Run `./hack/setup/prepare-crc.sh --help` to see the options. The script will also enable cluster monitoring and log you in as the cluster administrator.
+
+### Optional: Quicklab storage setup for clusters
+If you are using Quicklab to provision your development cluster, you will need to setup storage prior to running the bootstrap script.
+
+See `hack/quicklab/README.md`
 
 ### Bootstrap App Studio
 Steps:
@@ -271,6 +276,15 @@ To deploy all the builds as they complete, add the `-deploy` option.
 ```
 You can also run the noop build `./hack/build/quick-noop-build.sh`, that executes in couple seconds to validate a working install.
 
+### Tests via AppStudio
+
+To validate execution via AppStudio you can run `./hacb/build/build-via-appstudio.sh` script which sets credentials and AppStudio application and components. Without parameters it creates example components.
+
+```
+export MY_QUAY_USER=mkovarik
+./hack/build/build-via-appstudio.sh https://github.com/devfile-samples/devfile-sample-java-springboot-basic
+```
+ 
 ## Other Build utilities
 
 The build type is identified via temporary hack until the Component Detection Query is available which maps files in your git repo to known build types. See `./hack/build/repo-to-pipeline.sh`  which will print the repo name and computed builder type.
