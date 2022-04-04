@@ -84,7 +84,7 @@ case "$1" in
       echo "$PATCH" | yq e -P 'sort_keys(..)' -
     else
       set -x
-      kubectl patch $CHAINS_CONFIG --type=json --patch $PATCH 
+      kubectl patch $CHAINS_CONFIG --type=json --patch $PATCH
       $0 restart-controller
       $0 get
     fi
@@ -94,7 +94,7 @@ case "$1" in
   restart-controller )
     # Restart the controller to make sure the new config takes effect
     kubectl delete pod -n tekton-chains -l app=tekton-chains-controller
-    
+
     ;;
 
   * )
@@ -111,7 +111,7 @@ case "$1" in
     else
       # Apply the patch
       set -x
-      kubectl patch $CHAINS_CONFIG --patch "{\"data\":$PATCH} --type=merge"
+      kubectl patch $CHAINS_CONFIG --patch "{\"data\":$PATCH}" --type=merge
 
       # Restart the controller to ensure new config takes effect
       $0 restart-controller
