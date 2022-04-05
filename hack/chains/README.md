@@ -19,7 +19,8 @@ For CRC:
 
 For cluster-bot (in slack):
 
-    launch 4.9.15 # or launch latest ?
+    launch 4.9.15 $PLATFORM
+    # Use one of the following tested platforms: ovirt, openstack, azure, aws
     # ...and follow the instructions to authenticate once it's ready
 
 The full Gitops/ArgoCD install includes applications that are not needed if
