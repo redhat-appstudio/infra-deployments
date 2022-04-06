@@ -3,7 +3,7 @@
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/..
 
 echo "Changing AppStudio Gitlab Org to \"$1\""
-sed -i "s/GITHUB_ORG=.*/GITHUB_ORG=\"$1\"/" $ROOT/components/has/kustomization.yaml
+yq e -i "(.configMapGenerator[].literals[] | select(. == \"*GITHUB*\")) = \"GITHUB_ORG=$1\"" $ROOT/components/has/kustomization.yaml
 
 if [ -n "$MY_GITHUB_TOKEN" ]; then
     echo
