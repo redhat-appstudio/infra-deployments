@@ -108,8 +108,8 @@ spec:
     - docker://$(params.IMAGE)
     image: $(params.BUILDER_IMAGE)
     env:
-      - name: REGISTRY_AUTH_FILE
-        value: /etc/quay-secret/config.json
+    - name: REGISTRY_AUTH_FILE
+      value: /etc/quay-secret/config.json
     name: push
     resources: {}
     volumeMounts:
@@ -174,8 +174,8 @@ spec:
       kind: ClusterTask
       name: git-clone
     workspaces:
-      - name: output
-        workspace: source
+    - name: output
+      workspace: source
   - name: build
     taskRef:
       kind: ClusterTask
