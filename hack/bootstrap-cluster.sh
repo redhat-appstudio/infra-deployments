@@ -41,7 +41,33 @@ kubectl patch argocd/openshift-gitops -n openshift-gitops -p '{"spec": {"server"
 # - Once we have a proper access policy in place, this should be updated to be consistent with that policy.
 kubectl patch argocd/openshift-gitops -n openshift-gitops -p '{"spec":{"rbac":{"policy":"g, system:authenticated, role:admin"}}}' --type=merge
 
-echo
+# Mark Pending PVC as Healthy, workaround for WaitForFirstConsumer StorageClasses.
+# If the attachment will fail then it will be visible on the pod anyway.
+kubectl patch argocd/openshift-gitops -n openshift-gitops -p '
+spec:
+  resourceCustomizations: |
+    PersistentVolumeClaim:
+      health.lua: |
+        hs = {}
+        if obj.status ~= nil then
+          if obj.status.phase ~= nil then
+            if obj.status.phase == "Pending" then
+              hs.status = "Healthy"
+              hs.message = obj.status.phase
+              return hs
+            end
+            if obj.status.phase == "Bound" then
+              hs.status = "Healthy"
+              hs.message = obj.status.phase
+              return hs
+            end
+          end
+        end
+        hs.status = "Progressing"
+        return hs
+' --type=merge
+
+echo 
 echo "Add Role/RoleBindings for OpenShift GitOps:"
 kubectl apply --kustomize $ROOT/openshift-gitops/cluster-rbac
 
