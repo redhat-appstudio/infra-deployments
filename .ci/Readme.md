@@ -10,4 +10,4 @@ All documentation about how to onboard components in Openshift CI can be found i
 
 - `appstudio-e2e-deployment` Run all e2e test suites of Red Hat App Studio defined in the [e2e-tests](https://github.com/redhat-appstudio/e2e-tests) repository.
 
-The test container to run the e2e tests in Openshift Ci is builded from: https://github.com/redhat-appstudio/infra-deployments/blob/main/.ci/openshift-ci/Dockerfile
+The test container to run the e2e tests in Openshift CI is built from: https://github.com/redhat-appstudio/infra-deployments/blob/main/.ci/openshift-ci/Dockerfile
