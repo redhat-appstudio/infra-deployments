@@ -86,21 +86,13 @@ function executeE2ETests() {
 }
 
 function prepareWebhookVariables() {
-    # Download config file
-    wget https://raw.githubusercontent.com/redhat-appstudio/e2e-tests/main/webhookConfig.yml
     #Export variables
     export webhook_salt=123456789
     export webhook_target=https://smee.io/JgVqn2oYFPY1CF
-    export webhook_repositoryURL=https://github.com/redhat-appstudio-qe/infra-deployments
-    export webhook_repositoryFullName=redhat-appstudio-qe/infra-deployments
-    # Delete temp file
-    rm -f temp.yml
+    export webhook_repositoryURL=https://github.com/redhat-appstudio/infra-deployments
+    export webhook_repositoryFullName=redhat-appstudio/infra-deployments
     # Rewrite variables in webhookConfig.yml
-    ( echo "cat <<EOF >webhookConfig.yml";
-    cat webhookConfig.yml;
-    echo "EOF";
-    ) >temp.yml
-    . temp.yml
+    curl https://raw.githubusercontent.com/redhat-appstudio/e2e-tests/main/webhookConfig.yml | envsubst > webhookConfig.yml
 }
 
 createQuayPullSecrets
