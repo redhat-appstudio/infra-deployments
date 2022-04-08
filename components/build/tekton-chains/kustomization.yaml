@@ -18,8 +18,8 @@ patchesStrategicMerge:
 # Remove runAsUser and runAsGroup from security context
 - security-context-fix.yaml
 
-# Mount the secrets volume
-- chains-controller-cert.yaml
+# Mount the secrets volume and use the forked image
+- chains-controller-deployment.yaml
 
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
