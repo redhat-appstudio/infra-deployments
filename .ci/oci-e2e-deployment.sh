@@ -59,7 +59,7 @@ function createQuayPullSecrets() {
 function waitAppStudioToBeReady() {
     while [ "$(kubectl get applications.argoproj.io ${APPLICATION_NAME} -n ${APPLICATION_NAMESPACE} -o jsonpath='{.status.health.status}')" != "Healthy" ] ||
           [ "$(kubectl get applications.argoproj.io ${APPLICATION_NAME} -n ${APPLICATION_NAMESPACE} -o jsonpath='{.status.sync.status}')" != "Synced" ]; do
-        sleep 1m
+        sleep 2m
         echo "[INFO] Waiting for AppStudio to be ready."
     done
 }
@@ -67,7 +67,7 @@ function waitAppStudioToBeReady() {
 function waitBuildToBeReady() {
     while [ "$(kubectl get applications.argoproj.io build -n ${APPLICATION_NAMESPACE} -o jsonpath='{.status.health.status}')" != "Healthy" ] ||
           [ "$(kubectl get applications.argoproj.io build -n ${APPLICATION_NAMESPACE} -o jsonpath='{.status.sync.status}')" != "Synced" ]; do
-        sleep 1m
+        sleep 2m
         echo "[INFO] Waiting for Build to be ready."
     done
 }
