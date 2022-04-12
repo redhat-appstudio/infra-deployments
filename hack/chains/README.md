@@ -62,6 +62,9 @@ To return to using the default, public rekor instance:
 
    ./config.sh rekor-default
 
+### YAML Validation
+
+To validate any modified or untracked YAML files, execute the `check-yaml.sh` script in the `hack/chains` directory. This script uses `yamllint` and will notify you if it isn't installed on your system. [This](https://yamllint.readthedocs.io/en/stable/quickstart.html#installing-yamllint) URL is provided for installation details.
 
 ### Trust the cluster's SSL cert (optional)
 
