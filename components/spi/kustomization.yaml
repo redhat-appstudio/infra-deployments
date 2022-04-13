@@ -27,7 +27,6 @@ images:
 
 namespace: spi-system
 
-
 patches:
   - target:
       kind: ClusterRoleBinding
@@ -37,3 +36,7 @@ patches:
       kind: ClusterRoleBinding
       name: spi-scm-spiaccesstokens-for-file-retriever-server-sa
     path: cluster-rb-patch.json
+  - target:
+      kind: Deployment
+      name: oauth-service
+    path: oauth-service-deployment-patch.json
