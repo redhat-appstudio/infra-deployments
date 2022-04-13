@@ -1,0 +1,50 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: quality-frontend-dashboard
+  namespace: quality-dashboard
+  labels:
+    app: quality-dashboard
+    app.kubernetes.io/component: quality-frontend
+    app.kubernetes.io/instance: quality-dashboard
+    app.kubernetes.io/name: quality-dashboard
+    component: quality-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: quality-dashboard
+      component: quality-frontend
+  template:
+    metadata:
+      labels:
+        app: quality-dashboard
+        app.kubernetes.io/component: quality-frontend
+        app.kubernetes.io/instance: quality-dashboard
+        app.kubernetes.io/name: quality-dashboard
+        component: quality-frontend
+    spec:
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      containers:
+        - resources:
+            limits:
+              cpu: 500m
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 32Mi
+          name: quality-frontend-dashboard
+          env:
+            - name: REACT_APP_API_SERVER_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: quality-dashboard-configmap 
+                  key: BACKEND_ROUTE 
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          imagePullPolicy: Always
+          image: >-
+            quay.io/flacatus/dashboard-frontend:next

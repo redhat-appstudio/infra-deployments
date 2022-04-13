@@ -1,0 +1,75 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: quality-backend-dashboard
+  namespace: quality-dashboard
+  labels:
+    app: quality-dashboard
+    app.kubernetes.io/component: quality-backend
+    app.kubernetes.io/instance: quality-dashboard
+    app.kubernetes.io/name: quality-dashboard
+    component: quality-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: quality-dashboard
+      component: quality-backend
+  template:
+    metadata:
+      labels:
+        app: quality-dashboard
+        app.kubernetes.io/component: quality-backend
+        app.kubernetes.io/instance: quality-dashboard
+        app.kubernetes.io/name: quality-dashboard
+        component: quality-backend
+    spec:
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      containers:
+        - resources:
+            limits:
+              cpu: 500m
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 32Mi
+          name: quality-backend-dashboard
+          command: ["/root/qe-dashboard-backend"]
+          env:
+            - name: POSTGRES_ENT_HOST
+              value: "postgres-service"
+            - name: POSTGRES_ENT_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: quality-dashboard-secrets
+                  key: POSTGRESQL_DATABASE
+            - name: POSTGRES_ENT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: quality-dashboard-secrets
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_ENT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: quality-dashboard-secrets
+                  key: POSTGRES_USER
+            - name: GITHUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: quality-dashboard-secrets
+                  key: github-token
+          args:
+            - "--port=8080"
+          securityContext:
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          imagePullPolicy: Always
+          image: >-
+            quay.io/flacatus/dashboard-backend:next
+

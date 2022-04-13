@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgresql-dashboard
+  namespace: quality-dashboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgresql-dashboard
+  template:
+    metadata:
+      labels:
+        app: postgresql-dashboard
+    spec:
+      containers:
+        - name: postgresql-dashboard
+          image: registry.redhat.io/rhscl/postgresql-13-rhel7:1-67
+          imagePullPolicy: "IfNotPresent"
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRESQL_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: quality-dashboard-secrets
+                  key: POSTGRESQL_DATABASE
+            - name: POSTGRESQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: POSTGRES_PASSWORD
+                  name: quality-dashboard-secrets
+            - name: POSTGRESQL_USER
+              valueFrom:
+                secretKeyRef:
+                  key: POSTGRES_USER
+                  name: quality-dashboard-secrets
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: postgredb
+      volumes:
+        - name: postgredb
