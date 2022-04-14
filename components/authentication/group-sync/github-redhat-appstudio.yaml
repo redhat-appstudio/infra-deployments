@@ -1,0 +1,12 @@
+apiVersion: redhatcop.redhat.io/v1alpha1
+kind: GroupSync
+metadata:
+  name: github-redhat-appstudio
+spec:
+  providers:
+  - name: github
+    github:
+      organization: redhat-appstudio
+      credentialsSecret:
+        name: github-redhat-appstudio
+        namespace: group-sync-operator
