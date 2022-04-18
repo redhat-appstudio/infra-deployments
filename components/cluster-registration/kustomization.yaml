@@ -1,10 +1,10 @@
 resources:
-- https://raw.githubusercontent.com/stolostron/cluster-registration-operator/0.0.0-20220418-12-39-25/config/rbac/service_account.yaml
-- https://raw.githubusercontent.com/stolostron/cluster-registration-operator/0.0.0-20220418-12-39-25/config/rbac/role.yaml
-- https://raw.githubusercontent.com/stolostron/cluster-registration-operator/0.0.0-20220418-12-39-25/config/rbac/role_binding.yaml
-- https://raw.githubusercontent.com/stolostron/cluster-registration-operator/0.0.0-20220418-12-39-25/config/rbac/leader_election_role.yaml
-- https://raw.githubusercontent.com/stolostron/cluster-registration-operator/0.0.0-20220418-12-39-25/config/rbac/leader_election_role_binding.yaml
-- https://raw.githubusercontent.com/stolostron/cluster-registration-operator/0.0.0-20220418-12-39-25/config/installer/installer.yaml
+- https://raw.githubusercontent.com/stolostron/cluster-registration-operator/0.0.0-20220418-16-59-21/config/rbac/service_account.yaml
+- https://raw.githubusercontent.com/stolostron/cluster-registration-operator/0.0.0-20220418-16-59-21/config/rbac/role.yaml
+- https://raw.githubusercontent.com/stolostron/cluster-registration-operator/0.0.0-20220418-16-59-21/config/rbac/role_binding.yaml
+- https://raw.githubusercontent.com/stolostron/cluster-registration-operator/0.0.0-20220418-16-59-21/config/rbac/leader_election_role.yaml
+- https://raw.githubusercontent.com/stolostron/cluster-registration-operator/0.0.0-20220418-16-59-21/config/rbac/leader_election_role_binding.yaml
+- https://raw.githubusercontent.com/stolostron/cluster-registration-operator/0.0.0-20220418-16-59-21/config/installer/installer.yaml
 
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
@@ -12,7 +12,7 @@ kind: Kustomization
 images:
 - name: controller
   newName: quay.io/stolostron/cluster-registration-operator
-  newTag: 0.0.0-20220418-12-39-25
+  newTag: 0.0.0-20220418-16-59-21
 
 # Adds namespace to all resources.
 namespace: cluster-reg-config
