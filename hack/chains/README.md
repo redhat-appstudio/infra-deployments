@@ -26,21 +26,27 @@ For cluster-bot (in slack):
 The full Gitops/ArgoCD install includes applications that are not needed if
 you're just testing build pipelines and tasks with tekton chains. So you can
 save some time and reduce cluster resourcing requirements by installing only
-the 'build' application.
+the 'build' application by setting DEPLOY_ONLY. (The DEPLOY_ONLY var takes a
+comma separated list, so you can add other applications if required.)
 
     DEPLOY_ONLY=build
 
-(The DEPLOY_ONLY var takes a comma separated list, so you can add other
-applications if required.)
+To workaround a Gitops problem causing the 'pvc-cleaner' component to never
+complete syncing when installing just the 'build' application, create the
+'application-service' project in advance. (This may become unnecessary once
+[#214](https://github.com/redhat-appstudio/infra-deployments/pull/241) is
+completed.)
 
-Then (assuming you're working in a branch in your own fork
-of this repo):
+    oc new-project application-service
+
+Then, assuming you're working in a branch in your own fork
+of this repo:
 
     hack/bootstrap-cluster.sh preview
 
 A "go make some coffee" one liner for CRC:
 
-    cd $(git rev-parse --show-toplevel); crc delete; crc start; `crc console --credentials | tail -1 | cut -d\' -f2`; DEPLOY_ONLY=build hack/bootstrap-cluster.sh preview
+    cd $(git rev-parse --show-toplevel); crc delete; crc start; `crc console --credentials | tail -1 | cut -d\' -f2`; oc new-project application-service; DEPLOY_ONLY=build hack/bootstrap-cluster.sh preview
 
 Wait until you see healthy/synced at [Argo CD](https://openshift-gitops-server-openshift-gitops.apps-crc.testing/applications).
 
