@@ -17,7 +17,7 @@ $ROOT/hack/util-set-development-repos.sh $MY_GIT_REPO_URL development $MY_GIT_BR
 
 # set the API server which SPI uses to authenticate users to empty string (by default) so that multi-cluster
 # setup is not needed
-$ROOT/hack/util-set-spi-api-server.sh "$MY_API_SERVER"
+$ROOT/hack/util-set-spi-api-server.sh "$SPI_API_SERVER"
 
 if [ -n "$MY_GITHUB_ORG" ]; then
     $ROOT/hack/util-set-github-org $MY_GITHUB_ORG
