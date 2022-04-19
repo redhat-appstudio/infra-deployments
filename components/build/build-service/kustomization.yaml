@@ -1,8 +1,19 @@
 resources:
 - allow-argocd-to-manage.yaml
 - https://github.com/redhat-appstudio/build-service/config/default?ref=0eeba0f1eeaad40c2a3c88b861254986b42bb5d3
+- .tekton/
 
+namespace: build-service
 
+patchesJSON6902:
+- target:
+    version: v1
+    kind: Namespace
+    name: build-service-system
+  patch: |-
+    - op: replace
+      path: /metadata/name
+      value: build-service
 
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
