@@ -14,3 +14,7 @@ $ROOT/hack/util-update-app-of-apps.sh $REPO staging main
 $ROOT/hack/util-set-development-repos.sh $REPO development main
 #reset Application Service GitHub organization
 $ROOT/hack/util-set-github-org ""
+
+# use an external API server for authentication purposes of SPI. This defaults to the address of DevSandbox proxy.
+PROD_API_SERVER=${PROD_API_SERVER-'https://api-toolchain-host-operator.apps.appstudio-stage.x99m.p1.openshiftapps.com:443'}
+$ROOT/hack/util-set-spi-api-server.sh "${PROD_API_SERVER}"
