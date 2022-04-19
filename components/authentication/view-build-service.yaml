@@ -6,8 +6,8 @@ metadata:
 subjects:
   - kind: User
     name: vdemeester 
-  - kind: User
-    name: Michkov
+  - kind: Group
+    name: Build team
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -35,16 +35,6 @@ metadata:
   namespace: build-templates
 subjects:
   - kind: User
-    name: jduimovich
-  - kind: User
-    name: sbose78
-  - kind: User
-    name: Michkov
-  - kind: User
-    name: trdoyle81
-  - kind: User
-    name: psturc
-  - kind: User
     name: chmouel
   - kind: Group
     name: Build team
@@ -63,12 +53,8 @@ metadata:
 subjects:
   - kind: User
     name: chmouel
-  - kind: User
-    name: sbose78
-  - kind: User
-    name: brunoapimentel
-  - kind: User
-    name: Michkov
+  - kind: Group
+    name: Build team
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -81,10 +67,8 @@ metadata:
   namespace: tekton-chains
 subjects:
   # Build team members
-  - kind: User
-    name: sbose78 
-  - kind: User
-    name: Michkov 
+  - kind: Group
+    name: Build team
   # Enterprise Contract team members
   - kind: User
     name: bcaton85
@@ -131,8 +115,8 @@ metadata:
 subjects:
   - kind: User
     name: vdemeester
-  - kind: User
-    name: Michkov
+  - kind: Group
+    name: Build team
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -144,10 +128,8 @@ metadata:
   name: read-pvc-cleaner
   namespace: pvc-cleaner
 subjects:
-  - kind: User
-    name: AndrienkoAleksandr
-  - kind: User
-    name: Michkov
+  - kind: Group
+    name: Build team
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
