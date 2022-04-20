@@ -202,6 +202,8 @@ For access to Stage cluster the github user has to be part of `stage` team in `r
 
 Access to namespaces is managed by `components/authentication` where `User` is github account and `Group` is team of `redhat-appstudio` organization.
 
+Users can be added to organizations by Michal Kovarik <mkovarik@redhat.com> and by Shoubhik Bose <shbose@redhat.com>.
+
 # App Studio Build System
 
 The App Studio Build System is composed of the following components:
