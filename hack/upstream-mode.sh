@@ -16,5 +16,5 @@ $ROOT/hack/util-set-development-repos.sh $REPO development main
 $ROOT/hack/util-set-github-org ""
 
 # use an external API server for authentication purposes of SPI. This defaults to the address of DevSandbox proxy.
-SPI_API_SERVER=${PROD_API_SERVER-'https://api-toolchain-host-operator.apps.appstudio-stage.x99m.p1.openshiftapps.com:443'}
+SPI_API_SERVER=${SPI_API_SERVER-'https://api-toolchain-host-operator.apps.appstudio-stage.x99m.p1.openshiftapps.com:443'}
 $ROOT/hack/util-set-spi-api-server.sh "${SPI_API_SERVER}"
