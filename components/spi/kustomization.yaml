@@ -18,15 +18,14 @@ images:
     newTag: sha-a372429
   - name: quay.io/redhat-appstudio/service-provider-integration-oauth
     newName: quay.io/redhat-appstudio/service-provider-integration-oauth
-    # 0.4.4
-    newTag: sha-3707bbd
+    # 0.4.5
+    newTag: sha-21b82a4
   - name: quay.io/redhat-appstudio/service-provider-integration-scm-file-retriever-server
     newName:  quay.io/redhat-appstudio/service-provider-integration-scm-file-retriever-server
     # 0.4.3
     newTag: sha-470697e
 
 namespace: spi-system
-
 
 patches:
   - target:
@@ -37,3 +36,7 @@ patches:
       kind: ClusterRoleBinding
       name: spi-scm-spiaccesstokens-for-file-retriever-server-sa
     path: cluster-rb-patch.json
+  - target:
+      kind: Deployment
+      name: oauth-service
+    path: oauth-service-deployment-patch.json
