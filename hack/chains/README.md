@@ -109,6 +109,19 @@ make that work.
 Demos
 -----
 
+### Required prerequisites
+
+You must have the following prerequisites installed to run any of the demos in
+this section.
+- [tkn](https://github.com/tektoncd/cli)
+- [docker](https://docs.docker.com/get-docker/)
+- [skopeo](https://github.com/containers/skopeo)
+- [rekor-cli](https://docs.sigstore.dev/rekor/installation/)
+- [cosign](https://docs.sigstore.dev/cosign/installation/)
+
+The script `./install-demo-pre-req.sh` in the `hack/chains` directory will 
+install these prerequisites for you, if they're not already installed.
+
 ### Kaniko build demo
 
 - Trigger a taskrun that builds an image using kaniko and pushes it to
