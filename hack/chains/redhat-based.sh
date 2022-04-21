@@ -3,9 +3,9 @@
 # Red Hat-based OS (Fedora, RHEL).
 
 # Install the tekton cli
-VERSION=v0.23.1
+VERSION=0.23.1
 BINARY=Linux_x86_64
-curl -LO https://github.com/tektoncd/cli/releases/download/${VERSION}/tkn_${VERSION}_${BINARY}.tar.gz
+curl -LO https://github.com/tektoncd/cli/releases/download/v${VERSION}/tkn_${VERSION}_${BINARY}.tar.gz
 sudo tar xvzf tkn_${VERSION}_${BINARY}.tar.gz -C /usr/local/bin/ tkn
 
 # Install go
