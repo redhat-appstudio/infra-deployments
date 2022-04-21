@@ -17,7 +17,7 @@ brew install docker
 brew install skopeo
 
 # Install rekor cli
-go install -v github.com/sigstore/rekor/cmd/rekor-cli@latest
+go install github.com/sigstore/rekor/cmd/rekor-cli@latest
 
 # Install cosign
 brew install cosign

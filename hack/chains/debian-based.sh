@@ -20,7 +20,7 @@ sudo apt-get install docker.io
 sudo apt-get install skopeo
 
 # Install rekor cli
-go install -v github.com/sigstore/rekor/cmd/rekor-cli@latest
+go install github.com/sigstore/rekor/cmd/rekor-cli@latest
 
 # Install cosign
 go install github.com/sigstore/cosign/cmd/cosign@latest
