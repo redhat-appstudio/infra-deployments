@@ -194,6 +194,16 @@ Steps:
 4) Run `./hack/development-mode.sh` or `./hack/preview.sh`
 5) Trigger update in ArgoCD and delete `application-service-controller-manager` pod manually or run `oc rollout restart -n application-service deployment/application-service-controller-manager`
 
+## Authentication
+
+Authentication is managed by `components/authentication`. Authentication is disabled in development modes.
+
+For access to Stage cluster the github user has to be part of `stage` team in `redhat-appstudio-sre` organization.
+
+Access to namespaces is managed by `components/authentication` where `User` is github account and `Group` is team of `redhat-appstudio` organization.
+
+Users can be added to organizations by Michal Kovarik <mkovarik@redhat.com> and by Shoubhik Bose <shbose@redhat.com>.
+
 # App Studio Build System
 
 The App Studio Build System is composed of the following components:
