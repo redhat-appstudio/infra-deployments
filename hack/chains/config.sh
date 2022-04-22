@@ -55,6 +55,21 @@ case "$1" in
 
     ;;
 
+  pipelines-on )
+    # For the hacbs-contract fork of chains with pipelinerun support
+    $0 '{
+      "artifacts.pipelinerun.storage": "oci",
+      "artifacts.pipelinerun.format": "in-toto"
+    }' $2
+
+    ;;
+
+  pipelines-off )
+    $0 remove-key 'artifacts.pipelinerun.storage' $2
+    $0 remove-key 'artifacts.pipelinerun.format' $2
+
+    ;;
+
   rekor-on )
     # (Needs to be a string not a boolean FYI)
     $0 'transparency.enabled: "true"' $2
