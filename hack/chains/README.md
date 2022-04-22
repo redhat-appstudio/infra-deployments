@@ -119,7 +119,7 @@ this section.
 - [rekor-cli](https://docs.sigstore.dev/rekor/installation/)
 - [cosign](https://docs.sigstore.dev/cosign/installation/)
 
-The script `./install-demo-pre-req.sh` in the `hack/chains` directory will 
+The script `./install-demo-pre-req.sh` in the `hack/chains/setup` directory will 
 install these prerequisites for you, if they're not already installed.
 
 ### Kaniko build demo
