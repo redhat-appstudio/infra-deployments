@@ -12,8 +12,7 @@
 #
 #   2. Create a Secret named "cosign-public-key" with the "cosign.pub" attribute to house the
 #      public key to be used for verifying the signature of the image and its attestation:
-#      oc -n tekton-chains get secret signing-secrets -o json | jq '.data."cosign.pub" | @base64d' -r > cosign.pub
-#      oc create secret generic cosign-public-key --from-file=cosign.pub
+#      ./copy-public-sig-key.sh
 #
 #
 # Usage:

@@ -14,10 +14,6 @@
 SIG_KEY_DATA=$(kubectl get secret signing-secrets -n tekton-chains -o jsonpath='{.data}')
 [[ -n $SIG_KEY_DATA ]] && echo "Signing secret exists." && exit
 
-# Ensure the cosign.pub key file ends up in a consistent place, i.e. the
-# top level directory of this git repo
-cd "$( git rev-parse --show-toplevel )"
-
 # To make this run conveniently without user input let's create a random password
 RANDOM_PASS=$( head -c 12 /dev/urandom | base64 )
 
