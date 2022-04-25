@@ -105,7 +105,7 @@ spec:
 
 " | oc apply -f - > /dev/null
 
-oc get pipeline simple-release -o yaml | yq e '.spec'
+oc get pipeline simple-release -o yaml | yq e '.spec' -
 
 
 title "Verify Push Secret"
