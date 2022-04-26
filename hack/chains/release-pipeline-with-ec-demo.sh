@@ -24,8 +24,10 @@
 #                   image will be released to, e.g.
 #                   quay.io/spam/bacon:yummy
 # Environment Variables:
-#   TASK_BUNDLE image reference to the tekton bundle containing the
-#               verify-enterprise-contract task
+#   TASK_BUNDLE        image reference to the tekton bundle containing the
+#                      verify-enterprise-contract task
+#   BUILD_PIPELINE_RUN pipeline run to examine, otherwise auto-guessed
+#
 set -euo pipefail
 
 SRC_IMAGE_REF="$1"
@@ -39,6 +41,9 @@ SIG_KEY="k8s://$NAMESPACE/cosign-public-key"
 # https://github.com/redhat-appstudio/build-definitions repository.
 DEFAULT_TASK_BUNDLE='quay.io/lucarval/appstudio-tasks:63489f81a7680c2501b1c7e0802d24c6169d434e-2'
 TASK_BUNDLE="${TASK_BUNDLE:-${DEFAULT_TASK_BUNDLE}}"
+
+# Finds the first PipelineRun that has a TaskRun with the result named 'HACBS_TEST_OUTPUT'
+FALLBACK_PIPELINE_RUN=$(kubectl get taskruns -o go-template='{{ $found := false }}{{ range $tr := .items }}{{ range $tr.status.taskResults }}{{ if and (eq .name "HACBS_TEST_OUTPUT") (not $found) }}{{ index $tr.metadata.labels "tekton.dev/pipelineRun" }}{{ $found = true }}{{ end }}{{ end }}{{ end }}')
 
 source $(dirname $0)/_helpers.sh
 
@@ -75,6 +80,8 @@ spec:
       value: \$(params.SRC_IMAGE_REF)
     - name: PUBLIC_KEY
       value: \$(params.PUBLIC_KEY)
+    - name: PIPELINERUN_NAME
+      value: ${BUILD_PIPELINE_RUN:-$FALLBACK_PIPELINE_RUN}
     # These are here to facilitate alternate versions of the demo
     # - name: COSIGN_EXPERIMENTAL
     #   value: "0"
@@ -124,4 +131,3 @@ title "Run the Simple Release Pipeline"
 # Check if required secret exists
 oc get secret cosign-public-key > /dev/null
 show-then-run "tkn pipeline start simple-release --param SRC_IMAGE_REF=${SRC_IMAGE_REF} --param DST_IMAGE_REF=${DST_IMAGE_REF} --param PUBLIC_KEY=${SIG_KEY} --workspace name=images-url,emptyDir= --showlog"
-
