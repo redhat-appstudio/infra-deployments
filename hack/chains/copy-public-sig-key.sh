@@ -11,5 +11,5 @@
 # when you run this.
 #
 set -euo pipefail
-oc -n tekton-chains get secret signing-secrets -o json | jq '.data."cosign.pub" | @base64d' -r > cosign.pub
+cosign public-key --key k8s://tekton-chains/signing-secrets > cosign.pub
 oc create secret generic cosign-public-key --from-file=cosign.pub --dry-run=client -o yaml | oc apply -f-
