@@ -13,6 +13,7 @@ export TEST_BRANCH_ID=$(date +%s)
 export MY_GIT_FORK_REMOTE="qe"
 export MY_GITHUB_ORG="redhat-appstudio-qe"
 export MY_GITHUB_TOKEN="${GITHUB_TOKEN}"
+export E2E_APPLICATIONS_NAMESPACE=appstudio-e2e-test
 
 # Available openshift ci environments https://docs.ci.openshift.org/docs/architecture/step-registry/#available-environment-variables
 export ARTIFACTS_DIR=${ARTIFACT_DIR:-"/tmp/appstudio"}
@@ -50,9 +51,9 @@ function catchFinish() {
 # Secrets used by pipelines to push component containers to quay.io
 function createQuayPullSecrets() {
     echo "$QUAY_TOKEN" | base64 --decode > docker.config
-    oc create namespace application-service --dry-run=client -o yaml | oc apply -f -
-    kubectl create secret docker-registry redhat-appstudio-registry-pull-secret -n  application-service --from-file=.dockerconfigjson=docker.config
-    kubectl create secret docker-registry redhat-appstudio-staginguser-pull-secret -n  application-service --from-file=.dockerconfigjson=docker.config
+    oc create namespace $E2E_APPLICATIONS_NAMESPACE --dry-run=client -o yaml | oc apply -f -
+    kubectl create secret docker-registry redhat-appstudio-registry-pull-secret -n  $E2E_APPLICATIONS_NAMESPACE --from-file=.dockerconfigjson=docker.config
+    kubectl create secret docker-registry redhat-appstudio-staginguser-pull-secret -n  $E2E_APPLICATIONS_NAMESPACE --from-file=.dockerconfigjson=docker.config
     rm docker.config
 }
 
