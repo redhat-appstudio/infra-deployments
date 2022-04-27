@@ -48,6 +48,21 @@ roleRef:
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
+  name: read-build-templates-e2e
+  namespace: build-templates-e2e
+subjects:
+  - kind: Group
+    name: Build team
+  - kind: Group
+    name: Test team
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
   name: read-pac
   namespace: pipelines-as-code
 subjects:
