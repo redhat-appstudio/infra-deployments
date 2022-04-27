@@ -43,6 +43,13 @@ metadata:
   name: gitopsdeployment-manager
 rules:
   - apiGroups:
+      - appstudio.redhat.com
+    resources:
+      - releaselinks
+      - releasestrategies
+     verbs:
+      - '*'
+  - apiGroups:
       - managed-gitops.redhat.com
     resources:
       - gitopsdeployments
