@@ -2,6 +2,9 @@
 # This script sets up the pre-requisites for running the chains demos.
 # Firstly it checks which type of system is running this
 # Then it installs the dependencies one by one
+#
+# Todo: Integrate this into hack/setup since there's some overlap
+#
 
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 echo $ROOT
