@@ -91,6 +91,11 @@ spec:
     #   value: main
     # - name: STRICT_POLICY
     #   value: "0"
+    # - name: REKOR_HOST
+    #   value: https://<rekor-server-ingress-route>
+    # # Set SSL_CERT_DIR to the value below when using rekor-local
+    # - name: SSL_CERT_DIR
+    #   value: /var/run/secrets/kubernetes.io/serviceaccount
 
   - name: release
     taskRef:
