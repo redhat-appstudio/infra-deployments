@@ -119,6 +119,21 @@ spec:
 
 oc get pipeline simple-release -o yaml | yq e '.spec' -
 
+title "Enterprise Contract Policy"
+
+oc get configmap ec-policy >/dev/null 2>&1 || echo -n '
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: ec-policy
+data:
+  # HINT: Add "test" to the list to ignore tests
+  policy.json: |
+      {"non_blocking_checks":["not_useful"]}
+' | oc create -f - > /dev/null
+
+oc get configmap ec-policy -o json | jq '.data."policy.json" | fromjson'
 
 title "Verify Push Secret"
 
