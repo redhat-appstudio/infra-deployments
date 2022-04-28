@@ -39,7 +39,7 @@ SIG_KEY="k8s://$NAMESPACE/cosign-public-key"
 # The image used by the verify-enterprise-contract task. This image is usually
 # built by the 'hack/build-and-push.sh' script from the
 # https://github.com/redhat-appstudio/build-definitions repository.
-DEFAULT_TASK_BUNDLE='quay.io/lucarval/appstudio-tasks:63489f81a7680c2501b1c7e0802d24c6169d434e-2'
+DEFAULT_TASK_BUNDLE='quay.io/redhat-appstudio/appstudio-tasks:f647b6ced45f59f1cddbd9b8ae9b560173d1cc1b-2'
 TASK_BUNDLE="${TASK_BUNDLE:-${DEFAULT_TASK_BUNDLE}}"
 
 # Finds the first PipelineRun that has a TaskRun with the result named 'HACBS_TEST_OUTPUT'
