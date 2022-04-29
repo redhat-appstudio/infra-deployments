@@ -19,7 +19,7 @@ spec:
               do
                 sleep $SLEEP;
               done
- 
+
               echo "Patching TektonConfig config patameters"
               oc patch TektonConfig config -p '{"spec":{"pruner":{"keep": 10, "schedule": "0/10 * * * *"}}}' --type=merge
           imagePullPolicy: Always

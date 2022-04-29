@@ -4,7 +4,7 @@ resources:
 - allow-argocd-to-manage.yaml
 - https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/8c72ce9bc207c389e260a2808514083accbe42cf/manifests/appstudio-controller-rbac/appstudio-controller-rbac.yaml
 - https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/8c72ce9bc207c389e260a2808514083accbe42cf/manifests/staging-cluster-resources/argo-cd-namespace.yaml
-#- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/8c72ce9bc207c389e260a2808514083accbe42cf/manifests/staging-cluster-resources/argo-cd.yaml
+# - https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/8c72ce9bc207c389e260a2808514083accbe42cf/manifests/staging-cluster-resources/argo-cd.yaml
 - argo-cd.yaml
 - dbschema-config-map.yaml
 - https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/8c72ce9bc207c389e260a2808514083accbe42cf/manifests/database-init/job.yaml
@@ -60,7 +60,3 @@ patches:
     - op: replace
       path: /spec/template/spec/containers/1/env/0/value
       value: gitops-service-argocd
-
-
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
