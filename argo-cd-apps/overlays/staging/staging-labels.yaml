@@ -1,0 +1,119 @@
+# The following resources must be tagged according to https://source.redhat.com/groups/public/itpaas/mpwiki/user_managed_platform_required_resource_tagginglabeling:
+# Pods, Routes, Services, and PersistentVolumeClaims
+# Pods are tagged by their Pod Controller: 
+# Deployment, DeploymentConfig, CronJob, StatefulSet, or DaemonSet
+# Image tagging is recommended but not required. 
+# Images can have image labels provided as a build output when producing an image from a BuildConfig. 
+
+# To tag any resources created manually, use the CLI. For example: 
+# `oc label pvc $mypvcname paas.redhat.com/appcode=ASSH-001`
+
+# ${appcode } AppCode - A CMDB ID of the application. 
+# This is represented as the Kubernetes label key paas.redhat.com/appcode.
+# For our staging infrastucture, the code is ASSH-001.
+# TODO: how to set this variable for the rest of the file?
+appcode=ASSH-001
+
+apiVersion: argoproj.io/v1alpha1
+# Tag every service with metadata.labels.["paas.redhat.com/appcode"]
+kind: Service
+metadata:
+  labels:
+    paas.redhat.com/appcode: ${appcode}
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+---
+apiVersion: argoproj.io/v1alpha1
+# Tag every route with metadata.labels.["paas.redhat.com/appcode"]
+kind: Route
+metadata:
+  labels:
+    paas.redhat.com/appcode: ${appcode}
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+---
+apiVersion: argoproj.io/v1alpha1
+# Tag every Pod in a Deployment with spec.template.metadata.labels.["paas.redhat.com/appcode"]
+kind: Deployment
+metadata:
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  template:
+    metadata:
+      labels:
+        paas.redhat.com/appcode: ${appcode}
+---
+apiVersion: argoproj.io/v1alpha1
+# Tag every Pod in a DeploymentConfig with spec.template.metadata.labels.["paas.redhat.com/appcode"]
+kind: DeploymentConfig
+metadata:
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  template:
+    metadata:
+      labels:
+        paas.redhat.com/appcode: ${appcode}
+---
+apiVersion: argoproj.io/v1alpha1
+# Tag every Pod in a CronJob with spec.template.metadata.labels.["paas.redhat.com/appcode"]
+kind: CronJob
+metadata:
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  template:
+    metadata:
+      labels:
+        paas.redhat.com/appcode: ${appcode}
+---
+apiVersion: argoproj.io/v1alpha1
+# Tag every Pod in a StatefulSet with spec.template.metadata.labels.["paas.redhat.com/appcode"]
+kind: StatefulSet
+metadata:
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  template:
+    metadata:
+      labels:
+        paas.redhat.com/appcode: ${appcode}
+# For OpenShift 4.x also tag volume claims with volumeClaimTemplates[*].metadata.labels.["paas.redhat.com/appcode"]
+volumeClaimTemplates:
+- metadata:
+    labels:
+      paas.redhat.com/appcode: ${appcode}
+---
+apiVersion: argoproj.io/v1alpha1
+# Tag every Pod in a DaemonSet with spec.template.metadata.labels.["paas.redhat.com/appcode"]
+kind: DaemonSet
+metadata:
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  template:
+    metadata:
+      labels:
+        paas.redhat.com/appcode: ${appcode}
+---
+apiVersion: argoproj.io/v1alpha1
+# Tag every PersistentVolumeClaim with metadata.labels.["paas.redhat.com/appcode"]
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    paas.redhat.com/appcode: ${appcode}
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+---
+apiVersion: argoproj.io/v1alpha1
+kind: BuildConfig
+# Tag images by setting imageLabels when producing an image from a BuildConfig. 
+metadata:
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  output:
+    imageLabels:
+    - name: com.redhat.paas.appcode
+      value: ${appcode}
