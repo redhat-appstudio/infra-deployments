@@ -5,3 +5,11 @@ resources:
 
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+
+namespace: quality-dashboard
+
+configMapGenerator:
+- name: quality-dashboard-configmap
+  literals:
+  - BACKEND_ROUTE=http://quality-backend-route-quality-dashboard.apps.appstudio-stage.x99m.p1.openshiftapps.com
+  

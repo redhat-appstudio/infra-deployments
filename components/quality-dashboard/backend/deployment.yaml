@@ -37,8 +37,15 @@ spec:
           name: quality-backend-dashboard
           command: ["/root/qe-dashboard-backend"]
           env:
+            - name: MODE_SSL
+              value: "disable"
+            - name: MAX_CONNECTIONS
+              value: "100"
             - name: POSTGRES_ENT_HOST
-              value: "postgres-service"
+              valueFrom:
+                secretKeyRef:
+                  name: quality-dashboard-secrets
+                  key: rds-endpoint
             - name: POSTGRES_ENT_DATABASE
               valueFrom:
                 secretKeyRef:
@@ -71,5 +78,5 @@ spec:
               protocol: TCP
           imagePullPolicy: Always
           image: >-
-            quay.io/flacatus/dashboard-backend:next
+            quay.io/redhat-appstudio/quality-dashboard-backend:latest
 
