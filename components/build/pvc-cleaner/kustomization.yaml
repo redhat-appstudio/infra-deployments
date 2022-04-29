@@ -1,12 +1,12 @@
 resources:
 - namespace.yaml
 - .tekton
-- https://github.com/redhat-appstudio/pvc-cleaner//infra-deployments?ref=a1b63d4db48735f421454c13c7d5aa7e9b0084ba
+- https://github.com/redhat-appstudio/pvc-cleaner//infra-deployments?ref=96cb6db1991efa309334496fa0fd4494e9e75b23
 
 images:
 - name: quay.io/redhat-appstudio/pvc-cleaner
   newName: quay.io/redhat-appstudio/pvc-cleaner
-  newTag: a1b63d4db48735f421454c13c7d5aa7e9b0084ba
+  newTag: 96cb6db1991efa309334496fa0fd4494e9e75b23
 
 patchesStrategicMerge:
 - |-
@@ -21,7 +21,7 @@ patchesStrategicMerge:
         - name: pvc-cleaner
           env:
           - name: "PVC_POD_CLEANER_IMAGE"
-            value: "quay.io/redhat-appstudio/pvc-pod-cleaner:a1b63d4db48735f421454c13c7d5aa7e9b0084ba"
+            value: "quay.io/redhat-appstudio/pvc-pod-cleaner:96cb6db1991efa309334496fa0fd4494e9e75b23"
 
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
