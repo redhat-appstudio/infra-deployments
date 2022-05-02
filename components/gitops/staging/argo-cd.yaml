@@ -6,6 +6,57 @@ metadata:
   name: gitops-service-argocd
   namespace: gitops-service-argocd
 spec:
+
+  resourceInclusions: |
+    - apiGroups:
+      - ""
+      kinds:
+      - "PersistentVolumeClaim"
+      - "PersistentVolume"
+      - "Secret"
+      - "ConfigMap"
+      - "Pod"
+      - "Endpoint"
+      - "Service"
+      - "ServiceAccounts"
+      clusters:
+      - "*"
+    - apiGroups:
+      - "apps"
+      kinds:
+      - "ReplicaSet"
+      - "StatefulSet"
+      - "DaemonSet"
+      - "Deployment"
+      clusters:
+      - "*"
+    - apiGroups:
+      - "discovery.k8s.io"
+      kinds:
+      - "EndpointSlice"
+      clusters:
+      - "*"
+    - apiGroups:
+      - "networking.k8s.io"
+      kinds:
+      - "Ingress"
+      - "IngressClass"
+      clusters:
+      - "*"
+    - apiGroups:
+      - "rbac.authorization.k8s.io"
+      kinds:
+      - "RoleBinding"
+      - "Role"
+      clusters:
+      - "*"
+    - apiGroups:
+      - "route.openshift.io"
+      kinds:
+      - "Route"
+      clusters:
+      - "*"
+
   applicationSet:
     resources:
       limits:
