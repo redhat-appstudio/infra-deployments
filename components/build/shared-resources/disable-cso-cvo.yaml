@@ -1,0 +1,78 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: scale-down-cso-cvo
+rules:
+  - apiGroups:
+      - apps
+    resources:
+      - deployments/scale
+    verbs:
+      - patch
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+    verbs:
+      - get
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: scale-down-cso-cvo
+  namespace: build-templates
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: scale-down-cso
+  namespace: openshift-cluster-storage-operator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: scale-down-cso-cvo
+subjects:
+  - kind: ServiceAccount
+    name: scale-down-cso-cvo
+    namespace: build-templates
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: scale-down-cvo
+  namespace: openshift-cluster-version
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: scale-down-cso-cvo
+subjects:
+  - kind: ServiceAccount
+    name: scale-down-cso-cvo
+    namespace: build-templates
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: scale-down-cso-cvo
+  namespace: build-templates
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+spec:
+  template:
+    spec:
+      containers:
+        - image: registry.redhat.io/openshift4/ose-cli:v4.9
+          command:
+            - /bin/bash
+            - "-ec"
+            - |
+              oc scale --replicas=0 deploy/cluster-version-operator -n openshift-cluster-version
+              oc scale --replicas=0 deploy/cluster-storage-operator -n openshift-cluster-storage-operator
+          imagePullPolicy: Always
+          name: scale-down-cso-cvo
+      dnsPolicy: ClusterFirst
+      restartPolicy: OnFailure
+      terminationGracePeriodSeconds: 30
+      serviceAccount: scale-down-cso-cvo
+      serviceAccountName: scale-down-cso-cvo

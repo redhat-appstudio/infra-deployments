@@ -1,0 +1,47 @@
+resources:
+- https://raw.githubusercontent.com/openshift/cluster-storage-operator/362da0bbf110f2078273f7a80b1d829cd783405e/assets/csidriveroperators/shared-resource/02_sa.yaml
+- https://raw.githubusercontent.com/openshift/cluster-storage-operator/362da0bbf110f2078273f7a80b1d829cd783405e/assets/csidriveroperators/shared-resource/03_role.yaml
+- https://raw.githubusercontent.com/openshift/cluster-storage-operator/362da0bbf110f2078273f7a80b1d829cd783405e/assets/csidriveroperators/shared-resource/04_rolebinding.yaml
+- https://raw.githubusercontent.com/openshift/cluster-storage-operator/362da0bbf110f2078273f7a80b1d829cd783405e/assets/csidriveroperators/shared-resource/05_clusterrole.yaml
+- https://raw.githubusercontent.com/openshift/cluster-storage-operator/362da0bbf110f2078273f7a80b1d829cd783405e/assets/csidriveroperators/shared-resource/06_clusterrolebinding.yaml
+- https://raw.githubusercontent.com/openshift/cluster-storage-operator/362da0bbf110f2078273f7a80b1d829cd783405e/assets/csidriveroperators/shared-resource/07_role_config.yaml
+- https://raw.githubusercontent.com/openshift/cluster-storage-operator/362da0bbf110f2078273f7a80b1d829cd783405e/assets/csidriveroperators/shared-resource/08_rolebinding_config.yaml
+- https://raw.githubusercontent.com/openshift/cluster-storage-operator/362da0bbf110f2078273f7a80b1d829cd783405e/assets/csidriveroperators/shared-resource/09_deployment.yaml
+- https://raw.githubusercontent.com/openshift/cluster-storage-operator/362da0bbf110f2078273f7a80b1d829cd783405e/assets/csidriveroperators/shared-resource/10_cr.yaml
+- https://raw.githubusercontent.com/openshift/cluster-storage-operator/362da0bbf110f2078273f7a80b1d829cd783405e/assets/csidriveroperators/shared-resource/11_metrics_service.yaml
+- https://raw.githubusercontent.com/openshift/cluster-storage-operator/362da0bbf110f2078273f7a80b1d829cd783405e/assets/csidriveroperators/shared-resource/12_servicemonitor.yaml
+- scc.yaml
+- shared-resources-components.yaml
+- appstudio-push-secret.yaml
+- disable-cso-cvo.yaml
+
+patchesStrategicMerge:
+- |-
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: shared-resource-csi-driver-operator
+    namespace: openshift-cluster-csi-drivers
+  spec:
+    template:
+      spec:
+        containers:
+        - name: shared-resource-csi-driver-operator
+          env:
+          - name: DRIVER_IMAGE
+            value: quay.io/openshift/origin-csi-driver-shared-resource:4.10.0
+          - name: NODE_DRIVER_REGISTRAR_IMAGE
+            value: quay.io/openshift/origin-csi-node-driver-registrar:4.10.0
+          image: quay.io/openshift/origin-csi-driver-shared-resource-operator:4.10.0
+          args:
+          - start
+          - -v=5
+
+# Skip applying the Tekton operands while the Tekton operator is being installed.
+# See more information about this option, here:
+# https://argo-cd.readthedocs.io/en/stable/user-guide/sync-options/#skip-dry-run-for-new-custom-resources-types
+commonAnnotations:
+  argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
