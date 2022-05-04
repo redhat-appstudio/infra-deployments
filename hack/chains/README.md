@@ -54,8 +54,7 @@ If you installed all the applications, there are other steps required to get
 them all to go green. See [this
 guide](https://coreos.slack.com/files/T027F3GAJ/F036QJ81LLU) for details.
 
-
-### (Optional) Deploy local cluster rekor server
+### **Deprecated** - (Optional) Deploy local cluster rekor server
 
     cd hack/chains
     ./deploy-local-rekor.sh
@@ -67,6 +66,32 @@ To enable the use of a locally deployed rekor instance:
 To return to using the default, public rekor instance:
 
    ./config.sh rekor-default
+
+### Local cluster rekor server
+
+After running the `bootstrap-cluster.sh` script, a rekor application is deployed to the local cluster. This rekor instance has an internal hostname and ingress configured ( `rekor.enterprise-contract-service.svc` ) which can be used in conjunction with chains. This hostname will not be accessible by default from your local development machine.
+
+Execute the following commands to update the chains configmap to allow chains to utilize this internal hostname instead of the public Sigstore instance:
+
+    # turn off gitops syncing (otherwise, the configmap is overwritten to ensure proper sync state)
+    $ ./hack/chains/gitops-sync.sh off
+
+    # patch the configmap
+    $ kubectl patch configmap chains-config -n tekton-chains \
+    -p='{"data":{"transparency.url": "http://rekor.enterprise-contract-service.svc:3000"}}'
+
+### External access for local cluster rekor server
+
+By default, executing the `boostrap-cluster.sh` script with the `preview` parameter after executing the `boostrap-cluster.sh` script will do the following:
+* Reconfigure the local cluster rekor server with a hostname that is externally accessible in the format of `rekor.<cluster_domain>`
+* Patch the chains config to use this hostname in the format of `https://rekor.<cluster_domain>`
+* Restart the chains controller pod
+
+At this point you may access the local cluster rekor server via API or with the `rekor-cli`.
+
+To access via `rekor-cli`, ensure that you provide the `--rekor_server` flag such as in the example below:
+
+    $ rekor-cli --rekor_server https://rekor.<cluster_domain> loginfo
 
 ### YAML Validation
 
