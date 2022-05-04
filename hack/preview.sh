@@ -51,6 +51,9 @@ $ROOT/hack/util-set-development-repos.sh $MY_GIT_REPO_URL development $PREVIEW_B
 # setup is not needed
 $ROOT/hack/util-set-spi-api-server.sh "$SPI_API_SERVER"
 
+# set backend route for quality dashboard for currrent cluster
+$ROOT/hack/util-set-quality-dashboard-backend-route.sh
+
 if [ -n "$MY_GITHUB_ORG" ]; then
     $ROOT/hack/util-set-github-org $MY_GITHUB_ORG
 fi
