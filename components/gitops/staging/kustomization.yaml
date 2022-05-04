@@ -41,6 +41,7 @@ images:
   - name: \${COMMON_IMAGE}
     newName: quay.io/jgwest-redhat/gitops-service
     newTag: 8c72ce9bc207c389e260a2808514083accbe42cf
+    # TODO: When updating this newTag to the next version, remove the appstudio-controller-hotfix-may4-2022 below.
 
 # Replace ${ARGO_CD_NAMESPACE}
 patches:
@@ -61,6 +62,15 @@ patches:
       path: /spec/template/spec/containers/1/env/0/value
       value: gitops-service-argocd
 
+- target:
+    kind: Deployment
+    name: appstudio-controller-controller-manager
+    namespace: gitops
+  patch: |-
+    - op: replace
+      path: /spec/template/spec/containers/1/image
+      value: quay.io/jgwest-redhat/gitops-service:appstudio-controller-hotfix-may4-2022
+# Yell at jonwest@redhat.com if this 'appstuduio-controller-controller-manager' patch is not removed by May 27, 2022 :)
 
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
