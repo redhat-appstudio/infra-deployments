@@ -51,13 +51,19 @@ kubectl patch task kaniko-chains --type=json --patch='[
 IMAGE_REGISTRY=$( oc registry info )
 DOCKERCFG=$( oc get sa tekton-chains-controller -o json | jq -r '.secrets[1].name' )
 
+# Setting a prefix so that we can find this task to avoid any issues with timing.
+# Previously, the incorrect task was sometimes passed to the verify script.
+# Hat tip to @lui for the this.
+PREFIX="kaniko-chains-run-$(openssl rand --hex 5)"
+
 title "Run a build task and watch it"
 tkn task start kaniko-chains \
   --param IMAGE=$IMAGE_REGISTRY/tekton-chains/kaniko-chains \
   --use-param-defaults \
   --workspace name=source,emptyDir= \
   --workspace name=dockerconfig,secret=$DOCKERCFG \
-  --showlog
+  --showlog \
+  --prefix-name=$PREFIX
 
 title "Wait a few seconds for chains finalizers to complete"
 sleep 10
@@ -67,5 +73,7 @@ $SCRIPTDIR/kaniko-cosign-verify.sh
 
 pause
 
+# Filter our taskruns to find the one with the prefix set earlier
+TASK=$(kubectl get taskruns.tekton.dev -o json |jq '.items[] | select(.metadata.name | startswith("'$PREFIX'")) | .metadata.name' -r)
 # This will use rekor-cli to verify the taskrun and the image
-$SCRIPTDIR/rekor-verify-taskrun.sh
+$SCRIPTDIR/rekor-verify-taskrun.sh $TASK

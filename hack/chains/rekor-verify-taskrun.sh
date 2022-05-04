@@ -25,7 +25,7 @@ if [[ $IMAGE_URL != null ]]; then
 
   title "Lookup the transparency log entry for the image itself"
   # ...which is different to the transparency log entry for the taskrun
-  $SCRIPTDIR/rekor-image-lookup.sh $IMAGE_URL $REKOR_SERVER
+  $SCRIPTDIR/rekor-image-lookup.sh $IMAGE_DIGEST $REKOR_SERVER
   # This should work also
   #$SCRIPTDIR/rekor-image-lookup.sh $IMAGE_DIGEST $REKOR_SERVER
 fi
