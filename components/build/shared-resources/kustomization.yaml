@@ -1,41 +1,30 @@
 resources:
-- https://raw.githubusercontent.com/openshift/cluster-storage-operator/362da0bbf110f2078273f7a80b1d829cd783405e/assets/csidriveroperators/shared-resource/02_sa.yaml
-- https://raw.githubusercontent.com/openshift/cluster-storage-operator/362da0bbf110f2078273f7a80b1d829cd783405e/assets/csidriveroperators/shared-resource/03_role.yaml
-- https://raw.githubusercontent.com/openshift/cluster-storage-operator/362da0bbf110f2078273f7a80b1d829cd783405e/assets/csidriveroperators/shared-resource/04_rolebinding.yaml
-- https://raw.githubusercontent.com/openshift/cluster-storage-operator/362da0bbf110f2078273f7a80b1d829cd783405e/assets/csidriveroperators/shared-resource/05_clusterrole.yaml
-- https://raw.githubusercontent.com/openshift/cluster-storage-operator/362da0bbf110f2078273f7a80b1d829cd783405e/assets/csidriveroperators/shared-resource/06_clusterrolebinding.yaml
-- https://raw.githubusercontent.com/openshift/cluster-storage-operator/362da0bbf110f2078273f7a80b1d829cd783405e/assets/csidriveroperators/shared-resource/07_role_config.yaml
-- https://raw.githubusercontent.com/openshift/cluster-storage-operator/362da0bbf110f2078273f7a80b1d829cd783405e/assets/csidriveroperators/shared-resource/08_rolebinding_config.yaml
-- https://raw.githubusercontent.com/openshift/cluster-storage-operator/362da0bbf110f2078273f7a80b1d829cd783405e/assets/csidriveroperators/shared-resource/09_deployment.yaml
-- https://raw.githubusercontent.com/openshift/cluster-storage-operator/362da0bbf110f2078273f7a80b1d829cd783405e/assets/csidriveroperators/shared-resource/10_cr.yaml
-- https://raw.githubusercontent.com/openshift/cluster-storage-operator/362da0bbf110f2078273f7a80b1d829cd783405e/assets/csidriveroperators/shared-resource/11_metrics_service.yaml
-- https://raw.githubusercontent.com/openshift/cluster-storage-operator/362da0bbf110f2078273f7a80b1d829cd783405e/assets/csidriveroperators/shared-resource/12_servicemonitor.yaml
+- https://raw.githubusercontent.com/openshift/csi-driver-shared-resource-operator/c60295f4e59c0d3f17fd1c5b920296ec58231db1/assets/config_configmap.yaml
+- https://raw.githubusercontent.com/openshift/csi-driver-shared-resource-operator/c60295f4e59c0d3f17fd1c5b920296ec58231db1/assets/csidriver.yaml
+- https://raw.githubusercontent.com/openshift/csi-driver-shared-resource-operator/c60295f4e59c0d3f17fd1c5b920296ec58231db1/assets/metrics_service.yaml
+- https://raw.githubusercontent.com/openshift/csi-driver-shared-resource-operator/c60295f4e59c0d3f17fd1c5b920296ec58231db1/assets/node_sa.yaml
+- https://raw.githubusercontent.com/openshift/csi-driver-shared-resource-operator/c60295f4e59c0d3f17fd1c5b920296ec58231db1/assets/node.yaml
+- https://raw.githubusercontent.com/openshift/csi-driver-shared-resource-operator/c60295f4e59c0d3f17fd1c5b920296ec58231db1/assets/servicemonitor.yaml
+- https://raw.githubusercontent.com/openshift/csi-driver-shared-resource-operator/c60295f4e59c0d3f17fd1c5b920296ec58231db1/assets/service.yaml
+- https://raw.githubusercontent.com/openshift/csi-driver-shared-resource-operator/c60295f4e59c0d3f17fd1c5b920296ec58231db1/assets/rbac/node_binding.yaml
+- https://raw.githubusercontent.com/openshift/csi-driver-shared-resource-operator/c60295f4e59c0d3f17fd1c5b920296ec58231db1/assets/rbac/node_privileged_binding.yaml
+- https://raw.githubusercontent.com/openshift/csi-driver-shared-resource-operator/c60295f4e59c0d3f17fd1c5b920296ec58231db1/assets/rbac/node_role.yaml
+- https://raw.githubusercontent.com/openshift/csi-driver-shared-resource-operator/c60295f4e59c0d3f17fd1c5b920296ec58231db1/assets/rbac/privileged_role.yaml
+- https://raw.githubusercontent.com/openshift/csi-driver-shared-resource-operator/c60295f4e59c0d3f17fd1c5b920296ec58231db1/assets/rbac/prometheus_rolebinding.yaml
+- https://raw.githubusercontent.com/openshift/csi-driver-shared-resource-operator/c60295f4e59c0d3f17fd1c5b920296ec58231db1/assets/rbac/prometheus_role.yaml
+- https://raw.githubusercontent.com/openshift/api/9d91c1f6cfd40449bd2af8a6b697a3bf7baf933b/sharedresource/v1alpha1/0000_10_sharedconfigmap.crd.yaml
+- https://raw.githubusercontent.com/openshift/api/9d91c1f6cfd40449bd2af8a6b697a3bf7baf933b/sharedresource/v1alpha1/0000_10_sharedsecret.crd.yaml
 - scc.yaml
 - shared-resources-components.yaml
 - appstudio-push-secret.yaml
-- disable-cso-cvo.yaml
 
-patchesStrategicMerge:
-- |-
-  apiVersion: apps/v1
-  kind: Deployment
-  metadata:
-    name: shared-resource-csi-driver-operator
-    namespace: openshift-cluster-csi-drivers
-  spec:
-    template:
-      spec:
-        containers:
-        - name: shared-resource-csi-driver-operator
-          env:
-          - name: DRIVER_IMAGE
-            value: quay.io/openshift/origin-csi-driver-shared-resource:4.11.0
-          - name: NODE_DRIVER_REGISTRAR_IMAGE
-            value: quay.io/openshift/origin-csi-node-driver-registrar:4.11.0
-          image: quay.io/openshift/origin-csi-driver-shared-resource-operator:4.10.0
-          args:
-          - start
-          - -v=5
+images:
+- name: \${NODE_DRIVER_REGISTRAR_IMAGE}
+  newName: quay.io/openshift/origin-csi-node-driver-registrar
+  newTag: 4.11.0
+- name: \${DRIVER_IMAGE}
+  newName: quay.io/openshift/origin-csi-driver-shared-resource
+  newTag: 4.11.0
 
 # Skip applying the Tekton operands while the Tekton operator is being installed.
 # See more information about this option, here:
