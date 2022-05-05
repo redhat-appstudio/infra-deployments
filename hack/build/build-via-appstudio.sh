@@ -22,6 +22,9 @@ echo '{"auths": {' $(yq eval '.auths | with_entries(select(.key == "quay.io"))' 
 oc create secret docker-registry redhat-appstudio-registry-pull-secret --from-file=.dockerconfigjson=$SECRET --dry-run=client -o yaml | oc apply -f-
 rm $SECRET
 
+# Label namespace to be managed by gitops-service-argocd
+oc label namespace $(oc config view --minify -o 'jsonpath={..namespace}') --overwrite argocd.argoproj.io/managed-by=gitops-service-argocd
+
 oc delete --ignore-not-found -f $SCRIPTDIR/templates/application.yaml
 oc create -f $SCRIPTDIR/templates/application.yaml
 if ! oc wait --for=condition=Created application/test-application; then
