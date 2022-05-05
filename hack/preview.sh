@@ -32,6 +32,17 @@ if git rev-parse --verify $PREVIEW_BRANCH; then
 fi
 git checkout -b $PREVIEW_BRANCH
 
+# Set the domain for our rekor deployment.
+# We add the modified rekor.yaml file and this will get pushed to our preview branch.
+# This shouldn't ever be updated in $MY_GIT_BRANCH.
+# If you know a better way to make this magic happen, contact rnester@redhat.com
+domain=$( kubectl get ingresses.config.openshift.io cluster --template={{.spec.domain}} )
+echo
+echo "Setting rekor server domain to: $domain"
+echo
+sed -i "s/rekor-server.enterprise-contract-service.svc/rekor.$domain/" $ROOT/argo-cd-apps/base/enterprise-contract.yaml
+git add $ROOT/argo-cd-apps/base/enterprise-contract.yaml && git commit -m "Set domain for rekor"
+
 # reset the default repos in the development directory to be the current git repo
 # this needs to be pushed to your fork to be seen by argocd
 $ROOT/hack/util-set-development-repos.sh $MY_GIT_REPO_URL development $PREVIEW_BRANCH
@@ -86,3 +97,26 @@ git checkout $MY_GIT_BRANCH
 
 #set the local cluster to point to the current git repo and branch and update the path to development
 $ROOT/hack/util-update-app-of-apps.sh $MY_GIT_REPO_URL development $PREVIEW_BRANCH
+
+# Make sure we have a tekton-chains namespace
+echo "Checking to see if tekton-chains namespace exists"
+while ! kubectl get namespace tekton-chains &> /dev/null; do
+  echo -n .
+  sleep 3
+done
+
+echo "Setting chains to use cluster rekor server: https://rekor.$domain"
+kubectl patch configmap/chains-config -n tekton-chains --patch "{\"data\":{\"transparency.url\":\"https://rekor.$domain\"}}" --type=merge
+# Delete the controller pod for chains to ensure that the configuration change gets picked up.
+echo "Restarting chains controller"
+kubectl delete pod -n tekton-chains -l app=tekton-chains-controller
+# If we have a rekor namespace, we should wait for the server to be available
+if kubectl get namespace enterprise-contract-service &>/dev/null; then
+    kubectl delete pod -n enterprise-contract-service -l app.kubernetes.io/component=server
+    # Uncomment the following if you want to wait for rekor
+    # echo "Waiting for rekor server."
+    # while ! curl --fail --insecure --output /dev/null --silent "https://rekor.$domain/api/v1/log"; do
+    #     echo -n .
+    #     sleep 3
+    # done
+fi
