@@ -113,10 +113,38 @@ if ! kubectl get secret -n gitops gitops-postgresql-staging &>/dev/null; then
 fi
 
 echo
+echo "Setting secrets for Quality Dashboard"
+if ! kubectl get namespace quality-dashboard &>/dev/null; then
+  kubectl create namespace quality-dashboard
+fi
+if ! kubectl get secret -n quality-dashboard quality-dashboard-secrets &>/dev/null; then
+  kubectl create secret generic quality-dashboard-secrets \
+    --namespace=quality-dashboard \
+    --from-literal=rds-endpoint=REPLACE_WITH_RDS_ENDPOINT \
+    --from-literal=POSTGRES_USER=postgres \
+    --from-literal=POSTGRES_PASSWORD=REPLACE_DB_PASSWORD \
+    --from-literal=POSTGRESQL_DATABASE=quality \
+    --from-literal=github-token=REPLACE_GITHUB_TOKEN
+fi
+
+echo
 echo "Setting Cluster Mode: ${MODE:-Upstream}"
 case $MODE in
     ""|"upstream")
-        kubectl apply -f $ROOT/argo-cd-apps/app-of-apps/all-applications-staging.yaml ;;
+        kubectl apply -f $ROOT/argo-cd-apps/app-of-apps/all-applications-staging.yaml
+        # Check if we have a tekton-chains namespace, and if so, remove any explicit transparency.url setting
+        # which might be left from running this script with the 'preview' flag to enable the cluster local 
+        # rekor instance. By default, chains will use the publicly accessible sandbox instance hosted by sigstore
+        # of rekor
+        # If, in the future, we're boostrapping to use a Red Hat internal rekor instance instead of the public,
+        # default sandbox instance hosted by sigstore we would want to reconsider this approach.
+        if kubectl get namespace tekton-chains &> /dev/null; then
+          # Remove our transparency.url, if present, to ensure we're not using the cluster local rekor
+          # which is only available in 'preview' mode.
+          kubectl patch configmap/chains-config -n tekton-chains --type=json --patch '[{"op":"remove","path":"/data/transparency.url"}]'
+          kubectl delete pod -n tekton-chains -l app=tekton-chains-controller
+        fi
+        ;;
     "development")
         $ROOT/hack/development-mode.sh ;;
     "preview")
