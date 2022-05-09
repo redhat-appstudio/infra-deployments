@@ -1,0 +1,23 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: quality-frontend-service
+  namespace: quality-dashboard
+  labels:
+    app.kubernetes.io/component: quality-frontend
+    app.kubernetes.io/instance: quality-dashboard
+    app.kubernetes.io/name: quality-dashboard
+spec:
+  ipFamilies:
+    - IPv4
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
+  internalTrafficPolicy: Cluster
+  ipFamilyPolicy: SingleStack
+  selector:
+    app.kubernetes.io/component: quality-frontend
+    app.kubernetes.io/instance: quality-dashboard
+    app.kubernetes.io/name: quality-dashboard
