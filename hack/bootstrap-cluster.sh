@@ -113,6 +113,21 @@ if ! kubectl get secret -n gitops gitops-postgresql-staging &>/dev/null; then
 fi
 
 echo
+echo "Setting secrets for Quality Dashboard"
+if ! kubectl get namespace quality-dashboard &>/dev/null; then
+  kubectl create namespace quality-dashboard
+fi
+if ! kubectl get secret -n quality-dashboard quality-dashboard-secrets &>/dev/null; then
+  kubectl create secret generic quality-dashboard-secrets \
+    --namespace=quality-dashboard \
+    --from-literal=rds-endpoint=REPLACE_WITH_RDS_ENDPOINT \
+    --from-literal=POSTGRES_USER=postgres \
+    --from-literal=POSTGRES_PASSWORD=REPLACE_DB_PASSWORD \
+    --from-literal=POSTGRESQL_DATABASE=quality \
+    --from-literal=github-token=REPLACE_GITHUB_TOKEN
+fi
+
+echo
 echo "Setting Cluster Mode: ${MODE:-Upstream}"
 case $MODE in
     ""|"upstream")
