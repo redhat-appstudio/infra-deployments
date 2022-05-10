@@ -111,7 +111,11 @@ export -f waitBuildToBeReady
 export -f checkHASGithubOrg
 
 timeout --foreground 10m bash -c waitAppStudioToBeReady
+set +e
 timeout --foreground 10m bash -c waitBuildToBeReady
+EXIT_CODE="${?}"
+echo "Exit code: $EXIT_CODE"
+sleep 10m
 # Just a sleep before starting the tests
 sleep 2m
 timeout --foreground 3m bash -c checkHASGithubOrg
