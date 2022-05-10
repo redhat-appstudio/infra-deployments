@@ -71,6 +71,7 @@ function waitBuildToBeReady() {
     set -x
     while [ "$(kubectl get applications.argoproj.io build -n ${APPLICATION_NAMESPACE} -o jsonpath='{.status.health.status}')" != "Healthy" ] ||
           [ "$(kubectl get applications.argoproj.io build -n ${APPLICATION_NAMESPACE} -o jsonpath='{.status.sync.status}')" != "Synced" ]; do
+        kubectl get applications.argoproj.io build -n openshift-gitops -o yaml > build_app_$(date +"%H%M%S").yaml
         sleep 1m
         echo "[INFO] Waiting for Build to be ready."
     done
@@ -115,7 +116,10 @@ set +e
 timeout --foreground 10m bash -c waitBuildToBeReady
 EXIT_CODE="${?}"
 echo "Exit code: $EXIT_CODE"
-sleep 10m
+if [ $EXIT_CODE -ne 0 ]; then
+    echo "Failure happened. Sleeping for 10 minutes."
+    sleep 10m
+fi
 # Just a sleep before starting the tests
 sleep 2m
 timeout --foreground 3m bash -c checkHASGithubOrg
