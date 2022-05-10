@@ -87,6 +87,10 @@ echo "Here is the OpenShift console with the project:
 👉 $(oc whoami --show-console)/k8s/cluster/projects/demo
 "
 
+# wait for the pipeline service account to be created by the Tekton operator
+echo '⏳ Waiting for the pipeline service account to be created'
+while ! kubectl get serviceaccount pipeline > /dev/null 2>&1; do sleep 1; done
+
 echo "♾️ Setting up pipelines
 "
 kubectl apply -k "${BUILD_DEFINITIONS_DIR}/hack/test-build"
