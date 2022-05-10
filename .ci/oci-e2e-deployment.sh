@@ -58,19 +58,23 @@ function createQuayPullSecrets() {
 }
 
 function waitAppStudioToBeReady() {
+    set -x
     while [ "$(kubectl get applications.argoproj.io ${APPLICATION_NAME} -n ${APPLICATION_NAMESPACE} -o jsonpath='{.status.health.status}')" != "Healthy" ] ||
           [ "$(kubectl get applications.argoproj.io ${APPLICATION_NAME} -n ${APPLICATION_NAMESPACE} -o jsonpath='{.status.sync.status}')" != "Synced" ]; do
         sleep 1m
         echo "[INFO] Waiting for AppStudio to be ready."
     done
+    set +x
 }
 
 function waitBuildToBeReady() {
+    set -x
     while [ "$(kubectl get applications.argoproj.io build -n ${APPLICATION_NAMESPACE} -o jsonpath='{.status.health.status}')" != "Healthy" ] ||
           [ "$(kubectl get applications.argoproj.io build -n ${APPLICATION_NAMESPACE} -o jsonpath='{.status.sync.status}')" != "Synced" ]; do
         sleep 1m
         echo "[INFO] Waiting for Build to be ready."
     done
+    set +x
 }
 
 function checkHASGithubOrg() {
