@@ -137,4 +137,8 @@ kubectl create configmap ec-policy --from-file=policy.json=<(echo '{"non_blockin
 "${HACK_CHAINS_DIR}/copy-public-sig-key.sh"
 TASK_BUNDLE=quay.io/redhat-appstudio/appstudio-tasks:$(git ls-remote --heads https://github.com/redhat-appstudio/build-definitions.git refs/heads/main|cut -f 1)-2
 export TASK_BUNDLE
+
+# install skopeo-copy task if it's missing
+tkn task describe skopeo-copy >/dev/null 2>&1  || tkn hub install task skopeo-copy
+
 "${HACK_CHAINS_DIR}/release-pipeline-with-ec-demo.sh" "${BUILD_OUTPUT_IMAGE_REF}" "${RELEASE_OUTPUT_IMAGE_REF}"
