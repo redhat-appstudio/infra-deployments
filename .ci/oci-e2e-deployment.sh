@@ -71,7 +71,7 @@ function waitBuildToBeReady() {
     set -x
     while [ "$(kubectl get applications.argoproj.io build -n ${APPLICATION_NAMESPACE} -o jsonpath='{.status.health.status}')" != "Healthy" ] ||
           [ "$(kubectl get applications.argoproj.io build -n ${APPLICATION_NAMESPACE} -o jsonpath='{.status.sync.status}')" != "Synced" ]; do
-        kubectl get applications.argoproj.io build -n openshift-gitops -o yaml > build_app_$(date +"%H%M%S").yaml
+        kubectl get applications.argoproj.io build -n openshift-gitops -o yaml > "${ARTIFACTS_DIR}"/build_app_$(date +"%H%M%S").yaml
         sleep 1m
         echo "[INFO] Waiting for Build to be ready."
     done
