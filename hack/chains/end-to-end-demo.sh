@@ -95,10 +95,6 @@ kubectl apply -k "${BUILD_DEFINITIONS_DIR}/pipelines/hacbs"
 # This is for the build pipeline
 kubectl create secret docker-registry redhat-appstudio-staginguser-pull-secret --from-file=.dockerconfigjson="${HOME}/.docker/config.json" --dry-run=client -o yaml | kubectl apply -f -
 
-# This is for the chains-controller
-kubectl create secret docker-registry quay-pull-secret --from-file=.dockerconfigjson="${HOME}/.docker/config.json" -n tekton-chains --dry-run=client -o yaml | kubectl apply -f -
-kubectl patch sa pipeline -n tekton-chains -p '{"imagePullSecrets": [{"name": "quay-pull-secret"}]}'
-
 echo "
 🏃 Running a build pipeline
 
