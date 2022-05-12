@@ -104,7 +104,6 @@ spec:
   - name: release
     taskRef:
       name: skopeo-copy
-      kind: ClusterTask
     params:
     - name: srcImageURL
       value: docker://\$(params.SRC_IMAGE_REF)
