@@ -106,8 +106,21 @@ make that work.
     ./trust-local-cert.sh
 
 
-Demos
------
+Chains Demos
+------------
+
+### Required prerequisites
+
+You must have the following prerequisites installed to run any of the demos in
+this section.
+- [tkn](https://github.com/tektoncd/cli)
+- [docker](https://docs.docker.com/get-docker/)
+- [skopeo](https://github.com/containers/skopeo)
+- [rekor-cli](https://docs.sigstore.dev/rekor/installation/)
+- [cosign](https://docs.sigstore.dev/cosign/installation/)
+
+The script `./install-demo-pre-req.sh` in the `hack/chains/setup` directory will 
+install these prerequisites for you, if they're not already installed.
 
 ### Kaniko build demo
 
@@ -182,3 +195,31 @@ your Argo CD is in sync.
     ./config.sh default
     kubectl create -f your-downloaded-quay-secret.yml
     ./pipeline-quay-demo.sh quay.io/your-user/your-repo your-quay-secret-name
+
+
+Enterprise Contract demos
+-------------------------
+
+### Release pipeline demo
+
+This demo will create and run an example release pipeline including the
+Enterprise Contract task.
+
+See also the [task
+definition](https://github.com/redhat-appstudio/build-definitions/blob/main/tasks/verify-enterprise-contract.yaml)
+and [related scripts](https://github.com/redhat-appstudio/build-definitions/tree/main/appstudio-utils/util-scripts)
+in the [build-definitions](https://github.com/redhat-appstudio/build-definitions) repo.
+
+    ./release-pipeline-with-ec-demo.sh <src-image-ref> <dst-image-ref>
+
+See the comments in that script for more details on how to use it.
+
+### End to end demo
+
+This will run a build pipeline, then run a QE pipeline, and then use the above
+release pipeline demo to verify that build against the Enterprise Contract.
+
+    ./end-to-end-demo.sh
+
+There is a [video showing this in action](https://drive.google.com/file/d/1DEqAVhqNhu2L1t8w3_fkxAY860YOnx6M/view?usp=sharing)
+(8 minutes, Apr 28, 2022. Red Hat internal only).
