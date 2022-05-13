@@ -119,6 +119,8 @@ echo "Exit code: $EXIT_CODE"
 if [ $EXIT_CODE -ne 0 ]; then
     echo "Failure happened. Sleeping for 10 minutes."
     sleep 10m
+    # get build application yaml once again after 10 minutes to see if increase of timeout would help
+    kubectl get applications.argoproj.io build -n openshift-gitops -o yaml > "${ARTIFACTS_DIR}"/build_app_$(date +"%H%M%S").yaml
 fi
 # Just a sleep before starting the tests
 sleep 2m
