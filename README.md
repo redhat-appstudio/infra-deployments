@@ -350,6 +350,20 @@ spec:
   type: automated
 ```
 
+### Viewing the ArgoCD instance that is used to deploy user workloads
+
+* Determine the route
+```
+kubectl get  route/gitops-service-argocd-server  -n gitops-service-argocd -o template --template={{.spec.host}}
+```
+
+* Determine the password for the 'admin' user
+```
+kubectl get secret gitops-service-argocd-cluster -n gitops-service-argocd -o=jsonpath='{.data.admin\.password}' | base64 -d
+```
+
+Navigate to the URL found above and use *admin* as the user and the *password* from above.
+
 
 See the [GitOps Service M2 Demo script for more details](https://github.com/redhat-appstudio/managed-gitops/tree/main/examples/m2-demo#run-the-demo).
 
