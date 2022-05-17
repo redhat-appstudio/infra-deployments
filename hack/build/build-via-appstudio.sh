@@ -38,7 +38,7 @@ function create-component {
   NAME=$(echo $GIT_URL | grep -o '[^/]*$')
   IMAGE=quay.io/$MY_QUAY_USER/$NAME
   oc delete --ignore-not-found component $NAME
-  yq e "(.metadata.name=\"$NAME\") | (.spec.componentName=\"$NAME\") | (.spec.source.git.url=\"$GIT_URL\") | (.spec.build.containerImage=\"$IMAGE\") " $SCRIPTDIR/templates/component.yaml | oc apply -f-
+  yq e "(.metadata.name=\"$NAME\") | (.spec.componentName=\"$NAME\") | (.spec.source.git.url=\"$GIT_URL\") | (.spec.containerImage=\"$IMAGE\") " $SCRIPTDIR/templates/component.yaml | oc apply -f-
 }
 
 echo Git Repo created:
