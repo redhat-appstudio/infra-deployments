@@ -94,10 +94,6 @@ spec:
     # These are here to facilitate alternate versions of the demo
     # - name: COSIGN_EXPERIMENTAL
     #   value: "0"
-    # - name: POLICY_REPO
-    #   value: https://github.com/hacbs-contract/ec-policies.git
-    # - name: POLICY_REPO_REF
-    #   value: main
     # - name: STRICT_POLICY
     #   value: "0"
 
