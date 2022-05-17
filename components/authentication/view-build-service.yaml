@@ -5,7 +5,7 @@ metadata:
   namespace: openshift-pipelines
 subjects:
   - kind: User
-    name: vdemeester 
+    name: vdemeester
   - kind: Group
     name: Build team
 roleRef:
@@ -55,6 +55,8 @@ subjects:
     name: Build team
   - kind: Group
     name: Test team
+  - kind: Group
+    name: Enterprise Contract
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -84,21 +86,8 @@ subjects:
   # Build team members
   - kind: Group
     name: Build team
-  # Enterprise Contract team members
-  - kind: User
-    name: bcaton85
-  - kind: User
-    name: caugello
-  - kind: User
-    name: joejstuart
-  - kind: User
-    name: lcarva
-  - kind: User
-    name: robnester-rh
-  - kind: User
-    name: simonbaird
-  - kind: User
-    name: zregvart
+  - kind: Group
+    name: Enterprise Contract
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -183,6 +172,8 @@ subjects:
     name: Release team
   - kind: Group
     name: SPI Team
+  - kind: Group
+    name: Enterprise Contract
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
