@@ -1,0 +1,45 @@
+resources:
+- allow-argocd-to-manage.yaml
+- https://github.com/redhat-appstudio/jvm-build-service/deploy/crds/base?ref=0225b5510e8f1273b3156a7abf461b211c1e024f
+- https://github.com/redhat-appstudio/jvm-build-service/deploy/cache/overlays/dev-template?ref=0225b5510e8f1273b3156a7abf461b211c1e024f
+- https://github.com/redhat-appstudio/jvm-build-service/deploy/operator/base?ref=0225b5510e8f1273b3156a7abf461b211c1e024f
+- https://raw.githubusercontent.com/redhat-appstudio/jvm-build-service/0225b5510e8f1273b3156a7abf461b211c1e024f/deploy/base/run-maven-component-build-v0.1.yaml
+- .tekton/
+- namespace.yaml
+- localstack.yaml
+- hacbs-jvm-operator-edit.yaml
+
+namespace: jvm-build-service
+
+images:
+- name: hacbs-jvm-cache
+  newName: quay.io/redhat-appstudio/hacbs-jvm-cache
+  newTag: 0225b5510e8f1273b3156a7abf461b211c1e024f
+- name: quay.io/QUAY_USERNAME/hacbs-jvm-cache
+  newName: quay.io/redhat-appstudio/hacbs-jvm-cache
+  newTag: 0225b5510e8f1273b3156a7abf461b211c1e024f
+- name: hacbs-jvm-operator
+  newName: quay.io/redhat-appstudio/hacbs-jvm-controller
+  newTag: 0225b5510e8f1273b3156a7abf461b211c1e024f
+#- name: hacbs-jvm-sidecar
+#  newName: quay.io/redhat-appstudio/hacbs-jvm-sidecar
+#  newTag: 0225b5510e8f1273b3156a7abf461b211c1e024f
+
+patches:
+- target:
+    kind: Deployment
+    name: hacbs-jvm-cache
+  patch: |-
+    - op: replace
+      path: /spec/template/spec/containers/0/env/10/value
+      value: "http://localstack:4572"
+- target:
+    kind: ClusterRoleBinding
+    name: hacbs-jvm-operator
+  patch: |-
+    - op: replace
+      path: /subjects/0/namespace
+      value: jvm-build-service
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
