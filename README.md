@@ -194,6 +194,10 @@ Steps:
 4) Run `./hack/development-mode.sh` or `./hack/preview.sh`
 5) Trigger update in ArgoCD and delete `application-service-controller-manager` pod manually or run `oc rollout restart -n application-service deployment/application-service-controller-manager`
 
+### End-to-End Tests
+
+The E2E test suite can be run against a properly bootstrapped cluster. Please refer to [this repo](https://github.com/redhat-appstudio/e2e-tests) for details on how to build and run the tests.
+
 ## Authentication
 
 Authentication is managed by `components/authentication`. Authentication is disabled in development modes.
