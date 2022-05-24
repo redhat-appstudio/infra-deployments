@@ -8,9 +8,8 @@ spec:
     spec:
       containers:
       - name: tekton-chains-controller
-        # Contract team fork may be useful
-        # in future for testing features not yet upstream:
-        # image: ghcr.io/hacbs-contract/chains/controller@sha256...
+        # Use a custom version of chains that contains support for pipelinerun attestations
+        image: ghcr.io/hacbs-contract/chains/controller:poc-tep-84@sha256:ccbf0d5ceb99a3aa074466423e77bf5f72976ac80abf94e15e91cc0fca13eae7
         # To use a nightly build of chains if required:
         # image: gcr.io/tekton-nightly/github.com/tektoncd/chains/cmd/controller@sha256...
         volumeMounts:

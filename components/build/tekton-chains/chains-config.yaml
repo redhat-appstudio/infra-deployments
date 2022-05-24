@@ -13,6 +13,11 @@ data:
   # we need to change this to "tekton" for quay.io registries.
   artifacts.taskrun.storage: "oci"
 
+  # Attest pipelineruns the same way taskruns are attested, for details see:
+  # https://issues.redhat.com/browse/HACBS-264
+  artifacts.pipelinerun.format: "in-toto"
+  artifacts.pipelinerun.storage: "oci"
+
   # For image signing iiuc
   artifacts.oci.storage: "oci"
 
