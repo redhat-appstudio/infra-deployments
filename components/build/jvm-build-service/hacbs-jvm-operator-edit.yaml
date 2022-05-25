@@ -1,0 +1,23 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: hacbs-jvm-operator-edit
+  labels:
+    rbac.authorization.k8s.io/aggregate-to-edit: "true"
+rules:
+  - apiGroups:
+      - jvmbuildservice.io
+    resources:
+      - artifactbuildrequests
+      - artifactbuildrequests/status
+      - dependencybuilds
+      - dependencybuilds/status
+    verbs:
+      - create
+      - delete
+      - deletecollection
+      - get
+      - list
+      - patch
+      - update
+      - watch
