@@ -195,3 +195,16 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: view
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: read-enterprise-contract-service
+  namespace: enterprise-contract-service
+subjects:
+  - kind: Group
+    name: Enterprise Contract
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view
