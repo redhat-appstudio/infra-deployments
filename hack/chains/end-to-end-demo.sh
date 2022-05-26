@@ -87,6 +87,10 @@ echo "Here is the OpenShift console with the project:
 👉 $(oc whoami --show-console)/k8s/cluster/projects/demo
 "
 
+# wait for the pipeline service account to be created by the Tekton operator
+echo '⏳ Waiting for the pipeline service account to be created'
+while ! kubectl get serviceaccount pipeline > /dev/null 2>&1; do sleep 1; done
+
 echo "♾️ Setting up pipelines
 "
 kubectl apply -k "${BUILD_DEFINITIONS_DIR}/hack/test-build"
@@ -94,10 +98,6 @@ kubectl apply -k "${BUILD_DEFINITIONS_DIR}/pipelines/hacbs"
 
 # This is for the build pipeline
 kubectl create secret docker-registry redhat-appstudio-staginguser-pull-secret --from-file=.dockerconfigjson="${HOME}/.docker/config.json" --dry-run=client -o yaml | kubectl apply -f -
-
-# This is for the chains-controller
-kubectl create secret docker-registry quay-pull-secret --from-file=.dockerconfigjson="${HOME}/.docker/config.json" -n tekton-chains --dry-run=client -o yaml | kubectl apply -f -
-kubectl patch sa pipeline -n tekton-chains -p '{"imagePullSecrets": [{"name": "quay-pull-secret"}]}'
 
 echo "
 🏃 Running a build pipeline
@@ -137,4 +137,8 @@ kubectl create configmap ec-policy --from-file=policy.json=<(echo '{"non_blockin
 "${HACK_CHAINS_DIR}/copy-public-sig-key.sh"
 TASK_BUNDLE=quay.io/redhat-appstudio/appstudio-tasks:$(git ls-remote --heads https://github.com/redhat-appstudio/build-definitions.git refs/heads/main|cut -f 1)-2
 export TASK_BUNDLE
+
+# install skopeo-copy task if it's missing
+tkn task describe skopeo-copy >/dev/null 2>&1  || tkn hub install task skopeo-copy
+
 "${HACK_CHAINS_DIR}/release-pipeline-with-ec-demo.sh" "${BUILD_OUTPUT_IMAGE_REF}" "${RELEASE_OUTPUT_IMAGE_REF}"

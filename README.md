@@ -194,6 +194,10 @@ Steps:
 4) Run `./hack/development-mode.sh` or `./hack/preview.sh`
 5) Trigger update in ArgoCD and delete `application-service-controller-manager` pod manually or run `oc rollout restart -n application-service deployment/application-service-controller-manager`
 
+### End-to-End Tests
+
+The E2E test suite can be run against a properly bootstrapped cluster. Please refer to [this repo](https://github.com/redhat-appstudio/e2e-tests) for details on how to build and run the tests.
+
 ## Authentication
 
 Authentication is managed by `components/authentication`. Authentication is disabled in development modes.
@@ -349,6 +353,20 @@ spec:
   # Only 'automated' type is currently supported: changes to the GitOps repo immediately take effect (as soon as Argo CD detects them).
   type: automated
 ```
+
+### Viewing the ArgoCD instance that is used to deploy user workloads
+
+* Determine the route
+```
+kubectl get  route/gitops-service-argocd-server  -n gitops-service-argocd -o template --template={{.spec.host}}
+```
+
+* Determine the password for the 'admin' user
+```
+kubectl get secret gitops-service-argocd-cluster -n gitops-service-argocd -o=jsonpath='{.data.admin\.password}' | base64 -d
+```
+
+Navigate to the URL found above and use *admin* as the user and the *password* from above.
 
 
 See the [GitOps Service M2 Demo script for more details](https://github.com/redhat-appstudio/managed-gitops/tree/main/examples/m2-demo#run-the-demo).

@@ -45,6 +45,11 @@ TASK_BUNDLE="${TASK_BUNDLE:-${DEFAULT_TASK_BUNDLE}}"
 # Finds the first PipelineRun that has a TaskRun with the result named 'HACBS_TEST_OUTPUT'
 FALLBACK_PIPELINE_RUN=$(kubectl get taskruns -o go-template='{{ $found := false }}{{ range $tr := .items }}{{ range $tr.status.taskResults }}{{ if and (eq .name "HACBS_TEST_OUTPUT") (not $found) }}{{ index $tr.metadata.labels "tekton.dev/pipelineRun" }}{{ $found = true }}{{ end }}{{ end }}{{ end }}')
 
+REKOR_HOST="$($(dirname $0)/config.sh get | yq -e '."transparency.url" // ""')"
+if [[ -z $REKOR_HOST ]]; then
+    REKOR_HOST="https://rekor.sigstore.dev"
+fi
+
 source $(dirname $0)/_helpers.sh
 
 
@@ -82,25 +87,19 @@ spec:
       value: \$(params.PUBLIC_KEY)
     - name: PIPELINERUN_NAME
       value: ${BUILD_PIPELINE_RUN:-$FALLBACK_PIPELINE_RUN}
+    - name: REKOR_HOST
+      value: ${REKOR_HOST}
+    - name: SSL_CERT_DIR
+      value: /var/run/secrets/kubernetes.io/serviceaccount
     # These are here to facilitate alternate versions of the demo
     # - name: COSIGN_EXPERIMENTAL
     #   value: "0"
-    # - name: POLICY_REPO
-    #   value: https://github.com/hacbs-contract/ec-policies.git
-    # - name: POLICY_REPO_REF
-    #   value: main
     # - name: STRICT_POLICY
     #   value: "0"
-    # - name: REKOR_HOST
-    #   value: https://<rekor-server-ingress-route>
-    # # Set SSL_CERT_DIR to the value below when using rekor-local
-    # - name: SSL_CERT_DIR
-    #   value: /var/run/secrets/kubernetes.io/serviceaccount
 
   - name: release
     taskRef:
       name: skopeo-copy
-      kind: ClusterTask
     params:
     - name: srcImageURL
       value: docker://\$(params.SRC_IMAGE_REF)

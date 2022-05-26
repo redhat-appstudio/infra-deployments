@@ -134,3 +134,23 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: pipeline-maintainer
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: pipeline-maintainers
+  namespace: jvm-build-service
+subjects:
+  - kind: User
+    apiGroup: rbac.authorization.k8s.io
+    name: stuartwdouglas
+  - kind: User
+    apiGroup: rbac.authorization.k8s.io
+    name: gabemontero
+  - kind: User
+    apiGroup: rbac.authorization.k8s.io
+    name: Michkov
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: pipeline-maintainer

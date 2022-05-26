@@ -27,6 +27,8 @@ case "$1" in
     $0 '{
       "artifacts.taskrun.format": "in-toto",
       "artifacts.taskrun.storage": "oci",
+      "artifacts.pipelinerun.storage": "oci",
+      "artifacts.pipelinerun.format": "in-toto",
       "artifacts.oci.storage": "oci",
       "transparency.enabled": "true"
     }' $2

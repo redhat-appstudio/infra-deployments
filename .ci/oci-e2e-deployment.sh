@@ -83,7 +83,10 @@ function checkHASGithubOrg() {
 function executeE2ETests() {
     # E2E instructions can be found: https://github.com/redhat-appstudio/e2e-tests
     # The e2e binary is included in Openshift CI test container from the dockerfile: https://github.com/redhat-appstudio/infra-deployments/blob/main/.ci/openshift-ci/Dockerfile
-    e2e-appstudio --ginkgo.junit-report="${ARTIFACTS_DIR}"/e2e-report.xml -webhookConfigPath="./webhookConfig.yml"
+    curl https://raw.githubusercontent.com/redhat-appstudio/e2e-tests/main/scripts/e2e-openshift-ci.sh | bash -s
+    
+     # The bin will be installed in tmp folder after executing e2e-openshift-ci.sh script
+    ${WORKSPACE}/tmp/e2e-tests/bin/e2e-appstudio  --ginkgo.junit-report="${ARTIFACTS_DIR}"/e2e-report.xml -webhookConfigPath="./webhookConfig.yml"
 }
 
 function prepareWebhookVariables() {
@@ -99,6 +102,11 @@ function prepareWebhookVariables() {
 createQuayPullSecrets
 
 git remote add ${MY_GIT_FORK_REMOTE} https://github.com/redhat-appstudio-qe/infra-deployments.git
+
+# Initiate openshift ci users
+export KUBECONFIG_TEST="/tmp/kubeconfig"
+curl https://raw.githubusercontent.com/redhat-appstudio/e2e-tests/main/scripts/provision-openshift-user.sh | bash -s
+export KUBECONFIG="${KUBECONFIG_TEST}"
 
 /bin/bash "$WORKSPACE"/hack/bootstrap-cluster.sh preview
 
