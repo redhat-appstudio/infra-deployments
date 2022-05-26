@@ -110,7 +110,12 @@ export -f waitBuildToBeReady
 export -f checkHASGithubOrg
 
 timeout --foreground 10m bash -c waitAppStudioToBeReady
-timeout --foreground 10m bash -c waitBuildToBeReady
+if ! timeout --foreground 10m bash -c waitBuildToBeReady; then
+   echo "[ERROR] Build is not ready, check the output"
+   kubectl get applications.argoproj.io build -n ${APPLICATION_NAMESPACE} -o yaml
+   exit 1
+fi
+
 # Just a sleep before starting the tests
 sleep 2m
 timeout --foreground 3m bash -c checkHASGithubOrg
