@@ -103,6 +103,11 @@ createQuayPullSecrets
 
 git remote add ${MY_GIT_FORK_REMOTE} https://github.com/redhat-appstudio-qe/infra-deployments.git
 
+# Initiate openshift ci users
+export KUBECONFIG_TEST="/tmp/kubeconfig"
+curl https://raw.githubusercontent.com/redhat-appstudio/e2e-tests/main/scripts/provision-openshift-user.sh | bash -s
+export KUBECONFIG="${KUBECONFIG_TEST}"
+
 /bin/bash "$WORKSPACE"/hack/bootstrap-cluster.sh preview
 
 export -f waitAppStudioToBeReady
