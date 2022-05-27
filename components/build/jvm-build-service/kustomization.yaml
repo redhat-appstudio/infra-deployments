@@ -1,38 +1,67 @@
 resources:
 - allow-argocd-to-manage.yaml
-- https://github.com/redhat-appstudio/jvm-build-service/deploy/crds/base?ref=0225b5510e8f1273b3156a7abf461b211c1e024f
-- https://github.com/redhat-appstudio/jvm-build-service/deploy/cache/overlays/dev-template?ref=0225b5510e8f1273b3156a7abf461b211c1e024f
-- https://github.com/redhat-appstudio/jvm-build-service/deploy/operator/base?ref=0225b5510e8f1273b3156a7abf461b211c1e024f
-- https://raw.githubusercontent.com/redhat-appstudio/jvm-build-service/0225b5510e8f1273b3156a7abf461b211c1e024f/deploy/base/run-maven-component-build-v0.1.yaml
+- https://github.com/redhat-appstudio/jvm-build-service/deploy/crds/base?ref=450287b6a4dfc837a852a5c5eba5df3aa58e71f2
+- https://github.com/redhat-appstudio/jvm-build-service/deploy/cache/base?ref=450287b6a4dfc837a852a5c5eba5df3aa58e71f2
+- https://github.com/redhat-appstudio/jvm-build-service/deploy/operator/base?ref=450287b6a4dfc837a852a5c5eba5df3aa58e71f2
+- https://raw.githubusercontent.com/redhat-appstudio/jvm-build-service/450287b6a4dfc837a852a5c5eba5df3aa58e71f2/deploy/base/run-maven-component-build-v0.1.yaml
+- https://raw.githubusercontent.com/redhat-appstudio/jvm-build-service/450287b6a4dfc837a852a5c5eba5df3aa58e71f2/deploy/base/lookup-artifact-location-v0.1.yaml
 - .tekton/
 - namespace.yaml
 - localstack.yaml
-- hacbs-jvm-operator-edit.yaml
 
 namespace: jvm-build-service
 
 images:
 - name: hacbs-jvm-cache
   newName: quay.io/redhat-appstudio/hacbs-jvm-cache
-  newTag: 0225b5510e8f1273b3156a7abf461b211c1e024f
+  newTag: 450287b6a4dfc837a852a5c5eba5df3aa58e71f2
 - name: quay.io/QUAY_USERNAME/hacbs-jvm-cache
   newName: quay.io/redhat-appstudio/hacbs-jvm-cache
-  newTag: 0225b5510e8f1273b3156a7abf461b211c1e024f
+  newTag: 450287b6a4dfc837a852a5c5eba5df3aa58e71f2
 - name: hacbs-jvm-operator
   newName: quay.io/redhat-appstudio/hacbs-jvm-controller
-  newTag: 0225b5510e8f1273b3156a7abf461b211c1e024f
-#- name: hacbs-jvm-sidecar
-#  newName: quay.io/redhat-appstudio/hacbs-jvm-sidecar
-#  newTag: 0225b5510e8f1273b3156a7abf461b211c1e024f
+  newTag: 450287b6a4dfc837a852a5c5eba5df3aa58e71f2
 
 patches:
 - target:
     kind: Deployment
     name: hacbs-jvm-cache
   patch: |-
-    - op: replace
-      path: /spec/template/spec/containers/0/env/10/value
-      value: "http://localstack:4572"
+    - op: add
+      path: /spec/template/spec/containers/0/env/-
+      value:
+        name: QUARKUS_S3_ENDPOINT_OVERRIDE
+        value: "http://localstack:4572"
+    - op: add
+      path: /spec/template/spec/containers/0/env/-
+      value:
+        name: QUARKUS_S3_AWS_REGION
+        value: "us-east-1"
+    - op: add
+      path: /spec/template/spec/containers/0/env/-
+      value:
+        name: QUARKUS_S3_AWS_CREDENTIALS_STATIC_PROVIDER_ACCESS_KEY_ID
+        value: "accesskey"
+    - op: add
+      path: /spec/template/spec/containers/0/env/-
+      value:
+        name: QUARKUS_S3_AWS_CREDENTIALS_STATIC_PROVIDER_SECRET_ACCESS_KEY
+        value: "secretkey"
+    - op: add
+      path: /spec/template/spec/containers/0/env/-
+      value:
+        name: QUARKUS_S3_AWS_CREDENTIALS_TYPE
+        value: "static"
+    - op: add
+      path: /spec/template/spec/volumes
+      value:
+      - name: local-cache
+        emptyDir: {}
+    - op: add
+      path: /spec/template/spec/containers/0/volumeMounts
+      value:
+      - name: local-cache
+        mountPath: /deployments/cache
 - target:
     kind: ClusterRoleBinding
     name: hacbs-jvm-operator
@@ -40,6 +69,55 @@ patches:
     - op: replace
       path: /subjects/0/namespace
       value: jvm-build-service
+- target:
+    kind: ClusterRoleBinding
+    name: hacbs-jvm-operator
+  patch: |-
+    - op: replace
+      path: /subjects/0/namespace
+      value: jvm-build-service
+- target:
+    kind: ClusterTask
+    name: lookup-artifact-location
+  patch: |-
+    - op: replace
+      path: /spec/steps/0/image
+      value: quay.io/redhat-appstudio/hacbs-jvm-build-request-processor:450287b6a4dfc837a852a5c5eba5df3aa58e71f2
+- target:
+    kind: ClusterTask
+    name: run-maven-component-build
+  patch: |-
+    - op: replace
+      path: /spec/sidecars/0/env/0/value
+      value: http://hacbs-jvm-cache.jvm-build-service.svc.cluster.local
+    - op: replace
+      path: /spec/sidecars/0/image
+      value: quay.io/redhat-appstudio/hacbs-jvm-sidecar:450287b6a4dfc837a852a5c5eba5df3aa58e71f2
+    - op: add
+      path: /spec/sidecars/0/env/-
+      value:
+        name: QUARKUS_S3_ENDPOINT_OVERRIDE
+        value: "http://localstack.jvm-build-service.svc.cluster.local:4572"
+    - op: add
+      path: /spec/sidecars/0/env/-
+      value:
+        name: QUARKUS_S3_AWS_REGION
+        value: "us-east-1"
+    - op: add
+      path: /spec/sidecars/0/env/-
+      value:
+        name: QUARKUS_S3_AWS_CREDENTIALS_STATIC_PROVIDER_ACCESS_KEY_ID
+        value: "accesskey"
+    - op: add
+      path: /spec/sidecars/0/env/-
+      value:
+        name: QUARKUS_S3_AWS_CREDENTIALS_STATIC_PROVIDER_SECRET_ACCESS_KEY
+        value: "secretkey"
+    - op: add
+      path: /spec/sidecars/0/env/-
+      value:
+        name: QUARKUS_S3_AWS_CREDENTIALS_TYPE
+        value: "static"
 
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
