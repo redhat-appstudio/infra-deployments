@@ -82,6 +82,7 @@ function checkHASGithubOrg() {
 
 function executeE2ETests() {
     # Initialize vault
+    touch tmp/config.yaml
     curl https://raw.githubusercontent.com/redhat-appstudio/e2e-tests/main/scripts/spi-e2e-setup.sh | bash -s
 
     # E2E instructions can be found: https://github.com/redhat-appstudio/e2e-tests
