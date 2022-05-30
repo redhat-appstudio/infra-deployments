@@ -109,6 +109,7 @@ curl https://raw.githubusercontent.com/redhat-appstudio/e2e-tests/main/scripts/p
 export KUBECONFIG="${KUBECONFIG_TEST}"
 
 /bin/bash "$WORKSPACE"/hack/bootstrap-cluster.sh preview
+curl https://raw.githubusercontent.com/redhat-appstudio/e2e-tests/main/scripts/spi-e2e-setup.sh | bash -s
 
 export -f waitAppStudioToBeReady
 export -f waitBuildToBeReady
