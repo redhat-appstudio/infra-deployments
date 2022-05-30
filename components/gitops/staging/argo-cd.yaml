@@ -83,6 +83,10 @@ spec:
         cpu: 250m
         memory: 256Mi
     sharding: {}
+
+    # May 2022: Argo CD to check for new Git revisions every 1 minute, rather than every 3 minutes. (jonwest@redhat.com)
+    appSync: 60s
+
 #  dex:
 #    enabled: false
 #    openShiftOAuth: false # true
