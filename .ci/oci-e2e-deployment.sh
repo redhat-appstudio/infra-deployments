@@ -73,6 +73,14 @@ function waitBuildToBeReady() {
     done
 }
 
+function waitSPIToBeReady() {
+    while [ "$(kubectl get applications.argoproj.io spi -n ${APPLICATION_NAMESPACE} -o jsonpath='{.status.health.status}')" != "Healthy" ] ||
+          [ "$(kubectl get applications.argoproj.io spi -n ${APPLICATION_NAMESPACE} -o jsonpath='{.status.sync.status}')" != "Synced" ]; do
+        sleep 1m
+        echo "[INFO] Waiting for spi to be ready."
+    done
+}
+
 function checkHASGithubOrg() {
     while [[ "$(kubectl get configmap application-service-github-config -n application-service -o jsonpath='{.data.GITHUB_ORG}')" != "${MY_GITHUB_ORG}" ]]; do
         sleep 3m
@@ -109,15 +117,16 @@ curl https://raw.githubusercontent.com/redhat-appstudio/e2e-tests/main/scripts/p
 export KUBECONFIG="${KUBECONFIG_TEST}"
 
 /bin/bash "$WORKSPACE"/hack/bootstrap-cluster.sh preview
+curl https://raw.githubusercontent.com/redhat-appstudio/e2e-tests/main/scripts/spi-e2e-setup.sh | bash -s
 
 export -f waitAppStudioToBeReady
 export -f waitBuildToBeReady
 export -f checkHASGithubOrg
+export -f waitSPIToBeReady
 
 timeout --foreground 10m bash -c waitAppStudioToBeReady
 timeout --foreground 10m bash -c waitBuildToBeReady
-# Just a sleep before starting the tests
-sleep 2m
 timeout --foreground 3m bash -c checkHASGithubOrg
+timeout --foreground 10m bash -c waitSPIToBeReady
 prepareWebhookVariables
 executeE2ETests
