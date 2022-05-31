@@ -62,6 +62,18 @@ patches:
       value:
       - name: local-cache
         mountPath: /deployments/cache
+    # reduce CPU request to be able to run on testing instance
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/requests/cpu
+      value: 10m
+- target:
+    kind: Deployment
+    name: hacbs-jvm-operator
+  patch: |-
+    # reduce CPU request to be able to run on testing instance
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/requests/cpu
+      value: 10m
 - target:
     kind: ClusterRoleBinding
     name: hacbs-jvm-operator
