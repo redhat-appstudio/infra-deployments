@@ -13,6 +13,12 @@ images:
   newName: quay.io/redhat-appstudio/release-service
   newTag: be28c1b371f18a2d18215df3719c997de6ab3a4f
 
+configMapGenerator:
+- literals:
+  - DEFAULT_PERSISTENT_VOLUME_CLAIM="app-studio-default-workspace"
+  name: manager-properties
+  behavior: replace
+
 namespace: release-service
 
 patches:
