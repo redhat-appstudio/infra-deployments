@@ -1,10 +1,10 @@
 resources:
 - allow-argocd-to-manage.yaml
-- https://github.com/redhat-appstudio/jvm-build-service/deploy/crds/base?ref=209988a74904c718386e8101da7704197fe3a152
-- https://github.com/redhat-appstudio/jvm-build-service/deploy/cache/base?ref=209988a74904c718386e8101da7704197fe3a152
-- https://github.com/redhat-appstudio/jvm-build-service/deploy/operator/base?ref=209988a74904c718386e8101da7704197fe3a152
-- https://raw.githubusercontent.com/redhat-appstudio/jvm-build-service/209988a74904c718386e8101da7704197fe3a152/deploy/base/run-maven-component-build-v0.1.yaml
-- https://raw.githubusercontent.com/redhat-appstudio/jvm-build-service/209988a74904c718386e8101da7704197fe3a152/deploy/base/lookup-artifact-location-v0.1.yaml
+- https://github.com/redhat-appstudio/jvm-build-service/deploy/crds/base?ref=0094fd097778e9a975be6b1fff8ff05fe9de9f62
+- https://github.com/redhat-appstudio/jvm-build-service/deploy/cache/base?ref=0094fd097778e9a975be6b1fff8ff05fe9de9f62
+- https://github.com/redhat-appstudio/jvm-build-service/deploy/operator/base?ref=0094fd097778e9a975be6b1fff8ff05fe9de9f62
+- https://raw.githubusercontent.com/redhat-appstudio/jvm-build-service/0094fd097778e9a975be6b1fff8ff05fe9de9f62/deploy/base/run-maven-component-build-v0.1.yaml
+- https://raw.githubusercontent.com/redhat-appstudio/jvm-build-service/0094fd097778e9a975be6b1fff8ff05fe9de9f62/deploy/base/lookup-artifact-location-v0.1.yaml
 - .tekton/
 - namespace.yaml
 - localstack.yaml
@@ -15,13 +15,13 @@ namespace: jvm-build-service
 images:
 - name: hacbs-jvm-cache
   newName: quay.io/redhat-appstudio/hacbs-jvm-cache
-  newTag: 209988a74904c718386e8101da7704197fe3a152
+  newTag: 0094fd097778e9a975be6b1fff8ff05fe9de9f62
 - name: quay.io/QUAY_USERNAME/hacbs-jvm-cache
   newName: quay.io/redhat-appstudio/hacbs-jvm-cache
-  newTag: 209988a74904c718386e8101da7704197fe3a152
+  newTag: 0094fd097778e9a975be6b1fff8ff05fe9de9f62
 - name: hacbs-jvm-operator
   newName: quay.io/redhat-appstudio/hacbs-jvm-controller
-  newTag: 209988a74904c718386e8101da7704197fe3a152
+  newTag: 0094fd097778e9a975be6b1fff8ff05fe9de9f62
 
 patches:
 - target:
@@ -96,7 +96,7 @@ patches:
   patch: |-
     - op: replace
       path: /spec/steps/0/image
-      value: quay.io/redhat-appstudio/hacbs-jvm-build-request-processor:209988a74904c718386e8101da7704197fe3a152
+      value: quay.io/redhat-appstudio/hacbs-jvm-build-request-processor:0094fd097778e9a975be6b1fff8ff05fe9de9f62
 - target:
     kind: ClusterTask
     name: run-maven-component-build
@@ -106,7 +106,7 @@ patches:
       value: http://hacbs-jvm-cache.jvm-build-service.svc.cluster.local
     - op: replace
       path: /spec/sidecars/0/image
-      value: quay.io/redhat-appstudio/hacbs-jvm-sidecar:209988a74904c718386e8101da7704197fe3a152
+      value: quay.io/redhat-appstudio/hacbs-jvm-sidecar:0094fd097778e9a975be6b1fff8ff05fe9de9f62
     - op: add
       path: /spec/sidecars/0/env/-
       value:
