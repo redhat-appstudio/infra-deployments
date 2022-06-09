@@ -37,7 +37,7 @@ fi
 
 # Actually I only care about these two apps for chains config.
 # Comment this out if you want to disable syncing for everything.
-ARGO_APPS="all-components-staging build"
+ARGO_APPS="all-components-staging build enterprise-contract rekor"
 
 # Now apply the change
 for app in $ARGO_APPS; do
