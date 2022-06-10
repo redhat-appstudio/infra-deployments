@@ -53,6 +53,11 @@ patches:
       value:
         name: QUARKUS_S3_AWS_CREDENTIALS_TYPE
         value: "static"
+    # Change strategy to Recreate since PVC is RWO
+    - op: replace
+      path: /spec/strategy
+      value:
+        type: Recreate
     - op: add
       path: /spec/template/spec/volumes
       value:
