@@ -53,6 +53,11 @@ patches:
       value:
         name: QUARKUS_S3_AWS_CREDENTIALS_TYPE
         value: "static"
+    # Change strategy to Recreate since PVC is RWO
+    - op: replace
+      path: /spec/strategy
+      value:
+        type: Recreate
     - op: add
       path: /spec/template/spec/volumes
       value:
@@ -68,6 +73,10 @@ patches:
     - op: replace
       path: /spec/template/spec/containers/0/resources/requests/cpu
       value: 10m
+    # increase Memory limit
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/limits/memory
+      value: 2Gi
 - target:
     kind: Deployment
     name: hacbs-jvm-operator
@@ -132,6 +141,16 @@ patches:
       value:
         name: QUARKUS_S3_AWS_CREDENTIALS_TYPE
         value: "static"
+    # set limits for mvn-goals step
+    - op: add
+      path: /spec/steps/3/resources
+      value:
+        requests:
+          memory: 128Mi
+          cpu: 10m
+        limits:
+          memory: 8Gi
+          cpu: "2"
 
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
