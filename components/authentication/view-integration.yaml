@@ -1,19 +1,13 @@
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: read-has
-  namespace: application-service
+  name: read-integration
+  namespace: integration-service
 subjects:
   - kind: Group
-    name: HAS team
+    name: Test team
   - kind: Group
     name: Build team
-  - kind: Group
-    name: Release team
-  - kind: Group
-    name: Test team
-  - kind: User
-    name: maysunfaisal
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
