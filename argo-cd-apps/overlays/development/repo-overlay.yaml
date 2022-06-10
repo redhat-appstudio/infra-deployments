@@ -45,6 +45,17 @@ spec:
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
+  name: integration
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  source:
+    repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+    targetRevision: main
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
   name: spi
   finalizers:
     - resources-finalizer.argocd.argoproj.io
