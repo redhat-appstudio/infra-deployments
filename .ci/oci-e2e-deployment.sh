@@ -15,11 +15,11 @@ export MY_GITHUB_ORG="redhat-appstudio-qe"
 export MY_GITHUB_TOKEN="${GITHUB_TOKEN}"
 export E2E_APPLICATIONS_NAMESPACE=appstudio-e2e-test
 
+export PATH=$PATH:/tmp/bin
+mkdir -p /tmp/bin
+
 # Available openshift ci environments https://docs.ci.openshift.org/docs/architecture/step-registry/#available-environment-variables
 export ARTIFACTS_DIR=${ARTIFACT_DIR:-"/tmp/appstudio"}
-
-command -v yq >/dev/null 2>&1 || { echo "yq is not installed. Aborting."; exit 1; }
-command -v kubectl >/dev/null 2>&1 || { echo "kubectl is not installed. Aborting."; exit 1; }
 
 if [[ -z "${GITHUB_TOKEN}" ]]; then
   echo - e "[ERROR] GITHUB_TOKEN env is not set. Aborting."
@@ -45,6 +45,13 @@ function catchFinish() {
     git push $MY_GIT_FORK_REMOTE --delete preview-${MY_GIT_BRANCH}-${TEST_BRANCH_ID}
 
     exit $JOB_EXIT_CODE
+}
+
+function installCITools() {
+    curl -H "Authorization: token $GITHUB_TOKEN" -LO https://github.com/mikefarah/yq/releases/download/v4.20.2/yq_linux_amd64 && \
+    chmod +x ./yq_linux_amd64 && \
+    mv ./yq_linux_amd64 /tmp/bin/yq && \
+    yq --version
 }
 
 # Secrets used by pipelines to push component containers to quay.io
@@ -106,6 +113,7 @@ function prepareWebhookVariables() {
     curl https://raw.githubusercontent.com/redhat-appstudio/e2e-tests/main/webhookConfig.yml | envsubst > webhookConfig.yml
 }
 
+installCITools
 createQuayPullSecrets
 
 git remote add ${MY_GIT_FORK_REMOTE} https://github.com/redhat-appstudio-qe/infra-deployments.git
