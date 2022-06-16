@@ -1,10 +1,10 @@
 resources:
 - allow-argocd-to-manage.yaml
-- https://github.com/redhat-appstudio/jvm-build-service/deploy/crds/base?ref=4a121b8cba42a5aafcd449e8777d687039eab442
-- https://github.com/redhat-appstudio/jvm-build-service/deploy/cache/base?ref=4a121b8cba42a5aafcd449e8777d687039eab442
-- https://github.com/redhat-appstudio/jvm-build-service/deploy/operator/base?ref=4a121b8cba42a5aafcd449e8777d687039eab442
-- https://raw.githubusercontent.com/redhat-appstudio/jvm-build-service/4a121b8cba42a5aafcd449e8777d687039eab442/deploy/base/run-maven-component-build-v0.1.yaml
-- https://raw.githubusercontent.com/redhat-appstudio/jvm-build-service/4a121b8cba42a5aafcd449e8777d687039eab442/deploy/base/lookup-artifact-location-v0.1.yaml
+- https://github.com/redhat-appstudio/jvm-build-service/deploy/crds/base?ref=8b30414c81d5e74048ade47b337416416ff60260
+- https://github.com/redhat-appstudio/jvm-build-service/deploy/cache/base?ref=8b30414c81d5e74048ade47b337416416ff60260
+- https://github.com/redhat-appstudio/jvm-build-service/deploy/operator/base?ref=8b30414c81d5e74048ade47b337416416ff60260
+- https://raw.githubusercontent.com/redhat-appstudio/jvm-build-service/8b30414c81d5e74048ade47b337416416ff60260/deploy/base/run-maven-component-build-v0.1.yaml
+- https://raw.githubusercontent.com/redhat-appstudio/jvm-build-service/8b30414c81d5e74048ade47b337416416ff60260/deploy/base/lookup-artifact-location-v0.1.yaml
 - .tekton/
 - namespace.yaml
 - localstack.yaml
@@ -15,13 +15,13 @@ namespace: jvm-build-service
 images:
 - name: hacbs-jvm-cache
   newName: quay.io/redhat-appstudio/hacbs-jvm-cache
-  newTag: 4a121b8cba42a5aafcd449e8777d687039eab442
+  newTag: 8b30414c81d5e74048ade47b337416416ff60260
 - name: quay.io/QUAY_USERNAME/hacbs-jvm-cache
   newName: quay.io/redhat-appstudio/hacbs-jvm-cache
-  newTag: 4a121b8cba42a5aafcd449e8777d687039eab442
+  newTag: 8b30414c81d5e74048ade47b337416416ff60260
 - name: hacbs-jvm-operator
   newName: quay.io/redhat-appstudio/hacbs-jvm-controller
-  newTag: 4a121b8cba42a5aafcd449e8777d687039eab442
+  newTag: 8b30414c81d5e74048ade47b337416416ff60260
 
 patches:
 - target:
@@ -85,6 +85,12 @@ patches:
     - op: replace
       path: /spec/template/spec/containers/0/resources/requests/cpu
       value: 10m
+    # Enable removing of taskrun pods
+    - op: add
+      path: /spec/template/spec/containers/0/env/-
+      value:
+        name: JVM_DELETE_TASKRUN_PODS
+        value: "1"
 - target:
     kind: ClusterRoleBinding
     name: hacbs-jvm-operator
@@ -105,7 +111,7 @@ patches:
   patch: |-
     - op: replace
       path: /spec/steps/0/image
-      value: quay.io/redhat-appstudio/hacbs-jvm-build-request-processor:4a121b8cba42a5aafcd449e8777d687039eab442
+      value: quay.io/redhat-appstudio/hacbs-jvm-build-request-processor:8b30414c81d5e74048ade47b337416416ff60260
 - target:
     kind: ClusterTask
     name: run-maven-component-build
@@ -115,7 +121,7 @@ patches:
       value: http://hacbs-jvm-cache.jvm-build-service.svc.cluster.local
     - op: replace
       path: /spec/sidecars/0/image
-      value: quay.io/redhat-appstudio/hacbs-jvm-sidecar:4a121b8cba42a5aafcd449e8777d687039eab442
+      value: quay.io/redhat-appstudio/hacbs-jvm-sidecar:8b30414c81d5e74048ade47b337416416ff60260
     - op: add
       path: /spec/sidecars/0/env/-
       value:

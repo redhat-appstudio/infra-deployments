@@ -1,9 +1,7 @@
 resources:
   - argocd-permissions.yaml
-  - https://github.com/redhat-appstudio/service-provider-integration-operator/config/default?ref=7abc78001694bb3e6da3240f8b99102935307a6a
+  - https://github.com/redhat-appstudio/service-provider-integration-operator/config/default?ref=be71407fb38287ee80497d85a180c9346ad5fb9f
   - oauth_route.yaml
-  - https://github.com/redhat-appstudio/service-provider-integration-scm-file-retriever/server/config/default?ref=4edb96c318f86ae3124c139fa775754966baea4d
-  - scm_route.yaml
   - vault_role.yaml
   - vault_rolebinding.yaml
   - .tekton/
@@ -14,16 +12,12 @@ kind: Kustomization
 images:
   - name:  quay.io/redhat-appstudio/service-provider-integration-operator
     newName: quay.io/redhat-appstudio/service-provider-integration-operator
-    # 0.5.4
-    newTag: sha-7abc780
+    # 0.6.1
+    newTag: sha-df34819
   - name: quay.io/redhat-appstudio/service-provider-integration-oauth
     newName: quay.io/redhat-appstudio/service-provider-integration-oauth
-    # 0.5.6
-    newTag: sha-bc6979a
-  - name: quay.io/redhat-appstudio/service-provider-integration-scm-file-retriever-server
-    newName:  quay.io/redhat-appstudio/service-provider-integration-scm-file-retriever-server
-    # 0.5.2.1
-    newTag: sha-4edb96c
+    # 0.6.1
+    newTag: sha-5e619ac
 
 namespace: spi-system
 
