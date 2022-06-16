@@ -93,7 +93,7 @@ function executeE2ETests() {
     # The e2e binary is included in Openshift CI test container from the dockerfile: https://github.com/redhat-appstudio/infra-deployments/blob/main/.ci/openshift-ci/Dockerfile
     curl https://raw.githubusercontent.com/redhat-appstudio/e2e-tests/main/scripts/e2e-openshift-ci.sh | bash -s
 
-     # The bin will be installed in tmp folder after executing e2e-openshift-ci.sh script
+    # The bin will be installed in tmp folder after executing e2e-openshift-ci.sh script
     ${WORKSPACE}/tmp/e2e-tests/bin/e2e-appstudio  --ginkgo.junit-report="${ARTIFACTS_DIR}"/e2e-report.xml -webhookConfigPath="./webhookConfig.yml" -config-suites="${WORKSPACE}/tmp/e2e-tests/tests/e2e-demos/config/default.yaml"
 }
 
@@ -130,4 +130,3 @@ timeout --foreground 3m bash -c checkHASGithubOrg
 timeout --foreground 10m bash -c waitSPIToBeReady
 prepareWebhookVariables
 executeE2ETests
-## testing do not review
