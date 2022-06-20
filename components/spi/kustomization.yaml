@@ -1,6 +1,6 @@
 resources:
   - argocd-permissions.yaml
-  - https://github.com/redhat-appstudio/service-provider-integration-operator/config/default?ref=be71407fb38287ee80497d85a180c9346ad5fb9f
+  - https://github.com/redhat-appstudio/service-provider-integration-operator/config/default?ref=4c2c5da385fa0a85f9093cf024a908b155efd4c0
   - oauth_route.yaml
   - vault_role.yaml
   - vault_rolebinding.yaml
@@ -12,8 +12,8 @@ kind: Kustomization
 images:
   - name:  quay.io/redhat-appstudio/service-provider-integration-operator
     newName: quay.io/redhat-appstudio/service-provider-integration-operator
-    # 0.6.1
-    newTag: sha-df34819
+    # 0.6.2
+    newTag: sha-4c2c5da
   - name: quay.io/redhat-appstudio/service-provider-integration-oauth
     newName: quay.io/redhat-appstudio/service-provider-integration-oauth
     # 0.6.1
