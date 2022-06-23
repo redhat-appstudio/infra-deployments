@@ -471,3 +471,13 @@ requests:
     cpu: 100m
 ```
 Then [save and exit the editor](https://vim.rtorr.com/). The updates will be applied to the cluster immediately, and the App Studio deployment should complete within a few minutes.
+
+ ## For Members and Maintainers  
+ ### How to add yourself as a reviewer/approver 
+There is an OWNERS file present in each component folder [like this](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/spi/OWNERS) , people mentioned in the file have the respective access to approve/review PR's
+
+To add yourself change the OWNERS file present in your component folder and Raise a pull request, if you want to be a Approver for the enitre repo please change the OWNERS file present in the root level of this repository 
+
+Difference Between [Reviewers](https://github.com/kubernetes/community/blob/master/community-membership.md#reviewer) and [Approvers](https://github.com/kubernetes/community/blob/master/community-membership.md#approver)
+
+More about code review using [OWNERS](https://github.com/kubernetes/community/blob/master/contributors/guide/owners.md#code-review-using-owners-files)
