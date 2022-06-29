@@ -121,9 +121,9 @@ if ! kubectl get secret -n quality-dashboard quality-dashboard-secrets &>/dev/nu
   kubectl create secret generic quality-dashboard-secrets \
     --namespace=quality-dashboard \
     --from-literal=rds-endpoint=REPLACE_WITH_RDS_ENDPOINT \
-    --from-literal=POSTGRES_USER=postgres \
-    --from-literal=POSTGRES_PASSWORD=REPLACE_DB_PASSWORD \
-    --from-literal=POSTGRESQL_DATABASE=quality \
+    --from-literal=storage-user=postgres \
+    --from-literal=storage-password=REPLACE_DB_PASSWORD \
+    --from-literal=storage-database=quality \
     --from-literal=github-token=REPLACE_GITHUB_TOKEN
 fi
 

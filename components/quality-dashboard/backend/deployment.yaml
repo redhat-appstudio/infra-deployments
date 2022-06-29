@@ -50,17 +50,17 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: quality-dashboard-secrets
-                  key: POSTGRESQL_DATABASE
+                  key: storage-database
             - name: POSTGRES_ENT_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: quality-dashboard-secrets
-                  key: POSTGRES_PASSWORD
+                  key: storage-password
             - name: POSTGRES_ENT_USER
               valueFrom:
                 secretKeyRef:
                   name: quality-dashboard-secrets
-                  key: POSTGRES_USER
+                  key: storage-user
             - name: GITHUB_TOKEN
               valueFrom:
                 secretKeyRef:
@@ -78,5 +78,5 @@ spec:
               protocol: TCP
           imagePullPolicy: Always
           image: >-
-            quay.io/redhat-appstudio/quality-dashboard-backend:latest
+            quay.io/redhat-appstudio/quality-dashboard-backend:026d9b0b7acd0e2d3b198fb39b353f2653a8d4fc
 
