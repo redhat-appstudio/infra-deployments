@@ -114,8 +114,9 @@ function prepareWebhookVariables() {
     #Export variables
     export webhook_salt=123456789
     export webhook_target=https://smee.io/JgVqn2oYFPY1CF
-    export webhook_repositoryURL=https://github.com/redhat-appstudio/infra-deployments
-    export webhook_repositoryFullName=redhat-appstudio/infra-deployments
+    export webhook_repositoryURL=https://github.com/$REPO_OWNER/$REPO_NAME
+    export webhook_repositoryFullName=$REPO_OWNER/$REPO_NAME
+    export webhook_pullNumber=$PULL_NUMBER
     # Rewrite variables in webhookConfig.yml
     curl https://raw.githubusercontent.com/redhat-appstudio/e2e-tests/main/webhookConfig.yml | envsubst > webhookConfig.yml
 }
