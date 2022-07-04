@@ -26,7 +26,6 @@
 # Environment Variables:
 #   TASK_BUNDLE        image reference to the tekton bundle containing the
 #                      verify-enterprise-contract task
-#   BUILD_PIPELINE_RUN pipeline run to examine, otherwise auto-guessed
 #
 set -euo pipefail
 
@@ -41,9 +40,6 @@ SIG_KEY="k8s://$NAMESPACE/cosign-public-key"
 # https://github.com/redhat-appstudio/build-definitions repository.
 DEFAULT_TASK_BUNDLE='quay.io/redhat-appstudio/appstudio-tasks:f647b6ced45f59f1cddbd9b8ae9b560173d1cc1b-2'
 TASK_BUNDLE="${TASK_BUNDLE:-${DEFAULT_TASK_BUNDLE}}"
-
-# Finds the first PipelineRun that has a TaskRun with the result named 'HACBS_TEST_OUTPUT'
-FALLBACK_PIPELINE_RUN=$(kubectl get taskruns -o go-template='{{ $found := false }}{{ range $tr := .items }}{{ range $tr.status.taskResults }}{{ if and (eq .name "HACBS_TEST_OUTPUT") (not $found) }}{{ index $tr.metadata.labels "tekton.dev/pipelineRun" }}{{ $found = true }}{{ end }}{{ end }}{{ end }}')
 
 REKOR_HOST="$($(dirname $0)/config.sh get | yq -e '."transparency.url" // ""')"
 if [[ -z $REKOR_HOST ]]; then
@@ -85,17 +81,17 @@ spec:
       value: \$(params.SRC_IMAGE_REF)
     - name: PUBLIC_KEY
       value: \$(params.PUBLIC_KEY)
-    - name: PIPELINERUN_NAME
-      value: ${BUILD_PIPELINE_RUN:-$FALLBACK_PIPELINE_RUN}
     - name: REKOR_HOST
       value: ${REKOR_HOST}
     - name: SSL_CERT_DIR
       value: /var/run/secrets/kubernetes.io/serviceaccount
     # These are here to facilitate alternate versions of the demo
     # - name: COSIGN_EXPERIMENTAL
-    #   value: "0"
+    #   value: \"0\"
     # - name: STRICT_POLICY
-    #   value: "0"
+    #   value: \"0\"
+    # - name: POLICY_CONFIGURATION
+    #   value: \"ec-policy\"
 
   - name: release
     taskRef:
