@@ -110,6 +110,9 @@ git checkout $MY_GIT_BRANCH
 #set the local cluster to point to the current git repo and branch and update the path to development
 $ROOT/hack/util-update-app-of-apps.sh $MY_GIT_REPO_URL development $PREVIEW_BRANCH
 
+echo "GGM print all tasks before refresh"
+kubectl get tasks --all-namespaces
+
 # trigger refresh of apps
 for APP in $(kubectl get apps -n openshift-gitops -o name); do
   kubectl patch $APP -n openshift-gitops --type merge -p='{"metadata": {"annotations":{"argocd.argoproj.io/refresh": "hard"}}}'
@@ -137,3 +140,6 @@ if kubectl get namespace enterprise-contract-service &>/dev/null; then
     #     sleep 3
     # done
 fi
+
+echo "GGM print all tasks at end of preview"
+kubectl get tasks --all-namespaces
