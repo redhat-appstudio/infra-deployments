@@ -15,12 +15,18 @@ export MY_GITHUB_ORG="redhat-appstudio-qe"
 export MY_GITHUB_TOKEN="${GITHUB_TOKEN}"
 export E2E_APPLICATIONS_NAMESPACE=appstudio-e2e-test
 
+# Environment variable used to override the default "protected" image repository in HAS
+# https://github.com/redhat-appstudio/application-service/blob/6b9d21b8f835263b2e92f1e9343a1453caa2e561/gitops/generate_build.go#L50
+# Users are allowed to push images to this repo only in case the image contains a tag that consists of "<USER'S_NAMESPACE_NAME>-<CUSTOM-TAG>"
+# For example: "quay.io/redhat-appstudio-qe/test-images-protected:appstudio-e2e-test-mytag123"
+export HAS_DEFAULT_IMAGE_REPOSITORY="quay.io/redhat-appstudio-qe/test-images-protected"
+
+
+export PATH=$PATH:/tmp/bin
+mkdir -p /tmp/bin
+
 # Available openshift ci environments https://docs.ci.openshift.org/docs/architecture/step-registry/#available-environment-variables
 export ARTIFACTS_DIR=${ARTIFACT_DIR:-"/tmp/appstudio"}
-
-command -v yq >/dev/null 2>&1 || { echo "yq is not installed. Aborting."; exit 1; }
-command -v kubectl >/dev/null 2>&1 || { echo "kubectl is not installed. Aborting."; exit 1; }
-command -v e2e-appstudio >/dev/null 2>&1 || { echo "e2e-appstudio bin is not installed. Please install it from: https://github.com/redhat-appstudio/e2e-tests."; exit 1; }
 
 if [[ -z "${GITHUB_TOKEN}" ]]; then
   echo - e "[ERROR] GITHUB_TOKEN env is not set. Aborting."
@@ -46,6 +52,13 @@ function catchFinish() {
     git push $MY_GIT_FORK_REMOTE --delete preview-${MY_GIT_BRANCH}-${TEST_BRANCH_ID}
 
     exit $JOB_EXIT_CODE
+}
+
+function installCITools() {
+    curl -H "Authorization: token $GITHUB_TOKEN" -LO https://github.com/mikefarah/yq/releases/download/v4.20.2/yq_linux_amd64 && \
+    chmod +x ./yq_linux_amd64 && \
+    mv ./yq_linux_amd64 /tmp/bin/yq && \
+    yq --version
 }
 
 # Secrets used by pipelines to push component containers to quay.io
@@ -92,9 +105,9 @@ function executeE2ETests() {
     # E2E instructions can be found: https://github.com/redhat-appstudio/e2e-tests
     # The e2e binary is included in Openshift CI test container from the dockerfile: https://github.com/redhat-appstudio/infra-deployments/blob/main/.ci/openshift-ci/Dockerfile
     curl https://raw.githubusercontent.com/redhat-appstudio/e2e-tests/main/scripts/e2e-openshift-ci.sh | bash -s
-    
-     # The bin will be installed in tmp folder after executing e2e-openshift-ci.sh script
-    ${WORKSPACE}/tmp/e2e-tests/bin/e2e-appstudio  --ginkgo.junit-report="${ARTIFACTS_DIR}"/e2e-report.xml -webhookConfigPath="./webhookConfig.yml"
+
+    # The bin will be installed in tmp folder after executing e2e-openshift-ci.sh script
+    ${WORKSPACE}/tmp/e2e-tests/bin/e2e-appstudio  --ginkgo.junit-report="${ARTIFACTS_DIR}"/e2e-report.xml -webhookConfigPath="./webhookConfig.yml" -config-suites="${WORKSPACE}/tmp/e2e-tests/tests/e2e-demos/config/default.yaml"
 }
 
 function prepareWebhookVariables() {
@@ -107,6 +120,7 @@ function prepareWebhookVariables() {
     curl https://raw.githubusercontent.com/redhat-appstudio/e2e-tests/main/webhookConfig.yml | envsubst > webhookConfig.yml
 }
 
+installCITools
 createQuayPullSecrets
 
 git remote add ${MY_GIT_FORK_REMOTE} https://github.com/redhat-appstudio-qe/infra-deployments.git
