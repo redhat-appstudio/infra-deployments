@@ -76,6 +76,7 @@ function waitAppStudioToBeReady() {
         sleep 1m
         echo "[INFO] Waiting for AppStudio to be ready."
     done
+    echo "[INFO] AppStudio is ready."
 }
 
 function waitBuildToBeReady() {
@@ -84,6 +85,7 @@ function waitBuildToBeReady() {
         sleep 1m
         echo "[INFO] Waiting for Build to be ready."
     done
+    echo "[INFO] Build is ready."
 }
 
 function waitSPIToBeReady() {
@@ -92,6 +94,7 @@ function waitSPIToBeReady() {
         sleep 1m
         echo "[INFO] Waiting for spi to be ready."
     done
+    echo "[INFO] spi is ready."
 }
 
 function checkHASGithubOrg() {
@@ -99,6 +102,7 @@ function checkHASGithubOrg() {
         sleep 3m
         echo "[INFO] Waiting for HAS to be ready."
     done
+    echo "[INFO] HAS is ready."
 }
 
 function executeE2ETests() {
