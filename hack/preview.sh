@@ -150,3 +150,4 @@ if kubectl get namespace enterprise-contract-service &>/dev/null; then
     #     sleep 3
     # done
 fi
+
