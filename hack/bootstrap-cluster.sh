@@ -149,6 +149,8 @@ case $MODE in
         $ROOT/hack/development-mode.sh ;;
     "preview")
         $ROOT/hack/preview.sh ;;
+    "e2e")
+        $ROOT/hack/preview.sh e2e ;;
 esac
 
 ARGO_CD_ROUTE=$(kubectl get \

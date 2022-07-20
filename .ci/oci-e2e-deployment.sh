@@ -125,12 +125,38 @@ createQuayPullSecrets
 
 git remote add ${MY_GIT_FORK_REMOTE} https://github.com/redhat-appstudio-qe/infra-deployments.git
 
+# Install sandbox operators
+/bin/bash "$WORKSPACE"/hack/sandbox-development-mode.sh
+
+# Patch sandbox config to use provided keycloak
+BASE_URL=$(oc get ingresses.config.openshift.io/cluster -o jsonpath={.spec.domain})
+RHSSO_URL="https://keycloak-appstudio-sso.$BASE_URL"
+
+oc patch ToolchainConfig/config -n toolchain-host-operator --type=merge --patch-file=/dev/stdin << EOF
+spec:
+  host:
+    registrationService:
+      auth:
+        authClientConfigRaw: '{
+                  "realm": "testrealm",
+                  "auth-server-url": "$RHSSO_URL/auth",
+                  "ssl-required": "nones",
+                  "resource": "sandbox-public",
+                  "clientId": "sandbox-public",
+                  "public-client": true
+                }'
+        authClientLibraryURL: $RHSSO_URL/auth/js/keycloak.js
+        authClientPublicKeysURL: $RHSSO_URL/auth/realms/testrealm/protocol/openid-connect/certs
+EOF
+
 # Initiate openshift ci users
 export KUBECONFIG_TEST="/tmp/kubeconfig"
 curl https://raw.githubusercontent.com/redhat-appstudio/e2e-tests/main/scripts/provision-openshift-user.sh | bash -s
 export KUBECONFIG="${KUBECONFIG_TEST}"
 
-/bin/bash "$WORKSPACE"/hack/bootstrap-cluster.sh preview
+#Install AppStudio
+/bin/bash "$WORKSPACE"/hack/bootstrap-cluster.sh e2e
+
 curl https://raw.githubusercontent.com/redhat-appstudio/e2e-tests/main/scripts/spi-e2e-setup.sh | bash -s
 
 export -f waitAppStudioToBeReady
@@ -140,6 +166,12 @@ export -f waitSPIToBeReady
 
 timeout --foreground 10m bash -c waitAppStudioToBeReady
 timeout --foreground 10m bash -c waitBuildToBeReady
+
+## Delete reg service deployment to restart it and download certs from keycloak.
+oc delete deployment/registration-service -n toolchain-host-operator
+
+# Just a sleep before starting the tests
+sleep 2m
 timeout --foreground 3m bash -c checkHASGithubOrg
 timeout --foreground 10m bash -c waitSPIToBeReady
 prepareWebhookVariables

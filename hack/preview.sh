@@ -2,6 +2,8 @@
 
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/..
 
+OVERLAY=${1:-development}
+
 if [ -f $ROOT/hack/preview.env ]; then
     source $ROOT/hack/preview.env
 fi
@@ -45,7 +47,8 @@ git add $ROOT/argo-cd-apps/base/enterprise-contract.yaml && git commit -m "Set d
 
 # reset the default repos in the development directory to be the current git repo
 # this needs to be pushed to your fork to be seen by argocd
-$ROOT/hack/util-set-development-repos.sh $MY_GIT_REPO_URL development $PREVIEW_BRANCH
+$ROOT/hack/util-set-development-repos.sh $MY_GIT_REPO_URL $OVERLAY $PREVIEW_BRANCH
+
 
 # set the API server which SPI uses to authenticate users to empty string (by default) so that multi-cluster
 # setup is not needed
@@ -121,7 +124,7 @@ fi
 git checkout $MY_GIT_BRANCH
 
 #set the local cluster to point to the current git repo and branch and update the path to development
-$ROOT/hack/util-update-app-of-apps.sh $MY_GIT_REPO_URL development $PREVIEW_BRANCH
+$ROOT/hack/util-update-app-of-apps.sh $MY_GIT_REPO_URL $OVERLAY $PREVIEW_BRANCH
 
 # trigger refresh of apps
 for APP in $(kubectl get apps -n openshift-gitops -o name); do

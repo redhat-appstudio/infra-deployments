@@ -1,0 +1,10 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: appstudio-sso
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  source: # This will be replaced with a reference to your fork of this repo (see hack/patch-apps-for-dev.sh)
+    repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+    targetRevision: main

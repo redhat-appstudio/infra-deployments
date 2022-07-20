@@ -69,7 +69,7 @@ See `hack/quicklab/README.md`
 
 ### Bootstrap App Studio
 Steps:
-1) Run `./hack/bootstrap-cluster.sh [$MODE]` which will bootstrap Argo CD (using OpenShift GitOps) and setup the Argo CD `Application` Custom Resources (CRs) for each component. This command will output the Argo CD Web UI route when it's finished. For upstream mode keep the $MODE empty or "upstream". For development mode and preview mode set `$MODE` to `development` or `preview`, the modes are described in section 'Development modes for your own clusters'.
+1) Run `./hack/bootstrap-cluster.sh [$MODE]` which will bootstrap Argo CD (using OpenShift GitOps) and setup the Argo CD `Application` Custom Resources (CRs) for each component. This command will output the Argo CD Web UI route when it's finished. For upstream mode keep the $MODE empty or "upstream". For development mode and preview mode set `$MODE` to `development`, `preview` or `e2e`, the modes are described in section 'Development modes for your own clusters'.
 2) Open the Argo CD Web UI to see the status of your deployments. You can use the route from the previous step and login using your OpenShift credentials (using the 'Login with OpenShift' button), or login to the OpenShift Console and navigate to Argo CD using the OpenShift Gitops menu in the Applications pulldown.
 ![OpenShift Gitops menu with Cluster Argo CD menu option](documentation/images/argo-cd-login.png?raw=true "OpenShift Gitops menu")
 3) If your deployment was successful, you should see several applications running, such as "all-components-staging", "gitops", and so on.
@@ -144,6 +144,7 @@ The script also supports branches automatically. If you work in a checked out br
 There are two workflows for develompent provided:
 1) Development mode - work in the feature branch, apply changes related to your fork, revert the changes when the work is done
 2) Preview mode - work in a feature branch, apply script which creates new preview branch and create additional commit with for customization
+3) e2e mode - Same as `preview` mode, but also installs RHSSO with preconfigured realm to be used with toolchain operators.
 
 ### Development mode
 
