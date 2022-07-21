@@ -8,7 +8,7 @@ TMP_FILE=$(mktemp)
 
 cat $PATCH_FILE | jq '
     map(
-        if (.op == "add" and .path == "/spec/template/spec/containers/0/env") then
+        if (.op == "add" and .path == "/spec/template/spec/containers/0/env/-") then
             {
                 "op": .op,
                 "path": .path,

@@ -18,6 +18,8 @@ $ROOT/hack/util-set-development-repos.sh $MY_GIT_REPO_URL development $MY_GIT_BR
 # set the API server which SPI uses to authenticate users to empty string (by default) so that multi-cluster
 # setup is not needed
 $ROOT/hack/util-set-spi-api-server.sh "$SPI_API_SERVER"
+# set Vault host to local kubernetes service so the deployment is reproducible locally on single cluster
+$ROOT/hack/util-set-spi-vault-host.sh "$SPI_VAULT_HOST"
 
 # set backend route for quality dashboard for current cluster
 $ROOT/hack/util-set-quality-dashboard-backend-route.sh
