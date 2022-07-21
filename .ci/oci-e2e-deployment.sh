@@ -14,6 +14,7 @@ export MY_GIT_FORK_REMOTE="qe"
 export MY_GITHUB_ORG="redhat-appstudio-qe"
 export MY_GITHUB_TOKEN="${GITHUB_TOKEN}"
 export E2E_APPLICATIONS_NAMESPACE=appstudio-e2e-test
+export SHARED_SECRET_NAMESPACE="build-templates"
 
 # Environment variable used to override the default "protected" image repository in HAS
 # https://github.com/redhat-appstudio/application-service/blob/6b9d21b8f835263b2e92f1e9343a1453caa2e561/gitops/generate_build.go#L50
@@ -63,10 +64,10 @@ function installCITools() {
 
 # Secrets used by pipelines to push component containers to quay.io
 function createQuayPullSecrets() {
+    echo -e "[INFO] Creating application-service related secrets in $SHARED_SECRET_NAMESPACE namespace"
+
     echo "$QUAY_TOKEN" | base64 --decode > docker.config
-    oc create namespace $E2E_APPLICATIONS_NAMESPACE --dry-run=client -o yaml | oc apply -f -
-    kubectl create secret docker-registry redhat-appstudio-registry-pull-secret -n  $E2E_APPLICATIONS_NAMESPACE --from-file=.dockerconfigjson=docker.config
-    kubectl create secret docker-registry redhat-appstudio-staginguser-pull-secret -n  $E2E_APPLICATIONS_NAMESPACE --from-file=.dockerconfigjson=docker.config
+    kubectl create secret docker-registry redhat-appstudio-user-workload -n $SHARED_SECRET_NAMESPACE --from-file=.dockerconfigjson=docker.config || true
     rm docker.config
 }
 
@@ -122,7 +123,6 @@ function prepareWebhookVariables() {
 }
 
 installCITools
-createQuayPullSecrets
 
 git remote add ${MY_GIT_FORK_REMOTE} https://github.com/redhat-appstudio-qe/infra-deployments.git
 
@@ -144,4 +144,5 @@ timeout --foreground 10m bash -c waitBuildToBeReady
 timeout --foreground 3m bash -c checkHASGithubOrg
 timeout --foreground 10m bash -c waitSPIToBeReady
 prepareWebhookVariables
+createQuayPullSecrets
 executeE2ETests
