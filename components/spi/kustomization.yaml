@@ -3,7 +3,7 @@ kind: Kustomization
 
 resources:
   - argocd-permissions.yaml
-  - https://github.com/sparkoo/service-provider-integration-operator/config/default?ref=ee2f1bb50567d6d74ef526018307d0f05521e5b3
+  - https://github.com/sparkoo/service-provider-integration-operator/config/default?ref=1a3763ea07aef92fd4e275b71b67aa8176307028
   - oauth_route.yaml
   - .tekton/
 
@@ -36,3 +36,19 @@ patches:
       kind: ConfigMap
       name: shared-config
     path: config-vaulthost-patch.json
+  - target:
+      kind: ConfigMap
+      name: shared-config
+    patch: config-vaultauth-patch.json
+
+# we plan to use approle authentication, but it's not ready yet
+# with these dummy secrets, we're satisfying spi deployments, but they're not really used
+secretGenerator:
+  - name: vault-approle-spi-operator
+    literals:
+    - role_id=dummy
+    - secret_id=dummy
+  - name: vault-approle-spi-oauth
+    literals:
+    - role_id=dummy
+    - secret_id=dummy
