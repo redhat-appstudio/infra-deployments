@@ -2,7 +2,13 @@
 
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/..
 PATCH_FILE="$ROOT/components/spi/config-vaulthost-patch.json"
-VAULT_HOST=${1:-vault.spi-vault.svc.cluster.local:8200}
+
+if [ -z ${1} ]; then
+    CLUSTER_URL_HOST=$(oc whoami --show-console|sed 's|https://console-openshift-console.apps.||')
+    VAULT_HOST="https://vault-spi-vault.apps.${CLUSTER_URL_HOST}"
+else
+    VAULT_HOST=${1}
+fi
 
 TMP_FILE=$(mktemp)
 
