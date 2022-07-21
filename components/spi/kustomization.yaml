@@ -35,11 +35,7 @@ patches:
   - target:
       kind: ConfigMap
       name: shared-config
-    path: config-vaulthost-patch.json
-  - target:
-      kind: ConfigMap
-      name: shared-config
-    patch: config-vaultauth-patch.json
+    path: config-patch.json
 
 # we plan to use approle authentication, but it's not ready yet
 # with these dummy secrets, we're satisfying spi deployments, but they're not really used

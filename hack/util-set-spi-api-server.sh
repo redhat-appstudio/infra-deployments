@@ -6,6 +6,6 @@ API_SERVER=$1
 
 TMP_FILE=$(mktemp)
 
-cat $PATCH_FILE | jq --arg API_SERVER "${API_SERVER}" '.value.value = $API_SERVER' > "$TMP_FILE"
+cat $PATCH_FILE | jq --arg API_SERVER "${API_SERVER}" '.[0].value.value = $API_SERVER' > "$TMP_FILE"
 
 mv "$TMP_FILE" "$PATCH_FILE"
