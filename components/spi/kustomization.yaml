@@ -32,13 +32,3 @@ patches:
       kind: Deployment
       name: oauth-service
     path: oauth-service-deployment-patch.json
----
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-
-resources:
-  - https://github.com/sparkoo/service-provider-integration-operator/config/vault/openshift?ref=ee2f1bb50567d6d74ef526018307d0f05521e5b3
-  - vault_role.yaml
-  - vault_rolebinding.yaml
-
-namespace: spi-vault
