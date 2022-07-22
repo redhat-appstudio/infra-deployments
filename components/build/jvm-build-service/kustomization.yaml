@@ -91,12 +91,7 @@ patches:
     - op: replace
       path: /spec/template/spec/containers/0/resources/requests/cpu
       value: 10m
-    # Enable removing of taskrun pods
-    - op: add
-      path: /spec/template/spec/containers/0/env/-
-      value:
-        name: JVM_DELETE_TASKRUN_PODS
-        value: "1"
+
 - target:
     kind: ClusterRoleBinding
     name: hacbs-jvm-operator
@@ -163,6 +158,9 @@ patches:
         limits:
           memory: 8Gi
           cpu: "2"
+
+patchesStrategicMerge:
+  - operator-images.yaml
 
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
