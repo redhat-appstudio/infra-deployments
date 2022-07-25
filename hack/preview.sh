@@ -119,12 +119,16 @@ git checkout $MY_GIT_BRANCH
 #set the local cluster to point to the current git repo and branch and update the path to development
 $ROOT/hack/util-update-app-of-apps.sh $MY_GIT_REPO_URL development $PREVIEW_BRANCH
 
+while [ "$(oc get applications.argoproj.io all-components-staging -n openshift-gitops -o jsonpath='{.status.health.status} {.status.sync.status}')" != "Healthy Synced" ]; do
+  sleep 5
+done
+
 APPS=$(kubectl get apps -n openshift-gitops -o name)
 
-if echo $APPS | grep spi; then
+if echo $APPS | grep -q spi; then
   if [ "`oc get applications.argoproj.io spi -n openshift-gitops -o jsonpath='{.status.health.status} {.status.sync.status}'`" != "Healthy Synced" ]; then
     echo Initializing SPI
-    curl https://raw.githubusercontent.com/redhat-appstudio/e2e-tests/main/scripts/spi-e2e-setup.sh | bash -s
+    curl https://raw.githubusercontent.com/redhat-appstudio/e2e-tests/${E2E_TESTS_COMMIT_SHA:-main}/scripts/spi-e2e-setup.sh | bash -s
   fi
 fi
 # trigger refresh of apps
@@ -137,6 +141,7 @@ while [ -n "$(oc get applications.argoproj.io -n openshift-gitops -o jsonpath='{
   sleep 5
 done
 
+INTERVAL=10
 while :; do
   STATE=$(kubectl get apps -n openshift-gitops --no-headers)
   NOT_DONE=$(echo "$STATE" | grep -v "Synced[[:blank:]]*Healthy")
@@ -148,12 +153,18 @@ while :; do
      UNKNOWN=$(echo "$NOT_DONE" | grep Unknown | cut -f1 -d ' ')
      if [ -n "$UNKNOWN" ]; then
        for app in $UNKNOWN; do
+         ERROR=$(oc get -n openshift-gitops applications.argoproj.io $app -o jsonpath='{.status.conditions}')
+         if echo "$ERROR"; grep -q 'context deadline exceeded'; then
+           kubectl patch applications.argoproj.io $app -n openshift-gitops --type merge -p='{"metadata": {"annotations":{"argocd.argoproj.io/refresh": "soft"}}}'
+           sleep $INTERVAL
+           continue 2
+         fi
          echo $app failed with:
-         oc get -n openshift-gitops apps $app -o jsonpath='{.status.conditions}'
+         echo "$ERROR"
        done
        exit 1
      fi
-     echo Waiting 10 seconds for application sync
-     sleep 10
+     echo Waiting $INTERVAL seconds for application sync
+     sleep $INTERVAL
   fi
 done
