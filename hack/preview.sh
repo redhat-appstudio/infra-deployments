@@ -58,7 +58,7 @@ yq e ".sharedSecret=\"${SHARED_SECRET:-$(openssl rand -hex 20)}\"" $ROOT/compone
     yq e ".serviceProviders[0].clientSecret=\"${SPI_CLIENT_SECRET:-app-secret}\"" - | \
     yq e ".baseUrl=\"$SPI_BASE_URL\"" - > $TMP_FILE
 oc create -n spi-system secret generic oauth-config --from-file=config.yaml=$TMP_FILE --dry-run=client -o yaml | oc apply -f -
-echo "SPI configurared, set Authorization callback URL to $ROUTE"
+echo "SPI configurared, set Authorization callback URL to $SPI_BASE_URL"
 rm $TMP_FILE
 
 if [ -n "$DOCKER_IO_AUTH" ]; then
@@ -119,7 +119,41 @@ git checkout $MY_GIT_BRANCH
 #set the local cluster to point to the current git repo and branch and update the path to development
 $ROOT/hack/util-update-app-of-apps.sh $MY_GIT_REPO_URL development $PREVIEW_BRANCH
 
+APPS=$(kubectl get apps -n openshift-gitops -o name)
+
+if echo $APPS | grep spi; then
+  if [ "`oc get applications.argoproj.io spi -n openshift-gitops -o jsonpath='{.status.health.status} {.status.sync.status}'`" != "Healthy Synced" ]; then
+    echo Initializing SPI
+    curl https://raw.githubusercontent.com/redhat-appstudio/e2e-tests/main/scripts/spi-e2e-setup.sh | bash -s
+  fi
+fi
 # trigger refresh of apps
-for APP in $(kubectl get apps -n openshift-gitops -o name); do
+for APP in $APPS; do
   kubectl patch $APP -n openshift-gitops --type merge -p='{"metadata": {"annotations":{"argocd.argoproj.io/refresh": "hard"}}}'
+done
+
+# wait for the refresh
+while [ -n "$(oc get applications.argoproj.io -n openshift-gitops -o jsonpath='{range .items[*]}{@.metadata.annotations.argocd\.argoproj\.io/refresh}{end}')" ]; do
+  sleep 5
+done
+
+while :; do
+  STATE=$(kubectl get apps -n openshift-gitops --no-headers)
+  NOT_DONE=$(echo "$STATE" | grep -v "Synced[[:blank:]]*Healthy")
+  echo "$NOT_DONE"
+  if [ -z "$NOT_DONE" ]; then
+     echo All Applications are synced and Healthy
+     exit 0
+  else
+     UNKNOWN=$(echo "$NOT_DONE" | grep Unknown | cut -f1 -d ' ')
+     if [ -n "$UNKNOWN" ]; then
+       for app in $UNKNOWN; do
+         echo $app failed with:
+         oc get -n openshift-gitops apps $app -o jsonpath='{.status.conditions}'
+       done
+       exit 1
+     fi
+     echo Waiting 10 seconds for application sync
+     sleep 10
+  fi
 done
