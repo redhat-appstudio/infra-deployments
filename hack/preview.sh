@@ -98,6 +98,7 @@ fi
 [[ -n "${JVM_BUILD_SERVICE_SIDECAR_IMAGE_REPO}" && ${JVM_BUILD_SERVICE_SIDECAR_IMAGE_TAG} ]] && yq -i e "(.spec.template.spec.containers[].env[] | select(.name==\"JVM_BUILD_SERVICE_SIDECAR_IMAGE\")) |=.value=\"${JVM_BUILD_SERVICE_SIDECAR_IMAGE_REPO}:${JVM_BUILD_SERVICE_SIDECAR_IMAGE_TAG}\"" $ROOT/components/build/jvm-build-service/operator-images.yaml
 [[ -n "${JVM_BUILD_SERVICE_REQPROCESSOR_IMAGE_REPO}" && ${JVM_BUILD_SERVICE_REQPROCESSOR_IMAGE_TAG} ]] && yq -i e "(.spec.template.spec.containers[].env[] | select(.name==\"JVM_BUILD_SERVICE_REQPROCESSOR_IMAGE\")) |=.value=\"${JVM_BUILD_SERVICE_REQPROCESSOR_IMAGE_REPO}:${JVM_BUILD_SERVICE_REQPROCESSOR_IMAGE_TAG}\"" $ROOT/components/build/jvm-build-service/operator-images.yaml
 [ -n "${JVM_DELETE_TASKRUN_PODS}" ] && yq -i e "(.spec.template.spec.containers[].env[] | select(.name==\"JVM_DELETE_TASKRUN_PODS\")) |=.value=\"${JVM_DELETE_TASKRUN_PODS}\"" $ROOT/components/build/jvm-build-service/operator-images.yaml
+[ -n "${DEFAULT_BUILD_BUNDLE}" ] && yq -i e "(.configMapGenerator[].literals[] | select(. == \"default_build_bundle*\")) |= \"default_build_bundle=${DEFAULT_BUILD_BUNDLE}\"" $ROOT/components/build/kustomization.yaml
 
 [ -n "${HAS_IMAGE_REPO}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/redhat-appstudio/application-service\")) |=.newName=\"${HAS_IMAGE_REPO}\"" $ROOT/components/has/kustomization.yaml
 [ -n "${HAS_IMAGE_TAG}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/redhat-appstudio/application-service\")) |=.newTag=\"${HAS_IMAGE_TAG}\"" $ROOT/components/has/kustomization.yaml
