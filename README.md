@@ -88,11 +88,6 @@ SPI Vault instance has to be manually initialized. There is a script to help wit
 2) Clone SPI operator repo `git clone https://github.com/redhat-appstudio/service-provider-integration-operator && cd service-provider-integration-operator`
 3) run `vault-init.sh` script from repo root directory `./hack/vault-init.sh`
 
-
-#### Post-bootstrap Tekton Chains Configuration
-
-For Chains to work a key pair signing secret is required. You can use `cosign` to generate one and add it to the cluster by running `./hack/chains/create-signing-secret.sh`.
-
 ### Install Toolchain (Sandbox) Operators
 There are two scripts which you can use:
 - `./hack/sandbox-development-mode.sh` for development mode
