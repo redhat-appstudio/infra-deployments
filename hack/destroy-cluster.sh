@@ -5,9 +5,17 @@ TOOLCHAIN_E2E_TEMP_DIR=/tmp/toolchain-e2e
 
 # Remove resources in the reverse order from bootstrapping
 
-# Todo: Is there anything related to tekton-chains that needs removing here?
+ARGO_CD_ROUTE=$(kubectl get \
+                 -n openshift-gitops \
+                 -o template \
+                 --template={{.spec.host}} \
+                 route/openshift-gitops-server \
+               )
+ARGO_CD_URL="https://$ARGO_CD_ROUTE"
 
 echo
+echo "Starting with removing application, you can see progress $ARGO_CD_URL"
+echo "If there is running Sync then cancel it manually"
 echo "Remove Argo CD Applications:"
 kubectl delete -f $ROOT/argo-cd-apps/app-of-apps/all-applications-staging.yaml
 #kubectl -k $ROOT/argo-cd-apps/overlays/staging
@@ -21,26 +29,12 @@ echo "Remove the OpenShift GitOps operator subscription:"
 kubectl delete -f $ROOT/openshift-gitops/subscription-openshift-gitops.yaml
 
 echo 
-echo "Removing GitOps operator and operands:"
+echo "Removing operators and operands:"
+oc delete clusterserviceversions.operators.coreos.com --all -n openshift-operators
 
-while : ; do
-  kubectl patch argocd/openshift-gitops -n openshift-gitops -p '{"metadata":{"finalizers":null}}' --type=merge
-  OPERATORS=$(oc get clusterserviceversions.operators.coreos.com -o name)
-  for OPERATOR in $OPERATORS; do
-      if echo $OPERATOR | grep -q openshift-gitops-operator; then
-          kubectl delete $OPERATOR
-      fi
-  done
-  kubectl delete namespace --timeout=30s openshift-gitops
-
-  kubectl get namespace/openshift-gitops
-  RC=$?
-  if [ "${RC}" != 0 ]; then
-    break
-  fi
-
-  echo $RC
-done
+echo
+echo "Removing custom projects"
+oc delete $(oc get projects -o name --no-headers | grep -v '/openshift*\|kube*\|default')
 
 echo
 echo "Remove Toolchain (Sandbox) Operators with the user data:"
