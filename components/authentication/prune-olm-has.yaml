@@ -9,18 +9,11 @@ rules:
       - get
       - delete
     apiGroups:
-      - 'operators.coreos.com/v1alpha1'
+      - 'operators.coreos.com'
     resources:
       - ClusterServiceVersion
       - Subscription
       - CatalogSource
-  - verbs:
-      - list
-      - get
-      - delete
-    apiGroups:
-      - 'operators.coreos.com/v1'
-    resources:
       - OperatorGroup
 ---
 kind: RoleBinding
