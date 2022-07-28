@@ -1,0 +1,13 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jvm-build-system-config
+  namespace: jvm-build-service
+data:
+  image.cache: quay.io/redhat-appstudio/hacbs-jvm-cache:6d1b3dc2133be167babbef8bb7b52deab017648b
+  builder-image.names: jdk11,jdk8,jdk17
+  builder-image.jdk8.image: quay.io/redhat-appstudio/hacbs-jdk8-builder:6d1b3dc2133be167babbef8bb7b52deab017648b
+  builder-image.jdk11.image: quay.io/redhat-appstudio/hacbs-jdk11-builder:6d1b3dc2133be167babbef8bb7b52deab017648b
+  builder-image.jdk17.image: quay.io/redhat-appstudio/hacbs-jdk17-builder:6d1b3dc2133be167babbef8bb7b52deab017648b
+
