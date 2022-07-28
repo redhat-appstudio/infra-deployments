@@ -30,7 +30,7 @@ case "$1" in
       "artifacts.pipelinerun.storage": "oci",
       "artifacts.pipelinerun.format": "in-toto",
       "artifacts.oci.storage": "oci",
-      "transparency.enabled": "true"
+      "transparency.enabled": "false"
     }' $2
 
     ;;
