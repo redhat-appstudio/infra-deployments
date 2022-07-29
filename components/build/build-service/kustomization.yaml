@@ -5,16 +5,6 @@ resources:
 
 namespace: build-service
 
-patchesJSON6902:
-- target:
-    version: v1
-    kind: Namespace
-    name: build-service-system
-  patch: |-
-    - op: replace
-      path: /metadata/name
-      value: build-service
-
 images:
 - name: quay.io/redhat-appstudio/build-service
   newName: quay.io/redhat-appstudio/build-service
