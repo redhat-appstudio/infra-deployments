@@ -88,10 +88,15 @@ SPI Vault instance has to be manually initialized. There is a script to help wit
 2) Clone SPI operator repo `git clone https://github.com/redhat-appstudio/service-provider-integration-operator && cd service-provider-integration-operator`
 3) run `vault-init.sh` script from repo root directory `./hack/vault-init.sh`
 
+### Use SharedSecret with Tekton Chains
 
-#### Post-bootstrap Tekton Chains Configuration
-
-For Chains to work a key pair signing secret is required. You can use `cosign` to generate one and add it to the cluster by running `./hack/chains/create-signing-secret.sh`.
+During the build pipeline, it is possible to use the `redhat-appstudio-user-workload`
+[SharedSecret](https://github.com/openshift/csi-driver-shared-resource) to specify the credentials
+for pushing container images. If this is used, Tekton Chains must also be configured to use the
+same `SharedSecret`. This is done by default. However, the `Secret` referred to by the
+`SharedSecret` may not exist at bootstrap time. This is ok. The underlying `Secret` can be created
+at a later time, and/or updated as needed. The changes should be reflected automatically within the
+Tekton Chains Controller without requiring a Pod restart.
 
 ### Install Toolchain (Sandbox) Operators
 There are two scripts which you can use:

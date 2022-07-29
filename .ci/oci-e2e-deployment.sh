@@ -6,8 +6,6 @@ set -o pipefail
 set -u
 
 export WORKSPACE=$(dirname $(dirname $(readlink -f "$0")));
-export APPLICATION_NAMESPACE="openshift-gitops"
-export APPLICATION_NAME="all-components-staging"
 
 export TEST_BRANCH_ID=$(date +%s)
 export MY_GIT_FORK_REMOTE="qe"
@@ -71,37 +69,6 @@ function createQuayPullSecrets() {
     rm docker.config
 }
 
-function waitAppStudioToBeReady() {
-    while [ "$(kubectl get applications.argoproj.io ${APPLICATION_NAME} -n ${APPLICATION_NAMESPACE} -o jsonpath='{.status.health.status}')" != "Healthy" ] ||
-          [ "$(kubectl get applications.argoproj.io ${APPLICATION_NAME} -n ${APPLICATION_NAMESPACE} -o jsonpath='{.status.sync.status}')" != "Synced" ]; do
-        sleep 1m
-        echo "[INFO] Waiting for AppStudio to be ready."
-    done
-}
-
-function waitBuildToBeReady() {
-    while [ "$(kubectl get applications.argoproj.io build -n ${APPLICATION_NAMESPACE} -o jsonpath='{.status.health.status}')" != "Healthy" ] ||
-          [ "$(kubectl get applications.argoproj.io build -n ${APPLICATION_NAMESPACE} -o jsonpath='{.status.sync.status}')" != "Synced" ]; do
-        sleep 1m
-        echo "[INFO] Waiting for Build to be ready."
-    done
-}
-
-function waitSPIToBeReady() {
-    while [ "$(kubectl get applications.argoproj.io spi -n ${APPLICATION_NAMESPACE} -o jsonpath='{.status.health.status}')" != "Healthy" ] ||
-          [ "$(kubectl get applications.argoproj.io spi -n ${APPLICATION_NAMESPACE} -o jsonpath='{.status.sync.status}')" != "Synced" ]; do
-        sleep 1m
-        echo "[INFO] Waiting for spi to be ready."
-    done
-}
-
-function checkHASGithubOrg() {
-    while [[ "$(kubectl get configmap application-service-github-config -n application-service -o jsonpath='{.data.GITHUB_ORG}')" != "${MY_GITHUB_ORG}" ]]; do
-        sleep 3m
-        echo "[INFO] Waiting for HAS to be ready."
-    done
-}
-
 function executeE2ETests() {
     # E2E instructions can be found: https://github.com/redhat-appstudio/e2e-tests
     # The e2e binary is included in Openshift CI test container from the dockerfile: https://github.com/redhat-appstudio/infra-deployments/blob/main/.ci/openshift-ci/Dockerfile
@@ -131,18 +98,8 @@ export KUBECONFIG_TEST="/tmp/kubeconfig"
 curl https://raw.githubusercontent.com/redhat-appstudio/e2e-tests/main/scripts/provision-openshift-user.sh | bash -s
 export KUBECONFIG="${KUBECONFIG_TEST}"
 
-/bin/bash "$WORKSPACE"/hack/bootstrap-cluster.sh preview
-curl https://raw.githubusercontent.com/redhat-appstudio/e2e-tests/main/scripts/spi-e2e-setup.sh | bash -s
+timeout --foreground 15m "$WORKSPACE"/hack/bootstrap-cluster.sh preview
 
-export -f waitAppStudioToBeReady
-export -f waitBuildToBeReady
-export -f checkHASGithubOrg
-export -f waitSPIToBeReady
-
-timeout --foreground 10m bash -c waitAppStudioToBeReady
-timeout --foreground 10m bash -c waitBuildToBeReady
-timeout --foreground 3m bash -c checkHASGithubOrg
-timeout --foreground 10m bash -c waitSPIToBeReady
 prepareWebhookVariables
 createQuayPullSecrets
 executeE2ETests
