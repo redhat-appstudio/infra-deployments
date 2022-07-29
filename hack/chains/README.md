@@ -46,7 +46,7 @@ of this repo:
 
 A "go make some coffee" one liner for CRC:
 
-    cd $(git rev-parse --show-toplevel); crc delete; crc start; `crc console --credentials | tail -1 | cut -d\' -f2`; oc new-project application-service; DEPLOY_ONLY=build hack/bootstrap-cluster.sh preview
+    cd $(git rev-parse --show-toplevel); crc delete; crc start; `crc console --credentials | tail -1 | cut -d\' -f2`; oc new-project application-service; DEPLOY_ONLY=build,enterprise-contract hack/bootstrap-cluster.sh preview
 
 Wait until you see healthy/synced at [Argo CD](https://openshift-gitops-server-openshift-gitops.apps-crc.testing/applications).
 
