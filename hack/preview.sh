@@ -154,7 +154,7 @@ while :; do
      if [ -n "$UNKNOWN" ]; then
        for app in $UNKNOWN; do
          ERROR=$(oc get -n openshift-gitops applications.argoproj.io $app -o jsonpath='{.status.conditions}')
-         if echo "$ERROR"; grep -q 'context deadline exceeded'; then
+         if echo "$ERROR" | grep -q 'context deadline exceeded'; then
            kubectl patch applications.argoproj.io $app -n openshift-gitops --type merge -p='{"metadata": {"annotations":{"argocd.argoproj.io/refresh": "soft"}}}'
            sleep $INTERVAL
            continue 2
