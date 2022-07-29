@@ -14,6 +14,11 @@ export MY_GITHUB_TOKEN="${GITHUB_TOKEN}"
 export E2E_APPLICATIONS_NAMESPACE=appstudio-e2e-test
 export SHARED_SECRET_NAMESPACE="build-templates"
 
+# REPO_OWNER/REPO_NAME/PULL_NUMBER are not defined in openshift-ci periodics jobs
+export REPO_OWNER=${REPO_OWNER:-"redhat-appstudio"}
+export REPO_NAME=${REPO_NAME:-"infra-deployments"}
+export PULL_NUMBER=${PULL_NUMBER:-"periodic"}
+
 # Environment variable used to override the default "protected" image repository in HAS
 # https://github.com/redhat-appstudio/application-service/blob/6b9d21b8f835263b2e92f1e9343a1453caa2e561/gitops/generate_build.go#L50
 # Users are allowed to push images to this repo only in case the image contains a tag that consists of "<USER'S_NAMESPACE_NAME>-<CUSTOM-TAG>"
