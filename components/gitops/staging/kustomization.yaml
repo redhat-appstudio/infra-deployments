@@ -1,50 +1,68 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+
 resources:
 - allow-argocd-to-manage.yaml
-- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/fed1a8c90f6c35247de21f1f0530ba4e99afacb3/manifests/appstudio-controller-rbac/appstudio-controller-rbac.yaml
-- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/fed1a8c90f6c35247de21f1f0530ba4e99afacb3/manifests/staging-cluster-resources/argo-cd-namespace.yaml
-#- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/fed1a8c90f6c35247de21f1f0530ba4e99afacb3/manifests/staging-cluster-resources/argo-cd.yaml
 - argo-cd.yaml
-- dbschema-config-map.yaml
-- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/fed1a8c90f6c35247de21f1f0530ba4e99afacb3/manifests/database-init/job.yaml
-- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/fed1a8c90f6c35247de21f1f0530ba4e99afacb3/manifests/managed-gitops-appstudio-controller-deployment.yaml
-- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/fed1a8c90f6c35247de21f1f0530ba4e99afacb3/manifests/backend-rbac/managed-gitops-backend-controller-manager-metrics-service.yaml
-- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/fed1a8c90f6c35247de21f1f0530ba4e99afacb3/manifests/backend-rbac/managed-gitops-backend-controller-manager_serviceaccount.yaml
-- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/fed1a8c90f6c35247de21f1f0530ba4e99afacb3/manifests/managed-gitops-backend-deployment.yaml
-- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/fed1a8c90f6c35247de21f1f0530ba4e99afacb3/manifests/backend-rbac/managed-gitops-backend-leader-election-rolebinding.yaml
-- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/fed1a8c90f6c35247de21f1f0530ba4e99afacb3/manifests/backend-rbac/managed-gitops-backend-leader-election-role.yaml
-- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/fed1a8c90f6c35247de21f1f0530ba4e99afacb3/manifests/backend-rbac/managed-gitops-backend-manager-config.yaml
-- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/fed1a8c90f6c35247de21f1f0530ba4e99afacb3/manifests/backend-rbac/managed-gitops-backend-manager-rolebinding.yaml
-- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/fed1a8c90f6c35247de21f1f0530ba4e99afacb3/manifests/backend-rbac/managed-gitops-backend-manager-role.yaml
-- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/fed1a8c90f6c35247de21f1f0530ba4e99afacb3/manifests/backend-rbac/managed-gitops-backend-metrics-leader.yaml
-- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/fed1a8c90f6c35247de21f1f0530ba4e99afacb3/manifests/backend-rbac/managed-gitops-backend-proxy-rolebinding.yaml
-- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/fed1a8c90f6c35247de21f1f0530ba4e99afacb3/manifests/backend-rbac/managed-gitops-backend-proxy-role.yaml
-- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/fed1a8c90f6c35247de21f1f0530ba4e99afacb3/manifests/cluster-agent-rbac/managed-gitops-clusteragent-controller-manager-metrics-service.yaml
-- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/fed1a8c90f6c35247de21f1f0530ba4e99afacb3/manifests/cluster-agent-rbac/managed-gitops-clusteragent-controller-manager_serviceaccount.yaml
-- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/fed1a8c90f6c35247de21f1f0530ba4e99afacb3/manifests/managed-gitops-clusteragent-deployment.yaml
-- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/fed1a8c90f6c35247de21f1f0530ba4e99afacb3/manifests/cluster-agent-rbac/managed-gitops-clusteragent-leader-election-rolebinding.yaml
-- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/fed1a8c90f6c35247de21f1f0530ba4e99afacb3/manifests/cluster-agent-rbac/managed-gitops-clusteragent-leader-election-role.yaml
-- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/fed1a8c90f6c35247de21f1f0530ba4e99afacb3/manifests/cluster-agent-rbac/managed-gitops-clusteragent-manager-config.yaml
-- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/fed1a8c90f6c35247de21f1f0530ba4e99afacb3/manifests/cluster-agent-rbac/managed-gitops-clusteragent-manager-rolebinding.yaml
-- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/fed1a8c90f6c35247de21f1f0530ba4e99afacb3/manifests/cluster-agent-rbac/managed-gitops-clusteragent-manager-role.yaml
-- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/fed1a8c90f6c35247de21f1f0530ba4e99afacb3/manifests/cluster-agent-rbac/managed-gitops-clusteragent-metrics-leader.yaml
-- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/fed1a8c90f6c35247de21f1f0530ba4e99afacb3/manifests/cluster-agent-rbac/managed-gitops-clusteragent-proxy-rolebinding.yaml
-- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/fed1a8c90f6c35247de21f1f0530ba4e99afacb3/manifests/cluster-agent-rbac/managed-gitops-clusteragent-proxy-role.yaml
-- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/fed1a8c90f6c35247de21f1f0530ba4e99afacb3/backend/config/crd/bases/managed-gitops.redhat.com_gitopsdeployments.yaml
-- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/fed1a8c90f6c35247de21f1f0530ba4e99afacb3/backend/config/crd/bases/managed-gitops.redhat.com_gitopsdeploymentsyncruns.yaml
-- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/fed1a8c90f6c35247de21f1f0530ba4e99afacb3/backend-shared/config/crd/bases/managed-gitops.redhat.com_operations.yaml
-- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/fed1a8c90f6c35247de21f1f0530ba4e99afacb3/manifests/postgresql-staging/postgresql-staging.yaml
-- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/fed1a8c90f6c35247de21f1f0530ba4e99afacb3/manifests/routes.yaml
 
-# TODO: Make this line consistent with the others on the next official delivery of the GitOps Service
-# Ping @jgwest if you still see this statement here after end of June 2022.
-- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/1fb4d804a8c2d949c14fc64f3fbd73522a0b31cf/appstudio-shared/manifests/appstudio-shared-customresourcedefinitions.yaml
+# Custom Resource Definitions:
+- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/1b42854146c71359724dd402f72f0172f56c5443/appstudio-shared/manifests/appstudio-shared-customresourcedefinitions.yaml
+- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/1b42854146c71359724dd402f72f0172f56c5443/backend/config/crd/bases/managed-gitops.redhat.com_gitopsdeploymentrepositorycredentials.yaml
+- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/1b42854146c71359724dd402f72f0172f56c5443/backend/config/crd/bases/managed-gitops.redhat.com_gitopsdeployments.yaml
+- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/1b42854146c71359724dd402f72f0172f56c5443/backend/config/crd/bases/managed-gitops.redhat.com_gitopsdeploymentsyncruns.yaml
+- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/1b42854146c71359724dd402f72f0172f56c5443/backend/config/crd/bases/managed-gitops.redhat.com_gitopsdeploymentmanagedenvironments.yaml
+- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/1b42854146c71359724dd402f72f0172f56c5443/backend-shared/config/crd/bases/managed-gitops.redhat.com_operations.yaml
+
+
+# AppStudio-controller RBAC
+- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/1b42854146c71359724dd402f72f0172f56c5443/manifests/appstudio-controller-rbac/appstudio-controller-rbac.yaml
+
+# Backend RBAC
+- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/1b42854146c71359724dd402f72f0172f56c5443/manifests/backend-rbac/managed-gitops-backend-controller-manager-metrics-service.yaml
+- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/1b42854146c71359724dd402f72f0172f56c5443/manifests/backend-rbac/managed-gitops-backend-controller-manager_serviceaccount.yaml
+- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/1b42854146c71359724dd402f72f0172f56c5443/manifests/backend-rbac/managed-gitops-backend-leader-election-rolebinding.yaml
+- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/1b42854146c71359724dd402f72f0172f56c5443/manifests/backend-rbac/managed-gitops-backend-leader-election-role.yaml
+- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/1b42854146c71359724dd402f72f0172f56c5443/manifests/backend-rbac/managed-gitops-backend-manager-config.yaml
+- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/1b42854146c71359724dd402f72f0172f56c5443/manifests/backend-rbac/managed-gitops-backend-manager-rolebinding.yaml
+- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/1b42854146c71359724dd402f72f0172f56c5443/manifests/backend-rbac/managed-gitops-backend-manager-role.yaml
+- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/1b42854146c71359724dd402f72f0172f56c5443/manifests/backend-rbac/managed-gitops-backend-metrics-leader.yaml
+- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/1b42854146c71359724dd402f72f0172f56c5443/manifests/backend-rbac/managed-gitops-backend-proxy-rolebinding.yaml
+- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/1b42854146c71359724dd402f72f0172f56c5443/manifests/backend-rbac/managed-gitops-backend-proxy-role.yaml
+
+# Cluster-agent RBAC
+- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/1b42854146c71359724dd402f72f0172f56c5443/manifests/cluster-agent-rbac/managed-gitops-clusteragent-controller-manager-metrics-service.yaml
+- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/1b42854146c71359724dd402f72f0172f56c5443/manifests/cluster-agent-rbac/managed-gitops-clusteragent-controller-manager_serviceaccount.yaml
+- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/1b42854146c71359724dd402f72f0172f56c5443/manifests/cluster-agent-rbac/managed-gitops-clusteragent-leader-election-rolebinding.yaml
+- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/1b42854146c71359724dd402f72f0172f56c5443/manifests/cluster-agent-rbac/managed-gitops-clusteragent-leader-election-role.yaml
+- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/1b42854146c71359724dd402f72f0172f56c5443/manifests/cluster-agent-rbac/managed-gitops-clusteragent-manager-config.yaml
+- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/1b42854146c71359724dd402f72f0172f56c5443/manifests/cluster-agent-rbac/managed-gitops-clusteragent-manager-rolebinding.yaml
+- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/1b42854146c71359724dd402f72f0172f56c5443/manifests/cluster-agent-rbac/managed-gitops-clusteragent-manager-role.yaml
+- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/1b42854146c71359724dd402f72f0172f56c5443/manifests/cluster-agent-rbac/managed-gitops-clusteragent-metrics-leader.yaml
+- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/1b42854146c71359724dd402f72f0172f56c5443/manifests/cluster-agent-rbac/managed-gitops-clusteragent-proxy-rolebinding.yaml
+- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/1b42854146c71359724dd402f72f0172f56c5443/manifests/cluster-agent-rbac/managed-gitops-clusteragent-proxy-role.yaml
+
+# Workloads
+
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# NOTE: These next two items are not the default versions of these resources.
+# Ping @jgwest if this message is still present after August 15, 2022.
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/e6a163e72121246bb733bb56602f208b39e3da90/manifests/managed-gitops-appstudio-controller-deployment.yaml
+- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/e6a163e72121246bb733bb56602f208b39e3da90/manifests/managed-gitops-backend-deployment.yaml
+- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/1b42854146c71359724dd402f72f0172f56c5443/manifests/managed-gitops-clusteragent-deployment.yaml
+- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/1b42854146c71359724dd402f72f0172f56c5443/manifests/postgresql-staging/postgresql-staging.yaml
+
+# Route(s)
+- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/1b42854146c71359724dd402f72f0172f56c5443/manifests/routes.yaml
+
+# 'gitops-service-argocd' Namespace
+- https://raw.githubusercontent.com/redhat-appstudio/managed-gitops/1b42854146c71359724dd402f72f0172f56c5443/manifests/staging-cluster-resources/argo-cd-namespace.yaml
 
 images:
   - name: \${COMMON_IMAGE}
     newName: quay.io/redhat-appstudio/gitops-service
-    newTag: 7e142808ef95f386f389348f39cef64a70ff670a
+    newTag: 1b42854146c71359724dd402f72f0172f56c5443
 
 # Replace ${ARGO_CD_NAMESPACE}
 patches:
