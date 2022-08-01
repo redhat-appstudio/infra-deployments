@@ -131,6 +131,12 @@ if echo $APPS | grep -q spi; then
     curl https://raw.githubusercontent.com/redhat-appstudio/e2e-tests/${E2E_TESTS_COMMIT_SHA:-main}/scripts/spi-e2e-setup.sh | bash -s
   fi
 fi
+
+# update Pipelines as code secrets and github app
+if [ -n "${GITHUB_APP_ID}" ] && [ -n "${GITHUB_APP_PRIVATE_KEY}" ]; then
+  $ROOT/hack/build/setup-pac-app.sh
+fi
+
 # trigger refresh of apps
 for APP in $APPS; do
   kubectl patch $APP -n openshift-gitops --type merge -p='{"metadata": {"annotations":{"argocd.argoproj.io/refresh": "hard"}}}'
