@@ -169,8 +169,6 @@ case $MODE in
           kubectl delete pod -n tekton-chains -l app=tekton-chains-controller
         fi
         ;;
-    "development")
-        $ROOT/hack/development-mode.sh ;;
     "preview")
         $ROOT/hack/preview.sh ;;
 esac
