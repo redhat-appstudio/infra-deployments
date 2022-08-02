@@ -40,6 +40,14 @@ patches:
       name: shared-config
     path: config-patch.json
 
+patchesStrategicMerge:
+  - |-
+  apiVersion: v1
+  kind: Namespace
+  metadata:
+    name: spi-vault
+  $patch: delete
+
 # we plan to use approle authentication, but it's not ready yet
 # with these dummy secrets, we're satisfying spi deployments, but they're not really used
 secretGenerator:
