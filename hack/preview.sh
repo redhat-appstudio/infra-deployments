@@ -39,6 +39,7 @@ $ROOT/hack/util-set-development-repos.sh $MY_GIT_REPO_URL development $PREVIEW_B
 # set the API server which SPI uses to authenticate users to empty string (by default) so that multi-cluster
 # setup is not needed
 yq -i e ".0.value.0.value=\"$SPI_API_SERVER\"" $ROOT/components/spi/oauth-service-deployment-patch.json
+$ROOT/hack/util-set-spi-vault-host.sh
 
 # set backend route for quality dashboard for current cluster
 $ROOT/hack/util-set-quality-dashboard-backend-route.sh
