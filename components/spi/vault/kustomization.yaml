@@ -16,3 +16,11 @@ patchesStrategicMerge:
     metadata:
       name: spi-vault
     $patch: delete
+  - |-
+    kind: Route
+    apiVersion: route.openshift.io/v1
+    metadata:
+      name: spi-vault
+    spec:
+      to:
+        name: spi-vault
