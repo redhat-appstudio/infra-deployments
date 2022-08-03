@@ -9,6 +9,15 @@ resources:
   - vault_role.yaml
   - vault_rolebinding.yaml
 
+patches:
+- target:
+    kind: Route
+    name: vault
+  patch: |-
+    - op: replace
+      path: /spec/to/name
+      value: spi-vault
+
 patchesStrategicMerge:
   - |-
     apiVersion: v1
@@ -16,11 +25,3 @@ patchesStrategicMerge:
     metadata:
       name: spi-vault
     $patch: delete
-  - |-
-    kind: Route
-    apiVersion: route.openshift.io/v1
-    metadata:
-      name: spi-vault
-    spec:
-      to:
-        name: spi-vault
