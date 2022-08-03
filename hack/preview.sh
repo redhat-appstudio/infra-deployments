@@ -171,7 +171,11 @@ while :; do
            continue 2
          fi
          echo $app failed with:
-         echo "$ERROR"
+         if [ -n "$ERROR" ]; then
+           echo "$ERROR"
+         else
+           oc get -n openshift-gitops applications.argoproj.io $app -o yaml
+         fi
        done
        exit 1
      fi
