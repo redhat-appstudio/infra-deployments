@@ -1,24 +1,14 @@
 resources:
 - allow-argocd-to-manage.yaml
-- https://github.com/redhat-appstudio/build-service/config/default?ref=8eaa830b64a4773d06fee02740f154ca186d7dcc
+- https://github.com/redhat-appstudio/build-service/config/default?ref=1d40a8f6b897c6deb360f5ccfb8b20ed04a5f9cf
 - .tekton/
 
 namespace: build-service
 
-patchesJSON6902:
-- target:
-    version: v1
-    kind: Namespace
-    name: build-service-system
-  patch: |-
-    - op: replace
-      path: /metadata/name
-      value: build-service
-
 images:
 - name: quay.io/redhat-appstudio/build-service
   newName: quay.io/redhat-appstudio/build-service
-  newTag: 8eaa830b64a4773d06fee02740f154ca186d7dcc
+  newTag: 1d40a8f6b897c6deb360f5ccfb8b20ed04a5f9cf
 
 
 apiVersion: kustomize.config.k8s.io/v1beta1

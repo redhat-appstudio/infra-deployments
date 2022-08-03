@@ -1,0 +1,17 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hacbs-jvm-operator
+  namespace: jvm-build-service
+spec:
+  template:
+    spec:
+      containers:
+        - name: hacbs-jvm-operator
+          env:
+            - name: JVM_BUILD_SERVICE_REQPROCESSOR_IMAGE
+              value: quay.io/redhat-appstudio/hacbs-jvm-build-request-processor:cdacf5bfefc728b9def4c08a8b4226eaed320c47
+            - name: JVM_BUILD_SERVICE_SIDECAR_IMAGE
+              value: quay.io/redhat-appstudio/hacbs-jvm-sidecar:cdacf5bfefc728b9def4c08a8b4226eaed320c47
+            - name: JVM_DELETE_TASKRUN_PODS
+              value: "1"

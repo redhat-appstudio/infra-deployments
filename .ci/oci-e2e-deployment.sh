@@ -6,14 +6,18 @@ set -o pipefail
 set -u
 
 export WORKSPACE=$(dirname $(dirname $(readlink -f "$0")));
-export APPLICATION_NAMESPACE="openshift-gitops"
-export APPLICATION_NAME="all-components-staging"
 
 export TEST_BRANCH_ID=$(date +%s)
 export MY_GIT_FORK_REMOTE="qe"
 export MY_GITHUB_ORG="redhat-appstudio-qe"
 export MY_GITHUB_TOKEN="${GITHUB_TOKEN}"
 export E2E_APPLICATIONS_NAMESPACE=appstudio-e2e-test
+export SHARED_SECRET_NAMESPACE="build-templates"
+
+# REPO_OWNER/REPO_NAME/PULL_NUMBER are not defined in openshift-ci periodics jobs
+export REPO_OWNER=${REPO_OWNER:-"redhat-appstudio"}
+export REPO_NAME=${REPO_NAME:-"infra-deployments"}
+export PULL_NUMBER=${PULL_NUMBER:-"periodic"}
 
 # Environment variable used to override the default "protected" image repository in HAS
 # https://github.com/redhat-appstudio/application-service/blob/6b9d21b8f835263b2e92f1e9343a1453caa2e561/gitops/generate_build.go#L50
@@ -63,42 +67,11 @@ function installCITools() {
 
 # Secrets used by pipelines to push component containers to quay.io
 function createQuayPullSecrets() {
+    echo -e "[INFO] Creating application-service related secrets in $SHARED_SECRET_NAMESPACE namespace"
+
     echo "$QUAY_TOKEN" | base64 --decode > docker.config
-    oc create namespace $E2E_APPLICATIONS_NAMESPACE --dry-run=client -o yaml | oc apply -f -
-    kubectl create secret docker-registry redhat-appstudio-registry-pull-secret -n  $E2E_APPLICATIONS_NAMESPACE --from-file=.dockerconfigjson=docker.config
-    kubectl create secret docker-registry redhat-appstudio-staginguser-pull-secret -n  $E2E_APPLICATIONS_NAMESPACE --from-file=.dockerconfigjson=docker.config
+    kubectl create secret docker-registry redhat-appstudio-user-workload -n $SHARED_SECRET_NAMESPACE --from-file=.dockerconfigjson=docker.config || true
     rm docker.config
-}
-
-function waitAppStudioToBeReady() {
-    while [ "$(kubectl get applications.argoproj.io ${APPLICATION_NAME} -n ${APPLICATION_NAMESPACE} -o jsonpath='{.status.health.status}')" != "Healthy" ] ||
-          [ "$(kubectl get applications.argoproj.io ${APPLICATION_NAME} -n ${APPLICATION_NAMESPACE} -o jsonpath='{.status.sync.status}')" != "Synced" ]; do
-        sleep 1m
-        echo "[INFO] Waiting for AppStudio to be ready."
-    done
-}
-
-function waitBuildToBeReady() {
-    while [ "$(kubectl get applications.argoproj.io build -n ${APPLICATION_NAMESPACE} -o jsonpath='{.status.health.status}')" != "Healthy" ] ||
-          [ "$(kubectl get applications.argoproj.io build -n ${APPLICATION_NAMESPACE} -o jsonpath='{.status.sync.status}')" != "Synced" ]; do
-        sleep 1m
-        echo "[INFO] Waiting for Build to be ready."
-    done
-}
-
-function waitSPIToBeReady() {
-    while [ "$(kubectl get applications.argoproj.io spi -n ${APPLICATION_NAMESPACE} -o jsonpath='{.status.health.status}')" != "Healthy" ] ||
-          [ "$(kubectl get applications.argoproj.io spi -n ${APPLICATION_NAMESPACE} -o jsonpath='{.status.sync.status}')" != "Synced" ]; do
-        sleep 1m
-        echo "[INFO] Waiting for spi to be ready."
-    done
-}
-
-function checkHASGithubOrg() {
-    while [[ "$(kubectl get configmap application-service-github-config -n application-service -o jsonpath='{.data.GITHUB_ORG}')" != "${MY_GITHUB_ORG}" ]]; do
-        sleep 3m
-        echo "[INFO] Waiting for HAS to be ready."
-    done
 }
 
 function executeE2ETests() {
@@ -114,14 +87,14 @@ function prepareWebhookVariables() {
     #Export variables
     export webhook_salt=123456789
     export webhook_target=https://smee.io/JgVqn2oYFPY1CF
-    export webhook_repositoryURL=https://github.com/redhat-appstudio/infra-deployments
-    export webhook_repositoryFullName=redhat-appstudio/infra-deployments
+    export webhook_repositoryURL=https://github.com/$REPO_OWNER/$REPO_NAME
+    export webhook_repositoryFullName=$REPO_OWNER/$REPO_NAME
+    export webhook_pullNumber=$PULL_NUMBER
     # Rewrite variables in webhookConfig.yml
     curl https://raw.githubusercontent.com/redhat-appstudio/e2e-tests/main/webhookConfig.yml | envsubst > webhookConfig.yml
 }
 
 installCITools
-createQuayPullSecrets
 
 git remote add ${MY_GIT_FORK_REMOTE} https://github.com/redhat-appstudio-qe/infra-deployments.git
 
@@ -130,17 +103,8 @@ export KUBECONFIG_TEST="/tmp/kubeconfig"
 curl https://raw.githubusercontent.com/redhat-appstudio/e2e-tests/main/scripts/provision-openshift-user.sh | bash -s
 export KUBECONFIG="${KUBECONFIG_TEST}"
 
-/bin/bash "$WORKSPACE"/hack/bootstrap-cluster.sh preview
-curl https://raw.githubusercontent.com/redhat-appstudio/e2e-tests/main/scripts/spi-e2e-setup.sh | bash -s
+timeout --foreground 15m "$WORKSPACE"/hack/bootstrap-cluster.sh preview
 
-export -f waitAppStudioToBeReady
-export -f waitBuildToBeReady
-export -f checkHASGithubOrg
-export -f waitSPIToBeReady
-
-timeout --foreground 10m bash -c waitAppStudioToBeReady
-timeout --foreground 10m bash -c waitBuildToBeReady
-timeout --foreground 3m bash -c checkHASGithubOrg
-timeout --foreground 10m bash -c waitSPIToBeReady
 prepareWebhookVariables
+createQuayPullSecrets
 executeE2ETests

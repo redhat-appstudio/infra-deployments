@@ -63,7 +63,12 @@ spec:
       - "TriggerTemplate"
       clusters:
       - "*"
-
+    - apiGroups:
+      - "pipelinesascode.tekton.dev"
+      kinds:
+      - "Repository"
+      clusters:
+      - "*"
   applicationSet:
     resources:
       limits:
@@ -78,7 +83,7 @@ spec:
     resources:
       limits:
         cpu: "1"
-        memory: 1Gi
+        memory: 3Gi
       requests:
         cpu: 250m
         memory: 256Mi

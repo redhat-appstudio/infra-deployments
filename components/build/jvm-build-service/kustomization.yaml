@@ -1,33 +1,32 @@
 resources:
 - allow-argocd-to-manage.yaml
-- https://github.com/redhat-appstudio/jvm-build-service/deploy/crds/base?ref=3dcd8603061c7ab2cedfe128c80cac9726721a74
-- https://github.com/redhat-appstudio/jvm-build-service/deploy/cache/base?ref=3dcd8603061c7ab2cedfe128c80cac9726721a74
-- https://github.com/redhat-appstudio/jvm-build-service/deploy/operator/base?ref=3dcd8603061c7ab2cedfe128c80cac9726721a74
-- https://raw.githubusercontent.com/redhat-appstudio/jvm-build-service/3dcd8603061c7ab2cedfe128c80cac9726721a74/deploy/base/run-maven-component-build-v0.1.yaml
-- https://raw.githubusercontent.com/redhat-appstudio/jvm-build-service/3dcd8603061c7ab2cedfe128c80cac9726721a74/deploy/base/lookup-artifact-location-v0.1.yaml
+- https://github.com/redhat-appstudio/jvm-build-service/deploy/crds/base?ref=cdacf5bfefc728b9def4c08a8b4226eaed320c47
+- https://github.com/redhat-appstudio/jvm-build-service/deploy/cache/base?ref=cdacf5bfefc728b9def4c08a8b4226eaed320c47
+- https://github.com/redhat-appstudio/jvm-build-service/deploy/operator/base?ref=cdacf5bfefc728b9def4c08a8b4226eaed320c47
 - .tekton/
 - namespace.yaml
 - localstack.yaml
 - local-cache-pvc.yaml
+- system-config.yaml
 
 namespace: jvm-build-service
 
 images:
 - name: hacbs-jvm-cache
   newName: quay.io/redhat-appstudio/hacbs-jvm-cache
-  newTag: 3dcd8603061c7ab2cedfe128c80cac9726721a74
+  newTag: cdacf5bfefc728b9def4c08a8b4226eaed320c47
 - name: quay.io/QUAY_USERNAME/hacbs-jvm-cache
   newName: quay.io/redhat-appstudio/hacbs-jvm-cache
-  newTag: 3dcd8603061c7ab2cedfe128c80cac9726721a74
+  newTag: cdacf5bfefc728b9def4c08a8b4226eaed320c47
 - name: hacbs-jvm-operator
   newName: quay.io/redhat-appstudio/hacbs-jvm-controller
-  newTag: 3dcd8603061c7ab2cedfe128c80cac9726721a74
+  newTag: cdacf5bfefc728b9def4c08a8b4226eaed320c47
 - name: run-maven-component-build
   newName: quay.io/redhat-appstudio/hacbs-jvm-sidecar
-  newTag: 3dcd8603061c7ab2cedfe128c80cac9726721a74
+  newTag: cdacf5bfefc728b9def4c08a8b4226eaed320c47
 - name: lookup-artifact-location
   newName: quay.io/redhat-appstudio/hacbs-jvm-build-request-processor
-  newTag: 3dcd8603061c7ab2cedfe128c80cac9726721a74
+  newTag: cdacf5bfefc728b9def4c08a8b4226eaed320c47
 
 patches:
 - target:
@@ -91,78 +90,9 @@ patches:
     - op: replace
       path: /spec/template/spec/containers/0/resources/requests/cpu
       value: 10m
-    # Enable removing of taskrun pods
-    - op: add
-      path: /spec/template/spec/containers/0/env/-
-      value:
-        name: JVM_DELETE_TASKRUN_PODS
-        value: "1"
-- target:
-    kind: ClusterRoleBinding
-    name: hacbs-jvm-operator
-  patch: |-
-    - op: replace
-      path: /subjects/0/namespace
-      value: jvm-build-service
-- target:
-    kind: ClusterRoleBinding
-    name: hacbs-jvm-operator
-  patch: |-
-    - op: replace
-      path: /subjects/0/namespace
-      value: jvm-build-service
-- target:
-    kind: ClusterTask
-    name: lookup-artifact-location
-  patch: |-
-    - op: replace
-      path: /spec/steps/0/image
-      value: quay.io/redhat-appstudio/hacbs-jvm-build-request-processor:3dcd8603061c7ab2cedfe128c80cac9726721a74
-- target:
-    kind: ClusterTask
-    name: run-maven-component-build
-  patch: |-
-    - op: replace
-      path: /spec/sidecars/0/env/0/value
-      value: http://hacbs-jvm-cache.jvm-build-service.svc.cluster.local
-    - op: replace
-      path: /spec/sidecars/0/image
-      value: quay.io/redhat-appstudio/hacbs-jvm-sidecar:3dcd8603061c7ab2cedfe128c80cac9726721a74
-    - op: add
-      path: /spec/sidecars/0/env/-
-      value:
-        name: QUARKUS_S3_ENDPOINT_OVERRIDE
-        value: "http://localstack.jvm-build-service.svc.cluster.local:4572"
-    - op: add
-      path: /spec/sidecars/0/env/-
-      value:
-        name: QUARKUS_S3_AWS_REGION
-        value: "us-east-1"
-    - op: add
-      path: /spec/sidecars/0/env/-
-      value:
-        name: QUARKUS_S3_AWS_CREDENTIALS_STATIC_PROVIDER_ACCESS_KEY_ID
-        value: "accesskey"
-    - op: add
-      path: /spec/sidecars/0/env/-
-      value:
-        name: QUARKUS_S3_AWS_CREDENTIALS_STATIC_PROVIDER_SECRET_ACCESS_KEY
-        value: "secretkey"
-    - op: add
-      path: /spec/sidecars/0/env/-
-      value:
-        name: QUARKUS_S3_AWS_CREDENTIALS_TYPE
-        value: "static"
-    # set limits for mvn-goals step
-    - op: add
-      path: /spec/steps/3/resources
-      value:
-        requests:
-          memory: 128Mi
-          cpu: 10m
-        limits:
-          memory: 8Gi
-          cpu: "2"
+
+patchesStrategicMerge:
+  - operator-images.yaml
 
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
