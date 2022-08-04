@@ -1,23 +1,22 @@
-resources:
-  - argocd-permissions.yaml
-  - https://github.com/redhat-appstudio/service-provider-integration-operator/config/default?ref=06fb927a670578761036778001d72da86b3faec4
-  - oauth_route.yaml
-  - vault_role.yaml
-  - vault_rolebinding.yaml
-  - .tekton/
-
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+
+resources:
+  - argocd-permissions.yaml
+  - vault/
+  - https://github.com/redhat-appstudio/service-provider-integration-operator/config/default?ref=db4c8afdfd5af220fd68e7850c3a3ac56f6592a4
+  - oauth_route.yaml
+  - .tekton/
 
 images:
   - name:  quay.io/redhat-appstudio/service-provider-integration-operator
     newName: quay.io/redhat-appstudio/service-provider-integration-operator
-    # 0.6.9
-    newTag: sha-06fb927
+    # 0.7.0
+    newTag: sha-db4c8af
   - name: quay.io/redhat-appstudio/service-provider-integration-oauth
     newName: quay.io/redhat-appstudio/service-provider-integration-oauth
-    # 0.6.9
-    newTag: sha-43b4bfb
+    # 0.7.0
+    newTag: sha-d9e3f23
 
 namespace: spi-system
 
@@ -34,3 +33,19 @@ patches:
       kind: Deployment
       name: oauth-service
     path: oauth-service-deployment-patch.json
+  - target:
+      kind: ConfigMap
+      name: shared-config
+    path: config-patch.json
+
+# we plan to use approle authentication, but it's not ready yet
+# with these dummy secrets, we're satisfying spi deployments, but they're not really used
+secretGenerator:
+  - name: vault-approle-spi-operator
+    literals:
+    - role_id=dummy
+    - secret_id=dummy
+  - name: vault-approle-spi-oauth
+    literals:
+    - role_id=dummy
+    - secret_id=dummy
