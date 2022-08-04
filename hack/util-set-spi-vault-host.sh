@@ -14,3 +14,6 @@ TMP_FILE=$(mktemp)
 
 cat $PATCH_FILE | jq --arg VAULT_HOST "${VAULT_HOST}" '.[0].value = $VAULT_HOST' > "$TMP_FILE"
 mv "$TMP_FILE" "$PATCH_FILE"
+
+# because we can't be sure that target testing cluster has valid signed cert, we allow insecure tls connection to Vault 
+yq e -i '.patches += {"target": {"kind": "Deployment","name": "controller-manager|oauth-service"}, "path": "insecuretls-patch.json"}' $ROOT/components/spi/kustomization.yaml
