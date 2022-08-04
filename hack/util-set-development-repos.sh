@@ -25,7 +25,6 @@ else
 fi
 echo
 echo In dev mode, verify that argo-cd-apps/overlays/development includes a kustomization that points to this repo
-echo If you want to reset to the default upstream run the upstream-mode.sh script  
 
 PATCH="$(printf '.spec.source.repoURL="%q"' $GITURL)" 
 yq  e "$PATCH" $OVERLAYDIR/repo-overlay.yaml -i  
