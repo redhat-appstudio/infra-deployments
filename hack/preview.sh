@@ -161,13 +161,17 @@ while :; do
      echo All Applications are synced and Healthy
      exit 0
   else
-     UNKNOWN=$(echo "$NOT_DONE" | grep Unknown | cut -f1 -d ' ')
+     UNKNOWN=$(echo "$NOT_DONE" | grep Unknown | grep -v Progressing | cut -f1 -d ' ')
      if [ -n "$UNKNOWN" ]; then
        for app in $UNKNOWN; do
          ERROR=$(oc get -n openshift-gitops applications.argoproj.io $app -o jsonpath='{.status.conditions}')
          if echo "$ERROR" | grep -q 'context deadline exceeded'; then
+           echo Refreshing $app
            kubectl patch applications.argoproj.io $app -n openshift-gitops --type merge -p='{"metadata": {"annotations":{"argocd.argoproj.io/refresh": "soft"}}}'
-           sleep $INTERVAL
+           while [ -n "$(oc get applications.argoproj.io -n openshift-gitops $app -o jsonpath='{.metadata.annotations.argocd\.argoproj\.io/refresh}')" ]; do
+             sleep 5
+           done
+           echo Refresh of $app done
            continue 2
          fi
          echo $app failed with:
