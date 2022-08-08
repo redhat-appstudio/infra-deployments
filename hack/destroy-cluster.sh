@@ -13,6 +13,13 @@ ARGO_CD_ROUTE=$(kubectl get \
                )
 ARGO_CD_URL="https://$ARGO_CD_ROUTE"
 
+# there is an issue with deletion of chains-pods
+function wait_and_delete_chains {
+  sleep 10
+  oc delete -n tekton-chains --force pod --all
+}
+wait_and_delete_chains &
+
 echo
 echo "Starting with removing application, you can see progress $ARGO_CD_URL"
 echo "If there is running Sync then cancel it manually"
