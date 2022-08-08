@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# test pr to see how the jvm test looks in infra deployments
+
 MODE=$1
 
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/..
