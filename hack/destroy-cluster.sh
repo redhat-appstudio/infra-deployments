@@ -13,6 +13,13 @@ ARGO_CD_ROUTE=$(kubectl get \
                )
 ARGO_CD_URL="https://$ARGO_CD_ROUTE"
 
+# there is an issue with deletion of chains-pods
+function wait_and_delete_chains {
+  sleep 10
+  oc delete -n tekton-chains --force pod --all
+}
+wait_and_delete_chains &
+
 echo
 echo "Starting with removing application, you can see progress $ARGO_CD_URL"
 echo "If there is running Sync then cancel it manually"
@@ -34,7 +41,7 @@ oc delete clusterserviceversions.operators.coreos.com --all -n openshift-operato
 
 echo
 echo "Removing custom projects"
-oc delete $(oc get projects -o name --no-headers | grep -v '/openshift*\|kube*\|default')
+oc delete project e2e-tests enterprise-contract-service gitops quality-dashboard
 
 echo
 echo "Remove Toolchain (Sandbox) Operators with the user data:"
