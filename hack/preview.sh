@@ -38,7 +38,9 @@ $ROOT/hack/util-set-development-repos.sh $MY_GIT_REPO_URL development $PREVIEW_B
 
 # set the API server which SPI uses to authenticate users to empty string (by default) so that multi-cluster
 # setup is not needed
-yq -i e ".0.value.0.value=\"$SPI_API_SERVER\"" $ROOT/components/spi/oauth-service-deployment-patch.json
+yq -i e ".0.value.value=\"$SPI_API_SERVER\"" $ROOT/components/spi/oauth-service-deployment-patch.json
+# set Vault host configuration to provided VAULT_HOST variable or to current cluster
+$ROOT/hack/util-set-spi-vault-host.sh
 
 # set backend route for quality dashboard for current cluster
 $ROOT/hack/util-set-quality-dashboard-backend-route.sh
@@ -93,6 +95,11 @@ yq -i e ".data |= .\"transparency.url\"=\"https://$rekor_server\"" $ROOT/compone
 [[ -n "${JVM_BUILD_SERVICE_REQPROCESSOR_IMAGE_REPO}" && ${JVM_BUILD_SERVICE_REQPROCESSOR_IMAGE_TAG} ]] && yq -i e "(.spec.template.spec.containers[].env[] | select(.name==\"JVM_BUILD_SERVICE_REQPROCESSOR_IMAGE\")) |=.value=\"${JVM_BUILD_SERVICE_REQPROCESSOR_IMAGE_REPO}:${JVM_BUILD_SERVICE_REQPROCESSOR_IMAGE_TAG}\"" $ROOT/components/build/jvm-build-service/operator-images.yaml
 [ -n "${JVM_DELETE_TASKRUN_PODS}" ] && yq -i e "(.spec.template.spec.containers[].env[] | select(.name==\"JVM_DELETE_TASKRUN_PODS\")) |=.value=\"${JVM_DELETE_TASKRUN_PODS}\"" $ROOT/components/build/jvm-build-service/operator-images.yaml
 [ -n "${DEFAULT_BUILD_BUNDLE}" ] && yq -i e "(.configMapGenerator[].literals[] | select(. == \"default_build_bundle*\")) |= \"default_build_bundle=${DEFAULT_BUILD_BUNDLE}\"" $ROOT/components/build/kustomization.yaml
+[[ -n "${JVM_BUILD_SERVICE_CACHE_IMAGE_REPO}" && ${JVM_BUILD_SERVICE_CACHE_IMAGE_TAG} ]] && yq -i e "(.data.\"image.cache\") |=.=\"${JVM_BUILD_SERVICE_CACHE_IMAGE_REPO}:${JVM_BUILD_SERVICE_CACHE_IMAGE_TAG}\"" $ROOT/components/build/jvm-build-service/system-config.yaml
+[[ -n "${JVM_BUILD_SERVICE_JDK8_BUILDER_IMAGE_REPO}" && ${JVM_BUILD_SERVICE_JDK8_BUILDER_IMAGE_TAG} ]] && yq -i e "(.data.\"builder-image.jdk8.image\") |=.=\"${JVM_BUILD_SERVICE_JDK8_BUILDER_IMAGE_REPO}:${JVM_BUILD_SERVICE_JDK8_BUILDER_IMAGE_TAG}\"" $ROOT/components/build/jvm-build-service/system-config.yaml
+[[ -n "${JVM_BUILD_SERVICE_JDK11_BUILDER_IMAGE_REPO}" && ${JVM_BUILD_SERVICE_JDK11_BUILDER_IMAGE_TAG} ]] && yq -i e "(.data.\"builder-image.jdk11.image\") |=.=\"${JVM_BUILD_SERVICE_JDK11_BUILDER_IMAGE_REPO}:${JVM_BUILD_SERVICE_JDK11_BUILDER_IMAGE_TAG}\"" $ROOT/components/build/jvm-build-service/system-config.yaml
+[[ -n "${JVM_BUILD_SERVICE_JDK17_BUILDER_IMAGE_REPO}" && ${JVM_BUILD_SERVICE_JDK17_BUILDER_IMAGE_TAG} ]] && yq -i e "(.data.\"builder-image.jdk17.image\") |=.=\"${JVM_BUILD_SERVICE_JDK17_BUILDER_IMAGE_REPO}:${JVM_BUILD_SERVICE_JDK17_BUILDER_IMAGE_TAG}\"" $ROOT/components/build/jvm-build-service/system-config.yaml
+
 
 [ -n "${HAS_IMAGE_REPO}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/redhat-appstudio/application-service\")) |=.newName=\"${HAS_IMAGE_REPO}\"" $ROOT/components/has/kustomization.yaml
 [ -n "${HAS_IMAGE_TAG}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/redhat-appstudio/application-service\")) |=.newTag=\"${HAS_IMAGE_TAG}\"" $ROOT/components/has/kustomization.yaml
@@ -131,6 +138,10 @@ if echo $APPS | grep -q spi; then
     curl https://raw.githubusercontent.com/redhat-appstudio/e2e-tests/${E2E_TESTS_COMMIT_SHA:-main}/scripts/spi-e2e-setup.sh | bash -s
   fi
 fi
+
+# Configure Pipelines as Code and required credentials
+$ROOT/hack/build/setup-pac-integration.sh
+
 # trigger refresh of apps
 for APP in $APPS; do
   kubectl patch $APP -n openshift-gitops --type merge -p='{"metadata": {"annotations":{"argocd.argoproj.io/refresh": "hard"}}}'
@@ -150,17 +161,25 @@ while :; do
      echo All Applications are synced and Healthy
      exit 0
   else
-     UNKNOWN=$(echo "$NOT_DONE" | grep Unknown | cut -f1 -d ' ')
+     UNKNOWN=$(echo "$NOT_DONE" | grep Unknown | grep -v Progressing | cut -f1 -d ' ')
      if [ -n "$UNKNOWN" ]; then
        for app in $UNKNOWN; do
          ERROR=$(oc get -n openshift-gitops applications.argoproj.io $app -o jsonpath='{.status.conditions}')
          if echo "$ERROR" | grep -q 'context deadline exceeded'; then
+           echo Refreshing $app
            kubectl patch applications.argoproj.io $app -n openshift-gitops --type merge -p='{"metadata": {"annotations":{"argocd.argoproj.io/refresh": "soft"}}}'
-           sleep $INTERVAL
+           while [ -n "$(oc get applications.argoproj.io -n openshift-gitops $app -o jsonpath='{.metadata.annotations.argocd\.argoproj\.io/refresh}')" ]; do
+             sleep 5
+           done
+           echo Refresh of $app done
            continue 2
          fi
          echo $app failed with:
-         echo "$ERROR"
+         if [ -n "$ERROR" ]; then
+           echo "$ERROR"
+         else
+           oc get -n openshift-gitops applications.argoproj.io $app -o yaml
+         fi
        done
        exit 1
      fi

@@ -7,7 +7,6 @@ resources:
 - .tekton/
 - pvc-cleaner
 - build-service/
-- infra-deployments-ci/
 - shared-resources
 - jvm-build-service/
 
@@ -18,7 +17,7 @@ configMapGenerator:
 - name: build-pipelines-defaults
   namespace: build-templates
   literals:
-  - default_build_bundle=quay.io/redhat-appstudio/build-templates-bundle:7e9728af099c5db53dda5f60e97d2b75f7e00d7d
+  - default_build_bundle=quay.io/redhat-appstudio/build-templates-bundle:8e1bdea59a9cbf2a3d8199af74ed4cc1939eebf2
 
 # Skip applying the Tekton operands while the Tekton operator is being installed.
 # See more information about this option, here:

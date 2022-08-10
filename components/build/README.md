@@ -1,80 +1,107 @@
 
-# App Studio Build System
+# App Studio/HACBS Build System
 
-The App Studio Build System is composed of the following components:
+The App Studio/HACBS Build System is composed of the following components:
 
-1. OpenShift Pipelines. 
-2. AppStudio-specific Pipeline Definitions in `build-templates` for building images.
-3. AppStudio-specific `ClusterTasks`.
-4. Tekton Chains.
+- [OpenShift Pipelines](https://docs.openshift.com/container-platform/4.10/cicd/pipelines/understanding-openshift-pipelines.html)
+- [Tekton Chains](https://github.com/tektoncd/chains)
+- [Tekton Results](https://github.com/tektoncd/results)
+- [Pipelines as Code](https://pipelinesascode.com/)
+- [Shared Resources](https://github.com/openshift/csi-driver-shared-resource)
+- [App Studio Build Service](https://github.com/redhat-appstudio/build-service/)
+- [HACBS JVM Build Service](https://github.com/redhat-appstudio/jvm-build-service)
+- [PVC Cleaner](https://github.com/redhat-appstudio/pvc-cleaner/)
 
-This repository installs all the components and includes a set of example scripts that simplify usage and provide examples of a working system. There are no additiona components needed to use the build system API, howvever some utilities and scripts are provided to demonstrate functionality. 
+This repository installs all the components and includes a set of example scripts that simplify usage and provide examples of a working system. There are no additional components needed to use the build system API, however some utilities and scripts are provided to demonstrate functionality.
 
-## Quickstart 
+## Quickstart
 
-To try out a pre-configured, follow these steps. 
+To try out a pre-configured, follow these steps.
 
 | Steps    |    |
-| ----------- | ----------- | 
-| 1.  Create project for your pipelines execution. This can be run as any non-admin user (or admin)  and is needed to hold your execution pipelines.  |  oc new-project demo     |  
-| 2.  Run build-deploy example with a quarkus app. |  ./hack/build/build-deploy.sh  https://github.com/devfile-samples/devfile-sample-code-with-quarkus
-| 3.  View your build on the OpenShift Console under the pipelines page or view the logs via CLI. | `./hack/build/ls-builds.sh` or  `tkn.exe pipelinerun logs`      |
+| ----------- | ----------- |
+| 1.  Create project for your pipelines execution. This can be run as any non-admin user (or admin)  and is needed to hold your execution pipelines.  |  oc new-project demo     |
+| 2.  Run build-deploy example with a quarkus app. | MY_QUAY_USER=mkovarik ./hack/build/build-via-appstudio.sh https://github.com/devfile-samples/devfile-sample-code-with-quarkus
+| 3.  View your build on the OpenShift Console under the pipelines page or view the logs via CLI. | `tkn pipelinerun logs`      |
 
-## Usage
- 
-A sample script `build.sh` is provided which uses the App Studio Build Service API to demonstrate launching a build and inspecting the results.
-As a proof-of-concept, an optional `build-deploy.sh` script is included to take the build image and run it. . 
+## Tests via AppStudio
 
-```
-hack/build/build.sh  git-repo-url <optional-pipeline-name>
-```
-also the equivalent build but with an associated deploy. 
-```
-hack/build/build-deploy.sh  git-repo-url <optional-pipeline-name>
-```
-
-The `git-repo-url` is the git repository with your source code.
-The `<optional-pipeline-name>` is the name of one of the pipelines documented in the App Studio API Contract <url here>. This pipeline name can be provide when the automatic build type detection does not find a supported build type. 
-Note: Normally the build type would be done automatically by (by the Component Detection Query) which maps devfile or other markers to a type of build needed. The build currently uses a shim `repo-to-pipeline.sh` to map file markers to a pipeline type. For testing and experiments the  `optional-pipeline-name`  parameter can override the default pipeline name. 
-
-The current build types supported are: `devfile-build, `docker-build`, `java-buider` and `node-js-builder`.
-
-For a quick "do nothing pipeline" run you can specify the `noop` buider and have a quick pipeline run that does nothing except print some logs. 
-
-`.hack/build/build.sh  https://github.com/jduimovich/single-container-app  noop`
-
-Pipelines will be automatically installed when running a build via an OCI bundle mechanism. 
-
-To see what builds you have run, use the following examples.
-
-Use `.hack/build/ls-builds.sh` to show all builds in the system, and `.hack/build/ls-builds.sh <build-name>` to get the stats for a specific build.
-
-## Testing 
-
-To validate the pipelines are installed and working, you can run `./hack/build/m2-builds`  script which will build all the samples planned for milestone 2. 
-
-To deploy all the builds as they complete, add the `-deploy` option.
-```
-./hack/build/m2-builds -deploy
+To validate execution via AppStudio you can run `./hack/build/build-via-appstudio.sh` script which sets credentials and AppStudio application and components. Without parameters it creates example components.
 
 ```
-You can also run the noop build `hack/build/quick-noop-build.sh`, that executes in couple seconds to validate a working install.
- 
-## Other Build utilties 
-
-The build type is identified via temporary hack until the Component Detection Query is available which maps files in your git repo to known build types. See `hack/build/repo-to-pipeline.sh`  which will print the repo name and computed builder type.
-
-The system will fill with builds and logs so a utility is provided to prune pipelines and cleanup the associated storage. This is for dev mode only and will be done autatically by App Studio builds.
-Use `hack/build/prune-builds.sh` for a single cleanup pass, and `hack/build/prune-builds-loop.sh` to run a continous loop to cleanup extra resources. 
-
-Use `./hack/build/util/check-repo.sh` to test your what auto-detect build will return.  
+export MY_QUAY_USER=mkovarik
+./hack/build/build-via-appstudio.sh https://github.com/devfile-samples/devfile-sample-java-springboot-basic
 ```
-./hack/build/check-repo.sh  https://github.com/jduimovich/single-java-app
-https://github.com/jduimovich/single-java-app   -> java-builder
-  
-```
-If you want to check all your repos to see which ones may build you can use this script. You need to set you github id `export MY_GITHUB_USER=your-username` and it will test your repo for buildable content.  
+
+To enable PipelineAsCode integration you need to set `PIPELINESASCODE` env variable to `1` and also have to have set GitHub credentials in your `./hack/preview.env`.
+One may use GitHub PipelineAsCode application or webhook.
+To use GitHub application set `PAC_GITHUB_APP_PRIVATE_KEY` and `PAC_GITHUB_APP_ID` in your `./hack/preview.env`.
+Alternatively, to use GitHub webhook set `PAC_GITHUB_TOKEN` with [required permissions](https://pipelinesascode.com/docs/install/github_webhook/#create-github-personal-access-token) or make sure that `MY_GITHUB_TOKEN` set and has the required permissions.
+Then run:
 
 ```
-./hack/build/ls-all-my-repos.sh | xargs -n 1 ./hack/build/check-repo.sh
+MY_QUAY_USER=mkovarik PIPELINESASCODE=1 ./hack/build/build-via-appstudio.sh https://github.com/Michkov/devfile-sample-go-basic
 ```
+
+### Change of default pipeline bundle
+
+Pipeline bundles are generated by [build-definitions](https://github.com/redhat-appstudio/build-definitions).
+By default the bundle is defined in `build-templates` namespace:
+```
+oc get configmap -n build-templates -o jsonpath='{ .data.default_build_bundle }' build-pipelines-defaults
+```
+
+It can be overridden by configmap in working namespace:
+```
+oc create configmap build-pipelines-defaults --from-literal default_build_bundle=$BUNDLE
+```
+
+Switching to HACBS bundle:
+```
+HACBS_BUNDLE=$(oc get configmap -n build-templates -o jsonpath='{ .data.default_build_bundle }' build-pipelines-defaults | sed 's|/build-|/hacbs-|)
+oc delete configmap --ignore-not-found build-pipelines-defaults
+oc create configmap build-pipelines-defaults --from-literal default_build_bundle=$HACBS_BUNDLE
+```
+
+## Tekton Results integration
+
+[Tekton Results](https://github.com/tektoncd/results) is installed in the cluster. Helper script `hack/build/set-tkn-results.sh` is provided to set configuration of for `tkn results` command.
+
+```
+# ./hack/build/set-tkn-results.sh
+Configuration written to /home/myuser/.config/tkn/results.yaml
+
+Try it: tkn results list default
+```
+
+## Shared Resources
+
+Shared Secrets are provided to be used by projects, secrets is defined in one project but can be used by other projects.
+
+Available secrets:
+
+| Name | Source | Description | Access |
+| -- | -- | -- | -- |
+| test-team-snyk | test-teams-snyk secret in test-team namespace | Snyk token used by HACBS pipelines | users/serviceaccounts with edit role |
+| redhat-appstudio-user-workload | redhat-appstudio-user-workload secret in build-templates namespace | Quay secret allowing to push into default AppStudio repository | users/serviceaccounts with edit role |
+| redhat-appstudio-staginguser | redhat-appstudio-staginguser secret in build-templates namespace | Quay secret allowing to push into component repositories in redhat-appstudio org | `pipeline` service accounts defined in [shared-resources-components.yaml](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/build/shared-resources/shared-resources-components.yaml)|
+
+### Repository secrets
+
+There are three ways to provide repository secret into PipelineRun.
+
+By priority (1. is highest):
+
+1. `redhat-appstudio-registry-pull-secret` secret in the execution namespace
+2. linked secret to `pipeline` service account in the execution namespace
+3. shared secret `redhat-appstudio-user-workload`
+
+### Use SharedSecret with Tekton Chains
+
+During the build pipeline, it is possible to use the `redhat-appstudio-user-workload`
+[SharedSecret](https://github.com/openshift/csi-driver-shared-resource) to specify the credentials
+for pushing container images. If this is used, Tekton Chains must also be configured to use the
+same `SharedSecret`. This is done by default. However, the `Secret` referred to by the
+`SharedSecret` may not exist at bootstrap time. This is ok. The underlying `Secret` can be created
+at a later time, and/or updated as needed. The changes should be reflected automatically within the
+Tekton Chains Controller without requiring a Pod restart.
