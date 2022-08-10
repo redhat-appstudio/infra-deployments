@@ -119,7 +119,7 @@ this section.
 - [rekor-cli](https://docs.sigstore.dev/rekor/installation/)
 - [cosign](https://docs.sigstore.dev/cosign/installation/)
 
-The script `./install-demo-pre-req.sh` in the `hack/chains/setup` directory will 
+The script `./install-demo-pre-req.sh` in the `hack/chains/setup` directory will
 install these prerequisites for you, if they're not already installed.
 
 ### Kaniko build demo
@@ -206,7 +206,7 @@ This demo will create and run an example release pipeline including the
 Enterprise Contract task.
 
 See also the [task
-definition](https://github.com/redhat-appstudio/build-definitions/blob/main/tasks/verify-enterprise-contract.yaml)
+definition](https://github.com/redhat-appstudio/build-definitions/blob/main/tasks/verify-enterprise-contract-v2.yaml)
 and [related scripts](https://github.com/redhat-appstudio/build-definitions/tree/main/appstudio-utils/util-scripts)
 in the [build-definitions](https://github.com/redhat-appstudio/build-definitions) repo.
 
