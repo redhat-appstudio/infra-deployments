@@ -11,7 +11,7 @@ objects:
     namespace: ${MONITORING_NAMESPACE}
     name: prometheus-proxy-config
     labels:
-      provider: sandbox-sre
+      provider: appstudio-sre
   data:
     client-id: ${PROMETHEUS_GITHUB_CLIENT_ID}
     client-secret: ${PROMETHEUS_GITHUB_CLIENT_SECRET}
@@ -25,7 +25,7 @@ objects:
     namespace: ${MONITORING_NAMESPACE}
     name: prometheus
     labels:
-      provider: sandbox-sre
+      provider: appstudio-sre
       app.kubernetes.io/instance: prometheus
   spec:
     alerting:
@@ -43,12 +43,12 @@ objects:
     walCompression: ${{WAL_COMPRESSION}}
     ruleSelector:
       matchLabels:
-        prometheus: sandbox-sre
+        prometheus: appstudio-sre
     securityContext: {}
     serviceAccountName: prometheus-k8s
     serviceMonitorSelector:
       matchLabels:
-        prometheus: sandbox-sre
+        prometheus: appstudio-sre
     ruleNamespaceSelector:
       matchLabels:
         openshift.io/workload-monitoring: "true"
@@ -154,7 +154,7 @@ objects:
     namespace: ${MONITORING_NAMESPACE}
     name: prometheus
     labels:
-      provider: sandbox-sre
+      provider: appstudio-sre
     annotations:
       kubernetes.io/tls-acme: "true"
   spec:
@@ -173,7 +173,7 @@ objects:
     namespace: ${MONITORING_NAMESPACE}
     name: prometheus-oauth2
     labels:
-      provider: sandbox-sre
+      provider: appstudio-sre
       app.kubernetes.io/instance: prometheus
     annotations:
       service.alpha.openshift.io/serving-cert-secret-name: prometheus-oauth2-tls
@@ -194,7 +194,7 @@ objects:
     namespace: ${MONITORING_NAMESPACE}
     name: prometheus-oauth
     labels:
-      provider: sandbox-sre
+      provider: appstudio-sre
     annotations:
       kubernetes.io/tls-acme: "true"
   spec:
@@ -212,7 +212,7 @@ objects:
     namespace: ${MONITORING_NAMESPACE}
     name: prometheus-oauth
     labels:
-      provider: sandbox-sre
+      provider: appstudio-sre
       app.kubernetes.io/instance: prometheus
     annotations:
       service.alpha.openshift.io/serving-cert-secret-name: prometheus-oauth-tls
@@ -235,7 +235,7 @@ objects:
     namespace: ${MONITORING_NAMESPACE}
     name: sandbox-host-operator
     labels:
-      prometheus: sandbox-sre
+      prometheus: appstudio-sre
   spec:
     endpoints:
     - bearerTokenSecret:
@@ -261,7 +261,7 @@ objects:
     namespace: ${MONITORING_NAMESPACE}
     name: sandbox-member-operator
     labels:
-      prometheus: sandbox-sre
+      prometheus: appstudio-sre
   spec:
     endpoints:
     - bearerTokenSecret:
@@ -286,7 +286,7 @@ objects:
 #    namespace: ${MONITORING_NAMESPACE}
 #    name: loki
 #    labels:
-#      prometheus: sandbox-sre
+#      prometheus: appstudio-sre
 #  spec:
 #    endpoints:
 #    - bearerTokenSecret:
@@ -311,7 +311,7 @@ objects:
     namespace: ${MONITORING_NAMESPACE}
     name: prometheus
     labels:
-      prometheus: sandbox-sre
+      prometheus: appstudio-sre
   spec:
     endpoints:
     - bearerTokenSecret:
@@ -319,7 +319,7 @@ objects:
       interval: 15s
       port: oauth2-proxy
       scheme: HTTPS
-      tlsConfig: 
+      tlsConfig:
         caFile: /etc/prometheus/tls/tls.crt # volume mounted in the `prometheus` container of the prometheus pods
         serverName: "prometheus-oauth2.openshift-customer-monitoring.svc"
     namespaceSelector:
@@ -335,7 +335,7 @@ objects:
     namespace: ${MONITORING_NAMESPACE}
     name: deadmanssnitch
     labels:
-      prometheus: sandbox-sre
+      prometheus: appstudio-sre
       role: alert-rules
   spec:
     groups:
@@ -354,7 +354,7 @@ parameters:
 - name: MONITORING_NAMESPACE
   required: true
 - name: CLUSTER_LABEL
-  value: sandbox
+  value: appstudio-stage
 - name: LOG_LEVEL
   value: debug
 - name: RETENTION

@@ -4,7 +4,7 @@ metadata:
   name: observability-per-cluster-grafana
 objects:
 
-# the secret used by the `oauth-proxy` sidecar container of Prometheus to authenticate users on GitHub
+# the secret used by the `oauth-proxy` sidecar container of Grafana to authenticate users on GitHub
 - apiVersion: v1
   kind: Secret
   metadata:
@@ -127,7 +127,7 @@ objects:
         cpu: 100m
         memory: 200Mi
 
-# Route and service to provide a secured access to the Prometheus console
+# Route and service to provide a secured access to the Grafana console
 # via the oauth2-proxy sidecar (ie, that's the route for the human beings)
 - apiVersion: route.openshift.io/v1
   kind: Route
@@ -148,8 +148,8 @@ objects:
       insecureEdgeTerminationPolicy: Redirect
       termination: reencrypt
 
-# Route and service to provide a secured access to the Prometheus console
-# via the oauth-proxy sidecar (ie, that's the route for Grafana with a Service Account token)
+# Route and service to provide a secured access to the Grafana admin console
+# without the oauth-proxy sidecar (ie, that's the route for Grafana Admins)
 - apiVersion: route.openshift.io/v1
   kind: Route
   metadata:
