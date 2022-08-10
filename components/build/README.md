@@ -33,7 +33,11 @@ export MY_QUAY_USER=mkovarik
 ./hack/build/build-via-appstudio.sh https://github.com/devfile-samples/devfile-sample-java-springboot-basic
 ```
 
-To enable PipelineAsCode integration you need to set `PIPELINESASCODE` env variable and also have to have set `GITHUB_APP_PRIVATE_KEY` and `GITHUB_APP_ID` in your `./hack/preview.env`. The github app has to be installed on your testing repository.
+To enable PipelineAsCode integration you need to set `PIPELINESASCODE` env variable to `1` and also have to have set GitHub credentials in your `./hack/preview.env`.
+One may use GitHub PipelineAsCode application or webhook.
+To use GitHub application set `PAC_GITHUB_APP_PRIVATE_KEY` and `PAC_GITHUB_APP_ID` in your `./hack/preview.env`.
+Alternatively, to use GitHub webhook set `PAC_GITHUB_TOKEN` with [required permissions](https://pipelinesascode.com/docs/install/github_webhook/#create-github-personal-access-token) or make sure that `MY_GITHUB_TOKEN` set and has the required permissions.
+Then run:
 
 ```
 MY_QUAY_USER=mkovarik PIPELINESASCODE=1 ./hack/build/build-via-appstudio.sh https://github.com/Michkov/devfile-sample-go-basic
