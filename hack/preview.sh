@@ -139,10 +139,8 @@ if echo $APPS | grep -q spi; then
   fi
 fi
 
-# update Pipelines as code secrets and github app
-if [ -n "${GITHUB_APP_ID}" ] && [ -n "${GITHUB_APP_PRIVATE_KEY}" ]; then
-  $ROOT/hack/build/setup-pac-app.sh
-fi
+# Configure Pipelines as Code and required credentials
+$ROOT/hack/build/setup-pac-integration.sh
 
 # trigger refresh of apps
 for APP in $APPS; do
