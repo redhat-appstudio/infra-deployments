@@ -3,30 +3,44 @@ apiVersion: apps/v1
 metadata:
   name: quality-frontend-dashboard
   namespace: quality-dashboard
-  labels:
-    app: quality-dashboard
-    app.kubernetes.io/component: quality-frontend
-    app.kubernetes.io/instance: quality-dashboard
-    app.kubernetes.io/name: quality-dashboard
-    component: quality-frontend
 spec:
+  serviceAccountName: dashboard-proxy
   replicas: 1
   selector:
     matchLabels:
-      app: quality-dashboard
-      component: quality-frontend
+      app: quality-frontend-dashboard
   template:
     metadata:
       labels:
-        app: quality-dashboard
-        app.kubernetes.io/component: quality-frontend
-        app.kubernetes.io/instance: quality-dashboard
-        app.kubernetes.io/name: quality-dashboard
-        component: quality-frontend
+        app: quality-frontend-dashboard
     spec:
       restartPolicy: Always
       terminationGracePeriodSeconds: 30
       containers:
+        - name: dashboard-proxy
+          image: openshift/oauth-proxy:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+          - containerPort: 8443
+            name: public
+          args:
+          - --https-address=:8443
+          - --provider=openshift
+          - --openshift-service-account=proxy
+          - --upstream=http://localhost:8080
+          - --tls-cert=/etc/tls/private/tls.crt
+          - --tls-key=/etc/tls/private/tls.key
+          - --cookie-secret=SECRET
+          volumeMounts:
+          - mountPath: /etc/tls/private
+            name: proxy-tls
+          resources:
+            limits:
+              cpu: 500m
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 100Mi
         - resources:
             limits:
               cpu: 500m
@@ -48,3 +62,7 @@ spec:
           imagePullPolicy: Always
           image: >-
             quay.io/redhat-appstudio/quality-dashboard-frontend:bca48e980e10838ef6510c416ed4004dfb9f1d38
+      volumes:
+        - name: proxy-tls
+          secret:
+            secretName: proxy-tls
