@@ -4,7 +4,6 @@ metadata:
   name: quality-frontend-dashboard
   namespace: quality-dashboard
 spec:
-  serviceAccountName: dashboard-proxy
   replicas: 1
   selector:
     matchLabels:
@@ -14,6 +13,7 @@ spec:
       labels:
         app: quality-frontend-dashboard
     spec:
+      serviceAccountName: dashboard-proxy
       restartPolicy: Always
       terminationGracePeriodSeconds: 30
       containers:
