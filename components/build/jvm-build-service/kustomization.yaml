@@ -1,8 +1,8 @@
 resources:
 - allow-argocd-to-manage.yaml
-- https://github.com/redhat-appstudio/jvm-build-service/deploy/crds/base?ref=345ea0982fc5f57ef55c3e7e689e460e70cd5313
-- https://github.com/redhat-appstudio/jvm-build-service/deploy/cache/base?ref=345ea0982fc5f57ef55c3e7e689e460e70cd5313
-- https://github.com/redhat-appstudio/jvm-build-service/deploy/operator/base?ref=345ea0982fc5f57ef55c3e7e689e460e70cd5313
+- https://github.com/redhat-appstudio/jvm-build-service/deploy/crds/base?ref=505c85e3278cfb67fca6fd5a6b7c760f82e27d7b
+- https://github.com/redhat-appstudio/jvm-build-service/deploy/cache/base?ref=505c85e3278cfb67fca6fd5a6b7c760f82e27d7b
+- https://github.com/redhat-appstudio/jvm-build-service/deploy/operator/base?ref=505c85e3278cfb67fca6fd5a6b7c760f82e27d7b
 - .tekton/
 - namespace.yaml
 - localstack.yaml
@@ -14,19 +14,19 @@ namespace: jvm-build-service
 images:
 - name: hacbs-jvm-cache
   newName: quay.io/redhat-appstudio/hacbs-jvm-cache
-  newTag: 345ea0982fc5f57ef55c3e7e689e460e70cd5313
+  newTag: 505c85e3278cfb67fca6fd5a6b7c760f82e27d7b
 - name: quay.io/QUAY_USERNAME/hacbs-jvm-cache
   newName: quay.io/redhat-appstudio/hacbs-jvm-cache
-  newTag: 345ea0982fc5f57ef55c3e7e689e460e70cd5313
+  newTag: 505c85e3278cfb67fca6fd5a6b7c760f82e27d7b
 - name: hacbs-jvm-operator
   newName: quay.io/redhat-appstudio/hacbs-jvm-controller
-  newTag: 345ea0982fc5f57ef55c3e7e689e460e70cd5313
+  newTag: 505c85e3278cfb67fca6fd5a6b7c760f82e27d7b
 - name: run-maven-component-build
   newName: quay.io/redhat-appstudio/hacbs-jvm-sidecar
-  newTag: 345ea0982fc5f57ef55c3e7e689e460e70cd5313
+  newTag: 505c85e3278cfb67fca6fd5a6b7c760f82e27d7b
 - name: lookup-artifact-location
   newName: quay.io/redhat-appstudio/hacbs-jvm-build-request-processor
-  newTag: 345ea0982fc5f57ef55c3e7e689e460e70cd5313
+  newTag: 505c85e3278cfb67fca6fd5a6b7c760f82e27d7b
 
 patches:
 - target:
