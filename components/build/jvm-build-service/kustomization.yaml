@@ -1,7 +1,7 @@
 resources:
 - allow-argocd-to-manage.yaml
-- https://github.com/redhat-appstudio/jvm-build-service/deploy/crds/base?ref=505c85e3278cfb67fca6fd5a6b7c760f82e27d7b
-- https://github.com/redhat-appstudio/jvm-build-service/deploy/operator/base?ref=505c85e3278cfb67fca6fd5a6b7c760f82e27d7b
+- https://github.com/redhat-appstudio/jvm-build-service/deploy/crds/base?ref=3efb510b4f16a08cb4209ac7100d26488dabb0e9
+- https://github.com/redhat-appstudio/jvm-build-service/deploy/operator/base?ref=3efb510b4f16a08cb4209ac7100d26488dabb0e9
 - .tekton/
 - namespace.yaml
 - localstack.yaml
@@ -13,13 +13,13 @@ namespace: jvm-build-service
 images:
 - name: hacbs-jvm-operator
   newName: quay.io/redhat-appstudio/hacbs-jvm-controller
-  newTag: 505c85e3278cfb67fca6fd5a6b7c760f82e27d7b
+  newTag: 3efb510b4f16a08cb4209ac7100d26488dabb0e9
 - name: run-maven-component-build
   newName: quay.io/redhat-appstudio/hacbs-jvm-sidecar
-  newTag: 505c85e3278cfb67fca6fd5a6b7c760f82e27d7b
+  newTag: 3efb510b4f16a08cb4209ac7100d26488dabb0e9
 - name: lookup-artifact-location
   newName: quay.io/redhat-appstudio/hacbs-jvm-build-request-processor
-  newTag: 505c85e3278cfb67fca6fd5a6b7c760f82e27d7b
+  newTag: 3efb510b4f16a08cb4209ac7100d26488dabb0e9
 
 patches:
 - target:
