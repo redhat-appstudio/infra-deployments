@@ -131,11 +131,8 @@ echo "
 kubectl create secret docker-registry release-demo --from-file=.dockerconfigjson="${HOME}/.docker/config.json" --dry-run=client -o yaml | kubectl apply -f -
 oc secrets link pipeline release-demo --for=pull,mount
 
-# Enterprise Contract policy configuration
-kubectl create configmap ec-policy --from-file=policy.json=<(echo '{"non_blocking_checks":["not_useful","test:conftest-clair"]}'|jq .) 2>/dev/null || echo "ℹ️  Using existing Enterprise Contract policy configuration in ec-policy ConfigMap"
-
 "${HACK_CHAINS_DIR}/copy-public-sig-key.sh"
-TASK_BUNDLE=quay.io/redhat-appstudio/appstudio-tasks:$(git ls-remote --heads https://github.com/redhat-appstudio/build-definitions.git refs/heads/main|cut -f 1)-2
+TASK_BUNDLE=quay.io/redhat-appstudio/appstudio-tasks:$(git ls-remote --heads https://github.com/redhat-appstudio/build-definitions.git refs/heads/main|cut -f 1)-3
 export TASK_BUNDLE
 
 # install skopeo-copy task if it's missing
