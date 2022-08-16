@@ -1,4 +1,5 @@
 resources:
+- service-account.yaml
 - deployment.yaml
 - service.yaml
 - route.yaml
@@ -11,5 +12,4 @@ namespace: quality-dashboard
 configMapGenerator:
 - name: quality-dashboard-configmap
   literals:
-  - BACKEND_ROUTE=http://quality-backend-route-quality-dashboard.apps.appstudio-stage.x99m.p1.openshiftapps.com
-  
+  - BACKEND_ROUTE=https://quality-backend-route-quality-dashboard.apps.appstudio-stage.x99m.p1.openshiftapps.com
