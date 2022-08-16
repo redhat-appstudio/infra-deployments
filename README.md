@@ -216,7 +216,8 @@ This script requires few things
 * [oc](https://docs.openshift.com/container-platform/4.11/cli_reference/openshift_cli/getting-started-cli.html) binary installed and configured to have admin access to the cluster
 
 for running the `hack/setup_observability.sh` script
-1. Update the values for the variables from github oauth
+1. Copy `hack/monitoring-template.env` to `hack/monitoring.env`
+2. Update the values for the variables in `hack/monitoring.env` from github oauth
 2. ```$ ./hack/setup_observability.sh```
 
 ## FAQ
