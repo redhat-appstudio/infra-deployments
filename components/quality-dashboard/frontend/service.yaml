@@ -3,21 +3,12 @@ apiVersion: v1
 metadata:
   name: quality-frontend-service
   namespace: quality-dashboard
-  labels:
-    app.kubernetes.io/component: quality-frontend
-    app.kubernetes.io/instance: quality-dashboard
-    app.kubernetes.io/name: quality-dashboard
+  annotations:
+    service.alpha.openshift.io/serving-cert-secret-name: proxy-tls
 spec:
-  ipFamilies:
-    - IPv4
   ports:
-    - name: http
-      protocol: TCP
-      port: 8080
-      targetPort: 8080
-  internalTrafficPolicy: Cluster
-  ipFamilyPolicy: SingleStack
+    - name: https
+      port: 443
+      targetPort: 8443
   selector:
-    app.kubernetes.io/component: quality-frontend
-    app.kubernetes.io/instance: quality-dashboard
-    app.kubernetes.io/name: quality-dashboard
+    app: quality-frontend-dashboard
