@@ -67,14 +67,14 @@ spec:
                   name: quality-dashboard-secrets
                   key: github-token
           args:
-            - "--port=8080"
+            - "--port=8000"
           securityContext:
             capabilities:
               drop:
                 - ALL
           ports:
             - name: http
-              containerPort: 8080
+              containerPort: 8000
               protocol: TCP
           imagePullPolicy: Always
           image: >-
