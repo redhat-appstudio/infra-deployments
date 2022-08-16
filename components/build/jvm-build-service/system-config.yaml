@@ -5,11 +5,11 @@ metadata:
   name: jvm-build-system-config
   namespace: jvm-build-service
 data:
-  image.cache: quay.io/redhat-appstudio/hacbs-jvm-cache:345ea0982fc5f57ef55c3e7e689e460e70cd5313
+  image.cache: quay.io/redhat-appstudio/hacbs-jvm-cache:3efb510b4f16a08cb4209ac7100d26488dabb0e9
   builder-image.names: jdk11,jdk8,jdk17
-  builder-image.jdk8.image: quay.io/redhat-appstudio/hacbs-jdk8-builder:345ea0982fc5f57ef55c3e7e689e460e70cd5313
-  builder-image.jdk11.image: quay.io/redhat-appstudio/hacbs-jdk11-builder:345ea0982fc5f57ef55c3e7e689e460e70cd5313
-  builder-image.jdk17.image: quay.io/redhat-appstudio/hacbs-jdk17-builder:345ea0982fc5f57ef55c3e7e689e460e70cd5313
+  builder-image.jdk8.image: quay.io/redhat-appstudio/hacbs-jdk8-builder:3efb510b4f16a08cb4209ac7100d26488dabb0e9
+  builder-image.jdk11.image: quay.io/redhat-appstudio/hacbs-jdk11-builder:3efb510b4f16a08cb4209ac7100d26488dabb0e9
+  builder-image.jdk17.image: quay.io/redhat-appstudio/hacbs-jdk17-builder:3efb510b4f16a08cb4209ac7100d26488dabb0e9
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -19,3 +19,4 @@ metadata:
 data:
   enable-rebuilds: "false"
   maven-repository-300-jboss: "https://repository.jboss.org/nexus/content/groups/public/"
+  maven-repository-301-gradle: "https://repo.gradle.org/artifactory/libs-releases"
