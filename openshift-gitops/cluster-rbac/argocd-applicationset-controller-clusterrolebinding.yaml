@@ -1,0 +1,12 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: appstudio-openshift-gitops-argocd-applicationset-controller
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: applicationsets.argoproj.io-v1alpha1-admin
+subjects:
+- kind: ServiceAccount
+  name: gitops-service-argocd-applicationset-controller
+  namespace: gitops-service-argocd

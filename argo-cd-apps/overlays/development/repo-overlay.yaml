@@ -98,12 +98,12 @@ spec:
     targetRevision: main
 ---
 apiVersion: argoproj.io/v1alpha1
-kind: Application
+kind: ApplicationSet
 metadata:
   name: enterprise-contract
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
 spec:
-  source:
-    repoURL: https://github.com/redhat-appstudio/infra-deployments.git
-    targetRevision: main
+  template:
+    spec:
+      source:
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+        targetRevision: main

@@ -9,27 +9,34 @@
 # That directory needs to be modified in the users fork to replace replacing any components in their cluster
 # This will minimize the chance of error in pull requests to upstream which may accidentally include
 # references to the forked repo.
-# note, if accidental merges are accepted in the development directory, they will not affect staging. 
+# note, if accidental merges are accepted in the development directory, they will not affect staging.
 
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/..
 MANIFEST=$ROOT/argo-cd-apps/app-of-apps/all-applications-staging.yaml
 GITURL=$1
-OVERLAYDIR=argo-cd-apps/overlays/$2  
-BRANCH=$3 
+OVERLAYDIR=argo-cd-apps/overlays/$2
+BRANCH=$3
 if [ -z "$BRANCH" ]
 then
-      echo No Branch specified, setting all overlays targetRevisions to main 
-      BRANCH=main 
-else  
-      echo Setting all overlays targetRevisions to $BRANCH 
+      echo No Branch specified, setting all overlays targetRevisions to main
+      BRANCH=main
+else
+      echo Setting all overlays targetRevisions to $BRANCH
 fi
 echo
 echo In dev mode, verify that argo-cd-apps/overlays/development includes a kustomization that points to this repo
 
-PATCH="$(printf '.spec.source.repoURL="%q"' $GITURL)" 
-yq  e "$PATCH" $OVERLAYDIR/repo-overlay.yaml -i  
-PATCH="$(printf '.spec.source.targetRevision="%q"' $BRANCH)" 
-yq  e "$PATCH" $OVERLAYDIR/repo-overlay.yaml -i 
+# Patch Applications
+PATCH="$(printf '(select(.kind == "Application") | .spec.source.repoURL)="%q"' $GITURL)"
+yq  e "$PATCH" $OVERLAYDIR/repo-overlay.yaml -i
+PATCH="$(printf '(select(.kind == "Application") | .spec.source.targetRevision)="%q"' $BRANCH)"
+yq  e "$PATCH" $OVERLAYDIR/repo-overlay.yaml -i
+
+# Patch ApplicationSets
+PATCH="$(printf '(select(.kind == "ApplicationSet") | .spec.template.spec.source.repoURL)="%q"' $GITURL)"
+yq  e "$PATCH" $OVERLAYDIR/repo-overlay.yaml -i
+PATCH="$(printf '(select(.kind == "ApplicationSet") | .spec.template.spec.source.targetRevision)="%q"' $BRANCH)"
+yq  e "$PATCH" $OVERLAYDIR/repo-overlay.yaml -i
 
 echo
 echo The list of components which will be patched is
