@@ -11,4 +11,6 @@ spec:
       port: 443
       targetPort: 8443
   selector:
-    app: quality-frontend-dashboard
+    app.kubernetes.io/component: quality-frontend
+    app.kubernetes.io/instance: quality-dashboard
+    app.kubernetes.io/name: quality-dashboard
