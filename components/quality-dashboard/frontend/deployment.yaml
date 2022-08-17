@@ -3,15 +3,26 @@ apiVersion: apps/v1
 metadata:
   name: quality-frontend-dashboard
   namespace: quality-dashboard
+  labels:
+    app: quality-dashboard
+    app.kubernetes.io/component: quality-frontend
+    app.kubernetes.io/instance: quality-dashboard
+    app.kubernetes.io/name: quality-dashboard
+    component: quality-frontend
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: quality-frontend-dashboard
+      app: quality-dashboard
+      component: quality-frontend
   template:
     metadata:
       labels:
-        app: quality-frontend-dashboard
+        app: quality-dashboard
+        app.kubernetes.io/component: quality-frontend
+        app.kubernetes.io/instance: quality-dashboard
+        app.kubernetes.io/name: quality-dashboard
+        component: quality-frontend
     spec:
       serviceAccountName: dashboard-proxy
       restartPolicy: Always
