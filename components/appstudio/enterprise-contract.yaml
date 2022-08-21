@@ -1,0 +1,15 @@
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: Component
+metadata:
+  name: enterprise-contract-component
+  annotations:
+    pipelinesascode: "1"
+    skipprcreation: "1"
+spec:
+  componentName: enterprise-contract-component
+  application: appstudio-application
+  source:
+    git:
+      url: https://github.com/hacbs-contract/enterprise-contract-controller
+      dockerfileUrl: https://github.com/hacbs-contract/enterprise-contract-controller/blob/main/Dockerfile
+  containerImage: quay.io/redhat-appstudio/enterprise-contract-controller

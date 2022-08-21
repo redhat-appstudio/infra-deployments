@@ -1,0 +1,15 @@
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: Component
+metadata:
+  name: pvc-cleaner-component
+  annotations:
+    pipelinesascode: "1"
+    skipprcreation: "1"
+spec:
+  componentName: pvc-cleaner-component
+  application: appstudio-application
+  source:
+    git:
+      url: https://github.com/redhat-appstudio/pvc-cleaner
+      dockerfileUrl: https://github.com/redhat-appstudio/pvc-cleaner/blob/main/Dockerfile
+  containerImage: quay.io/redhat-appstudio/pvc-cleaner

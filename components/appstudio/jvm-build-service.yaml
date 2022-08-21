@@ -1,0 +1,15 @@
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: Component
+metadata:
+  name: jvm-build-service-component
+  annotations:
+    pipelinesascode: "1"
+    skipprcreation: "1"
+spec:
+  componentName: jvm-build-service-component
+  application: appstudio-application
+  source:
+    git:
+      url: https://github.com/redhat-appstudio/jvm-build-service
+      dockerfileUrl: https://github.com/redhat-appstudio/jvm-build-service/blob/main/Dockerfile
+  containerImage: quay.io/redhat-appstudio/jvm-build-service

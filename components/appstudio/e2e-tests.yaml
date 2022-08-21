@@ -1,0 +1,15 @@
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: Component
+metadata:
+  name: e2e-tests-component
+  annotations:
+    pipelinesascode: "1"
+    skipprcreation: "1"
+spec:
+  componentName: e2e-tests-component
+  application: appstudio-application
+  source:
+    git:
+      url: https://github.com/redhat-appstudio/e2e-tests
+      dockerfileUrl: https://github.com/redhat-appstudio/e2e-tests/blob/main/Dockerfile
+  containerImage: quay.io/redhat-appstudio/e2e-tests

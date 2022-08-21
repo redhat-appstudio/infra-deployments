@@ -1,0 +1,15 @@
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: Component
+metadata:
+  name: build-service-component
+  annotations:
+    pipelinesascode: "1"
+    skipprcreation: "1"
+spec:
+  componentName: build-service-component
+  application: appstudio-application
+  source:
+    git:
+      url: https://github.com/redhat-appstudio/build-service
+      dockerfileUrl: https://github.com/redhat-appstudio/build-service/blob/main/Dockerfile
+  containerImage: quay.io/redhat-appstudio/build-service

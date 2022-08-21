@@ -1,0 +1,15 @@
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: Component
+metadata:
+  name: service-provider-integration-oauth-component
+  annotations:
+    pipelinesascode: "1"
+    skipprcreation: "1"
+spec:
+  componentName: service-provider-integration-oauth-component
+  application: appstudio-application
+  source:
+    git:
+      url: https://github.com/redhat-appstudio/service-provider-integration-oauth
+      dockerfileUrl: https://github.com/redhat-appstudio/service-provider-integration-oauth/blob/main/Dockerfile
+  containerImage: quay.io/redhat-appstudio/service-provider-integration-oauth

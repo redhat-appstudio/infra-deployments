@@ -1,0 +1,15 @@
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: Component
+metadata:
+  name: managed-gitops-component
+  annotations:
+    pipelinesascode: "1"
+    skipprcreation: "1"
+spec:
+  componentName: managed-gitops-component
+  application: appstudio-application
+  source:
+    git:
+      url: https://github.com/redhat-appstudio/managed-gitops
+      dockerfileUrl: https://github.com/redhat-appstudio/managed-gitops/blob/main/Dockerfile
+  containerImage: quay.io/redhat-appstudio/gitops-service
