@@ -12,7 +12,7 @@
 # note, if accidental merges are accepted in the development directory, they will not affect staging. 
 
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/..
-MANIFEST=$ROOT/argo-cd-apps/app-of-apps/all-applications-staging.yaml
+MANIFEST=$ROOT/argo-cd-apps/app-of-apps/all-applications.yaml
 GITURL=$1
 OVERLAYDIR=argo-cd-apps/overlays/$2  
 BRANCH=$3 
@@ -26,9 +26,9 @@ fi
 echo
 echo In dev mode, verify that argo-cd-apps/overlays/development includes a kustomization that points to this repo
 
-PATCH="$(printf '.spec.source.repoURL="%q"' $GITURL)" 
-yq  e "$PATCH" $OVERLAYDIR/repo-overlay.yaml -i  
-PATCH="$(printf '.spec.source.targetRevision="%q"' $BRANCH)" 
+PATCH="$(printf '.spec.template.spec.source.repoURL="%q"' $GITURL)"
+yq  e "$PATCH" $OVERLAYDIR/repo-overlay.yaml -i
+PATCH="$(printf '.spec.template.spec.source.targetRevision="%q"' $BRANCH)"
 yq  e "$PATCH" $OVERLAYDIR/repo-overlay.yaml -i 
 
 echo
@@ -38,7 +38,7 @@ yq  e '.metadata.name' $OVERLAYDIR/repo-overlay.yaml
 echo
 echo Each component above is set to the following repositories
 echo if you do not see your component in the list, please send a PR update to $OVERLAYDIR/repo-overlay.yaml
-yq  e '.spec.source.repoURL' $OVERLAYDIR/repo-overlay.yaml
+yq  e '.spec.template.spec.source.repoURL' $OVERLAYDIR/repo-overlay.yaml
 
 if [ -n "$DEPLOY_ONLY" ]; then
     for APP in $(yq e -N '.metadata.name' $OVERLAYDIR/repo-overlay.yaml); do
