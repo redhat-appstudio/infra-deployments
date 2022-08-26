@@ -45,20 +45,20 @@ fi
 done
 
 #Get CRC VMs configured in local machine
-$CRCBINARY setup
+"$CRCBINARY" setup
 #Set memory and CPU allowance for CRC
 echo "Memory allowance for CRC is set to $MEMORY MB"
 echo "CPU allowance for CRC is set to $CPUS"
-$CRCBINARY config set memory $MEMORY
-$CRCBINARY config set cpus $CPUS
+"$CRCBINARY" config set memory $MEMORY
+"$CRCBINARY" config set cpus $CPUS
 #enable netmetrices addons, to make sure member cluster has proper resources
-$CRCBINARY config set enable-cluster-monitoring true
+"$CRCBINARY" config set enable-cluster-monitoring true
 #Delete existing CRC cluster to apply the config updates
 if [ $DELETE_CLUSTER -eq 1 ]; then
     echo "Force delete for CRC is set, deleting the existing CRC cluster"
-    $CRCBINARY delete --force
+    "$CRCBINARY" delete --force
 else
-    $CRCBINARY delete
+    "$CRCBINARY" delete
 fi
 
 #TODO: Check the return value of delete command and go forward accordingly
@@ -66,10 +66,10 @@ fi
 #existing cluster
 
 #Start CRC with modified configs
-$CRCBINARY start
+"$CRCBINARY" start
 
 #Point local environment clients (kubectl and oc) to the CRC cluster
-eval $($CRCBINARY oc-env)
+eval $("$CRCBINARY" oc-env)
 kubectl config use-context crc-admin
 
 #Reduce cpu resource request for each AppStudio Application
