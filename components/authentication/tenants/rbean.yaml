@@ -10,3 +10,68 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: admin
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: create-rs-ralphbean-ralphjbean
+  namespace: ralphjbean
+subjects:
+  - kind: User
+    name: ralphbean
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: release-service-releasestrategy-editor-role
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: create-gitops-manager-ralphbean-ralphjbean
+  namespace: ralphjbean
+subjects:
+  - kind: User
+    name: ralphbean
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: gitopsdeployment-manager
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: admin-managed-rbean
+  namespace: managed-rbean
+subjects:
+  - kind: User
+    name: ralphbean
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: admin
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: create-rs-ralphbean-managed-rbean
+  namespace: managed-rbean
+subjects:
+  - kind: User
+    name: ralphbean
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: release-service-releasestrategy-editor-role
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: create-gitops-manager-ralphbean-managed-rbean
+  namespace: managed-rbean
+subjects:
+  - kind: User
+    name: ralphbean
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: gitopsdeployment-manager
