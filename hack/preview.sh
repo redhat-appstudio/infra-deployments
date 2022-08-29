@@ -160,7 +160,7 @@ while :; do
   echo "$NOT_DONE"
   if [ -z "$NOT_DONE" ]; then
      echo All Applications are synced and Healthy
-     exit 0
+     break
   else
      UNKNOWN=$(echo "$NOT_DONE" | grep Unknown | grep -v Progressing | cut -f1 -d ' ')
      if [ -n "$UNKNOWN" ]; then
@@ -187,4 +187,15 @@ while :; do
      echo Waiting $INTERVAL seconds for application sync
      sleep $INTERVAL
   fi
+done
+
+# Wait for all tekton components to be installed
+# The status of a tektonconfig CR should be "type: Ready, status: True" once the install is completed
+# More info: https://tekton.dev/docs/operator/tektonconfig/#tekton-config
+while :; do
+  STATE=$(oc get tektonconfig config -o json | jq -r '.status.conditions[] | select(.type == "Ready")')
+  [ "$(jq -r '.status' <<< "$STATE")" == "True" ] && echo All required tekton resources are installed and ready && break
+  echo Some tekton resources are not ready yet:
+  jq -r '.message' <<< "$STATE"
+  sleep $INTERVAL
 done

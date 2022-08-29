@@ -58,6 +58,31 @@ objects:
       matchLabels:
         control-plane: "controller-manager"
         operators.coreos.com/toolchain-member-operator.toolchain-member-operator: ""
+
+  #SPI Operator
+- apiVersion: monitoring.coreos.com/v1
+  kind: ServiceMonitor
+  metadata:
+    namespace: ${MONITORING_NAMESPACE}
+    name: spi-operator
+    labels:
+      prometheus: appstudio-sre
+  spec:
+    endpoints:
+      - bearerTokenSecret:
+          name: ${PROMETHEUS_K8S_SECRET_NAME}
+          key: token
+        scheme: https
+        tlsConfig:
+          insecureSkipVerify: true
+        port: https
+      path: /metrics
+    namespaceSelector:
+      matchNames:
+        - spi-system
+    selector:
+      matchLabels:
+        control-plane: "controller-manager"
 # Loki
 #- apiVersion: monitoring.coreos.com/v1
 #  kind: ServiceMonitor
