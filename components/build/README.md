@@ -56,12 +56,18 @@ It can be overridden by configmap in working namespace:
 oc create configmap build-pipelines-defaults --from-literal default_build_bundle=$BUNDLE
 ```
 
-Switching to HACBS bundle:
-```
-HACBS_BUNDLE=$(oc get configmap -n build-templates -o jsonpath='{ .data.default_build_bundle }' build-pipelines-defaults | sed 's|/build-|/hacbs-|)
-oc delete configmap --ignore-not-found build-pipelines-defaults
-oc create configmap build-pipelines-defaults --from-literal default_build_bundle=$HACBS_BUNDLE
-```
+## HACBS enablement
+
+HACBS workflow can be set by creation of configmap `hacbs` in the user namespace.
+
+`oc create configmap hacbs` will:
+
+1. Always use Pipelines-as-Code
+2. Selects bundle from `hacbs_build_bundle` key in configmap `build-pipelines-defaults`
+
+### Stage Cluster integration prerequisites
+
+Before creating component in Stage cluster it's necessary install GitHub application [AppStudio Staging CI](https://github.com/apps/appstudio-staging-ci) into managed repository or into whole GitHub organization.
 
 ## Tekton Results integration
 
