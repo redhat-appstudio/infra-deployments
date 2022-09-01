@@ -124,7 +124,8 @@ if ! kubectl get secret -n quality-dashboard quality-dashboard-secrets &>/dev/nu
     --from-literal=storage-user=postgres \
     --from-literal=storage-password=REPLACE_DB_PASSWORD \
     --from-literal=storage-database=quality \
-    --from-literal=github-token=REPLACE_GITHUB_TOKEN
+    --from-literal=github-token=REPLACE_GITHUB_TOKEN \
+    --from-literal=jira-token=REPLACE_JIRA_TOKEN
 fi
 
 ARGO_CD_ROUTE=$(kubectl get \
