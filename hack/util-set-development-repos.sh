@@ -14,7 +14,7 @@
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/..
 MANIFEST=$ROOT/argo-cd-apps/app-of-apps/all-applications.yaml
 GITURL=$1
-OVERLAYDIR=argo-cd-apps/overlays/$2  
+OVERLAYDIR=$ROOT/argo-cd-apps/overlays/$2
 BRANCH=$3 
 if [ -z "$BRANCH" ]
 then
