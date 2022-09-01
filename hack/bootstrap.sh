@@ -168,7 +168,6 @@ case $MODE in
     "dev")
         configure_kcp dev
         kubectl apply -f $ROOT/argo-cd-apps/app-of-apps/all-applications.yaml --kubeconfig ${CLUSTER_KUBECONFIG}
-        source ${ROOT}/hack/development-mode.sh
         ;;
     "preview")
         $ROOT/hack/preview.sh ;;
