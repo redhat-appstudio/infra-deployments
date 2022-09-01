@@ -168,6 +168,21 @@ case $MODE in
     "dev")
         configure_kcp dev
         kubectl apply -f $ROOT/argo-cd-apps/app-of-apps/all-applications.yaml --kubeconfig ${CLUSTER_KUBECONFIG}
+
+        if [ -z "${MY_GIT_REPO_URL}" ]; then
+            MY_GIT_REPO_URL=$(git --git-dir=${ROOT}/.git --work-tree=${ROOT}  ls-remote --get-url| sed 's|^git@github.com:|https://github.com/|')
+        fi
+        if [ -z "${MY_GIT_BRANCH}" ]; then
+            MY_GIT_BRANCH=$(git  --git-dir=${ROOT}/.git --work-tree=${ROOT} rev-parse --abbrev-ref HEAD)
+        fi
+
+        echo "Redirecting the root app-of-apps to use the git repo '${MY_GIT_REPO_URL}' and branch '${MY_GIT_BRANCH}' and updating the path to development:"
+        $ROOT/hack/util-update-app-of-apps.sh ${MY_GIT_REPO_URL} development ${MY_GIT_BRANCH}
+        echo
+
+        echo "Resetting the default repos in the development directory to be the current git repo:"
+        echo "These changes need to be pushed to your fork to be seen by argocd"
+        $ROOT/hack/util-set-development-repos.sh ${MY_GIT_REPO_URL} development ${MY_GIT_BRANCH}
         ;;
     "preview")
         $ROOT/hack/preview.sh ;;
