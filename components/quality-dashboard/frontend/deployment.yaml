@@ -44,9 +44,12 @@ spec:
           - --cookie-secret=SECRET
           - --cookie-refresh=0
           - --custom-templates-dir=/usr/templates
+          - ---htpasswd-file=/tmp/auth/users.htpasswd
           volumeMounts:
           - mountPath: /etc/tls/private
             name: proxy-tls
+          - name: quality-dashboard-auth
+            mountPath: /tmp/auth
           resources:
             limits:
               cpu: 500m
@@ -79,3 +82,7 @@ spec:
         - name: proxy-tls
           secret:
             secretName: proxy-tls
+        - name: quality-dashboard-auth
+          secret:
+            secretName: quality-dashboard-auth
+            defaultMode: 420
