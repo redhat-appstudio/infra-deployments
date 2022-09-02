@@ -30,12 +30,12 @@ spec:
         - resources:
             limits:
               cpu: 500m
-              memory: 256Mi
+              memory: "1Gi"
             requests:
-              cpu: 100m
-              memory: 32Mi
+              cpu: 200m
+              memory: 512Mi
           name: quality-backend-dashboard
-          command: ["/root/qe-dashboard-backend"]
+          command: ["/root/server-runtime"]
           env:
             - name: MODE_SSL
               value: "disable"
@@ -66,6 +66,11 @@ spec:
                 secretKeyRef:
                   name: quality-dashboard-secrets
                   key: github-token
+            - name: JIRA_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: quality-dashboard-secrets
+                  key: jira-token
           args:
             - "--port=8000"
           securityContext:
@@ -78,4 +83,4 @@ spec:
               protocol: TCP
           imagePullPolicy: Always
           image: >-
-            quay.io/redhat-appstudio/quality-dashboard-backend:bca48e980e10838ef6510c416ed4004dfb9f1d38
+            quay.io/redhat-appstudio/quality-dashboard-backend:8cf9faea4364a89aab4f6c6076aa8276844fb3fb
