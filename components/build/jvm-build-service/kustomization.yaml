@@ -4,8 +4,6 @@ resources:
 - https://github.com/redhat-appstudio/jvm-build-service/deploy/operator/base?ref=cd568e1d98ac04ac1f4f982c702732df7951b920
 - .tekton/
 - namespace.yaml
-- localstack.yaml
-- local-cache-pvc.yaml
 - system-config.yaml
 
 namespace: jvm-build-service
@@ -13,12 +11,6 @@ namespace: jvm-build-service
 images:
 - name: hacbs-jvm-operator
   newName: quay.io/redhat-appstudio/hacbs-jvm-controller
-  newTag: cd568e1d98ac04ac1f4f982c702732df7951b920
-- name: run-maven-component-build
-  newName: quay.io/redhat-appstudio/hacbs-jvm-sidecar
-  newTag: cd568e1d98ac04ac1f4f982c702732df7951b920
-- name: lookup-artifact-location
-  newName: quay.io/redhat-appstudio/hacbs-jvm-build-request-processor
   newTag: cd568e1d98ac04ac1f4f982c702732df7951b920
 
 patches:
