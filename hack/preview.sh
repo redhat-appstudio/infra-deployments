@@ -2,12 +2,17 @@
 
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/..
 
-source ${ROOT}/hack/flags.sh "The preview.sh enable preview mode used for development and testing on non-production clusters / kcp instances."
-parse_flags $@
-
 if [ -f $ROOT/hack/preview.env ]; then
     source $ROOT/hack/preview.env
 fi
+
+CLUSTER_KUBECONFIG=$HOME/.kube/config
+if [ -z "$KCP_KUBECONFIG" ]; then
+    KCP_KUBECONFIG=$ROOT/hack/ckcp-kubeconfig
+fi
+
+source ${ROOT}/hack/flags.sh "The preview.sh enable preview mode used for development and testing on non-production clusters / kcp instances."
+parse_flags $@
 
 if [ -z "$MY_GIT_FORK_REMOTE" ]; then
     echo "Set MY_GIT_FORK_REMOTE environment to name of your fork remote"
@@ -58,7 +63,7 @@ git checkout $MY_GIT_BRANCH
 #set the local cluster to point to the current git repo and branch and update the path to development
 $ROOT/hack/util-update-app-of-apps.sh $MY_GIT_REPO_URL development $PREVIEW_BRANCH
 
-while [ "$(oc get applications.argoproj.io all-components-staging -n openshift-gitops -o jsonpath='{.status.health.status} {.status.sync.status}')" != "Healthy Synced" ]; do
+while [ "$(oc get applications.argoproj.io all-components -n openshift-gitops -o jsonpath='{.status.health.status} {.status.sync.status}')" != "Healthy Synced" ]; do
   sleep 5
 done
 

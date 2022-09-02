@@ -11,6 +11,11 @@ function extra_params() {
       KCP_INSTANCE_NAME=$1
       shift
       ;;
+    --insecure)
+      shift
+      INSECURE=$1
+      shift
+      ;;
     *)
      echo "ERROR: '$1' is not a recognized flag!" >&2
      user_help >&2
@@ -48,7 +53,10 @@ SYNC_TARGET=appstudio-internal
 if [[ -z "$(kubectl get synctargets.workload.kcp.dev ${SYNC_TARGET} --kubeconfig ${KCP_KUBECONFIG} 2>/dev/null)" ]]; then
   echo "Creating SyncTarget..."
   KUBECONFIG=${KCP_KUBECONFIG} kubectl kcp workload sync ${SYNC_TARGET} --syncer-image ghcr.io/kcp-dev/kcp/syncer:main --resources=services,routes.route.openshift.io -o /tmp/${SYNC_TARGET}-syncer.yaml
-  kubectl apply -f /tmp/${SYNC_TARGET}-syncer.yaml --kubeconfig ~/.kube/config --kubeconfig ${CLUSTER_KUBECONFIG}
+  if [ "$INSECURE" == "true" ]; then
+    sed -i 's/certificate-authority-data: .*/insecure-skip-tls-verify: true/' /tmp/${SYNC_TARGET}-syncer.yaml
+  fi
+  kubectl apply -f /tmp/${SYNC_TARGET}-syncer.yaml --kubeconfig ${CLUSTER_KUBECONFIG}
 fi
 
 BIND_SCOPE="system:authenticated"
