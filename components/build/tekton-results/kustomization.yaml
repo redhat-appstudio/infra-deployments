@@ -12,8 +12,11 @@ resources:
 
 images:
 - name: gcr.io/tekton-releases/github.com/tektoncd/results/cmd/api:v0.4.0
-  newName: quay.io/redhat-appstudio/tekton-results-no-auth
-  newTag: stable
+  newName: quay.io/redhat-appstudio/tekton-results-api
+  newTag: 6a7b8aba42519b46882f75a585c028c8f2c52b3b
+- name: gcr.io/tekton-releases/github.com/tektoncd/results/watcher/api:v0.4.0
+  newName: quay.io/redhat-appstudio/tekton-results-watcher
+  newTag: 6a7b8aba42519b46882f75a585c028c8f2c52b3b
 
 patchesStrategicMerge:
 - patch-postgres-redhat-statefulset.yaml
