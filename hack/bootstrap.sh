@@ -8,6 +8,12 @@ function extra_params() {
       shift
       MODE=$1
       shift
+      if echo $MODE | grep -q preview; then
+        if [ -z "$CLUSTER_KUBECONFIG" ]; then
+          export CLUSTER_KUBECONFIG=$HOME/.kube/config
+        fi
+        KCP_KUBECONFIG=placeholder
+      fi
       ;;
     -sk|--skip-kcp)
       shift
@@ -29,6 +35,10 @@ function extra_help() {
 
 source ${ROOT}/hack/flags.sh "The bootstrap.sh script installs and configures ArgoCD in Openshift cluster and configures service provider workspaces." extra_params extra_help
 parse_flags $@
+
+if [ -z "$CLUSTER_KUBECONFIG" ]; then
+  CLUSTER_KUBECONFIG=$HOME/.kube/config
+fi
 
 if [ "$(oc auth can-i '*' '*' --all-namespaces --kubeconfig ${CLUSTER_KUBECONFIG})" != "yes" ]; then
   echo
@@ -143,7 +153,6 @@ echo
 echo "========================================================================="
 echo
 
-
 configure_kcp() {
   if [[ "${SKIP_KCP}" == "true" ]]
   then
@@ -184,6 +193,10 @@ case $MODE in
         echo "These changes need to be pushed to your fork to be seen by argocd"
         $ROOT/hack/util-set-development-repos.sh ${MY_GIT_REPO_URL} development ${MY_GIT_BRANCH}
         ;;
-    "preview")
-        $ROOT/hack/preview.sh ;;
+    "preview-ckcp")
+        export KCP_KUBECONFIG=$ROOT/hack/ckcp-kubeconfig
+        $ROOT/hack/install-ckcp.sh
+        $ROOT/hack/configure-kcp.sh -kn dev
+        $ROOT/hack/preview.sh
+        ;;
 esac

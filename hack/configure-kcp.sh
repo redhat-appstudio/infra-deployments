@@ -48,7 +48,7 @@ SYNC_TARGET=appstudio-internal
 if [[ -z "$(kubectl get synctargets.workload.kcp.dev ${SYNC_TARGET} --kubeconfig ${KCP_KUBECONFIG} 2>/dev/null)" ]]; then
   echo "Creating SyncTarget..."
   KUBECONFIG=${KCP_KUBECONFIG} kubectl kcp workload sync ${SYNC_TARGET} --syncer-image ghcr.io/kcp-dev/kcp/syncer:main --resources=services,routes.route.openshift.io -o /tmp/${SYNC_TARGET}-syncer.yaml
-  kubectl apply -f /tmp/${SYNC_TARGET}-syncer.yaml --kubeconfig ~/.kube/config --kubeconfig ${CLUSTER_KUBECONFIG}
+  kubectl apply -f /tmp/${SYNC_TARGET}-syncer.yaml --kubeconfig ${CLUSTER_KUBECONFIG}
 fi
 
 BIND_SCOPE="system:authenticated"
