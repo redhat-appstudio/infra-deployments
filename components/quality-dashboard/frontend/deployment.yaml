@@ -29,8 +29,8 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: dashboard-proxy
-          image: openshift/oauth-proxy:latest
-          imagePullPolicy: IfNotPresent
+          image: quay.io/redhat-appstudio-qe/dashboard-oauth-proxy:f8a6c9973cb9c08a03cb227b65a75a0e80cea340
+          imagePullPolicy: Always
           ports:
           - containerPort: 8443
             name: public
@@ -42,9 +42,14 @@ spec:
           - --tls-cert=/etc/tls/private/tls.crt
           - --tls-key=/etc/tls/private/tls.key
           - --cookie-secret=SECRET
+          - --cookie-refresh=0
+          - --custom-templates-dir=/usr/templates
+          - ---htpasswd-file=/tmp/auth/users.htpasswd
           volumeMounts:
           - mountPath: /etc/tls/private
             name: proxy-tls
+          - name: quality-dashboard-auth
+            mountPath: /tmp/auth
           resources:
             limits:
               cpu: 500m
@@ -72,8 +77,12 @@ spec:
               protocol: TCP
           imagePullPolicy: Always
           image: >-
-            quay.io/redhat-appstudio/quality-dashboard-frontend:df7927773679f6a9822a0b8390d327ec2086c4ec
+            quay.io/redhat-appstudio/quality-dashboard-frontend:5e4d63a8c07414a6f1ec736c1fa09d5ea433436b
       volumes:
         - name: proxy-tls
           secret:
             secretName: proxy-tls
+        - name: quality-dashboard-auth
+          secret:
+            secretName: quality-dashboard-auth
+            defaultMode: 420
