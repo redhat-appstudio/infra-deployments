@@ -10,3 +10,5 @@ curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s htt
 chmod +x ./kubectl
 sudo mv ./kubectl /usr/local/bin
 sudo dnf install jq
+sudo dnf install openssl
+sudo dnf install coreutils
