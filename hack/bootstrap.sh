@@ -160,7 +160,7 @@ configure_kcp() {
   else
     if [[ ${2} == "true" ]]
     then
-      kubectl config use ${1}
+      KUBECONFIG=$KCP_KUBECONFIG kubectl config use ${1}
     fi
     source ${ROOT}/hack/configure-kcp.sh -kn ${1}
   fi
@@ -192,6 +192,13 @@ case $MODE in
         echo "Resetting the default repos in the development directory to be the current git repo:"
         echo "These changes need to be pushed to your fork to be seen by argocd"
         $ROOT/hack/util-set-development-repos.sh ${MY_GIT_REPO_URL} development ${MY_GIT_BRANCH}
+        ;;
+    "preview-cps")
+        export KCP_KUBECONFIG=$ROOT/hack/cps-kubeconfig
+        export ROOT_WORKSPACE='~'
+        KUBECONFIG=$KCP_KUBECONFIG kubectl config use kcp-stable-root
+        $ROOT/hack/configure-kcp.sh -kn dev
+        $ROOT/hack/preview.sh
         ;;
     "preview-ckcp")
         export KCP_KUBECONFIG=$ROOT/hack/ckcp-kubeconfig
