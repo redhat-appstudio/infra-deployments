@@ -1,6 +1,6 @@
-# AppStudio Infrastructure Deployments
+# App Studio Infrastructure Deployments
 
-This repository is an initial set of Argo-CD-based deployments of AppStudio components to a cluster, plus a script to bootstrap Argo CD onto that cluster (to drive these Argo-CD-based deployments, via OpenShift GitOps).
+This repository is an initial set of Argo-CD-based deployments of App Studio components to a cluster, plus a script to bootstrap Argo CD onto that cluster (to drive these Argo-CD-based deployments, via OpenShift GitOps).
 
 This repository is structured as a GitOps monorepo (e.g. the repository contains the K8s resources for *multiple* applications), using [Kustomize](https://kustomize.io/).
 
@@ -43,7 +43,7 @@ These are the steps to create a component pipeline:
     - ServiceAccount: This will be the service account the pipeline will run as.
     - Kustomization: This is necessary to install the component resources defined above.
 
-Target repository has to have installed GitHub app - [AppStudio Staging CI](https://github.com/apps/appstudio-staging-ci) and pipelineRuns created in `.tekton` folder, example [Build Service](https://github.com/redhat-appstudio/build-service/tree/main/.tekton)
+The target repository has to have an installed GitHub app - [App Studio Staging CI](https://github.com/apps/appstudio-staging-ci) and PipelineRuns created in the `.tekton` folder, for example [Build Service](https://github.com/redhat-appstudio/build-service/tree/main/.tekton)
 
 ## Maintaining your components
 
@@ -51,13 +51,24 @@ Simply update the files under `components/(team-name)`, and open a PR with the c
 
 **TIP**: For development purposes, you can use `kustomize build .` to output the K8s resources that are being generated for your folder.
 
+## Recommended workflow for changes to the pre-kcp App Studio Staging cluster
+
+If you want to make changes to the App Studio Staging cluster, which is using the long running pre-kcp branch for its configuration, here is the recommended workflow:
+- Pull the pre-kcp branch locally: `git fetch upstream pre-kcp`, `git checkout pre-kcp`
+- Work in a new feature branch based on `pre-kcp`
+- Make your changes and commit them, then push them your fork
+- Make a pull request to the upstream `pre-kcp` branch and get those changes reviewed
+- Test the changes, either via Openshift CI on the new pull request, or by updating another cluster and running the E2E tests
+- Use `kubectl apply -f argo-cd-apps/app-of-apps/all-applications-staging.yaml` to apply the changes to the App Studio Staging cluster
+- Merge the pull request into the upstream `pre-kcp` branch
+
 ## Bootstrapping a cluster
 
 ### Required prerequisites
 
 The prerequisites are:
 
-- You must have `kubectl`, `oc`, `jq` and [`yq`](https://github.com/mikefarah/yq) installed.
+- You must have `kubectl`, `oc`, `openssl`, `realpath`, `jq` and [`yq`](https://github.com/mikefarah/yq) installed.
 - You must have `kubectl` and `oc` pointing to an existing OpenShift cluster, that you wish to deploy to. Alternatively, you can configure a local CodeReady Containers VM to deploy to.
 - The script `./hack/setup/install-pre-req.sh` will install these prerequisites for you, if they're not already installed.
 
@@ -79,7 +90,7 @@ See [hack/quicklab/README.md](hack/quicklab/README.md)
 
 Steps:
 
-1) Run `./hack/bootstrap-cluster.sh [preview]` which will bootstrap Argo CD (using OpenShift GitOps) and setup the Argo CD `Application` Custom Resources (CRs) for each component. This command will output the Argo CD Web UI route when it's finished. `preview` will enable preview mode used for development and testing on non-production clusters, described in section [Preview mode for your clusters](#preview-mode-for-your-clusters).
+1) Run `./hack/bootstrap-cluster.sh [preview]` which will bootstrap Argo CD (using OpenShift GitOps) and setup the Argo CD `Application` Custom Resources (CRs) for each component. This command will output the Argo CD Web UI route when it's finished.  The `preview` option will enable preview mode used for development and testing on non-production clusters, described in section [Preview mode for your clusters](#preview-mode-for-your-clusters).  The default, non-preview mode is what is used on the App Studio Staging cluster.
 2) Open the Argo CD Web UI to see the status of your deployments. You can use the route from the previous step and login using your OpenShift credentials (using the 'Login with OpenShift' button), or login to the OpenShift Console and navigate to Argo CD using the OpenShift Gitops menu in the Applications pulldown.
 ![OpenShift Gitops menu with Cluster Argo CD menu option](documentation/images/argo-cd-login.png?raw=true "OpenShift Gitops menu")
 3) If your deployment was successful, you should see several applications running, such as "all-components-staging", "gitops", and so on.
@@ -145,34 +156,33 @@ Even with 6 CPU cores, you will need to reduce the CPU resource requests for eac
 
 ## Preview mode for your clusters
 
-Once you bootstrap a cluster without `preview` argument, the root ArgoCD Application and all of the component applications will each point to the upstream repository. Or you can bootstrap cluster directly in mode which you need.
+If you bootstrap a cluster without the `preview` argument, the root ArgoCD Application and all of the component applications will each point to the upstream repository.
 
-To enable development for a team or individual to test changes on your own cluster, you need to replace the references to `https://github.com/redhat-appstudio/infra-deployments.git` with references to your own fork.
+To test your changes on your own cluster, you need to replace the references to the upstream repository `https://github.com/redhat-appstudio/infra-deployments.git` with references to your own fork.
 
-There are a set of scripts that help with this, and minimize the changes needed in your forks.
+The preview mode scripts help minimize the changes needed in your forks. 
 
-There is a development configuration in `argo-cd-apps/overlays/development` which includes a kustomize overlay that can redirect the default components individual repositories to your fork.
-The script also supports branches automatically. If you work in a checked out branch, each of the components in the overlays will mapped to that branch by setting `targetRevision:`.
+There is a development configuration in `argo-cd-apps/overlays/development` which includes a kustomize overlay that can redirect the default components' individual repositories to your fork.
 
-Preview mode works in a feature branch, apply script which creates new preview branch and create additional commit with customization.
+Preview mode creates a temporary preview branch, runs kustomize, and creates a commit with the necessary changes. Then it applies those changes using Argo CD.
+
+The preview script also supports branches automatically. If you work in a checked out branch, each of the components in the overlays will be mapped to that branch by setting `targetRevision:`.
 
 ### Setting Preview mode
 
 Steps:
 
-1) Copy `hack/preview-template.env` to `hack/preview.env` and update new file based on instructions. File `hack/preview.env` should never be included in commit.
+1) Copy `hack/preview-template.env` to `hack/preview.env` and update the new file based on the instructions. File `hack/preview.env` should never be included in commit, so it is already included in the `.gitignore` file.
 2) Work on your changes in a feature branch
 3) Commit your changes
 4) Run `./hack/preview.sh`, which will do:
-  a) New branch is created from your current branch, the name of new branch is `preview-<name-of-current-branch>`
-  b) Commit with changes related to your environment is added into preview branch
-  c) Preview branch is pushed into your fork
+  a) A new branch named `preview-<name-of-current-branch>` is created from your current branch 
+  b) A commit with changes related to your environment is added into the preview branch
+  c) The preview branch is pushed into your fork
   d) ArgoCD is set to point to your fork and the preview branch
-  e) User is switched back to feature branch to create additional changes
+  e) Git is switched back to your feature branch for additional changes
 
 If you want to reset your environment you can run the `hack/util-update-app-of-apps.sh https://github.com/redhat-appstudio/infra-deployments.git staging pre-kcp` to reset everything including your cluster to `https://github.com/redhat-appstudio/infra-deployments.git` and match the upstream config.
-
-Note running these scripts in a clone repo will have no effect as the repo will remain `https://github.com/redhat-appstudio/infra-deployments.git`
 
 ## End-to-End Tests
 
@@ -184,9 +194,9 @@ The E2E test suite can be run against a properly bootstrapped cluster. Please re
 
 Authentication is managed by [components/authentication](components/authentication/). Authentication is disabled in preview mode.
 
-For access to Stage cluster the github user has to be part of `stage` team in `redhat-appstudio-sre` organization.
+For access to the App Studio Staging cluster the Github user must be a member of the `stage` team in the `redhat-appstudio-sre` organization.
 
-Access to namespaces is managed by [components/authentication](components/authentication/) where `User` is github account and `Group` is team of `redhat-appstudio` organization.
+Access to namespaces is managed by [components/authentication](components/authentication/) where `User` is a Github user ID and `Group` is a team in the `redhat-appstudio` organization.
 
 Users can be added to organizations by Michal Kovarik <mkovarik@redhat.com> and by Shoubhik Bose <shbose@redhat.com>.
 
@@ -202,9 +212,9 @@ Described in [components/gitops](components/gitops/README.md)
 
 Quality dashboard is managed by `components/quality-dashboard`.
 
-By default the frontend is using AppStudio Staging cluster for backend. If you want to use backend on your cluster you need to set secrets for `rds-endpoint`, `POSTGRES_PASSWORD` and `github-token` in `quality-dashboard` namespace and also push `components/quality-dashboard/frontend/kustomization.yaml`(the route to backend is changed by script `hack/util-set-quality-dashboard-backend-route.sh` in development and preview cluster modes).
+By default the frontend is using the App Studio Staging cluster for its backend. If you want to use a backend on your cluster you need to set secrets for `rds-endpoint`, `POSTGRES_PASSWORD` and `github-token` in the `quality-dashboard` namespace and also push `components/quality-dashboard/frontend/kustomization.yaml`. (The route to the backend is changed by the script `hack/util-set-quality-dashboard-backend-route.sh` in development and preview cluster modes.)
 
-More information about quality-dashboard you can found in repo: `https://github.com/redhat-appstudio/quality-dashboard`.
+More information about quality-dashboard can be found in repo: `https://github.com/redhat-appstudio/quality-dashboard`.
 
 ## Setting up observability stack
 
@@ -215,7 +225,7 @@ This script requires few things
 * [Github Cookie secret](https://oauth2-proxy.github.io/oauth2-proxy/docs/configuration/overview)
 * [oc](https://docs.openshift.com/container-platform/4.11/cli_reference/openshift_cli/getting-started-cli.html) binary installed and configured to have admin access to the cluster
 
-for running the `hack/setup_observability.sh` script
+To use the `hack/setup_observability.sh` script
 1. Copy `hack/monitoring-template.env` to `hack/monitoring.env`
 2. Update the values for the variables in `hack/monitoring.env` from github oauth
 2. ```$ ./hack/setup_observability.sh```
