@@ -11,7 +11,7 @@
 # note, if accidental merges are accepted in the development directory, they will not affect staging. 
 
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/..
-MANIFEST=$ROOT/argo-cd-apps/app-of-apps/all-applications-staging.yaml
+MANIFEST=$ROOT/argo-cd-apps/app-of-apps/all-applications.yaml
 GITURL=$1
 OVERLAYDIR=argo-cd-apps/overlays/$2
 
@@ -30,10 +30,17 @@ PATCHBRANCH="$(printf '.spec.source.targetRevision="%q"' $BRANCH)"
 # the overlay content can be updated selectively per user in their fork
 # to replace the specific component they are evolving  
 
+KUBECONFIG_PARAM=""
+if [[ -n ${CLUSTER_KUBECONFIG} ]]
+then
+  KUBECONFIG_PARAM="--kubeconfig ${CLUSTER_KUBECONFIG}"
+fi
 echo
+
 echo "Setting the application repo to $GITURL, branch $BRANCH in overlay $OVERLAYDIR"
-yq  e "$PATCHOVERLAY" $MANIFEST | \
- yq  e "$PATCHREPO" - | \
- yq  e "$PATCHBRANCH" - | \
- kubectl apply -f -
+kubectl create -f $MANIFEST --dry-run=client -o json ${KUBECONFIG_PARAM}  | \
+ jq "$PATCHOVERLAY" | \
+ jq "$PATCHREPO" | \
+ jq "$PATCHBRANCH" | \
+ kubectl apply ${KUBECONFIG_PARAM} -f -
  
