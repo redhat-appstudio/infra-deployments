@@ -40,7 +40,9 @@ Simply update the files under `components/(team-name)`, and open a PR with the c
 
 The prerequisites are:
 
-- You must have `kubectl`, `oc`, `jq`, `openssl`, `realpath` and [`yq`](https://github.com/mikefarah/yq) installed.
+- You must have `kubectl` (> v1.24), `oc`, `jq`, `openssl`, `realpath` and [`yq`](https://github.com/mikefarah/yq) installed.
+- [kubectl-kcp plugin](https://github.com/kcp-dev/kcp/releases)
+- [kubectl-oidc_login plugin](https://github.com/int128/kubelogin/releases) (only when connecting to CPS)
 - You must have `kubectl` and `oc` pointing to an existing OpenShift cluster, that you wish to deploy to. Alternatively, you can configure a local CodeReady Containers VM to deploy to.
 - You must have another `kubeconfig` pointing to an existing kcp instance, that you wish to deploy to. You can use either a CPS or a local kcp instance.
 - The script `./hack/setup/install-pre-req.sh` will install these prerequisites for you, if they're not already installed.
@@ -63,7 +65,7 @@ See [hack/quicklab/README.md](hack/quicklab/README.md)
 
 To boostrap AppStudio run:
 ```bash
-./hack/bootstrap.sh -kk [kubeconfig-pointing-to-kcp] -ck [kubeconfig-pointing-to-openshift] -rw [workspace-to-be-used-as-root] -m [mode|upstream,dev,preview]
+./hack/bootstrap.sh -kk [kubeconfig-pointing-to-kcp] -ck [kubeconfig-pointing-to-openshift] -rw [workspace-to-be-used-as-root] -m [mode|upstream,dev,preview-ckcp,preview-cps]
 ```
 which will:
 * Bootstrap Argo CD (using OpenShift GitOps) - it will output the Argo CD Web UI route when it's finished.
@@ -72,20 +74,20 @@ which will:
 * Setup the Argo CD `Application`/`ApplicationSet` Custom Resources (CRs) for each component.
 
 #### Modes:
-* `upstream` (default) mode will expect access to both CPS instances `kcp-stable` and `kcp-unstable` - each of them should be represented by a kubeconfig context having the same name as the CPS instance.  
-* `dev` mode will use one kcp instance as the deployment target - it can be any instance (either CPS or local kcp). The current kubeconfig context should point to it.  
-* `preview` mode will enable preview mode used for development and testing on non-production clusters using the same deployment target as `dev` mode. See [Preview mode for your clusters](#preview-mode-for-your-clusters).
+* `upstream` (default) mode will expect access to both CPS instances `kcp-stable` and `kcp-unstable` - each of them should be represented by a kubeconfig context having the same name as the CPS instance.
+* `dev` mode will use one kcp instance as the deployment target - it can be any instance (either CPS or local kcp). The current kubeconfig context should point to it.
+* `preview-[ckcp,cps]` mode will enable preview mode used for development and testing on non-production clusters using the same deployment target as `dev` mode. See [Preview mode for your clusters](#preview-mode-for-your-clusters).
 
 #### Workspaces:
-If `-rw | --root-workspace` parameter is not specified, then by default, all workspaces are automatically created under the `root` workspace.  
+If `-rw | --root-workspace` parameter is not specified, then by default, all workspaces are automatically created under the `root` workspace.
 There are two workspaces created per kcp instance:
-* `redhat-appstudio-internal-compute` - This is the workspace where the SyncTarget for the OpenShift workload cluster is configured. If the root workspace is different from `root`, then the name of the workspace is set to `compute` to work around [this issue](https://github.com/kcp-dev/kcp/issues/1843). (The name of the workspace can be overridden by setting the `COMPUTE_WORKSPACE` variable) 
-* `redhat-appstudio` - In this workspace ArgoCD deploys all kcp-related manifests from the infra-deployments repository. It's the place where all AppStudio components run. (The name of the workspace can be overridden by setting the `APPSTUDIO_WORSKPACE` variable)  
+* `redhat-appstudio-internal-compute` - This is the workspace where the SyncTarget for the OpenShift workload cluster is configured. If the root workspace is different from `root`, then the name of the workspace is set to `compute` to work around [this issue](https://github.com/kcp-dev/kcp/issues/1843). (The name of the workspace can be overridden by setting the `COMPUTE_WORKSPACE` variable)
+* `redhat-appstudio` - In this workspace ArgoCD deploys all kcp-related manifests from the infra-deployments repository. It's the place where all AppStudio components run. (The name of the workspace can be overridden by setting the `APPSTUDIO_WORKSPACE` variable)
 
 #### Configure kcp for upstream mode:
 If you decide to run the upstream mode, then the `bootstrap.sh` script tries to configure two instances of kcp: `kcp-stable` and `kcp-unstable`. However, `kcp-stable` instance may require different version of kubectl kcp plugin than the `kcp-unstable` one. This makes running the bootstrap script impossible for the upstream mode, because you cannot use two versions of the plugin at the same time.
 
-To work around the issue, you can skip the configuration of the kcp part by using `-sk | --skip-kcp parameter <true/false>`:  
+To work around the issue, you can skip the configuration of the kcp part by using `-sk | --skip-kcp parameter <true/false>`:
 ```bash
 ./hack/bootstrap.sh -sk true ...
 ```
@@ -109,7 +111,7 @@ Even with 6 CPU cores, you will need to reduce the CPU resource requests for eac
 
 ## Preview mode for your clusters
 
-Once you bootstrap your environment without `preview` argument, the root ArgoCD Application and all of the component applications will each point to the upstream repository. Or you can bootstrap cluster directly in mode which you need.
+Once you bootstrap your environment without `-m preview-ckcp` or `-m preview-cps`, the root ArgoCD Application and all of the component applications will each point to the upstream repository. Or you can bootstrap cluster directly in mode which you need.
 
 To enable development for a team or individual to test changes on your own cluster, you need to replace the references to `https://github.com/redhat-appstudio/infra-deployments.git` with references to your own fork.
 
@@ -119,6 +121,21 @@ There is a development configuration in `argo-cd-apps/overlays/development` whic
 The script also supports branches automatically. If you work in a checked out branch, each of the components in the overlays will mapped to that branch by setting `targetRevision:`.
 
 Preview mode works in a feature branch, apply script which creates new preview branch and create additional commit with customization.
+
+### Bootstrapping with Preview modes
+
+Two preview modes are offered:
+
+- `preview-ckcp` deploys containerized KCP directly into your cluster and connects the cluster. Kubeconfig will be stored in `hack/ckcp-kubeconfig`
+- `preview-cps` connects to CPS instance. Before the mode is used the kubeconfig file `hack/cps-kubeconfig` must be created manually based on 'CSP onboarding document'
+
+Usage:
+
+```
+./hack/bootstrap.sh -m preview-ckcp
+or
+./hack/bootstrap.sh -m preview-cps
+```
 
 ### Setting Preview mode
 

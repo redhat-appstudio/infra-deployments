@@ -8,7 +8,11 @@ fi
 
 CLUSTER_KUBECONFIG=$HOME/.kube/config
 if [ -z "$KCP_KUBECONFIG" ]; then
-    KCP_KUBECONFIG=$ROOT/hack/ckcp-kubeconfig
+    if [ -f $ROOT/hack/ckcp-kubeconfig ]; then
+        KCP_KUBECONFIG=$ROOT/hack/ckcp-kubeconfig
+    else
+        KCP_KUBECONFIG=$ROOT/hack/cps-kubeconfig
+    fi
 fi
 
 source ${ROOT}/hack/flags.sh "The preview.sh enable preview mode used for development and testing on non-production clusters / kcp instances."
@@ -80,7 +84,8 @@ while [ -n "$(oc get applications.argoproj.io -n openshift-gitops -o jsonpath='{
 done
 
 INTERVAL=10
-while :; do
+# Disabling check of healthy apps for now till envineronment is more stable
+while false; do
   STATE=$(kubectl get apps -n openshift-gitops --no-headers)
   NOT_DONE=$(echo "$STATE" | grep -v "Synced[[:blank:]]*Healthy")
   echo "$NOT_DONE"
