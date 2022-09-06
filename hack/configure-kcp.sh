@@ -26,6 +26,7 @@ function extra_params() {
 
 function extra_help() {
   echo "-kn, --kcp-name               The name of the kcp instance - eg. kcp-stable, kcp-unstable (default is 'dev')"
+  echo "--insecure                    Disable SSL check for KCP syncer when set to 'true'"
 }
 
 source ${ROOT}/hack/flags.sh "The configure-kcp.sh configures the kcp instance with the needed workspaces and a workload cluster. The current context of the kcp kubeconfig should point to the kcp instance." extra_params extra_help

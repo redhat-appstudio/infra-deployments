@@ -8,11 +8,8 @@ function extra_params() {
       shift
       MODE=$1
       shift
-      if echo $MODE | grep -q preview; then
-        if [ -z "$CLUSTER_KUBECONFIG" ]; then
-          export CLUSTER_KUBECONFIG=$HOME/.kube/config
-        fi
-        KCP_KUBECONFIG=placeholder
+      if echo $MODE | grep -q preview && [ -f $ROOT/hack/preview.env ]; then
+        source $ROOT/hack/preview.env
       fi
       ;;
     -sk|--skip-kcp)
@@ -35,10 +32,6 @@ function extra_help() {
 
 source ${ROOT}/hack/flags.sh "The bootstrap.sh script installs and configures ArgoCD in Openshift cluster and configures service provider workspaces." extra_params extra_help
 parse_flags $@
-
-if [ -z "$CLUSTER_KUBECONFIG" ]; then
-  CLUSTER_KUBECONFIG=$HOME/.kube/config
-fi
 
 if [ "$(oc auth can-i '*' '*' --all-namespaces --kubeconfig ${CLUSTER_KUBECONFIG})" != "yes" ]; then
   echo
@@ -160,7 +153,7 @@ configure_kcp() {
   else
     if [[ ${2} == "true" ]]
     then
-      KUBECONFIG=$KCP_KUBECONFIG kubectl config use ${1}
+      kubectl config use ${1} --kubeconfig ${KCP_KUBECONFIG}
     fi
     source ${ROOT}/hack/configure-kcp.sh -kn ${1}
   fi
@@ -194,16 +187,19 @@ case $MODE in
         $ROOT/hack/util-set-development-repos.sh ${MY_GIT_REPO_URL} development ${MY_GIT_BRANCH}
         ;;
     "preview-cps")
-        export KCP_KUBECONFIG=$ROOT/hack/cps-kubeconfig
         export ROOT_WORKSPACE='~'
-        rm -f $ROOT/hack/ckcp-kubeconfig
+        if [ -f "$CPS_KUBECONFIG" ]; then
+          cp $CPS_KUBECONFIG $KCP_KUBECONFIG
+        else
+          echo "environment variable CPS_KUBECONFIG must be set and point to kubeconfig of CPS"
+          exit 1
+        fi
         KUBECONFIG=$KCP_KUBECONFIG kubectl config use kcp-stable-root
         $ROOT/hack/configure-kcp.sh -kn dev
         $ROOT/hack/preview.sh
         ;;
     "preview-ckcp")
-        export KCP_KUBECONFIG=$ROOT/hack/ckcp-kubeconfig
-        $ROOT/hack/install-ckcp.sh
+        KUBECONFIG=${CLUSTER_KUBECONFIG} $ROOT/hack/install-ckcp.sh
         $ROOT/hack/configure-kcp.sh -kn dev --insecure true
         $ROOT/hack/preview.sh
         ;;

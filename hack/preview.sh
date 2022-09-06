@@ -6,15 +6,6 @@ if [ -f $ROOT/hack/preview.env ]; then
     source $ROOT/hack/preview.env
 fi
 
-CLUSTER_KUBECONFIG=$HOME/.kube/config
-if [ -z "$KCP_KUBECONFIG" ]; then
-    if [ -f $ROOT/hack/ckcp-kubeconfig ]; then
-        KCP_KUBECONFIG=$ROOT/hack/ckcp-kubeconfig
-    else
-        KCP_KUBECONFIG=$ROOT/hack/cps-kubeconfig
-    fi
-fi
-
 source ${ROOT}/hack/flags.sh "The preview.sh enable preview mode used for development and testing on non-production clusters / kcp instances."
 parse_flags $@
 
