@@ -39,11 +39,6 @@ parse_flags() {
         export ROOT_WORKSPACE=$1
         shift
         ;;
-      -m|--mode)
-        shift
-        export MODE=$1
-        shift
-        ;;
       *)
         if [[ -n ${EXTRA_PARAMS} ]]
         then
@@ -59,7 +54,7 @@ parse_flags() {
     esac
   done
 
-  if [[ -z ${KCP_KUBECONFIG} ]] || [[ -z ${KCP_KUBECONFIG} ]]
+  if [[ -z ${KCP_KUBECONFIG} ]] || [[ -z ${CLUSTER_KUBECONFIG} ]]
   then
     echo "ERROR: Both parameters --kcp-kubeconfig and --cluster-kubeconfig are mandatory" >&2
     exit 1
