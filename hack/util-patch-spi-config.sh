@@ -11,8 +11,6 @@ map(
         {"op": .op, "path": .path, "value": $VAULTHOST }
     elif (.op == "replace" and .path == "/data/BASEURL") then
         {"op": .op, "path": .path, "value": $BASEURL }
-    elif (.op == "replace" and .path == "/data/VAULTINSECURETLS") then
-        {"op": .op, "path": .path, "value": $VAULTINSECURETLS }
     else
         .
     end
@@ -47,5 +45,12 @@ fi
 
 TMP_FILE=$(mktemp)
 
-cat $PATCH_FILE | jq --arg VAULTHOST "${VAULT_HOST}" --arg BASEURL "${SPI_BASE_URL}" --arg VAULTINSECURETLS "${VAULT_INSECURE_TLS}" "${JQ_SCRIPT}" > "$TMP_FILE"
-mv "$TMP_FILE" "$PATCH_FILE"
+cat $PATCH_FILE | jq --arg VAULTHOST "${VAULT_HOST}" --arg BASEURL "${SPI_BASE_URL}" "${JQ_SCRIPT}" > "$TMP_FILE"
+cp "$TMP_FILE" "$PATCH_FILE"
+
+if [ "$VAULT_INSECURE_TLS" == "true" ]; then
+    cat "$PATCH_FILE" | jq '. += [{"op": "add", "path": "/data/VAULTINSECURETLS", "value": "true"}]' > "$TMP_FILE"
+    cp "$TMP_FILE" "$PATCH_FILE"
+fi
+
+rm "$TMP_FILE"
