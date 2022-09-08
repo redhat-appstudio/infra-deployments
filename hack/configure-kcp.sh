@@ -11,6 +11,11 @@ function extra_params() {
       KCP_INSTANCE_NAME=$1
       shift
       ;;
+    --insecure)
+      shift
+      INSECURE=$1
+      shift
+      ;;
     *)
      echo "ERROR: '$1' is not a recognized flag!" >&2
      user_help >&2
@@ -21,6 +26,7 @@ function extra_params() {
 
 function extra_help() {
   echo "-kn, --kcp-name               The name of the kcp instance - eg. kcp-stable, kcp-unstable (default is 'dev')"
+  echo "--insecure                    Disable SSL check for KCP syncer when set to 'true'"
 }
 
 source ${ROOT}/hack/flags.sh "The configure-kcp.sh configures the kcp instance with the needed workspaces and a workload cluster. The current context of the kcp kubeconfig should point to the kcp instance." extra_params extra_help
@@ -48,7 +54,10 @@ SYNC_TARGET=appstudio-internal
 if [[ -z "$(kubectl get synctargets.workload.kcp.dev ${SYNC_TARGET} --kubeconfig ${KCP_KUBECONFIG} 2>/dev/null)" ]]; then
   echo "Creating SyncTarget..."
   KUBECONFIG=${KCP_KUBECONFIG} kubectl kcp workload sync ${SYNC_TARGET} --syncer-image ghcr.io/kcp-dev/kcp/syncer:main --resources=services,routes.route.openshift.io -o /tmp/${SYNC_TARGET}-syncer.yaml
-  kubectl apply -f /tmp/${SYNC_TARGET}-syncer.yaml --kubeconfig ~/.kube/config --kubeconfig ${CLUSTER_KUBECONFIG}
+  if [ "$INSECURE" == "true" ]; then
+    sed -i 's/certificate-authority-data: .*/insecure-skip-tls-verify: true/' /tmp/${SYNC_TARGET}-syncer.yaml
+  fi
+  kubectl apply -f /tmp/${SYNC_TARGET}-syncer.yaml --kubeconfig ${CLUSTER_KUBECONFIG}
 fi
 
 BIND_SCOPE="system:authenticated"
@@ -96,12 +105,21 @@ done
 echo " OK"
 echo
 
-APPSTUDIO_WORSKPACE=${APPSTUDIO_WORSKPACE:-"redhat-appstudio"}
-echo "Creating and accessing '${APPSTUDIO_WORSKPACE}' for AppStudio controllers:"
+APPSTUDIO_WORKSPACE=${APPSTUDIO_WORKSPACE:-"redhat-appstudio"}
+echo "Creating and accessing '${APPSTUDIO_WORKSPACE}' for AppStudio controllers:"
 KUBECONFIG=${KCP_KUBECONFIG} kubectl ws ${ROOT_WORKSPACE}
-KUBECONFIG=${KCP_KUBECONFIG} kubectl ws create ${APPSTUDIO_WORSKPACE} --ignore-existing --type root:universal || true
-REDHAT_APPSTUDIO_URL=$(KUBECONFIG=${KCP_KUBECONFIG} kubectl get workspaces ${APPSTUDIO_WORSKPACE} -o jsonpath='{.status.URL}')
-KUBECONFIG=${KCP_KUBECONFIG} kubectl ws ${APPSTUDIO_WORSKPACE}
+
+if [ "$ROOT_WORKSPACE" == "~" ]; then
+  CURRENT_WS=$(KUBECONFIG=${KCP_KUBECONFIG} kubectl ws . | cut -f2 -d'"')
+  COMPUTE_WORKSPACE_PATH=${CURRENT_WS}:${COMPUTE_WORKSPACE}
+else
+  COMPUTE_WORKSPACE_PATH=${ROOT_WORKSPACE}:${COMPUTE_WORKSPACE}
+fi
+
+
+KUBECONFIG=${KCP_KUBECONFIG} kubectl ws create ${APPSTUDIO_WORKSPACE} --ignore-existing --type root:universal || true
+REDHAT_APPSTUDIO_URL=$(KUBECONFIG=${KCP_KUBECONFIG} kubectl get workspaces ${APPSTUDIO_WORKSPACE} -o jsonpath='{.status.URL}')
+KUBECONFIG=${KCP_KUBECONFIG} kubectl ws ${APPSTUDIO_WORKSPACE}
 
 echo "Creating APIBinding '${SYNC_TARGET}' for the compute"
 cat <<EOF | kubectl apply --kubeconfig ${KCP_KUBECONFIG} -f -
@@ -113,7 +131,7 @@ spec:
   reference:
     workspace:
       exportName: kubernetes
-      path: ${ROOT_WORKSPACE}:${COMPUTE_WORKSPACE}
+      path: $COMPUTE_WORKSPACE_PATH
 EOF
 
 echo -n "Waiting for APIBinding '${SYNC_TARGET}' to be bound:"
@@ -124,15 +142,15 @@ done
 echo " OK"
 echo
 
-echo "Adding Role/RoleBindings for OpenShift GitOps in ${APPSTUDIO_WORSKPACE} workspace:"
+echo "Adding Role/RoleBindings for OpenShift GitOps in ${APPSTUDIO_WORKSPACE} workspace:"
 kubectl apply --kustomize $ROOT/openshift-gitops/in-kcp --kubeconfig ${KCP_KUBECONFIG}
 echo
 
-echo "Getting a token for argocd SA (in ${APPSTUDIO_WORSKPACE} workspace) - kubectl 1.24.x or newer needs to be used."
+echo "Getting a token for argocd SA (in ${APPSTUDIO_WORKSPACE} workspace) - kubectl 1.24.x or newer needs to be used."
 SA_TOKEN=$(kubectl create token argocd --duration 876000h -n controllers-argocd-manager --kubeconfig ${KCP_KUBECONFIG})
 echo
 
-echo "Creating ArgoCD secret representing '${APPSTUDIO_WORSKPACE}' workspace with URL '${REDHAT_APPSTUDIO_URL}' in the compute OpenShift cluster:"
+echo "Creating ArgoCD secret representing '${APPSTUDIO_WORKSPACE}' workspace with URL '${REDHAT_APPSTUDIO_URL}' in the compute OpenShift cluster:"
 cat <<EOF | kubectl apply --kubeconfig ${CLUSTER_KUBECONFIG} -f -
 apiVersion: v1
 kind: Secret

@@ -8,6 +8,9 @@ function extra_params() {
       shift
       MODE=$1
       shift
+      if echo $MODE | grep -q preview && [ -f $ROOT/hack/preview.env ]; then
+        source $ROOT/hack/preview.env
+      fi
       ;;
     -sk|--skip-kcp)
       shift
@@ -143,7 +146,6 @@ echo
 echo "========================================================================="
 echo
 
-
 configure_kcp() {
   if [[ "${SKIP_KCP}" == "true" ]]
   then
@@ -151,7 +153,7 @@ configure_kcp() {
   else
     if [[ ${2} == "true" ]]
     then
-      kubectl config use ${1}
+      kubectl config use ${1} --kubeconfig ${KCP_KUBECONFIG}
     fi
     source ${ROOT}/hack/configure-kcp.sh -kn ${1}
   fi
@@ -184,6 +186,21 @@ case $MODE in
         echo "These changes need to be pushed to your fork to be seen by argocd"
         $ROOT/hack/util-set-development-repos.sh ${MY_GIT_REPO_URL} development ${MY_GIT_BRANCH}
         ;;
-    "preview")
-        $ROOT/hack/preview.sh ;;
+    "preview-cps")
+        export ROOT_WORKSPACE='~'
+        if [ -f "$CPS_KUBECONFIG" ]; then
+          cp $CPS_KUBECONFIG $KCP_KUBECONFIG
+        else
+          echo "environment variable CPS_KUBECONFIG must be set and point to kubeconfig of CPS"
+          exit 1
+        fi
+        KUBECONFIG=$KCP_KUBECONFIG kubectl config use kcp-stable-root
+        $ROOT/hack/configure-kcp.sh -kn dev
+        $ROOT/hack/preview.sh
+        ;;
+    "preview-ckcp")
+        KUBECONFIG=${CLUSTER_KUBECONFIG} $ROOT/hack/install-ckcp.sh
+        $ROOT/hack/configure-kcp.sh -kn dev --insecure true
+        $ROOT/hack/preview.sh
+        ;;
 esac
