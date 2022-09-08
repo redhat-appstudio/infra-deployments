@@ -67,7 +67,7 @@ then
 fi
 
 echo "Creating ClusterRole(Binding) to make the APIExport of the compute bindable for the group '${BIND_SCOPE}':"
-cat <<EOF | kubectl apply -f -
+cat <<EOF | kubectl apply --kubeconfig ${KCP_KUBECONFIG} -f -
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
