@@ -41,11 +41,11 @@ Simply update the files under `components/(team-name)`, and open a PR with the c
 The prerequisites are:
 
 - You must have `kubectl`, `oc`, `jq`, `openssl`, `realpath` and [`yq`](https://github.com/mikefarah/yq) installed.
-- You must have `kubectl` and `oc` pointing to an existing OpenShift cluster, that you wish to deploy to. Alternatively, you can configure a OpenShift Local to deploy to.
+- You must have `kubectl` and `oc` pointing to an existing OpenShift cluster, that you wish to deploy to. Alternatively, you can configure a OpenShift Local (formerly CRC) to deploy to.
 - You must have another `kubeconfig` pointing to an existing kcp instance, that you wish to deploy to. You can use either a CPS or a local kcp instance.
 - The script `./hack/setup/install-pre-req.sh` will install these prerequisites for you, if they're not already installed.
 
-### Optional: OpenShift Local Setup
+### Optional: OpenShift Local (formerly CRC) Setup
 
 If you don't already have a test OpenShift cluster available, OpenShift Local is a popular option. It runs a small OpenShift cluster in a single VM on your local workstation.
 
@@ -103,7 +103,7 @@ Open the Argo CD Web UI to see the status of your deployments. You can use the r
 
 If your deployment was successful, you should see several applications running, such as "all-components", "has", and so on.
 
-### Optional: OpenShift Local Post-Bootstrap Configuration
+### Optional: OpenShift Local (formerly CRC) Post-Bootstrap Configuration
 
 Even with 6 CPU cores, you will need to reduce the CPU resource requests for each App Studio application. Either run `./hack/reduce-gitops-cpu-requests.sh` which will set resources.requests.cpu values to 50m or use `kubectl edit argocd/openshift-gitops -n openshift-gitops` to reduce the values to some other value. More details are in the FAQ below.
 
@@ -205,19 +205,19 @@ oc delete pods -n openshift-gitops -l app.kubernetes.io/name=openshift-gitops-de
 ```
 + The pod will automatically restart and ArgoCD `Log In Via OpenShift` should be working again.
 
-### Q: What is the recommended memory and CPU allocation for OpenShift Local for development purposes?
+### Q: What is the recommended memory and CPU allocation for OpenShift Local (formerly CRC) for development purposes?
 
 We recommend 7+ cores and 24+ GiB (24576 MiB) of memory for the whole system (OpenShift Local + App Studio).
 
 See the OpenShift Local docs [for more on these minimum requirements](https://access.redhat.com/documentation/en-us/red_hat_openshift_local/2.5/html/getting_started_guide/installation_gsg#doc-wrapper) (HW, SW, SO ...)
 
-### Q: When using OpenShift Local for development purposes, I am getting an error message similar to: `0/1 nodes available: insufficient memory`.
+### Q: When using OpenShift Local (formerly CRC) for development purposes, I am getting an error message similar to: `0/1 nodes available: insufficient memory`.
 
 The default worker node memory allocation is insufficient to run App Studio. Increase the memory to 16 GiB using `crc config set memory 16384` and then create a new CRC VM to apply your changes, using `crc delete` and `crc start`. Finally, repeat the cluster bootstrapping process.
 
 See the OpenShift Local docs [for more on this configuration option](https://access.redhat.com/documentation/en-us/red_hat_openshift_local/2.5/html/getting_started_guide/configuring_gsg#configuring-the-instance_gsg).
 
-### Q: When using OpenShift Local for development purposes, I am getting an error message similar to: `0/1 nodes available: insufficient cpu`.
+### Q: When using OpenShift Local (formerly CRC) for development purposes, I am getting an error message similar to: `0/1 nodes available: insufficient cpu`.
 
 The default CPU allocation will not be sufficient for the CPU resource requests in this repo. Increase number of cores, for example, `crc config set cpus 6` if your hardware supports it, and then create a new CRC VM to apply your changes, using `crc delete` and `crc start`. Finally, repeat the cluster bootstrapping process.
 
