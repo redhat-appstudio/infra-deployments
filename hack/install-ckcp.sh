@@ -17,4 +17,15 @@ rm $TMP_FILE
 while ! oc rsh -n ckcp deployment/ckcp ls /etc/kcp/config/admin.kubeconfig; do
   sleep 10
 done
-oc rsh -n ckcp deployment/ckcp sed 's/certificate-authority-data: .*/insecure-skip-tls-verify: true/' /etc/kcp/config/admin.kubeconfig > $KCP_KUBECONFIG
+
+CKCP_KUBECONFIG=${CKCP_KUBECONFIG:-/tmp/ckcp-admin.kubeconfig}
+oc rsh -n ckcp deployment/ckcp sed 's/certificate-authority-data: .*/insecure-skip-tls-verify: true/' /etc/kcp/config/admin.kubeconfig > ${CKCP_KUBECONFIG}
+
+echo
+echo "=========================================================================================="
+echo "ckcp admin kubeconfig was stored in ${CKCP_KUBECONFIG}. To use the kubeconfig run:"
+echo
+echo "export KUBECONFIG=${CKCP_KUBECONFIG}"
+echo
+echo "=========================================================================================="
+echo
