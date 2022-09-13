@@ -44,16 +44,6 @@ yq -i e ".0.value=\"$SPI_API_SERVER\"" $ROOT/components/spi/oauth-service-config
 # This script also sets up the Vault client to accept insecure TLS connections so that the custom vault host doesn't have
 # to serve requests using a trusted TLS certificate.
 $ROOT/hack/util-patch-spi-config.sh
-
-# set backend route for quality dashboard for current cluster
-$ROOT/hack/util-set-quality-dashboard-backend-route.sh
-
-if [ -n "$MY_GITHUB_ORG" ]; then
-    $ROOT/hack/util-set-github-org $MY_GITHUB_ORG
-fi
-
-domain=$(kubectl get ingresses.config.openshift.io cluster --template={{.spec.domain}})
-
 # configure the secrets and providers in SPI
 TMP_FILE=$(mktemp)
 yq e ".sharedSecret=\"${SHARED_SECRET:-$(openssl rand -hex 20)}\"" $ROOT/components/spi/config.yaml | \
@@ -63,6 +53,15 @@ yq e ".sharedSecret=\"${SHARED_SECRET:-$(openssl rand -hex 20)}\"" $ROOT/compone
 oc create -n spi-system secret generic shared-configuration-file --from-file=config.yaml=$TMP_FILE --dry-run=client -o yaml | oc apply -f -
 echo "SPI configured"
 rm $TMP_FILE
+
+# set backend route for quality dashboard for current cluster
+$ROOT/hack/util-set-quality-dashboard-backend-route.sh
+
+if [ -n "$MY_GITHUB_ORG" ]; then
+    $ROOT/hack/util-set-github-org $MY_GITHUB_ORG
+fi
+
+domain=$(kubectl get ingresses.config.openshift.io cluster --template={{.spec.domain}})
 
 if [ -n "$DOCKER_IO_AUTH" ]; then
     AUTH=$(mktemp)
