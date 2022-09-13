@@ -199,7 +199,10 @@ case $MODE in
         $ROOT/hack/preview.sh
         ;;
     "preview-ckcp")
-        KUBECONFIG=${CLUSTER_KUBECONFIG} $ROOT/hack/install-ckcp.sh
+        CKCP_KUBECONFIG=${CKCP_KUBECONFIG:-/tmp/ckcp-admin.kubeconfig}
+        KUBECONFIG=${CLUSTER_KUBECONFIG} CKCP_KUBECONFIG=${CKCP_KUBECONFIG} $ROOT/hack/install-ckcp.sh
+
+        export KCP_KUBECONFIG=${CKCP_KUBECONFIG}
         $ROOT/hack/configure-kcp.sh -kn dev --insecure true
         $ROOT/hack/preview.sh
         ;;
