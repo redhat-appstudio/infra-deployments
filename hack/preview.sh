@@ -38,9 +38,21 @@ $ROOT/hack/util-set-development-repos.sh $MY_GIT_REPO_URL development $PREVIEW_B
 
 # set the API server which SPI uses to authenticate users to empty string (by default) so that multi-cluster
 # setup is not needed
-yq -i e ".0.value.value=\"$SPI_API_SERVER\"" $ROOT/components/spi/oauth-service-deployment-patch.json
-# set Vault host configuration to provided VAULT_HOST variable or to current cluster
-$ROOT/hack/util-set-spi-vault-host.sh
+yq -i e ".0.value=\"$SPI_API_SERVER\"" $ROOT/components/spi/oauth-service-config-patch.json
+# patch the SPI configuration with the Vault host configuration to provided VAULT_HOST variable or to current cluster
+# and the base URL set to the SPI_BASE_URL variable or the URL of the  route to the SPI OAuth service in the current cluster
+# This script also sets up the Vault client to accept insecure TLS connections so that the custom vault host doesn't have
+# to serve requests using a trusted TLS certificate.
+$ROOT/hack/util-patch-spi-config.sh
+# configure the secrets and providers in SPI
+TMP_FILE=$(mktemp)
+yq e ".sharedSecret=\"${SHARED_SECRET:-$(openssl rand -hex 20)}\"" $ROOT/components/spi/config.yaml | \
+    yq e ".serviceProviders[0].type=\"${SPI_TYPE:-GitHub}\"" - | \
+    yq e ".serviceProviders[0].clientId=\"${SPI_CLIENT_ID:-app-client-id}\"" - | \
+    yq e ".serviceProviders[0].clientSecret=\"${SPI_CLIENT_SECRET:-app-secret}\"" - > $TMP_FILE
+oc create -n spi-system secret generic shared-configuration-file --from-file=config.yaml=$TMP_FILE --dry-run=client -o yaml | oc apply -f -
+echo "SPI configured"
+rm $TMP_FILE
 
 # set backend route for quality dashboard for current cluster
 $ROOT/hack/util-set-quality-dashboard-backend-route.sh
@@ -50,18 +62,6 @@ if [ -n "$MY_GITHUB_ORG" ]; then
 fi
 
 domain=$(kubectl get ingresses.config.openshift.io cluster --template={{.spec.domain}})
-
-# set SPI
-TMP_FILE=$(mktemp)
-SPI_BASE_URL="https://spi-oauth-route-spi-system.${domain}"
-yq e ".sharedSecret=\"${SHARED_SECRET:-$(openssl rand -hex 20)}\"" $ROOT/components/spi/config.yaml | \
-    yq e ".serviceProviders[0].type=\"${SPI_TYPE:-GitHub}\"" - | \
-    yq e ".serviceProviders[0].clientId=\"${SPI_CLIENT_ID:-app-client-id}\"" - | \
-    yq e ".serviceProviders[0].clientSecret=\"${SPI_CLIENT_SECRET:-app-secret}\"" - | \
-    yq e ".baseUrl=\"$SPI_BASE_URL\"" - > $TMP_FILE
-oc create -n spi-system secret generic oauth-config --from-file=config.yaml=$TMP_FILE --dry-run=client -o yaml | oc apply -f -
-echo "SPI configurared, set Authorization callback URL to $SPI_BASE_URL"
-rm $TMP_FILE
 
 if [ -n "$DOCKER_IO_AUTH" ]; then
     AUTH=$(mktemp)

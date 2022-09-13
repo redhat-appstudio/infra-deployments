@@ -92,7 +92,7 @@ SPI components fails to start right after the bootstrap. It requires manual conf
 
 1) Edit `./components/spi/config.yaml` [see SPI Configuraton Documentation](https://github.com/redhat-appstudio/service-provider-integration-operator#configuration).
 2) In CRC setup add a random string for value of `sharedSecret`
-3) Create a `oauth-config` Secret (`kubectl create secret generic oauth-config --from-file=components/spi/config.yaml -n spi-system`)
+3) Create a `shared-configuration-file` Secret (`kubectl create secret generic `shared-configuration-file` --from-file=components/spi/config.yaml -n spi-system`)
 4) In few moments, SPI pods should start
 
 SPI Vault instance has to be manually initialized. There is a script to help with that:
