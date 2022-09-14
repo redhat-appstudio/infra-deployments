@@ -2,12 +2,8 @@
 
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/..
 
-if [ -f $ROOT/hack/preview.env ]; then
-    source $ROOT/hack/preview.env
-fi
-
 source ${ROOT}/hack/flags.sh "The preview.sh enable preview mode used for development and testing on non-production clusters / kcp instances."
-parse_flags $@
+MODE=${MODE:-preview} parse_flags $@
 
 if [ -z "$MY_GIT_FORK_REMOTE" ]; then
     echo "Set MY_GIT_FORK_REMOTE environment to name of your fork remote"
