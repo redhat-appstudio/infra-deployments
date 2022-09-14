@@ -29,12 +29,12 @@ parse_flags() {
         ;;
       -kk|--kcp-kubeconfig)
         shift
-        export KCP_KUBECONFIG=$1
+        KCP_KUBECONFIG_FLAG=$1
         shift
         ;;
       -ck|--cluster-kubeconfig)
         shift
-        export CLUSTER_KUBECONFIG=$1
+        CLUSTER_KUBECONFIG_FLAG=$1
         shift
         ;;
       -rw|--root-workspace)
@@ -59,7 +59,7 @@ parse_flags() {
 
   if echo ${MODE} | grep -q preview
   then
-    if [[ -n ${KCP_KUBECONFIG}${CLUSTER_KUBECONFIG} ]]
+    if [[ -n ${KCP_KUBECONFIG_FLAG}${CLUSTER_KUBECONFIG_FLAG} ]]
     then
       echo "ERROR: You cannot use the parameter --kcp-kubeconfig nor --cluster-kubeconfig in preview mode - use only the './hack/preview.env' file" >&2
       exit 1
@@ -71,10 +71,13 @@ parse_flags() {
       echo "ERROR: No ${ROOT}/hack/preview.env was found" >&2
       exit 1
     fi
-  elif [[ -z ${KCP_KUBECONFIG} ]] || [[ -z ${CLUSTER_KUBECONFIG} ]]
+  elif [[ -z ${KCP_KUBECONFIG_FLAG} ]] || [[ -z ${CLUSTER_KUBECONFIG_FLAG} ]]
   then
     echo "ERROR: Both parameters --kcp-kubeconfig and --cluster-kubeconfig are mandatory" >&2
     exit 1
+  else
+    export KCP_KUBECONFIG=${KCP_KUBECONFIG_FLAG}
+    export CLUSTER_KUBECONFIG=${CLUSTER_KUBECONFIG_FLAG}
   fi
   export ROOT_WORKSPACE=${ROOT_WORKSPACE:-"root"}
 }
