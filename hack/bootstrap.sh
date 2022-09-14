@@ -8,7 +8,7 @@ function extra_params() {
       shift
       MODE=$1
       shift
-      if echo $MODE | grep -q preview && [ -f $ROOT/hack/preview.env ]; then
+      if [ "$MODE" == "preview" ] && [ -f $ROOT/hack/preview.env ]; then
         source $ROOT/hack/preview.env
       fi
       ;;
@@ -40,6 +40,23 @@ if [ "$(oc auth can-i '*' '*' --all-namespaces --kubeconfig ${CLUSTER_KUBECONFIG
   exit 1
 fi
 
+echo
+echo "Checking KUBECONFIG files"
+if kubectl version -o yaml --kubeconfig ${CLUSTER_KUBECONFIG} | yq '.serverVersion.gitVersion' | grep -q kcp; then
+  echo CLUSTER_KUBECONFIG=${CLUSTER_KUBECONFIG} points to KCP not to cluster.
+  exit 1
+fi
+KCP_SERVER_VERSION=$(kubectl version -o yaml --kubeconfig ${KCP_KUBECONFIG} | yq '.serverVersion.gitVersion')
+if ! echo "$KCP_SERVER_VERSION" | grep -q kcp; then
+  echo KCP_KUBECONFIG=${KCP_KUBECONFIG} does not point to KCP cluster.
+  exit 1
+fi
+KCP_SERVER=$(echo $KCP_SERVER_VERSION | sed 's/.*kcp-v\(.*\)\..*/\1/')
+KCP_CLIENT=$(kubectl kcp --version | sed 's/.*kcp-v\(.*\)\..*/\1/')
+if [ "$KCP_SERVER" != "$KCP_CLIENT" ]; then
+  echo "KCP server version($KCP_SERVER) does not match kcp plugin version($KCP_CLIENT)"
+  exit 1
+fi
 echo
 echo "Installing the OpenShift GitOps operator subscription:"
 kubectl apply -f $ROOT/openshift-gitops/subscription-openshift-gitops.yaml --kubeconfig ${CLUSTER_KUBECONFIG}
@@ -155,7 +172,7 @@ configure_kcp() {
     then
       kubectl config use ${1} --kubeconfig ${KCP_KUBECONFIG}
     fi
-    source ${ROOT}/hack/configure-kcp.sh -kn ${1}
+    ${ROOT}/hack/configure-kcp.sh -kn ${1} --insecure ${3:-false}
   fi
 }
 
@@ -167,43 +184,8 @@ case $MODE in
         configure_kcp kcp-stable "true"
         kubectl apply -f $ROOT/argo-cd-apps/app-of-apps/all-applications.yaml --kubeconfig ${CLUSTER_KUBECONFIG}
         ;;
-    "dev")
-        configure_kcp dev
-        kubectl apply -f $ROOT/argo-cd-apps/app-of-apps/all-applications.yaml --kubeconfig ${CLUSTER_KUBECONFIG}
-
-        if [ -z "${MY_GIT_REPO_URL}" ]; then
-            MY_GIT_REPO_URL=$(git --git-dir=${ROOT}/.git --work-tree=${ROOT}  ls-remote --get-url| sed 's|^git@github.com:|https://github.com/|')
-        fi
-        if [ -z "${MY_GIT_BRANCH}" ]; then
-            MY_GIT_BRANCH=$(git  --git-dir=${ROOT}/.git --work-tree=${ROOT} rev-parse --abbrev-ref HEAD)
-        fi
-
-        echo "Redirecting the root app-of-apps to use the git repo '${MY_GIT_REPO_URL}' and branch '${MY_GIT_BRANCH}' and updating the path to development:"
-        $ROOT/hack/util-update-app-of-apps.sh ${MY_GIT_REPO_URL} development ${MY_GIT_BRANCH}
-        echo
-
-        echo "Resetting the default repos in the development directory to be the current git repo:"
-        echo "These changes need to be pushed to your fork to be seen by argocd"
-        $ROOT/hack/util-set-development-repos.sh ${MY_GIT_REPO_URL} development ${MY_GIT_BRANCH}
-        ;;
-    "preview-cps")
-        export ROOT_WORKSPACE='~'
-        if [ -f "$CPS_KUBECONFIG" ]; then
-          cp $CPS_KUBECONFIG $KCP_KUBECONFIG
-        else
-          echo "environment variable CPS_KUBECONFIG must be set and point to kubeconfig of CPS"
-          exit 1
-        fi
-        KUBECONFIG=$KCP_KUBECONFIG kubectl config use kcp-stable-root
-        $ROOT/hack/configure-kcp.sh -kn dev
-        $ROOT/hack/preview.sh
-        ;;
-    "preview-ckcp")
-        CKCP_KUBECONFIG=${CKCP_KUBECONFIG:-/tmp/ckcp-admin.kubeconfig}
-        KUBECONFIG=${CLUSTER_KUBECONFIG} CKCP_KUBECONFIG=${CKCP_KUBECONFIG} $ROOT/hack/install-ckcp.sh
-
-        export KCP_KUBECONFIG=${CKCP_KUBECONFIG}
-        $ROOT/hack/configure-kcp.sh -kn dev --insecure true
+    "preview")
+        configure_kcp dev "false" ${KCP_INSECURE_CONNECTION:-false}
         $ROOT/hack/preview.sh
         ;;
 esac
