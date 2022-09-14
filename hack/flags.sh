@@ -9,9 +9,9 @@ user_help () {
   echo "options:"
   echo "-h,  --help                   Show this help info"
   echo "-kk, --kcp-kubeconfig         Kubeconfig pointing to the kcp instance."
-  ehco "                              Don't use in any of the preview modes - use only the preview.env file."
+  echo "                              Don't use in any of the preview modes - use only the preview.env file."
   echo "-ck, --cluster-kubeconfig     Kubeconfig pointing to the OpenShift cluster that will be used as a sync target."
-  ehco "                              Don't use in any of the preview modes - use only the preview.env file."
+  echo "                              Don't use in any of the preview modes - use only the preview.env file."
   echo "-rw, --root-workspace         Fully-qualified name of the kcp workspace that should be used as root (default is 'root')."
   echo "                              Don't use in the preview-cps mode - it uses the home workspace of the kcp user automatically."
   if [[ -n ${EXTRA_PARAMS} ]]
