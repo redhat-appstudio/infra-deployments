@@ -134,7 +134,7 @@ Usage:
 ### Containerized KCP installation
 
 For testing purposes it is possible to use script for installation of containerized KCP directly into your OpenShift cluster.
-`hack/preview.env` must be set before running the command. Kubeconfig of containerized KCP will be stored in file pointed by KCP_KUBECONFIG environment variable.
+The script creates file `/tmp/ckcp-admin.kubeconfig` which should be copied to location defined by `KCP_KUBECONFIG` in `hack/preview.env`.
 
 Usage:
 ```
