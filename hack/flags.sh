@@ -60,4 +60,23 @@ parse_flags() {
     exit 1
   fi
   export ROOT_WORKSPACE=${ROOT_WORKSPACE:-"root"}
+
+  # Check config files and version compatibility
+  if kubectl version -o yaml --kubeconfig ${CLUSTER_KUBECONFIG} | yq '.serverVersion.gitVersion' | grep -q kcp; then
+    echo CLUSTER_KUBECONFIG=${CLUSTER_KUBECONFIG} points to KCP not to cluster.
+    exit 1
+  fi
+  KCP_SERVER_VERSION=$(kubectl version -o yaml --kubeconfig ${KCP_KUBECONFIG} | yq '.serverVersion.gitVersion')
+  if ! echo "$KCP_SERVER_VERSION" | grep -q kcp; then
+    echo KCP_KUBECONFIG=${KCP_KUBECONFIG} does not point to KCP cluster.
+    exit 1
+  fi
+  KCP_SERVER=$(echo $KCP_SERVER_VERSION | sed 's/.*kcp-v\(.*\)\..*/\1/')
+  KCP_CLIENT=$(kubectl kcp --version | sed 's/.*kcp-v\(.*\)\..*/\1/')
+  if echo $KCP_SERVER_VERSION | grep -q 'v0.0.0-master'; then
+    echo "KCP server is self compiled, cannot check kubectl kcp plugin compatibility"
+  elif [ "$KCP_SERVER" != "$KCP_CLIENT" ]; then
+    echo "KCP server version($KCP_SERVER) does not match kcp plugin version($KCP_CLIENT)"
+    exit 1
+  fi
 }

@@ -41,23 +41,6 @@ if [ "$(oc auth can-i '*' '*' --all-namespaces --kubeconfig ${CLUSTER_KUBECONFIG
 fi
 
 echo
-echo "Checking KUBECONFIG files"
-if kubectl version -o yaml --kubeconfig ${CLUSTER_KUBECONFIG} | yq '.serverVersion.gitVersion' | grep -q kcp; then
-  echo CLUSTER_KUBECONFIG=${CLUSTER_KUBECONFIG} points to KCP not to cluster.
-  exit 1
-fi
-KCP_SERVER_VERSION=$(kubectl version -o yaml --kubeconfig ${KCP_KUBECONFIG} | yq '.serverVersion.gitVersion')
-if ! echo "$KCP_SERVER_VERSION" | grep -q kcp; then
-  echo KCP_KUBECONFIG=${KCP_KUBECONFIG} does not point to KCP cluster.
-  exit 1
-fi
-KCP_SERVER=$(echo $KCP_SERVER_VERSION | sed 's/.*kcp-v\(.*\)\..*/\1/')
-KCP_CLIENT=$(kubectl kcp --version | sed 's/.*kcp-v\(.*\)\..*/\1/')
-if [ "$KCP_SERVER" != "$KCP_CLIENT" ]; then
-  echo "KCP server version($KCP_SERVER) does not match kcp plugin version($KCP_CLIENT)"
-  exit 1
-fi
-echo
 echo "Installing the OpenShift GitOps operator subscription:"
 kubectl apply -f $ROOT/openshift-gitops/subscription-openshift-gitops.yaml --kubeconfig ${CLUSTER_KUBECONFIG}
 
