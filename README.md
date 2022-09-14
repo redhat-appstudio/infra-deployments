@@ -139,7 +139,6 @@ For testing purposes it is possible to use script for installation of containeri
 Usage:
 ```
 ./hack/install-ckcp.sh
-echo 'export KCP_INSECURE_CONNECTION=true' >> ./hack/preview.env
 ```
 
 ### Setting Preview mode

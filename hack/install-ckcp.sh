@@ -36,7 +36,5 @@ echo "ckcp admin kubeconfig was stored in ${KCP_KUBECONFIG}. To use the kubeconf
 echo
 echo "export KUBECONFIG=${KCP_KUBECONFIG}"
 echo
-echo "Ensure that KCP_INSECURE_CONNECTION=true is set in 'hack/preview.env'"
-echo
 echo "=========================================================================================="
 echo

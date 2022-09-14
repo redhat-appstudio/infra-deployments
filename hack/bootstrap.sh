@@ -172,7 +172,7 @@ configure_kcp() {
     then
       kubectl config use ${1} --kubeconfig ${KCP_KUBECONFIG}
     fi
-    ${ROOT}/hack/configure-kcp.sh -kn ${1} --insecure ${3:-false}
+    ${ROOT}/hack/configure-kcp.sh -kn ${1}
   fi
 }
 
@@ -185,7 +185,7 @@ case $MODE in
         kubectl apply -f $ROOT/argo-cd-apps/app-of-apps/all-applications.yaml --kubeconfig ${CLUSTER_KUBECONFIG}
         ;;
     "preview")
-        configure_kcp dev "false" ${KCP_INSECURE_CONNECTION:-false}
+        configure_kcp dev "false"
         $ROOT/hack/preview.sh
         ;;
 esac
