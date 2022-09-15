@@ -1,0 +1,27 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+#  - argocd-permissions.yaml
+  #  - vault/
+  - https://github.com/redhat-appstudio/service-provider-integration-operator/config/kcp_openshift?ref=ebe2093650c957832d9ac7dfacf2820c4201d563
+#  - .tekton/
+
+images:
+  - name:  quay.io/redhat-appstudio/service-provider-integration-operator
+    newName: quay.io/redhat-appstudio/service-provider-integration-operator
+    newTag: ebe2093650c957832d9ac7dfacf2820c4201d563
+  - name: quay.io/redhat-appstudio/service-provider-integration-oauth
+    newName: quay.io/redhat-appstudio/service-provider-integration-oauth
+    newTag: 09ca0fac2b1c875fb52f4c8665d0d42f66c887a3
+
+namespace: spi-system
+patches:
+  - target:
+      kind: ConfigMap
+      name: oauth-service-environment-config
+    path: oauth-service-config-patch.json
+  - target:
+      kind: ConfigMap
+      name: shared-environment-config
+    path: config-patch.json

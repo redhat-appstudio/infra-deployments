@@ -49,7 +49,7 @@ if ! git diff --exit-code --quiet; then
     git push -f --set-upstream $MY_GIT_FORK_REMOTE $PREVIEW_BRANCH
 fi
 
-git checkout $MY_GIT_BRANCH
+
 
 #set the local cluster to point to the current git repo and branch and update the path to development
 $ROOT/hack/util-update-app-of-apps.sh $MY_GIT_REPO_URL development $PREVIEW_BRANCH
@@ -105,4 +105,75 @@ while false; do
      echo Waiting $INTERVAL seconds for application sync
      sleep $INTERVAL
   fi
+done
+
+echo
+echo -n "Waiting for 'spi-system' namespace to exist: "
+while ! kubectl get namespace spi-system --kubeconfig ${KCP_KUBECONFIG} &> /dev/null ; do
+  echo -n .
+  sleep 1
+done
+echo "OK"
+
+# patch the SPI configuration with the Vault host configuration to provided VAULT_HOST variable or to current cluster
+# and the base URL set to the SPI_BASE_URL variable or the URL of the  route to the SPI OAuth service in the current cluster
+# This script also sets up the Vault client to accept insecure TLS connections so that the custom vault host doesn't have
+# to serve requests using a trusted TLS certificate.
+echo
+echo -n "Waiting for 'spi-oauth' route to exist: "
+while ! kubectl get  route/spi-oauth -n spi-system  --kubeconfig ${KCP_KUBECONFIG} &> /dev/null ; do
+  echo -n .
+  sleep 1
+done
+echo "OK"
+
+echo -n "Waiting for 'spi-oauth' route to have a host set: "
+while ! kubectl get  route/spi-oauth -n spi-system  --kubeconfig ${KCP_KUBECONFIG} -o json | jq '.status.ingress[].host' &> /dev/null ; do
+  echo -n .
+  sleep 1
+done
+echo "OK"
+
+echo "start spi config"
+export SPI_BASE_URL=https://$(kubectl  --kubeconfig ${KCP_KUBECONFIG}  get route/spi-oauth -n spi-system -o jsonpath='{.status.ingress[0].host}')
+$ROOT/hack/util-patch-spi-config.sh $VAULT_HOST $SPI_BASE_URL "true"
+# configure the secrets and providers in SPI
+TMP_FILE=$(mktemp)
+yq e ".sharedSecret=\"${SHARED_SECRET:-$(openssl rand -hex 20)}\"" $ROOT/components/spi/config.yaml | \
+    yq e ".serviceProviders[0].type=\"${SPI_TYPE:-GitHub}\"" - | \
+    yq e ".serviceProviders[0].clientId=\"${SPI_CLIENT_ID:-app-client-id}\"" - | \
+    yq e ".serviceProviders[0].clientSecret=\"${SPI_CLIENT_SECRET:-app-secret}\"" - > $TMP_FILE
+oc --kubeconfig ${KCP_KUBECONFIG}  create -n spi-system secret generic shared-configuration-file --from-file=config.yaml=$TMP_FILE --dry-run=client -o yaml | oc  --kubeconfig ${KCP_KUBECONFIG}  apply -f -
+rm $TMP_FILE
+SPI_APP_ROLE_FILE=.tmp/approle_secret.yaml
+if [ -f "$SPI_APP_ROLE_FILE" ]; then
+    echo "$SPI_APP_ROLE_FILE exists."
+    kubectl apply -f $SPI_APP_ROLE_FILE  -n spi-system  --kubeconfig ${KCP_KUBECONFIG}
+fi
+echo "SPI configured"
+
+if ! git diff --exit-code --quiet; then
+    git commit -a -m "Preview mode, do not merge into main"
+    git push -f --set-upstream $MY_GIT_FORK_REMOTE $PREVIEW_BRANCH
+fi
+
+git checkout $MY_GIT_BRANCH
+
+#set the local cluster to point to the current git repo and branch and update the path to development
+$ROOT/hack/util-update-app-of-apps.sh $MY_GIT_REPO_URL development $PREVIEW_BRANCH
+
+while [ "$(oc get --kubeconfig ${CLUSTER_KUBECONFIG} applications.argoproj.io all-components -n openshift-gitops -o jsonpath='{.status.health.status} {.status.sync.status}')" != "Healthy Synced" ]; do
+  sleep 5
+done
+
+APPS=$(kubectl get --kubeconfig ${CLUSTER_KUBECONFIG} apps -n openshift-gitops -o name)
+
+# trigger refresh of apps
+for APP in $APPS; do
+  kubectl patch --kubeconfig ${CLUSTER_KUBECONFIG} $APP -n openshift-gitops --type merge -p='{"metadata": {"annotations":{"argocd.argoproj.io/refresh": "hard"}}}'
+done
+
+# wait for the refresh
+while [ -n "$(oc get --kubeconfig ${CLUSTER_KUBECONFIG} applications.argoproj.io -n openshift-gitops -o jsonpath='{range .items[*]}{@.metadata.annotations.argocd\.argoproj\.io/refresh}{end}')" ]; do
+  sleep 5
 done
