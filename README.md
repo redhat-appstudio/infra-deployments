@@ -65,7 +65,7 @@ See [hack/quicklab/README.md](hack/quicklab/README.md)
 
 To boostrap AppStudio run:
 ```bash
-./hack/bootstrap.sh -kk [kubeconfig-pointing-to-kcp] -ck [kubeconfig-pointing-to-openshift] -rw [workspace-to-be-used-as-root] -m [mode|upstream,dev,preview-ckcp,preview-cps]
+./hack/bootstrap.sh -kk [kubeconfig-pointing-to-kcp] -ck [kubeconfig-pointing-to-openshift] -rw [workspace-to-be-used-as-root] -m [mode|upstream,dev,preview]
 ```
 which will:
 * Bootstrap Argo CD (using OpenShift GitOps) - it will output the Argo CD Web UI route when it's finished.
@@ -75,8 +75,7 @@ which will:
 
 #### Modes:
 * `upstream` (default) mode will expect access to both CPS instances `kcp-stable` and `kcp-unstable` - each of them should be represented by a kubeconfig context having the same name as the CPS instance.
-* `dev` mode will use one kcp instance as the deployment target - it can be any instance (either CPS or local kcp). The current kubeconfig context should point to it.
-* `preview-[ckcp,cps]` mode will enable preview mode used for development and testing on non-production clusters using the same deployment target as `dev` mode. See [Preview mode for your clusters](#preview-mode-for-your-clusters).
+* `preview` mode will enable preview mode used for development and testing on non-production clusters using cluster and KCP kubeconfig defined in `hack/preview.env`. See [Preview mode for your clusters](#preview-mode-for-your-clusters).
 
 #### Workspaces:
 If `-rw | --root-workspace` parameter is not specified, then by default, all workspaces are automatically created under the `root` workspace.
@@ -111,7 +110,7 @@ Even with 6 CPU cores, you will need to reduce the CPU resource requests for eac
 
 ## Preview mode for your clusters
 
-Once you bootstrap your environment without `-m preview-ckcp` or `-m preview-cps`, the root ArgoCD Application and all of the component applications will each point to the upstream repository. Or you can bootstrap cluster directly in mode which you need.
+Once you bootstrap your environment without `-m preview`, the root ArgoCD Application and all of the component applications will each point to the upstream repository. Or you can bootstrap cluster directly in mode which you need.
 
 To enable development for a team or individual to test changes on your own cluster, you need to replace the references to `https://github.com/redhat-appstudio/infra-deployments.git` with references to your own fork.
 
@@ -122,19 +121,24 @@ The script also supports branches automatically. If you work in a checked out br
 
 Preview mode works in a feature branch, apply script which creates new preview branch and create additional commit with customization.
 
-### Bootstrapping with Preview modes
+### Bootstrapping with Preview mode
 
-Two preview modes are offered:
-
-- `preview-ckcp` deploys containerized KCP directly into your cluster and connects the cluster.
-- `preview-cps` connects to CPS instance. Before the mode is used the kubeconfig file must be created manually based on 'CSP onboarding document' and set `KCP_KUBECONFIG` variable in `hack/preview.env`
+To set your cluster, connect it to KCP instance and deploy components with modifications from current branch it is possible to bootstrap the cluster in preview mode directly. Configure `hack/preview.env` before running `bootstrap.sh`.
 
 Usage:
 
 ```
-./hack/bootstrap.sh -m preview-ckcp
-or
-./hack/bootstrap.sh -m preview-cps
+./hack/bootstrap.sh -m preview
+```
+
+### Containerized KCP installation
+
+For testing purposes it is possible to use script for installation of containerized KCP directly into your OpenShift cluster.
+The script creates file `/tmp/ckcp-admin.kubeconfig` which should be copied to location defined by `KCP_KUBECONFIG` in `hack/preview.env`.
+
+Usage:
+```
+./hack/install-ckcp.sh
 ```
 
 ### Setting Preview mode

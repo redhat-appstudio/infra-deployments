@@ -27,5 +27,8 @@ echo "ckcp admin kubeconfig was stored in ${CKCP_KUBECONFIG}. To use the kubecon
 echo
 echo "export KUBECONFIG=${CKCP_KUBECONFIG}"
 echo
+echo
+echo "To use the kubeconfig for bootstrap.sh copy it to file pointed by KCP_KUBECONFIG variable in hack/preview.env"
+echo
 echo "=========================================================================================="
 echo
