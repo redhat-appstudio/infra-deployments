@@ -152,7 +152,7 @@ configure_kcp() {
     then
       kubectl config use ${1} --kubeconfig ${KCP_KUBECONFIG}
     fi
-    source ${ROOT}/hack/configure-kcp.sh -kn ${1}
+    ${ROOT}/hack/configure-kcp.sh -kn ${1}
   fi
 }
 
@@ -164,37 +164,8 @@ case $MODE in
         configure_kcp kcp-stable "true"
         kubectl apply -f $ROOT/argo-cd-apps/app-of-apps/all-applications.yaml --kubeconfig ${CLUSTER_KUBECONFIG}
         ;;
-    "dev")
-        configure_kcp dev
-        kubectl apply -f $ROOT/argo-cd-apps/app-of-apps/all-applications.yaml --kubeconfig ${CLUSTER_KUBECONFIG}
-
-        if [ -z "${MY_GIT_REPO_URL}" ]; then
-            MY_GIT_REPO_URL=$(git --git-dir=${ROOT}/.git --work-tree=${ROOT}  ls-remote --get-url| sed 's|^git@github.com:|https://github.com/|')
-        fi
-        if [ -z "${MY_GIT_BRANCH}" ]; then
-            MY_GIT_BRANCH=$(git  --git-dir=${ROOT}/.git --work-tree=${ROOT} rev-parse --abbrev-ref HEAD)
-        fi
-
-        echo "Redirecting the root app-of-apps to use the git repo '${MY_GIT_REPO_URL}' and branch '${MY_GIT_BRANCH}' and updating the path to development:"
-        $ROOT/hack/util-update-app-of-apps.sh ${MY_GIT_REPO_URL} development ${MY_GIT_BRANCH}
-        echo
-
-        echo "Resetting the default repos in the development directory to be the current git repo:"
-        echo "These changes need to be pushed to your fork to be seen by argocd"
-        $ROOT/hack/util-set-development-repos.sh ${MY_GIT_REPO_URL} development ${MY_GIT_BRANCH}
-        ;;
-    "preview-cps")
-        export ROOT_WORKSPACE='~'
-        KUBECONFIG=$KCP_KUBECONFIG kubectl config use kcp-stable-root
-        $ROOT/hack/configure-kcp.sh -kn dev
-        $ROOT/hack/preview.sh
-        ;;
-    "preview-ckcp")
-        CKCP_KUBECONFIG=${CKCP_KUBECONFIG:-/tmp/ckcp-admin.kubeconfig}
-        KUBECONFIG=${CLUSTER_KUBECONFIG} CKCP_KUBECONFIG=${CKCP_KUBECONFIG} $ROOT/hack/install-ckcp.sh
-
-        export KCP_KUBECONFIG=${CKCP_KUBECONFIG}
-        $ROOT/hack/configure-kcp.sh -kn dev --insecure true
+    "preview")
+        configure_kcp dev "false"
         $ROOT/hack/preview.sh
         ;;
 esac

@@ -9,11 +9,11 @@ user_help () {
   echo "options:"
   echo "-h,  --help                   Show this help info"
   echo "-kk, --kcp-kubeconfig         Kubeconfig pointing to the kcp instance."
-  echo "                              Don't use in any of the preview modes - use only the preview.env file."
+  echo "                              Don't use in the preview mode - use only the preview.env file."
   echo "-ck, --cluster-kubeconfig     Kubeconfig pointing to the OpenShift cluster that will be used as a sync target."
-  echo "                              Don't use in any of the preview modes - use only the preview.env file."
+  echo "                              Don't use in the preview mode - use only the preview.env file."
   echo "-rw, --root-workspace         Fully-qualified name of the kcp workspace that should be used as root (default is 'root')."
-  echo "                              Don't use in the preview-cps mode - it uses the home workspace of the kcp user automatically."
+  echo "                              Don't use in the preview mode - use only the preview.env file."
   if [[ -n ${EXTRA_PARAMS} ]]
   then
     ${EXTRA_HELP}
@@ -57,7 +57,7 @@ parse_flags() {
     esac
   done
 
-  if echo ${MODE} | grep -q preview
+  if [ "${MODE}" == "preview" ]
   then
     if [[ -n ${KCP_KUBECONFIG_FLAG}${CLUSTER_KUBECONFIG_FLAG} ]]
     then
@@ -80,4 +80,23 @@ parse_flags() {
     export CLUSTER_KUBECONFIG=${CLUSTER_KUBECONFIG_FLAG}
   fi
   export ROOT_WORKSPACE=${ROOT_WORKSPACE:-"root"}
+
+  # Check config files and version compatibility
+  if kubectl version -o yaml --kubeconfig ${CLUSTER_KUBECONFIG} | yq '.serverVersion.gitVersion' | grep -q kcp; then
+    echo CLUSTER_KUBECONFIG=${CLUSTER_KUBECONFIG} points to KCP not to cluster.
+    exit 1
+  fi
+  KCP_SERVER_VERSION=$(kubectl version -o yaml --kubeconfig ${KCP_KUBECONFIG} | yq '.serverVersion.gitVersion')
+  if ! echo "$KCP_SERVER_VERSION" | grep -q 'kcp\|v0.0.0-master'; then
+    echo KCP_KUBECONFIG=${KCP_KUBECONFIG} does not point to KCP cluster.
+    exit 1
+  fi
+  KCP_SERVER=$(echo $KCP_SERVER_VERSION | sed 's/.*kcp-v\(.*\)\..*/\1/')
+  KCP_CLIENT=$(kubectl kcp --version | sed 's/.*kcp-v\(.*\)\..*/\1/')
+  if echo "$KCP_SERVER_VERSION" | grep -q 'v0.0.0-master'; then
+    echo "KCP server is self compiled, cannot check kubectl kcp plugin compatibility"
+  elif [ "$KCP_SERVER" != "$KCP_CLIENT" ]; then
+    echo "KCP server version($KCP_SERVER) does not match kcp plugin version($KCP_CLIENT)"
+    exit 1
+  fi
 }
