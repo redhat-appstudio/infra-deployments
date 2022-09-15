@@ -127,7 +127,7 @@ Preview mode works in a feature branch, apply script which creates new preview b
 Two preview modes are offered:
 
 - `preview-ckcp` deploys containerized KCP directly into your cluster and connects the cluster.
-- `preview-cps` connects to CPS instance. Before the mode is used the kubeconfig file must be created manually based on 'CSP onboarding document' and set `CPS_KUBECONFIG` variable in `hack/preview.env`
+- `preview-cps` connects to CPS instance. Before the mode is used the kubeconfig file must be created manually based on 'CSP onboarding document' and set `KCP_KUBECONFIG` variable in `hack/preview.env`
 
 Usage:
 
