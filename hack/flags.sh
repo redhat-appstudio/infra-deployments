@@ -67,7 +67,7 @@ parse_flags() {
     exit 1
   fi
   KCP_SERVER_VERSION=$(kubectl version -o yaml --kubeconfig ${KCP_KUBECONFIG} | yq '.serverVersion.gitVersion')
-  if ! echo "$KCP_SERVER_VERSION" | grep -q kcp; then
+  if ! echo "$KCP_SERVER_VERSION" | grep -q 'kcp\|v0.0.0-master'; then
     echo KCP_KUBECONFIG=${KCP_KUBECONFIG} does not point to KCP cluster.
     exit 1
   fi
@@ -75,8 +75,6 @@ parse_flags() {
   KCP_CLIENT=$(kubectl kcp --version | sed 's/.*kcp-v\(.*\)\..*/\1/')
   if echo "$KCP_SERVER_VERSION" | grep -q 'v0.0.0-master'; then
     echo "KCP server is self compiled, cannot check kubectl kcp plugin compatibility"
-  elif echo "$KCP_CLIENT" | grep -q 'v0.0.0-master'; then
-    echo "KCP kubectl plugin is self compiled, cannot check kubectl kcp plugin compatibility"
   elif [ "$KCP_SERVER" != "$KCP_CLIENT" ]; then
     echo "KCP server version($KCP_SERVER) does not match kcp plugin version($KCP_CLIENT)"
     exit 1
