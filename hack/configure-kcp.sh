@@ -105,10 +105,8 @@ function configure_service_provider_workspace() {
   if [ "$ROOT_WORKSPACE" == "~" ]; then
     CURRENT_WS=$(KUBECONFIG=${KCP_KUBECONFIG} kubectl ws . | cut -f2 -d'"')
     COMPUTE_WORKSPACE_PATH=${CURRENT_WS}:${COMPUTE_WORKSPACE}
-#    SP_WORKSPACE_PATH=${CURRENT_WS}:${SP_WORKSPACE_NAME}
   else
     COMPUTE_WORKSPACE_PATH=${ROOT_WORKSPACE}:${COMPUTE_WORKSPACE}
-#    SP_WORKSPACE_PATH=${ROOT_WORKSPACE}:${SP_WORKSPACE_NAME}
   fi
   
   KUBECONFIG=${KCP_KUBECONFIG} kubectl ws create ${SP_WORKSPACE_NAME} --ignore-existing --type root:universal || true
@@ -173,9 +171,11 @@ parse_flags $@
 configure_compute_workspace
 
 SP_WORKSPACE_NAME=${APPSTUDIO_WORKSPACE:-"redhat-appstudio"}
+echo "Configuring service provider workspace for AppStudio '${SP_WORKSPACE_NAME}'"
 configure_service_provider_workspace
 
 SP_WORKSPACE_NAME=${HACBS_WORKSPACE:-"redhat-hacbs"}
+echo "Configuring service provider workspace for HACBS '${SP_WORKSPACE_NAME}'"
 configure_service_provider_workspace
 
 echo
