@@ -6,15 +6,12 @@ function extra_params() {
   case "$1" in
     -m|--mode)
       shift
-      MODE=$1
+      export MODE=$1
       shift
-      if [ "$MODE" == "preview" ] && [ -f $ROOT/hack/preview.env ]; then
-        source $ROOT/hack/preview.env
-      fi
       ;;
     -sk|--skip-kcp)
       shift
-      SKIP_KCP=${1:-"true"}
+      export SKIP_KCP=${1:-"true"}
       shift
       ;;
     *)
