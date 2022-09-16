@@ -168,4 +168,7 @@ case $MODE in
         configure_kcp dev "false"
         $ROOT/hack/preview.sh
         ;;
+    *)
+        echo "${MODE} is not a valid mode"
+        ;;
 esac
