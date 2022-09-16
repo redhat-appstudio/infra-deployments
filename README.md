@@ -65,7 +65,7 @@ See [hack/quicklab/README.md](hack/quicklab/README.md)
 
 To boostrap AppStudio run:
 ```bash
-./hack/bootstrap.sh -kk [kubeconfig-pointing-to-kcp] -ck [kubeconfig-pointing-to-openshift] -rw [workspace-to-be-used-as-root] -m [mode|upstream,dev,preview]
+./hack/bootstrap.sh -kk [kubeconfig-pointing-to-kcp] -ck [kubeconfig-pointing-to-openshift] -rw [workspace-to-be-used-as-root] -m [mode|upstream,preview]
 ```
 which will:
 * Bootstrap Argo CD (using OpenShift GitOps) - it will output the Argo CD Web UI route when it's finished.
