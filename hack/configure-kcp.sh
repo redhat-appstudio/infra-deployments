@@ -23,7 +23,7 @@ function extra_help() {
   echo "-kn, --kcp-name               The name of the kcp instance - eg. kcp-stable, kcp-unstable (default is 'dev')"
 }
 
-function configure_compute_workspace() { 
+configure_compute_workspace() {
   # improve kubeconfig thing when this is addressed https://github.com/kcp-dev/kcp/issues/1689
   echo "Using the '${ROOT_WORKSPACE}' workspace as the root"
   KUBECONFIG=${KCP_KUBECONFIG} kubectl ws ${ROOT_WORKSPACE}
@@ -101,7 +101,7 @@ EOF
 }
 
 
-function configure_service_provider_workspace() {
+configure_service_provider_workspace() {
   echo "Creating and accessing '${SP_WORKSPACE_NAME}':"
   KUBECONFIG=${KCP_KUBECONFIG} kubectl ws ${ROOT_WORKSPACE}
   
