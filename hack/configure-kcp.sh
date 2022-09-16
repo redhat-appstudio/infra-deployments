@@ -54,6 +54,9 @@ function configure_compute_workspace() {
   BIND_SCOPE="system:authenticated"
   if [[ ${KCP_INSTANCE_NAME} == "kcp-stable" ]] || [[ ${KCP_INSTANCE_NAME} == "kcp-unstable" ]] && [[ ${ROOT_WORKSPACE} == "root" ]]
   then
+    # This "bind scope" represents a RH SSO group that has admin access in service provider workspaces as well as in the internal compute workspace.
+    # This scope should be used only in CPS when applying in "root" workspace.
+    # This makes sure that the admin who runs the script can bind the compute in service provider workspaces but no one else anywhere in CPS.
     BIND_SCOPE="rh-sso:16270929"
   fi
   
