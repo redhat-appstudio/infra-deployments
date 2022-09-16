@@ -32,6 +32,12 @@ parse_flags $@
 
 # Remove resources in the reverse order from bootstrapping
 
+delete_workspace() {
+  echo "Deleting '${1}' workspace:"
+  KUBECONFIG=${KCP_KUBECONFIG} kubectl delete workspace ${1}
+  echo
+}
+
 clean_kcp() {
   if [[ "${SKIP_KCP}" == "true" ]]
   then
@@ -52,14 +58,11 @@ clean_kcp() {
     else
       COMPUTE_WORKSPACE=${COMPUTE_WORKSPACE:-"compute"}
     fi
-    echo "Removing '${COMPUTE_WORKSPACE}' workspace:"
-    KUBECONFIG=${KCP_KUBECONFIG} kubectl delete workspace ${COMPUTE_WORKSPACE}
-    echo
 
-    APPSTUDIO_WORSKPACE=${APPSTUDIO_WORSKPACE:-"redhat-appstudio"}
-    echo "Removing '${COMPUTE_WORKSPACE}' workspace:"
-    KUBECONFIG=${KCP_KUBECONFIG} kubectl delete workspace ${APPSTUDIO_WORSKPACE}
-    echo
+    delete_workspace ${COMPUTE_WORKSPACE}
+    delete_workspace ${APPSTUDIO_WORSKPACE:-"redhat-appstudio"}
+    delete_workspace ${HACBS_WORKSPACE:-"redhat-hacbs"}
+
   fi
 }
 
