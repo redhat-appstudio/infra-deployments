@@ -86,7 +86,7 @@ parse_flags() {
     echo CLUSTER_KUBECONFIG=${CLUSTER_KUBECONFIG} points to KCP not to cluster.
     exit 1
   fi
-  KCP_SERVER_VERSION=$(kubectl version -o yaml --kubeconfig ${KCP_KUBECONFIG} | yq '.serverVersion.gitVersion')
+  KCP_SERVER_VERSION=$(kubectl version -o yaml --kubeconfig ${KCP_KUBECONFIG} 2>/dev/null | yq '.serverVersion.gitVersion')
   if ! echo "$KCP_SERVER_VERSION" | grep -q 'kcp\|v0.0.0-master'; then
     echo KCP_KUBECONFIG=${KCP_KUBECONFIG} does not point to KCP cluster.
     exit 1
