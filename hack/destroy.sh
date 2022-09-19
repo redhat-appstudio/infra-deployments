@@ -128,5 +128,10 @@ oc wait --for=delete namespace -l internal.workload.kcp.dev/cluster --kubeconfig
 oc delete namespace -l workload.kcp.io/sync-target --kubeconfig ${CLUSTER_KUBECONFIG}
 oc wait --for=delete namespace -l workload.kcp.io/sync-target --kubeconfig ${CLUSTER_KUBECONFIG}
 
+
+echo
+echo "Vault "
+oc delete namespace spi-vault --kubeconfig ${CLUSTER_KUBECONFIG}
+oc wait --for=delete namespace  spi-vault --kubeconfig ${CLUSTER_KUBECONFIG}
 echo 
 echo "Complete."
