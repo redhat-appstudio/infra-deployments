@@ -39,6 +39,26 @@ if [ -n "$MY_GITHUB_ORG" ]; then
     $ROOT/hack/util-set-github-org $MY_GITHUB_ORG
 fi
 
+echo "start spi config"
+CLUSTER_URL_HOST=$(oc whoami --kubeconfig ${CLUSTER_KUBECONFIG} --show-console | sed 's|https://console-openshift-console.apps.||')
+if ! oc get namespace spi-system --kubeconfig ${KCP_KUBECONFIG} &>/dev/null; then
+  oc create namespace spi-system --kubeconfig ${KCP_KUBECONFIG}
+  oc create route edge -n spi-system --service spi-oauth-service --port 8000 spi-oauth --kubeconfig ${KCP_KUBECONFIG}
+fi
+export SPI_BASE_URL=https://$(kubectl --kubeconfig ${KCP_KUBECONFIG} get route/spi-oauth -n spi-system -o jsonpath='{.status.ingress[0].host}')
+VAULT_HOST="https://vault-spi-vault.apps.${CLUSTER_URL_HOST}"
+$ROOT/hack/util-patch-spi-config.sh $VAULT_HOST $SPI_BASE_URL "true"
+# configure the secrets and providers in SPI
+TMP_FILE=$(mktemp)
+yq e ".sharedSecret=\"${SHARED_SECRET:-$(openssl rand -hex 20)}\"" $ROOT/components/spi/config.yaml | \
+    yq e ".serviceProviders[0].type=\"${SPI_TYPE:-GitHub}\"" - | \
+    yq e ".serviceProviders[0].clientId=\"${SPI_CLIENT_ID:-app-client-id}\"" - | \
+    yq e ".serviceProviders[0].clientSecret=\"${SPI_CLIENT_SECRET:-app-secret}\"" - > $TMP_FILE
+oc --kubeconfig ${KCP_KUBECONFIG}  create -n spi-system secret generic shared-configuration-file --from-file=config.yaml=$TMP_FILE --dry-run=client -o yaml | oc  --kubeconfig ${KCP_KUBECONFIG}  apply -f -
+rm $TMP_FILE
+echo "SPI configured"
+
+
 [ -n "${HAS_IMAGE_REPO}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/redhat-appstudio/application-service\")) |=.newName=\"${HAS_IMAGE_REPO}\"" $ROOT/components/has/kustomization.yaml
 [ -n "${HAS_IMAGE_TAG}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/redhat-appstudio/application-service\")) |=.newTag=\"${HAS_IMAGE_TAG}\"" $ROOT/components/has/kustomization.yaml
 [[ -n "${HAS_PR_OWNER}" && "${HAS_PR_SHA}" ]] && yq -i e "(.resources[] | select(. ==\"*github.com/redhat-appstudio/application-service*\")) |= \"https://github.com/${HAS_PR_OWNER}/application-service/config/default?ref=${HAS_PR_SHA}\"" $ROOT/components/has/kustomization.yaml
@@ -59,6 +79,23 @@ while [ "$(oc get --kubeconfig ${CLUSTER_KUBECONFIG} applications.argoproj.io al
 done
 
 APPS=$(kubectl get --kubeconfig ${CLUSTER_KUBECONFIG} apps -n openshift-gitops -o name)
+
+if echo $APPS | grep -q spi-vault; then
+  if [ "`oc get --kubeconfig ${CLUSTER_KUBECONFIG} applications.argoproj.io spi-vault -n openshift-gitops -o jsonpath='{.status.health.status} {.status.sync.status}'`" != "Healthy Synced" ]; then
+    echo "Initializing Vault"
+    export VAULT_KUBE_CONFIG=${CLUSTER_KUBECONFIG}
+    export VAULT_NAMESPACE=spi-vault
+    bash <(curl -s https://raw.githubusercontent.com/redhat-appstudio/service-provider-integration-operator/e43868a54f6eedcc55fb17d2237cb8820168002b/hack/vault-init.sh)
+    SPI_APP_ROLE_FILE=.tmp/approle_secret.yaml
+    if [ -f "$SPI_APP_ROLE_FILE" ]; then
+        echo "$SPI_APP_ROLE_FILE exists."
+        kubectl apply -f $SPI_APP_ROLE_FILE  -n spi-system  --kubeconfig ${KCP_KUBECONFIG}
+    fi
+    echo "Vault init complete"
+    echo "========================================================================="
+  fi
+fi
+echo
 
 # trigger refresh of apps
 for APP in $APPS; do
