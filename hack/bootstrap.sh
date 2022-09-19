@@ -143,20 +143,6 @@ echo
 echo "========================================================================="
 echo
 
-
-echo
-echo "Installing Vault:"
-kubectl apply --kustomize $ROOT/components/spi/vault --kubeconfig ${CLUSTER_KUBECONFIG}
-echo "========================================================================="
-echo
-echo "Initializing Vault"
-export VAULT_KUBE_CONFIG=${CLUSTER_KUBECONFIG}
-export VAULT_NAMESPACE=spi-vault
-bash <(curl -s https://raw.githubusercontent.com/redhat-appstudio/service-provider-integration-operator/5d4d662784b1d3ebadfdd20dc0ff73b16935c12e/hack/vault-init.sh)
-echo "Vault init complete"
-echo "========================================================================="
-export VAULT_HOST=https://$(kubectl  --kubeconfig ${CLUSTER_KUBECONFIG} get route/vault -n spi-vault -o jsonpath='{.status.ingress[0].host}')
-
 configure_kcp() {
   if [[ "${SKIP_KCP}" == "true" ]]
   then
