@@ -56,11 +56,6 @@ yq e ".sharedSecret=\"${SHARED_SECRET:-$(openssl rand -hex 20)}\"" $ROOT/compone
     yq e ".serviceProviders[0].clientSecret=\"${SPI_CLIENT_SECRET:-app-secret}\"" - > $TMP_FILE
 oc --kubeconfig ${KCP_KUBECONFIG}  create -n spi-system secret generic shared-configuration-file --from-file=config.yaml=$TMP_FILE --dry-run=client -o yaml | oc  --kubeconfig ${KCP_KUBECONFIG}  apply -f -
 rm $TMP_FILE
-SPI_APP_ROLE_FILE=.tmp/approle_secret.yaml
-if [ -f "$SPI_APP_ROLE_FILE" ]; then
-    echo "$SPI_APP_ROLE_FILE exists."
-    kubectl apply -f $SPI_APP_ROLE_FILE  -n spi-system  --kubeconfig ${KCP_KUBECONFIG}
-fi
 echo "SPI configured"
 
 
@@ -93,6 +88,11 @@ if echo $APPS | grep -q spi-vault; then
     bash <(curl -s https://raw.githubusercontent.com/redhat-appstudio/service-provider-integration-operator/5d4d662784b1d3ebadfdd20dc0ff73b16935c12e/hack/vault-init.sh)
     echo "Vault init complete"
     echo "========================================================================="
+    SPI_APP_ROLE_FILE=.tmp/approle_secret.yaml
+    if [ -f "$SPI_APP_ROLE_FILE" ]; then
+        echo "$SPI_APP_ROLE_FILE exists."
+        kubectl apply -f $SPI_APP_ROLE_FILE  -n spi-system  --kubeconfig ${KCP_KUBECONFIG}
+    fi
   fi
 fi
 echo
