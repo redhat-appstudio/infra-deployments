@@ -48,12 +48,30 @@ if [ -n "$MY_GITHUB_ORG" ]; then
     $ROOT/hack/util-set-github-org $MY_GITHUB_ORG
 fi
 
+
+echo
+echo -n "Waiting for 'spi-system' namespace to exist: "
+while ! kubectl get namespace spi-system --kubeconfig ${KCP_KUBECONFIG} &> /dev/null ; do
+  echo -n .
+  sleep 1
+done
+echo "OK"
+
+echo -n "Waiting for 'spi-oauth' route to exist: "
+while ! kubectl get  route/spi-oauth -n spi-system  --kubeconfig ${KCP_KUBECONFIG} &> /dev/null ; do
+  echo -n .
+  sleep 1
+done
+echo "OK"
+
+echo -n "Waiting for 'spi-oauth' route to have a host set: "
+while ! kubectl get  route/spi-oauth -n spi-system  --kubeconfig ${KCP_KUBECONFIG} -o json | jq '.status.ingress[].host' &> /dev/null ; do
+  echo -n .
+  sleep 1
+done
+echo "OK"
+
 echo "start spi config"
-CLUSTER_URL_HOST=$(oc whoami --kubeconfig ${CLUSTER_KUBECONFIG} --show-console | sed 's|https://console-openshift-console.apps.||')
-if ! oc get namespace spi-system --kubeconfig ${KCP_KUBECONFIG} &>/dev/null; then
-  oc create namespace spi-system --kubeconfig ${KCP_KUBECONFIG}
-  oc create route edge -n spi-system --service spi-oauth-service --port 8000 spi-oauth --kubeconfig ${KCP_KUBECONFIG}
-fi
 export SPI_BASE_URL=https://$(kubectl --kubeconfig ${KCP_KUBECONFIG} get route/spi-oauth -n spi-system -o jsonpath='{.status.ingress[0].host}')
 VAULT_HOST="https://vault-spi-vault.apps.${CLUSTER_URL_HOST}"
 $ROOT/hack/util-patch-spi-config.sh $VAULT_HOST $SPI_BASE_URL "true"
