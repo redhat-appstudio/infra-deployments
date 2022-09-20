@@ -8,16 +8,16 @@ The contents of this repository are not owned by any single individual, and shou
 
 ## How to add your own component
 
-You may use the `has` component as an example for how to add your own component. Here `has` refers to the HAS service team's K8s resources.
+You may use the `application-service` component as an example for how to add your own component. Here `application-service` refers to the HAS service team's K8s resources.
 
 These are the steps to add your own component:
 
 1) Create a new directory for your team's components, under `components/(team-name)`.
 2) Add a `kustomization.yaml` file under that directory, which points to the individual K8s YAML resources you wish to deploy.
     - You may also structure your deployment into directories and files. See the Kustomize documentation for more information, and/or examples below.
-    - See `components/has/staging` for an example of this.
+    - See `components/application-service/staging` for an example of this.
 3) Create an Argo CD `ApplicationSet` resource in `argo-cd-apps/base/(team-name).yaml`).
-    - See `has.yaml` for a template of how this should look.
+    - See `application-service.yaml` for a template of how this should look.
     - The `.spec.template.spec.source.path` value should point to the directory you created in previous step.
     - The `.spec.template.spec.destination.namespace` should match the target namespace you wish to deploy your resources to.
     - The suffix of the `.spec.template.metadata.name` should correspond to your team name, but keep the `{{kcp-name}}-` prefix for proper templating: `{{kcp-name}}-(team-name)`.
@@ -102,7 +102,7 @@ which takes care of creation of the workspaces, SyncTarget, and the representati
 Open the Argo CD Web UI to see the status of your deployments. You can use the route from the previous step and login using your OpenShift credentials (using the 'Login with OpenShift' button), or login to the OpenShift Console and navigate to Argo CD using the OpenShift Gitops menu in the Applications pulldown.
    ![OpenShift Gitops menu with Cluster Argo CD menu option](documentation/images/argo-cd-login.png?raw=true "OpenShift Gitops menu")
 
-If your deployment was successful, you should see several applications running, such as "all-components", "has", and so on.
+If your deployment was successful, you should see several applications running, such as "all-components", "application-service", and so on.
 
 ### Optional: CodeReady Containers Post-Bootstrap Configuration
 

@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: has
+  name: application-service
 spec:
   generators:
   - list:
@@ -10,12 +10,12 @@ spec:
       - kcp-name: kcp-unstable
   template:
     metadata:
-      name: '{{kcp-name}}-has'
+      name: '{{kcp-name}}-application-service'
     spec:
       project: default
 
       source:
-        path: components/has
+        path: components/application-service
         repoURL: https://github.com/redhat-appstudio/infra-deployments.git
         targetRevision: main
 
