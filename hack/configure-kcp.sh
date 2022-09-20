@@ -173,3 +173,7 @@ for APP in $(kubectl get apps -n openshift-gitops -o name --kubeconfig ${CLUSTER
   kubectl patch ${APP} -n openshift-gitops --type merge -p='{"metadata": {"annotations":{"argocd.argoproj.io/refresh": "hard"}}}' --kubeconfig ${CLUSTER_KUBECONFIG}
 done
 
+echo "Triggering replace sync of all Applications:"
+for APP in $(kubectl get apps -n openshift-gitops -o name --kubeconfig ${CLUSTER_KUBECONFIG}); do
+  kubectl patch ${APP} -n openshift-gitops --type merge -p='{"operation": {"sync":{"syncOptions": ["Replace=true"]}}}' --kubeconfig ${CLUSTER_KUBECONFIG}
+done
