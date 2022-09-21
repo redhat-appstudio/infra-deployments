@@ -3,7 +3,7 @@
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/..
 
 source ${ROOT}/hack/flags.sh "The install-pipeline-service.sh installs Pipeline Service for development and testing on non-production clusters / kcp instances."
-MODE=${MODE:-preview} parse_flags $@
+MODE=preview parse_flags $@
 
 
 PIPELINE_SERVICE_DIR=$(mktemp -d)
