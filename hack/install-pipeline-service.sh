@@ -7,7 +7,7 @@ MODE=preview parse_flags $@
 
 
 PIPELINE_SERVICE_DIR=$(mktemp -d)
-git clone -b record-server-ca-during-registration --depth 1 https://github.com/lcarva/pipeline-service/ $PIPELINE_SERVICE_DIR
+git clone -b record-server-ca-during-registration --depth 1 https://github.com/openshift-pipelines/pipeline-service/ $PIPELINE_SERVICE_DIR
 export WORK_DIR="${PIPELINE_SERVICE_DIR}/gitops/sre/"
 export WORKSPACE_DIR=$WORK_DIR
 
