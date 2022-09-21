@@ -20,6 +20,9 @@ These are the steps to add your own component:
     - See `application-service.yaml` for a template of how this should look.
     - The `.spec.template.spec.source.path` value should point to the directory you created in previous step.
     - The `.spec.template.spec.destination.namespace` should match the target namespace you wish to deploy your resources to.
+    - The `.spec.template.spec.destination.name` should correspond to the name of the workspace you wish to deploy your resources to. There are two types of destination:
+      * `redhat-appstudio-workspace-{{kcp-name}}` for all AppStudio components
+      * `redhat-hacbs-workspace-{{kcp-name}}` for all HACBS components
     - The suffix of the `.spec.template.metadata.name` should correspond to your team name, but keep the `{{kcp-name}}-` prefix for proper templating: `{{kcp-name}}-(team-name)`.
 4) Add a reference to your new `(team-name).yaml` file, to `argo-cd-apps/base/kustomization.yaml` (the reference to your YAML file should be in the `resources:` list field).
 5) Run `kustomize build (repo root)/argo-cd-apps/overlays/staging` and ensure it passes, and outputs your new Argo CD Application CR.
@@ -81,7 +84,8 @@ which will:
 If `-rw | --root-workspace` parameter is not specified, then by default, all workspaces are automatically created under the `root` workspace.
 There are two workspaces created per kcp instance:
 * `redhat-appstudio-internal-compute` - This is the workspace where the SyncTarget for the OpenShift workload cluster is configured. If the root workspace is different from `root`, then the name of the workspace is set to `compute` to work around [this issue](https://github.com/kcp-dev/kcp/issues/1843). (The name of the workspace can be overridden by setting the `COMPUTE_WORKSPACE` variable)
-* `redhat-appstudio` - In this workspace ArgoCD deploys all kcp-related manifests from the infra-deployments repository. It's the place where all AppStudio components run. (The name of the workspace can be overridden by setting the `APPSTUDIO_WORKSPACE` variable)
+* `redhat-appstudio` - In this workspace ArgoCD deploys all kcp-related AppStudio manifests from the infra-deployments repository. It's the place where all AppStudio components run. (The name of the workspace can be overridden by setting the `APPSTUDIO_WORKSPACE` variable)
+* `redhat-hacbs` - In this workspace ArgoCD deploys all kcp-related HACBS manifests from the infra-deployments repository. It's the place where all HACBS components run. (The name of the workspace can be overridden by setting the `HACBS_WORKSPACE` variable)
 
 #### Configure kcp for upstream mode:
 If you decide to run the upstream mode, then the `bootstrap.sh` script tries to configure two instances of kcp: `kcp-stable` and `kcp-unstable`. However, `kcp-stable` instance may require different version of kubectl kcp plugin than the `kcp-unstable` one. This makes running the bootstrap script impossible for the upstream mode, because you cannot use two versions of the plugin at the same time.
@@ -165,7 +169,7 @@ Authorization is managed by [components/authorization](components/authorization/
 
 For access to OpenShift Stage cluster the github user has to be part of `stage` team in `redhat-appstudio-sre` organization.
 
-Authorization in `root:redhat-appstudio` workspace in CPS is managed by [components/authorization/kcp/members-view.yaml](components/authorization/kcp/members-view.yaml).
+Authorization in `root:redhat-appstudio` and `root:redhat-hacbs` workspaces in CPS is managed by [components/authorization/kcp/](components/authorization/kcp/).
 
 ## FAQ
 
