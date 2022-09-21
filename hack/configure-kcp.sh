@@ -144,13 +144,14 @@ EOF
   echo "Getting a token for argocd SA (in ${SP_WORKSPACE_NAME} workspace) - kubectl 1.24.x or newer needs to be used."
   SA_TOKEN=$(kubectl create token argocd --duration 876000h -n controllers-argocd-manager --kubeconfig ${KCP_KUBECONFIG})
   echo
-  
-  echo "Creating ArgoCD secret representing '${SP_WORKSPACE_NAME}' workspace with URL '${SP_WORKSPACE_URL}' in the compute OpenShift cluster for ${KCP_INSTANCE_NAME}:"
+
+  SECRET_NAME=${CLUSTER_SECRET_NAME_PREFIX}-workspace-${KCP_INSTANCE_NAME}
+  echo "Creating ArgoCD secret with the name '${SECRET_NAME}' representing '${SP_WORKSPACE_NAME}' workspace with URL '${SP_WORKSPACE_URL}' in the compute OpenShift cluster for ${KCP_INSTANCE_NAME}:"
   cat <<EOF | kubectl apply --kubeconfig ${CLUSTER_KUBECONFIG} -f -
 apiVersion: v1
 kind: Secret
 metadata:
-  name: ${SP_WORKSPACE_NAME}-workspace-${KCP_INSTANCE_NAME}
+  name: ${SECRET_NAME}
   namespace: openshift-gitops
   labels:
     argocd.argoproj.io/secret-type: cluster
@@ -174,10 +175,12 @@ parse_flags $@
 configure_compute_workspace
 
 SP_WORKSPACE_NAME=${APPSTUDIO_WORKSPACE:-"redhat-appstudio"}
+CLUSTER_SECRET_NAME_PREFIX="redhat-appstudio"
 echo "Configuring service provider workspace for AppStudio '${SP_WORKSPACE_NAME}'"
 configure_service_provider_workspace
 
 SP_WORKSPACE_NAME=${HACBS_WORKSPACE:-"redhat-hacbs"}
+CLUSTER_SECRET_NAME_PREFIX="redhat-hacbs"
 echo "Configuring service provider workspace for HACBS '${SP_WORKSPACE_NAME}'"
 configure_service_provider_workspace
 
