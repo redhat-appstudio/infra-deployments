@@ -157,7 +157,7 @@ metadata:
     argocd.argoproj.io/secret-type: cluster
 type: Opaque
 stringData:
-  name: ${SP_WORKSPACE_NAME}-workspace-${KCP_INSTANCE_NAME}
+  name: ${SECRET_NAME}
   server: '${SP_WORKSPACE_URL}'
   config: |
     {
