@@ -10,6 +10,11 @@ if [ -z "$MY_GIT_FORK_REMOTE" ]; then
     exit 1
 fi
 
+if [ -z "${ROOT_WORKSPACE}" ]; then
+    echo "Set ROOT_WORKSPACE environment variable or include to hack/preview.env"
+    exit 1
+fi
+
 MY_GIT_REPO_URL=$(git ls-remote --get-url $MY_GIT_FORK_REMOTE | sed 's|^git@github.com:|https://github.com/|')
 MY_GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
@@ -23,6 +28,10 @@ if ! git diff --exit-code --quiet; then
     echo "Changes in working Git working tree, commit them or stash them"
     exit 1
 fi
+
+# Ensure that we are in redhat-appstudio workspace
+${KCP_KUBECONFIG} kubectl ws ${ROOT_WORKSPACE}
+${KCP_KUBECONFIG} kubectl ws redhat-appstudio
 
 # Create preview branch for preview configuration
 PREVIEW_BRANCH=preview-${MY_GIT_BRANCH}${TEST_BRANCH_ID+-$TEST_BRANCH_ID}
