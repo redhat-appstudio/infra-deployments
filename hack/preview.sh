@@ -30,8 +30,8 @@ if ! git diff --exit-code --quiet; then
 fi
 
 # Ensure that we are in redhat-appstudio workspace
-${KCP_KUBECONFIG} kubectl ws ${ROOT_WORKSPACE}
-${KCP_KUBECONFIG} kubectl ws redhat-appstudio
+KUBECONFIG=${KCP_KUBECONFIG} kubectl ws ${ROOT_WORKSPACE}
+KUBECONFIG=${KCP_KUBECONFIG} kubectl ws redhat-appstudio
 
 # Create preview branch for preview configuration
 PREVIEW_BRANCH=preview-${MY_GIT_BRANCH}${TEST_BRANCH_ID+-$TEST_BRANCH_ID}
