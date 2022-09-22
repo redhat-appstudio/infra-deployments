@@ -26,10 +26,8 @@ fi
 echo
 echo In dev mode, verify that argo-cd-apps/overlays/development includes a kustomization that points to this repo
 
-PATCH="$(printf '.spec.template.spec.source.repoURL="%q"' $GITURL)"
-yq  e "$PATCH" $OVERLAYDIR/repo-overlay.yaml -i
-PATCH="$(printf '.spec.template.spec.source.targetRevision="%q"' $BRANCH)"
-yq  e "$PATCH" $OVERLAYDIR/repo-overlay.yaml -i 
+yq e "select(.kind == \"Application\") |= with(.spec.source; .repoURL = \"$GITURL\" | .targetRevision = \"$BRANCH\")" $OVERLAYDIR/repo-overlay.yaml -i
+yq e "select(.kind == \"ApplicationSet\") |= with(.spec.template.spec.source; .repoURL = \"$GITURL\" | .targetRevision = \"$BRANCH\")" $OVERLAYDIR/repo-overlay.yaml -i
 
 echo
 echo The list of components which will be patched is
