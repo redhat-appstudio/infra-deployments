@@ -1,3 +1,25 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: authorization-in-kcp
+spec:
+  generators:
+  - matrix:
+      generators:
+      - list:
+          elements:
+          - kcp-name: dev
+      - list:
+          elements:
+          - service: appstudio
+          - service: hacbs
+  template:
+    spec:
+      source:
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+        targetRevision: main
+---
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
