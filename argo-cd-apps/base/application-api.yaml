@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: application-service
+  name: application-api
 spec:
   generators:
   - list:
@@ -10,17 +10,17 @@ spec:
       - kcp-name: kcp-unstable
   template:
     metadata:
-      name: '{{kcp-name}}-application-service'
+      name: '{{kcp-name}}-application-api'
     spec:
       project: default
 
       source:
-        path: components/application-service/overlays/{{kcp-name}}
+        path: components/application-api/base
         repoURL: https://github.com/redhat-appstudio/infra-deployments.git
         targetRevision: main
 
       destination:
-        namespace: application-service
+        namespace: application-api
         name: redhat-appstudio-workspace-{{kcp-name}}
 
       syncPolicy:
@@ -39,4 +39,3 @@ spec:
           limit: 50 # number of failed sync attempt retries; unlimited number of attempts if less than 0
           backoff:
             duration: 15s # the amount to back off. Default unit is seconds, but could also be a duration (e.g. "2m", "1h")
-
