@@ -20,8 +20,7 @@ USER_APPSTUDIO_WORKSPACE=${USER_APPSTUDIO_WORKSPACE:-"appstudio"}
 echo "Accessing the home workspace:"
 kubectl ws
 echo "Creating & accessing AppStudio workspace '${USER_APPSTUDIO_WORKSPACE}':"
-kubectl ws create ${USER_APPSTUDIO_WORKSPACE}  --ignore-existing --type root:universal
-kubectl ws ${USER_APPSTUDIO_WORKSPACE}
+kubectl ws create ${USER_APPSTUDIO_WORKSPACE}  --ignore-existing --type root:universal --enter
 
 for API_BINDING in ${ROOT}/apibindings/appstudio/*
 do
