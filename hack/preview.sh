@@ -1,10 +1,10 @@
 #!/bin/bash
 
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/..
-
+echo 'preview1'
 source ${ROOT}/hack/flags.sh "The preview.sh enable preview mode used for development and testing on non-production clusters / kcp instances."
 MODE=${MODE:-preview} parse_flags $@
-
+echo 'preview2'
 if [ -z "$MY_GIT_FORK_REMOTE" ]; then
     echo "Set MY_GIT_FORK_REMOTE environment to name of your fork remote"
     exit 1
@@ -14,7 +14,7 @@ if [ -z "${ROOT_WORKSPACE}" ]; then
     echo "Set ROOT_WORKSPACE environment variable or include to hack/preview.env"
     exit 1
 fi
-
+echo 'preview3'
 MY_GIT_REPO_URL=$(git ls-remote --get-url $MY_GIT_FORK_REMOTE | sed 's|^git@github.com:|https://github.com/|')
 MY_GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
@@ -23,50 +23,53 @@ if echo "$MY_GIT_REPO_URL" | grep -q redhat-appstudio/infra-deployments; then
     echo "Use your fork repository for preview"
     exit 1
 fi
-
+echo 'preview4'
 if ! git diff --exit-code --quiet; then
     echo "Changes in working Git working tree, commit them or stash them"
     exit 1
 fi
-
+echo 'preview5'
 # Ensure that we are in redhat-appstudio workspace
 KUBECONFIG=${KCP_KUBECONFIG} kubectl ws ${ROOT_WORKSPACE}
 KUBECONFIG=${KCP_KUBECONFIG} kubectl ws redhat-appstudio
-
+echo 'preview6'
 # Create preview branch for preview configuration
 PREVIEW_BRANCH=preview-${MY_GIT_BRANCH}${TEST_BRANCH_ID+-$TEST_BRANCH_ID}
 if git rev-parse --verify $PREVIEW_BRANCH; then
     git branch -D $PREVIEW_BRANCH
 fi
 git checkout -b $PREVIEW_BRANCH
-
+echo 'preview7'
 # reset the default repos in the development directory to be the current git repo
 # this needs to be pushed to your fork to be seen by argocd
 $ROOT/hack/util-set-development-repos.sh $MY_GIT_REPO_URL development $PREVIEW_BRANCH
-
+echo 'preview8'
 if [ -n "$MY_GITHUB_ORG" ]; then
     $ROOT/hack/util-set-github-org $MY_GITHUB_ORG
 fi
-
+echo 'preview9'
 echo "start spi config"
 CLUSTER_URL_HOST=$(oc whoami --kubeconfig ${CLUSTER_KUBECONFIG} --show-console | sed 's|https://console-openshift-console.apps.||')
 if ! oc get namespace spi-system --kubeconfig ${KCP_KUBECONFIG} &>/dev/null; then
   oc create namespace spi-system --kubeconfig ${KCP_KUBECONFIG}
   oc create route edge -n spi-system --service spi-oauth-service --port 8000 spi-oauth --kubeconfig ${KCP_KUBECONFIG}
 fi
+echo 'preview10'
 export SPI_BASE_URL=https://$(kubectl --kubeconfig ${KCP_KUBECONFIG} get route/spi-oauth -n spi-system -o jsonpath='{.status.ingress[0].host}')
 VAULT_HOST="https://vault-spi-vault.apps.${CLUSTER_URL_HOST}"
 $ROOT/hack/util-patch-spi-config.sh $VAULT_HOST $SPI_BASE_URL "true"
 # configure the secrets and providers in SPI
 TMP_FILE=$(mktemp)
+echo 'preview11'
 yq e ".sharedSecret=\"${SHARED_SECRET:-$(openssl rand -hex 20)}\"" $ROOT/components/spi/config.yaml | \
     yq e ".serviceProviders[0].type=\"${SPI_TYPE:-GitHub}\"" - | \
     yq e ".serviceProviders[0].clientId=\"${SPI_CLIENT_ID:-app-client-id}\"" - | \
     yq e ".serviceProviders[0].clientSecret=\"${SPI_CLIENT_SECRET:-app-secret}\"" - > $TMP_FILE
+echo 'preview12'
 oc --kubeconfig ${KCP_KUBECONFIG}  create -n spi-system secret generic shared-configuration-file --from-file=config.yaml=$TMP_FILE --dry-run=client -o yaml | oc  --kubeconfig ${KCP_KUBECONFIG}  apply -f -
 rm $TMP_FILE
 echo "SPI configured"
-
+echo 'preview13'
 
 [ -n "${HAS_IMAGE_REPO}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/redhat-appstudio/application-service\")) |=.newName=\"${HAS_IMAGE_REPO}\"" $ROOT/components/application-service/kustomization.yaml
 [ -n "${HAS_IMAGE_TAG}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/redhat-appstudio/application-service\")) |=.newTag=\"${HAS_IMAGE_TAG}\"" $ROOT/components/application-service/kustomization.yaml
