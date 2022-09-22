@@ -2,8 +2,6 @@ apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
   name: application-service
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
 spec:
   generators:
     - list:
@@ -19,8 +17,6 @@ apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
   name: spi
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
 spec:
   generators:
     - list:
@@ -36,8 +32,6 @@ apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
   name: spi-vault
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
 spec:
   generators:
     - list:
