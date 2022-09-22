@@ -163,6 +163,15 @@ If you want to reset your environment you can run the `hack/util-update-app-of-a
 
 Note running these scripts in a clone repo will have no effect as the repo will remain `https://github.com/redhat-appstudio/infra-deployments.git`
 
+### Pipeline Service installation
+
+[Pipeline Service](https://github.com/openshift-pipelines/pipeline-service) provides tekton resources for execution of PipelineRuns. For development purposes there is a script for deploying Pipeline Service into user kcp workspace. The script requires `hack/preview.env` file. The script creates file `/tmp/pipeline-service-binding.yaml` which can be applied in test workspace to consume Pipeline Service API.
+
+Usage:
+```
+./hack/install-pipeline-service.sh
+```
+
 ## Authorization
 
 Authorization is managed by [components/authorization](components/authorization/). Authorization is disabled in dev and preview mode.
