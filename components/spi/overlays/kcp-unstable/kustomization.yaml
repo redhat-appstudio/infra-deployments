@@ -3,3 +3,9 @@ kind: Kustomization
 
 resources:
   - ../../base
+
+patches:
+  - target:
+      kind: ConfigMap
+      name: shared-environment-config
+    path: config-patch.json
