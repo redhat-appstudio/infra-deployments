@@ -36,7 +36,7 @@ USER_APPSTUDIO_WORKSPACE=${USER_APPSTUDIO_WORKSPACE:-"${SERVICE_NAME}"}
 echo "Creating & accessing AppStudio workspace '${USER_APPSTUDIO_WORKSPACE}':"
 kubectl ws create ${USER_APPSTUDIO_WORKSPACE}  --ignore-existing --type root:universal --enter
 
-kustomize build ${ROOT}/apibindings/${SERVICE_NAME}/ | sed "s|\${APPSTUDIO_SP_WORKSPACE}|${APPSTUDIO_SP_WORKSPACE}|g;s|\${HACBS_SP_WORKSPACE}|${HACBS_SP_WORKSPACE}|g" | \
+kubectl kustomize ${ROOT}/apibindings/${SERVICE_NAME}/ | sed "s|\${APPSTUDIO_SP_WORKSPACE}|${APPSTUDIO_SP_WORKSPACE}|g;s|\${HACBS_SP_WORKSPACE}|${HACBS_SP_WORKSPACE}|g" | \
   kubectl apply -f -
 
 echo
