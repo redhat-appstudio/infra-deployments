@@ -27,7 +27,8 @@ These are the steps to add your own component:
 4) Add a reference to your new `(team-name).yaml` file, to `argo-cd-apps/base/kustomization.yaml` (the reference to your YAML file should be in the `resources:` list field).
 5) Run `kustomize build (repo root)/argo-cd-apps/overlays/staging` and ensure it passes, and outputs your new Argo CD Application CR.
 6) Add an entry in `argo-cd-apps/overlays/development/repo-overlay.yaml` for your new component so you can use the preview mode for testing.
-7) Open a PR for all of the above.
+7) Add an APIBinding (including the accepted permission claims) to [apibindings/appstudio](apibindings/appstudio) for an AppStudio component. (For HACBS components, it's still TBD) 
+8) Open a PR for all the above.
 
 More examples of using Kustomize to drive deployments using GitOps can be [found here](https://github.com/redhat-cop/gitops-catalog).
 
