@@ -17,6 +17,9 @@ ROOT_WORKSPACE=${ROOT_WORKSPACE:-"root"}
 APPSTUDIO_WORKSPACE=${APPSTUDIO_WORKSPACE:-"redhat-appstudio"}
 HACBS_WORKSPACE=${HACBS_WORKSPACE:-"redhat-hacbs"}
 
+echo "Accessing the home workspace:"
+kubectl ws '~'
+
 if [ "${ROOT_WORKSPACE}" == "~" ]; then
   ROOT_WORKSPACE=$(KUBECONFIG=${KCP_KUBECONFIG} kubectl ws . | cut -f2 -d'"')
 fi
@@ -25,8 +28,6 @@ APPSTUDIO_SP_WORKSPACE=${APPSTUDIO_SP_WORKSPACE:-${ROOT_WORKSPACE}:${APPSTUDIO_W
 HACBS_SP_WORKSPACE=${HACBS_SP_WORKSPACE:-${ROOT_WORKSPACE}:${HACBS_WORKSPACE}}
 
 USER_APPSTUDIO_WORKSPACE=${USER_APPSTUDIO_WORKSPACE:-"${SERVICE_NAME}"}
-echo "Accessing the home workspace:"
-kubectl ws '~'
 echo "Creating & accessing AppStudio workspace '${USER_APPSTUDIO_WORKSPACE}':"
 kubectl ws create ${USER_APPSTUDIO_WORKSPACE}  --ignore-existing --type root:universal --enter
 
