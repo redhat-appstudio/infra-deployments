@@ -17,11 +17,16 @@ ROOT_WORKSPACE=${ROOT_WORKSPACE:-"root"}
 APPSTUDIO_WORKSPACE=${APPSTUDIO_WORKSPACE:-"redhat-appstudio"}
 HACBS_WORKSPACE=${HACBS_WORKSPACE:-"redhat-hacbs"}
 
+if [[ -n ${KCP_KUBECONFIG} ]]
+then
+  export KUBECONFIG=${KCP_KUBECONFIG}
+fi
+
 echo "Accessing the home workspace:"
 kubectl ws '~'
 
 if [ "${ROOT_WORKSPACE}" == "~" ]; then
-  ROOT_WORKSPACE=$(KUBECONFIG=${KCP_KUBECONFIG} kubectl ws . | cut -f2 -d'"')
+  ROOT_WORKSPACE=$(kubectl ws . | cut -f2 -d'"')
 fi
 
 APPSTUDIO_SP_WORKSPACE=${APPSTUDIO_SP_WORKSPACE:-${ROOT_WORKSPACE}:${APPSTUDIO_WORKSPACE}}
