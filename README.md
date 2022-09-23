@@ -43,7 +43,7 @@ Simply update the files under `components/(team-name)`, and open a PR with the c
 
 The prerequisites are:
 
-- You must have `kubectl` (> v1.24), `oc`, `jq`, `openssl`, `realpath` and [`yq`](https://github.com/mikefarah/yq) installed.
+- You must have `kubectl` (> v1.24), `oc`, `jq`, `openssl`, `realpath` and [`yq`](https://github.com/mikefarah/yq) (> v4.27.0) installed.
 - [kubectl-kcp plugin](https://github.com/kcp-dev/kcp/releases)
 - [kubectl-oidc_login plugin](https://github.com/int128/kubelogin/releases) (only when connecting to CPS)
 - You must have `kubectl` and `oc` pointing to an existing OpenShift cluster, that you wish to deploy to. Alternatively, you can configure a local CodeReady Containers VM to deploy to.
@@ -162,6 +162,15 @@ Steps:
 If you want to reset your environment you can run the `hack/util-update-app-of-apps.sh https://github.com/redhat-appstudio/infra-deployments.git staging main` to reset everything including your cluster to `https://github.com/redhat-appstudio/infra-deployments.git` and match the upstream config.
 
 Note running these scripts in a clone repo will have no effect as the repo will remain `https://github.com/redhat-appstudio/infra-deployments.git`
+
+### Pipeline Service installation
+
+[Pipeline Service](https://github.com/openshift-pipelines/pipeline-service) provides tekton resources for execution of PipelineRuns. For development purposes there is a script for deploying Pipeline Service into user kcp workspace. The script requires `hack/preview.env` file. The script creates file `/tmp/pipeline-service-binding.yaml` which can be applied in test workspace to consume Pipeline Service API.
+
+Usage:
+```
+./hack/install-pipeline-service.sh
+```
 
 ## Authorization
 
