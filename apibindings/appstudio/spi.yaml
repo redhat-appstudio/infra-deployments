@@ -1,11 +1,13 @@
 apiVersion: apis.kcp.dev/v1alpha1
 kind: APIBinding
 metadata:
-  name: spi-binding
+  name: spi
 spec:
   reference:
     workspace:
+      path: ${APPSTUDIO_SP_WORKSPACE}
       exportName: spi
   permissionClaims:
-    - resource: secrets
-      state: Accepted
+  - group: ""
+    resource: "secrets"
+    state: Accepted
