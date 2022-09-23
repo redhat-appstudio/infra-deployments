@@ -1,0 +1,16 @@
+apiVersion: apis.kcp.dev/v1alpha1
+kind: APIBinding
+metadata:
+  name: application-service
+spec:
+  reference:
+    workspace:
+      path: ${APPSTUDIO_SP_WORKSPACE}
+      exportName: has
+  permissionClaims:
+  - group: ""
+    resource: "secrets"
+    state: Accepted
+  - group: ""
+    resource: "configmaps"
+    state: Accepted
