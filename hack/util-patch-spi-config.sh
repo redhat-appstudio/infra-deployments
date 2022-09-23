@@ -19,7 +19,7 @@ EOF
 )
 
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/..
-PATCH_FILE="$ROOT/components/spi/config-patch.json"
+PATCH_FILE="$ROOT/components/spi/overlays/dev/config-patch.json"
 
 if [ -z ${1} ]; then
     echo "VAULT_HOST is not set as a parameter of script"

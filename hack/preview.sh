@@ -59,7 +59,7 @@ VAULT_HOST="https://vault-spi-vault.apps.${CLUSTER_URL_HOST}"
 $ROOT/hack/util-patch-spi-config.sh $VAULT_HOST $SPI_BASE_URL "true"
 # configure the secrets and providers in SPI
 TMP_FILE=$(mktemp)
-yq e ".sharedSecret=\"${SHARED_SECRET:-$(openssl rand -hex 20)}\"" $ROOT/components/spi/config.yaml | \
+yq e ".sharedSecret=\"${SHARED_SECRET:-$(openssl rand -hex 20)}\"" $ROOT/components/spi/base/config.yaml | \
     yq e ".serviceProviders[0].type=\"${SPI_TYPE:-GitHub}\"" - | \
     yq e ".serviceProviders[0].clientId=\"${SPI_CLIENT_ID:-app-client-id}\"" - | \
     yq e ".serviceProviders[0].clientSecret=\"${SPI_CLIENT_SECRET:-app-secret}\"" - > $TMP_FILE
