@@ -26,7 +26,7 @@ echo "Accessing the home workspace:"
 kubectl ws '~'
 
 if [ "${ROOT_WORKSPACE}" == "~" ]; then
-  ROOT_WORKSPACE=$(kubectl ws . | cut -f2 -d'"')
+  ROOT_WORKSPACE=$(kubectl ws . --short)
 fi
 
 APPSTUDIO_SP_WORKSPACE=${APPSTUDIO_SP_WORKSPACE:-${ROOT_WORKSPACE}:${APPSTUDIO_WORKSPACE}}
@@ -40,4 +40,4 @@ kubectl kustomize ${ROOT}/apibindings/${SERVICE_NAME}/ | sed "s|\${APPSTUDIO_SP_
   kubectl apply -f -
 
 echo
-echo "The ${SERVICE_NAME} user workspace is created: $(kubectl ws . | cut -f2 -d'"')"
+echo "The ${SERVICE_NAME} user workspace is created: $(kubectl ws . --short)"
