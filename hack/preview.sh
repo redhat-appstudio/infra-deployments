@@ -73,6 +73,41 @@ echo "SPI configured"
 [[ -n "${HAS_PR_OWNER}" && "${HAS_PR_SHA}" ]] && yq -i e "(.resources[] | select(. ==\"*github.com/redhat-appstudio/application-service*\")) |= \"https://github.com/${HAS_PR_OWNER}/application-service/config/default?ref=${HAS_PR_SHA}\"" $ROOT/components/application-service/kustomization.yaml
 [ -n "${HAS_DEFAULT_IMAGE_REPOSITORY}" ] && yq -i e "(.spec.template.spec.containers[].env[] | select(.name ==\"IMAGE_REPOSITORY\").value) |= \"${HAS_DEFAULT_IMAGE_REPOSITORY}\"" $ROOT/components/application-service/base/manager_resources_patch.yaml
 
+# evaluate APIExports pointers
+evaluate_apiexports() {
+  APIEXPORT_FILES=$1
+  NEW_IDENTITY_HASHES=$(oc get apiexports.apis.kcp.dev -o jsonpath='{range .items[*]}{@.metadata.name}:{@.status.identityHash}{"\n"}{end}' --kubeconfig ${KCP_KUBECONFIG})
+  IDENTITY_HASHES=$(echo -e "$IDENTITY_HASHES\n$NEW_IDENTITY_HASHES")
+  for APIEXPORTFILE in $APIEXPORT_FILES; do
+    REQUESTS=$(yq e '.spec.permissionClaims.[] | select(.identityHash).identityHash' $APIEXPORTFILE | sort -u)
+    for REQUEST in $REQUESTS; do
+      IDENTITY_HASH=$(echo "$IDENTITY_HASHES" | grep "^$REQUEST:" | cut -f2 -d":")
+      if [ -z "$IDENTITY_HASH" ]; then
+        # find APIExport
+        for APIEXPORTFILE2 in $APIEXPORT_FILES; do
+          if [ "$(yq '.metadata.name' $APIEXPORTFILE2)" == "$REQUEST" ]; then
+            oc apply -f $APIEXPORTFILE2 --kubeconfig ${KCP_KUBECONFIG}
+            IDENTITY_HASH=$(oc get -f $APIEXPORTFILE2 --kubeconfig ${KCP_KUBECONFIG} -o jsonpath='{.status.identityHash}')
+            IDENTITY_HASHES=$(echo -e "$IDENTITY_HASHES\n$REQUEST:$IDENTITY_HASH")
+            break
+          fi
+        done
+      fi
+      if [ -z "$IDENTITY_HASH" ]; then
+        echo Unknown IDENTITY_HASH for $REQUEST
+      fi
+      sed -i "s/\b$REQUEST\b/$IDENTITY_HASH/g" $APIEXPORTFILE
+    done
+  done
+}
+
+evaluate_apiexports "$(find -name apiexport.yaml | grep -v '/hacbs/')"
+KUBECONFIG=${KCP_KUBECONFIG} kubectl ws ${ROOT_WORKSPACE}
+KUBECONFIG=${KCP_KUBECONFIG} kubectl ws redhat-hacbs
+evaluate_apiexports "$(find -name apiexport.yaml | grep '/hacbs/')"
+KUBECONFIG=${KCP_KUBECONFIG} kubectl ws ${ROOT_WORKSPACE}
+KUBECONFIG=${KCP_KUBECONFIG} kubectl ws redhat-appstudio
+
 if ! git diff --exit-code --quiet; then
     git commit -a -m "Preview mode, do not merge into main"
     git push -f --set-upstream $MY_GIT_FORK_REMOTE $PREVIEW_BRANCH
