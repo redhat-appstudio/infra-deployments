@@ -1,0 +1,25 @@
+apiVersion: apis.kcp.dev/v1alpha1
+kind: APIExport
+metadata:
+  name: build-service
+spec:
+  permissionClaims:
+    - group: ""
+      resource: "secrets"
+    - group: ""
+      resource: "configmaps"
+    - group: ""
+      resource: "namespaces"
+    - group: ""
+      resource: "events"
+    - group: ""
+      resource: "serviceaccounts"
+    - group: "tekton.dev"
+      resource: "pipelineruns"
+      identityHash: 72b2990e51b1931e9fee86e67091b721a8c32f407d762fc847d9d2316a988b52
+    - group: "appstudio.redhat.com"
+      resource: "components"
+      identityHash: 835cb978eda43fb9776eab29818632aab365fedac2ee8e137440be5e5ed10e1d
+    - group: "appstudio.redhat.com"
+      resource: "applications"
+      identityHash: 835cb978eda43fb9776eab29818632aab365fedac2ee8e137440be5e5ed10e1d

@@ -1,0 +1,42 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: build-service
+spec:
+  generators:
+  - list:
+      elements:
+      - kcp-name: kcp-stable
+      - kcp-name: kcp-unstable
+  template:
+    metadata:
+      name: '{{kcp-name}}-build-service'
+    spec:
+      project: default
+
+      source:
+        path: components/build-service/overlays/{{kcp-name}}
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+        targetRevision: main
+
+      destination:
+        namespace: build-service
+        name: redhat-appstudio-workspace-{{kcp-name}}
+
+      syncPolicy:
+
+        # Comment this out if you want to manually trigger deployments (using the
+        # Argo CD Web UI or Argo CD CLI), rather than automatically deploying on
+        # every new Git commit to your directory.
+        automated:
+          prune: true
+          selfHeal: true
+
+        syncOptions:
+        - CreateNamespace=true
+
+        retry:
+          limit: 50 # number of failed sync attempt retries; unlimited number of attempts if less than 0
+          backoff:
+            duration: 15s # the amount to back off. Default unit is seconds, but could also be a duration (e.g. "2m", "1h")
+
