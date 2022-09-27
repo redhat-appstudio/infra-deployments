@@ -40,4 +40,18 @@ kubectl kustomize ${ROOT}/apibindings/${SERVICE_NAME}/ | sed "s|\${APPSTUDIO_SP_
   kubectl apply -f -
 
 echo
+echo "Patching APIBindings to accept all permission claims:"
+API_BINDINGS=$(kubectl get apibindings.apis.kcp.dev -l provided-by=infra-deployments -o name)
+for API_BINDING in ${API_BINDINGS}
+do
+  EXPORT_PERMISSION_CLAIMS=$(kubectl get ${API_BINDING} -o jsonpath='{.status.exportPermissionClaims}')
+  ACCEPTED_CLAIMS=
+  for EXPORT_CLAIM in $(echo "${EXPORT_PERMISSION_CLAIMS}" | jq -c '.[]')
+  do
+    ACCEPTED_CLAIMS=${ACCEPTED_CLAIMS}$(echo "${EXPORT_CLAIM}" | jq '. += {"state": "Accepted"}' | jq -c)","
+  done
+  kubectl patch ${API_BINDING} --type='json' -p="[{'op': 'replace', 'path': '/spec/permissionClaims', 'value': [${ACCEPTED_CLAIMS}]}]"
+done
+
+echo
 echo "The ${SERVICE_NAME} user workspace is created: $(kubectl ws . --short)"
