@@ -100,11 +100,11 @@ evaluate_apiexports() {
     done
   done
 }
-
-evaluate_apiexports "$(find -name apiexport.yaml | grep -v '/hacbs/')"
+APIEXPORTS=$(find -name '*apiexport*.yaml' | grep overlays/dev)
+evaluate_apiexports "$(echo $APIEXPORTS | grep -v '/hacbs/')"
 KUBECONFIG=${KCP_KUBECONFIG} kubectl ws ${ROOT_WORKSPACE}
 KUBECONFIG=${KCP_KUBECONFIG} kubectl ws redhat-hacbs
-evaluate_apiexports "$(find -name apiexport.yaml | grep '/hacbs/')"
+evaluate_apiexports "$(echo $APIEXPORTS | grep '/hacbs/')"
 KUBECONFIG=${KCP_KUBECONFIG} kubectl ws ${ROOT_WORKSPACE}
 KUBECONFIG=${KCP_KUBECONFIG} kubectl ws redhat-appstudio
 
