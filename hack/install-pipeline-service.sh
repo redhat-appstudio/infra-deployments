@@ -12,7 +12,7 @@ export WORK_DIR="${PIPELINE_SERVICE_DIR}/gitops/sre/"
 export WORKSPACE_DIR=$WORK_DIR
 
 if [ "$ROOT_WORKSPACE" == "~" ]; then
-  ROOT_WORKSPACE=$(KUBECONFIG=${KCP_KUBECONFIG} kubectl ws '~' | cut -f2 -d'"')
+  ROOT_WORKSPACE=$(KUBECONFIG=${KCP_KUBECONFIG} kubectl ws '~' --short)
 fi
 
 KUBECONFIG=$KCP_KUBECONFIG $PIPELINE_SERVICE_DIR/images/access-setup/content/bin/setup_kcp.sh --kcp-workspace pipeline-service --kcp-org $ROOT_WORKSPACE

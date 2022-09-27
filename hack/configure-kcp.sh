@@ -106,7 +106,7 @@ configure_service_provider_workspace() {
   KUBECONFIG=${KCP_KUBECONFIG} kubectl ws ${ROOT_WORKSPACE}
   
   if [ "$ROOT_WORKSPACE" == "~" ]; then
-    CURRENT_WS=$(KUBECONFIG=${KCP_KUBECONFIG} kubectl ws . | cut -f2 -d'"')
+    CURRENT_WS=$(KUBECONFIG=${KCP_KUBECONFIG} kubectl ws . --short)
     COMPUTE_WORKSPACE_PATH=${CURRENT_WS}:${COMPUTE_WORKSPACE}
   else
     COMPUTE_WORKSPACE_PATH=${ROOT_WORKSPACE}:${COMPUTE_WORKSPACE}
