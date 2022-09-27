@@ -45,6 +45,7 @@ API_BINDINGS=$(kubectl get apibindings.apis.kcp.dev -l provided-by=infra-deploym
 for API_BINDING in ${API_BINDINGS}
 do
   EXPORT_PERMISSION_CLAIMS=$(kubectl get ${API_BINDING} -o jsonpath='{.status.exportPermissionClaims}')
+  ACCEPTED_CLAIMS=
   for EXPORT_CLAIM in $(echo ${EXPORT_PERMISSION_CLAIMS} | jq -c '.[]')
   do
     ACCEPTED_CLAIMS=${ACCEPTED_CLAIMS}$(echo ${EXPORT_CLAIM} | jq '. += {"state": "Accepted"}' | jq -c)","
