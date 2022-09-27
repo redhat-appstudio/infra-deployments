@@ -1,0 +1,33 @@
+apiVersion: apis.kcp.dev/v1alpha1
+kind: APIExport
+metadata:
+  name: application-service
+spec:
+  permissionClaims:
+    - group: ""
+      resource: "secrets"
+    - group: ""
+      resource: "namespaces"
+    - group: ""
+      resource: "configmaps"
+    - identityHash: 835cb978eda43fb9776eab29818632aab365fedac2ee8e137440be5e5ed10e1d
+      group: "appstudio.redhat.com"
+      resource: "applications"
+    - identityHash: 835cb978eda43fb9776eab29818632aab365fedac2ee8e137440be5e5ed10e1d
+      group: "appstudio.redhat.com"
+      resource: "applicationsnapshotenvironmentbindings"
+    - identityHash: 835cb978eda43fb9776eab29818632aab365fedac2ee8e137440be5e5ed10e1d
+      group: "appstudio.redhat.com"
+      resource: "components"
+    - identityHash: 835cb978eda43fb9776eab29818632aab365fedac2ee8e137440be5e5ed10e1d
+      group: "appstudio.redhat.com"
+      resource: "componentdetectionqueries"
+    - identityHash: 835cb978eda43fb9776eab29818632aab365fedac2ee8e137440be5e5ed10e1d
+      group: "appstudio.redhat.com"
+      resource: "environments"
+    - identityHash: f7ae9a3fe4e40a9052ddb96488af50b28b094c1d65044c9cf844b4fab8c73d3d
+      group: "appstudio.redhat.com"
+      resource: "spiaccesstokens"
+    - identityHash: f7ae9a3fe4e40a9052ddb96488af50b28b094c1d65044c9cf844b4fab8c73d3d
+      group: "appstudio.redhat.com"
+      resource: "spiaccesstokenbindings"
