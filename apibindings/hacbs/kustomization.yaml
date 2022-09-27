@@ -3,3 +3,12 @@ kind: Kustomization
 
 resources:
 - ../appstudio
+
+patches:
+- patch: |-
+    - op: replace
+      path: /metadata/labels
+      value:
+        provided-by: infra-deployments
+  target:
+    kind: APIBinding
