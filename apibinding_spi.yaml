@@ -1,0 +1,12 @@
+apibinding_spi.yamlapiVersion: apis.kcp.dev/v1alpha1
+kind: APIBinding
+metadata:
+  name: spi-binding
+spec:
+  reference:
+    workspace:
+      exportName: spi
+      path: root:redhat-appstudio
+  permissionClaims:
+    - resource: secrets
+      state: Accepted
