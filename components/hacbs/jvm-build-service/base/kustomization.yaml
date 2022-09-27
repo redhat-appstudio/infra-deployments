@@ -1,0 +1,12 @@
+resources:
+- https://github.com/redhat-appstudio/jvm-build-service/deploy/kcp?ref=954c86b39a12820c7910c93b1e20b9b572232816
+
+images:
+- name: hacbs-jvm-operator
+  newName: quay.io/redhat-appstudio/hacbs-jvm-controller
+  newTag: 954c86b39a12820c7910c93b1e20b9b572232816
+
+namespace: jvm-build-service
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
