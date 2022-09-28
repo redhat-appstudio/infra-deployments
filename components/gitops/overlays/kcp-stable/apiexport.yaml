@@ -1,0 +1,36 @@
+---
+apiVersion: apis.kcp.dev/v1alpha1
+kind: APIExport
+metadata:
+  name: gitopsrvc-backend-shared
+spec:
+  latestResourceSchemas:
+  - v202208100611.gitopsdeploymentmanagedenvironments.managed-gitops.redhat.com
+  - v202208100611.gitopsdeploymentrepositorycredentials.managed-gitops.redhat.com
+  - v202208100611.gitopsdeployments.managed-gitops.redhat.com
+  - v202208100611.gitopsdeploymentsyncruns.managed-gitops.redhat.com
+  - v202208100611.operations.managed-gitops.redhat.com
+  permissionClaims:
+  - group: ""
+    resource: secrets
+  - group: ""
+    resource: namespaces
+---
+apiVersion: apis.kcp.dev/v1alpha1
+kind: APIExport
+metadata:
+  name: gitopsrvc-appstudio-shared
+spec:
+  latestResourceSchemas:
+  - v202209151420.applicationpromotionruns.appstudio.redhat.com
+  - v202209151420.applicationsnapshotenvironmentbindings.appstudio.redhat.com
+  - v202209151420.applicationsnapshots.appstudio.redhat.com
+  - v202209151420.applications.appstudio.redhat.com
+  - v202209151420.environments.appstudio.redhat.com
+  permissionClaims:
+  - group: ""
+    resource: secrets
+  - group: ""
+    resource: namespaces
+  - group: managed-gitops.redhat.com
+    resource: gitopsdeployments
