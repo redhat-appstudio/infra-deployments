@@ -14,6 +14,7 @@ fi
 SERVICE_NAME=${1}
 
 ROOT_WORKSPACE=${ROOT_WORKSPACE:-"root"}
+HOME_WORKSPACE=${HOME_WORKSPACE:-"~"}
 APPSTUDIO_WORKSPACE=${APPSTUDIO_WORKSPACE:-"redhat-appstudio"}
 HACBS_WORKSPACE=${HACBS_WORKSPACE:-"redhat-hacbs"}
 PIPELINE_SERVICE_WORKSPACE=${PIPELINE_SERVICE_WORKSPACE:-"pipeline-service"}
@@ -24,7 +25,7 @@ then
 fi
 
 echo "Accessing the home workspace:"
-kubectl ws '~'
+kubectl ws $HOME_WORKSPACE
 
 if [ "${ROOT_WORKSPACE}" == "~" ]; then
   ROOT_WORKSPACE=$(kubectl ws . --short)
