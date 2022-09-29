@@ -17,6 +17,11 @@ if ! grep -q quay.io $AUTH_FILE; then
   exit 1
 fi
 
+# Create pipeline service if not exists
+if ! oc get sa pipeline &>/dev/null; then
+  oc create sa pipeline
+fi
+
 SECRET=$(mktemp)
 echo '{"auths": {' $(yq eval '.auths | with_entries(select(.key == "quay.io"))' $AUTH_FILE) '}}' > $SECRET
 oc create secret docker-registry redhat-appstudio-registry-pull-secret --from-file=.dockerconfigjson=$SECRET --dry-run=client -o yaml | oc apply -f-
