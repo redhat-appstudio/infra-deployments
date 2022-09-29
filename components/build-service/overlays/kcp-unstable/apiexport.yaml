@@ -1,0 +1,25 @@
+apiVersion: apis.kcp.dev/v1alpha1
+kind: APIExport
+metadata:
+  name: application-service
+spec:
+  permissionClaims:
+    - group: ""
+      resource: "secrets"
+    - group: ""
+      resource: "configmaps"
+    - group: ""
+      resource: "namespaces"
+    - group: ""
+      resource: "events"
+    - group: ""
+      resource: "serviceaccounts"
+    - group: "tekton.dev"
+      resource: "pipelineruns"
+      identityHash: placeholder # TODO add identityHash of pipeline-service when available on kcp-unstable
+    - group: "appstudio.redhat.com"
+      resource: "components"
+      identityHash: 676879883c7665b0b4a66256c3f86fbda6fa7e175f39f46f63cac75cdf7a6afa
+    - group: "appstudio.redhat.com"
+      resource: "applications"
+      identityHash: 676879883c7665b0b4a66256c3f86fbda6fa7e175f39f46f63cac75cdf7a6afa

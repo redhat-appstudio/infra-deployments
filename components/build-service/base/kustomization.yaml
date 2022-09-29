@@ -1,0 +1,22 @@
+resources:
+- https://github.com/redhat-appstudio/build-service/config/kcp?ref=29604e22278a5ede4efc630987315c36df711b8a
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+images:
+- name: quay.io/redhat-appstudio/build-service
+  newName: quay.io/redhat-appstudio/build-service
+  newTag: 29604e22278a5ede4efc630987315c36df711b8a
+
+namespace: build-service
+
+patches:
+# Add APIExport flag to the operator arguments list
+- patch: |-
+    - op: replace
+      path: /spec/template/spec/containers/0/args/1
+      value: --api-export-name=build-service
+  target:
+    kind: Deployment
+    name: controller-manager
