@@ -40,8 +40,10 @@ Simply update the files under `components/(team-name)`, and open a PR with the c
 
 The prerequisites are:
 
-- You must have `kubectl`, `oc`, `jq`, `openssl`, `realpath` and [`yq`](https://github.com/mikefarah/yq) installed.
-- You must have `kubectl` and `oc` pointing to an existing OpenShift cluster, that you wish to deploy to. Alternatively, you can configure a OpenShift Local (formerly CRC) to deploy to.
+- You must have `kubectl` (> v1.24), `oc`, `jq`, `openssl`, `realpath` and [`yq`](https://github.com/mikefarah/yq) (> v4.27.0) installed.
+- [kubectl-kcp plugin](https://github.com/kcp-dev/kcp/releases)
+- [kubectl-oidc_login plugin](https://github.com/int128/kubelogin/releases) (only when connecting to CPS)
+- You must have `kubectl` and `oc` pointing to an existing OpenShift cluster or OpenShift Local VM that you wish to deploy to.
 - You must have another `kubeconfig` pointing to an existing kcp instance, that you wish to deploy to. You can use either a CPS or a local kcp instance.
 - The script `./hack/setup/install-pre-req.sh` will install these prerequisites for you, if they're not already installed.
 
