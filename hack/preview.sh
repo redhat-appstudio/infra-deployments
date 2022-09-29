@@ -94,8 +94,9 @@ evaluate_apiexports() {
       fi
       if [ -z "$IDENTITY_HASH" ]; then
         echo Unknown IDENTITY_HASH for $REQUEST
+      else
+        sed -i "s/\b$REQUEST\b/$IDENTITY_HASH/g" $APIEXPORTFILE
       fi
-      sed -i "s/\b$REQUEST\b/$IDENTITY_HASH/g" $APIEXPORTFILE
     done
   done
 }
