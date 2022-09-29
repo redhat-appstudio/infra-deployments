@@ -1,9 +1,84 @@
+---
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: has
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
+  name: authorization-in-kcp
+spec:
+  generators:
+  - matrix:
+      generators:
+      - list:
+          elements:
+          - kcp-name: dev
+      - list:
+          elements:
+          - service: appstudio
+          - service: hacbs
+  template:
+    spec:
+      source:
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+        targetRevision: main
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: application-service
+spec:
+  generators:
+    - list:
+        elements:
+          - kcp-name: dev
+  template:
+    spec:
+      source:
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+        targetRevision: main
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: spi
+spec:
+  generators:
+    - list:
+        elements:
+          - kcp-name: dev
+  template:
+    spec:
+      source:
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+        targetRevision: main
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: spi-vault
+spec:
+  source:
+    repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+    targetRevision: main
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: application-api
+spec:
+  generators:
+    - list:
+        elements:
+          - kcp-name: dev
+  template:
+    spec:
+      source:
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+        targetRevision: main
+
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: enterprise-contract
 spec:
   generators:
     - list:

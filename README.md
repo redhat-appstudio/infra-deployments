@@ -8,23 +8,29 @@ The contents of this repository are not owned by any single individual, and shou
 
 ## How to add your own component
 
-You may use the `has` component as an example for how to add your own component. Here `has` refers to the HAS service team's K8s resources.
+You may use the `application-service` component as an example for how to add your own component. Here `application-service` refers to the HAS service team's K8s resources.
 
 These are the steps to add your own component:
 
 1) Create a new directory for your team's components, under `components/(team-name)`.
 2) Add a `kustomization.yaml` file under that directory, which points to the individual K8s YAML resources you wish to deploy.
     - You may also structure your deployment into directories and files. See the Kustomize documentation for more information, and/or examples below.
-    - See `components/has/staging` for an example of this.
+    - See `components/application-service/staging` for an example of this.
 3) Create an Argo CD `ApplicationSet` resource in `argo-cd-apps/base/(team-name).yaml`).
-    - See `has.yaml` for a template of how this should look.
+    - See `application-service.yaml` for a template of how this should look.
     - The `.spec.template.spec.source.path` value should point to the directory you created in previous step.
     - The `.spec.template.spec.destination.namespace` should match the target namespace you wish to deploy your resources to.
+    - The `.spec.template.spec.destination.name` should correspond to the name of the workspace you wish to deploy your resources to. There are two types of destination:
+      * `redhat-appstudio-workspace-{{kcp-name}}` for all AppStudio components
+      * `redhat-hacbs-workspace-{{kcp-name}}` for all HACBS components
     - The suffix of the `.spec.template.metadata.name` should correspond to your team name, but keep the `{{kcp-name}}-` prefix for proper templating: `{{kcp-name}}-(team-name)`.
 4) Add a reference to your new `(team-name).yaml` file, to `argo-cd-apps/base/kustomization.yaml` (the reference to your YAML file should be in the `resources:` list field).
 5) Run `kustomize build (repo root)/argo-cd-apps/overlays/staging` and ensure it passes, and outputs your new Argo CD Application CR.
 6) Add an entry in `argo-cd-apps/overlays/development/repo-overlay.yaml` for your new component so you can use the preview mode for testing.
-7) Open a PR for all of the above.
+7) Add an APIBinding (including the accepted permission claims):
+   - For an AppStudio component to [apibindings/appstudio](apibindings/appstudio)
+   - For an HACBS component to [apibindings/hacbs](apibindings/hacbs)
+8) Open a PR for all the above.
 
 More examples of using Kustomize to drive deployments using GitOps can be [found here](https://github.com/redhat-cop/gitops-catalog).
 
@@ -52,7 +58,7 @@ The prerequisites are:
 If you don't already have a test OpenShift cluster available, OpenShift Local is a popular option. It runs a small OpenShift cluster in a single VM on your local workstation.
 
 1) Create or log in using your free Red Hat account, and [install OpenShift Local (formerly Red Hat CodeReady Containers / CRC)](https://console.redhat.com/openshift/create/local).
-2) Make sure you have the latest version of CRC: `crc version`
+2) Make sure you have the latest version of OpenShift Local: `crc version`
 3) Run `./hack/setup/prepare-crc.sh` to configure OpenShift Local with the recommended minimum memory (16 GiB) and CPUs (6) for App Studio. The script has optional parameters for customizing `memory` and `cpu` allowance. It also supports `force delete` of existing cluster. Run `./hack/setup/prepare-crc.sh --help` to see the options. The script will also enable cluster monitoring and log you in as the cluster administrator.
 
 ### Optional: Quicklab storage setup for clusters
@@ -65,7 +71,7 @@ See [hack/quicklab/README.md](hack/quicklab/README.md)
 
 To boostrap AppStudio run:
 ```bash
-./hack/bootstrap.sh -kk [kubeconfig-pointing-to-kcp] -ck [kubeconfig-pointing-to-openshift] -rw [workspace-to-be-used-as-root] -m [mode|upstream,dev,preview]
+./hack/bootstrap.sh -kk [kubeconfig-pointing-to-kcp] -ck [kubeconfig-pointing-to-openshift] -rw [workspace-to-be-used-as-root] -m [mode|upstream,preview]
 ```
 which will:
 * Bootstrap Argo CD (using OpenShift GitOps) - it will output the Argo CD Web UI route when it's finished.
@@ -74,20 +80,20 @@ which will:
 * Setup the Argo CD `Application`/`ApplicationSet` Custom Resources (CRs) for each component.
 
 #### Modes:
-* `upstream` (default) mode will expect access to both CPS instances `kcp-stable` and `kcp-unstable` - each of them should be represented by a kubeconfig context having the same name as the CPS instance.  
-* `dev` mode will use one kcp instance as the deployment target - it can be any instance (either CPS or local kcp). The current kubeconfig context should point to it.  
-* `preview` mode will enable preview mode used for development and testing on non-production clusters using the same deployment target as `dev` mode. See [Preview mode for your clusters](#preview-mode-for-your-clusters).
+* `upstream` (default) mode will expect access to both CPS instances `kcp-stable` and `kcp-unstable` - each of them should be represented by a kubeconfig context having the same name as the CPS instance.
+* `preview` mode will enable preview mode used for development and testing on non-production clusters using cluster and KCP kubeconfig defined in `hack/preview.env`. See [Preview mode for your clusters](#preview-mode-for-your-clusters).
 
 #### Workspaces:
-If `-rw | --root-workspace` parameter is not specified, then by default, all workspaces are automatically created under the `root` workspace.  
+If `-rw | --root-workspace` parameter is not specified, then by default, all workspaces are automatically created under the `root` workspace.
 There are two workspaces created per kcp instance:
-* `redhat-appstudio-internal-compute` - This is the workspace where the SyncTarget for the OpenShift workload cluster is configured. If the root workspace is different from `root`, then the name of the workspace is set to `compute` to work around [this issue](https://github.com/kcp-dev/kcp/issues/1843). (The name of the workspace can be overridden by setting the `COMPUTE_WORKSPACE` variable) 
-* `redhat-appstudio` - In this workspace ArgoCD deploys all kcp-related manifests from the infra-deployments repository. It's the place where all AppStudio components run. (The name of the workspace can be overridden by setting the `APPSTUDIO_WORSKPACE` variable)  
+* `redhat-appstudio-internal-compute` - This is the workspace where the SyncTarget for the OpenShift workload cluster is configured. If the root workspace is different from `root`, then the name of the workspace is set to `compute` to work around [this issue](https://github.com/kcp-dev/kcp/issues/1843). (The name of the workspace can be overridden by setting the `COMPUTE_WORKSPACE` variable)
+* `redhat-appstudio` - In this workspace ArgoCD deploys all kcp-related AppStudio manifests from the infra-deployments repository. It's the place where all AppStudio components run. (The name of the workspace can be overridden by setting the `APPSTUDIO_WORKSPACE` variable)
+* `redhat-hacbs` - In this workspace ArgoCD deploys all kcp-related HACBS manifests from the infra-deployments repository. It's the place where all HACBS components run. (The name of the workspace can be overridden by setting the `HACBS_WORKSPACE` variable)
 
 #### Configure kcp for upstream mode:
 If you decide to run the upstream mode, then the `bootstrap.sh` script tries to configure two instances of kcp: `kcp-stable` and `kcp-unstable`. However, `kcp-stable` instance may require different version of kubectl kcp plugin than the `kcp-unstable` one. This makes running the bootstrap script impossible for the upstream mode, because you cannot use two versions of the plugin at the same time.
 
-To work around the issue, you can skip the configuration of the kcp part by using `-sk | --skip-kcp parameter <true/false>`:  
+To work around the issue, you can skip the configuration of the kcp part by using `-sk | --skip-kcp parameter <true/false>`:
 ```bash
 ./hack/bootstrap.sh -sk true ...
 ```
@@ -103,7 +109,7 @@ which takes care of creation of the workspaces, SyncTarget, and the representati
 Open the Argo CD Web UI to see the status of your deployments. You can use the route from the previous step and login using your OpenShift credentials (using the 'Login with OpenShift' button), or login to the OpenShift Console and navigate to Argo CD using the OpenShift Gitops menu in the Applications pulldown.
    ![OpenShift Gitops menu with Cluster Argo CD menu option](documentation/images/argo-cd-login.png?raw=true "OpenShift Gitops menu")
 
-If your deployment was successful, you should see several applications running, such as "all-components", "has", and so on.
+If your deployment was successful, you should see several applications running, such as "all-components", "application-service", and so on.
 
 ### Optional: OpenShift Local (formerly CRC) Post-Bootstrap Configuration
 
@@ -111,7 +117,7 @@ Even with 6 CPU cores, you will need to reduce the CPU resource requests for eac
 
 ## Preview mode for your clusters
 
-Once you bootstrap your environment without `preview` argument, the root ArgoCD Application and all of the component applications will each point to the upstream repository. Or you can bootstrap cluster directly in mode which you need.
+Once you bootstrap your environment without `-m preview`, the root ArgoCD Application and all of the component applications will each point to the upstream repository. Or you can bootstrap cluster directly in mode which you need.
 
 To enable development for a team or individual to test changes on your own cluster, you need to replace the references to `https://github.com/redhat-appstudio/infra-deployments.git` with references to your own fork.
 
@@ -122,31 +128,74 @@ The script also supports branches automatically. If you work in a checked out br
 
 Preview mode works in a feature branch, apply script which creates new preview branch and create additional commit with customization.
 
+### Bootstrapping with Preview mode
+
+To set your cluster, connect it to KCP instance and deploy components with modifications from current branch it is possible to bootstrap the cluster in preview mode directly. Configure `hack/preview.env` before running `bootstrap.sh`.
+
+Usage:
+
+```
+./hack/bootstrap.sh -m preview
+```
+
+### Containerized KCP installation
+
+For testing purposes it is possible to use script for installation of containerized KCP directly into your OpenShift cluster.
+The script creates file `/tmp/ckcp-admin.kubeconfig` which should be copied to location defined by `KCP_KUBECONFIG` in `hack/preview.env`.
+
+Usage:
+```
+./hack/install-ckcp.sh
+```
+
 ### Setting Preview mode
 
 Steps:
 
-1) Copy `hack/preview-template.env` to `hack/preview.env` and update new file based on instructions. File `hack/preview.env` should never be included in commit.
+1) Copy `hack/preview-template.env` to `hack/preview.env` and update the new file based on the instructions in the template. File `hack/preview.env` should never be included in a commit.
 2) Work on your changes in a feature branch
 3) Commit your changes
 4) Run `./hack/preview.sh`, which will do:
-   a) New branch is created from your current branch, the name of new branch is `preview-<name-of-current-branch>`
-   b) Commit with changes related to your environment is added into preview branch
-   c) Preview branch is pushed into your fork
+   a) A new branch named `preview-<name-of-current-branch>` is created from your current branch 
+   b) A commit with changes related to your environment is added into the preview branch
+   c) The preview branch is pushed into your fork
    d) ArgoCD is set to point to your fork and the preview branch
-   e) User is switched back to feature branch to create additional changes
+   e) Git is switched back to your feature branch to create additional changes
 
 If you want to reset your environment you can run the `hack/util-update-app-of-apps.sh https://github.com/redhat-appstudio/infra-deployments.git staging main` to reset everything including your cluster to `https://github.com/redhat-appstudio/infra-deployments.git` and match the upstream config.
 
-Note running these scripts in a clone repo will have no effect as the repo will remain `https://github.com/redhat-appstudio/infra-deployments.git`
+Note that running these scripts in a cloned repo will have no effect, as the repo will remain `https://github.com/redhat-appstudio/infra-deployments.git`
 
-## Authorization
+### Pipeline Service installation
+
+[Pipeline Service](https://github.com/openshift-pipelines/pipeline-service) provides tekton resources for execution of PipelineRuns. For development purposes there is a script for deploying Pipeline Service into user kcp workspace. The script requires the `hack/preview.env` file. The script creates the file `/tmp/pipeline-service-binding.yaml` which can be applied in a test workspace to consume the Pipeline Service API.
+
+Usage:
+```
+./hack/install-pipeline-service.sh
+```
+
+## Kubernetes Authorization
 
 Authorization is managed by [components/authorization](components/authorization/). Authorization is disabled in dev and preview mode.
 
-For access to OpenShift Stage cluster the github user has to be part of `stage` team in `redhat-appstudio-sre` organization.
+Authorization in `root:redhat-appstudio` and `root:redhat-hacbs` workspaces in CPS is managed by [components/authorization/kcp/](components/authorization/kcp/).
 
-Authorization in `root:redhat-appstudio` workspace in CPS is managed by [components/authorization/kcp/members-view.yaml](components/authorization/kcp/members-view.yaml).
+For access to the OpenShift staging cluster, the user must be added to the `stage` team in the `redhat-appstudio-sre` Github organization.
+
+## Repo Members and Maintainers
+
+### How to add yourself as a reviewer/approver
+There is an OWNERS file present in each component folder [like this](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/spi/OWNERS), and Github users listead in the file have the authority to approve/review PR's.
+
+To become an Approver for a component, add yourself to the OWNERS file present in your component folder and raise a pull request. 
+
+To become an Approver for the entire repo, add yourself to the OWNERS file present in the root level of this repository
+
+Difference Between [Reviewers](https://github.com/kubernetes/community/blob/master/community-membership.md#reviewer) and [Approvers](https://github.com/kubernetes/community/blob/master/community-membership.md#approver)
+
+More about code review using [OWNERS](https://github.com/kubernetes/community/blob/master/contributors/guide/owners.md#code-review-using-owners-files)
+
 
 ## FAQ
 
@@ -215,13 +264,13 @@ See the OpenShift Local docs [for more on these minimum requirements](https://ac
 
 ### Q: When using OpenShift Local (formerly CRC) for development purposes, I am getting an error message similar to: `0/1 nodes available: insufficient memory`.
 
-The default worker node memory allocation is insufficient to run App Studio. Increase the memory to 16 GiB using `crc config set memory 16384` and then create a new CRC VM to apply your changes, using `crc delete` and `crc start`. Finally, repeat the cluster bootstrapping process.
+The default worker node memory allocation is insufficient to run App Studio. Increase the memory to 16 GiB using `crc config set memory 16384` and then create a new VM to apply your changes, using `crc delete` and `crc start`. Finally, repeat the cluster bootstrapping process.
 
 See the OpenShift Local docs [for more on this configuration option](https://access.redhat.com/documentation/en-us/red_hat_openshift_local/2.5/html/getting_started_guide/configuring_gsg#configuring-the-instance_gsg).
 
 ### Q: When using OpenShift Local (formerly CRC) for development purposes, I am getting an error message similar to: `0/1 nodes available: insufficient cpu`.
 
-The default CPU allocation will not be sufficient for the CPU resource requests in this repo. Increase number of cores, for example, `crc config set cpus 6` if your hardware supports it, and then create a new CRC VM to apply your changes, using `crc delete` and `crc start`. Finally, repeat the cluster bootstrapping process.
+The default CPU allocation will not be sufficient for the CPU resource requests in this repo. Increase number of cores, for example, `crc config set cpus 6` if your hardware supports it, and then create a new VM to apply your changes, using `crc delete` and `crc start`. Finally, repeat the cluster bootstrapping process.
 
 See the OpenShift Local docs [for more on this configuration option](https://access.redhat.com/documentation/en-us/red_hat_openshift_local/2.5/html/getting_started_guide/configuring_gsg#configuring-the-instance_gsg).
 
@@ -241,13 +290,3 @@ requests:
 
 Then [save and exit the editor](https://vim.rtorr.com/). The updates will be applied to the cluster immediately, and the App Studio deployment should complete within a few minutes.
 
-## For Members and Maintainers
-
-### How to add yourself as a reviewer/approver
-There is an OWNERS file present in each component folder [like this](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/spi/OWNERS), people mentioned in the file have the respective access to approve/review PR's.
-
-To add yourself change the OWNERS file present in your component folder and Raise a pull request, if you want to be a Approver for the entire repo please change the OWNERS file present in the root level of this repository
-
-Difference Between [Reviewers](https://github.com/kubernetes/community/blob/master/community-membership.md#reviewer) and [Approvers](https://github.com/kubernetes/community/blob/master/community-membership.md#approver)
-
-More about code review using [OWNERS](https://github.com/kubernetes/community/blob/master/contributors/guide/owners.md#code-review-using-owners-files)

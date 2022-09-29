@@ -6,12 +6,12 @@ function extra_params() {
   case "$1" in
     -m|--mode)
       shift
-      MODE=$1
+      export MODE=$1
       shift
       ;;
     -sk|--skip-kcp)
       shift
-      SKIP_KCP=${1:-"true"}
+      export SKIP_KCP=${1:-"true"}
       shift
       ;;
     *)
@@ -143,7 +143,6 @@ echo
 echo "========================================================================="
 echo
 
-
 configure_kcp() {
   if [[ "${SKIP_KCP}" == "true" ]]
   then
@@ -151,9 +150,9 @@ configure_kcp() {
   else
     if [[ ${2} == "true" ]]
     then
-      kubectl config use ${1}
+      kubectl config use ${1} --kubeconfig ${KCP_KUBECONFIG}
     fi
-    source ${ROOT}/hack/configure-kcp.sh -kn ${1}
+    ${ROOT}/hack/configure-kcp.sh -kn ${1}
   fi
 }
 
@@ -165,25 +164,11 @@ case $MODE in
         configure_kcp kcp-stable "true"
         kubectl apply -f $ROOT/argo-cd-apps/app-of-apps/all-applications.yaml --kubeconfig ${CLUSTER_KUBECONFIG}
         ;;
-    "dev")
-        configure_kcp dev
-        kubectl apply -f $ROOT/argo-cd-apps/app-of-apps/all-applications.yaml --kubeconfig ${CLUSTER_KUBECONFIG}
-
-        if [ -z "${MY_GIT_REPO_URL}" ]; then
-            MY_GIT_REPO_URL=$(git --git-dir=${ROOT}/.git --work-tree=${ROOT}  ls-remote --get-url| sed 's|^git@github.com:|https://github.com/|')
-        fi
-        if [ -z "${MY_GIT_BRANCH}" ]; then
-            MY_GIT_BRANCH=$(git  --git-dir=${ROOT}/.git --work-tree=${ROOT} rev-parse --abbrev-ref HEAD)
-        fi
-
-        echo "Redirecting the root app-of-apps to use the git repo '${MY_GIT_REPO_URL}' and branch '${MY_GIT_BRANCH}' and updating the path to development:"
-        $ROOT/hack/util-update-app-of-apps.sh ${MY_GIT_REPO_URL} development ${MY_GIT_BRANCH}
-        echo
-
-        echo "Resetting the default repos in the development directory to be the current git repo:"
-        echo "These changes need to be pushed to your fork to be seen by argocd"
-        $ROOT/hack/util-set-development-repos.sh ${MY_GIT_REPO_URL} development ${MY_GIT_BRANCH}
-        ;;
     "preview")
-        $ROOT/hack/preview.sh ;;
+        configure_kcp dev "false"
+        $ROOT/hack/preview.sh
+        ;;
+    *)
+        echo "${MODE} is not a valid mode"
+        ;;
 esac
