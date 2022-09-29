@@ -264,13 +264,13 @@ See the OpenShift Local docs [for more on these minimum requirements](https://ac
 
 ### Q: When using OpenShift Local (formerly CRC) for development purposes, I am getting an error message similar to: `0/1 nodes available: insufficient memory`.
 
-The default worker node memory allocation of 8192 MiB is insufficient to run App Studio. Increase the memory to at least 16 MiB, for example: `crc config set memory 16384`, and then create a new CRC VM to apply your changes, using `crc delete` and `crc start`. Finally, repeat the cluster bootstrapping process.
+The default worker node memory allocation is insufficient to run App Studio. Increase the memory to 16 GiB using `crc config set memory 16384` and then create a new VM to apply your changes, using `crc delete` and `crc start`. Finally, repeat the cluster bootstrapping process.
 
 See the OpenShift Local docs [for more on this configuration option](https://access.redhat.com/documentation/en-us/red_hat_openshift_local/2.5/html/getting_started_guide/configuring_gsg#configuring-the-instance_gsg).
 
 ### Q: When using OpenShift Local (formerly CRC) for development purposes, I am getting an error message similar to: `0/1 nodes available: insufficient cpu`.
 
-The default 4-CPU allocation will not be sufficient for the CPU resource requests in this repo. Increase the number of CPUs, for example, `crc config set cpus 6`, and then create a new CRC VM to apply your changes, using `crc delete` and `crc start`. Finally, repeat the cluster bootstrapping process.
+The default CPU allocation will not be sufficient for the CPU resource requests in this repo. Increase number of cores, for example, `crc config set cpus 6` if your hardware supports it, and then create a new VM to apply your changes, using `crc delete` and `crc start`. Finally, repeat the cluster bootstrapping process.
 
 See the OpenShift Local docs [for more on this configuration option](https://access.redhat.com/documentation/en-us/red_hat_openshift_local/2.5/html/getting_started_guide/configuring_gsg#configuring-the-instance_gsg).
 
