@@ -152,36 +152,50 @@ Usage:
 
 Steps:
 
-1) Copy `hack/preview-template.env` to `hack/preview.env` and update new file based on instructions. File `hack/preview.env` should never be included in commit.
+1) Copy `hack/preview-template.env` to `hack/preview.env` and update the new file based on the instructions in the template. File `hack/preview.env` should never be included in a commit.
 2) Work on your changes in a feature branch
 3) Commit your changes
 4) Run `./hack/preview.sh`, which will do:
-   a) New branch is created from your current branch, the name of new branch is `preview-<name-of-current-branch>`
-   b) Commit with changes related to your environment is added into preview branch
-   c) Preview branch is pushed into your fork
+   a) A new branch named `preview-<name-of-current-branch>` is created from your current branch 
+   b) A commit with changes related to your environment is added into the preview branch
+   c) The preview branch is pushed into your fork
    d) ArgoCD is set to point to your fork and the preview branch
-   e) User is switched back to feature branch to create additional changes
+   e) Git is switched back to your feature branch to create additional changes
 
 If you want to reset your environment you can run the `hack/util-update-app-of-apps.sh https://github.com/redhat-appstudio/infra-deployments.git staging main` to reset everything including your cluster to `https://github.com/redhat-appstudio/infra-deployments.git` and match the upstream config.
 
-Note running these scripts in a clone repo will have no effect as the repo will remain `https://github.com/redhat-appstudio/infra-deployments.git`
+Note that running these scripts in a cloned repo will have no effect, as the repo will remain `https://github.com/redhat-appstudio/infra-deployments.git`
 
 ### Pipeline Service installation
 
-[Pipeline Service](https://github.com/openshift-pipelines/pipeline-service) provides tekton resources for execution of PipelineRuns. For development purposes there is a script for deploying Pipeline Service into user kcp workspace. The script requires `hack/preview.env` file. The script creates file `/tmp/pipeline-service-binding.yaml` which can be applied in test workspace to consume Pipeline Service API.
+[Pipeline Service](https://github.com/openshift-pipelines/pipeline-service) provides tekton resources for execution of PipelineRuns. For development purposes there is a script for deploying Pipeline Service into user kcp workspace. The script requires the `hack/preview.env` file. The script creates the file `/tmp/pipeline-service-binding.yaml` which can be applied in a test workspace to consume the Pipeline Service API.
 
 Usage:
 ```
 ./hack/install-pipeline-service.sh
 ```
 
-## Authorization
+## Kubernetes Authorization
 
 Authorization is managed by [components/authorization](components/authorization/). Authorization is disabled in dev and preview mode.
 
-For access to OpenShift Stage cluster the github user has to be part of `stage` team in `redhat-appstudio-sre` organization.
-
 Authorization in `root:redhat-appstudio` and `root:redhat-hacbs` workspaces in CPS is managed by [components/authorization/kcp/](components/authorization/kcp/).
+
+For access to the OpenShift staging cluster, the user must be added to the `stage` team in the `redhat-appstudio-sre` Github organization.
+
+## Repo Members and Maintainers
+
+### How to add yourself as a reviewer/approver
+There is an OWNERS file present in each component folder [like this](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/spi/OWNERS), and Github users listead in the file have the authority to approve/review PR's.
+
+To become an Approver for a component, add yourself to the OWNERS file present in your component folder and raise a pull request. 
+
+To become an Approver for the entire repo, add yourself to the OWNERS file present in the root level of this repository
+
+Difference Between [Reviewers](https://github.com/kubernetes/community/blob/master/community-membership.md#reviewer) and [Approvers](https://github.com/kubernetes/community/blob/master/community-membership.md#approver)
+
+More about code review using [OWNERS](https://github.com/kubernetes/community/blob/master/contributors/guide/owners.md#code-review-using-owners-files)
+
 
 ## FAQ
 
@@ -248,13 +262,13 @@ We recommend 7+ cores and 24+ GiB (24576 MiB) of memory.
 
 ### Q: When using CodeReady Containers for development purposes, I am getting an error message similar to: `0/1 nodes available: insufficient memory`.
 
-The default worker node memory allocation of 8192 MiB insufficient to run App Studio. Increase the memory to 16 MiB using `crc config set memory 16384` and then create a new CRC VM to apply your changes, using `crc delete` and `crc start`. Finally, repeat the cluster bootstrapping process.
+The default worker node memory allocation of 8192 MiB is insufficient to run App Studio. Increase the memory to at least 16 MiB, for example: `crc config set memory 16384`, and then create a new CRC VM to apply your changes, using `crc delete` and `crc start`. Finally, repeat the cluster bootstrapping process.
 
 See the CodeReady Containers docs [for more on this configuration option](https://access.redhat.com/documentation/en-us/red_hat_codeready_containers/1.7/html/getting_started_guide/configuring-codeready-containers_gsg).
 
 ### Q: When using CodeReady Containers for development purposes, I am getting an error message similar to: `0/1 nodes available: insufficient cpu`.
 
-The default 4-CPU allocation will not be sufficient for the CPU resource requests in this repo. Increase number of cores, for example, `crc config set cpus 6` if your hardware supports it, and then create a new CRC VM to apply your changes, using `crc delete` and `crc start`. Finally, repeat the cluster bootstrapping process.
+The default 4-CPU allocation will not be sufficient for the CPU resource requests in this repo. Increase the number of CPUs, for example, `crc config set cpus 6`, and then create a new CRC VM to apply your changes, using `crc delete` and `crc start`. Finally, repeat the cluster bootstrapping process.
 
 See the CodeReady Containers docs [for more on this configuration option](https://access.redhat.com/documentation/en-us/red_hat_codeready_containers/1.7/html/getting_started_guide/configuring-codeready-containers_gsg).
 
@@ -274,13 +288,3 @@ requests:
 
 Then [save and exit the editor](https://vim.rtorr.com/). The updates will be applied to the cluster immediately, and the App Studio deployment should complete within a few minutes.
 
-## For Members and Maintainers
-
-### How to add yourself as a reviewer/approver
-There is an OWNERS file present in each component folder [like this](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/spi/OWNERS), people mentioned in the file have the respective access to approve/review PR's.
-
-To add yourself change the OWNERS file present in your component folder and Raise a pull request, if you want to be a Approver for the entire repo please change the OWNERS file present in the root level of this repository
-
-Difference Between [Reviewers](https://github.com/kubernetes/community/blob/master/community-membership.md#reviewer) and [Approvers](https://github.com/kubernetes/community/blob/master/community-membership.md#approver)
-
-More about code review using [OWNERS](https://github.com/kubernetes/community/blob/master/contributors/guide/owners.md#code-review-using-owners-files)
