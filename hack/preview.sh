@@ -33,13 +33,16 @@ if [ -n "$PIPELINE_SERVICE_IDENTITY_HASH" ]; then
   IDENTITY_HASHES="pipeline-service:$PIPELINE_SERVICE_IDENTITY_HASH"
 else
   KUBECONFIG=${KCP_KUBECONFIG} kubectl ws ${ROOT_WORKSPACE}
-  if KUBECONFIG=${KCP_KUBECONFIG} kubectl ws pipeline-service; then
+  if KUBECONFIG=${KCP_KUBECONFIG} kubectl ws redhat-pipeline-service-compute; then
     IDENTITY_HASH=$(oc get apiexport kubernetes --kubeconfig ${KCP_KUBECONFIG} -o jsonpath='{.status.identityHash}')
     IDENTITY_HASHES="pipeline-service:$IDENTITY_HASH"
+  elif [ "$PIPELINE_SERVICE_LOCAL_DEPLOY" == "true" ]; then
+    KUBECONFIG={CLUSTER_KUBECONFIG} ./hack/install-pipeline-service.sh
   else
     echo "pipeline-service workspace is not available"
     echo "Set existing pipeline-service workspace by PIPELINE_SERVICE_SP_WORKSPACE and PIPELINE_SERVICE_IDENTITY_HASH"
     echo "Or install pipeline-service instance using './hack/install-pipeline-service.sh'"
+    echo "Or let preview.sh to install pipeline-service automatically using PIPELINE_SERVICE_LOCAL_DEPLOY='true'"
     exit 1
   fi
 fi
