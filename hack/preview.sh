@@ -18,7 +18,6 @@ fi
 MY_GIT_REPO_URL=$(git ls-remote --get-url $MY_GIT_FORK_REMOTE | sed 's|^git@github.com:|https://github.com/|')
 MY_GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
-
 if echo "$MY_GIT_REPO_URL" | grep -q redhat-appstudio/infra-deployments; then
     echo "Use your fork repository for preview"
     exit 1
@@ -29,17 +28,24 @@ if ! git diff --exit-code --quiet; then
     exit 1
 fi
 
+export PIPELINE_SERVICE_WORKSPACE=${PIPELINE_SERVICE_WORKSPACE:-"redhat-pipeline-service-compute"}
 if [ -n "$PIPELINE_SERVICE_IDENTITY_HASH" ]; then
   IDENTITY_HASHES="pipeline-service:$PIPELINE_SERVICE_IDENTITY_HASH"
 else
   KUBECONFIG=${KCP_KUBECONFIG} kubectl ws ${ROOT_WORKSPACE}
-  if KUBECONFIG=${KCP_KUBECONFIG} kubectl ws pipeline-service; then
+  if KUBECONFIG=${KCP_KUBECONFIG} kubectl ws $PIPELINE_SERVICE_WORKSPACE; then
+    IDENTITY_HASH=$(oc get apiexport kubernetes --kubeconfig ${KCP_KUBECONFIG} -o jsonpath='{.status.identityHash}')
+    IDENTITY_HASHES="pipeline-service:$IDENTITY_HASH"
+  elif [ "$PIPELINE_SERVICE_LOCAL_DEPLOY" == "true" ]; then
+    KUBECONFIG=${CLUSTER_KUBECONFIG} ./hack/install-pipeline-service.sh
+    KUBECONFIG=${KCP_KUBECONFIG} kubectl ws $PIPELINE_SERVICE_WORKSPACE
     IDENTITY_HASH=$(oc get apiexport kubernetes --kubeconfig ${KCP_KUBECONFIG} -o jsonpath='{.status.identityHash}')
     IDENTITY_HASHES="pipeline-service:$IDENTITY_HASH"
   else
     echo "pipeline-service workspace is not available"
     echo "Set existing pipeline-service workspace by PIPELINE_SERVICE_SP_WORKSPACE and PIPELINE_SERVICE_IDENTITY_HASH"
     echo "Or install pipeline-service instance using './hack/install-pipeline-service.sh'"
+    echo "Or let preview.sh to install pipeline-service automatically using PIPELINE_SERVICE_LOCAL_DEPLOY='true'"
     exit 1
   fi
 fi
