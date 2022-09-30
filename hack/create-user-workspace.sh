@@ -14,29 +14,32 @@ fi
 SERVICE_NAME=${1}
 
 ROOT_WORKSPACE=${ROOT_WORKSPACE:-"root"}
+HOME_WORKSPACE=${HOME_WORKSPACE:-"~"}
 APPSTUDIO_WORKSPACE=${APPSTUDIO_WORKSPACE:-"redhat-appstudio"}
 HACBS_WORKSPACE=${HACBS_WORKSPACE:-"redhat-hacbs"}
+PIPELINE_SERVICE_WORKSPACE=${PIPELINE_SERVICE_WORKSPACE:-"redhat-pipeline-service-compute"}
 
 if [[ -n ${KCP_KUBECONFIG} ]]
 then
   export KUBECONFIG=${KCP_KUBECONFIG}
 fi
 
-echo "Accessing the home workspace:"
-kubectl ws '~'
-
 if [ "${ROOT_WORKSPACE}" == "~" ]; then
-  ROOT_WORKSPACE=$(kubectl ws . --short)
+  ROOT_WORKSPACE=$(kubectl ws '~' --short)
 fi
+
+echo "Accessing the home workspace:"
+kubectl ws $HOME_WORKSPACE
 
 APPSTUDIO_SP_WORKSPACE=${APPSTUDIO_SP_WORKSPACE:-${ROOT_WORKSPACE}:${APPSTUDIO_WORKSPACE}}
 HACBS_SP_WORKSPACE=${HACBS_SP_WORKSPACE:-${ROOT_WORKSPACE}:${HACBS_WORKSPACE}}
+PIPELINE_SERVICE_SP_WORKSPACE=${PIPELINE_SERVICE_SP_WORKSPACE:-${ROOT_WORKSPACE}:${PIPELINE_SERVICE_WORKSPACE}}
 
 USER_APPSTUDIO_WORKSPACE=${USER_APPSTUDIO_WORKSPACE:-"${SERVICE_NAME}"}
 echo "Creating & accessing AppStudio workspace '${USER_APPSTUDIO_WORKSPACE}':"
 kubectl ws create ${USER_APPSTUDIO_WORKSPACE}  --ignore-existing --type root:universal --enter
 
-kubectl kustomize ${ROOT}/apibindings/${SERVICE_NAME}/ | sed "s|\${APPSTUDIO_SP_WORKSPACE}|${APPSTUDIO_SP_WORKSPACE}|g;s|\${HACBS_SP_WORKSPACE}|${HACBS_SP_WORKSPACE}|g" | \
+kubectl kustomize ${ROOT}/apibindings/${SERVICE_NAME}/ | sed "s|\${APPSTUDIO_SP_WORKSPACE}|${APPSTUDIO_SP_WORKSPACE}|g;s|\${HACBS_SP_WORKSPACE}|${HACBS_SP_WORKSPACE}|g;s|\${PIPELINE_SERVICE_SP_WORKSPACE}|${PIPELINE_SERVICE_SP_WORKSPACE}|g" | \
   kubectl apply -f -
 
 echo

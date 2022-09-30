@@ -81,6 +81,11 @@ parse_flags() {
   fi
   export ROOT_WORKSPACE=${ROOT_WORKSPACE:-"root"}
 
+  # Convert home ROOT_WORKSPACE to full path
+  if [ "$ROOT_WORKSPACE" == "~" ]; then
+    ROOT_WORKSPACE=$(KUBECONFIG=${KCP_KUBECONFIG} kubectl ws '~' --short)
+  fi
+
   # Check config files and version compatibility
   if kubectl version -o yaml --kubeconfig ${CLUSTER_KUBECONFIG} | yq '.serverVersion.gitVersion' | grep -q kcp; then
     echo CLUSTER_KUBECONFIG=${CLUSTER_KUBECONFIG} points to KCP not to cluster.
@@ -89,6 +94,11 @@ parse_flags() {
   KCP_SERVER_VERSION=$(kubectl version -o yaml --kubeconfig ${KCP_KUBECONFIG} 2>/dev/null | yq '.serverVersion.gitVersion')
   if ! echo "$KCP_SERVER_VERSION" | grep -q 'kcp\|v0.0.0-master'; then
     echo KCP_KUBECONFIG=${KCP_KUBECONFIG} does not point to KCP cluster.
+    exit 1
+  fi
+  KUBECTL_CLIENT_VERSION=$(kubectl version --client -o yaml)
+  if [ $(echo "$KUBECTL_CLIENT_VERSION" | yq '.clientVersion.minor') -lt 24 ]; then
+    echo 'kubectl 1.24.x or newer needs to be used'
     exit 1
   fi
   KCP_SERVER=$(echo $KCP_SERVER_VERSION | sed 's/.*kcp-v\(.*\)\..*/\1/')
