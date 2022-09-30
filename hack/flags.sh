@@ -91,6 +91,11 @@ parse_flags() {
     echo KCP_KUBECONFIG=${KCP_KUBECONFIG} does not point to KCP cluster.
     exit 1
   fi
+  KUBECTL_CLIENT_VERSION=$(kubectl version --client -o yaml)
+  if [ $(echo "$KUBECTL_CLIENT_VERSION" | yq '.clientVersion.minor') -lt 24 ]; then
+    echo 'kubectl 1.24.x or newer needs to be used'
+    exit 1
+  fi
   KCP_SERVER=$(echo $KCP_SERVER_VERSION | sed 's/.*kcp-v\(.*\)\..*/\1/')
   KCP_CLIENT=$(kubectl kcp --version | sed 's/.*kcp-v\(.*\)\..*/\1/')
   if echo "$KCP_SERVER_VERSION" | grep -q 'v0.0.0-master'; then
