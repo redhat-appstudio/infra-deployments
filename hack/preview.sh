@@ -51,8 +51,7 @@ else
 fi
 
 # Ensure that we are in redhat-appstudio workspace
-KUBECONFIG=${KCP_KUBECONFIG} kubectl ws ${ROOT_WORKSPACE}
-KUBECONFIG=${KCP_KUBECONFIG} kubectl ws redhat-appstudio
+KUBECONFIG=${KCP_KUBECONFIG} kubectl ws ${ROOT_WORKSPACE}:redhat-appstudio
 
 # Create preview branch for preview configuration
 PREVIEW_BRANCH=preview-${MY_GIT_BRANCH}${TEST_BRANCH_ID+-$TEST_BRANCH_ID}
@@ -123,11 +122,9 @@ evaluate_apiexports() {
 }
 APIEXPORTS=$(find -name '*apiexport*.yaml' | grep overlays/dev)
 evaluate_apiexports "$(echo $APIEXPORTS | grep -v '/hacbs/')"
-KUBECONFIG=${KCP_KUBECONFIG} kubectl ws ${ROOT_WORKSPACE}
-KUBECONFIG=${KCP_KUBECONFIG} kubectl ws redhat-hacbs
+KUBECONFIG=${KCP_KUBECONFIG} kubectl ws ${ROOT_WORKSPACE}:redhat-hacbs
 evaluate_apiexports "$(echo $APIEXPORTS | grep '/hacbs/')"
-KUBECONFIG=${KCP_KUBECONFIG} kubectl ws ${ROOT_WORKSPACE}
-KUBECONFIG=${KCP_KUBECONFIG} kubectl ws redhat-appstudio
+KUBECONFIG=${KCP_KUBECONFIG} kubectl ws ${ROOT_WORKSPACE}:redhat-appstudio
 
 if ! git diff --exit-code --quiet; then
     git commit -a -m "Preview mode, do not merge into main"
