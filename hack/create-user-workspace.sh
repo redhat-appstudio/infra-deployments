@@ -25,7 +25,7 @@ then
 fi
 
 if [ "${ROOT_WORKSPACE}" == "~" ]; then
-  ROOT_WORKSPACE=$(kubectl ws . --short)
+  ROOT_WORKSPACE=$(kubectl ws '~' --short)
 fi
 
 echo "Accessing the home workspace:"
