@@ -104,13 +104,7 @@ EOF
 configure_service_provider_workspace() {
   echo "Creating and accessing '${SP_WORKSPACE_NAME}':"
   KUBECONFIG=${KCP_KUBECONFIG} kubectl ws ${ROOT_WORKSPACE}
-  
-  if [ "$ROOT_WORKSPACE" == "~" ]; then
-    CURRENT_WS=$(KUBECONFIG=${KCP_KUBECONFIG} kubectl ws . --short)
-    COMPUTE_WORKSPACE_PATH=${CURRENT_WS}:${COMPUTE_WORKSPACE}
-  else
-    COMPUTE_WORKSPACE_PATH=${ROOT_WORKSPACE}:${COMPUTE_WORKSPACE}
-  fi
+  COMPUTE_WORKSPACE_PATH=${ROOT_WORKSPACE}:${COMPUTE_WORKSPACE}
   
   KUBECONFIG=${KCP_KUBECONFIG} kubectl ws create ${SP_WORKSPACE_NAME} --ignore-existing --type root:universal || true
   SP_WORKSPACE_URL=$(KUBECONFIG=${KCP_KUBECONFIG} kubectl get workspaces ${SP_WORKSPACE_NAME} -o jsonpath='{.status.URL}')
