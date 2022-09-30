@@ -7,7 +7,8 @@ spec:
   - list:
       elements:
       - kcp-name: kcp-stable
-      - kcp-name: kcp-unstable
+      # Disable kcp-unstable since there is no pipeline-service yet
+      # - kcp-name: kcp-unstable
   template:
     metadata:
       name: '{{kcp-name}}-jvm-build-service'
@@ -15,7 +16,7 @@ spec:
       project: default
 
       source:
-        path: components/jvm-build-service
+        path: components/hacbs/jvm-build-service/overlays/{{kcp-name}}
         repoURL: https://github.com/redhat-appstudio/infra-deployments.git
         targetRevision: main
 

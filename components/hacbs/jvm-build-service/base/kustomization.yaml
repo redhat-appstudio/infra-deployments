@@ -10,3 +10,22 @@ namespace: jvm-build-service
 
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+
+patchesStrategicMerge:
+- |-
+  apiVersion: jvmbuildservice.io/v1alpha1
+  kind: SystemConfig
+  metadata:
+    name: cluster
+  $patch: delete
+- |-
+  apiVersion: apis.kcp.dev/v1alpha1
+  kind: APIBinding
+  metadata:
+    name: jvmbuildservice-binding
+  $patch: delete
+- |-
+  apiVersion: apis.kcp.dev/v1alpha1
+  kind: APIExport
+  metadata:
+    name: jvmbuildservice
