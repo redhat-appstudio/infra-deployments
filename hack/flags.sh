@@ -81,6 +81,11 @@ parse_flags() {
   fi
   export ROOT_WORKSPACE=${ROOT_WORKSPACE:-"root"}
 
+  # Convert home ROOT_WORKSPACE to full path
+  if [ "$ROOT_WORKSPACE" == "~" ]; then
+    ROOT_WORKSPACE=$(KUBECONFIG=${KCP_KUBECONFIG} kubectl ws '~' --short)
+  fi
+
   # Check config files and version compatibility
   if kubectl version -o yaml --kubeconfig ${CLUSTER_KUBECONFIG} | yq '.serverVersion.gitVersion' | grep -q kcp; then
     echo CLUSTER_KUBECONFIG=${CLUSTER_KUBECONFIG} points to KCP not to cluster.
