@@ -19,10 +19,10 @@ if [ ! -d $BASE_DIR ]; then
 fi
 
 TEMP=$(mktemp -d)
-kubectl kustomize $BASE_DIR | csplit -sf $TEMP/resource - /---/ '{*}'
+kubectl kustomize $BASE_DIR | csplit -sf $TEMP/resource - /^---/ '{*}'
 
 APIEXPORT_FILES=$(grep -lr 'kind: APIExport' $TEMP)
-if [ -n $APIEXPORT_FILES ]; then
+if [ -n "$APIEXPORT_FILES" ]; then
   cat $APIEXPORT_FILES > $COMPONENT_DIR/overlays/dev/apiexport.yaml
 fi
 rm -rf $TEMP
