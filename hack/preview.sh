@@ -121,9 +121,9 @@ evaluate_apiexports() {
   done
 }
 APIEXPORTS=$(find -name '*apiexport*.yaml' | grep overlays/dev)
-evaluate_apiexports "$(echo $APIEXPORTS | grep -v '/hacbs/')"
+evaluate_apiexports "$(echo "$APIEXPORTS" | grep -v '/hacbs/')"
 KUBECONFIG=${KCP_KUBECONFIG} kubectl ws ${ROOT_WORKSPACE}:redhat-hacbs
-evaluate_apiexports "$(echo $APIEXPORTS | grep '/hacbs/')"
+evaluate_apiexports "$(echo "$APIEXPORTS" | grep '/hacbs/')"
 KUBECONFIG=${KCP_KUBECONFIG} kubectl ws ${ROOT_WORKSPACE}:redhat-appstudio
 
 if ! git diff --exit-code --quiet; then
