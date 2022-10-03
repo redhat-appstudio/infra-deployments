@@ -1,0 +1,21 @@
+apiVersion: apis.kcp.dev/v1alpha1
+kind: APIExport
+metadata:
+  name: jvm-build-service
+spec:
+  permissionClaims:
+    - group: ""
+      resource: "secrets"
+    - group: ""
+      resource: "serviceaccounts"
+    - group: ""
+      resource: "events"
+    - group: ""
+      resource: "services"
+      identityHash: #find hash for apiexport that has services in kcp-unstable
+    - group: "apps"
+      resource: "deployments"
+      identityHash: #find hash for apiexport that has service in kcp-unstable
+    - group: "tekton.dev"
+      resource: "pipelineruns"
+      identityHash: #find hash for apiexport that has service in kcp-unstable
