@@ -126,9 +126,9 @@ evaluate_apiexports() {
 
 APIEXPORTS=$(find ${ROOT}/components -name '*apiexport*.yaml' | grep overlays/dev)
 KUBECONFIG=${KCP_KUBECONFIG} kubectl ws ${ROOT_WORKSPACE}:redhat-appstudio
-evaluate_apiexports "$(echo $APIEXPORTS | grep -v '/hacbs/')"
+evaluate_apiexports "$(echo "$APIEXPORTS" | grep -v '/hacbs/')"
 KUBECONFIG=${KCP_KUBECONFIG} kubectl ws ${ROOT_WORKSPACE}:redhat-hacbs
-evaluate_apiexports "$(echo $APIEXPORTS | grep '/hacbs/')"
+evaluate_apiexports "$(echo "$APIEXPORTS" | grep '/hacbs/')"
 
 if ! git diff --exit-code --quiet; then
     git commit -a -m "Preview mode, do not merge into main"
