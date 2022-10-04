@@ -1,31 +1,21 @@
 resources:
-- https://github.com/redhat-appstudio/jvm-build-service/deploy/kcp?ref=954c86b39a12820c7910c93b1e20b9b572232816
+- https://github.com/redhat-appstudio/jvm-build-service/deploy/kcp?ref=7d203d042f5ce4b49751fb9552cb71cab10ef757
+
+patchesStrategicMerge:
+- self-binding.yaml
 
 images:
 - name: hacbs-jvm-operator
   newName: quay.io/redhat-appstudio/hacbs-jvm-controller
-  newTag: 954c86b39a12820c7910c93b1e20b9b572232816
+  newTag: 7d203d042f5ce4b49751fb9552cb71cab10ef757
 
 namespace: jvm-build-service
 
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-patchesStrategicMerge:
-- |-
-  apiVersion: jvmbuildservice.io/v1alpha1
-  kind: SystemConfig
-  metadata:
-    name: cluster
-  $patch: delete
-- |-
-  apiVersion: apis.kcp.dev/v1alpha1
-  kind: APIBinding
-  metadata:
-    name: jvmbuildservice-binding
-  $patch: delete
-- |-
-  apiVersion: apis.kcp.dev/v1alpha1
-  kind: APIExport
-  metadata:
-    name: jvmbuildservice
+# Skip applying the jvmbuildservice operands while the jvm-build-service operator is being installed.
+# See more information about this option, here:
+# https://argo-cd.readthedocs.io/en/stable/user-guide/sync-options/#skip-dry-run-for-new-custom-resources-types
+commonAnnotations:
+  argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true

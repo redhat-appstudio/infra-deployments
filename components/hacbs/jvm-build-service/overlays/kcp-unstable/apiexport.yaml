@@ -1,21 +1,32 @@
+---
 apiVersion: apis.kcp.dev/v1alpha1
 kind: APIExport
 metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
   name: jvm-build-service
+  namespace: jvm-build-service
 spec:
+  latestResourceSchemas:
+  - v202209270158.artifactbuilds.jvmbuildservice.io
+  - v202209270158.dependencybuilds.jvmbuildservice.io
+  - v202209270158.rebuiltartifacts.jvmbuildservice.io
+  - v202209270158.systemconfigs.jvmbuildservice.io
+  - v202209270158.tektonwrappers.jvmbuildservice.io
+  - v202209270158.userconfigs.jvmbuildservice.io
   permissionClaims:
-    - group: ""
-      resource: "secrets"
-    - group: ""
-      resource: "serviceaccounts"
-    - group: ""
-      resource: "events"
-    - group: ""
-      resource: "services"
-      identityHash: #find hash for apiexport that has services in kcp-unstable
-    - group: "apps"
-      resource: "deployments"
-      identityHash: #find hash for apiexport that has service in kcp-unstable
-    - group: "tekton.dev"
-      resource: "pipelineruns"
-      identityHash: #find hash for apiexport that has service in kcp-unstable
+  - group: ""
+    resource: secrets
+  - group: ""
+    resource: serviceaccounts
+  - group: ""
+    resource: events
+  - group: ""
+    identityHash: 72b2990e51b1931e9fee86e67091b721a8c32f407d762fc847d9d2316a988b52
+    resource: services
+  - group: apps
+    identityHash: 72b2990e51b1931e9fee86e67091b721a8c32f407d762fc847d9d2316a988b52
+    resource: deployments
+  - group: tekton.dev
+    identityHash: 72b2990e51b1931e9fee86e67091b721a8c32f407d762fc847d9d2316a988b52
+    resource: pipelineruns
