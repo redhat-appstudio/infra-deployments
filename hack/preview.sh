@@ -95,16 +95,19 @@ echo "SPI configured"
 # evaluate APIExports pointers
 evaluate_apiexports() {
   APIEXPORT_FILES=$1
+  # Get existing APIExports in service provider namespace
   NEW_IDENTITY_HASHES=$(oc get apiexports.apis.kcp.dev -o jsonpath='{range .items[*]}{@.metadata.name}:{@.status.identityHash}{"\n"}{end}' --kubeconfig ${KCP_KUBECONFIG})
   IDENTITY_HASHES=$(echo -e "$IDENTITY_HASHES\n$NEW_IDENTITY_HASHES")
   for APIEXPORTFILE in $APIEXPORT_FILES; do
+    # Get indentityHashes placeholders to be replaced
     REQUESTS=$(yq e '.spec.permissionClaims.[] | select(.identityHash).identityHash' $APIEXPORTFILE | sort -u)
     for REQUEST in $REQUESTS; do
       IDENTITY_HASH=$(echo "$IDENTITY_HASHES" | grep "^$REQUEST:" | cut -f2 -d":")
       if [ -z "$IDENTITY_HASH" ]; then
-        # find APIExport
+        # find APIExport when it is not created on server
         for APIEXPORTFILE2 in $APIEXPORT_FILES; do
           if [ "$(yq '.metadata.name' $APIEXPORTFILE2)" == "$REQUEST" ]; then
+            # Create APIExport placeholder and get IdentityHash, APIExport will be updated by ArgoCD later
             oc apply -f $APIEXPORTFILE2 --kubeconfig ${KCP_KUBECONFIG}
             IDENTITY_HASH=$(oc get -f $APIEXPORTFILE2 --kubeconfig ${KCP_KUBECONFIG} -o jsonpath='{.status.identityHash}')
             IDENTITY_HASHES=$(echo -e "$IDENTITY_HASHES\n$REQUEST:$IDENTITY_HASH")
@@ -120,11 +123,12 @@ evaluate_apiexports() {
     done
   done
 }
-APIEXPORTS=$(find -name '*apiexport*.yaml' | grep overlays/dev)
-evaluate_apiexports "$(echo "$APIEXPORTS" | grep -v '/hacbs/')"
-KUBECONFIG=${KCP_KUBECONFIG} kubectl ws ${ROOT_WORKSPACE}:redhat-hacbs
-evaluate_apiexports "$(echo "$APIEXPORTS" | grep '/hacbs/')"
+
+APIEXPORTS=$(find ${ROOT}/components -name '*apiexport*.yaml' | grep overlays/dev)
 KUBECONFIG=${KCP_KUBECONFIG} kubectl ws ${ROOT_WORKSPACE}:redhat-appstudio
+evaluate_apiexports "$(echo $APIEXPORTS | grep -v '/hacbs/')"
+KUBECONFIG=${KCP_KUBECONFIG} kubectl ws ${ROOT_WORKSPACE}:redhat-hacbs
+evaluate_apiexports "$(echo $APIEXPORTS | grep '/hacbs/')"
 
 if ! git diff --exit-code --quiet; then
     git commit -a -m "Preview mode, do not merge into main"
@@ -151,6 +155,7 @@ if echo $APPS | grep -q spi-vault; then
     SPI_APP_ROLE_FILE=.tmp/approle_secret.yaml
     if [ -f "$SPI_APP_ROLE_FILE" ]; then
         echo "$SPI_APP_ROLE_FILE exists."
+        KUBECONFIG=${KCP_KUBECONFIG} kubectl ws ${ROOT_WORKSPACE}:redhat-appstudio
         kubectl apply -f $SPI_APP_ROLE_FILE  -n spi-system  --kubeconfig ${KCP_KUBECONFIG}
     fi
     echo "Vault init complete"
