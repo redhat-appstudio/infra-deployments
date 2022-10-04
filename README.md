@@ -12,31 +12,41 @@ You may use the `application-service` component as an example for how to add you
 
 These are the steps to add your own component:
 
-1) Create a new directory for your team's components, under `components/(team-name)`.
-2) Add a `kustomization.yaml` file under that directory, which points to the individual K8s YAML resources you wish to deploy.
+1) Create a new directory for component, under `components/(component-name)/base`.
+1) In case of customization requirement for environments create overlays sub-directories:
+    - `components/(component-name)/overlays/dev`
+    - `components/(component-name)/overlays/kcp-stable`
+    - `components/(component-name)/overlays/kcp-unstable`
+1) Add a `kustomization.yaml` file under `base` directory, which points to the individual K8s YAML resources you wish to deploy.
     - You may also structure your deployment into directories and files. See the Kustomize documentation for more information, and/or examples below.
-    - See `components/application-service/staging` for an example of this.
-3) Create an Argo CD `ApplicationSet` resource in `argo-cd-apps/base/(team-name).yaml`).
+    - See `components/application-service/` for an example of this.
+1) Create an Argo CD `ApplicationSet` resource in `argo-cd-apps/base/(component-name).yaml`).
     - See `application-service.yaml` for a template of how this should look.
     - The `.spec.template.spec.source.path` value should point to the directory you created in previous step.
     - The `.spec.template.spec.destination.namespace` should match the target namespace you wish to deploy your resources to.
     - The `.spec.template.spec.destination.name` should correspond to the name of the workspace you wish to deploy your resources to. There are two types of destination:
       * `redhat-appstudio-workspace-{{kcp-name}}` for all AppStudio components
       * `redhat-hacbs-workspace-{{kcp-name}}` for all HACBS components
-    - The suffix of the `.spec.template.metadata.name` should correspond to your team name, but keep the `{{kcp-name}}-` prefix for proper templating: `{{kcp-name}}-(team-name)`.
-4) Add a reference to your new `(team-name).yaml` file, to `argo-cd-apps/base/kustomization.yaml` (the reference to your YAML file should be in the `resources:` list field).
-5) Run `kustomize build (repo root)/argo-cd-apps/overlays/staging` and ensure it passes, and outputs your new Argo CD Application CR.
-6) Add an entry in `argo-cd-apps/overlays/development/repo-overlay.yaml` for your new component so you can use the preview mode for testing.
-7) Add an APIBinding (including the accepted permission claims):
+    - The suffix of the `.spec.template.metadata.name` should correspond to your team name, but keep the `{{kcp-name}}-` prefix for proper templating: `{{kcp-name}}-(component-name)`.
+1) Add a reference to your new `(component-name).yaml` file, to `argo-cd-apps/base/kustomization.yaml` (the reference to your YAML file should be in the `resources:` list field).
+1) Run `kustomize build (repo root)/argo-cd-apps/overlays/staging` and ensure it passes, and outputs your new Argo CD Application CR.
+1) Add an entry in `argo-cd-apps/overlays/development/repo-overlay.yaml` for your new component so you can use the preview mode for testing.
+1) Add an APIBinding:
    - For an AppStudio component to [apibindings/appstudio](apibindings/appstudio)
    - For an HACBS component to [apibindings/hacbs](apibindings/hacbs)
-8) Open a PR for all the above.
+1) Generate APIExports for overlays if component APIExports requires identityHashes:
+   - Execute `hack/generate-apiexport-overlays.sh components/(component-name)`
+   - The script generates `apiexport.yaml` files in `overlays`
+   - `overlays/dev/apiexport.yaml` contains APIExports from the component repository
+   - `overlays/kcp-stable/apiexport.yaml` replaces `identityHash: placeholder` by value in file `identity/kcp-stable/placeholder`
+   - `overlays/kcp-unstable/apiexport.yaml` replaces `identityHash: placeholder` by value in file `identity/kcp-unstable/placeholder`
+1) Open a PR for all the above.
 
 More examples of using Kustomize to drive deployments using GitOps can be [found here](https://github.com/redhat-cop/gitops-catalog).
 
 ## Maintaining your components
 
-Simply update the files under `components/(team-name)`, and open a PR with the changes.
+Simply update the files under `components/(component-name)`, and open a PR with the changes.
 
 **TIP**: For development purposes, you can use `kustomize build .` to output the K8s resources that are being generated for your folder.
 
@@ -156,7 +166,7 @@ Steps:
 2) Work on your changes in a feature branch
 3) Commit your changes
 4) Run `./hack/preview.sh`, which will do:
-   a) A new branch named `preview-<name-of-current-branch>` is created from your current branch 
+   a) A new branch named `preview-<name-of-current-branch>` is created from your current branch
    b) A commit with changes related to your environment is added into the preview branch
    c) The preview branch is pushed into your fork
    d) ArgoCD is set to point to your fork and the preview branch
@@ -188,7 +198,7 @@ For access to the OpenShift staging cluster, the user must be added to the `stag
 ### How to add yourself as a reviewer/approver
 There is an OWNERS file present in each component folder [like this](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/spi/OWNERS), and Github users listead in the file have the authority to approve/review PR's.
 
-To become an Approver for a component, add yourself to the OWNERS file present in your component folder and raise a pull request. 
+To become an Approver for a component, add yourself to the OWNERS file present in your component folder and raise a pull request.
 
 To become an Approver for the entire repo, add yourself to the OWNERS file present in the root level of this repository
 
