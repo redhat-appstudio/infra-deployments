@@ -20,3 +20,10 @@ patches:
   target:
     kind: Deployment
     name: controller-manager
+- patch: |-
+    - op: replace
+      path: /metadata/name
+      value: build-service
+  target:
+    kind: APIExport
+    name: build-service-apiexport
