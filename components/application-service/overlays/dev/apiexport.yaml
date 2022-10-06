@@ -1,33 +1,35 @@
+---
 apiVersion: apis.kcp.dev/v1alpha1
 kind: APIExport
 metadata:
   name: application-service
+  namespace: application-service
 spec:
   permissionClaims:
-    - group: ""
-      resource: "secrets"
-    - group: ""
-      resource: "namespaces"
-    - group: ""
-      resource: "configmaps"
-    - identityHash: application-api
-      group: "appstudio.redhat.com"
-      resource: "applications"
-    - identityHash: application-api
-      group: "appstudio.redhat.com"
-      resource: "applicationsnapshotenvironmentbindings"
-    - identityHash: application-api
-      group: "appstudio.redhat.com"
-      resource: "components"
-    - identityHash: application-api
-      group: "appstudio.redhat.com"
-      resource: "componentdetectionqueries"
-    - identityHash: application-api
-      group: "appstudio.redhat.com"
-      resource: "environments"
-    - identityHash: spi
-      group: "appstudio.redhat.com"
-      resource: "spiaccesstokens"
-    - identityHash: spi
-      group: "appstudio.redhat.com"
-      resource: "spiaccesstokenbindings"
+  - group: ""
+    resource: secrets
+  - group: ""
+    resource: namespaces
+  - group: ""
+    resource: configmaps
+  - group: appstudio.redhat.com
+    identityHash: application-api
+    resource: applications
+  - group: appstudio.redhat.com
+    identityHash: application-api
+    resource: applicationsnapshotenvironmentbindings
+  - group: appstudio.redhat.com
+    identityHash: application-api
+    resource: components
+  - group: appstudio.redhat.com
+    identityHash: application-api
+    resource: componentdetectionqueries
+  - group: appstudio.redhat.com
+    identityHash: application-api
+    resource: environments
+  - group: appstudio.redhat.com
+    identityHash: spi
+    resource: spiaccesstokens
+  - group: appstudio.redhat.com
+    identityHash: spi
+    resource: spiaccesstokenbindings
