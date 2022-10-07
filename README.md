@@ -155,8 +155,10 @@ The script creates file `/tmp/ckcp-admin.kubeconfig` which should be copied to l
 
 Usage:
 ```
-./hack/install-ckcp.sh
+./hack/install-ckcp.sh [--destroy]
 ```
+
+`--destroy` flag removes currently installed ckcp instance, deletes all kcp namespaces and removes Applications from ArgoCD.
 
 ### Setting Preview mode
 
