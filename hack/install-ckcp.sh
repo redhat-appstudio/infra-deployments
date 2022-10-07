@@ -2,6 +2,22 @@
 
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/..
 
+if [ "$1" == "--destroy" ]; then
+  oc -n openshift-gitops delete application pipeline-service
+  oc -n openshift-gitops delete application all-components --wait=false
+  oc -n openshift-gitops delete applicationset --all
+  sleep 5
+  for APP in `oc get -n openshift-gitops applications.argoproj.io -o name`; do 
+    oc -n openshift-gitops patch  $APP --type json --patch='[ { "op": "remove", "path": "/metadata/finalizers" } ]'
+  done
+  KCP_PROJECTS=$(oc get projects -o name | grep kcp)
+  while [ -n "$KCP_PROJECTS" ]; do 
+    oc delete $KCP_PROJECTS
+    KCP_PROJECTS=$(oc get projects -o name | grep kcp)
+  done
+  oc delete project spi-vault
+fi
+
 oc apply -f $ROOT/components/ckcp/cert-manager.yaml
 oc apply -f $ROOT/components/ckcp/namespace.yaml
 oc apply -f $ROOT/components/ckcp/route.yaml
