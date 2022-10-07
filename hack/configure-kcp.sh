@@ -44,7 +44,7 @@ configure_compute_workspace() {
   SYNC_TARGET=appstudio-internal
   if [[ -z "$(kubectl get synctargets.workload.kcp.dev ${SYNC_TARGET} --kubeconfig ${KCP_KUBECONFIG} 2>/dev/null)" ]]; then
     echo "Creating SyncTarget..."
-    KUBECONFIG=${KCP_KUBECONFIG} kubectl kcp workload sync ${SYNC_TARGET} --syncer-image ghcr.io/kcp-dev/kcp/syncer:main --resources=services,routes.route.openshift.io -o /tmp/${SYNC_TARGET}-syncer.yaml
+    KUBECONFIG=${KCP_KUBECONFIG} kubectl kcp workload sync ${SYNC_TARGET} --syncer-image ghcr.io/kcp-dev/kcp/syncer:v0.9.0 --resources=services,routes.route.openshift.io -o /tmp/${SYNC_TARGET}-syncer.yaml
     if grep -q "insecure-skip-tls-verify: true" ${KCP_KUBECONFIG}; then
       sed -i 's/certificate-authority-data: .*/insecure-skip-tls-verify: true/' /tmp/${SYNC_TARGET}-syncer.yaml
     fi
