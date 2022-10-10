@@ -10,6 +10,7 @@ PIPELINE_SERVICE_DIR=$(mktemp -d)
 git clone --depth 1 https://github.com/openshift-pipelines/pipeline-service/ $PIPELINE_SERVICE_DIR
 export WORK_DIR="${PIPELINE_SERVICE_DIR}/gitops/sre/"
 export WORKSPACE_DIR=$WORK_DIR
+export TEKTON_RESULTS_DATABASE_USER=${TEKTON_RESULTS_DATABASE_USER:-"tekton-results"} TEKTON_RESULTS_DATABASE_PASSWORD=${TEKTON_RESULTS_DATABASE_PASSWORD:-"tekton-results"}
 
 KUBECONFIG=$KCP_KUBECONFIG $PIPELINE_SERVICE_DIR/images/access-setup/content/bin/setup_kcp.sh --kcp-workspace $PIPELINE_SERVICE_WORKSPACE --kcp-org $ROOT_WORKSPACE
 
@@ -17,7 +18,7 @@ KUBECONFIG=$CLUSTER_KUBECONFIG $PIPELINE_SERVICE_DIR/images/access-setup/content
 
 $PIPELINE_SERVICE_DIR/images/cluster-setup/bin/install.sh
 
-$PIPELINE_SERVICE_DIR/images/kcp-registrar/register.sh --kcp-org $ROOT_WORKSPACE --kcp-workspace $PIPELINE_SERVICE_WORKSPACE --kcp-sync-tag v0.9.0
+$PIPELINE_SERVICE_DIR/images/kcp-registrar/bin/register.sh --kcp-org $ROOT_WORKSPACE --kcp-workspace $PIPELINE_SERVICE_WORKSPACE --kcp-sync-tag v0.9.0
 
 rm -rf "$PIPELINE_SERVICE_DIR"
 
