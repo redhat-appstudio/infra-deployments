@@ -18,7 +18,7 @@ KUBECONFIG=$CLUSTER_KUBECONFIG $PIPELINE_SERVICE_DIR/images/access-setup/content
 
 $PIPELINE_SERVICE_DIR/images/cluster-setup/bin/install.sh
 
-$PIPELINE_SERVICE_DIR/images/kcp-registrar/register.sh --kcp-org $ROOT_WORKSPACE --kcp-workspace $PIPELINE_SERVICE_WORKSPACE --kcp-sync-tag v0.9.0
+$PIPELINE_SERVICE_DIR/images/kcp-registrar/bin/register.sh --kcp-org $ROOT_WORKSPACE --kcp-workspace $PIPELINE_SERVICE_WORKSPACE --kcp-sync-tag v0.9.0
 
 rm -rf "$PIPELINE_SERVICE_DIR"
 
