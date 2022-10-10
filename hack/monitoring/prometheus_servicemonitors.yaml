@@ -1,13 +1,8 @@
-apiVersion: v1
+apiVersion: template.openshift.io/v1
 kind: Template
 metadata:
   name: prometheus-servicemonitors
 objects:
-
-# ServiceMonitors
-# 1 resource per target to configure
-
-#Sandbox Host Operator
 - apiVersion: monitoring.coreos.com/v1
   kind: ServiceMonitor
   metadata:
@@ -76,13 +71,39 @@ objects:
         tlsConfig:
           insecureSkipVerify: true
         port: https
-      path: /metrics
     namespaceSelector:
       matchNames:
         - spi-system
     selector:
       matchLabels:
         control-plane: "controller-manager"
+
+#release-service
+- apiVersion: monitoring.coreos.com/v1
+  kind: ServiceMonitor
+  metadata:
+    labels:
+      control-plane: controller-manager
+      prometheus: appstudio-sre
+    name: release-service
+    namespace: ${MONITORING_NAMESPACE}
+  spec:
+    endpoints:
+      - path: /metrics
+        port: https
+        scheme: https
+        bearerTokenSecret:
+          name: ${PROMETHEUS_K8S_SECRET_NAME}
+          key: token
+        tlsConfig:
+          insecureSkipVerify: true
+    namespaceSelector:
+      matchNames:
+        - release-service
+    selector:
+      matchLabels:
+        control-plane: controller-manager
+
 # Loki
 #- apiVersion: monitoring.coreos.com/v1
 #  kind: ServiceMonitor
