@@ -87,10 +87,10 @@ rm $TMP_FILE
 echo "SPI configured"
 
 echo "start GitOps Service config"
-if ! kubectl get namespace gitops &>/dev/null; then
+if ! kubectl --kubeconfig ${KCP_KUBECONFIG} get namespace gitops &>/dev/null; then
   KUBECONFIG=${KCP_KUBECONFIG} kubectl create namespace gitops
 fi
-if ! kubectl get secret -n gitops gitops-postgresql-staging &>/dev/null; then
+if ! kubectl --kubeconfig ${KCP_KUBECONFIG} get secret -n gitops gitops-postgresql-staging &>/dev/null; then
   KUBECONFIG=${KCP_KUBECONFIG} kubectl create secret generic gitops-postgresql-staging \
     --namespace=gitops \
     --from-literal=postgresql-password=$(openssl rand -base64 20)

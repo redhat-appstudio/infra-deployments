@@ -2,11 +2,10 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-- https://github.com/jgwest/managed-gitops/manifests/kcp?ref=552d8c1d987dd8897aadbe5979b2be2d0f27eba4
-# TODO: Make sure this is replaced with reference to managed-gitops repo!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! (more exclamation marks so it's easy recognizable in PR view :)  )
+- https://github.com/redhat-appstudio/managed-gitops/manifests/kcp?ref=db924ec7d7e44d9b205b103d7d0b05abac3a4f1d
 
 images:
   - name: \${COMMON_IMAGE}
     newName: quay.io/redhat-appstudio/gitops-service
-    newTag: 33705d2bf7faa59cdaa3d6515c1c6480438c15c0
+    newTag: d868aef2b5db0f38ca4d6129bf204ee9561df728
 
