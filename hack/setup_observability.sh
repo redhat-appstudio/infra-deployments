@@ -53,6 +53,9 @@ oc process -p MONITORING_NAMESPACE=$MONITORING_NAMESPACE -f install_grafana.yaml
 #Configure grafana with github oauth
 oc process -p MONITORING_NAMESPACE=$MONITORING_NAMESPACE -p GRAFANA_GITHUB_CLIENT_ID=$GRAFANA_GITHUB_CLIENT_ID -p GRAFANA_GITHUB_CLIENT_SECRET=$GRAFANA_GITHUB_CLIENT_SECRET -p GRAFANA_GITHUB_COOKIE_SECRET=$GRAFANA_GITHUB_COOKIE_SECRET -p GRAFANA_ADMIN_PASSWD=$GRAFANA_ADMIN_PASSWD -p GRAFANA_ADMIN_USER=$GRAFANA_ADMIN_USER -f configure_grafana.yaml|oc apply -f -
 
+#Give grafana serviceaccount view permission to datasources
+oc adm policy add-cluster-role-to-user cluster-monitoring-view system:serviceaccount:openshift-customer-monitoring:grafana-serviceaccount
+
 #Configure grafana datasource
 oc apply -f grafanadatasource_prometheus.yaml
 
