@@ -119,3 +119,18 @@ spec:
       source:
         repoURL: https://github.com/redhat-appstudio/infra-deployments.git
         targetRevision: main
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: release-service
+spec:
+  generators:
+    - list:
+        elements:
+          - kcp-name: dev
+  template:
+    spec:
+      source:
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+        targetRevision: main
