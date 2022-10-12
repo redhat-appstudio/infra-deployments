@@ -1,0 +1,12 @@
+resources:
+- "https://github.com/redhat-appstudio/integration-service/config/kcp?ref=cf8459fbde3cfa5f92518e637fb55150500b8626"
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+images:
+  - name: quay.io/redhat-appstudio/integration-service
+    newName: quay.io/redhat-appstudio/integration-service
+    newTag: cf8459fbde3cfa5f92518e637fb55150500b8626
+
+namespace: integration-service
