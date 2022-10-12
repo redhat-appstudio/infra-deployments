@@ -4,6 +4,17 @@ resources:
 patchesStrategicMerge:
 - self-binding.yaml
 
+patches:
+  - patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value:
+          name: IMAGE_TAG
+          value: b911059a17e1efdbc2ddb496604e673d0c491c43
+    target:
+      kind: Deployment
+      name: hacbs-jvm-operator
+
 images:
 - name: hacbs-jvm-operator
   newName: quay.io/redhat-appstudio/hacbs-jvm-controller
