@@ -48,6 +48,14 @@ configure_compute_workspace() {
     if grep -q "insecure-skip-tls-verify: true" ${KCP_KUBECONFIG}; then
       sed -i 's/certificate-authority-data: .*/insecure-skip-tls-verify: true/' /tmp/${SYNC_TARGET}-syncer.yaml
     fi
+    if [[ "${CKCP_SYNCER_USE_INTERNAL_SERVICE}" == "true" ]]
+    then 
+      CKCP_INTERNAL_NAME=ckcp.ckcp.svc.cluster.local
+      CKCP_EXTERNAL_NAME=$(oc get route -n ckcp ckcp -o jsonpath={.spec.host} --kubeconfig ${CLUSTER_KUBECONFIG})
+      sed -i 's/certificate-authority-data: .*/insecure-skip-tls-verify: true/' /tmp/${SYNC_TARGET}-syncer.yaml
+      sed -i s/$CKCP_EXTERNAL_NAME:443/$CKCP_INTERNAL_NAME:6443/g /tmp/${SYNC_TARGET}-syncer.yaml
+      echo "CRC Mode: Patch ckcp from $CKCP_EXTERNAL_NAME:443 to $CKCP_INTERNAL_NAME:6443 "
+    fi  
     kubectl apply -f /tmp/${SYNC_TARGET}-syncer.yaml --kubeconfig ${CLUSTER_KUBECONFIG}
   fi
   
