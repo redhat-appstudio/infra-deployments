@@ -84,17 +84,26 @@ $ROOT/hack/util-patch-spi-config.sh $VAULT_HOST $SPI_BASE_URL "true"
 TMP_FILE=$(mktemp)
 yq e ".serviceProviders[0].type=\"${SPI_TYPE:-GitHub}\"" $ROOT/components/spi/base/config.yaml | \
     yq e ".serviceProviders[0].clientId=\"${SPI_CLIENT_ID:-app-client-id}\"" - | \
-    yq e ".serviceProviders[0].clientSecret=\"${SPI_CLIENT_SECRET:-app-secret}\"" - \
-    yq e ".serviceProviders[1].type=\"${SPI_TYPE:-Quay}\"" - | \
-    yq e ".serviceProviders[1].clientId=\"${SPI_CLIENT_ID:-app-client-id}\"" - | \
-    yq e ".serviceProviders[1].clientSecret=\"${SPI_CLIENT_SECRET:-app-secret}\"" - > $TMP_FILE
+    yq e ".serviceProviders[0].clientSecret=\"${SPI_CLIENT_SECRET:-app-secret}\"" - > $TMP_FILE
+
 oc --kubeconfig ${KCP_KUBECONFIG}  create -n spi-system secret generic shared-configuration-file --from-file=config.yaml=$TMP_FILE --dry-run=client -o yaml | oc  --kubeconfig ${KCP_KUBECONFIG}  apply -f -
 rm $TMP_FILE
 echo "SPI configured"
 
+echo "start GitOps Service config"
+if ! kubectl --kubeconfig ${KCP_KUBECONFIG} get namespace gitops &>/dev/null; then
+  KUBECONFIG=${KCP_KUBECONFIG} kubectl create namespace gitops
+fi
+if ! kubectl --kubeconfig ${KCP_KUBECONFIG} get secret -n gitops gitops-postgresql-staging &>/dev/null; then
+  KUBECONFIG=${KCP_KUBECONFIG} kubectl create secret generic gitops-postgresql-staging \
+    --namespace=gitops \
+    --from-literal=postgresql-password=$(openssl rand -base64 20)
+fi
+echo "GitOps Service configured"
 
-[ -n "${HAS_IMAGE_REPO}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/redhat-appstudio/application-service\")) |=.newName=\"${HAS_IMAGE_REPO}\"" $ROOT/components/application-service/kustomization.yaml
-[ -n "${HAS_IMAGE_TAG}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/redhat-appstudio/application-service\")) |=.newTag=\"${HAS_IMAGE_TAG}\"" $ROOT/components/application-service/kustomization.yaml
+
+[ -n "${HAS_IMAGE_REPO}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/redhat-appstudio/application-service\")) |=.newName=\"${HAS_IMAGE_REPO}\"" $ROOT/components/application-service/base/kustomization.yaml
+[ -n "${HAS_IMAGE_TAG}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/redhat-appstudio/application-service\")) |=.newTag=\"${HAS_IMAGE_TAG}\"" $ROOT/components/application-service/base/kustomization.yaml
 [[ -n "${HAS_PR_OWNER}" && "${HAS_PR_SHA}" ]] && yq -i e "(.resources[] | select(. ==\"*github.com/redhat-appstudio/application-service*\")) |= \"https://github.com/${HAS_PR_OWNER}/application-service/config/default?ref=${HAS_PR_SHA}\"" $ROOT/components/application-service/kustomization.yaml
 [ -n "${HAS_DEFAULT_IMAGE_REPOSITORY}" ] && yq -i e "(.spec.template.spec.containers[].env[] | select(.name ==\"IMAGE_REPOSITORY\").value) |= \"${HAS_DEFAULT_IMAGE_REPOSITORY}\"" $ROOT/components/application-service/base/manager_resources_patch.yaml
 
@@ -124,7 +133,7 @@ evaluate_apiexports() {
       if [ -z "$IDENTITY_HASH" ]; then
         echo Unknown IDENTITY_HASH for $REQUEST
       else
-        sed -i "s/\b$REQUEST\b/$IDENTITY_HASH/g" $APIEXPORTFILE
+        sed -i.bak "s/\b$REQUEST\b/$IDENTITY_HASH/g" $APIEXPORTFILE && rm "$APIEXPORTFILE.bak"
       fi
     done
   done
