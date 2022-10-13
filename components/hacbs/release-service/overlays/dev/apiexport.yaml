@@ -1,0 +1,30 @@
+apiVersion: apis.kcp.dev/v1alpha1
+kind: APIExport
+metadata:
+  name: release-service
+  namespace: release-service
+spec:
+  latestResourceSchemas:
+  - md5-06f1498b5778196e58c2bc1fc88108b8.releaseplanadmissions.appstudio.redhat.com
+  - md5-9959e22acaaf6d162a03980c75b93dfe.releaseplans.appstudio.redhat.com
+  - md5-e3f55fb6efb4bca5c1b68c9813fe9a90.releases.appstudio.redhat.com
+  - md5-a1a202cb4819f0c40034030c40f8526f.releasestrategies.appstudio.redhat.com
+  permissionClaims:
+  - group: appstudio.redhat.com
+    identityHash: application-api
+    resource: applications
+  - group: appstudio.redhat.com
+    identityHash: application-api
+    resource: components
+  - group: appstudio.redhat.com
+    identityHash: application-api
+    resource: applicationsnapshots
+  - group: appstudio.redhat.com
+    identityHash: application-api
+    resource: environments
+  - group: appstudio.redhat.com
+    identityHash: application-api
+    resource: applicationsnapshotenvironmentbindings
+  - group: tekton.dev
+    identityHash: pipeline-service
+    resource: pipelineruns

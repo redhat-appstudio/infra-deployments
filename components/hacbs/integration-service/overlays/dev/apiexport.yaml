@@ -1,0 +1,32 @@
+apiVersion: apis.kcp.dev/v1alpha1
+kind: APIExport
+metadata:
+  name: integration-service
+spec:
+  permissionClaims:
+    - resource: pipelineruns
+      group: tekton.dev
+      identityHash: pipeline-service
+    - resource: applications
+      group: appstudio.redhat.com
+      identityHash: application-api
+    - resource: components
+      group: appstudio.redhat.com
+      identityHash: application-api
+    - resource: applicationsnapshots
+      group: appstudio.redhat.com
+      identityHash: application-api
+    - resource: environments
+      group: appstudio.redhat.com
+      identityHash: application-api
+    - resource: applicationsnapshotenvironmentbindings
+      group: appstudio.redhat.com
+      identityHash: application-api
+    - resource: release
+      group: appstudio.redhat.com
+      identityHash: release-service
+    - resource: releaseplan
+      group: appstudio.redhat.com
+      identityHash: release-service
+  latestResourceSchemas:
+    - md5-bdbd79111419cb45ed5f46c858d8ff96.integrationtestscenarios.appstudio.redhat.com

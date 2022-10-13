@@ -44,10 +44,25 @@ configure_compute_workspace() {
   SYNC_TARGET=appstudio-internal
   if [[ -z "$(kubectl get synctargets.workload.kcp.dev ${SYNC_TARGET} --kubeconfig ${KCP_KUBECONFIG} 2>/dev/null)" ]]; then
     echo "Creating SyncTarget..."
-    KUBECONFIG=${KCP_KUBECONFIG} kubectl kcp workload sync ${SYNC_TARGET} --syncer-image ghcr.io/kcp-dev/kcp/syncer:v0.9.0 --resources=services,routes.route.openshift.io -o /tmp/${SYNC_TARGET}-syncer.yaml
+    # CAUTION: '--resource=statefulsets.apps' is temporarily added as a synchronized resource to the syncer, until the GitOps 
+    # Service team moves Argo CD out of KCP. The KCP team does not support StatefulSets as of this writing (Oct 2022).
+    # 
+    # Until KCP adds support, StatefulSets should not be used by components except in the short term and in limited contexts,
+    # and with full understanding of the consequences. - @jgwest
+
+    KUBECONFIG=${KCP_KUBECONFIG} kubectl kcp workload sync ${SYNC_TARGET} --syncer-image ghcr.io/kcp-dev/kcp/syncer:v0.9.0 --resources=services,routes.route.openshift.io,statefulsets.apps -o /tmp/${SYNC_TARGET}-syncer.yaml
+
     if grep -q "insecure-skip-tls-verify: true" ${KCP_KUBECONFIG}; then
-      sed -i 's/certificate-authority-data: .*/insecure-skip-tls-verify: true/' /tmp/${SYNC_TARGET}-syncer.yaml
+      sed -i.bak 's/certificate-authority-data: .*/insecure-skip-tls-verify: true/' /tmp/${SYNC_TARGET}-syncer.yaml && rm /tmp/${SYNC_TARGET}-syncer.yaml.bak
     fi
+    if [[ "${CKCP_SYNCER_USE_INTERNAL_SERVICE}" == "true" ]]
+    then 
+      CKCP_INTERNAL_NAME=ckcp.ckcp.svc.cluster.local
+      CKCP_EXTERNAL_NAME=$(oc get route -n ckcp ckcp -o jsonpath={.spec.host} --kubeconfig ${CLUSTER_KUBECONFIG})
+      sed -i 's/certificate-authority-data: .*/insecure-skip-tls-verify: true/' /tmp/${SYNC_TARGET}-syncer.yaml
+      sed -i s/$CKCP_EXTERNAL_NAME:443/$CKCP_INTERNAL_NAME:6443/g /tmp/${SYNC_TARGET}-syncer.yaml
+      echo "CRC Mode: Patch ckcp from $CKCP_EXTERNAL_NAME:443 to $CKCP_INTERNAL_NAME:6443 "
+    fi  
     kubectl apply -f /tmp/${SYNC_TARGET}-syncer.yaml --kubeconfig ${CLUSTER_KUBECONFIG}
   fi
   

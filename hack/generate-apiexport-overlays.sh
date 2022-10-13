@@ -28,6 +28,7 @@ fi
 rm -rf $TEMP
 
 resolve_identity_hashes() {
+  local SED_SUBST
   IDENTITY_HASHES=$(awk '$1 == "identityHash:" {print $2}' $1 | uniq)
   for IDENTITY_HASH_PLACEHOLDER in $IDENTITY_HASHES; do
     HASHFILE=$ROOT/identityhashes/$2/$IDENTITY_HASH_PLACEHOLDER
