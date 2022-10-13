@@ -86,6 +86,17 @@ oc --kubeconfig ${KCP_KUBECONFIG}  create -n spi-system secret generic shared-co
 rm $TMP_FILE
 echo "SPI configured"
 
+echo "start GitOps Service config"
+if ! kubectl --kubeconfig ${KCP_KUBECONFIG} get namespace gitops &>/dev/null; then
+  KUBECONFIG=${KCP_KUBECONFIG} kubectl create namespace gitops
+fi
+if ! kubectl --kubeconfig ${KCP_KUBECONFIG} get secret -n gitops gitops-postgresql-staging &>/dev/null; then
+  KUBECONFIG=${KCP_KUBECONFIG} kubectl create secret generic gitops-postgresql-staging \
+    --namespace=gitops \
+    --from-literal=postgresql-password=$(openssl rand -base64 20)
+fi
+echo "GitOps Service configured"
+
 
 [ -n "${HAS_IMAGE_REPO}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/redhat-appstudio/application-service\")) |=.newName=\"${HAS_IMAGE_REPO}\"" $ROOT/components/application-service/kustomization.yaml
 [ -n "${HAS_IMAGE_TAG}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/redhat-appstudio/application-service\")) |=.newTag=\"${HAS_IMAGE_TAG}\"" $ROOT/components/application-service/kustomization.yaml
