@@ -53,7 +53,7 @@ configure_compute_workspace() {
     KUBECONFIG=${KCP_KUBECONFIG} kubectl kcp workload sync ${SYNC_TARGET} --syncer-image ghcr.io/kcp-dev/kcp/syncer:v0.9.0 --resources=services,routes.route.openshift.io,statefulsets.apps -o /tmp/${SYNC_TARGET}-syncer.yaml
 
     if grep -q "insecure-skip-tls-verify: true" ${KCP_KUBECONFIG}; then
-      sed -i 's/certificate-authority-data: .*/insecure-skip-tls-verify: true/' /tmp/${SYNC_TARGET}-syncer.yaml
+      sed -i.bak 's/certificate-authority-data: .*/insecure-skip-tls-verify: true/' /tmp/${SYNC_TARGET}-syncer.yaml && rm /tmp/${SYNC_TARGET}-syncer.yaml.bak
     fi
     if [[ "${CKCP_SYNCER_USE_INTERNAL_SERVICE}" == "true" ]]
     then 
