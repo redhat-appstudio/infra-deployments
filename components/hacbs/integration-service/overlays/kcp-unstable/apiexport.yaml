@@ -1,0 +1,32 @@
+apiVersion: apis.kcp.dev/v1alpha1
+kind: APIExport
+metadata:
+  name: integration-service
+spec:
+  permissionClaims:
+    - resource: pipelineruns
+      group: tekton.dev
+      identityHash: pipeline-service
+    - resource: applications
+      group: appstudio.redhat.com
+      identityHash: 676879883c7665b0b4a66256c3f86fbda6fa7e175f39f46f63cac75cdf7a6afa
+    - resource: components
+      group: appstudio.redhat.com
+      identityHash: 676879883c7665b0b4a66256c3f86fbda6fa7e175f39f46f63cac75cdf7a6afa
+    - resource: applicationsnapshots
+      group: appstudio.redhat.com
+      identityHash: 676879883c7665b0b4a66256c3f86fbda6fa7e175f39f46f63cac75cdf7a6afa
+    - resource: environments
+      group: appstudio.redhat.com
+      identityHash: 676879883c7665b0b4a66256c3f86fbda6fa7e175f39f46f63cac75cdf7a6afa
+    - resource: applicationsnapshotenvironmentbindings
+      group: appstudio.redhat.com
+      identityHash: 676879883c7665b0b4a66256c3f86fbda6fa7e175f39f46f63cac75cdf7a6afa
+    - resource: release
+      group: appstudio.redhat.com
+      identityHash: f17ec8703b89d2099c8cfc7a854ee15c89fa179999b88461d30599bff7dbb8ac
+    - resource: releaseplan
+      group: appstudio.redhat.com
+      identityHash: f17ec8703b89d2099c8cfc7a854ee15c89fa179999b88461d30599bff7dbb8ac
+  latestResourceSchemas:
+    - md5-bdbd79111419cb45ed5f46c858d8ff96.integrationtestscenarios.appstudio.redhat.com

@@ -1,0 +1,26 @@
+---
+apiVersion: apis.kcp.dev/v1alpha1
+kind: APIExport
+metadata:
+  name: gitopsrvc-appstudio-shared
+spec:
+  permissionClaims:
+  - group: ""
+    resource: secrets
+  - group: ""
+    resource: namespaces
+  - group: managed-gitops.redhat.com
+    identityHash: e9d1f9fa8a79a615d6a981c2d1dd0abcb4782da493e8c4ade932ffdfcfb18e47
+    resource: gitopsdeployments
+  - group: appstudio.redhat.com
+    identityHash: 676879883c7665b0b4a66256c3f86fbda6fa7e175f39f46f63cac75cdf7a6afa
+    resource: applications
+  - group: appstudio.redhat.com
+    identityHash: 676879883c7665b0b4a66256c3f86fbda6fa7e175f39f46f63cac75cdf7a6afa
+    resource: applicationsnapshotenvironmentbindings
+  - group: appstudio.redhat.com
+    identityHash: 676879883c7665b0b4a66256c3f86fbda6fa7e175f39f46f63cac75cdf7a6afa
+    resource: components
+  - group: appstudio.redhat.com
+    identityHash: 676879883c7665b0b4a66256c3f86fbda6fa7e175f39f46f63cac75cdf7a6afa
+    resource: environments
