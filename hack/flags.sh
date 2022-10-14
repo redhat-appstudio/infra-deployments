@@ -105,9 +105,11 @@ parse_flags() {
   KCP_SERVER=$(echo $KCP_SERVER_VERSION | sed 's/.*kcp-v\(.*\)\..*/\1/')
   KCP_CLIENT=$(kubectl kcp --version | sed 's/.*kcp-v\(.*\)\..*/\1/')
   if echo "$KCP_SERVER_VERSION" | grep -q 'v0.0.0-master'; then
+    export KCP_VERSION=${KCP_VERSION:-"main"}
     echo "KCP server is self compiled, cannot check kubectl kcp plugin compatibility"
   elif [ "$KCP_SERVER" != "$KCP_CLIENT" ]; then
     echo "KCP server version($KCP_SERVER) does not match kcp plugin version($KCP_CLIENT)"
     exit 1
   fi
+  export KCP_VERSION=${KCP_VERSION:-"$(echo ${KCP_SERVER_VERSION} | sed 's/.*kcp-\([^-]*\).*/\1/')"}
 }
