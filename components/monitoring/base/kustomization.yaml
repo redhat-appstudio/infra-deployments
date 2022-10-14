@@ -4,7 +4,7 @@ resources:
   - install_prometheus.yaml
   - prometheus-view.yaml
 
-namespace: "openshift-user-workload-monitoring"
+namespace: "appstudio-workload-monitoring"
 patches:
   - target:
       kind: OperatorGroup
@@ -12,11 +12,11 @@ patches:
     patch: |-
       - op: replace
         path: /spec/targetNamespaces
-        value: "openshift-user-workload-monitoring"
+        value: "appstudio-workload-monitoring"
   - target:
       kind: ClusterRoleBinding
       name: prometheus-view
     patch: |-
       - op: replace
         path: /subjects/0/namespace
-        value: "openshift-user-workload-monitoring"
+        value: "appstudio-workload-monitoring"

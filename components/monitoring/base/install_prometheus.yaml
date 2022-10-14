@@ -2,18 +2,18 @@
 apiVersion: operators.coreos.com/v1
 kind: OperatorGroup
 metadata:
-  name: openshift-user-workload-monitoring-stack
-  namespace: openshift-user-workload-monitoring
+  name: appstudio-workload-monitoring-stack
+  namespace: appstudio-workload-monitoring
 spec:
   targetNamespaces:
-  - openshift-user-workload-monitoring
+  - appstudio-workload-monitoring
 
 ---
 apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription
 metadata:
   name: prometheus
-  namespace: openshift-user-workload-monitoring
+  namespace: appstudio-workload-monitoring
 spec:
   channel: beta
   installPlanApproval: Automatic
