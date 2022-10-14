@@ -1,5 +1,5 @@
 resources:
-- https://github.com/redhat-appstudio/release-service/config/kcp?ref=5361cfbf55281a715a495f0593f794025f949f74
+- https://github.com/redhat-appstudio/release-service/config/kcp?ref=4f70c35199e4b0eabfad87ecd258d5db0a86b26f
 
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
@@ -7,6 +7,9 @@ kind: Kustomization
 images:
 - name: quay.io/redhat-appstudio/release-service
   newName: quay.io/redhat-appstudio/release-service
-  newTag: 69f4ae703bb51b356b9973133596bba235147245
+  newTag: 4f70c35199e4b0eabfad87ecd258d5db0a86b26f
 
 namespace: release-service
+
+patches:
+  - ./manager_resources_patch.yaml
