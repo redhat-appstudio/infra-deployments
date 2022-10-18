@@ -35,9 +35,9 @@ APPSTUDIO_SP_WORKSPACE=${APPSTUDIO_SP_WORKSPACE:-${ROOT_WORKSPACE}:${APPSTUDIO_W
 HACBS_SP_WORKSPACE=${HACBS_SP_WORKSPACE:-${ROOT_WORKSPACE}:${HACBS_WORKSPACE}}
 PIPELINE_SERVICE_SP_WORKSPACE=${PIPELINE_SERVICE_SP_WORKSPACE:-${ROOT_WORKSPACE}:${PIPELINE_SERVICE_WORKSPACE}}
 
-USER_APPSTUDIO_WORKSPACE=${USER_APPSTUDIO_WORKSPACE:-"${SERVICE_NAME}"}
-echo "Creating & accessing AppStudio workspace '${USER_APPSTUDIO_WORKSPACE}':"
-kubectl ws create ${USER_APPSTUDIO_WORKSPACE}  --ignore-existing --type root:universal --enter
+USER_WORKSPACE=${USER_WORKSPACE:-"${SERVICE_NAME}"}
+echo "Creating & accessing AppStudio workspace '${USER_WORKSPACE}':"
+kubectl ws create ${USER_WORKSPACE}  --ignore-existing --type root:universal --enter
 
 kubectl kustomize ${ROOT}/apibindings/${SERVICE_NAME}/ | sed "s|\${APPSTUDIO_SP_WORKSPACE}|${APPSTUDIO_SP_WORKSPACE}|g;s|\${HACBS_SP_WORKSPACE}|${HACBS_SP_WORKSPACE}|g;s|\${PIPELINE_SERVICE_SP_WORKSPACE}|${PIPELINE_SERVICE_SP_WORKSPACE}|g" | \
   kubectl apply -f -
@@ -57,4 +57,4 @@ do
 done
 
 echo
-echo "The ${SERVICE_NAME} user workspace is created: $(kubectl ws . --short)"
+echo "The ${USER_WORKSPACE} user workspace is created: $(kubectl ws . --short)"
