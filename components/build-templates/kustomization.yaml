@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- namespace.yaml
+- role.yaml
+- rolebinding.yaml
+
+namespace: build-templates
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+configMapGenerator:
+- name: build-pipelines-defaults
+  literals:
+  - default_build_bundle=quay.io/redhat-appstudio/build-templates-bundle:13f5d9c921b3f727684a00084037f673a0dc4273
+  - hacbs_build_bundle=quay.io/redhat-appstudio/hacbs-templates-bundle:510fa6e99f1fa1f816c96354bbaf1ad155c6d9c3
