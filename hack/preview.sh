@@ -7,16 +7,6 @@ ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/..
 source ${ROOT}/hack/flags.sh "The preview.sh enable preview mode used for development and testing on non-production clusters / kcp instances."
 MODE=${MODE:-preview} parse_flags $@
 
-if [ -z "$MY_GIT_FORK_REMOTE" ]; then
-    echo "Set MY_GIT_FORK_REMOTE environment to name of your fork remote"
-    exit 1
-fi
-
-if [ -z "${ROOT_WORKSPACE}" ]; then
-    echo "Set ROOT_WORKSPACE environment variable or include to hack/preview.env"
-    exit 1
-fi
-
 MY_GIT_REPO_URL=$(git ls-remote --get-url $MY_GIT_FORK_REMOTE | sed 's|^git@github.com:|https://github.com/|')
 MY_GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 

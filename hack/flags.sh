@@ -71,7 +71,7 @@ parse_flags() {
     then
       echo "Loading environment variables from ${ROOT}/hack/preview.env"
       source ${ROOT}/hack/preview.env
-      $ROOT/hack/util-validate-preview-env.sh
+      $ROOT/hack/util-validate-preview-env.sh || exit 1
     else
       echo "ERROR: No ${ROOT}/hack/preview.env was found" >&2
       exit 1
