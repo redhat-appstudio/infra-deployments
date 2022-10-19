@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/..
 
 source ${ROOT}/hack/flags.sh "The preview.sh enable preview mode used for development and testing on non-production clusters / kcp instances."
@@ -36,7 +38,7 @@ if [ -n "$PIPELINE_SERVICE_IDENTITY_HASH" ]; then
   IDENTITY_HASHES="pipeline-service:$PIPELINE_SERVICE_IDENTITY_HASH"
 else
   KUBECONFIG=${KCP_KUBECONFIG} kubectl ws ${ROOT_WORKSPACE}
-  if KUBECONFIG=${KCP_KUBECONFIG} kubectl ws $PIPELINE_SERVICE_WORKSPACE; then
+  if KUBECONFIG=${KCP_KUBECONFIG} kubectl ws $PIPELINE_SERVICE_WORKSPACE &>/dev/null; then
     IDENTITY_HASH=$(oc get apiexport kubernetes --kubeconfig ${KCP_KUBECONFIG} -o jsonpath='{.status.identityHash}')
     IDENTITY_HASHES="pipeline-service:$IDENTITY_HASH"
   elif [ "$PIPELINE_SERVICE_LOCAL_DEPLOY" == "true" ]; then
@@ -84,12 +86,12 @@ $ROOT/hack/util-patch-spi-config.sh $VAULT_HOST $SPI_BASE_URL "true"
 TMP_FILE=$(mktemp)
 yq e ".serviceProviders[0].type=\"${SPI_TYPE:-GitHub}\"" $ROOT/components/spi/base/config.yaml | \
     yq e ".serviceProviders[0].clientId=\"${SPI_CLIENT_ID:-app-client-id}\"" - | \
-    yq e ".serviceProviders[0].clientSecret=\"${SPI_CLIENT_SECRET:-app-secret}\""  - | \
+    yq e ".serviceProviders[0].clientSecret=\"${SPI_CLIENT_SECRET:-app-secret}\"" - | \
     yq e ".serviceProviders[1].type=\"${SPI_TYPE:-Quay}\"" - | \
     yq e ".serviceProviders[1].clientId=\"${SPI_CLIENT_ID:-app-client-id}\"" - | \
     yq e ".serviceProviders[1].clientSecret=\"${SPI_CLIENT_SECRET:-app-secret}\"" - > $TMP_FILE
 
-oc --kubeconfig ${KCP_KUBECONFIG}  create -n spi-system secret generic shared-configuration-file --from-file=config.yaml=$TMP_FILE --dry-run=client -o yaml | oc  --kubeconfig ${KCP_KUBECONFIG}  apply -f -
+oc --kubeconfig ${KCP_KUBECONFIG} create -n spi-system secret generic shared-configuration-file --from-file=config.yaml=$TMP_FILE --dry-run=client -o yaml | oc --kubeconfig ${KCP_KUBECONFIG} apply -f -
 rm $TMP_FILE
 echo "SPI configured"
 

@@ -1,14 +1,17 @@
 #!/bin/bash
 
+set -e
+
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/..
 
 if [ "$1" == "--destroy" ]; then
+  set +e
   oc -n openshift-gitops delete application pipeline-service
   oc -n openshift-gitops delete application all-components --wait=false
   oc -n openshift-gitops delete applicationset --all
   sleep 5
   for APP in `oc get -n openshift-gitops applications.argoproj.io -o name`; do 
-    oc -n openshift-gitops patch  $APP --type json --patch='[ { "op": "remove", "path": "/metadata/finalizers" } ]'
+    oc -n openshift-gitops patch $APP --type json --patch='[ { "op": "remove", "path": "/metadata/finalizers" } ]'
   done
   KCP_PROJECTS=$(oc get projects -o name | grep kcp)
   while [ -n "$KCP_PROJECTS" ]; do 
@@ -16,7 +19,9 @@ if [ "$1" == "--destroy" ]; then
     KCP_PROJECTS=$(oc get projects -o name | grep kcp)
   done
   oc delete project spi-vault
+  set -e
 fi
+
 
 oc apply -f $ROOT/components/ckcp/cert-manager.yaml
 oc apply -f $ROOT/components/ckcp/namespace.yaml
@@ -25,12 +30,18 @@ oc apply -f $ROOT/components/ckcp/route.yaml
 URL=$(oc get route -n ckcp ckcp -o jsonpath={.spec.host})
 TMP_FILE=$(mktemp)
 oc kustomize $ROOT/components/ckcp | sed "s/\$HOSTNAME/$URL/" > $TMP_FILE
-while ! oc apply -f $TMP_FILE; do
+echo Waiting for Cert Manager to be installed
+while ! oc apply -f $TMP_FILE &>/dev/null; do
+  echo -n .
   sleep 10
 done
+echo Cert Manager installed
 rm $TMP_FILE
 
-while ! oc rsh -n ckcp deployment/ckcp ls /etc/kcp/config/admin.kubeconfig; do
+echo
+echo Waiting for ckcp pod is running
+while ! oc rsh -n ckcp deployment/ckcp ls /etc/kcp/config/admin.kubeconfig &>/dev/null; do
+  echo -n .
   sleep 10
 done
 

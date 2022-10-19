@@ -5,6 +5,8 @@
 # 2. is the base URL of SPI (defaults to https://spi-oauth-route-spi-system.apps.<cluster URL>)
 # 3. is either true or false and defaults to true. When true, Vault is configured to accepts TLS connections with untrusted certificates.
 
+set -e
+
 JQ_SCRIPT=$(cat << "EOF"
 map(
     if (.op == "replace" and .path == "/data/VAULTHOST") then

@@ -31,13 +31,8 @@ yq e "select(.kind == \"ApplicationSet\") |= with(.spec.template.spec.source; .r
 
 echo
 echo The list of components which will be patched is
-yq  e '.metadata.name' $OVERLAYDIR/repo-overlay.yaml
-
+yq e --no-doc '.metadata.name' $OVERLAYDIR/repo-overlay.yaml
 echo
-echo Each component above is set to the following repositories
-echo if you do not see your component in the list, please send a PR update to $OVERLAYDIR/repo-overlay.yaml
-yq  e '.spec.template.spec.source.repoURL' $OVERLAYDIR/repo-overlay.yaml
-
 if [ -n "$DEPLOY_ONLY" ]; then
     for APP in $(yq e -N '.metadata.name' $OVERLAYDIR/repo-overlay.yaml); do
         if ! grep "\b$APP\b" <<< $DEPLOY_ONLY; then
