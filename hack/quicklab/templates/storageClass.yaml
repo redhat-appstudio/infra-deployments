@@ -6,5 +6,5 @@ metadata:
     storageclass.kubernetes.io/is-default-class: 'true'
 provisioner: storage.io/nfs
 parameters:
-  pathPattern: "${.PVC.namespace}/${.PVC.name}"
-  onDelete: delete'
+  pathPattern: "${.PVC.namespace}_${.PVC.name}"
+  onDelete: delete
