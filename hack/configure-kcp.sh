@@ -50,24 +50,25 @@ configure_compute_workspace() {
     # 
     # Until KCP adds support, StatefulSets should not be used by components except in the short term and in limited contexts,
     # and with full understanding of the consequences. - @jgwest
+    SYNCER_MANIFEST=/tmp/${SYNC_TARGET}-${KCP_INSTANCE_NAME}-syncer.yaml
     KUBECONFIG=${KCP_KUBECONFIG} kubectl kcp workload sync ${SYNC_TARGET} \
       --syncer-image ghcr.io/kcp-dev/kcp/syncer:${KCP_VERSION:-"main"} \
       --resources services,routes.route.openshift.io,statefulsets.apps \
       --namespace kcp-syncer-${KCP_INSTANCE_NAME} \
-      --output-file /tmp/${SYNC_TARGET}-${KCP_INSTANCE_NAME}-syncer.yaml
+      --output-file ${SYNCER_MANIFEST}
 
     if grep -q "insecure-skip-tls-verify: true" ${KCP_KUBECONFIG}; then
-      sed -i.bak 's/certificate-authority-data: .*/insecure-skip-tls-verify: true/' /tmp/${SYNC_TARGET}-syncer.yaml && rm /tmp/${SYNC_TARGET}-syncer.yaml.bak
+      sed -i.bak 's/certificate-authority-data: .*/insecure-skip-tls-verify: true/' ${SYNCER_MANIFEST} && rm ${SYNCER_MANIFEST}.bak
     fi
     if [[ "${CKCP_SYNCER_USE_INTERNAL_SERVICE}" == "true" ]]
     then 
       CKCP_INTERNAL_NAME=ckcp.ckcp.svc.cluster.local
       CKCP_EXTERNAL_NAME=$(oc get route -n ckcp ckcp -o jsonpath={.spec.host} --kubeconfig ${CLUSTER_KUBECONFIG})
-      sed -i 's/certificate-authority-data: .*/insecure-skip-tls-verify: true/' /tmp/${SYNC_TARGET}-syncer.yaml
-      sed -i s/$CKCP_EXTERNAL_NAME:443/$CKCP_INTERNAL_NAME:6443/g /tmp/${SYNC_TARGET}-syncer.yaml
+      sed -i 's/certificate-authority-data: .*/insecure-skip-tls-verify: true/' ${SYNCER_MANIFEST}
+      sed -i s/$CKCP_EXTERNAL_NAME:443/$CKCP_INTERNAL_NAME:6443/g ${SYNCER_MANIFEST}
       echo "CRC Mode: Patch ckcp from $CKCP_EXTERNAL_NAME:443 to $CKCP_INTERNAL_NAME:6443 "
     fi  
-    kubectl apply -f /tmp/${SYNC_TARGET}-syncer.yaml --kubeconfig ${CLUSTER_KUBECONFIG}
+    kubectl apply -f ${SYNCER_MANIFEST} --kubeconfig ${CLUSTER_KUBECONFIG}
   fi
   
   BIND_SCOPE="system:authenticated"
