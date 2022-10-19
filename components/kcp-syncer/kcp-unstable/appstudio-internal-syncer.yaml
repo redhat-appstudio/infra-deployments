@@ -1,0 +1,221 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kcp-syncer-kcp-unstable
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kcp-syncer-appstudio-internal-jbrk5z54
+  namespace: kcp-syncer-kcp-unstable
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kcp-dns-appstudio-internal-jbrk5z54
+  namespace: kcp-syncer-kcp-unstable
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kcp-syncer-appstudio-internal-jbrk5z54-token
+  namespace: kcp-syncer-kcp-unstable
+  annotations:
+    kubernetes.io/service-account.name: kcp-syncer-appstudio-internal-jbrk5z54
+type: kubernetes.io/service-account-token
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kcp-syncer-appstudio-internal-jbrk5z54
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - "create"
+  - "list"
+  - "watch"
+  - "delete"
+- apiGroups:
+  - "apiextensions.k8s.io"
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - "get"
+  - "watch"
+  - "list"
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - services
+  verbs:
+  - "*"
+- apiGroups:
+  - "apps"
+  resources:
+  - deployments
+  - statefulsets
+  verbs:
+  - "*"
+- apiGroups:
+  - "route.openshift.io"
+  resources:
+  - routes
+  verbs:
+  - "*"
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kcp-dns-appstudio-internal-jbrk5z54
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - "get"
+      - "list"
+      - "watch"
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kcp-syncer-appstudio-internal-jbrk5z54
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kcp-syncer-appstudio-internal-jbrk5z54
+subjects:
+- kind: ServiceAccount
+  name: kcp-syncer-appstudio-internal-jbrk5z54
+  namespace: kcp-syncer-kcp-unstable
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kcp-dns-appstudio-internal-jbrk5z54
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kcp-dns-appstudio-internal-jbrk5z54
+subjects:
+  - kind: ServiceAccount
+    name: kcp-dns-appstudio-internal-jbrk5z54
+    namespace: kcp-syncer-kcp-unstable
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kcp-syncer-appstudio-internal-jbrk5z54
+  namespace: kcp-syncer-kcp-unstable
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: kcp-syncer-appstudio-internal-jbrk5z54
+  template:
+    metadata:
+      labels:
+        app: kcp-syncer-appstudio-internal-jbrk5z54
+    spec:
+      containers:
+      - name: kcp-syncer
+        command:
+        - /ko-app/syncer
+        args:
+        - --from-kubeconfig=/kcp/kubeconfig
+        - --sync-target-name=appstudio-internal
+        - --sync-target-uid=215a89f0-828f-4703-8992-e34769def7d3
+        - --from-cluster=root:redhat-appstudio-internal-compute
+        - --api-import-poll-interval=1m0s
+        - --resources=configmaps
+        - --resources=deployments.apps
+        - --resources=routes.route.openshift.io
+        - --resources=secrets
+        - --resources=services
+        - --resources=statefulsets.apps
+        - --qps=20
+        - --burst=30
+        - --dns=kcp-dns-appstudio-internal-jbrk5z54.kcp-syncer-kcp-unstable.svc.cluster.local
+        env:
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        image: ghcr.io/kcp-dev/kcp/syncer:main
+        imagePullPolicy: Always
+        terminationMessagePolicy: FallbackToLogsOnError
+        volumeMounts:
+        - name: kcp-config
+          mountPath: /kcp/
+          readOnly: true
+      serviceAccountName: kcp-syncer-appstudio-internal-jbrk5z54
+      volumes:
+        - name: kcp-config
+          secret:
+            secretName: kcp-syncer-appstudio-internal-jbrk5z54
+            optional: false
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kcp-dns-appstudio-internal-jbrk5z54
+  namespace: kcp-syncer-kcp-unstable
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: kcp-dns-appstudio-internal-jbrk5z54
+  template:
+    metadata:
+      labels:
+        app: kcp-dns-appstudio-internal-jbrk5z54
+    spec:
+      containers:
+      - name: kcp-dns
+        command:
+        - /ko-app/syncer
+        args:
+        - dns
+        - start
+        env:
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        image: ghcr.io/kcp-dev/kcp/syncer:main
+        imagePullPolicy: Always
+        terminationMessagePolicy: FallbackToLogsOnError
+      serviceAccountName: kcp-dns-appstudio-internal-jbrk5z54
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kcp-dns-appstudio-internal-jbrk5z54
+  namespace: kcp-syncer-kcp-unstable
+  labels:
+    app: kcp-dns-appstudio-internal-jbrk5z54
+spec:
+  type: ClusterIP
+  selector:
+    app: kcp-dns-appstudio-internal-jbrk5z54
+  ports:
+    - name: dns
+      port: 53
+      protocol: UDP
+      targetPort: 5353
+    - name: dns-tcp
+      port: 53
+      protocol: TCP
+      targetPort: 5353
+
