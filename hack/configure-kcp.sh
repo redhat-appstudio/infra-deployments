@@ -50,7 +50,11 @@ configure_compute_workspace() {
     # 
     # Until KCP adds support, StatefulSets should not be used by components except in the short term and in limited contexts,
     # and with full understanding of the consequences. - @jgwest
-    KUBECONFIG=${KCP_KUBECONFIG} kubectl kcp workload sync ${SYNC_TARGET} --syncer-image ghcr.io/kcp-dev/kcp/syncer:${KCP_VERSION:-"main"}  --resources=services,routes.route.openshift.io,statefulsets.apps -o /tmp/${SYNC_TARGET}-syncer.yaml
+    KUBECONFIG=${KCP_KUBECONFIG} kubectl kcp workload sync ${SYNC_TARGET} \
+      --syncer-image ghcr.io/kcp-dev/kcp/syncer:${KCP_VERSION:-"main"} \
+      --resources services,routes.route.openshift.io,statefulsets.apps \
+      --namespace kcp-syncer-${KCP_INSTANCE_NAME} \
+      --output-file /tmp/${SYNC_TARGET}-${KCP_INSTANCE_NAME}-syncer.yaml
 
     if grep -q "insecure-skip-tls-verify: true" ${KCP_KUBECONFIG}; then
       sed -i.bak 's/certificate-authority-data: .*/insecure-skip-tls-verify: true/' /tmp/${SYNC_TARGET}-syncer.yaml && rm /tmp/${SYNC_TARGET}-syncer.yaml.bak
