@@ -63,6 +63,20 @@ The prerequisites are:
 - You must have another `kubeconfig` pointing to an existing kcp instance, that you wish to deploy to. You can use either a CPS or a local kcp instance.
 - The script `./hack/setup/install-pre-req.sh` will install these prerequisites for you, if they're not already installed.
 
+> **Note - Mac OS**
+>
+> If you're using Mac OS, make sure you are using GNU version of `sed` by default (`sed --version` -> **GNU sed 4.8**) and `openssl version` >= v3.0.2:
+> You can install correct versions of these tools with 
+> ```bash
+> brew install openssl@3 gnu-sed
+> ```
+> Then make sure the $PATH is updated to point to those tools' binaries (by updating your .bashrc/.zshrc file):
+> ```bash
+> export PATH="/usr/local/opt/openssl@3/bin:$PATH"
+> export PATH="/usr/local/opt/gnu-sed/libexec/gnubin:$PATH"
+> ```
+> After opening a new terminal window you should be using correct versions of these tools by default
+
 ### Optional: OpenShift Local (formerly CRC) Setup
 
 If you don't already have a test OpenShift cluster available, OpenShift Local is a popular option. It runs a small OpenShift cluster in a single VM on your local workstation.
