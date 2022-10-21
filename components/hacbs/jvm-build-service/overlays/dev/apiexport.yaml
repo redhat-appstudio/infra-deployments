@@ -8,25 +8,21 @@ metadata:
   namespace: jvm-build-service
 spec:
   latestResourceSchemas:
-  - v202210110553.artifactbuilds.jvmbuildservice.io
-  - v202210110553.dependencybuilds.jvmbuildservice.io
-  - v202210110553.rebuiltartifacts.jvmbuildservice.io
-  - v202210110553.systemconfigs.jvmbuildservice.io
-  - v202210110553.tektonwrappers.jvmbuildservice.io
-  - v202210110553.userconfigs.jvmbuildservice.io
+  - v202210180116.artifactbuilds.jvmbuildservice.io
+  - v202210180116.dependencybuilds.jvmbuildservice.io
+  - v202210180116.rebuiltartifacts.jvmbuildservice.io
+  - v202210180116.systemconfigs.jvmbuildservice.io
+  - v202210180116.tektonwrappers.jvmbuildservice.io
+  - v202210180116.userconfigs.jvmbuildservice.io
   permissionClaims:
   - group: ""
     resource: secrets
   - group: ""
-    resource: serviceaccounts
+    resource: configmaps
   - group: ""
     resource: events
   - group: ""
-    identityHash: pipeline-service
-    resource: services
-  - group: apps
-    identityHash: pipeline-service
-    resource: deployments
+    resource: resourcequotas
   - group: tekton.dev
     identityHash: pipeline-service
     resource: pipelineruns
