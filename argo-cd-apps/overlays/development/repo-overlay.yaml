@@ -194,3 +194,26 @@ spec:
       source:
         repoURL: https://github.com/redhat-appstudio/infra-deployments.git
         targetRevision: main
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: clusterworkspacetypes
+spec:
+  generators:
+  - matrix:
+      generators:
+      - list:
+          elements:
+          - kcp-name: dev
+      - list:
+          elements:
+          - sub-directory-path: clusterworkspacetypes
+            service: appstudio
+          - sub-directory-path: hacbs/clusterworkspacetypes
+            service: hacbs
+  template:
+    spec:
+      source:
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+        targetRevision: main

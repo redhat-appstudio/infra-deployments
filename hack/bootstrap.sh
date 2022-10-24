@@ -95,7 +95,7 @@ spec:
         return hs
 ' --type=merge --kubeconfig ${CLUSTER_KUBECONFIG}
 
-# Exclude tenancy.kcp.dev API as ArgoCD won't probably have enough permissions for all kinds in the group (and we doesn't need to sync it anyway).
+# Exclude clusterworkspaces.tenancy.kcp.dev API as ArgoCD doesn't have permissions to list all ClusterWorkspace CRs.
 kubectl patch argocd/openshift-gitops -n openshift-gitops -p '
 spec:
   resourceExclusions: |
@@ -111,7 +111,7 @@ spec:
       clusters:
       - "*"
       kinds:
-      - "*"
+      - ClusterWorkspace
 ' --type=merge --kubeconfig ${CLUSTER_KUBECONFIG}
 
 echo
