@@ -107,3 +107,14 @@ spec:
   source:
     repoURL: https://github.com/redhat-appstudio/infra-deployments.git
     targetRevision: pre-kcp
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: hac-pact-broker
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  source:
+    repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+    targetRevision: pre-kcp
