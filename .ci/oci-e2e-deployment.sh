@@ -6,3 +6,4 @@ set -o pipefail
 set -u
 
 echo "No support for e2e tests in kcp yet."
+####################################
