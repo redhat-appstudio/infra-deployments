@@ -138,7 +138,7 @@ APPS=$(kubectl get apps -n openshift-gitops -o name)
 if echo $APPS | grep -q spi; then
   if [ "`oc get applications.argoproj.io spi -n openshift-gitops -o jsonpath='{.status.health.status} {.status.sync.status}'`" != "Healthy Synced" ]; then
     echo Initializing SPI
-    curl https://raw.githubusercontent.com/redhat-appstudio/e2e-tests/${E2E_TESTS_COMMIT_SHA:-main}/scripts/spi-e2e-setup.sh | bash -s
+    curl https://raw.githubusercontent.com/redhat-appstudio/e2e-tests/${E2E_TESTS_COMMIT_SHA:-pre-kcp}/scripts/spi-e2e-setup.sh | bash -s
   fi
 fi
 
