@@ -145,3 +145,79 @@ spec:
       expr: vector(1)
       labels:
         severity: deadman
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: appstudio-workload-monitoring
+  name: prometheus-oauth2
+  labels:
+    provider: appstudio-kcp-workload
+    app.kubernetes.io/instance: prometheus
+  annotations:
+    service.alpha.openshift.io/serving-cert-secret-name: prometheus-oauth2-tls
+spec:
+  ports:
+  - name: oauth2-proxy
+    port: 9091
+    protocol: TCP
+    targetPort: 9091
+  selector:
+    app.kubernetes.io/instance: prometheus
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  namespace: appstudio-workload-monitoring
+  name: prometheus
+  labels:
+    provider: appstudio-kcp-workload
+  annotations:
+    kubernetes.io/tls-acme: "true"
+spec:
+  to:
+    kind: Service
+    name: prometheus-oauth2
+  port:
+    targetPort: oauth2-proxy
+  tls:
+    insecureEdgeTerminationPolicy: Redirect
+    termination: reencrypt
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: appstudio-workload-monitoring
+  name: prometheus-oauth
+  labels:
+    provider: appstudio-kcp-workload
+    app.kubernetes.io/instance: prometheus
+  annotations:
+    service.alpha.openshift.io/serving-cert-secret-name: prometheus-oauth-tls
+spec:
+  ports:
+  - name: oauth-proxy
+    port: 9092
+    protocol: TCP
+    targetPort: 9092
+  selector:
+    app.kubernetes.io/instance: prometheus
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  namespace: appstudio-workload-monitoring
+  name: prometheus-oauth
+  labels:
+    provider: appstudio-kcp-workload
+  annotations:
+    kubernetes.io/tls-acme: "true"
+spec:
+  to:
+    kind: Service
+    name: prometheus-oauth
+  port:
+    targetPort: oauth-proxy
+  tls:
+    termination: reencrypt
+
