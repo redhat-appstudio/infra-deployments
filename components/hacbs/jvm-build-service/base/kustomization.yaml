@@ -1,5 +1,5 @@
 resources:
-- https://github.com/redhat-appstudio/jvm-build-service/deploy/kcp?ref=b07e73c9b43a83912d4f8c8e0ea12045495027d6
+- https://github.com/redhat-appstudio/jvm-build-service/deploy/kcp?ref=44ee24c346983fdf37c9455d90a7e63e942fb2f2
 
 patchesStrategicMerge:
 - self-binding.yaml
@@ -10,7 +10,7 @@ patches:
         path: /spec/template/spec/containers/0/env/-
         value:
           name: IMAGE_TAG
-          value: b07e73c9b43a83912d4f8c8e0ea12045495027d6
+          value: 44ee24c346983fdf37c9455d90a7e63e942fb2f2
     target:
       kind: Deployment
       name: hacbs-jvm-operator
@@ -18,7 +18,7 @@ patches:
 images:
 - name: hacbs-jvm-operator
   newName: quay.io/redhat-appstudio/hacbs-jvm-controller
-  newTag: b07e73c9b43a83912d4f8c8e0ea12045495027d6
+  newTag: 44ee24c346983fdf37c9455d90a7e63e942fb2f2
 
 namespace: jvm-build-service
 
