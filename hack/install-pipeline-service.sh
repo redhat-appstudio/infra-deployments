@@ -7,7 +7,7 @@ MODE=preview parse_flags $@
 PIPELINE_SERVICE_WORKSPACE=${PIPELINE_SERVICE_WORKSPACE:-"redhat-pipeline-service-compute"}
 
 PIPELINE_SERVICE_DIR=$(mktemp -d)
-git clone --branch v0.8.0 --depth 1 https://github.com/openshift-pipelines/pipeline-service/ $PIPELINE_SERVICE_DIR
+git clone --branch v0.8 --depth 1 https://github.com/openshift-pipelines/pipeline-service/ $PIPELINE_SERVICE_DIR
 export WORK_DIR="${PIPELINE_SERVICE_DIR}/gitops/sre/"
 export WORKSPACE_DIR=$WORK_DIR
 export TEKTON_RESULTS_DATABASE_USER=${TEKTON_RESULTS_DATABASE_USER:-"tekton-results"} TEKTON_RESULTS_DATABASE_PASSWORD=${TEKTON_RESULTS_DATABASE_PASSWORD:-"tekton-results"}
