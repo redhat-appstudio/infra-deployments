@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: application-service
+  labels: 
+    appstudio.redhat.com/namespacetype: "controller"
+  annotations:
+    k8s.ovn.org/acl-logging: |-
+      {
+        "deny": "info",
+        "allow": "info"
+      }
