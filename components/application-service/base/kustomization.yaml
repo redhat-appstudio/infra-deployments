@@ -12,4 +12,19 @@ images:
 namespace: application-service
 
 patches:
-  - ./manager_resources_patch.yaml
+- ./manager_resources_patch.yaml
+- patch: |-
+    - op: add
+      path: /metadata/labels
+      value:
+        appstudio.redhat.com/namespacetype: "controller"
+    - op: add
+      path: /metadata/annotations
+      value:
+        k8s.ovn.org/acl-logging: |-
+      {
+        "deny": "info",
+        "allow": "info"
+      }
+  target:
+    kind: Namespace
