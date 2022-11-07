@@ -161,7 +161,7 @@ if echo $APPS | grep -q spi-vault; then
     echo "Initializing Vault"
     export VAULT_KUBE_CONFIG=${CLUSTER_KUBECONFIG}
     export VAULT_NAMESPACE=spi-vault
-    bash <(curl -s https://raw.githubusercontent.com/redhat-appstudio/service-provider-integration-operator/b9cd8ab7b6ab5d6a0d4b77cb9af1de24a4c5bca3/hack/vault-init.sh)
+    bash <(curl -s https://raw.githubusercontent.com/redhat-appstudio/service-provider-integration-operator/b08407b98e39c91135e79adf17c22dbfbf0b3415/hack/vault-init.sh)
     SPI_APP_ROLE_FILE=.tmp/approle_secret.yaml
     if [ -f "$SPI_APP_ROLE_FILE" ]; then
         echo "$SPI_APP_ROLE_FILE exists."
