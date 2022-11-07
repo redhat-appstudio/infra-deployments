@@ -65,15 +65,16 @@ The prerequisites are:
 
 > **Note - Mac OS**
 >
-> If you're using Mac OS, make sure you are using GNU version of `sed` by default (`sed --version` -> **GNU sed 4.8**) and `openssl version` >= v3.0.2:
+> If you're using Mac OS, make sure you are using GNU version of `sed` (`sed --version` -> **GNU sed 4.8**), openssl `openssl version` >= v3.0.2 and bash (`bash --version` >= **GNU bash, version 5.2**) by default:
 > You can install correct versions of these tools with 
 > ```bash
-> brew install openssl@3 gnu-sed
+> brew install openssl@3 gnu-sed bash
 > ```
 > Then make sure the $PATH is updated to point to those tools' binaries (by updating your .bashrc/.zshrc file):
 > ```bash
 > export PATH="/usr/local/opt/openssl@3/bin:$PATH"
 > export PATH="/usr/local/opt/gnu-sed/libexec/gnubin:$PATH"
+> export PATH="/usr/local/bin/bash:${PATH}"
 > ```
 > After opening a new terminal window you should be using correct versions of these tools by default
 
