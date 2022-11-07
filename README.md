@@ -209,6 +209,28 @@ Authorization in `root:redhat-appstudio` and `root:redhat-hacbs` workspaces in C
 
 For access to the OpenShift staging cluster, the user must be added to the `stage` team in the `redhat-appstudio-sre` Github organization.
 
+## Enabling Monitoring for workload cluster
+
+Prometheus Operator is deployed through ArgoCD. This is configure to run in `appstudio-workload-monitoring` namespace. 
+This prometheus is accessed through exported route, which is secured by github oauth. Github oauth secrets are configured in the cluster through secret
+
+`prometheus-proxy-config`
+
+```yaml
+   apiVersion: v1
+   kind: Secret
+   metadata:
+     namespace: appstudio-workload-monitoring
+     name: prometheus-proxy-config
+     labels:
+       provider: appstudio-kcp-workload
+   data:
+     client-id: <github-oauth-client-id-for-prometheus>
+     client-secret: <github-oauth-secret-for-prometheus>
+     cookie-secret: <github-oauth-cookie-secret-for-prometheus>
+   type: Opaque
+```
+
 ## Repo Members and Maintainers
 
 ### How to add yourself as a reviewer/approver
