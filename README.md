@@ -209,7 +209,12 @@ Authorization in `root:redhat-appstudio` and `root:redhat-hacbs` workspaces in C
 
 For access to the OpenShift staging cluster, the user must be added to the `stage` team in the `redhat-appstudio-sre` Github organization.
 
-## Enabling Monitoring for workload cluster
+## Monitoring for workload clusters
+
+Both Prometheus and Grafana UIs are protected by an OAuth2 proxy which delegates the authentication to GitHub. 
+Users must belong to the [Red Hat Appstudio SRE organization](https://github.com/redhat-appstudio-sre) team configured in the OAuth2 proxy to be allowed to access these UIs.
+
+### Setup
 
 Make sure you have the following environment variables:
 - `PROMETHEUS_GITHUB_CLIENT_ID`
@@ -219,9 +224,9 @@ Make sure you have the following environment variables:
 - `GRAFANA_GITHUB_CLIENT_SECRET`
 - `GRAFANA_GITHUB_COOKIE_SECRET`
 
-(The `x_CLIENT_ID` and `x_CLIENT_SECRET` value pairs must match an existing OAuth application on GitHub - see `Settings > Developer settings > OAuth apps`)
+The `PROMETHEUS_GITHUB_CLIENT_ID`/`PROMETHEUS_GITHUB_CLIENT_SECRET` and `GRAFANA_GITHUB_CLIENT_ID`/`GRAFANA_GITHUB_CLIENT_SECRET` value pairs must match an existing OAuth application on GitHub - see [OAuth apps](https://github.com/organizations/redhat-appstudio-sre/settings/applications) in the [Red Hat Appstudio SRE organization](https://github.com/organizations/redhat-appstudio-sre). The `PROMETHEUS_GITHUB_COOKIE_SECRET` and `GRAFANA_GITHUB_COOKIE_SECRET` can be generated using the [followiing instructions](https://oauth2-proxy.github.io/oauth2-proxy/docs/configuration/overview#generating-a-cookie-secret).
 
-Then run the `hack/setup-monitoring.sh` script. This will take care of creating the `appstudio-workload-monitoring` project and the `prometheus-proxy-config` and `grafana-oauth2-proxy-config` secrets.
+Running the `hack/setup-monitoring.sh` script creates the `appstudio-workload-monitoring` project and the `prometheus-proxy-config` and `grafana-oauth2-proxy-config` secrets.
 
 ## Repo Members and Maintainers
 
