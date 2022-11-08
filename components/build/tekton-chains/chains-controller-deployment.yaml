@@ -8,10 +8,6 @@ spec:
     spec:
       containers:
       - name: tekton-chains-controller
-        # Use a custom version of chains that contains support for pipelinerun attestations
-        image: ghcr.io/hacbs-contract/chains/controller:poc-tep-84-extras@sha256:a0da9f4c48c628097493a08304e04d82a3085631aad519790fefe1f72e249248
-        # To use a nightly build of chains if required:
-        # image: gcr.io/tekton-nightly/github.com/tektoncd/chains/cmd/controller@sha256...
         volumeMounts:
         - mountPath: /etc/ssl/certs
           name: chains-ca-cert
