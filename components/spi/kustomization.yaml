@@ -35,6 +35,10 @@ patches:
       kind: ConfigMap
       name: shared-environment-config
     path: config-patch.json
+  - target:
+      kind: Deployment
+      name: spi-controller-manager
+    path: operator-limits-patch.json
 
 # we plan to use approle authentication, but it's not ready yet
 # with these dummy secrets, we're satisfying spi deployments, but they're not really used
