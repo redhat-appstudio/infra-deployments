@@ -114,22 +114,12 @@ evaluate_apiexports() {
     for REQUEST in $REQUESTS; do
       IDENTITY_HASH=$(echo "$IDENTITY_HASHES" | grep "^$REQUEST:" | cut -f2 -d":")
       if [ -z "$IDENTITY_HASH" ]; then
-        # find APIExport when it is not created on server
-        for APIEXPORTFILE2 in $APIEXPORT_FILES; do
-          if [ "$(yq '.metadata.name' $APIEXPORTFILE2)" == "$REQUEST" ]; then
-            # Create APIExport placeholder and get IdentityHash, APIExport will be updated by ArgoCD later
-            oc apply -f $APIEXPORTFILE2 --kubeconfig ${KCP_KUBECONFIG}
-            IDENTITY_HASH=$(oc get -f $APIEXPORTFILE2 --kubeconfig ${KCP_KUBECONFIG} -o jsonpath='{.status.identityHash}')
-            IDENTITY_HASHES=$(echo -e "$IDENTITY_HASHES\n$REQUEST:$IDENTITY_HASH")
-            break
-          fi
-        done
+        # Create stump APIExport to get it's identityHash, it will be updated by ArgoCD
+        echo "{ \"apiVersion\": \"apis.kcp.dev/v1alpha1\", \"kind\": \"APIExport\", \"metadata\": { \"name\": \"$REQUEST\" } }" | oc create -f- --kubeconfig ${KCP_KUBECONFIG}
+        IDENTITY_HASH=$(oc get apiexport $REQUEST --kubeconfig ${KCP_KUBECONFIG} -o jsonpath='{.status.identityHash}')
+        IDENTITY_HASHES=$(echo -e "$IDENTITY_HASHES\n$REQUEST:$IDENTITY_HASH")
       fi
-      if [ -z "$IDENTITY_HASH" ]; then
-        echo Unknown IDENTITY_HASH for $REQUEST
-      else
-        sed -i.bak "s/\b$REQUEST\b/$IDENTITY_HASH/g" $APIEXPORTFILE && rm "$APIEXPORTFILE.bak"
-      fi
+      sed -i.bak "s/\b$REQUEST\b/$IDENTITY_HASH/g" $APIEXPORTFILE && rm "$APIEXPORTFILE.bak"
     done
   done
 }
