@@ -27,3 +27,17 @@ patches:
   target:
     kind: APIExport
     name: build-service-apiexport
+# Add App Studio controller label to the namespace for easier log searches
+# Add network traffic logging to meet the "monitor outgoing network 
+# traffic" ESS requirement
+- patch: |-
+    - op: add
+      path: /metadata/labels/appstudio.redhat.com~1namespacetype
+      value:
+        "controller"
+    - op: add
+      path: /metadata/annotations/k8s.ovn.org~1acl-logging
+      value:
+        '{"deny": "info", "allow": "info"}'
+  target:
+    kind: Namespace

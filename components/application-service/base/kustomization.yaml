@@ -15,6 +15,9 @@ patchesStrategicMerge:
 - ./manager_resources_patch.yaml
 
 patches:
+# Add App Studio controller label to the namespace for easier log searches
+# Add network traffic logging to meet the "monitor outgoing network 
+# traffic" ESS requirement
 - patch: |-
     - op: add
       path: /metadata/labels/appstudio.redhat.com~1namespacetype
