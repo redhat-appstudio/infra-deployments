@@ -16,9 +16,14 @@ spec:
     resource: events
   - group: ""
     resource: serviceaccounts
+  - group: apis.kcp.dev
+    resource: apibindings
   - group: tekton.dev
     identityHash: pipeline-service
     resource: pipelineruns
+  - group: pipelinesascode.tekton.dev
+    identityHash: pipeline-service
+    resource: repositories
   - group: appstudio.redhat.com
     identityHash: application-api
     resource: components
@@ -27,4 +32,4 @@ spec:
     resource: applications
   - group: appstudio.redhat.com
     identityHash: application-api
-    resource: applicationsnapshots
+    resource: snapshots
