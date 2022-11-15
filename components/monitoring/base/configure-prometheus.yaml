@@ -73,17 +73,17 @@ spec:
       valueFrom:
         secretKeyRef:
           key: client-id
-          name: prometheus-proxy-config
+          name: prometheus-oauth2-proxy
     - name: OAUTH2_PROXY_CLIENT_SECRET
       valueFrom:
         secretKeyRef:
           key: client-secret
-          name: prometheus-proxy-config
+          name: prometheus-oauth2-proxy
     - name: OAUTH2_PROXY_COOKIE_SECRET
       valueFrom:
         secretKeyRef:
           key: cookie-secret
-          name: prometheus-proxy-config
+          name: prometheus-oauth2-proxy
     image: quay.io/oauth2-proxy/oauth2-proxy:v7.2.1
     imagePullPolicy: Always
     ports:
@@ -220,4 +220,32 @@ spec:
     targetPort: oauth-proxy
   tls:
     termination: reencrypt
+---
+# The Grafana service account is used by Grafana to fetch the metrics via the Auth proxy container of the Prometheus pods
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  annotations:
+    openshift.io/description: used by Grafana to fetch the metrics via the Auth proxy container of the Prometheus pods
+  namespace: appstudio-workload-monitoring
+  name: grafana
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations:
+    openshift.io/description: used by Grafana to fetch the metrics via the Auth proxy container of the Prometheus pods
+  name: grafana-cluster-monitoring-view
+  namespace: appstudio-workload-monitoring
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-monitoring-view
+subjects:
+- kind: ServiceAccount
+  name: grafana
+  namespace: appstudio-workload-monitoring
+
+
 

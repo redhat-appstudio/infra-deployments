@@ -211,22 +211,62 @@ For access to the OpenShift staging cluster, the user must be added to the `stag
 
 ## Monitoring for workload clusters
 
-Both Prometheus and Grafana UIs are protected by an OAuth2 proxy which delegates the authentication to GitHub. 
-Users must belong to the [Red Hat Appstudio SRE organization](https://github.com/redhat-appstudio-sre) team configured in the OAuth2 proxy to be allowed to access these UIs.
+Note:
+
+This section refers to "Grafana cluster" and "Prometheus cluster" as the clusters on which Grafana and Prometheus are deployed, respectively. In a multi-cluster topology, there will be a single cluster on which Grafana is deployed, whereas Prometheus will be deployed on all clusters where collecting metrics is needed.
 
 ### Setup
 
-Make sure you have the following environment variables:
-- `PROMETHEUS_GITHUB_CLIENT_ID`
-- `PROMETHEUS_GITHUB_CLIENT_SECRET`
-- `PROMETHEUS_GITHUB_COOKIE_SECRET`
-- `GRAFANA_GITHUB_CLIENT_ID`
-- `GRAFANA_GITHUB_CLIENT_SECRET`
-- `GRAFANA_GITHUB_COOKIE_SECRET`
+First, create the `appstudio-workload-monitoring` namespace if it does not exist yet:
 
-The `PROMETHEUS_GITHUB_CLIENT_ID`/`PROMETHEUS_GITHUB_CLIENT_SECRET` and `GRAFANA_GITHUB_CLIENT_ID`/`GRAFANA_GITHUB_CLIENT_SECRET` value pairs must match an existing OAuth application on GitHub - see [OAuth apps](https://github.com/organizations/redhat-appstudio-sre/settings/applications) in the [Red Hat Appstudio SRE organization](https://github.com/organizations/redhat-appstudio-sre). The `PROMETHEUS_GITHUB_COOKIE_SECRET` and `GRAFANA_GITHUB_COOKIE_SECRET` can be generated using the [following instructions](https://oauth2-proxy.github.io/oauth2-proxy/docs/configuration/overview#generating-a-cookie-secret).
+```
+$ oc create namespace appstudio-workload-monitoring
+```
 
-Running the `hack/setup-monitoring.sh` script creates the `appstudio-workload-monitoring` project and the `prometheus-proxy-config` and `grafana-oauth2-proxy-config` secrets.
+#### OAuth2 proxy secrets
+
+Both Prometheus and Grafana UIs are protected by an OAuth2 proxy running as a sidecar container and which delegates the authentication to GitHub. 
+Users must belong to the [Red Hat Appstudio SRE organization](https://github.com/redhat-appstudio-sre) team configured in the OAuth2 proxy to be allowed to access the Web UIs.
+
+Create the secrets with the following commands:
+
+```
+$ ./hack/setup-monitoring.sh oauth2-secret prometheus-oauth2-proxy $PROMETHEUS_GITHUB_CLIENT_ID $PROMETHEUS_GITHUB_CLIENT_SECRET $PROMETHEUS_GITHUB_COOKIE_SECRET
+
+$ ./hack/setup-monitoring.sh oauth2-secret grafana-oauth2-proxy $GRAFANA_GITHUB_CLIENT_ID $GRAFANA_GITHUB_CLIENT_SECRET $GRAFANA_GITHUB_COOKIE_SECRET
+```
+
+The `PROMETHEUS_GITHUB_CLIENT_ID`/`PROMETHEUS_GITHUB_CLIENT_SECRET` and `GRAFANA_GITHUB_CLIENT_ID`/`GRAFANA_GITHUB_CLIENT_SECRET` value pairs must match an existing "OAuth application" on GitHub - see [OAuth apps](https://github.com/organizations/redhat-appstudio-sre/settings/applications) in the [Red Hat Appstudio SRE organization](https://github.com/organizations/redhat-appstudio-sre). The `PROMETHEUS_GITHUB_COOKIE_SECRET` and `GRAFANA_GITHUB_COOKIE_SECRET` can be generated using the [following instructions](https://oauth2-proxy.github.io/oauth2-proxy/docs/configuration/overview#generating-a-cookie-secret).
+
+
+#### Grafana Datasources
+
+Grafana datasources contain the connection settings to the Prometheus instances. These datasources are stored in secrets in the `appstudio-workload-monitoring` of the **Grafana cluster**.
+
+The Prometheus endpoints used by Grafana are protected by an OAuth proxy running as a sidecar container and which checks that the incoming requests contain a valid token. A token is valid if it belongs to a service account of the **Prometheus cluster** and which has the RBAC permission to "get namespaces". This can be obtained with the `cluster-monitoring-view` cluster role.
+
+```
+$ ./hack/setup-monitoring.sh grafana-datasource-secret $DATASOURCE_NAME $PROMETHEUS_URL $GRAFANA_TOKEN
+```
+
+`DATASOURCE_NAME` is the name of the secret itself, as well as the base name of the YAML file it contains. Grafana supports datasources from multiple secrets, so their names must be unique.
+
+`PROMETHEUS_URL` is obtained from the route created for Prometheus in the `openshift-monitoring` and `appstudio-workload-monitoring` namespaces:
+
+```
+$ PROMETHEUS_URL=`oc get route/prometheus-k8s -n openshift-monitoring -o json | jq -r '.status.ingress[0].host'`
+
+$ PROMETHEUS_URL=`oc get route/prometheus -n appstudio-workload-monitoring -o json | jq -r '.status.ingress[0].host'`
+```
+
+`GRAFANA_TOKEN` is obtained by requesting a token for the `grafana` service account in the **Prometheus cluster**:
+```
+$ GRAFANA_TOKEN=`oc create token grafana -n appstudio-workload-monitoring`
+```
+
+The `grafana` service account must exist in the `appstudio-workload-monitoring` namespace of the **Prometheus cluster** and must be allowed to `get namespaces`, for example by having the `cluster-monitoring-view` cluster role. 
+
+The same Grafana token aforementioned can be used in the datasources associated with the Prometheus instances deployed in `openshift-monitoring` and `appstudio-workload-monitoring` namespaces.
 
 ## Repo Members and Maintainers
 
