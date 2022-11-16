@@ -131,7 +131,7 @@ KUBECONFIG=${KCP_KUBECONFIG} kubectl ws ${ROOT_WORKSPACE}:${HACBS_WORKSPACE}
 evaluate_apiexports "$(echo "$APIEXPORTS" | grep '/components/hacbs/')"
 
 if ! git diff --exit-code --quiet; then
-    git commit -a -m "Preview mode, do not merge into main"
+    git commit -a -m "Preview mode, do not merge into main nor kcp"
     git push -f --set-upstream $MY_GIT_FORK_REMOTE $PREVIEW_BRANCH
 fi
 

@@ -188,7 +188,7 @@ Steps:
    d) ArgoCD is set to point to your fork and the preview branch
    e) Git is switched back to your feature branch to create additional changes
 
-If you want to reset your environment you can run the `hack/util-update-app-of-apps.sh https://github.com/redhat-appstudio/infra-deployments.git staging main` to reset everything including your cluster to `https://github.com/redhat-appstudio/infra-deployments.git` and match the upstream config.
+If you want to reset your environment you can run the `hack/util-update-app-of-apps.sh https://github.com/redhat-appstudio/infra-deployments.git staging kcp` to reset everything including your cluster to `https://github.com/redhat-appstudio/infra-deployments.git` and match the upstream config.
 
 Note that running these scripts in a cloned repo will have no effect, as the repo will remain `https://github.com/redhat-appstudio/infra-deployments.git`
 
@@ -234,7 +234,7 @@ This prometheus is accessed through exported route, which is secured by github o
 ## Repo Members and Maintainers
 
 ### How to add yourself as a reviewer/approver
-There is an OWNERS file present in each component folder [like this](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/spi/OWNERS), and Github users listead in the file have the authority to approve/review PR's.
+There is an OWNERS file present in each component folder [like this](https://github.com/redhat-appstudio/infra-deployments/blob/kcp/components/spi/OWNERS), and Github users listead in the file have the authority to approve/review PR's.
 
 To become an Approver for a component, add yourself to the OWNERS file present in your component folder and raise a pull request.
 
