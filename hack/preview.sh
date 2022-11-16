@@ -120,7 +120,7 @@ yq -i e ".data |= .\"transparency.url\"=\"https://$rekor_server\"" $ROOT/compone
 [ -n "${SPI_OPERATOR_IMAGE_TAG}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/redhat-appstudio/service-provider-integration-operator\")) |=.newTag=\"${SPI_OPERATOR_IMAGE_TAG}\"" $ROOT/components/spi/kustomization.yaml
 
 if ! git diff --exit-code --quiet; then
-    git commit -a -m "Preview mode, do not merge into main nor pre-kcp branch"
+    git commit -a -m "Preview mode, do not merge into main"
     git push -f --set-upstream $MY_GIT_FORK_REMOTE $PREVIEW_BRANCH
 fi
 
@@ -138,7 +138,7 @@ APPS=$(kubectl get apps -n openshift-gitops -o name)
 if echo $APPS | grep -q spi; then
   if [ "`oc get applications.argoproj.io spi -n openshift-gitops -o jsonpath='{.status.health.status} {.status.sync.status}'`" != "Healthy Synced" ]; then
     echo Initializing SPI
-    curl https://raw.githubusercontent.com/redhat-appstudio/e2e-tests/${E2E_TESTS_COMMIT_SHA:-pre-kcp}/scripts/spi-e2e-setup.sh | bash -s
+    curl https://raw.githubusercontent.com/redhat-appstudio/e2e-tests/${E2E_TESTS_COMMIT_SHA:-main}/scripts/spi-e2e-setup.sh | bash -s
   fi
 fi
 
