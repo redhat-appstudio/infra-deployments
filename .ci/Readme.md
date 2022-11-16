@@ -1,8 +1,6 @@
 # Infra Deployments CI documentation
 
-Currently, in infra-deployments all tests are running in Openshift CI [Openshift CI](https://prow.ci.openshift.org/?job=*infra*deployments*).
-
-As of now, no tests are executed as the current test suite doesn't support a kcp environment yet.
+Currently in infra-deployments all tests are running in Openshift CI [Openshift CI](https://prow.ci.openshift.org/?job=*infra*deployments*)
 
 ## Openshift CI
 
@@ -10,6 +8,6 @@ Openshift CI is a Kubernetes based CI/CD system. Jobs can be triggered by variou
 
 All documentation about how to onboard components in Openshift CI can be found in the Openshift CI jobs [repository](https://github.com/openshift/release). All infra-deployments jobs configurations are defined in `https://github.com/openshift/release/tree/master/ci-operator/config/redhat-appstudio/infra-deployments`.
 
-- `appstudio-e2e-deployment` Doesn't do anything yet.
+- `appstudio-e2e-deployment` Run all e2e test suites of Red Hat App Studio defined in the [e2e-tests](https://github.com/redhat-appstudio/e2e-tests) repository.
 
 The test container to run the e2e tests in Openshift CI is built from: https://github.com/redhat-appstudio/infra-deployments/blob/main/.ci/openshift-ci/Dockerfile

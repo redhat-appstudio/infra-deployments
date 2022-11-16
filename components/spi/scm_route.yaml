@@ -1,0 +1,13 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: file-retriever-server-service
+  namespace: spi-system
+spec:
+  port:
+    targetPort: 8080
+  to:
+    kind: Service
+    name: spi-system-file-retriever-server-service
+  tls:
+    termination: edge

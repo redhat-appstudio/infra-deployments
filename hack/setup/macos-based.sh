@@ -4,5 +4,3 @@ brew update
 brew install kubectl
 brew install yq
 brew install jq
-brew install openssl
-brew install coreutils

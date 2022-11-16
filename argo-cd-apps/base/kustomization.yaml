@@ -1,22 +1,16 @@
 resources:
-- authorization-in-cluster.yaml
-- authorization-in-kcp.yaml
-- application-api.yaml
-- application-service.yaml
-- build-service.yaml
-- enterprise-contract.yaml
-- jvm-build-service.yaml
-- release-service.yaml
-- integration-service.yaml
+- gitops.yaml
+- build.yaml
+- authentication.yaml
+- has.yaml
+- release.yaml
+- integration.yaml
 - spi.yaml
-- gitops-core-service.yaml
-- gitops-appstudio-service.yaml
-- kcp-syncer.yaml
-- monitoring-workload-in-cluster.yaml
-- build-templates.yaml
-- clusterworkspacetypes.yaml
+- e2e-tests.yaml
+- cluster-registration.yaml
+- enterprise-contract.yaml
+- quality-dashboard.yaml
+- hac-pact-broker.yaml
 
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-
-namespace: openshift-gitops

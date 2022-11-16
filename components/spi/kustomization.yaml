@@ -1,0 +1,53 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - argocd-permissions.yaml
+  - vault/
+  - https://github.com/redhat-appstudio/service-provider-integration-operator/config/default?ref=12c085728913b9cd94da3be409a09f4cb387a7c3
+  - oauth_route.yaml
+  - .tekton/
+
+images:
+  - name:  quay.io/redhat-appstudio/service-provider-integration-operator
+    newName: quay.io/redhat-appstudio/service-provider-integration-operator
+    newTag: 12c085728913b9cd94da3be409a09f4cb387a7c3 
+  - name: quay.io/redhat-appstudio/service-provider-integration-oauth
+    newName: quay.io/redhat-appstudio/service-provider-integration-oauth
+    newTag: 237895a0e45fdf8137136e4dffda292b4bf4c420 
+
+namespace: spi-system
+
+patches:
+  - target:
+      kind: ClusterRoleBinding
+      name: spi-scm-kube-rbac-proxy
+    path: cluster-rb-patch.json
+  - target:
+      kind: ClusterRoleBinding
+      name: spi-scm-spiaccesstokens-for-file-retriever-server-sa
+    path: cluster-rb-patch.json
+  - target:
+      kind: ConfigMap
+      name: oauth-service-environment-config
+    path: oauth-service-config-patch.json
+  - target:
+      kind: ConfigMap
+      name: shared-environment-config
+    path: config-patch.json
+  - target:
+      kind: Deployment
+      name: spi-controller-manager
+    path: operator-limits-patch.json
+
+# we plan to use approle authentication, but it's not ready yet
+# with these dummy secrets, we're satisfying spi deployments, but they're not really used
+secretGenerator:
+  - name: vault-approle-spi-operator
+    literals:
+    - role_id=dummy
+    - secret_id=dummy
+  - name: vault-approle-spi-oauth
+    literals:
+    - role_id=dummy
+    - secret_id=dummy

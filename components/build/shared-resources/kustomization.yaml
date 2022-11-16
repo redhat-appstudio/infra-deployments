@@ -1,0 +1,40 @@
+resources:
+- https://raw.githubusercontent.com/openshift/csi-driver-shared-resource-operator/c60295f4e59c0d3f17fd1c5b920296ec58231db1/assets/config_configmap.yaml
+- https://raw.githubusercontent.com/openshift/csi-driver-shared-resource-operator/c60295f4e59c0d3f17fd1c5b920296ec58231db1/assets/csidriver.yaml
+- https://raw.githubusercontent.com/openshift/csi-driver-shared-resource-operator/c60295f4e59c0d3f17fd1c5b920296ec58231db1/assets/metrics_service.yaml
+- https://raw.githubusercontent.com/openshift/csi-driver-shared-resource-operator/c60295f4e59c0d3f17fd1c5b920296ec58231db1/assets/node_sa.yaml
+- https://raw.githubusercontent.com/openshift/csi-driver-shared-resource-operator/c60295f4e59c0d3f17fd1c5b920296ec58231db1/assets/node.yaml
+- https://raw.githubusercontent.com/openshift/csi-driver-shared-resource-operator/c60295f4e59c0d3f17fd1c5b920296ec58231db1/assets/servicemonitor.yaml
+- https://raw.githubusercontent.com/openshift/csi-driver-shared-resource-operator/c60295f4e59c0d3f17fd1c5b920296ec58231db1/assets/service.yaml
+- https://raw.githubusercontent.com/openshift/csi-driver-shared-resource-operator/c60295f4e59c0d3f17fd1c5b920296ec58231db1/assets/rbac/node_binding.yaml
+- https://raw.githubusercontent.com/openshift/csi-driver-shared-resource-operator/c60295f4e59c0d3f17fd1c5b920296ec58231db1/assets/rbac/node_privileged_binding.yaml
+- https://raw.githubusercontent.com/openshift/csi-driver-shared-resource-operator/c60295f4e59c0d3f17fd1c5b920296ec58231db1/assets/rbac/node_role.yaml
+- https://raw.githubusercontent.com/openshift/csi-driver-shared-resource-operator/c60295f4e59c0d3f17fd1c5b920296ec58231db1/assets/rbac/privileged_role.yaml
+- https://raw.githubusercontent.com/openshift/csi-driver-shared-resource-operator/c60295f4e59c0d3f17fd1c5b920296ec58231db1/assets/rbac/prometheus_rolebinding.yaml
+- https://raw.githubusercontent.com/openshift/csi-driver-shared-resource-operator/c60295f4e59c0d3f17fd1c5b920296ec58231db1/assets/rbac/prometheus_role.yaml
+- https://raw.githubusercontent.com/openshift/api/9d91c1f6cfd40449bd2af8a6b697a3bf7baf933b/sharedresource/v1alpha1/0000_10_sharedconfigmap.crd.yaml
+- https://raw.githubusercontent.com/openshift/api/9d91c1f6cfd40449bd2af8a6b697a3bf7baf933b/sharedresource/v1alpha1/0000_10_sharedsecret.crd.yaml
+- scc.yaml
+- shared-resources-components.yaml
+- redhat-appstudio-staginguser-secret.yaml
+- infra-deployments-pr-creator.yaml
+- redhat-appstudio-user-workload-sharedsecret.yaml
+- globally-shared-secrets-clusterrole.yaml
+- test-team-snyk-shared-secret.yaml
+
+images:
+- name: \${NODE_DRIVER_REGISTRAR_IMAGE}
+  newName: quay.io/openshift/origin-csi-node-driver-registrar
+  newTag: 4.11.0
+- name: \${DRIVER_IMAGE}
+  newName: quay.io/openshift/origin-csi-driver-shared-resource
+  newTag: 4.11.0
+
+# Skip applying the Tekton operands while the Tekton operator is being installed.
+# See more information about this option, here:
+# https://argo-cd.readthedocs.io/en/stable/user-guide/sync-options/#skip-dry-run-for-new-custom-resources-types
+commonAnnotations:
+  argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
