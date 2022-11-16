@@ -1,7 +1,7 @@
 resources:
 - allow-argocd-to-manage.yaml
 - argocd-permissions.yaml
-- https://github.com/redhat-appstudio/release-service/config/default?ref=ddac1272d2cea70a7b21ca0d6f65bc0ed9dbbd67
+- https://github.com/redhat-appstudio/release-service/config/default?ref=0009b2836e62f86e53d40f86c101e8c790c71036
 - .tekton/
 
 
@@ -11,9 +11,18 @@ kind: Kustomization
 images:
 - name: quay.io/redhat-appstudio/release-service
   newName: quay.io/redhat-appstudio/release-service
-  newTag: ddac1272d2cea70a7b21ca0d6f65bc0ed9dbbd67
+  newTag: 0009b2836e62f86e53d40f86c101e8c790c71036
 
 namespace: release-service
 
-patches:
+patchesStrategicMerge:
   - ./manager_resources_patch.yaml
+
+patches:
+  - target:
+      kind: Service
+      name: release-service-release-service-controller-manager-metrics-service
+    patch: |-
+      - op: replace
+        path: /metadata/name
+        value: release-service-controller-manager-metrics-service
