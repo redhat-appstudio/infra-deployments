@@ -170,7 +170,7 @@ Steps:
   d) ArgoCD is set to point to your fork and the preview branch
   e) User is switched back to feature branch to create additional changes
 
-If you want to reset your environment you can run the `hack/util-update-app-of-apps.sh https://github.com/redhat-appstudio/infra-deployments.git staging pre-kcp` to reset everything including your cluster to `https://github.com/redhat-appstudio/infra-deployments.git` and match the upstream config.
+If you want to reset your environment you can run the `hack/util-update-app-of-apps.sh https://github.com/redhat-appstudio/infra-deployments.git staging main` to reset everything including your cluster to `https://github.com/redhat-appstudio/infra-deployments.git` and match the upstream config.
 
 Note running these scripts in a clone repo will have no effect as the repo will remain `https://github.com/redhat-appstudio/infra-deployments.git`
 
@@ -332,7 +332,7 @@ Then [save and exit the editor](https://vim.rtorr.com/). The updates will be app
 ## For Members and Maintainers
 
 ### How to add yourself as a reviewer/approver
-There is an OWNERS file present in each component folder [like this](https://github.com/redhat-appstudio/infra-deployments/blob/pre-kcp/components/spi/OWNERS), people mentioned in the file have the respective access to approve/review PR's.
+There is an OWNERS file present in each component folder [like this](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/spi/OWNERS), people mentioned in the file have the respective access to approve/review PR's.
 
 To add yourself change the OWNERS file present in your component folder and Raise a pull request, if you want to be a Approver for the entire repo please change the OWNERS file present in the root level of this repository
 

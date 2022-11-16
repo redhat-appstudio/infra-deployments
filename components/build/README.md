@@ -90,7 +90,7 @@ Available secrets:
 | -- | -- | -- | -- |
 | test-team-snyk | test-teams-snyk secret in test-team namespace | Snyk token used by HACBS pipelines | users/serviceaccounts with edit role |
 | redhat-appstudio-user-workload | redhat-appstudio-user-workload secret in build-templates namespace | Quay secret allowing to push into default AppStudio repository | users/serviceaccounts with edit role |
-| redhat-appstudio-staginguser | redhat-appstudio-staginguser secret in build-templates namespace | Quay secret allowing to push into component repositories in redhat-appstudio org | `pipeline` service accounts defined in [shared-resources-components.yaml](https://github.com/redhat-appstudio/infra-deployments/blob/pre-kcp/components/build/shared-resources/shared-resources-components.yaml)|
+| redhat-appstudio-staginguser | redhat-appstudio-staginguser secret in build-templates namespace | Quay secret allowing to push into component repositories in redhat-appstudio org | `pipeline` service accounts defined in [shared-resources-components.yaml](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/build/shared-resources/shared-resources-components.yaml)|
 
 ### Repository secrets
 
