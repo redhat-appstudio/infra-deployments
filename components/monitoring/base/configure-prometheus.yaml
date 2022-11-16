@@ -1,4 +1,6 @@
----
+# vscode-kubernetes-tools: exclude
+# (because OpenShift routes seem to be interpreted as pods ¯\_(ツ)_/¯)
+--- 
 apiVersion: monitoring.coreos.com/v1
 kind: Prometheus
 metadata:
@@ -24,7 +26,13 @@ spec:
   ruleSelector:
     matchLabels:
       prometheus: appstudio-kcp-workload
-  securityContext: {}
+  securityContext:
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop: [ALL] 
+    seccompProfile:
+      type: RuntimeDefault
   serviceAccountName: prometheus-k8s
   serviceMonitorSelector:
     matchLabels:
@@ -99,6 +107,13 @@ spec:
         port: oauth2-proxy
         path: /ping
       timeoutSeconds: 1
+    securityContext:
+      runAsNonRoot: true
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: [ALL] 
+      seccompProfile:
+        type: RuntimeDefault
     terminationMessagePath: /dev/termination-log
     terminationMessagePolicy: File
     volumeMounts:
@@ -118,9 +133,17 @@ spec:
     - --upstream=http://localhost:9090
     - --tls-cert=/etc/tls/private/tls.crt
     - --tls-key=/etc/tls/private/tls.key
+    - --request-logging=true
     - --cookie-secret=SECRET
     # see https://github.com/openshift/oauth-proxy/#delegate-authentication-and-authorization-to-openshift-for-infrastructure
     - --openshift-delegate-urls={"/":{"group":"","resource":"namespaces","verb":"get"}}
+    securityContext:
+      runAsNonRoot: true
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: [ALL]
+      seccompProfile:
+        type: RuntimeDefault
     volumeMounts:
     - mountPath: /etc/tls/private
       name: secret-prometheus-oauth-tls
@@ -221,7 +244,7 @@ spec:
   tls:
     termination: reencrypt
 ---
-# The Grafana service account is used by Grafana to fetch the metrics via the Auth proxy container of the Prometheus pods
+# The `grafana-oauth` service account is used by Grafana to fetch the metrics via the Auth proxy container of the Prometheus pods
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -229,14 +252,14 @@ metadata:
   annotations:
     openshift.io/description: used by Grafana to fetch the metrics via the Auth proxy container of the Prometheus pods
   namespace: appstudio-workload-monitoring
-  name: grafana
+  name: grafana-oauth
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
+kind: ClusterRoleBinding
 metadata:
   annotations:
     openshift.io/description: used by Grafana to fetch the metrics via the Auth proxy container of the Prometheus pods
-  name: grafana-cluster-monitoring-view
+  name: grafana-oauth-cluster-monitoring-view
   namespace: appstudio-workload-monitoring
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -244,8 +267,27 @@ roleRef:
   name: cluster-monitoring-view
 subjects:
 - kind: ServiceAccount
-  name: grafana
+  name: grafana-oauth
   namespace: appstudio-workload-monitoring
 
-
+---
+# The `prometheus-k8s` service account is created by the Prometheus Operator to run Prometheus.
+# It is also used by the `oauth-proxy` sidecar container, hence it needs permissions to create `tokenreviews` and `subjectaccessreviews`
+# These permissions can be granted via the `thanos-querier` clusterrole
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    openshift.io/description: used by Grafana to fetch the metrics via the Auth proxy container of the Prometheus pods
+  name: prometheus-k8s-thanos-querier
+  namespace: appstudio-workload-monitoring
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: thanos-querier
+subjects:
+- kind: ServiceAccount
+  name: prometheus-k8s
+  namespace: appstudio-workload-monitoring
 

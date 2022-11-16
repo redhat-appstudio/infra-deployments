@@ -256,17 +256,17 @@ $ ./hack/setup-monitoring.sh grafana-datasource-secret $DATASOURCE_NAME $PROMETH
 ```
 $ PROMETHEUS_URL=`oc get route/prometheus-k8s -n openshift-monitoring -o json | jq -r '.status.ingress[0].host'`
 
-$ PROMETHEUS_URL=`oc get route/prometheus -n appstudio-workload-monitoring -o json | jq -r '.status.ingress[0].host'`
+$ PROMETHEUS_URL=`oc get route/prometheus-oauth -n appstudio-workload-monitoring -o json | jq -r '.status.ingress[0].host'`
 ```
 
-`GRAFANA_TOKEN` is obtained by requesting a token for the `grafana` service account in the **Prometheus cluster**:
+`GRAFANA_TOKEN` is obtained by requesting a token for the `grafana-oauth` service account in the **Prometheus cluster**:
 ```
-$ GRAFANA_TOKEN=`oc create token grafana -n appstudio-workload-monitoring`
+$ GRAFANA_TOKEN=`oc create token grafana-oauth -n appstudio-workload-monitoring`
 ```
 
-The `grafana` service account must exist in the `appstudio-workload-monitoring` namespace of the **Prometheus cluster** and must be allowed to `get namespaces`, for example by having the `cluster-monitoring-view` cluster role. 
+The `grafana-oauth` service account is created by `.components/monitoring/base/configure-prometheus.yaml` along with a binding to the `cluster-monitoring-view` cluster role. 
 
-The same Grafana token aforementioned can be used in the datasources associated with the Prometheus instances deployed in `openshift-monitoring` and `appstudio-workload-monitoring` namespaces.
+Note: the same aforementioned token can be used in datasources secrets related to the Prometheus instances deployed in the `openshift-monitoring` and `appstudio-workload-monitoring` namespaces.
 
 ## Repo Members and Maintainers
 

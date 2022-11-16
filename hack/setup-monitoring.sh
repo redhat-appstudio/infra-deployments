@@ -46,7 +46,7 @@ datasources:
 - name: $NAME
   type: prometheus
   access: proxy
-  url: $URL
+  url: https://$URL
   basicAuth: false
   withCredentials: true
   isDefault: false
@@ -57,7 +57,7 @@ datasources:
   secureJsonData:
     httpHeaderValue1: 'Bearer $TOKEN'"
   
-  oc create secret generic $NAME --from-literal=$NAME.yaml="$DATA"
+  oc create secret generic $NAME -n appstudio-workload-monitoring --from-literal=$NAME.yaml="$DATA" 
 }
 
 # -----------------------------------------------------------------
