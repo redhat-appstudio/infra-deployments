@@ -13,9 +13,4 @@ do
 	    PATCH+='{"op": "replace", "path": "/spec/'${KEY}'/resources/requests/cpu", "value": "50m"},'
 	fi
 done
-KUBECONFIG_PARAM=""
-if [[ -n ${CLUSTER_KUBECONFIG} ]]
-then
-  KUBECONFIG_PARAM="--kubeconfig ${CLUSTER_KUBECONFIG}"
-fi
-kubectl patch argocd/openshift-gitops -n openshift-gitops --type='json' -p "${PATCH}]" ${KUBECONFIG_PARAM}
+kubectl patch argocd/openshift-gitops -n openshift-gitops --type='json' -p "${PATCH}]"

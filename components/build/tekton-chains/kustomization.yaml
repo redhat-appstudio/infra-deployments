@@ -1,0 +1,29 @@
+resources:
+#
+# For now we'll use the official release directly rather than downloading
+# it and checking it in.
+#
+# To list available releases:
+#  curl -s https://storage.googleapis.com/tekton-releases/ | xq | grep -E 'chains/.*/release.yaml'
+#
+- allow-argocd-to-manage.yaml
+- https://storage.googleapis.com/tekton-releases/chains/previous/v0.13.0/release.yaml
+- chains-secrets-config.yaml
+- tekton-chains-controller-shared-secrets-rolebinding.yaml
+
+patchesStrategicMerge:
+#
+# Add some chains configuration
+- chains-config.yaml
+#
+# Remove runAsUser and runAsGroup from security context
+- security-context-fix.yaml
+
+# Mount the secrets volume and use the forked image
+- chains-controller-deployment.yaml
+
+# Mount the shared secret
+- tekton-chains-controller-shared-secret.yaml
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization

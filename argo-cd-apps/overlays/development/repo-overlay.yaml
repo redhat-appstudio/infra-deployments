@@ -1,219 +1,120 @@
----
 apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
+kind: Application
 metadata:
-  name: authorization-in-kcp
+  name: build
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
 spec:
-  generators:
-  - matrix:
-      generators:
-      - list:
-          elements:
-          - kcp-name: dev
-      - list:
-          elements:
-          - service: appstudio
-          - service: hacbs
-  template:
-    spec:
-      source:
-        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
-        targetRevision: main
----
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
-  name: application-service
-spec:
-  generators:
-    - list:
-        elements:
-          - kcp-name: dev
-  template:
-    spec:
-      source:
-        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
-        targetRevision: main
----
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
-  name: spi
-spec:
-  generators:
-    - list:
-        elements:
-          - kcp-name: dev
-  template:
-    spec:
-      source:
-        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
-        targetRevision: main
+  source: # This will be replaced with a reference to your fork of this repo (see hack/patch-apps-for-dev.sh)
+    repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+    targetRevision: pre-kcp
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: spi-vault
+  name: gitops
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
 spec:
   source:
     repoURL: https://github.com/redhat-appstudio/infra-deployments.git
-    targetRevision: main
+    targetRevision: pre-kcp
 ---
 apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
+kind: Application
 metadata:
-  name: application-api
+  name: has
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
 spec:
-  generators:
-    - list:
-        elements:
-          - kcp-name: dev
-  template:
-    spec:
-      source:
-        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
-        targetRevision: main
-
+  source:
+    repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+    targetRevision: pre-kcp
 ---
 apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
+kind: Application
+metadata:
+  name: release
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  source:
+    repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+    targetRevision: pre-kcp
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: integration
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  source:
+    repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+    targetRevision: pre-kcp
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: spi
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  source:
+    repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+    targetRevision: pre-kcp
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: e2e-tests
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  source:
+    repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+    targetRevision: pre-kcp
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cluster-registration
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  source:
+    repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+    targetRevision: pre-kcp
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: quality-dashboard
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  source:
+    repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+    targetRevision: pre-kcp
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
 metadata:
   name: enterprise-contract
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
 spec:
-  generators:
-    - list:
-        elements:
-          - kcp-name: dev
-  template:
-    spec:
-      source:
-        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
-        targetRevision: main
+  source:
+    repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+    targetRevision: pre-kcp
 ---
 apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
+kind: Application
 metadata:
-  name: build-service
+  name: hac-pact-broker
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
 spec:
-  generators:
-    - list:
-        elements:
-          - kcp-name: dev
-  template:
-    spec:
-      source:
-        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
-        targetRevision: main
----
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
-  name: jvm-build-service
-spec:
-  generators:
-    - list:
-        elements:
-          - kcp-name: dev
-  template:
-    spec:
-      source:
-        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
-        targetRevision: main
----
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
-  name: gitops-core-service
-spec:
-  generators:
-    - list:
-        elements:
-          - kcp-name: dev
-  template:
-    spec:
-      source:
-        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
-        targetRevision: main
----
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
-  name: gitops-appstudio-service
-spec:
-  generators:
-    - list:
-        elements:
-          - kcp-name: dev
-  template:
-    spec:
-      source:
-        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
-        targetRevision: main
----
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
-  name: release-service
-spec:
-  generators:
-    - list:
-        elements:
-          - kcp-name: dev
-  template:
-    spec:
-      source:
-        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
-        targetRevision: main
----
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
-  name: integration-service
-spec:
-  generators:
-    - list:
-        elements:
-          - kcp-name: dev
-  template:
-    spec:
-      source:
-        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
-        targetRevision: main
----
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
-  name: build-templates
-spec:
-  generators:
-    - list:
-        elements:
-          - kcp-name: dev
-  template:
-    spec:
-      source:
-        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
-        targetRevision: main
----
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
-  name: clusterworkspacetypes
-spec:
-  generators:
-  - matrix:
-      generators:
-      - list:
-          elements:
-          - kcp-name: dev
-      - list:
-          elements:
-          - sub-directory-path: clusterworkspacetypes
-            service: appstudio
-          - sub-directory-path: hacbs/clusterworkspacetypes
-            service: hacbs
-  template:
-    spec:
-      source:
-        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
-        targetRevision: main
+  source:
+    repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+    targetRevision: pre-kcp

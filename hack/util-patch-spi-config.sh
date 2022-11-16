@@ -5,8 +5,6 @@
 # 2. is the base URL of SPI (defaults to https://spi-oauth-route-spi-system.apps.<cluster URL>)
 # 3. is either true or false and defaults to true. When true, Vault is configured to accepts TLS connections with untrusted certificates.
 
-set -e
-
 JQ_SCRIPT=$(cat << "EOF"
 map(
     if (.op == "replace" and .path == "/data/VAULTHOST") then
@@ -21,18 +19,20 @@ EOF
 )
 
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/..
-PATCH_FILE="$ROOT/components/spi/overlays/dev/config-patch.json"
+PATCH_FILE="$ROOT/components/spi/config-patch.json"
 
 if [ -z ${1} ]; then
-    echo "VAULT_HOST is not set as a parameter of script"
-    exit 1
+    CLUSTER_URL_HOST=$(oc whoami --show-console|sed 's|https://console-openshift-console.apps.||')
+    VAULT_HOST="https://spi-vault-spi-system.apps.${CLUSTER_URL_HOST}"
 else
     VAULT_HOST=${1}
 fi
 
 if [ -z ${2} ]; then
-    echo "SPI_BASE_URL  is not set as a parameter of script"
-    exit 1
+    if [ -z $CLUSTER_URL_HOST ]; then
+        CLUSTER_URL_HOST=$(oc whoami --show-console|sed 's|https://console-openshift-console.apps.||')
+    fi
+    SPI_BASE_URL="https://spi-oauth-route-spi-system.apps.${CLUSTER_URL_HOST}"
 else
     SPI_BASE_URL=${2}
 fi
