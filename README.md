@@ -217,7 +217,7 @@ This section refers to "Grafana cluster" and "Prometheus cluster" as the cluster
 
 ### Setup
 
-First, create the `appstudio-workload-monitoring` namespace if it does not exist yet:
+First, create the `appstudio-workload-monitoring` namespace on each Prometheus or Grafana cluster, if it does not exist yet:
 
 ```
 $ oc create namespace appstudio-workload-monitoring
