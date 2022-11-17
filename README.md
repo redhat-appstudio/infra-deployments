@@ -241,7 +241,7 @@ The `PROMETHEUS_GITHUB_CLIENT_ID`/`PROMETHEUS_GITHUB_CLIENT_SECRET` and `GRAFANA
 
 #### Grafana Datasources
 
-Grafana datasources contain the connection settings to the Prometheus instances. These datasources are stored in secrets in the `appstudio-workload-monitoring` of the **Grafana cluster**.
+Grafana datasources contain the connection settings to the Prometheus instances. These datasources are stored in secrets in the `appstudio-workload-monitoring` namespace of the **Grafana cluster**.
 
 The Prometheus endpoints used by Grafana are protected by an OAuth proxy running as a sidecar container and which checks that the incoming requests contain a valid token. A token is valid if it belongs to a service account of the **Prometheus cluster** and which has the RBAC permission to "get namespaces". This can be obtained with the `cluster-monitoring-view` cluster role.
 
