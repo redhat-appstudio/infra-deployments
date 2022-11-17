@@ -110,7 +110,7 @@ which will:
 #### Workspaces:
 If `-rw | --root-workspace` parameter is not specified, then by default, all workspaces are automatically created under the `root` workspace.
 There are two workspaces created per kcp instance:
-* `redhat-appstudio-internal-compute` - This is the workspace where the SyncTarget for the OpenShift Prometheus cluster is configured. If the root workspace is different from `root`, then the name of the workspace is set to `compute` to work around [this issue](https://github.com/kcp-dev/kcp/issues/1843). (The name of the workspace can be overridden by setting the `COMPUTE_WORKSPACE` variable)
+* `redhat-appstudio-internal-compute` - This is the workspace where the SyncTarget for the OpenShift workload cluster is configured. If the root workspace is different from `root`, then the name of the workspace is set to `compute` to work around [this issue](https://github.com/kcp-dev/kcp/issues/1843). (The name of the workspace can be overridden by setting the `COMPUTE_WORKSPACE` variable)
 * `redhat-appstudio` - In this workspace ArgoCD deploys all kcp-related AppStudio manifests from the infra-deployments repository. It's the place where all AppStudio components run. (The name of the workspace can be overridden by setting the `APPSTUDIO_WORKSPACE` variable)
 * `redhat-hacbs` - In this workspace ArgoCD deploys all kcp-related HACBS manifests from the infra-deployments repository. It's the place where all HACBS components run. (The name of the workspace can be overridden by setting the `HACBS_WORKSPACE` variable)
 
