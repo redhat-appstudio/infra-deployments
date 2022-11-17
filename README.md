@@ -242,6 +242,8 @@ The `PROMETHEUS_GITHUB_CLIENT_ID`/`PROMETHEUS_GITHUB_CLIENT_SECRET` and `GRAFANA
 
 Each Prometheus instance must have its own OAuth Application on GitHub and its own `prometheus-oauth2-proxy` secret, whereas Grafana needs a single OAuth Application on GitHub since it is only deployed once.
 
+These `prometheus-oauth2-proxy` and `grafana-oauth2-proxy` secrets must be created before deploying Prometheus and Grafana, otherwise the pods will fail to run.
+
 #### Grafana Datasources
 
 Grafana datasources contain the connection settings to the Prometheus instances. These datasources are stored in secrets in the `appstudio-workload-monitoring` namespace of the **Grafana cluster**.
