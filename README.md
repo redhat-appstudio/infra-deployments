@@ -231,10 +231,10 @@ Users must belong to the [Red Hat Appstudio SRE organization](https://github.com
 Create the secrets with the following commands:
 
 ```
-# on the Grafana cluster
+# on each Prometheus cluster
 $ ./hack/setup-monitoring.sh oauth2-secret prometheus-oauth2-proxy $PROMETHEUS_GITHUB_CLIENT_ID $PROMETHEUS_GITHUB_CLIENT_SECRET $PROMETHEUS_GITHUB_COOKIE_SECRET
 
-# on each Prometheus cluster
+# on the Grafana cluster
 $ ./hack/setup-monitoring.sh oauth2-secret grafana-oauth2-proxy $GRAFANA_GITHUB_CLIENT_ID $GRAFANA_GITHUB_CLIENT_SECRET $GRAFANA_GITHUB_COOKIE_SECRET
 ```
 
