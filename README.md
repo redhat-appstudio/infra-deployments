@@ -110,7 +110,7 @@ which will:
 #### Workspaces:
 If `-rw | --root-workspace` parameter is not specified, then by default, all workspaces are automatically created under the `root` workspace.
 There are two workspaces created per kcp instance:
-* `redhat-appstudio-internal-compute` - This is the workspace where the SyncTarget for the OpenShift workload cluster is configured. If the root workspace is different from `root`, then the name of the workspace is set to `compute` to work around [this issue](https://github.com/kcp-dev/kcp/issues/1843). (The name of the workspace can be overridden by setting the `COMPUTE_WORKSPACE` variable)
+* `redhat-appstudio-internal-compute` - This is the workspace where the SyncTarget for the OpenShift Prometheus cluster is configured. If the root workspace is different from `root`, then the name of the workspace is set to `compute` to work around [this issue](https://github.com/kcp-dev/kcp/issues/1843). (The name of the workspace can be overridden by setting the `COMPUTE_WORKSPACE` variable)
 * `redhat-appstudio` - In this workspace ArgoCD deploys all kcp-related AppStudio manifests from the infra-deployments repository. It's the place where all AppStudio components run. (The name of the workspace can be overridden by setting the `APPSTUDIO_WORKSPACE` variable)
 * `redhat-hacbs` - In this workspace ArgoCD deploys all kcp-related HACBS manifests from the infra-deployments repository. It's the place where all HACBS components run. (The name of the workspace can be overridden by setting the `HACBS_WORKSPACE` variable)
 
@@ -121,7 +121,7 @@ To work around the issue, you can skip the configuration of the kcp part by usin
 ```bash
 ./hack/bootstrap.sh -sk true ...
 ```
-The bootstrap.sh script then configures only ArgoCD (including the Application/ApplicationsSets) in the workload cluster and doesn't do anything for kcp.
+The bootstrap.sh script then configures only ArgoCD (including the Application/ApplicationsSets) in the Prometheus cluster and doesn't do anything for kcp.
 
 To configure the kcp instances separately use the `configure-kcp.sh` script:
 ```bash
@@ -209,11 +209,11 @@ Authorization in `root:redhat-appstudio` and `root:redhat-hacbs` workspaces in C
 
 For access to the OpenShift staging cluster, the user must be added to the `stage` team in the `redhat-appstudio-sre` Github organization.
 
-## Monitoring for workload clusters
+## Monitoring for Prometheus clusters
 
 Note:
 
-This section refers to "Grafana cluster" and "Prometheus cluster" as the clusters on which Grafana and Prometheus are deployed, respectively. In a multi-cluster topology, there will be a single cluster on which Grafana is deployed, whereas Prometheus will be deployed on all clusters where collecting metrics is needed.
+This section refers to "Grafana cluster" and "Prometheus cluster" as the clusters on which Grafana and Prometheus are deployed, respectively. In a multi-cluster topology, there will be a single cluster on which Grafana is deployed, whereas Prometheus will be deployed on all clusters where metrics needed to be collected.
 
 ### Setup
 
@@ -231,13 +231,16 @@ Users must belong to the [Red Hat Appstudio SRE organization](https://github.com
 Create the secrets with the following commands:
 
 ```
+# on the Grafana cluster
 $ ./hack/setup-monitoring.sh oauth2-secret prometheus-oauth2-proxy $PROMETHEUS_GITHUB_CLIENT_ID $PROMETHEUS_GITHUB_CLIENT_SECRET $PROMETHEUS_GITHUB_COOKIE_SECRET
 
+# on each Prometheus cluster
 $ ./hack/setup-monitoring.sh oauth2-secret grafana-oauth2-proxy $GRAFANA_GITHUB_CLIENT_ID $GRAFANA_GITHUB_CLIENT_SECRET $GRAFANA_GITHUB_COOKIE_SECRET
 ```
 
-The `PROMETHEUS_GITHUB_CLIENT_ID`/`PROMETHEUS_GITHUB_CLIENT_SECRET` and `GRAFANA_GITHUB_CLIENT_ID`/`GRAFANA_GITHUB_CLIENT_SECRET` value pairs must match an existing "OAuth application" on GitHub - see [OAuth apps](https://github.com/organizations/redhat-appstudio-sre/settings/applications) in the [Red Hat Appstudio SRE organization](https://github.com/organizations/redhat-appstudio-sre). The `PROMETHEUS_GITHUB_COOKIE_SECRET` and `GRAFANA_GITHUB_COOKIE_SECRET` can be generated using the [following instructions](https://oauth2-proxy.github.io/oauth2-proxy/docs/configuration/overview#generating-a-cookie-secret).
+The `PROMETHEUS_GITHUB_CLIENT_ID`/`PROMETHEUS_GITHUB_CLIENT_SECRET` and `GRAFANA_GITHUB_CLIENT_ID`/`GRAFANA_GITHUB_CLIENT_SECRET` value pairs must match an existing "OAuth Application" on GitHub - see [OAuth apps](https://github.com/organizations/redhat-appstudio-sre/settings/applications) in the [Red Hat Appstudio SRE organization](https://github.com/organizations/redhat-appstudio-sre). The `PROMETHEUS_GITHUB_COOKIE_SECRET` and `GRAFANA_GITHUB_COOKIE_SECRET` can be generated using the [following instructions](https://oauth2-proxy.github.io/oauth2-proxy/docs/configuration/overview#generating-a-cookie-secret).
 
+Each Prometheus instance must have its own OAuth Application on GitHub and its own `prometheus-oauth2-proxy` secret, whereas Grafana needs a single OAuth Application on GitHub since it is only deployed once.
 
 #### Grafana Datasources
 
