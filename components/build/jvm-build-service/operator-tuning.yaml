@@ -1,0 +1,13 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hacbs-jvm-operator
+  namespace: jvm-build-service
+spec:
+  template:
+    spec:
+      containers:
+        - name: hacbs-jvm-operator
+          env:
+            - name: JVM_DELETE_TASKRUN_PODS
+              value: "1"
