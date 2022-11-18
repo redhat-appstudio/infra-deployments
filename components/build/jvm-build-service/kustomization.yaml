@@ -1,0 +1,30 @@
+resources:
+- allow-argocd-to-manage.yaml
+- https://github.com/redhat-appstudio/jvm-build-service/deploy/crds/base?ref=cd568e1d98ac04ac1f4f982c702732df7951b920
+- https://github.com/redhat-appstudio/jvm-build-service/deploy/operator/base?ref=cd568e1d98ac04ac1f4f982c702732df7951b920
+- .tekton/
+- namespace.yaml
+- system-config.yaml
+
+namespace: jvm-build-service
+
+images:
+- name: hacbs-jvm-operator
+  newName: quay.io/redhat-appstudio/hacbs-jvm-controller
+  newTag: cd568e1d98ac04ac1f4f982c702732df7951b920
+
+patches:
+- target:
+    kind: Deployment
+    name: hacbs-jvm-operator
+  patch: |-
+    # reduce CPU request to be able to run on testing instance
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/requests/cpu
+      value: 10m
+
+patchesStrategicMerge:
+  - operator-images.yaml
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
