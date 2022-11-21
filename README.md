@@ -226,7 +226,7 @@ Users can be added to organizations by Michal Kovarik <mkovarik@redhat.com> and 
 
 Note:
 
-This section refers to "Grafana cluster" and "Prometheus cluster" as the clusters on which Grafana and Prometheus are deployed, respectively. In a multi-cluster topology, there will be a single cluster on which Grafana is deployed, whereas Prometheus will be deployed on all clusters where metrics needed to be collected.
+This section uses **Grafana cluster** and **Prometheus cluster** to refer to the clusters on which Grafana and Prometheus are deployed, respectively. In a multi-cluster topology, there will be a single cluster on which Grafana is deployed, whereas Prometheus will be deployed on all clusters where metrics needed to be collected.
 
 ### Setup
 
