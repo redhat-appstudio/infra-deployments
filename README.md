@@ -226,7 +226,7 @@ Users can be added to organizations by Michal Kovarik <mkovarik@redhat.com> and 
 
 Note:
 
-This section uses **Grafana cluster** and **Prometheus cluster** to refer to the clusters on which Grafana and Prometheus are deployed, respectively. In a multi-cluster topology, there will be a single cluster on which Grafana is deployed, whereas Prometheus will be deployed on all clusters where metrics needed to be collected.
+This section uses **Grafana cluster** and **Prometheus cluster** to refer to the clusters on which Grafana and Prometheus are deployed, respectively. In a multi-cluster topology, there will be a single cluster on which Grafana is deployed, whereas Prometheus will be deployed on all clusters where metrics need to be collected.
 
 ### Setup
 
@@ -261,31 +261,35 @@ These `prometheus-oauth2-proxy` and `grafana-oauth2-proxy` secrets must be creat
 
 Grafana datasources contain the connection settings to the Prometheus instances. These datasources are stored in secrets in the `appstudio-workload-monitoring` namespace of the **Grafana cluster**.
 
-The Prometheus endpoints used by Grafana are protected by an OAuth proxy running as a sidecar container and which checks that the incoming requests contain a valid token. A token is valid if it belongs to a service account of the **Prometheus cluster** and which has the RBAC permission to "get namespaces". This can be obtained with the `cluster-monitoring-view` cluster role.
+The Prometheus endpoints called by Grafana are protected by an OAuth proxy running as a sidecar container and which checks that the incoming requests contain a valid token. A token is valid if it belongs to a service account of the **Prometheus cluster** which has the RBAC permission to "get namespaces". Such a permission can be obtained with the `cluster-monitoring-view` cluster role.
 
-```
-$ ./hack/setup-monitoring.sh grafana-datasource-secret $DATASOURCE_NAME $PROMETHEUS_URL $GRAFANA_TOKEN
-```
+In a multi-cluster setup, Grafana will have a datasource secret for each instance of Prometheus. 
+A datasource has a name (`DATASOURCE_NAME`), an URL (`PROMETHEUS_URL`) and a token (`GRAFANA_OAUTH_TOKEN`) obtained as follow:
 
-`DATASOURCE_NAME` is the name of the secret itself, as well as the base name of the YAML file it contains. Grafana supports datasources from multiple secrets, so their names must be unique.
+`DATASOURCE_NAME` is the name of the datasource as it will appear in Grafana. It is also the name of the secret which will contain the YAML file defining the datasource itself.
 `DATASOURCE_NAME` is an arbitrary name, for example `cluster-1-prometheus-openshift-ds` for Prometheus running in the `openshift-monitoring` namespace of Cluster-1.
 
 `PROMETHEUS_URL` is obtained from the route created for Prometheus in the `openshift-monitoring` and `appstudio-workload-monitoring` namespaces in the **Prometheus cluster**:
-
 ```
 $ PROMETHEUS_URL=`oc get route/prometheus-k8s -n openshift-monitoring -o json | jq -r '.status.ingress[0].host'`
 
 $ PROMETHEUS_URL=`oc get route/prometheus-oauth -n appstudio-workload-monitoring -o json | jq -r '.status.ingress[0].host'`
 ```
 
-`GRAFANA_TOKEN` is obtained by requesting a token for the `grafana-oauth` service account in the **Prometheus cluster**:
+`GRAFANA_OAUTH_TOKEN` is obtained by requesting a token for the `grafana-oauth` service account in the **Prometheus cluster**:
 ```
-$ GRAFANA_TOKEN=`oc create token grafana-oauth -n appstudio-workload-monitoring`
+$ GRAFANA_OAUTH_TOKEN=`oc create token grafana-oauth -n appstudio-workload-monitoring`
+```
+Notes: 
+- The `grafana-oauth` service account is created by `components/monitoring/base/configure-prometheus.yaml` along with a binding to the `cluster-monitoring-view` cluster role. 
+- The same token can be used in datasources secrets related to the Prometheus instances deployed in the `openshift-monitoring` and `appstudio-workload-monitoring` namespaces.
+
+Using the values obtained from the **Prometheus cluster**, run the following command on the **Grafana cluster**:
+
+```
+$ ./hack/setup-monitoring.sh grafana-datasource-secret $DATASOURCE_NAME $PROMETHEUS_URL $GRAFANA_OAUTH_TOKEN
 ```
 
-The `grafana-oauth` service account is created by `components/monitoring/base/configure-prometheus.yaml` along with a binding to the `cluster-monitoring-view` cluster role. 
-
-Note: the same aforementioned token can be used in datasources secrets related to the Prometheus instances deployed in the `openshift-monitoring` and `appstudio-workload-monitoring` namespaces.
 
 ## App Studio/HACBS Build System
 
