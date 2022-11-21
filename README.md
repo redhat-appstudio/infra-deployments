@@ -270,7 +270,7 @@ $ ./hack/setup-monitoring.sh grafana-datasource-secret $DATASOURCE_NAME $PROMETH
 `DATASOURCE_NAME` is the name of the secret itself, as well as the base name of the YAML file it contains. Grafana supports datasources from multiple secrets, so their names must be unique.
 `DATASOURCE_NAME` is an arbitrary name, for example `cluster-1-prometheus-openshift-ds` for Prometheus running in the `openshift-monitoring` namespace of Cluster-1.
 
-`PROMETHEUS_URL` is obtained from the route created for Prometheus in the `openshift-monitoring` and `appstudio-workload-monitoring` namespaces:
+`PROMETHEUS_URL` is obtained from the route created for Prometheus in the `openshift-monitoring` and `appstudio-workload-monitoring` namespaces in the **Prometheus cluster**:
 
 ```
 $ PROMETHEUS_URL=`oc get route/prometheus-k8s -n openshift-monitoring -o json | jq -r '.status.ingress[0].host'`
