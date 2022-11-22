@@ -192,7 +192,7 @@ Users can be added to organizations by Michal Kovarik <mkovarik@redhat.com> and 
 
 ## App Studio/HACBS Build System
 
-Described in [components/build](components/build/README.md)
+Described in [components/build-service](components/build-service/README.md)
 
 ## GitOps Service
 

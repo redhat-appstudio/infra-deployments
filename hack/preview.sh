@@ -77,7 +77,7 @@ fi
 
 rekor_server="rekor.$domain"
 sed -i "s/rekor-server.enterprise-contract-service.svc/$rekor_server/" $ROOT/argo-cd-apps/base/enterprise-contract.yaml
-yq -i e ".data |= .\"transparency.url\"=\"https://$rekor_server\"" $ROOT/components/build/tekton-chains/chains-config.yaml
+yq -i e ".data |= .\"transparency.url\"=\"https://$rekor_server\"" $ROOT/components/pipeline-service/tekton-chains/chains-config.yaml
 
 [ -n "${BUILD_SERVICE_IMAGE_REPO}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/redhat-appstudio/build-service\")) |=.newName=\"${BUILD_SERVICE_IMAGE_REPO}\"" $ROOT/components/build/build-service/kustomization.yaml
 [ -n "${BUILD_SERVICE_IMAGE_TAG}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/redhat-appstudio/build-service\")) |=.newTag=\"${BUILD_SERVICE_IMAGE_TAG}\"" $ROOT/components/build/build-service/kustomization.yaml

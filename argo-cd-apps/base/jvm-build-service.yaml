@@ -1,0 +1,36 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: jvm-build-service
+  
+spec:
+  project: default
+
+  source:
+    path: components/jvm-build-service
+    repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+    targetRevision: main
+
+  destination:
+    namespace: default # not relevant yet since every object has an explicit namespace.
+    server: https://kubernetes.default.svc
+
+  syncPolicy:
+
+    # Comment this out if you want to manually trigger deployments (using the 
+    # Argo CD Web UI or Argo CD CLI), rather than automatically deploying on
+    # every new Git commit to your directory.
+    automated: 
+      prune: true
+      selfHeal: true
+
+    syncOptions:
+    - CreateNamespace=true
+
+    retry:
+      limit: -1 # number of failed sync attempt retries; unlimited number of attempts if less than 0
+      backoff:
+        duration: 10s # the amount to back off. Default unit is seconds, but could also be a duration (e.g. "2m", "1h")
+        factor: 2 # a factor to multiply the base duration after each failed retry
+        maxDuration: 3m # the maximum amount of time allowed for the backoff strategy
+
