@@ -4,29 +4,21 @@ kind: Kustomization
 resources:
   - argocd-permissions.yaml
   - vault/
-  - https://github.com/redhat-appstudio/service-provider-integration-operator/config/default?ref=12c085728913b9cd94da3be409a09f4cb387a7c3
+  - https://github.com/redhat-appstudio/service-provider-integration-operator/config/default?ref=f6d00f26628f215e8673e79639cea01f193cf535
   - oauth_route.yaml
   - .tekton/
 
 images:
   - name:  quay.io/redhat-appstudio/service-provider-integration-operator
     newName: quay.io/redhat-appstudio/service-provider-integration-operator
-    newTag: 12c085728913b9cd94da3be409a09f4cb387a7c3 
+    newTag: f6d00f26628f215e8673e79639cea01f193cf535
   - name: quay.io/redhat-appstudio/service-provider-integration-oauth
     newName: quay.io/redhat-appstudio/service-provider-integration-oauth
-    newTag: 237895a0e45fdf8137136e4dffda292b4bf4c420 
+    newTag: f6d00f26628f215e8673e79639cea01f193cf535
 
 namespace: spi-system
 
 patches:
-  - target:
-      kind: ClusterRoleBinding
-      name: spi-scm-kube-rbac-proxy
-    path: cluster-rb-patch.json
-  - target:
-      kind: ClusterRoleBinding
-      name: spi-scm-spiaccesstokens-for-file-retriever-server-sa
-    path: cluster-rb-patch.json
   - target:
       kind: ConfigMap
       name: oauth-service-environment-config
