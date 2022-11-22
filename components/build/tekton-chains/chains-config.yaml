@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: chains-config
+  namespace: tekton-chains
+
+data:
+  # See https://tekton.dev/docs/chains/config/
+  artifacts.taskrun.format: "in-toto"
+
+  # The internal openshift image registry can handle storing
+  # taskrun attestations with oci, but quay.io can't. So currently
+  # we need to change this to "tekton" for quay.io registries.
+  artifacts.taskrun.storage: "oci"
+
+  # Attest pipelineruns the same way taskruns are attested, for details see:
+  # https://issues.redhat.com/browse/HACBS-264
+  artifacts.pipelinerun.format: "in-toto"
+  artifacts.pipelinerun.storage: "oci"
+
+  # For image signing iiuc
+  artifacts.oci.storage: "oci"
+
+  # We might want to turn this off by default later so we aren't
+  # filling up rekor.sigstore.dev with garbage.
+  transparency.enabled: "true"
+  #transparency.url: "https://rekor.sigstore.dev"

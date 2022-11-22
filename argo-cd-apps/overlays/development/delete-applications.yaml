@@ -1,14 +1,19 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: authentication
+$patch: delete
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: authorization-in-cluster
+  name: quality-dashboard
 $patch: delete
 ---
 apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
+kind: Application
 metadata:
-  name: kcp-syncer
+  name: hac-pact-broker
 $patch: delete
 ---
 apiVersion: argoproj.io/v1alpha1
