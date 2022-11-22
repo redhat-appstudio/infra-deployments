@@ -18,8 +18,8 @@ OVERLAYDIR=argo-cd-apps/overlays/$2
 BRANCH=$3 
 if [ -z "$BRANCH" ]
 then
-      echo No Branch specified, setting all overlays targetRevisions to pre-kcp
-      BRANCH=pre-kcp
+      echo No Branch specified, setting all overlays targetRevisions to main
+      BRANCH=main
 else  
       echo Setting all overlays targetRevisions to $BRANCH 
 fi
