@@ -22,17 +22,17 @@ ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/..
 PATCH_FILE="$ROOT/components/spi/config-patch.json"
 
 if [ -z ${1} ]; then
-    CLUSTER_URL_HOST=$(oc whoami --show-console|sed 's|https://console-openshift-console.apps.||')
-    VAULT_HOST="https://spi-vault-spi-system.apps.${CLUSTER_URL_HOST}"
+    APPS_BASE_URL=$(oc get ingress.config cluster -o jsonpath='{.spec.domain}')
+    VAULT_HOST="https://spi-vault-spi-system.${APPS_BASE_URL}"
 else
     VAULT_HOST=${1}
 fi
 
 if [ -z ${2} ]; then
-    if [ -z $CLUSTER_URL_HOST ]; then
-        CLUSTER_URL_HOST=$(oc whoami --show-console|sed 's|https://console-openshift-console.apps.||')
+    if [ -z $APPS_BASE_URL ]; then
+       APPS_BASE_URL=$(oc get ingress.config cluster -o jsonpath='{.spec.domain}')
     fi
-    SPI_BASE_URL="https://spi-oauth-route-spi-system.apps.${CLUSTER_URL_HOST}"
+    SPI_BASE_URL="https://spi-oauth-route-spi-system.${APPS_BASE_URL}"
 else
     SPI_BASE_URL=${2}
 fi
