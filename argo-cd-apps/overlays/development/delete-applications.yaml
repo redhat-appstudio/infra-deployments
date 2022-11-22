@@ -1,4 +1,3 @@
----
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -15,4 +14,10 @@ apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: hac-pact-broker
+$patch: delete
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: monitoring-workload-in-cluster
 $patch: delete
