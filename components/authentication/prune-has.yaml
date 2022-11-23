@@ -16,6 +16,15 @@ rules:
       - components
       - componentdetectionqueries
   - verbs:
+      - list
+      - get
+    apiGroups:
+      - 'appstudio.redhat.com'
+    resources:
+      - snapshots
+      - snapshotenvironmentbindings
+      - environments
+  - verbs:
       - create # allows addition of credentials only.
       - delete
       - list
