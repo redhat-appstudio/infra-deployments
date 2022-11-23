@@ -204,6 +204,12 @@ First, create the `appstudio-workload-monitoring` namespace on each Prometheus o
 $ oc create namespace appstudio-workload-monitoring
 ```
 
+and create the "base" resources by running the following command:
+
+```
+$ kustomize build components/monitoring/base | oc apply -f -   
+```
+
 #### OAuth2 proxy secrets
 
 Both Prometheus and Grafana UIs are protected by an OAuth2 proxy running as a sidecar container and which delegates the authentication to GitHub. 
