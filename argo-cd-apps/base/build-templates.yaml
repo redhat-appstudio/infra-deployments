@@ -1,13 +1,12 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: build
-  
+  name: build-templates
 spec:
   project: default
 
   source:
-    path: components/build
+    path: components/build-templates
     repoURL: https://github.com/redhat-appstudio/infra-deployments.git
     targetRevision: main
 

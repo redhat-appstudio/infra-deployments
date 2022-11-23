@@ -10,6 +10,11 @@ images:
   newName: quay.io/redhat-appstudio/build-service
   newTag: 61ad51e80af24618ed043b6022ea4f4dfac09afd
 
+# Skip applying the Tekton operands while the Tekton operator is being installed.
+# See more information about this option, here:
+# https://argo-cd.readthedocs.io/en/stable/user-guide/sync-options/#skip-dry-run-for-new-custom-resources-types
+commonAnnotations:
+  argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
