@@ -139,7 +139,6 @@ spec:
       registrationServiceURL: <The landing page URL>
 ```
 
-
 ### Optional: CodeReady Containers Post-Bootstrap Configuration
 
 Even with 6 CPU cores, you will need to reduce the CPU resource requests for each App Studio application. Either run `./hack/reduce-gitops-cpu-requests.sh` which will set resources.requests.cpu values to 50m or use `kubectl edit argocd/openshift-gitops -n openshift-gitops` to reduce the values to some other value. More details are in the FAQ below.
