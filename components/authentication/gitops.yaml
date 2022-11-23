@@ -1,7 +1,7 @@
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: gitops-service-ci-maintainers
+  name: gitops-service-maintainers
   namespace: gitops
 subjects:
   - kind: User
@@ -16,4 +16,4 @@ subjects:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: pipeline-maintainer
+  name: component-maintainer
