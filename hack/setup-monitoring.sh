@@ -69,7 +69,6 @@ else
     # Show a helpful error
     echo "'$1' is not a valid command" >&2
     echo "available commands:"
-    echo "namespace                   Create the 'appstudio-workload-monitoring' namespace"
     echo "oauth2-secret               Create the secret for Grafana's or Prometheus's OAuth2 proxy"
     echo "grafana-datasource-secret   Create the secret for a Grafana datasource"
     echo ""
