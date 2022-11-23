@@ -21,7 +21,8 @@ oauth2-secret() {
     -n appstudio-workload-monitoring  \
     --from-literal=client-id=$CLIENT_ID \
     --from-literal=client-secret=$CLIENT_SECRET \
-    --from-literal=cookie-secret=$COOKIE_SECRET
+    --from-literal=cookie-secret=$COOKIE_SECRET \
+    --dry-run=client -o yaml | oc apply -f -
 }
 
 # ----------------------------------------------------------------
@@ -57,7 +58,7 @@ datasources:
   secureJsonData:
     httpHeaderValue1: 'Bearer $TOKEN'"
   
-  oc create secret generic $NAME -n appstudio-workload-monitoring --from-literal=$NAME.yaml="$DATA" 
+  oc create secret generic $NAME -n appstudio-workload-monitoring --from-literal=$NAME.yaml="$DATA" --dry-run=client -o yaml | oc apply -f -
 }
 
 # -----------------------------------------------------------------
