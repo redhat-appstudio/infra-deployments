@@ -46,3 +46,26 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: cluster-registration-maintainer
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: cluster-registration-service-component-maintainers
+  namespace: cluster-reg-config
+subjects:
+- kind: User
+  name: chrisahl
+- kind: User
+  name: leena-jawale
+- kind: User
+  name: itdove
+- kind: User
+  name: vidyanambiar
+- kind: User
+  name: tpouyer
+- kind: User
+  name: robinbobbit
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: component-maintainer

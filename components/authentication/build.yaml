@@ -19,7 +19,7 @@ subjects:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: pipeline-maintainer
+  name: component-maintainer
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
@@ -39,7 +39,7 @@ subjects:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: pipeline-maintainer
+  name: component-maintainer
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
@@ -56,12 +56,12 @@ subjects:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: pipeline-maintainer
+  name: component-maintainer
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: pipeline-maintainers
+  name: component-maintainers
   namespace: tekton-pipelines
 subjects:
   - kind: User
@@ -82,12 +82,12 @@ subjects:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: pipeline-maintainer
+  name: component-maintainer
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: pipeline-maintainers
+  name: component-maintainers
   namespace: tekton-chains
 subjects:
   - kind: User
@@ -102,12 +102,12 @@ subjects:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: pipeline-maintainer
+  name: component-maintainer
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: pipeline-maintainers
+  name: component-maintainers
   namespace: pvc-cleaner
 subjects:
   - kind: User
@@ -119,12 +119,12 @@ subjects:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: pipeline-maintainer
+  name: component-maintainer
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: pipeline-maintainers
+  name: component-maintainers
   namespace: build-service
 subjects:
   - kind: User
@@ -136,12 +136,12 @@ subjects:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: pipeline-maintainer
+  name: component-maintainer
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: pipeline-maintainers
+  name: component-maintainers
   namespace: jvm-build-service
 subjects:
   - kind: User
@@ -156,4 +156,4 @@ subjects:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: pipeline-maintainer
+  name: component-maintainer
