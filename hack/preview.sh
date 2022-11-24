@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/..
 
@@ -27,14 +27,33 @@ fi
 
 # Create preview branch for preview configuration
 PREVIEW_BRANCH=preview-${MY_GIT_BRANCH}${TEST_BRANCH_ID+-$TEST_BRANCH_ID}
-if git rev-parse --verify $PREVIEW_BRANCH; then
+if git rev-parse --verify $PREVIEW_BRANCH &> /dev/null; then
     git branch -D $PREVIEW_BRANCH
 fi
 git checkout -b $PREVIEW_BRANCH
 
-# reset the default repos in the development directory to be the current git repo
-# this needs to be pushed to your fork to be seen by argocd
-$ROOT/hack/util-set-development-repos.sh $MY_GIT_REPO_URL development $PREVIEW_BRANCH
+# patch argoCD applications to point to your fork
+oc kustomize $ROOT/argo-cd-apps/base/ | yq e "select(.spec.source.repoURL==\"https://github.com/redhat-appstudio/infra-deployments.git\")
+  | del(.spec.destination, .spec.syncPolicy, .spec.project, .spec.source.path)
+  | .spec.source.repoURL=\"$MY_GIT_REPO_URL\"
+  | .spec.source.targetRevision=\"$PREVIEW_BRANCH\"
+  | .metadata.finalizers=[\"resources-finalizer.argocd.argoproj.io\"]" > $ROOT/argo-cd-apps/overlays/development/repo-overlay.yaml
+
+# delete argoCD applications which are not in DEPLOY_ONLY env var if it's set
+if [ -n "$DEPLOY_ONLY" ]; then
+  APPLICATIONS=$(oc kustomize argo-cd-apps/base/ | yq e --no-doc .metadata.name)
+  DELETED=$(yq e --no-doc .metadata.name $ROOT/argo-cd-apps/overlays/development/delete-applications.yaml)
+  for APP in $APPLICATIONS; do
+    if ! grep -q "\b$APP\b" <<< $DEPLOY_ONLY && ! grep -q "\b$APP\b" <<< $DELETED; then
+      echo Disabling $APP based on DEPLOY_ONLY variable
+      echo '---' >> $ROOT/argo-cd-apps/overlays/development/delete-applications.yaml
+      yq e -n ".apiVersion=\"argoproj.io/v1alpha1\"
+                 | .kind=\"Application\"
+                 | .metadata.name = \"$APP\"
+                 | .\$patch = \"delete\"" >> $ROOT/argo-cd-apps/overlays/development/delete-applications.yaml
+    fi
+  done
+fi
 
 # set the API server which SPI uses to authenticate users to empty string (by default) so that multi-cluster
 # setup is not needed
@@ -50,12 +69,10 @@ yq e ".sharedSecret=\"${SHARED_SECRET:-$(openssl rand -hex 20)}\"" $ROOT/compone
     yq e ".serviceProviders[0].type=\"${SPI_TYPE:-GitHub}\"" - | \
     yq e ".serviceProviders[0].clientId=\"${SPI_CLIENT_ID:-app-client-id}\"" - | \
     yq e ".serviceProviders[0].clientSecret=\"${SPI_CLIENT_SECRET:-app-secret}\"" - > $TMP_FILE
+oc create namespace spi-system --dry-run=client -o yaml | oc apply -f -
 oc create -n spi-system secret generic shared-configuration-file --from-file=config.yaml=$TMP_FILE --dry-run=client -o yaml | oc apply -f -
 echo "SPI configured"
 rm $TMP_FILE
-
-# set backend route for quality dashboard for current cluster
-$ROOT/hack/util-set-quality-dashboard-backend-route.sh
 
 if [ -n "$MY_GITHUB_ORG" ]; then
     $ROOT/hack/util-set-github-org $MY_GITHUB_ORG
@@ -71,6 +88,7 @@ if [ -n "$DOCKER_IO_AUTH" ]; then
     oc set data secret/pull-secret -n openshift-config --from-file=.dockerconfigjson=$AUTH
     # Set current namespace pipeline serviceaccount which is used by buildah
     oc create secret docker-registry docker-io-pull --from-file=.dockerconfigjson=$AUTH -o yaml --dry-run=client | oc apply -f-
+    oc create serviceaccount pipeline -o yaml --dry-run=client | oc apply -f-
     oc secrets link pipeline docker-io-pull
     rm $AUTH
 fi
@@ -127,9 +145,13 @@ fi
 git checkout $MY_GIT_BRANCH
 
 #set the local cluster to point to the current git repo and branch and update the path to development
-$ROOT/hack/util-update-app-of-apps.sh $MY_GIT_REPO_URL development $PREVIEW_BRANCH
+yq e ".spec.source.path=\"argo-cd-apps/overlays/development\"
+    | .spec.source.repoURL=\"$MY_GIT_REPO_URL\"
+    | .spec.source.targetRevision=\"$PREVIEW_BRANCH\"" \
+  $ROOT/argo-cd-apps/app-of-apps/all-applications-staging.yaml | oc apply -f -
 
 while [ "$(oc get applications.argoproj.io all-components-staging -n openshift-gitops -o jsonpath='{.status.health.status} {.status.sync.status}')" != "Healthy Synced" ]; do
+  echo Waiting for sync of all-components-staging argoCD app
   sleep 5
 done
 
@@ -147,8 +169,9 @@ $ROOT/hack/build/setup-pac-integration.sh
 
 # trigger refresh of apps
 for APP in $APPS; do
-  kubectl patch $APP -n openshift-gitops --type merge -p='{"metadata": {"annotations":{"argocd.argoproj.io/refresh": "hard"}}}'
+  kubectl patch $APP -n openshift-gitops --type merge -p='{"metadata": {"annotations":{"argocd.argoproj.io/refresh": "hard"}}}' &
 done
+wait
 
 # wait for the refresh
 while [ -n "$(oc get applications.argoproj.io -n openshift-gitops -o jsonpath='{range .items[*]}{@.metadata.annotations.argocd\.argoproj\.io/refresh}{end}')" ]; do
@@ -158,7 +181,7 @@ done
 INTERVAL=10
 while :; do
   STATE=$(kubectl get apps -n openshift-gitops --no-headers)
-  NOT_DONE=$(echo "$STATE" | grep -v "Synced[[:blank:]]*Healthy")
+  NOT_DONE=$(echo "$STATE" | grep -v "Synced[[:blank:]]*Healthy" || true)
   echo "$NOT_DONE"
   if [ -z "$NOT_DONE" ]; then
      echo All Applications are synced and Healthy
