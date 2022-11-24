@@ -89,5 +89,8 @@ fi
 
 oc -n ${PAC_NAMESPACE} delete secret ${PAC_SECRET_NAME} &>/dev/null
 eval "oc -n '$PAC_NAMESPACE' create secret generic '$PAC_SECRET_NAME' $GITHUB_APP_DATA $GITHUB_WEBHOOK_DATA $GITLAB_WEBHOOK_DATA"
-eval "oc -n build-service create secret generic '$PAC_SECRET_NAME' $GITHUB_APP_DATA $GITHUB_WEBHOOK_DATA $GITLAB_WEBHOOK_DATA"
 echo "Configured ${PAC_SECRET_NAME} secret in ${PAC_NAMESPACE} namespace"
+
+oc -n build-service delete secret ${PAC_SECRET_NAME} &>/dev/null
+eval "oc -n build-service create secret generic '$PAC_SECRET_NAME' $GITHUB_APP_DATA $GITHUB_WEBHOOK_DATA $GITLAB_WEBHOOK_DATA"
+echo "Configured ${PAC_SECRET_NAME} secret in build-service namespace"
