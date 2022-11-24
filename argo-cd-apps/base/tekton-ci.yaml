@@ -1,17 +1,17 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: e2e-tests
+  name: tekton-ci
 
 spec:
   project: default
 
   source:
-    path: components/e2e-tests
+    path: components/tekton-ci
     repoURL: https://github.com/redhat-appstudio/infra-deployments.git
     targetRevision: main
   destination:
-    namespace: e2e-tests
+    namespace: tekton-ci
     server: https://kubernetes.default.svc
 
   syncPolicy:
