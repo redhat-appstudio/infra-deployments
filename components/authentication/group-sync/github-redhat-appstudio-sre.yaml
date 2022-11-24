@@ -1,0 +1,13 @@
+apiVersion: redhatcop.redhat.io/v1alpha1
+kind: GroupSync
+metadata:
+  name: github-redhat-appstudio-sre
+spec:
+  schedule: "*/15 * * * *"
+  providers:
+  - name: github
+    github:
+      organization: redhat-appstudio-sre
+      credentialsSecret:
+        name: github-redhat-appstudio-sre
+        namespace: group-sync-operator
