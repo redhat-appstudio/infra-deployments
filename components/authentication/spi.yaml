@@ -1,0 +1,16 @@
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: spi-service-maintainers
+  namespace: spi-system
+subjects:
+  - kind: User
+    name: skabashnyuk
+  - kind: User
+    name: sbose78
+  - kind: User
+    name: Michkov
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: component-maintainer

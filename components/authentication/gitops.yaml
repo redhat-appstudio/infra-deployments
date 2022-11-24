@@ -1,0 +1,19 @@
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: gitops-service-maintainers
+  namespace: gitops
+subjects:
+  - kind: User
+    apiGroup: rbac.authorization.k8s.io
+    name: sbose78
+  - kind: User
+    apiGroup: rbac.authorization.k8s.io
+    name: jduimovich
+  - kind: User
+    apiGroup: rbac.authorization.k8s.io
+    name: Michkov
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: component-maintainer
