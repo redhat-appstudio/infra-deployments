@@ -80,14 +80,10 @@ fi
 
 PAC_NAMESPACE='pipelines-as-code'
 PAC_SECRET_NAME='pipelines-as-code-secret'
-if ! oc get namespace ${PAC_NAMESPACE} &>/dev/null; then
-        oc create namespace ${PAC_NAMESPACE} 2>/dev/null
-fi
-if ! oc get namespace build-service &>/dev/null; then
-        oc create namespace build-service 2>/dev/null
-fi
 
-oc -n ${PAC_NAMESPACE} delete secret ${PAC_SECRET_NAME} &>/dev/null
-eval "oc -n '$PAC_NAMESPACE' create secret generic '$PAC_SECRET_NAME' $GITHUB_APP_DATA $GITHUB_WEBHOOK_DATA $GITLAB_WEBHOOK_DATA"
-eval "oc -n build-service create secret generic '$PAC_SECRET_NAME' $GITHUB_APP_DATA $GITHUB_WEBHOOK_DATA $GITLAB_WEBHOOK_DATA"
+oc create namespace -o yaml --dry-run=client ${PAC_NAMESPACE} | oc apply -f-
+oc create namespace -o yaml --dry-run=client build-service | oc apply -f-
+
+eval "oc -n '$PAC_NAMESPACE' create secret generic '$PAC_SECRET_NAME' $GITHUB_APP_DATA $GITHUB_WEBHOOK_DATA $GITLAB_WEBHOOK_DATA -o yaml --dry-run=client" | oc apply -f-
+eval "oc -n build-service create secret generic '$PAC_SECRET_NAME' $GITHUB_APP_DATA $GITHUB_WEBHOOK_DATA $GITLAB_WEBHOOK_DATA -o yaml --dry-run=client" | oc apply -f-
 echo "Configured ${PAC_SECRET_NAME} secret in ${PAC_NAMESPACE} namespace"
