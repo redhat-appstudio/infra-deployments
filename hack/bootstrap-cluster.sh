@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 MODE=$1
 
@@ -72,9 +72,7 @@ echo "Add Role/RoleBindings for OpenShift GitOps:"
 kubectl apply --kustomize $ROOT/openshift-gitops/cluster-rbac
 
 echo "Setting secrets for Tekton Results"
-if ! kubectl get namespace tekton-pipelines &>/dev/null; then
-  kubectl create namespace tekton-pipelines
-fi
+kubectl create namespace tekton-pipelines -o yaml --dry-run=client | oc apply -f-
 
 OPENSSLDIR=`openssl version -d | cut -f2 -d'"'`
 
@@ -103,9 +101,7 @@ fi
 
 echo
 echo "Setting secrets for GitOps"
-if ! kubectl get namespace gitops &>/dev/null; then
-  kubectl create namespace gitops
-fi
+kubectl create namespace gitops -o yaml --dry-run=client | oc apply -f-
 if ! kubectl get secret -n gitops gitops-postgresql-staging &>/dev/null; then
   kubectl create secret generic gitops-postgresql-staging \
     --namespace=gitops \
@@ -114,9 +110,7 @@ fi
 
 echo
 echo "Setting secrets for Quality Dashboard"
-if ! kubectl get namespace quality-dashboard &>/dev/null; then
-  kubectl create namespace quality-dashboard
-fi
+kubectl create namespace quality-dashboard -o yaml --dry-run=client | oc apply -f-
 if ! kubectl get secret -n quality-dashboard quality-dashboard-secrets &>/dev/null; then
   kubectl create secret generic quality-dashboard-secrets \
     --namespace=quality-dashboard \
