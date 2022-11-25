@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Expects up to 3 parameters.
-# 1. is the vault host (defaults to https://spi-vault-spi-system.apps.<cluster URL>)
+# 1. is the vault host (defaults to https://vault-spi-vault.apps.<cluster URL>)
 # 2. is the base URL of SPI (defaults to https://spi-oauth-route-spi-system.apps.<cluster URL>)
 # 3. is either true or false and defaults to true. When true, Vault is configured to accepts TLS connections with untrusted certificates.
 
@@ -19,11 +19,11 @@ EOF
 )
 
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/..
-PATCH_FILE="$ROOT/components/spi/config-patch.json"
+PATCH_FILE="$ROOT/components/spi/overlays/staging/config-patch.json"
 
 if [ -z ${1} ]; then
     APPS_BASE_URL=$(oc get ingress.config cluster -o jsonpath='{.spec.domain}')
-    VAULT_HOST="https://spi-vault-spi-system.${APPS_BASE_URL}"
+    VAULT_HOST="https://vault-spi-vault.${APPS_BASE_URL}"
 else
     VAULT_HOST=${1}
 fi
