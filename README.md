@@ -90,14 +90,14 @@ Steps:
 
 SPI components fails to start right after the bootstrap. It requires manual configuration in order to work properly:
 
-1) Edit `./components/spi/config.yaml` [see SPI Configuraton Documentation](https://github.com/redhat-appstudio/service-provider-integration-operator#configuration).
+1) Edit `./components/spi/base/config.yaml` [see SPI Configuraton Documentation](https://github.com/redhat-appstudio/service-provider-integration-operator/blob/main/docs/ADMIN.md#configuration).
 2) In CRC setup add a random string for value of `sharedSecret`
-3) Create a `shared-configuration-file` Secret (`kubectl create secret generic `shared-configuration-file` --from-file=components/spi/config.yaml -n spi-system`)
+3) Create a `shared-configuration-file` Secret (`kubectl create secret generic `shared-configuration-file` --from-file=components/spi/base/config.yaml -n spi-system`)
 4) In few moments, SPI pods should start
 
 SPI Vault instance has to be manually initialized. There is a script to help with that:
 
-1) Make sure that your cluster user has at least permissions `./components/spi/vault_role.yaml`
+1) Make sure that your cluster user has at least permissions `./components/authentication/spi-vault-admin.yaml`
 2) Clone SPI operator repo `git clone https://github.com/redhat-appstudio/service-provider-integration-operator && cd service-provider-integration-operator`
 3) run `vault-init.sh` script from repo root directory `./hack/vault-init.sh`
 
