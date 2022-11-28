@@ -57,7 +57,7 @@ fi
 
 # set the API server which SPI uses to authenticate users to empty string (by default) so that multi-cluster
 # setup is not needed
-yq -i e ".0.value=\"$SPI_API_SERVER\"" $ROOT/components/spi/oauth-service-config-patch.json
+yq -i e ".0.value=\"$SPI_API_SERVER\"" $ROOT/components/spi/overlays/staging/oauth-service-config-patch.json
 # patch the SPI configuration with the Vault host configuration to provided VAULT_HOST variable or to current cluster
 # and the base URL set to the SPI_BASE_URL variable or the URL of the  route to the SPI OAuth service in the current cluster
 # This script also sets up the Vault client to accept insecure TLS connections so that the custom vault host doesn't have
@@ -65,10 +65,12 @@ yq -i e ".0.value=\"$SPI_API_SERVER\"" $ROOT/components/spi/oauth-service-config
 $ROOT/hack/util-patch-spi-config.sh
 # configure the secrets and providers in SPI
 TMP_FILE=$(mktemp)
-yq e ".sharedSecret=\"${SHARED_SECRET:-$(openssl rand -hex 20)}\"" $ROOT/components/spi/config.yaml | \
-    yq e ".serviceProviders[0].type=\"${SPI_TYPE:-GitHub}\"" - | \
+yq e ".serviceProviders[0].type=\"${SPI_TYPE:-GitHub}\"" $ROOT/components/spi/base/config.yaml | \
     yq e ".serviceProviders[0].clientId=\"${SPI_CLIENT_ID:-app-client-id}\"" - | \
-    yq e ".serviceProviders[0].clientSecret=\"${SPI_CLIENT_SECRET:-app-secret}\"" - > $TMP_FILE
+    yq e ".serviceProviders[0].clientSecret=\"${SPI_CLIENT_SECRET:-app-secret}\"" - | \
+    yq e ".serviceProviders[1].type=\"${SPI_TYPE:-Quay}\"" - | \
+    yq e ".serviceProviders[1].clientId=\"${SPI_CLIENT_ID:-app-client-id}\"" - | \
+    yq e ".serviceProviders[1].clientSecret=\"${SPI_CLIENT_SECRET:-app-secret}\"" - > $TMP_FILE
 oc create namespace spi-system --dry-run=client -o yaml | oc apply -f -
 oc create -n spi-system secret generic shared-configuration-file --from-file=config.yaml=$TMP_FILE --dry-run=client -o yaml | oc apply -f -
 echo "SPI configured"
@@ -160,7 +162,14 @@ APPS=$(kubectl get apps -n openshift-gitops -o name)
 if echo $APPS | grep -q spi; then
   if [ "`oc get applications.argoproj.io spi -n openshift-gitops -o jsonpath='{.status.health.status} {.status.sync.status}'`" != "Healthy Synced" ]; then
     echo Initializing SPI
-    curl https://raw.githubusercontent.com/redhat-appstudio/e2e-tests/${E2E_TESTS_COMMIT_SHA:-main}/scripts/spi-e2e-setup.sh | bash -s
+    curl https://raw.githubusercontent.com/redhat-appstudio/e2e-tests/${E2E_TESTS_COMMIT_SHA:-main}/scripts/spi-e2e-setup.sh | VAULT_PODNAME='vault-0' VAULT_NAMESPACE='spi-vault' bash -s
+    SPI_APP_ROLE_FILE=$ROOT/.tmp/approle_secret.yaml
+    if [ -f "$SPI_APP_ROLE_FILE" ]; then
+        echo "$SPI_APP_ROLE_FILE exists."
+        kubectl apply -f $SPI_APP_ROLE_FILE  -n spi-system
+    fi
+    echo "Vault init complete"
+
   fi
 fi
 
