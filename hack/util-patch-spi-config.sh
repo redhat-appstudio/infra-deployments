@@ -2,7 +2,7 @@
 
 # Expects up to 3 parameters.
 # 1. is the vault host (defaults to https://vault-spi-vault.apps.<cluster URL>)
-# 2. is the base URL of SPI (defaults to https://spi-oauth-route-spi-system.apps.<cluster URL>)
+# 2. is the base URL of SPI (defaults to https://spi-oauth-spi-system.apps.<cluster URL>)
 # 3. is either true or false and defaults to true. When true, Vault is configured to accepts TLS connections with untrusted certificates.
 
 JQ_SCRIPT=$(cat << "EOF"
@@ -32,7 +32,7 @@ if [ -z ${2} ]; then
     if [ -z $APPS_BASE_URL ]; then
        APPS_BASE_URL=$(oc get ingress.config cluster -o jsonpath='{.spec.domain}')
     fi
-    SPI_BASE_URL="https://spi-oauth-route-spi-system.${APPS_BASE_URL}"
+    SPI_BASE_URL="https://spi-oauth-spi-system.${APPS_BASE_URL}"
 else
     SPI_BASE_URL=${2}
 fi
