@@ -1,14 +1,15 @@
+---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  namespace: ${MONITORING_NAMESPACE}
+  namespace: appstudio-workload-monitoring
   name: sandbox-host-operator
   labels:
     prometheus: appstudio-sre
 spec:
   endpoints:
   - bearerTokenSecret:
-      name: ${PROMETHEUS_K8S_SECRET_NAME}
+      name: ""
       key: token
     interval: 15s
     scheme: https
@@ -26,14 +27,14 @@ spec:
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  namespace: ${MONITORING_NAMESPACE}
+  namespace: appstudio-workload-monitoring
   name: sandbox-member-operator
   labels:
     prometheus: appstudio-sre
 spec:
   endpoints:
   - bearerTokenSecret:
-      name: ${PROMETHEUS_K8S_SECRET_NAME}
+      name: ""
       key: token
     interval: 15s
     scheme: https
@@ -51,14 +52,14 @@ spec:
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  namespace: ${MONITORING_NAMESPACE}
+  namespace: appstudio-workload-monitoring
   name: spi-operator
   labels:
     prometheus: appstudio-sre
 spec:
   endpoints:
   - bearerTokenSecret:
-      name: ${PROMETHEUS_K8S_SECRET_NAME}
+      name: ""
       key: token
     scheme: https
     tlsConfig:
@@ -78,14 +79,14 @@ metadata:
     control-plane: controller-manager
     prometheus: appstudio-sre
   name: release-service
-  namespace: ${MONITORING_NAMESPACE}
+  namespace: appstudio-workload-monitoring
 spec:
   endpoints:
   - path: /metrics
     port: https
     scheme: https
     bearerTokenSecret:
-      name: ${PROMETHEUS_K8S_SECRET_NAME}
+      name: ""
       key: token
     tlsConfig:
       insecureSkipVerify: true
@@ -95,38 +96,11 @@ spec:
   selector:
     matchLabels:
       control-plane: controller-manager
-
-# Loki
-#- apiVersion: monitoring.coreos.com/v1
-#  kind: ServiceMonitor
-#  metadata:
-#    namespace: ${MONITORING_NAMESPACE}
-#    name: loki
-#    labels:
-#      prometheus: appstudio-sre
-#  spec:
-#    endpoints:
-#    - bearerTokenSecret:
-#        name: ${LOKI_SECRET_NAME} # this SA has the permissions to `get /metrics`
-#        key: token
-#      interval: 15s
-#      scheme: https
-#      tlsConfig:
-#        insecureSkipVerify: true
-#      port: http-metrics
-#    namespaceSelector:
-#      matchNames:
-#      - ${MONITORING_NAMESPACE}
-#    selector:
-#      matchLabels:
-#        app: loki-oauth
-
-#Prometheus itself
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  namespace: ${MONITORING_NAMESPACE}
+  namespace: appstudio-workload-monitoring
   name: prometheus
   labels:
     prometheus: appstudio-sre
@@ -142,7 +116,7 @@ spec:
       serverName: "prometheus-oauth2.openshift-customer-monitoring.svc"
   namespaceSelector:
     matchNames:
-    - ${MONITORING_NAMESPACE}
+    - appstudio-workload-monitoring
   selector:
     matchLabels:
       app.kubernetes.io/instance: prometheus
