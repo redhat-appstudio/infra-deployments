@@ -1,18 +1,18 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: spi
+  name: spi-vault
 
 spec:
   project: default
 
   source:
-    path: components/spi/overlays/staging
+    path: components/spi-vault
     repoURL: https://github.com/redhat-appstudio/infra-deployments.git
     targetRevision: main
 
   destination:
-    namespace: spi-system
+    namespace: spi-vault
     server: https://kubernetes.default.svc
 
   syncPolicy:
