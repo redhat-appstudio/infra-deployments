@@ -13,7 +13,10 @@ rules:
     resourceNames:
       - pipeline # TODO: figure out how to 'gitops' this.
   - verbs:
-      - create # allows addition of credentials only.
+      - create
+      - get
+      - list
+      - watch
       - delete
     apiGroups:
       - ''
