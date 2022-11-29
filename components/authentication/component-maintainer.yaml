@@ -43,3 +43,11 @@ rules:
     - pods/portforward
     verbs:
     - create
+  - apiGroups:
+      - 'apps'
+      - 'extensions'
+    resources:
+      - deployments
+    verbs:
+      - get
+      - patch
