@@ -57,7 +57,7 @@ fi
 
 # set the API server which SPI uses to authenticate users to empty string (by default) so that multi-cluster
 # setup is not needed
-yq -i e ".0.value=\"$SPI_API_SERVER\"" $ROOT/components/spi/oauth-service-config-patch.json
+yq -i e ".0.value=\"$SPI_API_SERVER\"" $ROOT/components/spi/overlays/staging/oauth-service-config-patch.json
 # patch the SPI configuration with the Vault host configuration to provided VAULT_HOST variable or to current cluster
 # and the base URL set to the SPI_BASE_URL variable or the URL of the  route to the SPI OAuth service in the current cluster
 # This script also sets up the Vault client to accept insecure TLS connections so that the custom vault host doesn't have
@@ -65,10 +65,12 @@ yq -i e ".0.value=\"$SPI_API_SERVER\"" $ROOT/components/spi/oauth-service-config
 $ROOT/hack/util-patch-spi-config.sh
 # configure the secrets and providers in SPI
 TMP_FILE=$(mktemp)
-yq e ".sharedSecret=\"${SHARED_SECRET:-$(openssl rand -hex 20)}\"" $ROOT/components/spi/config.yaml | \
-    yq e ".serviceProviders[0].type=\"${SPI_TYPE:-GitHub}\"" - | \
+yq e ".serviceProviders[0].type=\"${SPI_TYPE:-GitHub}\"" $ROOT/components/spi/base/config.yaml | \
     yq e ".serviceProviders[0].clientId=\"${SPI_CLIENT_ID:-app-client-id}\"" - | \
-    yq e ".serviceProviders[0].clientSecret=\"${SPI_CLIENT_SECRET:-app-secret}\"" - > $TMP_FILE
+    yq e ".serviceProviders[0].clientSecret=\"${SPI_CLIENT_SECRET:-app-secret}\"" - | \
+    yq e ".serviceProviders[1].type=\"${SPI_TYPE:-Quay}\"" - | \
+    yq e ".serviceProviders[1].clientId=\"${SPI_CLIENT_ID:-app-client-id}\"" - | \
+    yq e ".serviceProviders[1].clientSecret=\"${SPI_CLIENT_SECRET:-app-secret}\"" - > $TMP_FILE
 oc create namespace spi-system --dry-run=client -o yaml | oc apply -f -
 oc create -n spi-system secret generic shared-configuration-file --from-file=config.yaml=$TMP_FILE --dry-run=client -o yaml | oc apply -f -
 echo "SPI configured"
@@ -94,33 +96,33 @@ if [ -n "$DOCKER_IO_AUTH" ]; then
 fi
 
 rekor_server="rekor.$domain"
-sed -i "s/rekor-server.enterprise-contract-service.svc/$rekor_server/" $ROOT/argo-cd-apps/base/enterprise-contract.yaml
+sed -i.bak "s/rekor-server.enterprise-contract-service.svc/$rekor_server/" $ROOT/argo-cd-apps/base/enterprise-contract.yaml && rm $ROOT/argo-cd-apps/base/enterprise-contract.yaml.bak
 yq -i e ".data |= .\"transparency.url\"=\"https://$rekor_server\"" $ROOT/components/pipeline-service/tekton-chains/chains-config.yaml
 
-[ -n "${BUILD_SERVICE_IMAGE_REPO}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/redhat-appstudio/build-service\")) |=.newName=\"${BUILD_SERVICE_IMAGE_REPO}\"" $ROOT/components/build/build-service/kustomization.yaml
-[ -n "${BUILD_SERVICE_IMAGE_TAG}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/redhat-appstudio/build-service\")) |=.newTag=\"${BUILD_SERVICE_IMAGE_TAG}\"" $ROOT/components/build/build-service/kustomization.yaml
-[[ -n "${BUILD_SERVICE_PR_OWNER}" && "${BUILD_SERVICE_PR_SHA}" ]] && yq -i e "(.resources[] | select(. ==\"*github.com/redhat-appstudio/build-service*\")) |= \"https://github.com/${BUILD_SERVICE_PR_OWNER}/build-service/config/default?ref=${BUILD_SERVICE_PR_SHA}\"" $ROOT/components/build/build-service/kustomization.yaml
-[ -n "${JVM_BUILD_SERVICE_IMAGE_REPO}" ] && yq -i e "(.images.[] | select(.name==\"hacbs-jvm-operator\")) |=.newName=\"${JVM_BUILD_SERVICE_IMAGE_REPO}\"" $ROOT/components/build/jvm-build-service/kustomization.yaml
-[ -n "${JVM_BUILD_SERVICE_IMAGE_TAG}" ] && yq -i e "(.images.[] | select(.name==\"hacbs-jvm-operator\")) |=.newTag=\"${JVM_BUILD_SERVICE_IMAGE_TAG}\"" $ROOT/components/build/jvm-build-service/kustomization.yaml
-[[ -n "${JVM_BUILD_SERVICE_PR_OWNER}" && "${JVM_BUILD_SERVICE_PR_SHA}" ]] && sed -i -e "s|\(https://github.com/\)redhat-appstudio\(/jvm-build-service/.*?ref=\)\(.*\)|\1${JVM_BUILD_SERVICE_PR_OWNER}\2${JVM_BUILD_SERVICE_PR_SHA}|" -e "s|\(https://raw.githubusercontent.com/\)redhat-appstudio\(/jvm-build-service/\)[^/]*\(/.*\)|\1${JVM_BUILD_SERVICE_PR_OWNER}\2${JVM_BUILD_SERVICE_PR_SHA}\3|" $ROOT/components/build/jvm-build-service/kustomization.yaml
-[ -n "${JVM_BUILD_SERVICE_IMAGE_REPO}" ] && yq -i e "(.images.[] | select(.name==\"hacbs-jvm-operator\")) |=.newName=\"${JVM_BUILD_SERVICE_IMAGE_REPO}\"" $ROOT/components/build/jvm-build-service/kustomization.yaml
-[ -n "${JVM_BUILD_SERVICE_IMAGE_TAG}" ] && yq -i e "(.images.[] | select(.name==\"hacbs-jvm-operator\")) |=.newTag=\"${JVM_BUILD_SERVICE_IMAGE_TAG}\"" $ROOT/components/build/jvm-build-service/kustomization.yaml
-[ -n "${JVM_BUILD_SERVICE_CACHE_IMAGE_REPO}" ] && yq -i e "(.images.[] | select(.name==\"hacbs-jvm-cache\")) |=.newName=\"${JVM_BUILD_SERVICE_CACHE_IMAGE_REPO}\"" $ROOT/components/build/jvm-build-service/kustomization.yaml
-[ -n "${JVM_BUILD_SERVICE_CACHE_IMAGE_TAG}" ] && yq -i e "(.images.[] | select(.name==\"hacbs-jvm-cache\")) |=.newTag=\"${JVM_BUILD_SERVICE_CACHE_IMAGE_TAG}\"" $ROOT/components/build/jvm-build-service/kustomization.yaml
-[ -n "${JVM_BUILD_SERVICE_SIDECAR_IMAGE_REPO}" ] && yq -i e "(.images.[] | select(.name==\"run-maven-component-build\")) |=.newName=\"${JVM_BUILD_SERVICE_SIDECAR_IMAGE_REPO}\"" $ROOT/components/build/jvm-build-service/kustomization.yaml
-[ -n "${JVM_BUILD_SERVICE_SIDECAR_IMAGE_TAG}" ] && yq -i e "(.images.[] | select(.name==\"run-maven-component-build\")) |=.newTag=\"${JVM_BUILD_SERVICE_SIDECAR_IMAGE_TAG}\"" $ROOT/components/build/jvm-build-service/kustomization.yaml
-[[ -n "${JVM_BUILD_SERVICE_SIDECAR_IMAGE_REPO}" && ${JVM_BUILD_SERVICE_SIDECAR_IMAGE_TAG} ]] && yq -i e "(.spec.template.spec.containers[].env[] | select(.name==\"JVM_BUILD_SERVICE_SIDECAR_IMAGE\")) |=.value=\"${JVM_BUILD_SERVICE_SIDECAR_IMAGE_REPO}:${JVM_BUILD_SERVICE_SIDECAR_IMAGE_TAG}\"" $ROOT/components/build/jvm-build-service/operator-images.yaml
-[[ -n "${JVM_BUILD_SERVICE_REQPROCESSOR_IMAGE_REPO}" && ${JVM_BUILD_SERVICE_REQPROCESSOR_IMAGE_TAG} ]] && yq -i e "(.spec.template.spec.containers[].env[] | select(.name==\"JVM_BUILD_SERVICE_REQPROCESSOR_IMAGE\")) |=.value=\"${JVM_BUILD_SERVICE_REQPROCESSOR_IMAGE_REPO}:${JVM_BUILD_SERVICE_REQPROCESSOR_IMAGE_TAG}\"" $ROOT/components/build/jvm-build-service/operator-images.yaml
-[ -n "${JVM_DELETE_TASKRUN_PODS}" ] && yq -i e "(.spec.template.spec.containers[].env[] | select(.name==\"JVM_DELETE_TASKRUN_PODS\")) |=.value=\"${JVM_DELETE_TASKRUN_PODS}\"" $ROOT/components/build/jvm-build-service/operator-images.yaml
-[ -n "${DEFAULT_BUILD_BUNDLE}" ] && yq -i e "(.configMapGenerator[].literals[] | select(. == \"default_build_bundle*\")) |= \"default_build_bundle=${DEFAULT_BUILD_BUNDLE}\"" $ROOT/components/build/kustomization.yaml
-[[ -n "${JVM_BUILD_SERVICE_CACHE_IMAGE_REPO}" && ${JVM_BUILD_SERVICE_CACHE_IMAGE_TAG} ]] && yq -i e "(.data.\"image.cache\") |=.=\"${JVM_BUILD_SERVICE_CACHE_IMAGE_REPO}:${JVM_BUILD_SERVICE_CACHE_IMAGE_TAG}\"" $ROOT/components/build/jvm-build-service/system-config.yaml
-[[ -n "${JVM_BUILD_SERVICE_JDK8_BUILDER_IMAGE_REPO}" && ${JVM_BUILD_SERVICE_JDK8_BUILDER_IMAGE_TAG} ]] && yq -i e "(.data.\"builder-image.jdk8.image\") |=.=\"${JVM_BUILD_SERVICE_JDK8_BUILDER_IMAGE_REPO}:${JVM_BUILD_SERVICE_JDK8_BUILDER_IMAGE_TAG}\"" $ROOT/components/build/jvm-build-service/system-config.yaml
-[[ -n "${JVM_BUILD_SERVICE_JDK11_BUILDER_IMAGE_REPO}" && ${JVM_BUILD_SERVICE_JDK11_BUILDER_IMAGE_TAG} ]] && yq -i e "(.data.\"builder-image.jdk11.image\") |=.=\"${JVM_BUILD_SERVICE_JDK11_BUILDER_IMAGE_REPO}:${JVM_BUILD_SERVICE_JDK11_BUILDER_IMAGE_TAG}\"" $ROOT/components/build/jvm-build-service/system-config.yaml
-[[ -n "${JVM_BUILD_SERVICE_JDK17_BUILDER_IMAGE_REPO}" && ${JVM_BUILD_SERVICE_JDK17_BUILDER_IMAGE_TAG} ]] && yq -i e "(.data.\"builder-image.jdk17.image\") |=.=\"${JVM_BUILD_SERVICE_JDK17_BUILDER_IMAGE_REPO}:${JVM_BUILD_SERVICE_JDK17_BUILDER_IMAGE_TAG}\"" $ROOT/components/build/jvm-build-service/system-config.yaml
+[ -n "${BUILD_SERVICE_IMAGE_REPO}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/redhat-appstudio/build-service\")) |=.newName=\"${BUILD_SERVICE_IMAGE_REPO}\"" $ROOT/components/build-service/kustomization.yaml
+[ -n "${BUILD_SERVICE_IMAGE_TAG}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/redhat-appstudio/build-service\")) |=.newTag=\"${BUILD_SERVICE_IMAGE_TAG}\"" $ROOT/components/build-service/kustomization.yaml
+[[ -n "${BUILD_SERVICE_PR_OWNER}" && "${BUILD_SERVICE_PR_SHA}" ]] && yq -i e "(.resources[] | select(. ==\"*github.com/redhat-appstudio/build-service*\")) |= \"https://github.com/${BUILD_SERVICE_PR_OWNER}/build-service/config/default?ref=${BUILD_SERVICE_PR_SHA}\"" $ROOT/components/build-service/kustomization.yaml
+[ -n "${JVM_BUILD_SERVICE_IMAGE_REPO}" ] && yq -i e "(.images.[] | select(.name==\"hacbs-jvm-operator\")) |=.newName=\"${JVM_BUILD_SERVICE_IMAGE_REPO}\"" $ROOT/components/jvm-build-service/kustomization.yaml
+[ -n "${JVM_BUILD_SERVICE_IMAGE_TAG}" ] && yq -i e "(.images.[] | select(.name==\"hacbs-jvm-operator\")) |=.newTag=\"${JVM_BUILD_SERVICE_IMAGE_TAG}\"" $ROOT/components/jvm-build-service/kustomization.yaml
+[[ -n "${JVM_BUILD_SERVICE_PR_OWNER}" && "${JVM_BUILD_SERVICE_PR_SHA}" ]] && sed -i -e "s|\(https://github.com/\)redhat-appstudio\(/jvm-build-service/.*?ref=\)\(.*\)|\1${JVM_BUILD_SERVICE_PR_OWNER}\2${JVM_BUILD_SERVICE_PR_SHA}|" -e "s|\(https://raw.githubusercontent.com/\)redhat-appstudio\(/jvm-build-service/\)[^/]*\(/.*\)|\1${JVM_BUILD_SERVICE_PR_OWNER}\2${JVM_BUILD_SERVICE_PR_SHA}\3|" $ROOT/components/jvm-build-service/kustomization.yaml
+[ -n "${JVM_BUILD_SERVICE_IMAGE_REPO}" ] && yq -i e "(.images.[] | select(.name==\"hacbs-jvm-operator\")) |=.newName=\"${JVM_BUILD_SERVICE_IMAGE_REPO}\"" $ROOT/components/jvm-build-service/kustomization.yaml
+[ -n "${JVM_BUILD_SERVICE_IMAGE_TAG}" ] && yq -i e "(.images.[] | select(.name==\"hacbs-jvm-operator\")) |=.newTag=\"${JVM_BUILD_SERVICE_IMAGE_TAG}\"" $ROOT/components/jvm-build-service/kustomization.yaml
+[ -n "${JVM_BUILD_SERVICE_CACHE_IMAGE_REPO}" ] && yq -i e "(.images.[] | select(.name==\"hacbs-jvm-cache\")) |=.newName=\"${JVM_BUILD_SERVICE_CACHE_IMAGE_REPO}\"" $ROOT/components/jvm-build-service/kustomization.yaml
+[ -n "${JVM_BUILD_SERVICE_CACHE_IMAGE_TAG}" ] && yq -i e "(.images.[] | select(.name==\"hacbs-jvm-cache\")) |=.newTag=\"${JVM_BUILD_SERVICE_CACHE_IMAGE_TAG}\"" $ROOT/components/jvm-build-service/kustomization.yaml
+[ -n "${JVM_BUILD_SERVICE_SIDECAR_IMAGE_REPO}" ] && yq -i e "(.images.[] | select(.name==\"run-maven-component-build\")) |=.newName=\"${JVM_BUILD_SERVICE_SIDECAR_IMAGE_REPO}\"" $ROOT/components/jvm-build-service/kustomization.yaml
+[ -n "${JVM_BUILD_SERVICE_SIDECAR_IMAGE_TAG}" ] && yq -i e "(.images.[] | select(.name==\"run-maven-component-build\")) |=.newTag=\"${JVM_BUILD_SERVICE_SIDECAR_IMAGE_TAG}\"" $ROOT/components/jvm-build-service/kustomization.yaml
+[[ -n "${JVM_BUILD_SERVICE_SIDECAR_IMAGE_REPO}" && ${JVM_BUILD_SERVICE_SIDECAR_IMAGE_TAG} ]] && yq -i e "(.spec.template.spec.containers[].env[] | select(.name==\"JVM_BUILD_SERVICE_SIDECAR_IMAGE\")) |=.value=\"${JVM_BUILD_SERVICE_SIDECAR_IMAGE_REPO}:${JVM_BUILD_SERVICE_SIDECAR_IMAGE_TAG}\"" $ROOT/components/jvm-build-service/operator-images.yaml
+[[ -n "${JVM_BUILD_SERVICE_REQPROCESSOR_IMAGE_REPO}" && ${JVM_BUILD_SERVICE_REQPROCESSOR_IMAGE_TAG} ]] && yq -i e "(.spec.template.spec.containers[].env[] | select(.name==\"JVM_BUILD_SERVICE_REQPROCESSOR_IMAGE\")) |=.value=\"${JVM_BUILD_SERVICE_REQPROCESSOR_IMAGE_REPO}:${JVM_BUILD_SERVICE_REQPROCESSOR_IMAGE_TAG}\"" $ROOT/components/jvm-build-service/operator-images.yaml
+[ -n "${JVM_DELETE_TASKRUN_PODS}" ] && yq -i e "(.spec.template.spec.containers[].env[] | select(.name==\"JVM_DELETE_TASKRUN_PODS\")) |=.value=\"${JVM_DELETE_TASKRUN_PODS}\"" $ROOT/components/jvm-build-service/operator-images.yaml
+[ -n "${DEFAULT_BUILD_BUNDLE}" ] && yq -i e "(.configMapGenerator[].literals[] | select(. == \"default_build_bundle*\")) |= \"default_build_bundle=${DEFAULT_BUILD_BUNDLE}\"" $ROOT/components/build-templates/kustomization.yaml
+[[ -n "${JVM_BUILD_SERVICE_CACHE_IMAGE_REPO}" && ${JVM_BUILD_SERVICE_CACHE_IMAGE_TAG} ]] && yq -i e "(.data.\"image.cache\") |=.=\"${JVM_BUILD_SERVICE_CACHE_IMAGE_REPO}:${JVM_BUILD_SERVICE_CACHE_IMAGE_TAG}\"" $ROOT/components/jvm-build-service/system-config.yaml
+[[ -n "${JVM_BUILD_SERVICE_JDK8_BUILDER_IMAGE_REPO}" && ${JVM_BUILD_SERVICE_JDK8_BUILDER_IMAGE_TAG} ]] && yq -i e "(.data.\"builder-image.jdk8.image\") |=.=\"${JVM_BUILD_SERVICE_JDK8_BUILDER_IMAGE_REPO}:${JVM_BUILD_SERVICE_JDK8_BUILDER_IMAGE_TAG}\"" $ROOT/components/jvm-build-service/system-config.yaml
+[[ -n "${JVM_BUILD_SERVICE_JDK11_BUILDER_IMAGE_REPO}" && ${JVM_BUILD_SERVICE_JDK11_BUILDER_IMAGE_TAG} ]] && yq -i e "(.data.\"builder-image.jdk11.image\") |=.=\"${JVM_BUILD_SERVICE_JDK11_BUILDER_IMAGE_REPO}:${JVM_BUILD_SERVICE_JDK11_BUILDER_IMAGE_TAG}\"" $ROOT/components/jvm-build-service/system-config.yaml
+[[ -n "${JVM_BUILD_SERVICE_JDK17_BUILDER_IMAGE_REPO}" && ${JVM_BUILD_SERVICE_JDK17_BUILDER_IMAGE_TAG} ]] && yq -i e "(.data.\"builder-image.jdk17.image\") |=.=\"${JVM_BUILD_SERVICE_JDK17_BUILDER_IMAGE_REPO}:${JVM_BUILD_SERVICE_JDK17_BUILDER_IMAGE_TAG}\"" $ROOT/components/jvm-build-service/system-config.yaml
 
 # for jvm-build-service, since its service registry tests produces a ton of pipelineruns, and even the simple ones can produced more than 10,
 # we bump the keep setting to better allow for debug in jvm-build-service PRs
-[[ -n "${JVM_BUILD_SERVICE_PR_OWNER}" && ${JVM_BUILD_SERVICE_PR_SHA} ]] && yq -i e "(.spec.pruner.keep = 1000)" $ROOT/components/build/openshift-pipelines/config.yaml
+[[ -n "${JVM_BUILD_SERVICE_PR_OWNER}" && ${JVM_BUILD_SERVICE_PR_SHA} ]] && yq -i e "(.spec.pruner.keep = 1000)" $ROOT/components/pipeline-service/openshift-pipelines/config.yaml
 
 [ -n "${HAS_IMAGE_REPO}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/redhat-appstudio/application-service\")) |=.newName=\"${HAS_IMAGE_REPO}\"" $ROOT/components/has/kustomization.yaml
 [ -n "${HAS_IMAGE_TAG}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/redhat-appstudio/application-service\")) |=.newTag=\"${HAS_IMAGE_TAG}\"" $ROOT/components/has/kustomization.yaml
@@ -160,7 +162,14 @@ APPS=$(kubectl get apps -n openshift-gitops -o name)
 if echo $APPS | grep -q spi; then
   if [ "`oc get applications.argoproj.io spi -n openshift-gitops -o jsonpath='{.status.health.status} {.status.sync.status}'`" != "Healthy Synced" ]; then
     echo Initializing SPI
-    curl https://raw.githubusercontent.com/redhat-appstudio/e2e-tests/${E2E_TESTS_COMMIT_SHA:-main}/scripts/spi-e2e-setup.sh | bash -s
+    curl https://raw.githubusercontent.com/redhat-appstudio/e2e-tests/${E2E_TESTS_COMMIT_SHA:-main}/scripts/spi-e2e-setup.sh | VAULT_PODNAME='vault-0' VAULT_NAMESPACE='spi-vault' bash -s
+    SPI_APP_ROLE_FILE=$ROOT/.tmp/approle_secret.yaml
+    if [ -f "$SPI_APP_ROLE_FILE" ]; then
+        echo "$SPI_APP_ROLE_FILE exists."
+        kubectl apply -f $SPI_APP_ROLE_FILE  -n spi-system
+    fi
+    echo "Vault init complete"
+
   fi
 fi
 
