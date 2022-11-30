@@ -17,9 +17,9 @@ patches:
     name: hacbs-jvm-operator
   patch: |-
     - op: add
-      path: /spec/template/spec/containers/0/env/-
+      path: /spec/template/spec/containers/0/env
       value:
-        name: IMAGE_TAG
+      - name: IMAGE_TAG
         value: 398d723ee6e9a0a035630332b76bef9400e0a370
 
 apiVersion: kustomize.config.k8s.io/v1beta1
