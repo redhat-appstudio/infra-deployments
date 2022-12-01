@@ -6,10 +6,5 @@ resources:
 - group-sync.yaml
 - namespaces.yaml
 - subscription.yaml
-namespace: group-sync-operator
 
-# Skip applying the Group-sync operands while the Tekton operator is being installed.
-# See more information about this option, here:
-# https://argo-cd.readthedocs.io/en/stable/user-guide/sync-options/#skip-dry-run-for-new-custom-resources-types
-commonAnnotations:
-  argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+namespace: group-sync-operator
