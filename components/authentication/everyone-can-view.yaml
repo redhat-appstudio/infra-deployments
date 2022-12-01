@@ -26,6 +26,26 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - managed-gitops.redhat.com
+  resources:
+  - gitopsdeploymentmanagedenvironments
+  - gitopsdeployments
+  - gitopsdeploymentsyncruns
+  - operations
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - jvmbuildservice.io
+  resources:
+  - artifactbuilds
+  - dependencybuilds
+  - rebuiltartifacts
+  - systemconfigs
+  - tektonwrappers
+  - userconfigs
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
