@@ -35,7 +35,8 @@ fi
 
 function create-component {
   GIT_URL=$1
-  NAME=$(echo $GIT_URL | grep -o '[^/]*$')
+  REPO=$(echo $GIT_URL | grep -o '[^/]*$')
+  NAME=${REPO%%.git}
   [ -z "$SKIP_OUTPUT_IMAGE" ] && IMAGE=quay.io/$MY_QUAY_USER/$NAME
   oc delete --ignore-not-found component $NAME
   yq e "(.metadata.name=\"$NAME\") | (.spec.componentName=\"$NAME\") | (.spec.source.git.url=\"$GIT_URL\") | (.spec.containerImage=\"$IMAGE\") | (.metadata.annotations.pipelinesascode=\"$PIPELINESASCODE\")" $SCRIPTDIR/templates/component.yaml | oc apply -f-
