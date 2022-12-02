@@ -1,6 +1,5 @@
 # vscode-kubernetes-tools: exclude
 # (because OpenShift routes seem to be interpreted as pods ¯\_(ツ)_/¯)
---- 
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -178,13 +177,13 @@ spec:
           - secret:
               name: prometheus-openshift-ds
               items:
-                - key: prometheus-openshift-ds.yaml
-                  path: prometheus-openshift-ds.yaml
+              - key: prometheus-openshift-ds.yaml
+                path: prometheus-openshift-ds.yaml
           - secret:
               name: prometheus-appstudio-ds
               items:
-                - key: prometheus-appstudio-ds.yaml
-                  path: prometheus-appstudio-ds.yaml
+              - key: prometheus-appstudio-ds.yaml
+                path: prometheus-appstudio-ds.yaml
       - name: grafana-config
         secret:
           defaultMode: 420
@@ -200,9 +199,6 @@ spec:
         secret:
           defaultMode: 420
           secretName: grafana-tls
-  test: false
-  triggers:
-  - type: ConfigChange
 ---
 # ConfigMap for the Dashboards, which defines where the JSON files should be stored (and read from)
 # The files are "mounted from a ConfigMap" which is created by the `configure grafana` command

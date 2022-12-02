@@ -1,6 +1,5 @@
 # vscode-kubernetes-tools: exclude
 # (because OpenShift routes seem to be interpreted as pods ¯\_(ツ)_/¯)
---- 
 apiVersion: monitoring.coreos.com/v1
 kind: Prometheus
 metadata:
@@ -18,25 +17,22 @@ spec:
       scheme: http
   image: quay.io/prometheus/prometheus:v2.39.1
   externalLabels:
-    cluster: appstudio-kcp-workload
+    cluster: appstudio-workload
   logLevel: debug
   replicas: 2
   retention: 45d
   walCompression: true
   ruleSelector:
     matchLabels:
-      prometheus: appstudio-kcp-workload
+      prometheus: appstudio-workload
   securityContext:
     runAsNonRoot: true
-    allowPrivilegeEscalation: false
-    capabilities:
-      drop: [ALL] 
     seccompProfile:
       type: RuntimeDefault
   serviceAccountName: prometheus-k8s
   serviceMonitorSelector:
     matchLabels:
-      prometheus: appstudio-kcp-workload
+      prometheus: appstudio-workload
   ruleNamespaceSelector:
     matchLabels:
       openshift.io/workload-monitoring: "true"
@@ -53,8 +49,8 @@ spec:
         storageClassName: gp2
   version: v2.39.1
   volumeMounts:
-    - mountPath: /etc/prometheus/tls
-      name: secret-prometheus-oauth2-tls
+  - mountPath: /etc/prometheus/tls
+    name: secret-prometheus-oauth2-tls
   volumes:
   - name: secret-prometheus-oauth2-tls
     secret:
@@ -111,7 +107,7 @@ spec:
       runAsNonRoot: true
       allowPrivilegeEscalation: false
       capabilities:
-        drop: [ALL] 
+        drop: [ALL]
       seccompProfile:
         type: RuntimeDefault
     terminationMessagePath: /dev/termination-log
@@ -153,14 +149,13 @@ metadata:
   namespace: appstudio-workload-monitoring
   name: deadmanssnitch
   labels:
-    prometheus: appstudio-kcp-workload
+    prometheus: appstudio-workload
     role: alert-rules
 spec:
   groups:
   - name: deadmanssnitch
     rules:
     - alert: SnitchHeartBeat
-      interval: 1m
       annotations:
         message: "SnitchHeartBeat: appstudio-kcp-workload has not reported to Deadmanssnitch"
         runbook: "https://gitlab.cee.redhat.com/service/app-interface/tree/master/docs/app-sre/sop/prometheus/prometheus-deadmanssnitch.md"
