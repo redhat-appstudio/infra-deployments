@@ -61,6 +61,22 @@ The prerequisites are:
 - You must have `kubectl` and `oc` pointing to an existing OpenShift cluster, that you wish to deploy to. Alternatively, you can configure a local CodeReady Containers VM to deploy to.
 - The script `./hack/setup/install-pre-req.sh` will install these prerequisites for you, if they're not already installed.
 
+**Note - Mac OS**
+
+If you're using Mac OS, make sure you are using GNU version of `sed` (`sed --version` -> **GNU sed 4.8**), openssl `openssl version` >= v3.0.2 and bash (`bash --version` >= **GNU bash, version 5.2**), because some of the configuration scripts in this repository depend on them.
+
+You can install correct versions of these tools with:
+```bash
+brew install openssl@3 gnu-sed bash
+```
+Then make sure the $PATH is updated to point to those tools' binaries (by updating your .bashrc/.zshrc file):
+```bash
+export PATH="/usr/local/opt/openssl@3/bin:$PATH"
+export PATH="/usr/local/opt/gnu-sed/libexec/gnubin:$PATH"
+export PATH="/usr/local/bin/bash:${PATH}"
+```
+After opening a new terminal window you should be using correct versions of these tools by default.
+
 ### Optional: CodeReady Containers Setup
 
 If you don't already have a test OpenShift cluster available, CodeReady Containers is a popular option. It runs a small OpenShift cluster in a single VM on your local workstation.
