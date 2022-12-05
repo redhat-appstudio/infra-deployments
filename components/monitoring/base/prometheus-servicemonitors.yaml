@@ -1,0 +1,125 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  namespace: appstudio-workload-monitoring
+  name: sandbox-host-operator
+  labels:
+    prometheus: appstudio-workload
+spec:
+  endpoints:
+  - bearerTokenSecret:
+      name: "prometheus-k8s-token-xhrjb"
+      key: token
+    interval: 15s
+    scheme: https
+    tlsConfig:
+      insecureSkipVerify: true
+    path: /metrics
+    port: https
+  namespaceSelector:
+    matchNames:
+    - toolchain-host-operator
+  selector:
+    matchLabels:
+      control-plane: "controller-manager"
+      operators.coreos.com/toolchain-host-operator.toolchain-host-operator: ""
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  namespace: appstudio-workload-monitoring
+  name: sandbox-member-operator
+  labels:
+    prometheus: appstudio-workload
+spec:
+  endpoints:
+  - bearerTokenSecret:
+      name: "prometheus-k8s-token-xhrjb"
+      key: token
+    interval: 15s
+    scheme: https
+    tlsConfig:
+      insecureSkipVerify: true
+    path: /metrics
+    port: https
+  namespaceSelector:
+    matchNames:
+    - toolchain-member-operator
+  selector:
+    matchLabels:
+      control-plane: "controller-manager"
+      operators.coreos.com/toolchain-member-operator.toolchain-member-operator: ""
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  namespace: appstudio-workload-monitoring
+  name: spi-operator
+  labels:
+    prometheus: appstudio-workload
+spec:
+  endpoints:
+  - bearerTokenSecret:
+      name: "prometheus-k8s-token-xhrjb"
+      key: token
+    scheme: https
+    tlsConfig:
+      insecureSkipVerify: true
+    path: /metrics
+    port: https
+  namespaceSelector:
+    matchNames:
+    - spi-system
+  selector:
+    matchLabels:
+      control-plane: "controller-manager"
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    control-plane: controller-manager
+    prometheus: appstudio-workload
+  name: release-service
+  namespace: appstudio-workload-monitoring
+spec:
+  endpoints:
+  - path: /metrics
+    port: https
+    scheme: https
+    bearerTokenSecret:
+      name: "prometheus-k8s-token-xhrjb"
+      key: token
+    tlsConfig:
+      insecureSkipVerify: true
+  namespaceSelector:
+    matchNames:
+    - release-service
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  namespace: appstudio-workload-monitoring
+  name: prometheus
+  labels:
+    prometheus: appstudio-workload
+spec:
+  endpoints:
+  - bearerTokenSecret:
+      key: ""
+    interval: 15s
+    path: /metrics
+    port: oauth2-proxy
+    scheme: HTTPS
+    tlsConfig:
+      caFile: /etc/prometheus/tls/tls.crt # volume mounted in the `prometheus` container of the prometheus pods
+      serverName: "prometheus-oauth2.appstudio-workload-monitoring.svc"
+  namespaceSelector:
+    matchNames:
+    - appstudio-workload-monitoring
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: monitoring-workload-in-cluster
