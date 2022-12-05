@@ -1,10 +1,11 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - install-prometheus.yaml
-  - configure-prometheus.yaml
-  - prometheus-view.yaml
-  - grafana-app.yaml
+- install-prometheus.yaml
+- prometheus-view.yaml
+- configure-prometheus.yaml
+- prometheus-servicemonitors.yaml
+- grafana-app.yaml
 
 namespace: "appstudio-workload-monitoring"
 
@@ -22,4 +23,4 @@ secretGenerator:
 - name: grafana-config
   files:
   - grafana.ini=grafana.ini
-  
+
