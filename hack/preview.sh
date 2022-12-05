@@ -20,6 +20,12 @@ if echo "$MY_GIT_REPO_URL" | grep -q redhat-appstudio/infra-deployments; then
     exit 1
 fi
 
+# Do not allow to use default github org
+if [ -z "$MY_GITHUB_ORG" ] || [ "$MY_GITHUB_ORG" == "redhat-appstudio-appdata" ]; then
+    echo "Set MY_GITHUB_ORG environment variable"
+    exit 1
+fi
+
 if ! git diff --exit-code --quiet; then
     echo "Changes in working Git working tree, commit them or stash them"
     exit 1
@@ -76,9 +82,7 @@ oc create -n spi-system secret generic shared-configuration-file --from-file=con
 echo "SPI configured"
 rm $TMP_FILE
 
-if [ -n "$MY_GITHUB_ORG" ]; then
-    $ROOT/hack/util-set-github-org $MY_GITHUB_ORG
-fi
+$ROOT/hack/util-set-github-org $MY_GITHUB_ORG
 
 domain=$(kubectl get ingresses.config.openshift.io cluster --template={{.spec.domain}})
 
