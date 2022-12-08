@@ -45,7 +45,15 @@ rules:
   - rebuiltartifacts
   - systemconfigs
   - tektonwrappers
-  - userconfigs
+  - jbsconfigs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - pipelinesascode.tekton.dev
+  resources:
+  - repositories
   verbs:
   - get
   - list
