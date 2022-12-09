@@ -1,6 +1,35 @@
 #!/bin/bash -e
 
+# Print help message
+function print_help() {
+  echo "Usae: $0 MODE [-t|--toolchain] [-kc|--keycloak] [-h|--help]"
+  echo "  MODE             upstream/preview (default: upstream)"
+  echo "  -t, --toolchain  Install toolchain operators (only in preview mode)"
+  echo "  -kc, --keycloak  Configure the toolchain operator to "
+  echo "  -h, --help       Show this help message and exit"
+}
+
 MODE=$1
+while [[ $# -gt 0 ]]; do
+  key=$1
+  case $key in
+    --toolchain|-t)
+      TOOLCHAIN=true
+      shift
+      ;;
+    --keycloak|-kc)
+      KEYCLOAK=true
+      shift
+      ;;
+    -h|--help)
+      print_help
+      exit 0
+      ;;
+    *)
+      shift
+      ;;
+  esac
+done
 
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/..
 
@@ -165,5 +194,5 @@ case $MODE in
         fi
         ;;
     "preview")
-        $ROOT/hack/preview.sh ;;
+        $ROOT/hack/preview.sh $TOOLCHAIN $KEYCLOAK;;
 esac

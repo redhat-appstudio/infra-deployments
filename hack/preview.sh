@@ -2,6 +2,38 @@
 
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/..
 
+TOOLCHAIN=$1
+KEYCLOAK=$2
+
+if [ -n $TOOLCHAIN ]; then
+  echo "Deploying toolchain"
+  $ROOT/hack/sandbox-development-mode.sh
+
+  if [ -n $KEYCLOAK ]; then
+    echo "Patching toolchain config to use keylcoak installed on the cluster"
+
+    BASE_URL=$(oc get ingresses.config.openshift.io/cluster -o jsonpath={.spec.domain})
+    RHSSO_URL="https://keycloak-appstudio-sso.$BASE_URL"
+
+    oc patch ToolchainConfig/config -n toolchain-host-operator --type=merge --patch-file=/dev/stdin << EOF
+spec:
+  host:
+    registrationService:
+      auth:
+        authClientConfigRaw: '{
+                  "realm": "testrealm",
+                  "auth-server-url": "$RHSSO_URL/auth",
+                  "ssl-required": "nones",
+                  "resource": "sandbox-public",
+                  "clientId": "sandbox-public",
+                  "public-client": true
+                }'
+        authClientLibraryURL: $RHSSO_URL/auth/js/keycloak.js
+        authClientPublicKeysURL: $RHSSO_URL/auth/realms/testrealm/protocol/openid-connect/certs
+EOF
+  fi
+fi
+
 if [ -f $ROOT/hack/preview.env ]; then
     source $ROOT/hack/preview.env
 fi
@@ -226,3 +258,9 @@ while :; do
   jq -r '.message' <<< "$STATE"
   sleep $INTERVAL
 done
+
+
+if [ -n $KEYCLOAK ] && [ -n $TOOLCHAIN ]; then
+  echo "Restarting toolchain registration service to pick up keycloak's certs."
+  oc delete deployment/registration-service -n toolchain-host-operator
+fi
