@@ -5,7 +5,7 @@ function print_help() {
   echo "Usae: $0 MODE [-t|--toolchain] [-kc|--keycloak] [-h|--help]"
   echo "  MODE             upstream/preview (default: upstream)"
   echo "  -t, --toolchain  Install toolchain operators (only in preview mode)"
-  echo "  -kc, --keycloak  Configure the toolchain operator to "
+  echo "  -kc, --keycloak  Configure the toolchain operator to use keycloak deployed on the cluster"
   echo "  -h, --help       Show this help message and exit"
 }
 
