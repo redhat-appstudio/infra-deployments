@@ -108,23 +108,6 @@ kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: component-maintainers
-  namespace: pvc-cleaner
-subjects:
-  - kind: User
-    apiGroup: rbac.authorization.k8s.io
-    name: Michkov
-  - kind: User
-    apiGroup: rbac.authorization.k8s.io
-    name: AndrienkoAleksandr
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: component-maintainer
----
-kind: RoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: component-maintainers
   namespace: build-service
 subjects:
   - kind: User
