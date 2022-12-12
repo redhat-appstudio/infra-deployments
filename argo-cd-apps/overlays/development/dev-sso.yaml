@@ -1,16 +1,16 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: appstudio-sso
+  name: dev-sso
 
 spec:
   project: default
 
   source:
-    path: components/rhsso
+    path: components/dev-sso
     repoURL: https://github.com/redhat-appstudio/infra-deployments.git
   destination:
-    namespace: appstudio-sso
+    namespace: dev-sso
     server: https://kubernetes.default.svc
 
   syncPolicy:

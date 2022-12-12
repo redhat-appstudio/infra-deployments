@@ -103,7 +103,7 @@ export KUBECONFIG_TEST="/tmp/kubeconfig"
 curl https://raw.githubusercontent.com/redhat-appstudio/e2e-tests/pre-kcp/scripts/provision-openshift-user.sh | bash -s
 export KUBECONFIG="${KUBECONFIG_TEST}"
 
-timeout --foreground 15m "$WORKSPACE"/hack/bootstrap-cluster.sh preview --keycloak --toolchain
+timeout --foreground 15m "$WORKSPACE"/hack/bootstrap-cluster.sh preview
 
 prepareWebhookVariables
 createQuayPullSecrets

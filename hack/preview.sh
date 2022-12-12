@@ -13,7 +13,7 @@ if [ -n $TOOLCHAIN ]; then
     echo "Patching toolchain config to use keylcoak installed on the cluster"
 
     BASE_URL=$(oc get ingresses.config.openshift.io/cluster -o jsonpath={.spec.domain})
-    RHSSO_URL="https://keycloak-appstudio-sso.$BASE_URL"
+    RHSSO_URL="https://keycloak-dev-sso.$BASE_URL"
 
     oc patch ToolchainConfig/config -n toolchain-host-operator --type=merge --patch-file=/dev/stdin << EOF
 spec:
@@ -263,4 +263,9 @@ done
 if [ -n $KEYCLOAK ] && [ -n $TOOLCHAIN ]; then
   echo "Restarting toolchain registration service to pick up keycloak's certs."
   oc delete deployment/registration-service -n toolchain-host-operator
+  # Wait for the new deployment to be available
+  while [[ "$(oc get deployment/registration-service -n toolchain-host-operator -o jsonpath='{.status.conditions[?(@.type=="Available")].status}')" != "True" ]]; do
+    echo "Waiting for registration-service to be available again"
+    sleep 2
+  done
 fi

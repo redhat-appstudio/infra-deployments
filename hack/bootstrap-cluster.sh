@@ -11,7 +11,6 @@ function print_help() {
   echo "Example usage: \`$0 preview --toolchain --keycloak"
 }
 
-MODE=$1
 while [[ $# -gt 0 ]]; do
   key=$1
   case $key in
@@ -21,6 +20,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --keycloak|-kc)
       KEYCLOAK=true
+      shift
+      ;;
+    preview|upstream)
+      MODE=$1
       shift
       ;;
     -h|--help)
