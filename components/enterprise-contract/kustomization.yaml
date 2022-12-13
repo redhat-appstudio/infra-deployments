@@ -11,6 +11,15 @@ resources:
 - https://raw.githubusercontent.com/hacbs-contract/enterprise-contract-controller/1985cbeddf7a803ab51597cae8cf4bfeca13acb4/config/rbac/enterprisecontractpolicy_viewer_role.yaml
 - https://raw.githubusercontent.com/hacbs-contract/enterprise-contract-controller/1985cbeddf7a803ab51597cae8cf4bfeca13acb4/config/rbac/enterprisecontractpolicy_editor_role.yaml
 
+generatorOptions:
+  disableNameSuffixHash: true
+
+configMapGenerator:
+- name: ec-defaults
+  namespace: enterprise-contract-service
+  literals:
+  - verify_ec_task_bundle=quay.io/hacbs-contract/ec-task-bundle:a98163a138491ba91ffce4e1f1853e3a52943f1e
+
 images:
 - name: quay.io/redhat-appstudio/enterprise-contract-controller
   newName: quay.io/redhat-appstudio/enterprise-contract-controller
