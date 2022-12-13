@@ -5,11 +5,11 @@ ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/..
 TOOLCHAIN=$1
 KEYCLOAK=$2
 
-if [ -n $TOOLCHAIN ]; then
+if [ -n "$TOOLCHAIN" ]; then
   echo "Deploying toolchain"
-  $ROOT/hack/sandbox-development-mode.sh
+  "$ROOT/hack/sandbox-development-mode.sh"
 
-  if [ -n $KEYCLOAK ]; then
+  if [ -n "$KEYCLOAK" ]; then
     echo "Patching toolchain config to use keylcoak installed on the cluster"
 
     BASE_URL=$(oc get ingresses.config.openshift.io/cluster -o jsonpath={.spec.domain})
@@ -260,12 +260,18 @@ while :; do
 done
 
 
-if [ -n $KEYCLOAK ] && [ -n $TOOLCHAIN ]; then
+if [ -n "$KEYCLOAK" ] && [ -n "$TOOLCHAIN" ]; then
   echo "Restarting toolchain registration service to pick up keycloak's certs."
   oc delete deployment/registration-service -n toolchain-host-operator
   # Wait for the new deployment to be available
-  while [[ "$(oc get deployment/registration-service -n toolchain-host-operator -o jsonpath='{.status.conditions[?(@.type=="Available")].status}')" != "True" ]]; do
-    echo "Waiting for registration-service to be available again"
-    sleep 2
-  done
+  timeout --foreground 5m bash  <<- EOF
+		while [[ "$(oc get deployment/registration-service -n toolchain-host-operator -o jsonpath='{.status.conditions[?(@.type=="Available")].status}')" != "True" ]]; do 
+			echo "Waiting for registration-service to be available again"
+			sleep 2
+		done
+		EOF
+  if [ $? -ne 0 ]; then
+	  echo "Timed out waiting for registration-service to be available"
+	  exit 1
+  fi
 fi
