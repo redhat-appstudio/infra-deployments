@@ -123,6 +123,8 @@ SPI Vault instance has to be manually initialized. There is a script to help wit
 
 ### Optional: Install Toolchain (Sandbox) Operators
 
+This part is automated if you use `--toolchain` parameter of `hack/bootstrap-cluster.sh`
+
 There are two scripts which you can use:
 
 - `./hack/sandbox-development-mode.sh` for development mode
@@ -137,6 +139,8 @@ Both of the scripts will:
     - Proxy URL.
 
 #### SSO
+
+This part is automated if you use `--toolchain --keycloak` parameters of `hack/bootstrap-cluster.sh`. These parameters install toolchain operators (`./hack/sandbox-development-mode.sh`) and configure them to use keycloak, which is automatically deployed as part of `development` overlay.
 
 In development mode, the Toolchain Operators are configured to use Keycloak instance that is internally used by the Sandbox team. If you want to reconfigure it to use your own Keycloak instance, you need to add a few parameters to `ToolchainConfig` resource in `toolchain-host-operator` namespace.
 This is an example of the needed parameters and their values:

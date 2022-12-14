@@ -1,0 +1,37 @@
+apiVersion: keycloak.org/v1alpha1
+kind: KeycloakRealm
+metadata:
+  name: testrealm
+spec:
+  instanceSelector:
+    matchLabels:
+      app.kubernetes.io/instance: dev-sso
+  realm:
+    clients:
+      - enabled: true
+        redirectUris:
+          - '*'
+        clientId: sandbox-public
+        name: sandbox-public
+        implicitFlowEnabled: false
+        publicClient: true
+        standardFlowEnabled: true
+        protocol: openid-connect
+        webOrigins:
+          - '*'
+        directAccessGrantsEnabled: false
+    displayName: Appstudio Realm
+    enabled: true
+    id: rh-sso
+    loginTheme: rh-sso
+    realm: testrealm
+    users:
+      - credentials:
+          - type: password
+            value: user1
+        email: user1@user.us
+        emailVerified: true
+        enabled: true
+        firstName: user1
+        id: user1
+        username: user1
