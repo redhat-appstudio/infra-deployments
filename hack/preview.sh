@@ -2,6 +2,38 @@
 
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/..
 
+TOOLCHAIN=$1
+KEYCLOAK=$2
+
+if [ -n "$TOOLCHAIN" ]; then
+  echo "Deploying toolchain"
+  "$ROOT/hack/sandbox-development-mode.sh"
+
+  if [ -n "$KEYCLOAK" ]; then
+    echo "Patching toolchain config to use keylcoak installed on the cluster"
+
+    BASE_URL=$(oc get ingresses.config.openshift.io/cluster -o jsonpath={.spec.domain})
+    RHSSO_URL="https://keycloak-dev-sso.$BASE_URL"
+
+    oc patch ToolchainConfig/config -n toolchain-host-operator --type=merge --patch-file=/dev/stdin << EOF
+spec:
+  host:
+    registrationService:
+      auth:
+        authClientConfigRaw: '{
+                  "realm": "testrealm",
+                  "auth-server-url": "$RHSSO_URL/auth",
+                  "ssl-required": "nones",
+                  "resource": "sandbox-public",
+                  "clientId": "sandbox-public",
+                  "public-client": true
+                }'
+        authClientLibraryURL: $RHSSO_URL/auth/js/keycloak.js
+        authClientPublicKeysURL: $RHSSO_URL/auth/realms/testrealm/protocol/openid-connect/certs
+EOF
+  fi
+fi
+
 if [ -f $ROOT/hack/preview.env ]; then
     source $ROOT/hack/preview.env
 fi
@@ -39,11 +71,12 @@ fi
 git checkout -b $PREVIEW_BRANCH
 
 # patch argoCD applications to point to your fork
-oc kustomize $ROOT/argo-cd-apps/base/ | yq e "select(.spec.source.repoURL==\"https://github.com/redhat-appstudio/infra-deployments.git\")
-  | del(.spec.destination, .spec.syncPolicy, .spec.project, .spec.source.path)
+oc kustomize $ROOT/argo-cd-apps/overlays/development | yq e "select(.spec.source.repoURL==\"https://github.com/redhat-appstudio/infra-deployments.git\")
+  | del(.spec.destination, .spec.syncPolicy, .spec.project, .spec.source.path, .metadata.namespace)
   | .spec.source.repoURL=\"$MY_GIT_REPO_URL\"
   | .spec.source.targetRevision=\"$PREVIEW_BRANCH\"
   | .metadata.finalizers=[\"resources-finalizer.argocd.argoproj.io\"]" > $ROOT/argo-cd-apps/overlays/development/repo-overlay.yaml
+
 
 # delete argoCD applications which are not in DEPLOY_ONLY env var if it's set
 if [ -n "$DEPLOY_ONLY" ]; then
@@ -225,3 +258,20 @@ while :; do
   jq -r '.message' <<< "$STATE"
   sleep $INTERVAL
 done
+
+
+if [ -n "$KEYCLOAK" ] && [ -n "$TOOLCHAIN" ]; then
+  echo "Restarting toolchain registration service to pick up keycloak's certs."
+  oc delete deployment/registration-service -n toolchain-host-operator
+  # Wait for the new deployment to be available
+  timeout --foreground 5m bash  <<- EOF
+		while [[ "$(oc get deployment/registration-service -n toolchain-host-operator -o jsonpath='{.status.conditions[?(@.type=="Available")].status}')" != "True" ]]; do 
+			echo "Waiting for registration-service to be available again"
+			sleep 2
+		done
+		EOF
+  if [ $? -ne 0 ]; then
+	  echo "Timed out waiting for registration-service to be available"
+	  exit 1
+  fi
+fi
