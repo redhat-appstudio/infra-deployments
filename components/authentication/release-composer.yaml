@@ -1,0 +1,51 @@
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: release-composer-releasestrategy
+subjects:
+  - kind: Group
+    apiGroup: rbac.authorization.k8s.io
+    name: Release team
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: releasestrategy-editor-role
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: release-composer-releaseplanadmission
+subjects:
+  - kind: Group
+    apiGroup: rbac.authorization.k8s.io
+    name: Release team
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: releaseplanadmission-editor-role
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: release-composer-releaseplan
+subjects:
+  - kind: Group
+    apiGroup: rbac.authorization.k8s.io
+    name: Release team
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: releaseplan-editor-role
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: release-composer-release
+subjects:
+  - kind: Group
+    apiGroup: rbac.authorization.k8s.io
+    name: Release team
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: release-editor-role
