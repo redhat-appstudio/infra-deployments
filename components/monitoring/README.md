@@ -1,10 +1,10 @@
 ###On boarding to services to Monitoring
 
 #1. Metrics exporter services
-a. The intended service should export the metrics from the application so that prometheus is able to understand it. https://prometheus.io/docs/instrumenting/writing_exporters/
-b. Exported port, service, route should be accessible to prometheus service.
-
-For example https://github.com/redhat-appstudio/service-provider-integration-operator/blob/main/config/rbac/auth_proxy_service.yaml
+a. The intended service should export the metrics from the application so that prometheus is able to understand it. 
+b. For refernce https://prometheus.io/docs/instrumenting/writing_exporters/
+c. Exported port, service, route should be accessible to prometheus service.
+[Here](https://github.com/redhat-appstudio/service-provider-integration-operator/blob/main/config/rbac/auth_proxy_service.yaml) is example for the spi-system
 ```yaml
 apiVersion: v1
 kind: Service
