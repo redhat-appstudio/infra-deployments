@@ -8,7 +8,7 @@
 
     c. Exported port, service, route should be accessible to prometheus service.
 
-    [Here](https://github.com/redhat-appstudio/service-provider-integration-operator/blob/main/config/rbac/auth_proxy_service.yaml) is example for the spi-system
+  - [Here](https://github.com/redhat-appstudio/service-provider-integration-operator/blob/main/config/rbac/auth_proxy_service.yaml) is example for the spi-system
 
 ```yaml
 apiVersion: v1
@@ -36,6 +36,7 @@ spec:
   - If servicemonitor is for prometheus it self
 
       - Add servicemonitor declaration for scrapping the intended service
+      - [Here](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/monitoring/prometheus/base/prometheus-servicemonitors.yaml) is an example servicemonitor for prometheus itself
       
       ```yaml
       apiVersion: monitoring.coreos.com/v1
@@ -63,7 +64,7 @@ spec:
           matchLabels:
             app.kubernetes.io/instance: monitoring-workload-in-cluster
       ```
-      - [Here](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/monitoring/prometheus/base/prometheus-servicemonitors.yaml) is an example servicemonitor for prometheus itself
+     
       
 
   - If the servicemonitor is for getting other components added to prometheus monitoring
@@ -109,8 +110,7 @@ spec:
     a. Prometheus should have view access to the metrics exporter service namespace
 
     b. Add the Rolebinding to give prometheus view access. 
-    
-    [Here](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/monitoring/prometheus/base/prometheus-view.yaml) is an example providing prometheus view access to the cluster
+  - [Here](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/monitoring/prometheus/base/prometheus-view.yaml) is an example providing prometheus view access to the cluster
 
   ```yaml
   kind: ClusterRoleBinding
@@ -137,4 +137,5 @@ spec:
 
     d. Export the dashboard definition in JSON format. (At the top of the screen, the icon with 3 dots lets you "Share dashboard or panel". Select Export... Save to file.)
 
-    e.  Store the dashboard definition in git, in infra-deployments. [Here](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/monitoring/grafana/base/dashboards/example.json) is an example for the default dashboard.
+    e.  Store the dashboard definition in git, in infra-deployments. 
+  - [Here](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/monitoring/grafana/base/dashboards/example.json) is an example for the default dashboard.
