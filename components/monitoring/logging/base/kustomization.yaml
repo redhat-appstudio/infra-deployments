@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- fluent-bit-cluster-info-cm.yaml
+- fluent-bit-sa-config.yaml
+- fluent-bit-state-pvc.yaml
+- fluent-bit-setup.yaml
+
+namespace: "appstudio-workload-monitoring"
+
+generatorOptions:
+  disableNameSuffixHash: true
