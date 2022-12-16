@@ -1,13 +1,12 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: monitoring-workload-in-cluster
-
+  name: monitoring-workload-grafana
 spec:
   project: default
 
   source:
-    path: components/monitoring/base
+    path: components/monitoring/grafana/base
     repoURL: https://github.com/redhat-appstudio/infra-deployments.git
     targetRevision: main
 
