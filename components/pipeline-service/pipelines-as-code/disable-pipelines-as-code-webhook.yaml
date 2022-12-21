@@ -1,0 +1,17 @@
+---
+# See https://issues.redhat.com/browse/PLNSRVCE-946
+# TL;DR: We want to allow multiple Repository CRs
+# to reference the same repository.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pipelines-as-code-webhook
+  namespace: pipelines-as-code
+spec:
+  replicas: 0
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: validation.pipelinesascode.tekton.dev
+$patch: delete
