@@ -4,11 +4,11 @@
 
     a. The intended service should export the metrics from the application so that prometheus is able to understand it. 
 
-    b. For refernce, see https://prometheus.io/docs/instrumenting/writing_exporters/
+    b. For reference, see [Writing Exporters](https://prometheus.io/docs/instrumenting/writing_exporters/).
 
     c. Exported port, service, route should be accessible to prometheus service.
 
-  - [Here](https://github.com/redhat-appstudio/service-provider-integration-operator/blob/main/config/rbac/auth_proxy_service.yaml) is example for the spi-system
+  - [Here](https://github.com/redhat-appstudio/service-provider-integration-operator/blob/main/config/rbac/auth_proxy_service.yaml) is an example for the spi-system
 
 ```yaml
 apiVersion: v1
@@ -31,11 +31,12 @@ spec:
 
 #### 2. Service monitors
 
-    a. Adding the servicemonitor decaration
+    a. Adding the servicemonitor declaration
 
-  - If servicemonitor is for prometheus it self
+  - If servicemonitor is for prometheus itself
 
-      - Add servicemonitor declaration for scrapping the intended service
+      - Add the servicemonitor declaration for scraping the prometheus service
+
       - [Here](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/monitoring/prometheus/base/prometheus-servicemonitors.yaml) is an example servicemonitor for prometheus itself
       
       ```yaml
@@ -69,7 +70,7 @@ spec:
 
   - If the servicemonitor is for getting other components added to prometheus monitoring
       
-      - Add a sevicemonitor decalration for scrapping the intended service
+      - Add a sevicemonitor decalration for scraping the intended service
       
           ```yaml
           apiVersion: monitoring.coreos.com/v1
@@ -78,14 +79,14 @@ spec:
             labels:
               prometheus: appstudio-workload <label getting discovered by prometheus-operator>
             name: release-service
-            namespace: release-service `<name of the namespace the service is in>`
+            namespace: release-service <name of the namespace the service is in>
           spec:
             endpoints:
             - path: /metrics
               port: https
               scheme: https
               bearerTokenSecret:
-                name: `<secret for accessing the endpoint path on the service>`
+                name: <secret for accessing the endpoint path on the service>
                 key: token
               tlsConfig:
                 insecureSkipVerify: true
@@ -97,7 +98,7 @@ spec:
                 control-plane: controller-manager
           ```
 
-      - Note: `make sure the namespace` is the namespace for the intended service itself, in this case `release-service`.
+      - Note: The namespace of the ServiceMonitor matches the namespace for the service we are scraping, in this case, `release-service`.
 
     b. It should have the accessible port and route to the service (or service url)
 
@@ -129,13 +130,19 @@ spec:
 
 #### 4. Grafana dashboards - manual export
 
-    a. Create a new folder in grafana for your service. (In the left nav, + Create Folder)
+    a. Create a new folder in [grafana](https://grafana-appstudio-workload-monitoring.apps.appstudio-stage.x99m.p1.openshiftapps.com) for your service. (In the left nav, + Create Folder)
 
-    b. Create a dashboard for your team's view on your service's service level indicators. (After navigating to your folder, + Create Dashboard)
+    b. [Create a dashboard](https://grafana.com/docs/grafana/v9.0/dashboards/) for your team's view of your service's Service Level Indicators. (After navigating to your folder, + Create Dashboard)
 
     c. Add tiles on the dashboard to track your initial set of service level indicators. If you correctly added your servicemonitor to the stage Prometheus datasource, it will show up in the Query list when you edit a tile.
 
     d. Export the dashboard definition in JSON format. (At the top of the screen, the icon with 3 dots lets you "Share dashboard or panel". Select Export... Save to file.)
 
     e.  Store the dashboard definition in git, in infra-deployments. 
+
+    f. Add your dashboard to the [kustomization file](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/monitoring/grafana/base/kustomization.yaml#L15) to automatically add it to future deployments.
+
   - [Here](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/monitoring/grafana/base/dashboards/example.json) is an example for the default dashboard.
+  
+    
+
