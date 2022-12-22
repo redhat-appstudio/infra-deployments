@@ -12,9 +12,8 @@ resources:
 - tekton-chains-controller-shared-secrets-rolebinding.yaml
 
 patchesStrategicMerge:
-#
-# Add some chains configuration
-- chains-config.yaml
+# We need to manage chains-config from enterprise-contract
+- remove-chains-config.yaml
 #
 # Remove runAsUser and runAsGroup from security context
 - security-context-fix.yaml

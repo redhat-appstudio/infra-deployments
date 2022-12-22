@@ -78,7 +78,7 @@ Execute the following commands to update the chains configmap to allow chains to
 
     # patch the configmap
     $ kubectl patch configmap chains-config -n tekton-chains \
-    -p='{"data":{"transparency.url": "http://rekor.enterprise-contract-service.svc:3000"}}'
+    -p='{"data":{"transparency.url": "http://rekor-server.rekor.svc.cluster.local"}}'
 
 ### External access for local cluster rekor server
 

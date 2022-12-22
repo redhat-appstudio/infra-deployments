@@ -3,6 +3,9 @@ kind: ConfigMap
 metadata:
   name: chains-config
   namespace: tekton-chains
+  labels:
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/part-of: tekton-chains
 
 data:
   # See https://tekton.dev/docs/chains/config/

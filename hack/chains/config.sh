@@ -84,8 +84,8 @@ case "$1" in
     ;;
 
   rekor-local )
-    REKOR_SERVER=$(kubectl get ingress -n enterprise-contract-service -o jsonpath='{.items[0].spec.rules[0].host}')
-    $0 "transparency.url: \"https://$REKOR_SERVER\"" $2
+    REKOR_SERVER=http://rekor-server.rekor.svc.cluster.local
+    $0 "transparency.url: \"$REKOR_SERVER\"" $2
 
     ;;
 

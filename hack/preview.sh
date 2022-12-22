@@ -71,10 +71,13 @@ fi
 git checkout -b $PREVIEW_BRANCH
 
 # patch argoCD applications to point to your fork
-oc kustomize $ROOT/argo-cd-apps/overlays/development | yq e "select(.spec.source.repoURL==\"https://github.com/redhat-appstudio/infra-deployments.git\")
-  | del(.spec.destination, .spec.syncPolicy, .spec.project, .spec.source.path, .metadata.namespace)
-  | .spec.source.repoURL=\"$MY_GIT_REPO_URL\"
-  | .spec.source.targetRevision=\"$PREVIEW_BRANCH\"
+oc kustomize $ROOT/argo-cd-apps/overlays/development | yq e "select(.spec.source.repoURL==\"https://github.com/redhat-appstudio/infra-deployments.git\" or .spec.template.spec.source.repoURL==\"https://github.com/redhat-appstudio/infra-deployments.git\")
+  | del(.metadata.namespace, .spec.destination, .spec.syncPolicy, .spec.project, .spec.source.path, .spec.template.spec.destination, .spec.template.spec.syncPolicy, .spec.template.spec.project, .spec.template.spec.source.path)
+  | (.spec | select(has(\"source\")) | .source.repoURL)=\"$MY_GIT_REPO_URL\"
+  | (.spec | select(has(\"source\")) | .source.targetRevision)=\"$PREVIEW_BRANCH\"
+  | (.spec | select(has(\"template\")) | .template.spec.source.repoURL)=\"$MY_GIT_REPO_URL\"
+  | (.spec | select(has(\"template\")) | .template.spec.source.targetRevision)=\"$PREVIEW_BRANCH\"
+  | (.spec | select(has(\"template\")) | parent | .metadata.namespace)=\"openshift-gitops\"
   | .metadata.finalizers=[\"resources-finalizer.argocd.argoproj.io\"]" > $ROOT/argo-cd-apps/overlays/development/repo-overlay.yaml
 
 
@@ -131,10 +134,6 @@ if [ -n "$DOCKER_IO_AUTH" ]; then
     oc secrets link pipeline docker-io-pull
     rm $AUTH
 fi
-
-rekor_server="rekor.$domain"
-sed -i.bak "s/rekor-server.enterprise-contract-service.svc/$rekor_server/" $ROOT/argo-cd-apps/base/enterprise-contract.yaml && rm $ROOT/argo-cd-apps/base/enterprise-contract.yaml.bak
-yq -i e ".data |= .\"transparency.url\"=\"https://$rekor_server\"" $ROOT/components/pipeline-service/tekton-chains/chains-config.yaml
 
 [ -n "${BUILD_SERVICE_IMAGE_REPO}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/redhat-appstudio/build-service\")) |=.newName=\"${BUILD_SERVICE_IMAGE_REPO}\"" $ROOT/components/build-service/kustomization.yaml
 [ -n "${BUILD_SERVICE_IMAGE_TAG}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/redhat-appstudio/build-service\")) |=.newTag=\"${BUILD_SERVICE_IMAGE_TAG}\"" $ROOT/components/build-service/kustomization.yaml
@@ -265,7 +264,7 @@ if [ -n "$KEYCLOAK" ] && [ -n "$TOOLCHAIN" ]; then
   oc delete deployment/registration-service -n toolchain-host-operator
   # Wait for the new deployment to be available
   timeout --foreground 5m bash  <<- "EOF"
-		while [[ "$(oc get deployment/registration-service -n toolchain-host-operator -o jsonpath='{.status.conditions[?(@.type=="Available")].status}')" != "True" ]]; do 
+		while [[ "$(oc get deployment/registration-service -n toolchain-host-operator -o jsonpath='{.status.conditions[?(@.type=="Available")].status}')" != "True" ]]; do
 			echo "Waiting for registration-service to be available again"
 			sleep 2
 		done
