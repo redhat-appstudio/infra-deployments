@@ -4,6 +4,12 @@ resources:
 - https://github.com/redhat-appstudio/jvm-build-service/deploy/operator/base?ref=dd87015360c06fe6d194f9cb5602ed1f7f570472
 - https://github.com/redhat-appstudio/jvm-build-service/deploy/operator/config?ref=dd87015360c06fe6d194f9cb5602ed1f7f570472
 
+# Skip applying the jvm-build-service operands (SystemConfig) while the jvm-build-service operator is being installed.
+# See more information about this option, here:
+# https://argo-cd.readthedocs.io/en/stable/user-guide/sync-options/#skip-dry-run-for-new-custom-resources-types
+commonAnnotations:
+  argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+
 namespace: jvm-build-service
 
 images:
