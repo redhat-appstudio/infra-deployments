@@ -1,7 +1,8 @@
+---
+title: StoneSoup Build System
+---
 
-# App Studio/HACBS Build System
-
-The App Studio/HACBS Build System is composed of the following components:
+The StoneSoup Build System is composed of the following components:
 
 - [OpenShift Pipelines](https://docs.openshift.com/container-platform/4.10/cicd/pipelines/understanding-openshift-pipelines.html)
 - [Tekton Chains](https://github.com/tektoncd/chains)
@@ -24,9 +25,9 @@ To try out a pre-configured, follow these steps.
 | 2.  Run build-deploy example with a quarkus app. | MY_QUAY_USER=mkovarik ./hack/build/build-via-appstudio.sh https://github.com/devfile-samples/devfile-sample-code-with-quarkus
 | 3.  View your build on the OpenShift Console under the pipelines page or view the logs via CLI. | `tkn pipelinerun logs`      |
 
-## Tests via AppStudio
+## Tests via StoneSoup
 
-To validate execution via AppStudio you can run `./hack/build/build-via-appstudio.sh` script which sets credentials and AppStudio application and components. Without parameters it creates example components.
+To validate execution via StoneSoup you can run `./hack/build/build-via-appstudio.sh` script which sets credentials and StoneSoup application and components. Without parameters it creates example components.
 
 ```
 export MY_QUAY_USER=mkovarik
