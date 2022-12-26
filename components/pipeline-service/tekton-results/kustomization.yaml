@@ -2,7 +2,7 @@ resources:
 - allow-argocd-to-manage.yaml
 - tekton-pipelines-namespace.yaml
 - db-execution-configmap.yaml
-- https://github.com/tektoncd/results/releases/download/v0.4.0/release.yaml
+- https://github.com/openshift-pipelines/tektoncd-results.git/config?ref=18f7ee98d3f95d58d061a6ccee18fbfffeeae8f7
 - route.yaml
 - ingress-annotation-role.yaml
 - ingress-annotation-sa.yaml
@@ -10,9 +10,12 @@ resources:
 - ingress-annotation-job.yaml
 
 images:
-- name: gcr.io/tekton-releases/github.com/tektoncd/results/cmd/api:v0.4.0
-  newName: quay.io/redhat-appstudio/tekton-results-no-auth
-  newTag: stable
+- name: ko://github.com/tektoncd/results/cmd/api
+  newName: quay.io/redhat-appstudio/tekton-results-api
+  newTag: 18f7ee98d3f95d58d061a6ccee18fbfffeeae8f7
+- name: ko://github.com/tektoncd/results/cmd/watcher
+  newName: quay.io/redhat-appstudio/tekton-results-watcher
+  newTag: 18f7ee98d3f95d58d061a6ccee18fbfffeeae8f7
 
 patchesStrategicMerge:
 - patch-postgres-redhat-statefulset.yaml
