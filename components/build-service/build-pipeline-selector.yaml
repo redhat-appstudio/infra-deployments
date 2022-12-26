@@ -8,26 +8,17 @@ spec:
       pipelineRef:
         name: docker-build
         bundle: quay.io/redhat-appstudio-tekton-catalog/pipeline-docker-build:894f0ee2bcbe317c3027d232dbfb68a2dd7e86f6
-      pipelineParams:
-        - name: hacbs
-          value: "true"
       when:
         dockerfile: true
     - name: Java
       pipelineRef:
         name: java-builder
         bundle: quay.io/redhat-appstudio-tekton-catalog/pipeline-java-builder:894f0ee2bcbe317c3027d232dbfb68a2dd7e86f6
-      pipelineParams:
-        - name: hacbs
-          value: "true"
       when:
         language: java
     - name: NodeJS
       pipelineRef:
         name: nodejs-builder
         bundle: quay.io/redhat-appstudio-tekton-catalog/pipeline-nodejs-builder:894f0ee2bcbe317c3027d232dbfb68a2dd7e86f6
-      pipelineParams:
-        - name: hacbs
-          value: "true"
       when:
         language: nodejs,node
