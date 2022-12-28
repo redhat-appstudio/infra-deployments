@@ -41,7 +41,11 @@ oc delete clusterserviceversions.operators.coreos.com --all -n openshift-operato
 
 echo
 echo "Removing custom projects"
-oc delete project enterprise-contract-service gitops quality-dashboard
+oc delete project enterprise-contract-service gitops quality-dashboard internal-services application-api
+
+echo
+echo "Removing dev-sso"
+oc delete project dev-sso || :
 
 echo
 echo "Remove Toolchain (Sandbox) Operators with the user data:"
