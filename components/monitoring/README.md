@@ -2,11 +2,12 @@
 
 ### 1. Metrics exporter services
 
-    a. The intended service should export the metrics from the application so that prometheus is able to understand it. 
+  - The intended service should export the metrics from the application so that prometheus is able to understand it. 
 
-    b. For reference, see [Writing Exporters](https://prometheus.io/docs/instrumenting/writing_exporters/).
+  - For reference, see 
+    [Writing Exporters](https://prometheus.io/docs/instrumenting/writing_exporters)
 
-    c. Exported port, service, route should be accessible to prometheus service.
+  - Exported port, service, route should be accessible to prometheus service.
 
   - [Here](https://github.com/redhat-appstudio/service-provider-integration-operator/blob/main/config/rbac/auth_proxy_service.yaml) is an example for the spi-system
 
@@ -31,9 +32,9 @@ spec:
 
 #### 2. Service monitors
 
-    a. Adding the servicemonitor declaration
+  - Adding the servicemonitor declaration
 
-  - If servicemonitor is for prometheus itself
+    - If servicemonitor is for prometheus itself
 
       - Add the servicemonitor declaration for scraping the prometheus service
 
@@ -100,17 +101,17 @@ spec:
 
       - Note: The namespace of the ServiceMonitor matches the namespace for the service we are scraping, in this case, `release-service`.
 
-    b. It should have the accessible port and route to the service (or service url)
+  - It should have the accessible port and route to the service (or service url)
 
-    c. Access token or service accounts as required.
+  - Access token or service accounts as required.
 
-    d. Use label selectors to select the desired service uniquely in the cluster.
+  - Use label selectors to select the desired service uniquely in the cluster.
 
 ### 3. View access to the exporter service for Prometheus
 
-    a. Prometheus should have view access to the metrics exporter service namespace
+  - Prometheus should have view access to the metrics exporter service namespace
 
-    b. Add the Rolebinding to give prometheus view access. 
+  - Add the Rolebinding to give prometheus view access. 
   - [Here](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/monitoring/prometheus/base/prometheus-view.yaml) is an example providing prometheus view access to the cluster
 
   ```yaml
@@ -130,17 +131,17 @@ spec:
 
 #### 4. Grafana dashboards - manual export
 
-    a. Create a new folder in [grafana](https://grafana-appstudio-workload-monitoring.apps.appstudio-stage.x99m.p1.openshiftapps.com) for your service. (In the left nav, + Create Folder)
+  - Create a new folder in [grafana](https://grafana-appstudio-workload-monitoring.apps.appstudio-stage.x99m.p1.openshiftapps.com) for your service. (In the left nav, + Create Folder)
 
-    b. [Create a dashboard](https://grafana.com/docs/grafana/v9.0/dashboards/) for your team's view of your service's Service Level Indicators. (After navigating to your folder, + Create Dashboard)
+  - [Create a dashboard](https://grafana.com/docs/grafana/v9.0/dashboards/) for your team's view of your service's Service Level Indicators. (After navigating to your folder, + Create Dashboard)
 
-    c. Add tiles on the dashboard to track your initial set of service level indicators. If you correctly added your servicemonitor to the stage Prometheus datasource, it will show up in the Query list when you edit a tile.
+  - Add tiles on the dashboard to track your initial set of service level indicators. If you correctly added your servicemonitor to the stage Prometheus datasource, it will show up in the Query list when you edit a tile.
 
-    d. Export the dashboard definition in JSON format. (At the top of the screen, the icon with 3 dots lets you "Share dashboard or panel". Select Export... Save to file.)
+  - Export the dashboard definition in JSON format. (At the top of the screen, the icon with 3 dots lets you "Share dashboard or panel". Select Export... Save to file.)
 
-    e.  Store the dashboard definition in git, in infra-deployments. 
+  -  Store the dashboard definition in git, in infra-deployments. 
 
-    f. Add your dashboard to the [kustomization file](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/monitoring/grafana/base/kustomization.yaml#L15) to automatically add it to future deployments.
+  - Add your dashboard to the [kustomization file](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/monitoring/grafana/base/kustomization.yaml#L15) to automatically add it to future deployments.
 
   - [Here](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/monitoring/grafana/base/dashboards/example.json) is an example for the default dashboard.
   
