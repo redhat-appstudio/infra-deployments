@@ -123,3 +123,25 @@ spec:
   selector:
     matchLabels:
       app.kubernetes.io/instance: monitoring-workload-in-cluster
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  namespace: appstudio-workload-monitoring
+  name: spi-service-monitor
+  labels:
+    prometheus: appstudio-workload
+spec:
+  endpoints:
+    - path: /metrics
+      port: metrics
+      scheme: https
+      bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+      tlsConfig:
+        insecureSkipVerify: true
+  namespaceSelector:
+    matchNames:
+      - spi-system
+  selector:
+    matchLabels:
+      control-plane: "controller-manager"
