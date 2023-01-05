@@ -1,4 +1,6 @@
-# Configuring NFS storage provisioner on Quicklab clusters 
+---
+title: Configuring NFS storage provisioner on Quicklab clusters
+---
 
 This document and script are based on the following documents:
 
@@ -7,7 +9,7 @@ This document and script are based on the following documents:
 
 This procedure will essentially deploy a new storage provisioner to your cluster.
 
-###### Requiremements 
+###### Requirements 
 
 This script can only be executed once:
  

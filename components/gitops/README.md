@@ -1,4 +1,6 @@
-# GitOps Service
+---
+title: GitOps Service
+---
 
 Once the cluster is successfully bootstrapped, create a Namespace with the `argocd.argoproj.io/managed-by: gitops-service-argocd` label, for example:
 
