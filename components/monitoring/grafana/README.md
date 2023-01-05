@@ -1,4 +1,6 @@
-# Installing and configuring Grafana on the control-plane cluster
+---
+title: Installing and configuring Grafana on the control-plane cluster
+---
 
 Note:
 This section uses the **Grafana cluster** term to refer to the cluster on which Grafana is deployed. 

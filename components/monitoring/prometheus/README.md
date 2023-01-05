@@ -1,4 +1,6 @@
-# Installing and configuring Prometheus on the workload clusters
+---
+title: Installing and configuring Prometheus on the workload clusters
+---
 
 Note:
 This section uses the **Prometheus cluster** term to refer to the clusters on which Prometheus is deployed. 
