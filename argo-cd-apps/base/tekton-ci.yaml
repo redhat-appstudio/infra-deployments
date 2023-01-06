@@ -14,6 +14,14 @@ spec:
     namespace: tekton-ci
     server: https://kubernetes.default.svc
 
+
+  ignoreDifferences:
+  - group: ""
+    kind: "ServiceAccount"
+    name: pipeline
+    jqPathExpressions:
+    - .imagePullSecrets[] | select(.name | startswith("pipeline-dockercfg"))
+
   syncPolicy:
     # Comment this out if you want to manually trigger deployments (using the
     # Argo CD Web UI or Argo CD CLI), rather than automatically deploying on
