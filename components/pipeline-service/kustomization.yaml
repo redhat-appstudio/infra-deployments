@@ -14,3 +14,5 @@ resources:
 patchesStrategicMerge:
   # Mount the shared secret in tekton Chains
   - tekton-chains-controller-shared-secret.yaml
+  # Reset securityContext in order to be able to mount csi content
+  - tekton-chains-controller-deployment.yaml
