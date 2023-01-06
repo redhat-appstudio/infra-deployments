@@ -1,4 +1,6 @@
-# Installing and configuring Grafana on the control-plane cluster
+---
+title: Installing and configuring Grafana on the control-plane cluster
+---
 
 Note:
 This section uses the **Grafana cluster** term to refer to the cluster on which Grafana is deployed. 
@@ -48,20 +50,28 @@ A datasource has a name (`DATASOURCE_NAME`), an URL (`PROMETHEUS_URL`) and a tok
 `PROMETHEUS_URL` is obtained from the route created for Prometheus in the `openshift-monitoring` and `appstudio-workload-monitoring` namespaces in the **Prometheus cluster**:
 
 ```
-$ PROMETHEUS_URL=`oc get route/prometheus-k8s -n openshift-monitoring -o json | jq -r '.status.ingress[0].host'`
+$ export PROMETHEUS_URL_OPENSHIFT=`oc get route/prometheus-k8s -n openshift-monitoring -o json | jq -r '.status.ingress[0].host'`
 
-$ PROMETHEUS_URL=`oc get route/prometheus-oauth -n appstudio-workload-monitoring -o json | jq -r '.status.ingress[0].host'`
+$ export PROMETHEUS_URL_APPSTUDIO=`oc get route/prometheus-oauth -n appstudio-workload-monitoring -o json | jq -r '.status.ingress[0].host'`
 ```
 
 `GRAFANA_OAUTH_TOKEN` is obtained by requesting a token for the `grafana-oauth` service account in the **Prometheus cluster**:
 ```
-$ GRAFANA_OAUTH_TOKEN=`oc create token grafana-oauth -n appstudio-workload-monitoring`
+$ export GRAFANA_SECRET_NAME=$(oc -n appstudio-workload-monitoring get sa/grafana-oauth -o jsonpath="{.secrets[0].name}")
+
+$ export GRAFANA_OAUTH_TOKEN=`oc -n appstudio-workload-monitoring create token grafana-oauth --bound-object-kind Secret --bound-object-name $GRAFANA_SECRET_NAME`
 ```
 
 Using the values obtained from the **Prometheus cluster**, run the following command on the **Grafana cluster**:
+For current setup we have two datasource `prometheus-appstudio-ds` and `prometheus-openshift-ds`
 
 ```
-$ ./hack/setup-monitoring.sh grafana-datasource-secret $DATASOURCE_NAME $PROMETHEUS_URL $GRAFANA_OAUTH_TOKEN
+$ export DATASOURCE_APPSTUDIO="prometheus-appstudio-ds"
+$ export DATASOURCE_OPENSHIFT="prometheus-openshift-ds"
+
+$ ./hack/setup-monitoring.sh grafana-datasource-secret $DATASOURCE_APPSTUDIO $PROMETHEUS_URL_APPSTUDIO $GRAFANA_OAUTH_TOKEN
+
+$ ./hack/setup-monitoring.sh grafana-datasource-secret $DATASOURCE_OPENSHIFT $PROMETHEUS_URL_OPENSHIFT $GRAFANA_OAUTH_TOKEN
 ```
 
 Notes: 
