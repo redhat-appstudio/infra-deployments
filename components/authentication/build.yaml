@@ -4,6 +4,9 @@ metadata:
   name: pipelines-as-code-maintainers
   namespace: pipelines-as-code
 subjects:
+  - kind: Group
+    apiGroup: rbac.authorization.k8s.io
+    name: Pipeline Service
   - kind: User
     apiGroup: rbac.authorization.k8s.io
     name: sbose78
@@ -64,6 +67,9 @@ metadata:
   name: component-maintainers
   namespace: tekton-pipelines
 subjects:
+  - kind: Group
+    apiGroup: rbac.authorization.k8s.io
+    name: Pipeline Service
   - kind: User
     apiGroup: rbac.authorization.k8s.io
     name: sbose78
@@ -90,6 +96,9 @@ metadata:
   name: component-maintainers
   namespace: tekton-chains
 subjects:
+  - kind: Group
+    apiGroup: rbac.authorization.k8s.io
+    name: Pipeline Service
   - kind: User
     apiGroup: rbac.authorization.k8s.io
     name: sbose78
