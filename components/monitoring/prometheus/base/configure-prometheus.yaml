@@ -284,4 +284,42 @@ subjects:
 - kind: ServiceAccount
   name: prometheus-k8s
   namespace: appstudio-workload-monitoring
-
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus-host-operator-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: host-operator-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: prometheus-k8s
+  namespace: appstudio-workload-monitoring
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus-member-operator-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: member-operator-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: prometheus-k8s
+  namespace: appstudio-workload-monitoring
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus-release-service-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: release-service-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: prometheus-k8s
+  namespace: appstudio-workload-monitoring
