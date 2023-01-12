@@ -98,6 +98,18 @@ spec:
           name: grafana-dashboards
         - mountPath: /var/lib/grafana/dashboards
           name: grafana-dashboard-definitions
+        - mountPath: /var/lib/grafana/dashboards/spi
+          subPath: grafana-dashboard-spi-health.json
+          name: grafana-dashboard-spi-health-volume
+          readOnly: true
+        - mountPath: /var/lib/grafana/dashboards/spi
+          subPath: grafana-dashboard-spi-outbound-traffic.json
+          name: grafana-dashboard-spi-outbound-traffic-volume
+          readOnly: true
+        - mountPath: /var/lib/grafana/dashboards/spi
+          subPath: grafana-dashboard-spi-slo.json
+          name: grafana-dashboard-spi-slo-volume
+          readOnly: true
       - name: grafana-oauth2-proxy
         args:
         - --provider=github
@@ -195,6 +207,15 @@ spec:
       - name: grafana-dashboard-definitions
         configMap:
           name: grafana-dashboard-definitions
+      - name: grafana-dashboard-spi-health-volume
+        configMap:
+          name: grafana-dashboard-spi-health
+      - name: grafana-dashboard-spi-outbound-traffic-volume
+        configMap:
+          name: grafana-dashboard-spi-outbound-traffic
+      - name: grafana-dashboard-spi-slo-volume
+        configMap:
+          name: grafana-dashboard-spi-slo
       - name: secret-grafana-tls
         secret:
           defaultMode: 420
@@ -216,6 +237,12 @@ data:
         type: file
         options:
           path: /var/lib/grafana/dashboards
+      - name: Spi
+        folder: spi
+        type: file
+        disableDeletion: true
+        options:
+          path: /var/lib/grafana/dashboards/spi
 ---
 # Route and service to provide a secured access to Grafana
 apiVersion: route.openshift.io/v1
