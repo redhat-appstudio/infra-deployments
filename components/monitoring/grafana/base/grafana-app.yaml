@@ -98,15 +98,15 @@ spec:
           name: grafana-dashboards
         - mountPath: /var/lib/grafana/dashboards
           name: grafana-dashboard-definitions
-        - mountPath: /var/lib/grafana/dashboards/spi
+        - mountPath: /var/lib/grafana/dashboards/spi/grafana-dashboard-spi-health.json
           subPath: grafana-dashboard-spi-health.json
           name: grafana-dashboard-spi-health-volume
           readOnly: true
-        - mountPath: /var/lib/grafana/dashboards/spi
+        - mountPath: /var/lib/grafana/dashboards/spi/grafana-dashboard-spi-outbound-traffic.json
           subPath: grafana-dashboard-spi-outbound-traffic.json
           name: grafana-dashboard-spi-outbound-traffic-volume
           readOnly: true
-        - mountPath: /var/lib/grafana/dashboards/spi
+        - mountPath: /var/lib/grafana/dashboards/spi/grafana-dashboard-spi-slo.json
           subPath: grafana-dashboard-spi-slo.json
           name: grafana-dashboard-spi-slo-volume
           readOnly: true
