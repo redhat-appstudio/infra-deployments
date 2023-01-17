@@ -45,6 +45,7 @@ fi
 
 MY_GIT_REPO_URL=$(git ls-remote --get-url $MY_GIT_FORK_REMOTE | sed 's|^git@github.com:|https://github.com/|')
 MY_GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+trap "git checkout $MY_GIT_BRANCH" EXIT
 
 
 if echo "$MY_GIT_REPO_URL" | grep -q redhat-appstudio/infra-deployments; then
@@ -71,11 +72,14 @@ fi
 git checkout -b $PREVIEW_BRANCH
 
 # patch argoCD applications to point to your fork
-oc kustomize $ROOT/argo-cd-apps/overlays/development | yq e "select(.spec.source.repoURL==\"https://github.com/redhat-appstudio/infra-deployments.git\")
-  | del(.spec.destination, .spec.syncPolicy, .spec.project, .spec.source.path, .metadata.namespace)
-  | .spec.source.repoURL=\"$MY_GIT_REPO_URL\"
-  | .spec.source.targetRevision=\"$PREVIEW_BRANCH\"
-  | .metadata.finalizers=[\"resources-finalizer.argocd.argoproj.io\"]" > $ROOT/argo-cd-apps/overlays/development/repo-overlay.yaml
+update_patch_file () {
+  local file=${1:?}
+
+  yq -i ".[0].value = \"$MY_GIT_REPO_URL\"" "$file"
+  yq -i ".[1].value = \"$PREVIEW_BRANCH\""  "$file"
+}
+update_patch_file "${ROOT}/argo-cd-apps/k-components/inject-infra-deployments-repo-details/application-patch.yaml"
+update_patch_file "${ROOT}/argo-cd-apps/k-components/inject-infra-deployments-repo-details/application-set-patch.yaml"
 
 
 # delete argoCD applications which are not in DEPLOY_ONLY env var if it's set
@@ -87,7 +91,7 @@ if [ -n "$DEPLOY_ONLY" ]; then
       echo Disabling $APP based on DEPLOY_ONLY variable
       echo '---' >> $ROOT/argo-cd-apps/overlays/development/delete-applications.yaml
       yq e -n ".apiVersion=\"argoproj.io/v1alpha1\"
-                 | .kind=\"Application\"
+                 | .kind=\"ApplicationSet\"
                  | .metadata.name = \"$APP\"
                  | .\$patch = \"delete\"" >> $ROOT/argo-cd-apps/overlays/development/delete-applications.yaml
     fi
@@ -119,21 +123,8 @@ $ROOT/hack/util-set-github-org $MY_GITHUB_ORG
 
 domain=$(kubectl get ingresses.config.openshift.io cluster --template={{.spec.domain}})
 
-if [ -n "$DOCKER_IO_AUTH" ]; then
-    AUTH=$(mktemp)
-    # Set global pull secret
-    oc get secret/pull-secret -n openshift-config --template='{{index .data ".dockerconfigjson" | base64decode}}' > $AUTH
-    oc registry login --registry=docker.io --auth-basic=$DOCKER_IO_AUTH --to=$AUTH
-    oc set data secret/pull-secret -n openshift-config --from-file=.dockerconfigjson=$AUTH
-    # Set current namespace pipeline serviceaccount which is used by buildah
-    oc create secret docker-registry docker-io-pull --from-file=.dockerconfigjson=$AUTH -o yaml --dry-run=client | oc apply -f-
-    oc create serviceaccount pipeline -o yaml --dry-run=client | oc apply -f-
-    oc secrets link pipeline docker-io-pull
-    rm $AUTH
-fi
-
 rekor_server="rekor.$domain"
-sed -i.bak "s/rekor-server.enterprise-contract-service.svc/$rekor_server/" $ROOT/argo-cd-apps/base/enterprise-contract.yaml && rm $ROOT/argo-cd-apps/base/enterprise-contract.yaml.bak
+sed -i.bak "s/rekor-server.enterprise-contract-service.svc/$rekor_server/" $ROOT/argo-cd-apps/base/member/optional/helm/rekor/rekor.yaml && rm $ROOT/argo-cd-apps/base/member/optional/helm/rekor/rekor.yaml.bak
 
 [ -n "${BUILD_SERVICE_IMAGE_REPO}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/redhat-appstudio/build-service\")) |=.newName=\"${BUILD_SERVICE_IMAGE_REPO}\"" $ROOT/components/build-service/kustomization.yaml
 [ -n "${BUILD_SERVICE_IMAGE_TAG}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/redhat-appstudio/build-service\")) |=.newTag=\"${BUILD_SERVICE_IMAGE_TAG}\"" $ROOT/components/build-service/kustomization.yaml
@@ -165,23 +156,18 @@ if ! git diff --exit-code --quiet; then
     git push -f --set-upstream $MY_GIT_FORK_REMOTE $PREVIEW_BRANCH
 fi
 
-git checkout $MY_GIT_BRANCH
+# Create the root Application
+oc apply -k $ROOT/argo-cd-apps/app-of-app-sets/development
 
-#set the local cluster to point to the current git repo and branch and update the path to development
-yq e ".spec.source.path=\"argo-cd-apps/overlays/development\"
-    | .spec.source.repoURL=\"$MY_GIT_REPO_URL\"
-    | .spec.source.targetRevision=\"$PREVIEW_BRANCH\"" \
-  $ROOT/argo-cd-apps/app-of-apps/all-applications-staging.yaml | oc apply -f -
-
-while [ "$(oc get applications.argoproj.io all-components-staging -n openshift-gitops -o jsonpath='{.status.health.status} {.status.sync.status}')" != "Healthy Synced" ]; do
-  echo Waiting for sync of all-components-staging argoCD app
+while [ "$(oc get applications.argoproj.io all-application-sets -n openshift-gitops -o jsonpath='{.status.health.status} {.status.sync.status}')" != "Healthy Synced" ]; do
+  echo Waiting for sync of all-application-sets argoCD app
   sleep 5
 done
 
 APPS=$(kubectl get apps -n openshift-gitops -o name)
 
 if echo $APPS | grep -q spi; then
-  if [ "`oc get applications.argoproj.io spi -n openshift-gitops -o jsonpath='{.status.health.status} {.status.sync.status}'`" != "Healthy Synced" ]; then
+  if [ "$(oc get applications.argoproj.io spi-in-cluster-local -n openshift-gitops -o jsonpath='{.status.health.status} {.status.sync.status}')" != "Healthy Synced" ]; then
     echo Initializing SPI
     curl https://raw.githubusercontent.com/redhat-appstudio/e2e-tests/${E2E_TESTS_COMMIT_SHA:-main}/scripts/spi-e2e-setup.sh | VAULT_PODNAME='vault-0' VAULT_NAMESPACE='spi-vault' bash -s
     SPI_APP_ROLE_FILE=$ROOT/.tmp/approle_secret.yaml

@@ -2,6 +2,9 @@
 title: Staging Environment
 ---
 
+**Note**: Single cluster deployment for staging/production environments is about to
+be deprecated and replaced by a [multi-cluster deployment](./multi-cluster.md)
+
 Currently all the components are deployed to a single cluster using ArgoCD.
 Components are declared using [ArgoCD Applications](../../argo-cd-apps/base/), and synced periodically by it to
 the Staging cluster.  

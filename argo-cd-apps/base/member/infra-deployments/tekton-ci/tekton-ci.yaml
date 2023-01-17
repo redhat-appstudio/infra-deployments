@@ -1,0 +1,37 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: tekton-ci
+spec:
+  generators:
+    - clusters: {}
+  template:
+    metadata:
+      name: tekton-ci-{{nameNormalized}}
+    spec:
+      project: default
+      source:
+        path: components/tekton-ci
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+        targetRevision: main
+      destination:
+        namespace: tekton-ci
+        server: '{{server}}'
+      ignoreDifferences:
+      - group: ""
+        kind: "ServiceAccount"
+        name: pipeline
+        jqPathExpressions:
+        - .imagePullSecrets[] | select(.name | startswith("pipeline-dockercfg"))
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+        retry:
+          limit: -1
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 3m

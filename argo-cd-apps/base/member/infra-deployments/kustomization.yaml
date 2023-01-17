@@ -1,0 +1,27 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - gitops
+  - authentication
+  - application-api
+  - has
+  - release
+  - integration
+  - spi
+  - spi-vault
+  - tekton-ci
+  - cluster-registration
+  - enterprise-contract
+  - quality-dashboard
+  - hac-pact-broker
+  - build-service
+  - jvm-build-service
+  - pipeline-service
+  - build-templates
+  - shared-resources
+  - internal-services
+  - monitoring-workload-prometheus
+  - monitoring-workload-grafana
+  - monitoring-workload-logging
+components:
+  - ../../../k-components/inject-infra-deployments-repo-details

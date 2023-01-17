@@ -4,10 +4,3 @@ ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/..
 
 echo "Changing AppStudio Gitlab Org to \"$1\""
 yq e -i "(.configMapGenerator[].literals[] | select(. == \"*GITHUB*\")) = \"GITHUB_ORG=$1\"" $ROOT/components/has/kustomization.yaml
-
-if [ -n "$MY_GITHUB_TOKEN" ]; then
-    echo
-    echo "Setting gitHub token"
-    oc create namespace application-service --dry-run=client -o yaml | oc apply -f -
-    oc create -n application-service secret generic has-github-token --from-literal=token="$MY_GITHUB_TOKEN" --dry-run=client -o yaml | oc apply -f -
-fi
