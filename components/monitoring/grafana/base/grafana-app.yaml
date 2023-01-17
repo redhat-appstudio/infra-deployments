@@ -100,6 +100,8 @@ spec:
           name: grafana-dashboard-definitions
         - mountPath: /var/lib/grafana/dashboards-spi
           name: grafana-dashboard-spi-volume
+        - mountPath: /var/lib/grafana/dashboards-release-service
+          name: grafana-dashboard-release-service-volume
       - name: grafana-oauth2-proxy
         args:
         - --provider=github
@@ -206,6 +208,11 @@ spec:
               name: grafana-dashboard-spi-outbound-traffic
           - configMap:
               name: grafana-dashboard-spi-slo
+      - name: grafana-dashboard-release-service-volume
+        projected:
+          sources:
+            - configMap:
+                name: grafana-dashboard-release-release-attempts
       - name: secret-grafana-tls
         secret:
           defaultMode: 420
@@ -233,6 +240,12 @@ data:
         disableDeletion: true
         options:
           path: /var/lib/grafana/dashboards-spi
+      - name: Release Service
+        folder: release
+        type: file
+        disableDeletion: true
+        options:
+          path: /var/lib/grafana/dashboards-release-service
 ---
 # Route and service to provide a secured access to Grafana
 apiVersion: route.openshift.io/v1
