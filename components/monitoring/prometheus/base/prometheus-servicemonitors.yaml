@@ -103,6 +103,31 @@ spec:
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
+  labels:
+    control-plane: controller-manager
+    prometheus: appstudio-workload
+  name: integration-service
+  namespace: appstudio-workload-monitoring
+spec:
+  endpoints:
+  - path: /metrics
+    port: https
+    scheme: https
+    bearerTokenSecret:
+      name: "prometheus-k8s-token-xhrjb"
+      key: token
+    tlsConfig:
+      insecureSkipVerify: true
+  namespaceSelector:
+    matchNames:
+    - integration-service
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
   namespace: appstudio-workload-monitoring
   name: prometheus
   labels:
