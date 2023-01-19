@@ -101,7 +101,7 @@ spec:
         return hs
 ' --type=merge
 
-echo 
+echo
 echo "Add Role/RoleBindings for OpenShift GitOps:"
 kubectl apply --kustomize $ROOT/openshift-gitops/cluster-rbac
 
@@ -154,6 +154,14 @@ if ! kubectl get secret -n quality-dashboard quality-dashboard-secrets &>/dev/nu
     --from-literal=storage-database=quality \
     --from-literal=github-token=REPLACE_GITHUB_TOKEN \
     --from-literal=jira-token=REPLACE_JIRA_TOKEN
+fi
+
+echo
+echo "Setting secrets for Dora metrics exporter"
+kubectl create namespace dora-metrics -o yaml --dry-run=client | oc apply -f-
+if ! kubectl get secret -n dora-metrics exporters-secret &>/dev/null; then
+  kubectl create secret generic exporters-secret -n dora-metrics \
+    --from-literal=github=${MY_GITHUB_TOKEN:-""}
 fi
 
 ARGO_CD_ROUTE=$(kubectl get \

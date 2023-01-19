@@ -1,0 +1,10 @@
+resources:
+- https://github.com/redhat-appstudio/dora-metrics/deploy/base?ref=4ee139d33d2ddd8c73496b2a82975b46f22720a2
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+images:
+  - name: quay.io/redhat-appstudio/dora-metrics
+    newName: quay.io/redhat-appstudio/dora-metrics
+    newTag: 4ee139d33d2ddd8c73496b2a82975b46f22720a2
