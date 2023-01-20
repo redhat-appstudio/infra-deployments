@@ -101,37 +101,9 @@ spec:
         return hs
 ' --type=merge
 
-echo 
+echo
 echo "Add Role/RoleBindings for OpenShift GitOps:"
 kubectl apply --kustomize $ROOT/openshift-gitops/cluster-rbac
-
-echo "Setting secrets for Tekton Results"
-kubectl create namespace tekton-pipelines -o yaml --dry-run=client | oc apply -f-
-
-OPENSSLDIR=`openssl version -d | cut -f2 -d'"'`
-
-if ! kubectl get secret -n tekton-pipelines tekton-results-tls &>/dev/null; then
-  ROUTE=$(oc whoami --show-console | sed 's|https://console-openshift-console|api-tekton-pipelines|')
-  openssl req -x509 \
-    -newkey rsa:4096 \
-    -keyout key.pem \
-    -out cert.pem \
-    -days 3650 \
-    -nodes \
-    -subj "/CN=tekton-results-api-service.tekton-pipelines.svc.cluster.local" \
-    -reqexts SAN \
-    -extensions SAN \
-    -config <(cat ${OPENSSLDIR:-/etc/pki/tls}/openssl.cnf \
-        <(printf "\n[SAN]\nsubjectAltName=DNS:tekton-results-api-service.tekton-pipelines.svc.cluster.local, DNS:$ROUTE"))
-  kubectl create secret tls -n tekton-pipelines tekton-results-tls --cert=cert.pem --key=key.pem
-  rm cert.pem key.pem
-fi
-if ! kubectl get secret -n tekton-pipelines tekton-results-postgres &>/dev/null; then
-  kubectl create secret generic tekton-results-postgres \
-    --namespace="tekton-pipelines" \
-    --from-literal=POSTGRES_USER=results \
-    --from-literal=POSTGRES_PASSWORD=$(openssl rand -base64 20)
-fi
 
 echo
 echo "Setting secrets for GitOps"
@@ -154,6 +126,14 @@ if ! kubectl get secret -n quality-dashboard quality-dashboard-secrets &>/dev/nu
     --from-literal=storage-database=quality \
     --from-literal=github-token=REPLACE_GITHUB_TOKEN \
     --from-literal=jira-token=REPLACE_JIRA_TOKEN
+fi
+
+echo
+echo "Setting secrets for Dora metrics exporter"
+kubectl create namespace dora-metrics -o yaml --dry-run=client | oc apply -f-
+if ! kubectl get secret -n dora-metrics exporters-secret &>/dev/null; then
+  kubectl create secret generic exporters-secret -n dora-metrics \
+    --from-literal=github=${MY_GITHUB_TOKEN:-""}
 fi
 
 ARGO_CD_ROUTE=$(kubectl get \
