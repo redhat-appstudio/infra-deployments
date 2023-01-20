@@ -134,7 +134,6 @@ fi
 
 rekor_server="rekor.$domain"
 sed -i.bak "s/rekor-server.enterprise-contract-service.svc/$rekor_server/" $ROOT/argo-cd-apps/base/enterprise-contract.yaml && rm $ROOT/argo-cd-apps/base/enterprise-contract.yaml.bak
-yq -i e ".data |= .\"transparency.url\"=\"https://$rekor_server\"" $ROOT/components/pipeline-service/tekton-chains/chains-config.yaml
 
 [ -n "${BUILD_SERVICE_IMAGE_REPO}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/redhat-appstudio/build-service\")) |=.newName=\"${BUILD_SERVICE_IMAGE_REPO}\"" $ROOT/components/build-service/kustomization.yaml
 [ -n "${BUILD_SERVICE_IMAGE_TAG}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/redhat-appstudio/build-service\")) |=.newTag=\"${BUILD_SERVICE_IMAGE_TAG}\"" $ROOT/components/build-service/kustomization.yaml
@@ -145,9 +144,6 @@ yq -i e ".data |= .\"transparency.url\"=\"https://$rekor_server\"" $ROOT/compone
 [[ -n "${JVM_BUILD_SERVICE_CACHE_IMAGE}" && ${JVM_BUILD_SERVICE_REQPROCESSOR_IMAGE} ]] && yq -i e "select(.[].path == \"/spec/template/spec/containers/0/env\") | .[].value |= . + [{\"name\" : \"JVM_BUILD_SERVICE_CACHE_IMAGE\", \"value\": \"${JVM_BUILD_SERVICE_CACHE_IMAGE}\"}, {\"name\": \"JVM_BUILD_SERVICE_REQPROCESSOR_IMAGE\", \"value\": \"${JVM_BUILD_SERVICE_REQPROCESSOR_IMAGE}\"}] | (.[].value[] | select(.name == \"IMAGE_TAG\")) |= .value = \"\"" $ROOT/components/jvm-build-service/operator_env_patch.yaml
 [ -n "${DEFAULT_BUILD_BUNDLE}" ] && yq -i e "(.configMapGenerator[].literals[] | select(. == \"default_build_bundle*\")) |= \"default_build_bundle=${DEFAULT_BUILD_BUNDLE}\"" $ROOT/components/build-templates/kustomization.yaml
 [ -n "${HACBS_BUILD_BUNDLE}" ] && yq -i e "(.configMapGenerator[].literals[] | select(. == \"hacbs_build_bundle*\")) |= \"hacbs_build_bundle=${HACBS_BUILD_BUNDLE}\"" $ROOT/components/build-templates/kustomization.yaml
-# for jvm-build-service, since its service registry tests produces a ton of pipelineruns, and even the simple ones can produced more than 10,
-# we bump the keep setting to better allow for debug in jvm-build-service PRs
-[[ -n "${JVM_BUILD_SERVICE_PR_OWNER}" && ${JVM_BUILD_SERVICE_PR_SHA} ]] && yq -i e "(.spec.pruner.keep = 1000)" $ROOT/components/pipeline-service/openshift-pipelines/config.yaml
 
 [ -n "${HAS_IMAGE_REPO}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/redhat-appstudio/application-service\")) |=.newName=\"${HAS_IMAGE_REPO}\"" $ROOT/components/has/kustomization.yaml
 [ -n "${HAS_IMAGE_TAG}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/redhat-appstudio/application-service\")) |=.newTag=\"${HAS_IMAGE_TAG}\"" $ROOT/components/has/kustomization.yaml
