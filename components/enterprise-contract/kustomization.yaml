@@ -1,13 +1,13 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - https://github.com/hacbs-contract/enterprise-contract-controller/config/crd?ref=f390159f6b5323ca2168ee2cbcf9537841084928
+  - https://github.com/hacbs-contract/enterprise-contract-controller/config/crd?ref=99925bf43f06f6f7d3cb9aef21fa75e256c89625
   # Kustomize does not allow github.com urls that reference a single-file. They must always reference
   # a directory that contains a kustomization.yaml file. The directory /config/rbac does include a
   # kustomization.yaml file but it includes many other RBAC changes that are not desirable here. Use
   # a URL to the "raw" version of the file instead.
-  - https://raw.githubusercontent.com/hacbs-contract/enterprise-contract-controller/f390159f6b5323ca2168ee2cbcf9537841084928/config/rbac/enterprisecontractpolicy_viewer_role.yaml
-  - https://raw.githubusercontent.com/hacbs-contract/enterprise-contract-controller/f390159f6b5323ca2168ee2cbcf9537841084928/config/rbac/enterprisecontractpolicy_editor_role.yaml
+  - https://raw.githubusercontent.com/hacbs-contract/enterprise-contract-controller/99925bf43f06f6f7d3cb9aef21fa75e256c89625/config/rbac/enterprisecontractpolicy_viewer_role.yaml
+  - https://raw.githubusercontent.com/hacbs-contract/enterprise-contract-controller/99925bf43f06f6f7d3cb9aef21fa75e256c89625/config/rbac/enterprisecontractpolicy_editor_role.yaml
 generatorOptions:
   disableNameSuffixHash: true
 configMapGenerator:
@@ -20,4 +20,4 @@ configMapGenerator:
 images:
   - name: quay.io/redhat-appstudio/enterprise-contract-controller
     newName: quay.io/redhat-appstudio/enterprise-contract-controller
-    newTag: f390159f6b5323ca2168ee2cbcf9537841084928
+    newTag: 99925bf43f06f6f7d3cb9aef21fa75e256c89625
