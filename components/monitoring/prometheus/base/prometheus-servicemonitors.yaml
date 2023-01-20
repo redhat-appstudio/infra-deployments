@@ -223,6 +223,9 @@ spec:
     matchLabels:
       control-plane: controller-manager
 ---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metatada:
   name: dora-service
   namespace: appstudio-workload-monitoring
   labels:
