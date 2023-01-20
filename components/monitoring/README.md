@@ -71,7 +71,7 @@ spec:
 
   - If the servicemonitor is for getting other components added to prometheus monitoring
       - create a new file under [components/monitoring/prometheus/base/servicemonitors](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/monitoring/prometheus/base/servicemonitors)
-      - Add a sevicemonitor decalration for scraping the intended service
+      - Add a ServiceMonitor along with a ClusterRoleBinding to scrape the intended service
       - [Here](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/monitoring/prometheus/base/servicemonitors/spi-operator.yaml) is an example for servicemonitor
       
           ```yaml
