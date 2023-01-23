@@ -1,0 +1,46 @@
+---
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: EnterpriseContractPolicy
+metadata:
+  name: default
+  namespace: enterprise-contract-service
+spec:
+  description: >
+    Default EnterpriseContractPolicy. If a different policy is desired,
+    this resource can serve as a starting point.
+  configuration:
+    # TODO: https://issues.redhat.com/browse/HACBS-1615 will be used to determine a
+    # more reasonable defaulit policy configuration.
+    exclude: []
+    include: ["*"]
+    collections: []
+  # TODO: public key is copied from components/pipeline-service/public/tekton-chains-signing-secret.pub
+  # until https://issues.redhat.com/browse/HACBS-1660 is in place.
+  publicKey: |-
+    -----BEGIN PUBLIC KEY-----
+    MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEODgxyIz09vBqJlXXzjp/X2h17WIt
+    jCVQhnDYVWHvXhw6rgqGeg6NTUxIEhRQqQZaF9mcBotHkuYGJfYZbai+FA==
+    -----END PUBLIC KEY-----
+  sources:
+    - name: Default Policies
+      data:
+        - oci::https://quay.io/hacbs-contract/ec-policy-data:git-ccc72dc@sha256:00e383dae2d0d79552ec6c53e68e74ead86f1e62714f5e1224dcfe88230f1f9a
+      policy:
+        - oci::https://quay.io/hacbs-contract/ec-release-policy:git-ccc72dc@sha256:af149d5f68984b303739eb2222ad5b7471862b287387a27d338ec0adb36aab7d
+---
+# Allow any authenticated user to access to get/list/watch the EnterpriseContractPolicy resources
+# in the enterprise-contract-service namespace.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: public-ecp
+  namespace: enterprise-contract-service
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: enterprisecontractpolicy-viewer-role
+subjects:
+- apiGroup: rbac.authorization.k8s.io
+  kind: Group
+  name: system:authenticated
+
