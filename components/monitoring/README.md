@@ -38,7 +38,7 @@ spec:
 
       - Add the servicemonitor declaration for scraping the prometheus service
 
-      - [Here](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/monitoring/prometheus/base/prometheus-servicemonitors.yaml) is an example servicemonitor for prometheus itself
+      - [Here](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/monitoring/prometheus/base/servicemonitors/prometheus.yaml) is an example servicemonitor for prometheus itself
       
       ```yaml
       apiVersion: monitoring.coreos.com/v1
@@ -70,36 +70,39 @@ spec:
       
 
   - If the servicemonitor is for getting other components added to prometheus monitoring
-      
-      - Add a sevicemonitor decalration for scraping the intended service
+      - create a new file under [components/monitoring/prometheus/base/servicemonitors](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/monitoring/prometheus/base/servicemonitors)
+      - Add an entry into the [components/monitoring/prometheus/base/servicemonitors/kustomization.yaml](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/monitoring/prometheus/base/servicemonitors/kustomization.yaml)
+      - Add a ServiceMonitor along with a ClusterRoleBinding to scrape the intended service
+      - [Here](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/monitoring/prometheus/base/servicemonitors/spi-operator.yaml) is an example for servicemonitor
       
           ```yaml
           apiVersion: monitoring.coreos.com/v1
           kind: ServiceMonitor
           metadata:
+            namespace: appstudio-workload-monitoring
+            name: spi-operator <name of the servicemonitor>
             labels:
-              prometheus: appstudio-workload <label getting discovered by prometheus-operator>
-            name: release-service
-            namespace: release-service <name of the namespace the service is in>
+              prometheus: appstudio-workload
           spec:
             endpoints:
-            - path: /metrics
-              port: https
-              scheme: https
-              bearerTokenSecret:
-                name: <secret for accessing the endpoint path on the service>
+            - bearerTokenSecret:
+                name: <secret name for prometheus sa>
                 key: token
+              scheme: https
               tlsConfig:
                 insecureSkipVerify: true
+              interval: 15s
+              path: /metrics
+              port: metrics <port for metrics exporter svc>
             namespaceSelector:
               matchNames:
-              - release-service
+              - spi-system
             selector:
               matchLabels:
-                control-plane: controller-manager
+                control-plane: "controller-manager"
           ```
 
-      - Note: The namespace of the ServiceMonitor matches the namespace for the service we are scraping, in this case, `release-service`.
+      - Note: The namespace of the ServiceMonitor matches the namespace for the prometheus service, in this case, `appstudio-workload-monitoring`.
 
   - It should have the accessible port and route to the service (or service url)
 
@@ -111,22 +114,22 @@ spec:
 
   - Prometheus should have view access to the metrics exporter service namespace
 
-  - Add the Rolebinding to give prometheus view access. 
-  - [Here](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/monitoring/prometheus/base/prometheus-view.yaml) is an example providing prometheus view access to the cluster
+  - Add the Rolebinding to give prometheus view access in the same servicemonitor file. 
+  - [Here](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/monitoring/prometheus/base/servicemonitors/spi-operator.yaml) is an example providing prometheus view access to the cluster
 
   ```yaml
-  kind: ClusterRoleBinding
   apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
   metadata:
-    name: prometheus-view
+    name: prometheus-spi-metrics-reader
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: spi-metrics-reader
   subjects:
   - kind: ServiceAccount
     name: prometheus-k8s
     namespace: appstudio-workload-monitoring
-  roleRef:
-    apiGroup: rbac.authorization.k8s.io
-    kind: ClusterRole
-    name: view
   ```
 
 #### 4. Grafana dashboards - manual export
