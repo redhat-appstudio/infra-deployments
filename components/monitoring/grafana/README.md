@@ -75,7 +75,7 @@ $ ./hack/setup-monitoring.sh grafana-datasource-secret $DATASOURCE_OPENSHIFT $PR
 ```
 
 Notes: 
-- The `grafana-oauth` service account is created by `components/monitoring/base/prometheus/configure-prometheus.yaml` along with a binding to the `cluster-monitoring-view` cluster role. 
+- The `grafana-oauth` service account is created by `components/monitoring/prometheus/base/configure-prometheus.yaml` along with a binding to the `cluster-monitoring-view` cluster role. 
 - The same token can be used in datasources secrets related to the Prometheus instances deployed in the `openshift-monitoring` and `appstudio-workload-monitoring` namespaces.
 
 ## Installation and Configuration
