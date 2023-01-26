@@ -102,6 +102,8 @@ spec:
           name: grafana-dashboard-spi-volume
         - mountPath: /var/lib/grafana/dashboards-release-service
           name: grafana-dashboard-release-service-volume
+        - mountPath: /var/lib/grafana/dashboards-dora-metrics
+          name: grafana-dashboard-dora-metrics-volume
       - name: grafana-oauth2-proxy
         args:
         - --provider=github
@@ -213,6 +215,11 @@ spec:
           sources:
             - configMap:
                 name: grafana-dashboard-release-release-attempts
+      - name: grafana-dashboard-dora-metrics-volume
+        projected:
+          sources:
+            - configMap:
+                name: grafana-dashboard-dora-metrics
       - name: secret-grafana-tls
         secret:
           defaultMode: 420
@@ -246,6 +253,12 @@ data:
         disableDeletion: true
         options:
           path: /var/lib/grafana/dashboards-release-service
+      - name: Dora Metrics
+        folder: QE
+        type: file
+        disableDeletion: true
+        options:
+          path: /var/lib/grafana/dashboards-dora-metrics
 ---
 # Route and service to provide a secured access to Grafana
 apiVersion: route.openshift.io/v1
