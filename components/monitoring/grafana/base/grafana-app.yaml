@@ -1,5 +1,4 @@
 # vscode-kubernetes-tools: exclude
-# (because OpenShift routes seem to be interpreted as pods ¯\_(ツ)_/¯)
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -188,16 +187,12 @@ spec:
       - name: grafana-datasources
         projected:
           sources:
+          # 1 secret per remote cluster where metrics are collected
           - secret:
-              name: prometheus-openshift-ds
+              name: thanos-querier-ds
               items:
-              - key: prometheus-openshift-ds.yaml
-                path: prometheus-openshift-ds.yaml
-          - secret:
-              name: prometheus-appstudio-ds
-              items:
-              - key: prometheus-appstudio-ds.yaml
-                path: prometheus-appstudio-ds.yaml
+              - key: thanos-querier-ds.yaml
+                path: thanos-querier-ds.yaml
       - name: grafana-config
         secret:
           defaultMode: 420
