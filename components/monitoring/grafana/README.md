@@ -125,6 +125,27 @@ can be imported as configmaps by including them as an external resource in `kust
     - https://github.com/redhat-appstudio/managed-gitops/manifests/base/monitoring/base?ref=283a1c391d64b251bf57c79403485ca47246be34
     - https://github.com/redhat-appstudio/dora-metrics/deploy/grafana/?ref=326417b0ffc4205fa3acaa675bfc0286f12b7682
     ```
+    Note: to keep the `ref={id}` up to date such a configuration of PipelineRun can be used
+   ```yaml
+   apiVersion: tekton.dev/v1beta1
+   kind: PipelineRun
+   metadata:
+      name: spi-controller-on-push
+   annotations:
+      pipelinesascode.tekton.dev/on-event: "[push]"
+      pipelinesascode.tekton.dev/on-target-branch: "[main]"
+      pipelinesascode.tekton.dev/max-keep-runs: "5"
+   spec:
+      params:
+      ...
+      - name: infra-deployment-update-script
+        value: |
+         sed -i -e 's|\(https://github.com/redhat-appstudio/service-provider-integration-operator/config/monitoring/base?ref=\)\(.*\)|\1{{ revision }}|' components/monitoring/grafana/base/kustomization.yaml
+        pipelineRef:
+         name: docker-build
+         bundle: quay.io/redhat-appstudio/hacbs-core-service-templates-bundle:latest
+      ...
+   ```
 3. Add a volume to `grafana-app.yaml`
     ```yaml
     - name: grafana-dashboard-dora-metrics-volume
