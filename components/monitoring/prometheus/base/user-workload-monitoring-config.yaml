@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: openshift-user-workload-monitoring
+  name: user-workload-monitoring-config
+data:
+  config.yaml: |
+    prometheusOperator:
+      logLevel: info
+    prometheus: 
+      logLevel: debug
+      retention: 45d 
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+          - ReadWriteOnce
+          resources:
+            requests:
+              storage: 50Gi
+          storageClassName: gp2-csi
