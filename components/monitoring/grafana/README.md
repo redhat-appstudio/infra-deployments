@@ -184,7 +184,7 @@ Grafana dashboards has to have a predefined datasource name. It is recommended t
     ]
   },
 ```
-In this example dashboard will `prometheus-appstudio-ds` with ability to use other datasource that contains `appstudio` in the name.
+In this example dashboard will use `prometheus-appstudio-ds` datasource, with ability to use other datasource that contains `appstudio` in the name.
 
 ## Installation and Configuration
 
