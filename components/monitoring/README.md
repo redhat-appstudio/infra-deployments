@@ -135,7 +135,7 @@ spec:
 #### 4. Grafana dashboards
 
 A dashboard is a set of one or more panels organized and arranged into one or more rows. It visualizes results from multiple data sources simultaneously.
-New dashboards can be added throw the user interface, preconfigured in infra-deployment project, or imported from other projects.
+New dashboards can be added through the user interface, preconfigured in infra-deployment project, or imported from other projects.
 
 ##### Manual export
 
