@@ -21,6 +21,7 @@ SECRET=$(mktemp)
 echo '{"auths": {' $(yq eval '.auths | with_entries(select(.key == "quay.io"))' $AUTH_FILE) '}}' > $SECRET
 oc create secret docker-registry redhat-appstudio-registry-pull-secret --from-file=.dockerconfigjson=$SECRET --dry-run=client -o yaml | oc apply -f-
 rm $SECRET
+oc secret link pipeline redhat-appstudio-registry-pull-secret
 
 # Label namespace to be managed by gitops-service-argocd
 oc label namespace $(oc config view --minify -o 'jsonpath={..namespace}') --overwrite argocd.argoproj.io/managed-by=gitops-service-argocd
