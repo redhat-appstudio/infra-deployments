@@ -80,7 +80,6 @@ Notes:
 - The `grafana-oauth` service account is created by `components/monitoring/base/prometheus/configure-prometheus.yaml` along with a binding to the `cluster-monitoring-view` cluster role. 
 - The same token can be used in datasources secrets related to the Prometheus instances deployed in the `openshift-monitoring` and `appstudio-workload-monitoring` namespaces.
 
-
 ## Installation and Configuration
 
 create the "base" resources by running the following command:
