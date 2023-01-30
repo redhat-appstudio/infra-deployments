@@ -254,9 +254,7 @@ New dashboards can be added throw the user interface, preconfigured in infra-dep
             disableDeletion: true
             options:
               path: /var/lib/grafana/dashboards-dora-metrics
-    
-
-        ```
+    ```
   
   - Note: Grafana dashboards has to have a predefined datasource name. It is recommended to use templating to select them. For example:
     ```json
