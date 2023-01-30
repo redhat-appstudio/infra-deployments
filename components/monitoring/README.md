@@ -155,9 +155,9 @@ New dashboards can be added throw the user interface, preconfigured in infra-dep
 
 ##### In place configuration
 
-  - Add dashboard json to the `dashboards` folder
+  - Add dashboard json to the [dashboards](https://github.com/redhat-appstudio/infra-deployments/tree/main/components/monitoring/grafana/base/dashboards) folder
 
-  - Add dashboard's file name to `kustomization.yaml`
+  - Add dashboard's file name to [kustomization.yaml](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/monitoring/grafana/base/kustomization.yaml#L15)
     ```yaml
     configMapGenerator:
     - name: grafana-dashboard-definitions
@@ -187,7 +187,7 @@ New dashboards can be added throw the user interface, preconfigured in infra-dep
           - grafana-dashboards/spi-slo.json
     ```
 
-  - Include a reference to this dashboard in `kustomization.yaml`
+  - Include a reference to this dashboard in [kustomization.yaml](https://github.com/redhat-appstudio/infra-deployments/blob/2a6e4dcb272fa01d330b393d87b8f5ea5c434687/components/monitoring/grafana/base/kustomization.yaml#L3)
     ```yaml
     apiVersion: kustomize.config.k8s.io/v1beta1
     kind: Kustomization
@@ -221,7 +221,7 @@ New dashboards can be added throw the user interface, preconfigured in infra-dep
       ...
     ```
 
-  - Add a volume to `grafana-app.yaml`
+  - Add a [volume](https://github.com/redhat-appstudio/infra-deployments/blob/2a6e4dcb272fa01d330b393d87b8f5ea5c434687/components/monitoring/grafana/base/grafana-app.yaml#L175) to `grafana-app.yaml` 
     ```yaml
     - name: grafana-dashboard-dora-metrics-volume
       projected:
@@ -230,14 +230,14 @@ New dashboards can be added throw the user interface, preconfigured in infra-dep
              name: grafana-dashboard-dora-metrics
      ```
 
-  - Add a volumeMounts to `grafana-app.yaml`
+  - Add a [volumeMounts](https://github.com/redhat-appstudio/infra-deployments/blob/2a6e4dcb272fa01d330b393d87b8f5ea5c434687/components/monitoring/grafana/base/grafana-app.yaml#L87) to `grafana-app.yaml`
     ```yaml
     volumeMounts:
     - mountPath: /var/lib/grafana/dashboards-dora-metrics
       name: grafana-dashboard-dora-metrics-volume
     ```
 
-  - Add a link to the new maps folder in `appstudio-workload-monitoring` ConfigMap in  `grafana-app.yaml`
+  - Add a link to the new maps folder in `appstudio-workload-monitoring` [ConfigMap](https://github.com/redhat-appstudio/infra-deployments/blob/2a6e4dcb272fa01d330b393d87b8f5ea5c434687/components/monitoring/grafana/base/grafana-app.yaml#L234) in  `grafana-app.yaml`
     ```yaml
     apiVersion: v1
     kind: ConfigMap
