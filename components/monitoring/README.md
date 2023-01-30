@@ -132,7 +132,14 @@ spec:
     namespace: appstudio-workload-monitoring
   ```
 
-#### 4. Grafana dashboards - manual export
+#### 4. Grafana dashboards
+
+A dashboard is a set of one or more panels organized and arranged into one or more rows.
+It visualizes results from multiple data sources simultaneously.
+New dashboards can be added throw the user interface, preconfigured in infra-deployment project
+, or imported from other projects.
+
+##### Manual export
 
   - Create a new folder in [grafana](https://grafana-appstudio-workload-monitoring.apps.appstudio-stage.x99m.p1.openshiftapps.com) for your service. (In the left nav, + Create Folder)
 
@@ -147,6 +154,137 @@ spec:
   - Add your dashboard to the [kustomization file](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/monitoring/grafana/base/kustomization.yaml#L15) to automatically add it to future deployments.
 
   - [Here](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/monitoring/grafana/base/dashboards/example.json) is an example for the default dashboard.
+
+##### In place configuration
+
+  - Add dashboard json to the `dashboards` folder
+
+  - Add dashboard's file name to `kustomization.yaml`
+    ```yaml
+    configMapGenerator:
+    - name: grafana-dashboard-definitions
+      files:
+      - example.json=dashboards/example.json
+    ```
+
+##### External configuration
+  - Create in your project `kustomization.yaml` which will provide a configmaps with Grafana dashboards.
+    ```yaml
+    kind: Kustomization
+    apiVersion: kustomize.config.k8s.io/v1beta1
+    
+    generatorOptions:
+      disableNameSuffixHash: true
+    
+    
+    configMapGenerator:
+      - name: grafana-dashboard-spi-health
+        files:
+          - grafana-dashboards/spi-health.json
+      - name: grafana-dashboard-spi-outbound-traffic
+        files:
+          - grafana-dashboards/spi-outbound-traffic.json
+      - name: grafana-dashboard-spi-slo
+        files:
+          - grafana-dashboards/spi-slo.json
+    ```
+
+  - Include a reference to this dashboard in `kustomization.yaml`
+    ```yaml
+    apiVersion: kustomize.config.k8s.io/v1beta1
+    kind: Kustomization
+    resources:
+    - grafana-app.yaml
+    - https://github.com/redhat-appstudio/service-provider-integration-operator/config/monitoring/base?ref=02c2b7042a1b8cfff1fc489a964cc3142bcefcbe
+    - https://github.com/redhat-appstudio/release-service/config/monitoring/?ref=af24f781e2ecd5648d057b9c522cfbd46ed7a076
+    - https://github.com/redhat-appstudio/managed-gitops/manifests/base/monitoring/base?ref=283a1c391d64b251bf57c79403485ca47246be34
+    - https://github.com/redhat-appstudio/dora-metrics/deploy/grafana/?ref=326417b0ffc4205fa3acaa675bfc0286f12b7682
+    ```
+
+  - Note: to keep the `ref={id}` up to date such a configuration of PipelineRun can be used
+    ```yaml
+    apiVersion: tekton.dev/v1beta1
+    kind: PipelineRun
+    metadata:
+      name: spi-controller-on-push
+    annotations:
+      pipelinesascode.tekton.dev/on-event: "[push]"
+      pipelinesascode.tekton.dev/on-target-branch: "[main]"
+      pipelinesascode.tekton.dev/max-keep-runs: "5"
+    spec:
+      params:
+      ...
+      - name: infra-deployment-update-script
+        value: |
+         sed -i -e 's|\(https://github.com/redhat-appstudio/service-provider-integration-operator/config/monitoring/base?ref=\)\(.*\)|\1{{ revision }}|' components/monitoring/grafana/base/kustomization.yaml
+        pipelineRef:
+         name: docker-build
+         bundle: quay.io/redhat-appstudio/hacbs-core-service-templates-bundle:latest
+      ...
+    ```
+
+  - Add a volume to `grafana-app.yaml`
+    ```yaml
+    - name: grafana-dashboard-dora-metrics-volume
+      projected:
+       sources:
+         - configMap:
+             name: grafana-dashboard-dora-metrics
+     ```
+
+  - Add a volumeMounts to `grafana-app.yaml`
+    ```yaml
+    volumeMounts:
+    - mountPath: /var/lib/grafana/dashboards-dora-metrics
+      name: grafana-dashboard-dora-metrics-volume
+    ```
+
+  - Add a link to the new maps folder in `appstudio-workload-monitoring` ConfigMap in  `grafana-app.yaml`
+    ```yaml
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      namespace: appstudio-workload-monitoring
+      name: grafana-dashboards
+    data:
+      default.yaml: |
+        apiVersion: 1
+        providers:
+          - name: Dora Metrics
+            folder: QE
+            type: file
+            disableDeletion: true
+            options:
+              path: /var/lib/grafana/dashboards-dora-metrics
+    
+
+        ```
   
+  - Note: Grafana dashboards has to have a predefined datasource name. It is recommended to use templating to select them. For example:
+    ```json
+      "templating": {
+        "list": [
+          {
+            "current": {
+              "selected": true,
+              "text": "prometheus-appstudio-ds",
+              "value": "prometheus-appstudio-ds"
+            },
+            "hide": 0,
+            "includeAll": false,
+            "multi": false,
+            "name": "datasource",
+            "options": [],
+            "query": "prometheus",
+            "queryValue": "",
+            "refresh": 1,
+            "regex": ".*-(appstudio)-.*",
+            "skipUrlSync": false,
+            "type": "datasource"
+          }
+        ]
+      },
+    ```
+    In this example dashboard will use `prometheus-appstudio-ds` datasource, with ability to use other datasource that contains `appstudio` in the name.
     
 
