@@ -59,8 +59,10 @@ $ export PROMETHEUS_URL_APPSTUDIO=`oc get route/prometheus-oauth -n appstudio-wo
 ```
 $ export GRAFANA_SECRET_NAME=$(oc -n appstudio-workload-monitoring get sa/grafana-oauth -o jsonpath="{.secrets[0].name}")
 
-$ export GRAFANA_OAUTH_TOKEN=`oc -n appstudio-workload-monitoring create token grafana-oauth --bound-object-kind Secret --bound-object-name $GRAFANA_SECRET_NAME`
+$ export GRAFANA_OAUTH_TOKEN=`oc -n appstudio-workload-monitoring create token grafana-oauth --bound-object-kind Secret --bound-object-name $GRAFANA_SECRET_NAME --duration=8760h`
 ```
+Note: We are keeping expiration duration to one year. So we need to keep this renewing.
+TODO: find a way to get token and renew this automatically.
 
 Using the values obtained from the **Prometheus cluster**, run the following command on the **Grafana cluster**:
 For current setup we have two datasource `prometheus-appstudio-ds` and `prometheus-openshift-ds`
