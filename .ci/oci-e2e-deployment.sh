@@ -6,7 +6,7 @@ set -o pipefail
 set -u
 
 export WORKSPACE=$(dirname $(dirname $(readlink -f "$0")));
-
+#######
 export TEST_BRANCH_ID=$(date +%s)
 export MY_GIT_FORK_REMOTE="qe"
 export MY_GITHUB_ORG="redhat-appstudio-qe"
