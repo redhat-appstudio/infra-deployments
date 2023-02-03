@@ -1,0 +1,26 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app.kubernetes.io/name: sprayproxy
+    prometheus: appstudio-workload
+  name: sprayproxy
+  namespace: appstudio-workload-monitoring
+spec:
+  endpoints:
+    - path: /metrics
+      interval: 15s
+      port: https
+      scheme: https
+      bearerTokenSecret:
+        name: "prometheus-k8s-token-xhrjb"
+        key: token
+      tlsConfig:
+        insecureSkipVerify: true
+  namespaceSelector:
+    matchNames:
+      # fyi the yaml in the sprayproxy repo has 'redhat-sprayproxy' as the namespace, but the kustomization.yaml in the parent director is forcing the namespace to 'sprayproxy', so citing that here
+      - sprayproxy
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: sprayproxy
