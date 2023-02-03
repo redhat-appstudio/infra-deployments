@@ -21,15 +21,15 @@ spec:
     registrationService:
       auth:
         authClientConfigRaw: '{
-                  "realm": "testrealm",
+                  "realm": "redhat-external",
                   "auth-server-url": "$RHSSO_URL/auth",
                   "ssl-required": "nones",
-                  "resource": "sandbox-public",
-                  "clientId": "sandbox-public",
+                  "resource": "cloud-services",
+                  "clientId": "cloud-services",
                   "public-client": true
                 }'
         authClientLibraryURL: $RHSSO_URL/auth/js/keycloak.js
-        authClientPublicKeysURL: $RHSSO_URL/auth/realms/testrealm/protocol/openid-connect/certs
+        authClientPublicKeysURL: $RHSSO_URL/auth/realms/redhat-external/protocol/openid-connect/certs
 EOF
   fi
 fi

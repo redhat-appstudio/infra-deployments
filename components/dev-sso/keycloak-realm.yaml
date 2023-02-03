@@ -1,7 +1,7 @@
 apiVersion: keycloak.org/v1alpha1
 kind: KeycloakRealm
 metadata:
-  name: testrealm
+  name: redhat-external
 spec:
   instanceSelector:
     matchLabels:
@@ -12,8 +12,8 @@ spec:
       - enabled: true
         redirectUris:
           - '*'
-        clientId: sandbox-public
-        name: sandbox-public
+        clientId: cloud-services
+        name: cloud-services
         implicitFlowEnabled: false
         publicClient: true
         standardFlowEnabled: true
@@ -21,11 +21,11 @@ spec:
         webOrigins:
           - '*'
         directAccessGrantsEnabled: true
-    displayName: Appstudio Realm
+    displayName: Redhat External for HAC
     enabled: true
-    id: rh-sso
+    id: hac-sso
     loginTheme: rh-sso
-    realm: testrealm
+    realm: redhat-external
     users:
       - credentials:
           - type: password
