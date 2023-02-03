@@ -258,10 +258,11 @@ done
 
 if [ -n "$KEYCLOAK" ] && [ -n "$TOOLCHAIN" ]; then
   echo "Restarting toolchain registration service to pick up keycloak's certs."
+  oc rollout restart StatefulSet/keycloak -n dev-sso
   oc delete deployment/registration-service -n toolchain-host-operator
   # Wait for the new deployment to be available
   timeout --foreground 5m bash  <<- "EOF"
-		while [[ "$(oc get deployment/registration-service -n toolchain-host-operator -o jsonpath='{.status.conditions[?(@.type=="Available")].status}')" != "True" ]]; do 
+		while [[ "$(oc get deployment/registration-service -n toolchain-host-operator -o jsonpath='{.status.conditions[?(@.type=="Available")].status}')" != "True" ]]; do
 			echo "Waiting for registration-service to be available again"
 			sleep 2
 		done
