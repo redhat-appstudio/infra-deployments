@@ -187,18 +187,22 @@ New dashboards can be added through the user interface, preconfigured in infra-d
           - grafana-dashboards/spi-slo.json
     ```
 
-  - Include a reference to this dashboard in [kustomization.yaml](https://github.com/redhat-appstudio/infra-deployments/blob/2a6e4dcb272fa01d330b393d87b8f5ea5c434687/components/monitoring/grafana/base/kustomization.yaml#L3)
+  - Include a reference to this dashboard in [kustomization.yaml](https://github.com/redhat-appstudio/infra-deployments/blob/f0d3956f4a11d25291e91773d74b5942ce943f39/components/monitoring/grafana/base/spi/kustomization.yaml#L4)
     ```yaml
     apiVersion: kustomize.config.k8s.io/v1beta1
     kind: Kustomization
     resources:
-    - grafana-app.yaml
-    - https://github.com/redhat-appstudio/service-provider-integration-operator/config/monitoring/base?ref=02c2b7042a1b8cfff1fc489a964cc3142bcefcbe
-    - https://github.com/redhat-appstudio/release-service/config/monitoring/?ref=af24f781e2ecd5648d057b9c522cfbd46ed7a076
-    - https://github.com/redhat-appstudio/managed-gitops/manifests/base/monitoring/base?ref=283a1c391d64b251bf57c79403485ca47246be34
-    - https://github.com/redhat-appstudio/dora-metrics/deploy/grafana/?ref=326417b0ffc4205fa3acaa675bfc0286f12b7682
+    - https://github.com/redhat-appstudio/service-provider-integration-operator/config/monitoring/base?ref=8456502ae3a4dca0688bc70abfac2db58ee8acb4
     ```
-
+  - Ensure that project's kustomization.yaml is included in [grafana/base/kustomization.yaml](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/monitoring/grafana/base/kustomization.yaml)
+  ```yaml
+     apiVersion: kustomize.config.k8s.io/v1beta1
+     kind: Kustomization
+     resources:
+     ...
+       - spi/
+     ...
+  ```
   - Note: to keep the `ref={id}` up to date such a configuration of PipelineRun can be used
     ```yaml
     apiVersion: tekton.dev/v1beta1
@@ -214,7 +218,7 @@ New dashboards can be added through the user interface, preconfigured in infra-d
       ...
       - name: infra-deployment-update-script
         value: |
-         sed -i -e 's|\(https://github.com/redhat-appstudio/service-provider-integration-operator/config/monitoring/base?ref=\)\(.*\)|\1{{ revision }}|' components/monitoring/grafana/base/kustomization.yaml
+         sed -i -e 's|\(https://github.com/redhat-appstudio/service-provider-integration-operator/config/monitoring/base?ref=\)\(.*\)|\1{{ revision }}|' components/monitoring/grafana/base/spi/kustomization.yaml
         pipelineRef:
          name: docker-build
          bundle: quay.io/redhat-appstudio/hacbs-core-service-templates-bundle:latest
