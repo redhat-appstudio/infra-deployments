@@ -1,0 +1,13 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sprayproxy
+spec:
+  template:
+    spec:
+      containers:
+        - name: sprayproxy
+          envFrom:
+            - configMapRef:
+                name: backends
