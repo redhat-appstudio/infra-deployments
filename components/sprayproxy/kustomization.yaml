@@ -11,18 +11,8 @@ images:
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-configMapGenerator:
-  - name: backends
-    literals:
-      - SPRAYPROXY_SERVER_BACKENDS=pipelines-as-code-controller-pipelines-as-code.apps.stone-stg-m01.1ion.p1.openshiftapps.com pipelines-as-code-controller-pipelines-as-code.apps.stone-stg-rh01.0fk9.p1.openshiftapps.com
-
-generatorOptions:
-  annotations:
-    argocd.argoproj.io/compare-options: IgnoreExtraneous
-    argocd.argoproj.io/sync-options: Prune=false
-
 patches:
-  - path: add-backends-configmap.yml
+  - path: add-backends.yml
     target:
       name: sprayproxy
       group: apps
