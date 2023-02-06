@@ -1,0 +1,49 @@
+apiVersion: monitoring.coreos.com/v1
+kind: Alertmanager
+metadata:
+  name: alertmanager-appstudio
+  namespace: appstudio-workload-monitoring
+spec:
+  replicas: 3
+  alertmanagerConfigSelector:
+    matchLabels:
+      cluster: appstudio-stage
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: alertmanager-appstudio
+  namespace: appstudio-workload-monitoring
+  labels:
+    provider: appstudio-workload
+spec:
+  ports:
+  - name: web
+    port: 9093
+    protocol: TCP
+    targetPort: web
+  selector:
+    alertmanager: alertmanager-appstudio
+---
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
+metadata:
+  name: config-appstudio-stage
+  labels:
+    cluster: appstudio-stage
+spec:
+  route:
+    groupBy: ['job']
+    groupWait: 30s
+    groupInterval: 5m
+    repeatInterval: 12h
+    receiver: "stonesoup-stage"
+  receivers:
+  - name: "stonesoup-stage"
+    emailConfigs:
+    - to: 'appstudio-stage@redhat.com'
+      from: 'appstudio-stage@redhat.com'
+      #smarthost: <smtp-host>
+      #auth_username: <sender_email_id>
+      #auth_identity: <sender_email_id>
+      #auth_password: 'password'
