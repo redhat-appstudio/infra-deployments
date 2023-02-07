@@ -9,11 +9,17 @@ spec:
     Default EnterpriseContractPolicy. If a different policy is desired,
     this resource can serve as a starting point.
   configuration:
-    # TODO: https://issues.redhat.com/browse/HACBS-1615 will be used to determine a
-    # more reasonable defaulit policy configuration.
-    exclude: []
-    include: ["*"]
-    collections: []
+    collections:
+    #
+    # The "minimal" collection is a set of rules that should be easy to pass for brand new Stonesoup users
+    # See https://hacbs-contract.github.io/ec-policies/policy_configuration.html#_available_collections
+    - minimal
+    #
+    # These can be used for more fine-grained selection of rules if required.
+    # See https://hacbs-contract.github.io/ec-policies/policy_configuration.html#_including_and_excluding_rules
+    #exclude: []
+    #include: ["*"]
+    #
   # TODO: public key is copied from components/pipeline-service/public/tekton-chains-signing-secret.pub
   # until https://issues.redhat.com/browse/HACBS-1660 is in place.
   publicKey: |-
