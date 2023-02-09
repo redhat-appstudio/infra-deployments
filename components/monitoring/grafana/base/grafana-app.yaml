@@ -108,6 +108,8 @@ spec:
           name: grafana-dashboard-dora-metrics-volume
         - mountPath: /var/lib/grafana/dashboards-has
           name: grafana-dashboard-has-volume
+        - mountPath: /var/lib/grafana/dashboards-gitops
+          name: grafana-dashboard-gitops-volume
       - name: grafana-oauth2-proxy
         args:
         - --provider=github
@@ -236,6 +238,11 @@ spec:
           sources:
             - configMap:
                 name: grafana-dashboard-has-gitops-repo-metrics
+      - name: grafana-dashboard-gitops-volume
+        projected:
+          sources:
+            - configMap:
+                name: grafana-dashboard-gitops-service
       - name: secret-grafana-tls
         secret:
           defaultMode: 420
@@ -287,6 +294,12 @@ data:
         disableDeletion: true
         options:
           path: /var/lib/grafana/dashboards-has
+      - name: "GitOps Service"
+        folder: "GitOps Service"
+        type: file
+        disableDeletion: true
+        options:
+          path: /var/lib/grafana/dashboards-gitops
 ---
 # Route and service to provide a secured access to Grafana
 apiVersion: route.openshift.io/v1
