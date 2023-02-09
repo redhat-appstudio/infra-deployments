@@ -1,0 +1,25 @@
+resources:
+- allow-argocd-to-manage.yaml
+- https://github.com/redhat-appstudio/image-controller/config/default?ref=6a9e2196945df258be8d289c92ef871b88054f83
+
+images:
+- name: quay.io/redhat-appstudio/image-controller
+  newName: quay.io/redhat-appstudio/user-workload
+  #newName: quay.io/redhat-appstudio/image-controller
+  #newTag: df9177f14a0e46f9e9da51ff2d0f6055b67f9abe
+  newTag: image-controller-a1439d26922c7cd917f4f324fd6645fd02531ecb
+
+secretGenerator:
+- literals:
+  - quaytoken=""
+  - organization="redhat-user-workloads"
+  name: quaytoken
+
+namespace: image-controller
+
+patches:
+  - ./manager_resources_patch.yaml
+  
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
