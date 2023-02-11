@@ -14,6 +14,12 @@ spec:
     kind: ClusterSecretStore
     name: appsre-stonesoup-vault
   target:
+    name: redhat-appstudio-user-workload
     creationPolicy: Owner
     deletionPolicy: Delete
-    name: redhat-appstudio-user-workload
+    template:
+      engineVersion: v2
+      type: kubernetes.io/dockerconfigjson
+      data:
+        .dockerconfigjson: "{{ .config | b64enc }}"
+    
