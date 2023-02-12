@@ -47,6 +47,10 @@ wait_for_route() {
 switch_route_to_reencrypt() {
     echo Switch the Route to use re-encryption
     kubectl patch argocd/openshift-gitops -n openshift-gitops -p '{"spec": {"server": {"route": {"enabled": true, "tls": {"termination": "reencrypt"}}}}}' --type=merge
+    # After changing the tls method, a restart is needed other wise we
+    # experience timeouts in the UI.
+    echo Restarting ArgoCD Server
+    oc delete pod -l app.kubernetes.io/name=openshift-gitops-server -n openshift-gitops
 }
 
 grant_admin_role_to_all_authenticated_users() {

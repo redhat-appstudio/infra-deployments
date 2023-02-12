@@ -1,4 +1,5 @@
 #!/bin/bash -e
+set -o pipefail
 
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/..
 
@@ -84,7 +85,10 @@ update_patch_file "${ROOT}/argo-cd-apps/k-components/inject-infra-deployments-re
 
 # delete argoCD applications which are not in DEPLOY_ONLY env var if it's set
 if [ -n "$DEPLOY_ONLY" ]; then
-  APPLICATIONS=$(oc kustomize argo-cd-apps/base/ | yq e --no-doc .metadata.name)
+  APPLICATIONS=$(\
+    oc kustomize argo-cd-apps/overlays/development |\
+    yq e --no-doc 'select(.kind == "ApplicationSet") | .metadata.name'
+  )
   DELETED=$(yq e --no-doc .metadata.name $ROOT/argo-cd-apps/overlays/development/delete-applications.yaml)
   for APP in $APPLICATIONS; do
     if ! grep -q "\b$APP\b" <<< $DEPLOY_ONLY && ! grep -q "\b$APP\b" <<< $DELETED; then
@@ -203,7 +207,7 @@ while :; do
      echo All Applications are synced and Healthy
      break
   else
-     UNKNOWN=$(echo "$NOT_DONE" | grep Unknown | grep -v Progressing | cut -f1 -d ' ')
+     UNKNOWN=$(echo "$NOT_DONE" | grep Unknown | grep -v Progressing | cut -f1 -d ' ') || :
      if [ -n "$UNKNOWN" ]; then
        for app in $UNKNOWN; do
          ERROR=$(oc get -n openshift-gitops applications.argoproj.io $app -o jsonpath='{.status.conditions}')

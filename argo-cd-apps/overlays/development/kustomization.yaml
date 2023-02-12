@@ -10,3 +10,14 @@ patchesStrategicMerge:
 components:
   - ../../k-components/all-in-one
 namespace: openshift-gitops
+patches:
+  - path: gitops-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: gitops
+  - path: pipeline-service-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: pipeline-service
