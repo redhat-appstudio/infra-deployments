@@ -23,7 +23,7 @@ spec:
         authClientConfigRaw: '{
                   "realm": "redhat-external",
                   "auth-server-url": "$RHSSO_URL/auth",
-                  "ssl-required": "nones",
+                  "ssl-required": "none",
                   "resource": "cloud-services",
                   "clientId": "cloud-services",
                   "public-client": true
