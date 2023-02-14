@@ -4,28 +4,14 @@ metadata:
   name: spi
 spec:
   generators:
-    - merge:
-        mergeKeys:
-          - nameNormalized
-        generators:
-          - clusters:
-              values:
-                sourceRoot: components/spi/overlays
-                environment: staging
-                clusterDir: base
-          - list:
-              elements:
-                - nameNormalized: stone-stg-m01
-                  values.clusterDir: stone-stg-m01
-                - nameNormalized: stone-stg-rh01
-                  values.clusterDir: stone-stg-rh01
+    - clusters: {}
   template:
     metadata:
       name: spi-{{nameNormalized}}
     spec:
       project: default
       source:
-        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
+        path: components/spi/overlays/staging
         repoURL: https://github.com/redhat-appstudio/infra-deployments.git
         targetRevision: main
       destination:
