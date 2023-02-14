@@ -6,7 +6,7 @@ title: Prerequisites
 
 The prerequisites are:
 
-- You must have the following tools install: 
+- You must have the following tools install:
   - `kubectl` - that matches your cluster version.
   - `oc` - that matches your cluster version.
   - `jq` >= `1.6`
