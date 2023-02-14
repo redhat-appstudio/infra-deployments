@@ -1,0 +1,20 @@
+---
+- op: replace
+  path: /spec/generators
+  value:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              values:
+                sourcePath: components/spi/overlays/staging/base
+          - list:
+              elements:
+                - nameNormalized: stone-stg-m01
+                  values.sourcePath: components/spi/overlays/staging/stone-stg-m01
+                - nameNormalized: stone-stg-rh01
+                  values.sourcePath: components/spi/overlays/staging/stone-stg-rh01
+- op: replace
+  path: /spec/template/spec/source/path
+  value: '{{values.sourcePath}}'
