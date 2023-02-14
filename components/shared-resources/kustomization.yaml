@@ -1,4 +1,6 @@
 resources:
+# when stonesoup rebases on OCP 4.14, shared resources will be part of the GA install; as such, if we are still using shared resources,
+# all these raw.githubusercontent refs to install shared resources can go away
 - https://raw.githubusercontent.com/openshift/csi-driver-shared-resource-operator/c60295f4e59c0d3f17fd1c5b920296ec58231db1/assets/config_configmap.yaml
 - https://raw.githubusercontent.com/openshift/csi-driver-shared-resource-operator/c60295f4e59c0d3f17fd1c5b920296ec58231db1/assets/csidriver.yaml
 - https://raw.githubusercontent.com/openshift/csi-driver-shared-resource-operator/c60295f4e59c0d3f17fd1c5b920296ec58231db1/assets/metrics_service.yaml
@@ -14,10 +16,12 @@ resources:
 - https://raw.githubusercontent.com/openshift/csi-driver-shared-resource-operator/c60295f4e59c0d3f17fd1c5b920296ec58231db1/assets/rbac/prometheus_role.yaml
 - https://raw.githubusercontent.com/openshift/api/9d91c1f6cfd40449bd2af8a6b697a3bf7baf933b/sharedresource/v1alpha1/0000_10_sharedconfigmap.crd.yaml
 - https://raw.githubusercontent.com/openshift/api/9d91c1f6cfd40449bd2af8a6b697a3bf7baf933b/sharedresource/v1alpha1/0000_10_sharedsecret.crd.yaml
+# the scc.yaml can be removed when we move to 4.13 OCP, as the storage team's CSI in-line security 
 - scc.yaml
 - redhat-appstudio-user-workload-sharedsecret.yaml
 - globally-shared-secrets-clusterrole.yaml
 
+# the images section can be removed when we move to 4.14 OCP
 images:
 - name: \${NODE_DRIVER_REGISTRAR_IMAGE}
   newName: quay.io/openshift/origin-csi-node-driver-registrar
