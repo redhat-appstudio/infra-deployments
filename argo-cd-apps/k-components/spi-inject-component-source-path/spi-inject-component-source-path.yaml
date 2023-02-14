@@ -7,6 +7,9 @@
           - nameNormalized
         generators:
           - clusters:
+              selector:
+                matchLabels:
+                  appstudio.redhat.com/member-cluster: "true"
               values:
                 sourcePath: components/spi/overlays/staging/base
           - list:
