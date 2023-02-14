@@ -5,6 +5,14 @@ ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/..
 TOOLCHAIN=$1
 KEYCLOAK=$2
 
+if ! kubectl get namespace  openshift-cluster-csi-drivers  &>/dev/null; then
+  echo "Adding Storage Capability to ensure openshift-cluster-csi-drivers exists"
+  oc patch clusterversion/version --type merge -p \
+    '{"spec":{"capabilities":{"additionalEnabledCapabilities":["openshift-samples","marketplace","Console","Storage"]}}}'
+else 
+  echo "openshift-cluster-csi-drivers exists"
+fi
+ 
 if [ -n "$TOOLCHAIN" ]; then
   echo "Deploying toolchain"
   "$ROOT/hack/sandbox-development-mode.sh"
@@ -15,7 +23,9 @@ if [ -n "$TOOLCHAIN" ]; then
     BASE_URL=$(oc get ingresses.config.openshift.io/cluster -o jsonpath={.spec.domain})
     RHSSO_URL="https://keycloak-dev-sso.$BASE_URL"
 
-    oc patch ToolchainConfig/config -n toolchain-host-operator --type=merge --patch-file=/dev/stdin << EOF
+    # Use a temp file to workaround some install issues on wsl/crc with /dev/stdin 
+    AUTH=$(mktemp)
+    cat > $AUTH << EOF
 spec:
   host:
     registrationService:
@@ -31,6 +41,7 @@ spec:
         authClientLibraryURL: $RHSSO_URL/auth/js/keycloak.js
         authClientPublicKeysURL: $RHSSO_URL/auth/realms/redhat-external/protocol/openid-connect/certs
 EOF
+  oc patch ToolchainConfig/config -n toolchain-host-operator --type=merge --patch-file=$AUTH
   fi
 fi
 
