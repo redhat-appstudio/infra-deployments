@@ -80,7 +80,7 @@ spec:
 The ServiceMonitor above references a `Secret` which contains the bearer token that Prometheus will use when sending requests to the metrics endpoint. This secret needs to be in the same namespace as the ServiceMonitor itself. 
 
 
-In this case, running the following script will create the secret with 
+Running the following script will create the secret:
 
 ```
 $ ./hack/setup-monitoring.sh service-monitor-secret OPERATOR_NAMESPACE SERVICE_MONITOR_NAME SECRET_NAME      
