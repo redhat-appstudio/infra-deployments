@@ -1,14 +1,13 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
+  - ../../base/local-cluster-secret/all-in-one
   - ../../base/host
   - ../../base/host/optional/infra-deployments/dev-sso
   - ../../base/member
   - ../../base/all-clusters
 patchesStrategicMerge:
   - delete-applications.yaml
-components:
-  - ../../k-components/all-in-one
 namespace: openshift-gitops
 patches:
   - path: development-overlay-patch.yaml
