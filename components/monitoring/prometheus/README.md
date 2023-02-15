@@ -121,4 +121,4 @@ level=warn ts=2023-01-25T11:05:13.374328714Z caller=operator.go:2255 component=p
 ## Verifying the Prometheus Targets
 
 User Workload Monitoring is integrated into the OpenShift Web Console. 
-Admins can check the target status in the [Observe > Targets menu](https://console-openshift-console.apps.sandbox-stage.gb17.p1.openshiftapps.com/monitoring/targets)
+Admins can check the target status in the [Observe > Targets menu](https://console-openshift-console.apps.sandbox-stage.gb17.p1.openshiftapps.com/monitoring/targets) and expect to see the metrics endpoint in "Up" state.
