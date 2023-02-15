@@ -9,10 +9,6 @@ commonAnnotations:
 
 resources:
   - git::https://github.com/openshift-pipelines/pipeline-service.git/operator/gitops/argocd/pipeline-service?ref=972a910ba3a86cacaeb9493fc1ac04428c7588e6
-  - tekton-chains-controller-shared-secrets-rolebinding.yaml
 
-patchesStrategicMerge:
-  # Mount the shared secret in tekton Chains
-  - tekton-chains-controller-shared-secret.yaml
-  # Reset securityContext in order to be able to mount csi content
-  - tekton-chains-controller-deployment.yaml
+components:
+  - ../components/tekton-chains
