@@ -108,3 +108,4 @@ timeout --foreground 15m "$WORKSPACE"/hack/bootstrap-cluster.sh preview
 prepareWebhookVariables
 createQuayPullSecrets
 executeE2ETests
+###############
