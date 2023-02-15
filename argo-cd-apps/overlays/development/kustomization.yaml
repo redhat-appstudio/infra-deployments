@@ -11,7 +11,7 @@ components:
   - ../../k-components/all-in-one
 namespace: openshift-gitops
 patches:
-  - path: gitops-patch.yaml
+  - path: development-overlay-patch.yaml
     target:
       kind: ApplicationSet
       version: v1alpha1
@@ -21,3 +21,8 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: pipeline-service
+  - path: development-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: build-service
