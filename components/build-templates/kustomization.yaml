@@ -1,18 +1,9 @@
 resources:
 - 0-namespace.yaml
-- 1-read-cm.yaml
-- 2-read-cm-binding.yaml
 - e2e/
 
 generatorOptions:
   disableNameSuffixHash: true
-
-configMapGenerator:
-- name: build-pipelines-defaults
-  namespace: build-templates
-  literals:
-  - default_build_bundle=quay.io/redhat-appstudio-tekton-catalog/pipeline-docker-build:e6ac988666adc39d265c979aabb48625013421fa
-  - hacbs_build_bundle=quay.io/redhat-appstudio-tekton-catalog/pipeline-docker-build:e6ac988666adc39d265c979aabb48625013421fa
 
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization

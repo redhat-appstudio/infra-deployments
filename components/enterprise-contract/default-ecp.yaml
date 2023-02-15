@@ -1,0 +1,51 @@
+---
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: EnterpriseContractPolicy
+metadata:
+  name: default
+  namespace: enterprise-contract-service
+spec:
+  description: >
+    Default EnterpriseContractPolicy. If a different policy is desired, this resource can serve as a starting point.
+
+  configuration:
+    collections:
+      #
+      # The "minimal" collection is a set of rules that should be easy to pass for brand new Stonesoup users
+      # See https://hacbs-contract.github.io/ec-policies/policy_configuration.html#_available_collections
+      - minimal
+      #
+      # These can be used for more fine-grained selection of rules if required.
+      # See https://hacbs-contract.github.io/ec-policies/policy_configuration.html#_including_and_excluding_rules
+      #exclude: []
+      #include: ["*"]
+      #
+  # TODO: public key is copied from components/pipeline-service/public/tekton-chains-signing-secret.pub
+  # until https://issues.redhat.com/browse/HACBS-1660 is in place.
+  publicKey: |-
+    -----BEGIN PUBLIC KEY-----
+    MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEODgxyIz09vBqJlXXzjp/X2h17WIt
+    jCVQhnDYVWHvXhw6rgqGeg6NTUxIEhRQqQZaF9mcBotHkuYGJfYZbai+FA==
+    -----END PUBLIC KEY-----
+  sources:
+    - name: Default Policies
+      data:
+        - oci::https://quay.io/hacbs-contract/ec-policy-data:git-5e76d0e@sha256:0a74ea290975fbe9280b17b43add061d59caa63a3e7b988bd61872b037fa82ed
+      policy:
+        - oci::https://quay.io/hacbs-contract/ec-release-policy:git-95fe672@sha256:c0c9232c3ed4310b486dae22bacaaedc6f6759bcb1f404e96c69cb8311b52977
+---
+# Allow any authenticated user to access to get/list/watch the EnterpriseContractPolicy resources
+# in the enterprise-contract-service namespace.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: public-ecp
+  namespace: enterprise-contract-service
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: enterprisecontractpolicy-viewer-role
+subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: system:authenticated

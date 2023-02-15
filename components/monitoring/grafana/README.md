@@ -47,6 +47,10 @@ $ export GRAFANA_OAUTH_TOKEN=`oc -n openshift-user-workload-monitoring create to
 $ export THANOS_QUERIER_URL=`oc get route/thanos-querier -n openshift-monitoring -o json | jq -r '.status.ingress[0].host'`
 ```
 
+Note: We are keeping expiration duration to one year. So we need to keep this renewing.
+
+TODO: find a way to get token and renew this automatically.
+
 Using these values, run the following command on the **Grafana cluster**:
 
 ```

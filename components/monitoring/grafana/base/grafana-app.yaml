@@ -99,6 +99,16 @@ spec:
           name: grafana-dashboard-definitions
         - mountPath: /var/lib/grafana/dashboards-spi
           name: grafana-dashboard-spi-volume
+        - mountPath: /var/lib/grafana/dashboards-release-service
+          name: grafana-dashboard-release-service-volume
+        - mountPath: /var/lib/grafana/dashboards-build-service
+          name: grafana-dashboard-build-service-volume
+        - mountPath: /var/lib/grafana/dashboards-dora-metrics
+          name: grafana-dashboard-dora-metrics-volume
+        - mountPath: /var/lib/grafana/dashboards-has
+          name: grafana-dashboard-has-volume
+        - mountPath: /var/lib/grafana/dashboards-gitops
+          name: grafana-dashboard-gitops-volume
       - name: grafana-oauth2-proxy
         args:
         - --provider=github
@@ -201,6 +211,33 @@ spec:
               name: grafana-dashboard-spi-outbound-traffic
           - configMap:
               name: grafana-dashboard-spi-slo
+      - name: grafana-dashboard-release-service-volume
+        projected:
+          sources:
+            - configMap:
+                name: grafana-dashboard-release-release-attempts
+      - name: grafana-dashboard-build-service-volume
+        projected:
+          sources:
+            - configMap:
+                name: grafana-dashboard-initial-build-pipeline
+            - configMap:
+                name: grafana-dashboard-pac-provision
+      - name: grafana-dashboard-dora-metrics-volume
+        projected:
+          sources:
+            - configMap:
+                name: grafana-dashboard-dora-metrics
+      - name: grafana-dashboard-has-volume
+        projected:
+          sources:
+            - configMap:
+                name: grafana-dashboard-has-gitops-repo-metrics
+      - name: grafana-dashboard-gitops-volume
+        projected:
+          sources:
+            - configMap:
+                name: grafana-dashboard-gitops-service
       - name: secret-grafana-tls
         secret:
           defaultMode: 420
@@ -228,6 +265,36 @@ data:
         disableDeletion: true
         options:
           path: /var/lib/grafana/dashboards-spi
+      - name: Release Service
+        folder: release
+        type: file
+        disableDeletion: true
+        options:
+          path: /var/lib/grafana/dashboards-release-service
+      - name: Build Service Operator
+        folder: "Build Service Operator"
+        type: file
+        disableDeletion: true
+        options:
+          path: /var/lib/grafana/dashboards-build-service
+      - name: Dora Metrics
+        folder: QE
+        type: file
+        disableDeletion: true
+        options:
+          path: /var/lib/grafana/dashboards-dora-metrics
+      - name: HAS 
+        folder: has
+        type: file
+        disableDeletion: true
+        options:
+          path: /var/lib/grafana/dashboards-has
+      - name: "GitOps Service"
+        folder: "GitOps Service"
+        type: file
+        disableDeletion: true
+        options:
+          path: /var/lib/grafana/dashboards-gitops
 ---
 # Route and service to provide a secured access to Grafana
 apiVersion: route.openshift.io/v1
