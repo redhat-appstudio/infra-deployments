@@ -15,11 +15,11 @@ while [[ $# -gt 0 ]]; do
   key=$1
   case $key in
     --toolchain|-t)
-      TOOLCHAIN=true
+      TOOLCHAIN="--toolchain"
       shift
       ;;
     --keycloak|-kc)
-      KEYCLOAK=true
+      KEYCLOAK="--keycloak"
       shift
       ;;
     preview|upstream)

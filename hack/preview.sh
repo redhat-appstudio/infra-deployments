@@ -2,14 +2,44 @@
 
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/..
 
-TOOLCHAIN=$1
-KEYCLOAK=$2
+# Print help message
+function print_help() {
+  echo "Usae: $0 MODE [--toolchain] [--keycloak] [-h|--help]"
+  echo "  MODE             upstream/preview (default: upstream)"
+  echo "  --toolchain  (only in preview mode) Install toolchain operators"
+  echo "  --keycloak  (only in preview mode) Configure the toolchain operator to use keycloak deployed on the cluster"
+  echo
+  echo "Example usage: \`$0 --toolchain --keycloak"
+}
+TOOLCHAIN=false
+KEYCLOAK=false
 
-if [ -n "$TOOLCHAIN" ]; then
+while [[ $# -gt 0 ]]; do
+  key=$1
+  case $key in
+    --toolchain)
+      TOOLCHAIN=true
+      shift
+      ;;
+    --keycloak)
+      KEYCLOAK=true
+      shift
+      ;;
+    -h|--help)
+      print_help
+      exit 0
+      ;;
+    *)
+      shift
+      ;;
+  esac
+done
+
+if $TOOLCHAIN ; then
   echo "Deploying toolchain"
   "$ROOT/hack/sandbox-development-mode.sh"
 
-  if [ -n "$KEYCLOAK" ]; then
+  if $KEYCLOAK; then
     echo "Patching toolchain config to use keylcoak installed on the cluster"
 
     BASE_URL=$(oc get ingresses.config.openshift.io/cluster -o jsonpath={.spec.domain})
@@ -256,7 +286,7 @@ while :; do
 done
 
 
-if [ -n "$KEYCLOAK" ] && [ -n "$TOOLCHAIN" ]; then
+if $KEYCLOAK && $TOOLCHAIN ; then
   echo "Restarting toolchain registration service to pick up keycloak's certs."
   oc rollout restart StatefulSet/keycloak -n dev-sso
   oc wait --for=condition=Ready pod/keycloak-0 -n dev-sso --timeout=5m
