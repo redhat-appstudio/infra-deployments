@@ -27,7 +27,7 @@ Metric endpoints exposed by the operator pods may be secured or unsecured, which
 
 ### Unsecured Endpoints
 
-When an operator exposes its endpoint in an unsecured manner (see example below), then no extra action is necessary, Prometheus will be able to fetch the metrics out-fof-the-box.
+When an operator exposes its endpoint in an unsecured manner (see example below), then no extra action is necessary, Prometheus will be able to fetch the metrics out-of-the-box.
 
 
 ```
