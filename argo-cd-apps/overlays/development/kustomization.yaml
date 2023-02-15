@@ -1,14 +1,42 @@
-resources:
-- ../../base
-- dev-sso.yaml
-
-namespace: openshift-gitops
-
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+resources:
+  - ../../base/local-cluster-secret/all-in-one
+  - ../../base/host
+  - ../../base/host/optional/infra-deployments/dev-sso
+  - ../../base/member
+  - ../../base/all-clusters
 patchesStrategicMerge:
-  - repo-overlay.yaml 
   - delete-applications.yaml
-
-
-
+namespace: openshift-gitops
+patches:
+  - path: development-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: gitops
+  - path: development-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: pipeline-service
+  - path: development-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: build-service
+  - path: development-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: build-templates
+  - path: development-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: has
+  - path: development-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: spi

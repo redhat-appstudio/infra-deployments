@@ -3,6 +3,13 @@ title: Bootstrap StoneSoup
 ---
 
 The following steps will help you creating an environment for developing StoneSoup.
+For development purposes, all the components will be deployed into a single cluster,
+as opposed to a [production deployment](../deployment/multi-cluster.md) where multiple clusters are needed.
+
+The deployment of StoneSoup's components is done via ArgoCD. The script mentioned below, will deploy an
+ArgoCD instance to the [development cluster](./pre.md#bootstrapping-a-cluster) and configure it to
+deploy StoneSoup.
+
 
 ## Getting Started
 
@@ -13,7 +20,7 @@ Steps:
 2. Open the Argo CD Web UI to see the status of your deployments. You can use the route from the previous step and login using your OpenShift credentials (using the 'Login with OpenShift' button), or login to the OpenShift Console and navigate to Argo CD using the OpenShift Gitops menu in the Applications pulldown.
 ![OpenShift Gitops menu with Cluster Argo CD menu option](./argo-cd-login.png?raw=true "OpenShift Gitops menu")
 
-3. If your deployment was successful, you should see several applications running, such as "all-components-staging", "gitops", and so on.
+3. If your deployment was successful, you should see several applications running.
 
 ## Preview mode for your clusters
 

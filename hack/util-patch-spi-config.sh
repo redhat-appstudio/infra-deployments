@@ -19,7 +19,7 @@ EOF
 )
 
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/..
-PATCH_FILE="$ROOT/components/spi/overlays/staging/config-patch.json"
+PATCH_FILE="$ROOT/components/spi/overlays/development/config-patch.json"
 
 if [ -z ${1} ]; then
     APPS_BASE_URL=$(oc get ingress.config cluster -o jsonpath='{.spec.domain}')

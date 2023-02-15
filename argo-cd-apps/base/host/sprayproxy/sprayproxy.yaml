@@ -1,0 +1,32 @@
+
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: sprayproxy
+spec:
+  generators:
+    - clusters: {}
+  template:
+    metadata:
+      name: sprayproxy-{{nameNormalized}}
+    spec:
+      project: default
+      source:
+        path: components/sprayproxy
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+        targetRevision: multi-cluster
+      destination:
+        namespace: sprayproxy
+        server: '{{server}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+        retry:
+          limit: -1
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 3m

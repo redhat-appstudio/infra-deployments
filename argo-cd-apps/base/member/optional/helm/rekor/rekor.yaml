@@ -1,0 +1,44 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: rekor
+spec:
+  generators:
+    - clusters: {}
+  template:
+    metadata:
+      name: rekor-{{nameNormalized}}
+    spec:
+      project: default
+      source:
+        path: helm-charts/rekor
+        repoURL: 'https://github.com/sigstore/sigstore-helm-operator'
+        targetRevision: "143b8d71fc861d7c7ac93a15d0fbd33654b75908"
+        helm:
+          valueFiles:
+            - values.yaml
+          values: |-
+            server:
+              strategy:
+                type: Recreate
+              ingress:
+                hostname: rekor-server.enterprise-contract-service.svc
+                annotations:
+                  route.openshift.io/termination: "edge"
+            mysql:
+              auth:
+                password: "password"
+      destination:
+        namespace: enterprise-contract-service
+        server: '{{server}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+        retry:
+          limit: 50
+          backoff:
+            duration: 15s
