@@ -6,20 +6,20 @@ metadata:
   namespace: enterprise-contract-service
 spec:
   description: >
-    Default EnterpriseContractPolicy. If a different policy is desired,
-    this resource can serve as a starting point.
+    Default EnterpriseContractPolicy. If a different policy is desired, this resource can serve as a starting point.
+
   configuration:
     collections:
-    #
-    # The "minimal" collection is a set of rules that should be easy to pass for brand new Stonesoup users
-    # See https://hacbs-contract.github.io/ec-policies/policy_configuration.html#_available_collections
-    - minimal
-    #
-    # These can be used for more fine-grained selection of rules if required.
-    # See https://hacbs-contract.github.io/ec-policies/policy_configuration.html#_including_and_excluding_rules
-    #exclude: []
-    #include: ["*"]
-    #
+      #
+      # The "minimal" collection is a set of rules that should be easy to pass for brand new Stonesoup users
+      # See https://hacbs-contract.github.io/ec-policies/policy_configuration.html#_available_collections
+      - minimal
+      #
+      # These can be used for more fine-grained selection of rules if required.
+      # See https://hacbs-contract.github.io/ec-policies/policy_configuration.html#_including_and_excluding_rules
+      #exclude: []
+      #include: ["*"]
+      #
   # TODO: public key is copied from components/pipeline-service/public/tekton-chains-signing-secret.pub
   # until https://issues.redhat.com/browse/HACBS-1660 is in place.
   publicKey: |-
@@ -30,9 +30,9 @@ spec:
   sources:
     - name: Default Policies
       data:
-        - oci::https://quay.io/hacbs-contract/ec-policy-data:git-ccc72dc@sha256:00e383dae2d0d79552ec6c53e68e74ead86f1e62714f5e1224dcfe88230f1f9a
+        - oci::https://quay.io/hacbs-contract/ec-policy-data:git-5e76d0e@sha256:0a74ea290975fbe9280b17b43add061d59caa63a3e7b988bd61872b037fa82ed
       policy:
-        - oci::https://quay.io/hacbs-contract/ec-release-policy:git-ccc72dc@sha256:af149d5f68984b303739eb2222ad5b7471862b287387a27d338ec0adb36aab7d
+        - oci::https://quay.io/hacbs-contract/ec-release-policy:git-95fe672@sha256:c0c9232c3ed4310b486dae22bacaaedc6f6759bcb1f404e96c69cb8311b52977
 ---
 # Allow any authenticated user to access to get/list/watch the EnterpriseContractPolicy resources
 # in the enterprise-contract-service namespace.
@@ -46,7 +46,6 @@ roleRef:
   kind: ClusterRole
   name: enterprisecontractpolicy-viewer-role
 subjects:
-- apiGroup: rbac.authorization.k8s.io
-  kind: Group
-  name: system:authenticated
-
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: system:authenticated
