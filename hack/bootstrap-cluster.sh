@@ -8,11 +8,11 @@ main() {
         key=$1
         case $key in
         --toolchain | -t)
-            toolchain=true
+            toolchain="--toolchain"
             shift
             ;;
         --keycloak | -kc)
-            keycloak=true
+            keycloak="--keycloak"
             shift
             ;;
         preview | upstream)
