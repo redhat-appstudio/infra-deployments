@@ -11,6 +11,7 @@ The prerequisites are:
   - `oc` - that matches your cluster version.
   - `jq` >= `1.6`
   - [`yq`](https://github.com/mikefarah/yq) >= `v4.23.1`
+  - `openssl` >= v3.0.2
 - The script `./hack/setup/install-pre-req.sh` will install these prerequisites for you, if they're not already installed.
 - You must have `kubectl` and `oc` pointing to an existing OpenShift cluster, that you wish to deploy to.
 
