@@ -4,14 +4,24 @@ metadata:
   name: dora-metrics
 spec:
   generators:
-    - clusters: {}
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              values:
+                sourceRoot: components/dora-metrics
+                environment: staging
+                clusterDir: ""
+          - list:
+              elements: []
   template:
     metadata:
       name: dora-metrics-{{nameNormalized}}
     spec:
       project: default
       source:
-        path: components/dora-metrics
+        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
         repoURL: https://github.com/redhat-appstudio/infra-deployments.git
         targetRevision: main
       destination:
