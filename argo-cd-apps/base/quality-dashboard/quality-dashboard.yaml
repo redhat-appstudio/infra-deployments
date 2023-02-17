@@ -4,7 +4,20 @@ metadata:
   name: quality-dashboard
 spec:
   generators:
-    - clusters: {}
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              selector:
+                matchLabels:
+                  appstudio.redhat.com/quality-dashboard: "true"
+              values:
+                sourceRoot: components/quality-dashboard
+                environment: staging
+                clusterDir: ""
+          - list:
+              elements: []
   template:
     metadata:
       name: quality-dashboard-{{nameNormalized}}

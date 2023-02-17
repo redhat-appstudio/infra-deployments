@@ -1,11 +1,10 @@
 ---
 - op: add
-  path: /spec/generators/0/clusters
+  path: /spec/generators/0/merge/generators/0/clusters/selector
   value:
-    selector:
-      matchLabels:
-        argocd.argoproj.io/secret-type: cluster
-      matchExpressions:
-        - key: app.kubernetes.io/name
-          operator: NotIn
-          values: [argocd-default-cluster-config]
+    matchLabels:
+      argocd.argoproj.io/secret-type: cluster
+    matchExpressions:
+      - key: app.kubernetes.io/name
+        operator: NotIn
+        values: [argocd-default-cluster-config]
