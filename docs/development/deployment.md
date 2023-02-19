@@ -30,7 +30,7 @@ To enable development for a team or individual to test changes on your own clust
 
 There are a set of scripts that help with this, and minimize the changes needed in your forks.
 
-The [development configuration](../../argo-cd-apps/overlays/development) includes a kustomize overlay that can redirect the default components individual repositories to your fork.
+The [development configuration](https://github.com/redhat-appstudio/infra-deployments/tree/main/argo-cd-apps/overlays/development) includes a kustomize overlay that can redirect the default components individual repositories to your fork.
 The script also supports branches automatically. If you work in a checked out branch, each of the components in the overlays will mapped to that branch by setting `targetRevision:`.
 
 Preview mode works in a feature branch, apply script which creates new preview branch and create additional commit with customization.
