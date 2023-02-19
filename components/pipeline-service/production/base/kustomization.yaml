@@ -13,3 +13,11 @@ resources:
 
 components:
   - ../../components/tekton-chains
+
+patches:
+  - path: pipelines-as-code-secret-path.yaml
+    target:
+      name: pipelines-as-code-secret
+      group: external-secrets.io
+      version: v1beta1
+      kind: ExternalSecret
