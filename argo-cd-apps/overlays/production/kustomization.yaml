@@ -5,6 +5,7 @@ resources:
   - ../../base/host
   - ../../base/member
   - ../../base/all-clusters
+  - ../../base/tekton-ci
 namespace: argocd
 patches:
   - path: production-overlay-patch.yaml
@@ -57,3 +58,8 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: sprayproxy
+  - path: production-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: monitoring-workload-prometheus
