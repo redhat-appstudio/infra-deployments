@@ -3,17 +3,9 @@ resources:
 - https://github.com/redhat-appstudio/image-controller/config/default?ref=3a5123f3fa750c769cafe98f5f9595a3b3eef9d8
 
 images:
-- name: quay.io/redhat-appstudio/image-controller
-  newName: quay.io/redhat-appstudio/user-workload
-  #newName: quay.io/redhat-appstudio/image-controller
-  #newTag: df9177f14a0e46f9e9da51ff2d0f6055b67f9abe
-  newTag: image-controller-3a5123f3fa750c769cafe98f5f9595a3b3eef9d8
-
-secretGenerator:
-- literals:
-  - quaytoken=""
-  - organization="redhat-user-workloads"
-  name: quaytoken
+- name: quay.io/shbose/image-controller
+  newName: quay.io/redhat-appstudio/image-controller
+  newTag: 3a5123f3fa750c769cafe98f5f9595a3b3eef9d8
 
 namespace: image-controller
 
