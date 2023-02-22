@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- ../base
+- ../base/external-secrets
+
+patches:
+  - path: tekton-ci-push-secret.yaml
+    target:
+      name: tekton-ci-push-secret
+      kind: ExternalSecret
+      group: external-secrets.io
+      version: v1beta1
+  - path: infra-deployments-pr-creator.yaml
+    target:
+      name: infra-deployments-pr-creator
+      kind: ExternalSecret
+      group: external-secrets.io
+      version: v1beta1
