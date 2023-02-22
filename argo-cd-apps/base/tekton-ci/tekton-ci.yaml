@@ -4,17 +4,27 @@ metadata:
   name: tekton-ci
 spec:
   generators:
-    - clusters:
-        selector:
-          matchLabels:
-            appstudio.redhat.com/tekton-ci: "true"
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              values:
+                sourceRoot: components/tekton-ci
+                environment: staging
+                clusterDir: ""
+              selector:
+                matchLabels:
+                  appstudio.redhat.com/tekton-ci: "true"
+          - list:
+              elements: []
   template:
     metadata:
       name: tekton-ci-{{nameNormalized}}
     spec:
       project: default
       source:
-        path: components/tekton-ci
+        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
         repoURL: https://github.com/redhat-appstudio/infra-deployments.git
         targetRevision: main
       destination:
