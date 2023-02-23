@@ -12,6 +12,8 @@ main() {
     oc registry login --registry=docker.io --auth-basic="$docker_io_auth" --to="$auth"
     oc set data secret/pull-secret -n openshift-config --from-file=.dockerconfigjson="$auth"
     # Set current namespace pipeline serviceaccount which is used by buildah
+    rm "$auth"
+    oc registry login --registry=docker.io --auth-basic="$docker_io_auth" --to="$auth"
     oc create secret docker-registry docker-io-pull --from-file=.dockerconfigjson="$auth" -o yaml --dry-run=client | oc apply -f-
     oc create serviceaccount pipeline -o yaml --dry-run=client | oc apply -f-
     oc secrets link pipeline docker-io-pull
