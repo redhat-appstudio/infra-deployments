@@ -5,7 +5,7 @@ metadata:
 spec:
   instanceSelector:
     matchLabels:
-      app.kubernetes.io/instance: dev-sso
+      appstudio.redhat.com/keycloak: dev
   realm:
     accessTokenLifespan: 7200
     clients:
@@ -36,3 +36,6 @@ spec:
         firstName: user1
         id: user1
         username: user1
+        clientRoles:
+          realm-management:
+            - "manage-users"
