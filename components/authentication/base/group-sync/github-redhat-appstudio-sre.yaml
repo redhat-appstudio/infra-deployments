@@ -2,6 +2,8 @@ apiVersion: redhatcop.redhat.io/v1alpha1
 kind: GroupSync
 metadata:
   name: github-redhat-appstudio-sre
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
   schedule: "*/15 * * * *"
   providers:
