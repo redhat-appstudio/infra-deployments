@@ -7,6 +7,7 @@ main() {
     "${ROOT}/secret-creator/create-gitops-secrets.sh"
     [[ -z "$MY_GITHUB_TOKEN" ]] ||
         "${ROOT}/secret-creator/create-github-secret.sh" "$MY_GITHUB_TOKEN"
+    "${ROOT}/secret-creator/create-image-controller-secret.sh" "${IMAGE_CONTROLLER_QUAY_ORG:-undefined}" "${IMAGE_CONTROLLER_QUAY_TOKEN:-undefined}"
 }
 
 load_global_vars() {
