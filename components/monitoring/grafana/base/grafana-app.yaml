@@ -104,6 +104,8 @@ spec:
           name: grafana-dashboard-release-service-volume
         - mountPath: /var/lib/grafana/dashboards-build-service
           name: grafana-dashboard-build-service-volume
+        - mountPath: /var/lib/grafana/dashboards-jvm-build-service
+          name: grafana-dashboard-jvm-build-service-volume
         - mountPath: /var/lib/grafana/dashboards-dora-metrics
           name: grafana-dashboard-dora-metrics-volume
         - mountPath: /var/lib/grafana/dashboards-has
@@ -228,6 +230,11 @@ spec:
                 name: grafana-dashboard-initial-build-pipeline
             - configMap:
                 name: grafana-dashboard-pac-provision
+      - name: grafana-dashboard-jvm-build-service-volume
+        projected:
+          sources:
+            - configMap:
+                name: grafana-dashboard-jvm-dependency-builds
       - name: grafana-dashboard-dora-metrics-volume
         projected:
           sources:
@@ -282,6 +289,12 @@ data:
         disableDeletion: true
         options:
           path: /var/lib/grafana/dashboards-build-service
+      - name: JVM Build Service
+        folder: "JVM Build Service"
+        type: file
+        disableDeletion: true
+        options:
+          path: /var/lib/grafana/dashboards-jvm-build-service
       - name: Dora Metrics
         folder: QE
         type: file
