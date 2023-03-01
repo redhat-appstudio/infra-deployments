@@ -8,7 +8,16 @@ commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 
 resources:
-  - git::https://github.com/openshift-pipelines/pipeline-service.git/operator/gitops/argocd/pipeline-service?ref=c3d1e5f85e64205a3c4fd7476d0ef0d03e4b570f
-
+  # database
+  - https://raw.githubusercontent.com/openshift-pipelines/pipeline-service/40eeb2ee7df776f3b6a9ff579055475c73007139/developer/local/postgres/db-service.yaml
+  - https://raw.githubusercontent.com/openshift-pipelines/pipeline-service/40eeb2ee7df776f3b6a9ff579055475c73007139/developer/local/postgres/db-statefulset.yaml
+  # pipeline service
+  - git::https://github.com/openshift-pipelines/pipeline-service.git/developer/openshift/gitops/argocd/pipeline-service?ref=40eeb2ee7df776f3b6a9ff579055475c73007139
+  # minio tenant sync resources
+  - job-permissions.yaml
+  - minio-tenant-installed-check-job.yaml
 components:
   - ../components/tekton-chains
+
+patchesStrategicMerge:
+  - minio-tekton-results-sync-patch.yaml

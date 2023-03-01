@@ -1,0 +1,43 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: minio-tenant-check
+  namespace: tekton-results
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      containers:
+        - image: registry.redhat.io/openshift4/ose-cli:v4.12@sha256:9f0cdc00b1b1a3c17411e50653253b9f6bb5329ea4fb82ad983790a6dbf2d9ad
+          command:
+            - /bin/bash
+            - -c
+            - |
+              printf "Waiting for minio tenant to be present "
+
+              numOfAttempts=40;
+              i=0;
+              until [ -s /tmp/pod ];
+              do
+                printf '.'; sleep 10;
+                oc get pods -l "app=minio" -n "tekton-results" --no-headers -o custom-columns=':metadata.name' > /tmp/pod;
+                i=$((i+1));
+                if [[ $i -eq "${numOfAttempts}" ]]; then
+                  printf "\n[ERROR] Pod %s not found by timeout \n" "app=minio" >&2;
+                  exit 1;
+                fi
+              done
+              printf " OK.\n"
+
+              printf "Waiting for minio tenant to be Ready "
+              kubectl wait --for=condition=ready pod -l "app=minio" -n "tekton-results" --timeout=150s
+              printf " OK.\n"
+          imagePullPolicy: Always
+          name: minio-tenant-checker
+      dnsPolicy: ClusterFirst
+      restartPolicy: OnFailure
+      terminationGracePeriodSeconds: 30
+      serviceAccount: minio-tenant-checker
+      serviceAccountName: minio-tenant-checker

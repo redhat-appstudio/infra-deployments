@@ -195,6 +195,50 @@ if ! git diff --exit-code --quiet; then
     git push -f --set-upstream $MY_GIT_FORK_REMOTE $PREVIEW_BRANCH
 fi
 
+TEKTON_RESULTS_DATABASE_USER="admin"
+TEKTON_RESULTS_DATABASE_PASSWORD="admin"
+# todo create namespace from git yaml
+oc new-project tekton-results || true
+oc create secret generic -n tekton-results tekton-results-database \
+  --from-literal=db.user="$TEKTON_RESULTS_DATABASE_USER" \
+  --from-literal=db.password="$TEKTON_RESULTS_DATABASE_PASSWORD" \
+  --from-literal=db.host="tekton-results-database-service.tekton-results.svc.cluster.local" \
+  --from-literal=db.name="tekton_results" || true
+
+  echo "Set up configuration Minio storage."
+  TEMP_CONF_DIR=$(mktemp -d)
+  MINIO_CONF_DIR="$TEMP_CONF_DIR/minio"
+  mkdir -p "$MINIO_CONF_DIR"
+
+  minio_configuration_secret="minio-storage-configuration"
+  # secret with minio tenant configuration
+  results_minio_conf_secret_path="$MINIO_CONF_DIR/${minio_configuration_secret}.yaml"
+
+  minio_credentials_secret="s3-credentials"
+  # secret with minio credentials for tekton-results api server
+  results_minio_cred_secret_path="$MINIO_CONF_DIR/${minio_credentials_secret}.yaml"
+
+  # todo handle credential values
+  export TEKTON_RESULTS_MINIO_USER="minio"
+  export TEKTON_RESULTS_MINIO_PASSWORD="minio123"
+  # todo handle commit hash...
+  minio_conf_template_url="https://raw.githubusercontent.com/openshift-pipelines/pipeline-service/main/developer/openshift/gitops/argocd/pipeline-service/tekton-results/templates/minio-storage-configuration.yaml"
+  minio_conf_template="$MINIO_CONF_DIR/minio-storage-configuration-template.yaml"
+  curl curl -LJO "$minio_conf_template_url" --output "$minio_conf_template"
+  envsubst < "$minio_conf_template" > "$results_minio_conf_secret_path"
+  # unset env variables, but save their values
+  export -n TEKTON_RESULTS_MINIO_USER
+  export -n TEKTON_RESULTS_MINIO_PASSWORD
+
+  oc create secret generic "${minio_credentials_secret}" \
+  --from-literal=S3_ACCESS_KEY_ID="$TEKTON_RESULTS_MINIO_USER" \
+  --from-literal=S3_SECRET_ACCESS_KEY="$TEKTON_RESULTS_MINIO_PASSWORD" \
+  -n tekton-results --dry-run=client -o yaml >> "$results_minio_cred_secret_path"
+
+  oc apply -f "$results_minio_conf_secret_path" >/dev/null
+  oc apply -f "$results_minio_cred_secret_path" >/dev/null
+  echo "OK"
+
 # Create the root Application
 oc apply -k $ROOT/argo-cd-apps/app-of-app-sets/development
 
