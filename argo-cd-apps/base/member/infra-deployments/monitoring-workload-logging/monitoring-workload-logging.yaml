@@ -4,14 +4,24 @@ metadata:
   name: monitoring-workload-logging
 spec:
   generators:
-    - clusters: {}
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              values:
+                sourceRoot: components/monitoring/prometheus
+                environment: staging
+                clusterDir: ""
+          - list:
+              elements: []
   template:
     metadata:
       name: monitoring-workload-logging-{{nameNormalized}}
     spec:
       project: default
       source:
-        path: components/monitoring/logging/base
+        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
         repoURL: https://github.com/redhat-appstudio/infra-deployments.git
         targetRevision: main
       destination:
