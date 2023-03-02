@@ -37,6 +37,7 @@ main() {
     echo "Setting Cluster Mode: ${MODE:-Upstream}"
     case $mode in
     "" | "upstream")
+        kubectl create namespace argocd-staging
         kubectl create -k $ROOT/argo-cd-apps/app-of-app-sets/staging
         # Check if we have a tekton-chains namespace, and if so, remove any explicit transparency.url setting
         # which might be left from running this script with the 'preview' flag to enable the cluster local
