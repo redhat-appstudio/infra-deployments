@@ -1,0 +1,24 @@
+---
+apiVersion: logging.openshift.io/v1
+kind: ClusterLogForwarder
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  name: instance
+spec:
+  outputs:
+    - cloudwatch:
+        groupBy: namespaceName
+        region: us-east-1
+      name: remote-cloudwatch
+      secret:
+        name: cloudwatch-forwarder
+      type: cloudwatch
+  pipelines:
+    - inputRefs:
+        - application
+        - audit
+        - infrastructure
+      name: fluentd-cloudwatch-logforward
+      outputRefs:
+        - remote-cloudwatch
