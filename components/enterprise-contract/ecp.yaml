@@ -6,12 +6,8 @@ metadata:
   namespace: enterprise-contract-service
 spec:
   description: >
-    Use the policy rules from the "minimal" collection. This and other collections are defined in
-    https://redhat-appstudio.github.io/docs.stonesoup.io/ec-policies/release_policy.html#_available_rule_collections
-    The minimal collection is a small set of policy rules that should be easy to pass for brand new
-    Stonesoup users. If a different policy configuration is desired, this resource can serve as a
-    starting point. See the docs on how to include and exclude rules
-    https://redhat-appstudio.github.io/docs.stonesoup.io/ec-policies/policy_configuration.html#_including_and_excluding_rules
+    Use the policy rules from the "minimal" collection. This and other collections are defined in https://redhat-appstudio.github.io/docs.stonesoup.io/ec-policies/release_policy.html#_available_rule_collections The minimal collection is a small set of policy rules that should be easy to pass for brand new Stonesoup users. If a different policy configuration is desired, this resource can serve as a starting point. See the docs on how to include and exclude rules https://redhat-appstudio.github.io/docs.stonesoup.io/ec-policies/policy_configuration.html#_including_and_excluding_rules
+
   configuration:
     collections:
       - minimal
@@ -19,9 +15,9 @@ spec:
   sources:
     - name: Release Policies
       data:
-        - oci::https://quay.io/hacbs-contract/ec-policy-data:latest@sha256:2321f0c6e9367d9e203dfbd17455cb0238d4c9b55e61e11ab659948d9bb8af9e
+        - oci::https://quay.io/hacbs-contract/ec-policy-data:latest@sha256:948877d0564c922d60dac24b4fce82ee2da74fa9bd1a4cdc6900b77dfd93af75
       policy:
-        - oci::https://quay.io/hacbs-contract/ec-release-policy:latest@sha256:16703532b485c4edd3cbe47f62d44a51be4b7390b663e86eb5a7372ba9ecae52
+        - oci::https://quay.io/hacbs-contract/ec-release-policy:latest@sha256:a41da88e27bab10dec2e61b1844a4053e73ea4a422fa2a4997a1a1366becd68d
 ---
 apiVersion: appstudio.redhat.com/v1alpha1
 kind: EnterpriseContractPolicy
@@ -30,17 +26,17 @@ metadata:
   namespace: enterprise-contract-service
 spec:
   description: >
-    Evaluate components with all of the available policy rules. The policy rules are described in
-    https://redhat-appstudio.github.io/docs.stonesoup.io/ec-policies/release_policy.html
+    Evaluate components with all of the available policy rules. The policy rules are described in https://redhat-appstudio.github.io/docs.stonesoup.io/ec-policies/release_policy.html
+
   # An empty configuration, by default, means all policy rules.
   configuration: {}
   publicKey: k8s://tekton-chains/public-key
   sources:
     - name: Release Policies
       data:
-        - oci::https://quay.io/hacbs-contract/ec-policy-data:latest@sha256:2321f0c6e9367d9e203dfbd17455cb0238d4c9b55e61e11ab659948d9bb8af9e
+        - oci::https://quay.io/hacbs-contract/ec-policy-data:latest@sha256:948877d0564c922d60dac24b4fce82ee2da74fa9bd1a4cdc6900b77dfd93af75
       policy:
-        - oci::https://quay.io/hacbs-contract/ec-release-policy:latest@sha256:16703532b485c4edd3cbe47f62d44a51be4b7390b663e86eb5a7372ba9ecae52
+        - oci::https://quay.io/hacbs-contract/ec-release-policy:latest@sha256:a41da88e27bab10dec2e61b1844a4053e73ea4a422fa2a4997a1a1366becd68d
 ---
 # Allow any authenticated user to access to get/list/watch the EnterpriseContractPolicy resources
 # in the enterprise-contract-service namespace.
