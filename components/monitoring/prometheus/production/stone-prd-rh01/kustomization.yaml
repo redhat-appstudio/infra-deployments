@@ -9,3 +9,9 @@ patches:
       group: external-secrets.io
       version: v1beta1
       kind: ExternalSecret
+  - path: monitoring-prometheus-sm-secret-path.yaml
+    target:
+      group: monitoring.coreos.com
+      version: v1
+      kind: ServiceMonitor
+      labelSelector: prometheus=appstudio-workload

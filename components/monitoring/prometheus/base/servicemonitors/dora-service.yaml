@@ -12,6 +12,9 @@ spec:
   - interval: 120s
     path: /metrics
     port: metrics-port
+    bearerTokenSecret:
+      name: "dummy-token"
+      key: token
     tlsConfig:
       insecureSkipVerify: true
     scrapeTimeout: 30s
