@@ -11,6 +11,9 @@ spec:
   configuration:
     collections:
       - minimal
+    exclude:
+      # This can be removed once https://issues.redhat.com/browse/OCPBUGS-8428 is addressed
+      - step_image_registries
   publicKey: k8s://tekton-chains/public-key
   sources:
     - name: Release Policies
