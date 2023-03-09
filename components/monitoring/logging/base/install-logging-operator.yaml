@@ -17,22 +17,6 @@ metadata:
   labels:
     openshift.io/cluster-monitoring: "true"
 ---
-apiVersion: operators.coreos.com/v1
-kind: OperatorGroup
-metadata:
-  name: openshift-operators-redhat
-  namespace: openshift-operators-redhat 
-spec: {}
----
-apiVersion: operators.coreos.com/v1
-kind: OperatorGroup
-metadata:
-  name: cluster-logging
-  namespace: openshift-logging 
-spec:
-  targetNamespaces:
-  - openshift-logging
----
 apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription
 metadata:
