@@ -215,7 +215,8 @@ if echo $APPS | grep -q spi; then
         kubectl apply -f $SPI_APP_ROLE_FILE  -n spi-system
     fi
     echo "Vault init complete"
-
+  else
+     echo "Vault initialization skipped"
   fi
 fi
 
