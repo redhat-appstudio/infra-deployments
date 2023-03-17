@@ -37,8 +37,11 @@ create_s3_secret() {
     USER=minio
     PASS="$(openssl rand -base64 20)"
     kubectl create secret generic -n tekton-results tekton-results-s3 \
-      --from-literal=S3_ACCESS_KEY_ID="$USER" \
-      --from-literal=S3_SECRET_ACCESS_KEY="$PASS"
+      --from-literal=aws_access_key_id="$USER" \
+      --from-literal=aws_secret_access_key="$PASS" \
+      --from-literal=aws_region='not-applicable' \
+      --from-literal=bucket=tekton-results \
+      --from-literal=endpoint='https://minio.tekton-results.svc.cluster.local'
 
     echo "Creating MinIO config" >&2
     if kubectl get secret -n tekton-results minio-storage-configuration &>/dev/null; then
