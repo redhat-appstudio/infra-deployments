@@ -1,6 +1,5 @@
 #!/bin/bash -e
 
-TEMP_USERS_VALUE='test:$2y$05$YXriyqEu7vzNMJklogXm3eaQ6/Plhip7zHXVBDwfJdlsBRpAI8oTu'
 
 main() {
     echo "Setting secrets for Quality Dashboard"
@@ -18,7 +17,7 @@ main() {
     if ! kubectl get secret -n quality-dashboard quality-dashboard-auth &>/dev/null; then
         kubectl create secret generic quality-dashboard-auth \
             --namespace=quality-dashboard \
-            --from-literal=users.htpasswd=$TEMP_USERS_VALUE 
+            --from-literal=users.htpasswd=NOUSER
     fi
 }
 
