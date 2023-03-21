@@ -3,15 +3,15 @@ kind: Kustomization
 
 resources:
   - argocd-permissions.yaml
-  - https://github.com/redhat-appstudio/service-provider-integration-operator/config/overlays/openshift_vault?ref=ee065809ae70788b257500b0ac993b493e9b4aaf
+  - https://github.com/redhat-appstudio/service-provider-integration-operator/config/overlays/openshift_vault?ref=00e34761a52e4b905be2b7294f39a798bc8c3c7b
 
 images:
   - name:  quay.io/redhat-appstudio/service-provider-integration-operator
     newName: quay.io/redhat-appstudio/service-provider-integration-operator
-    newTag: ee065809ae70788b257500b0ac993b493e9b4aaf
+    newTag: 00e34761a52e4b905be2b7294f39a798bc8c3c7b
   - name: quay.io/redhat-appstudio/service-provider-integration-oauth
     newName: quay.io/redhat-appstudio/service-provider-integration-oauth
-    newTag: ee065809ae70788b257500b0ac993b493e9b4aaf
+    newTag: 00e34761a52e4b905be2b7294f39a798bc8c3c7b
 
 namespace: spi-system
 
