@@ -47,7 +47,7 @@ setup-pac-app() (
         webhook_secret=$(openssl rand -hex 20)
 
         if ! oc get -n pipelines-as-code secret pipelines-as-code-secret &>/dev/null; then         
-                token=$(sign rs256 "$payload" "$(echo $PAC_GITHUB_APP_PRIVATE_KEY | base64 -d)")
+                token=$(sign rs256 "$payload" "$(echo "$PAC_GITHUB_APP_PRIVATE_KEY" | base64 -d)")
                 webhook_url=$(oc whoami --show-console | sed 's/console-openshift-console/pipelines-as-code-controller-pipelines-as-code/')
                 curl \
                 -X PATCH \
@@ -62,7 +62,7 @@ setup-pac-app() (
 
 if [ -n "${PAC_GITHUB_APP_ID}" ] && [ -n "${PAC_GITHUB_APP_PRIVATE_KEY}" ]; then
         WEBHOOK_SECRET=$(setup-pac-app)
-        GITHUB_APP_PRIVATE_KEY=$(echo $PAC_GITHUB_APP_PRIVATE_KEY | base64 -d)
+        GITHUB_APP_PRIVATE_KEY=$(echo "$PAC_GITHUB_APP_PRIVATE_KEY" | base64 -d)
         GITHUB_APP_DATA="--from-literal github-private-key='$GITHUB_APP_PRIVATE_KEY' --from-literal github-application-id='${PAC_GITHUB_APP_ID}' --from-literal webhook.secret='$WEBHOOK_SECRET'"                
 fi
 
