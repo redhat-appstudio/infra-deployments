@@ -18,8 +18,7 @@ spec:
   pipelines:
     - inputRefs:
         - application
-        - audit
-        - infrastructure
       name: fluentd-cloudwatch-logforward
       outputRefs:
         - remote-cloudwatch
+      parse: json
