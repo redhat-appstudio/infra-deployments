@@ -4,6 +4,14 @@ metadata:
   name: pipeline-service-sre
 rules:
 - apiGroups:
+  - operators.coreos.com
+  resources:
+  - installplans
+  verbs:
+  - get
+  - list
+  - patch
+- apiGroups:
   - tekton.dev
   resources:
   - clustertasks
