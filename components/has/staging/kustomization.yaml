@@ -4,5 +4,8 @@ resources:
   - ../base
   - ../base/external-secrets
 
-patches:
-  - ./gitops-org-patch.yaml
+configMapGenerator:
+- literals:
+  - GITHUB_ORG="redhat-appstudio-appdata-staging"
+  name: github-config
+  behavior: replace
