@@ -3,8 +3,14 @@ kind: Kustomization
 resources:
   - ../base
   - ../base/external-secrets
+
+configMapGenerator:
+- literals:
+  - GITHUB_ORG="redhat-appstudio-appdata"
+  name: github-config
+  behavior: replace
+
 patches:
-  - ./gitops-org-patch.yaml
   - path: has-github-token-patch.yaml
     target:
       name: has-github-token
