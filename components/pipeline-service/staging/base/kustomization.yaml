@@ -14,3 +14,10 @@ resources:
 
 components:
   - ../../components/tekton-chains
+
+patches:
+  - path: pac-app-name.yaml
+    target:
+      kind: ConfigMap
+      name: pipelines-as-code
+      namespace: pipelines-as-code
