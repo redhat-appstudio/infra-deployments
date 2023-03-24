@@ -83,3 +83,25 @@ same `SharedSecret`. This is done by default. However, the `Secret` referred to 
 `SharedSecret` may not exist at bootstrap time. This is ok. The underlying `Secret` can be created
 at a later time, and/or updated as needed. The changes should be reflected automatically within the
 Tekton Chains Controller without requiring a Pod restart.
+
+## Build Service secrets
+
+List of secrets:
+
+| Name | Source | Description |
+| -- | -- | -- |
+| pipelines-as-code-secret | appsre vault | Secret containg 'github-application-id', 'github-private-key' and 'webhook.secret' of GitHub Application used by Bild service for creating pull-requests |
+
+Rotation rule: Secrets must be rotated within 7 days after someone with access leaves the organization. Secret older than one year should be rotated.
+
+### Instruction for rotation of pipelines-as-code-secret
+
+Prerequisite:
+- User must have admin role on organization owning the GitHub Application.
+- GitHub Application is shared between Build team and Pipeline Service team - both teams must be aware of rotation
+
+Process for red-hat-trusted-app-pipeline GitHub application:
+1. Go to https://github.com/organizations/redhat-appstudio/settings/apps/red-hat-trusted-app-pipeline
+2. In section 'Webhook secret (optional)' - click on Change Secret
+3. In section 'Private Keys' - generate new private key and remove the old one.
+4. Put new secrets from step 2. and 3. to app-sre vault to `stonesoup/production/pipeline-service/github-app` and `stonesoup/production/build/build-service`
