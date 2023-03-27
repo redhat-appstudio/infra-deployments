@@ -1,6 +1,7 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
+  - ../../base
   - https://github.com/redhat-appstudio/service-provider-integration-operator/config/overlays/openshift_vault?ref=78c69be42f568941d5422684263998b9ef9b9905
 
 namespace: spi-system
@@ -22,3 +23,8 @@ patches:
       kind: ConfigMap
       name: shared-environment-config
     path: config-patch.json
+  - target:
+      kind: Deployment
+      name: spi-controller-manager
+    path: operator-limits-patch.json
+  - path: delete-shared-configuration-file.yaml
