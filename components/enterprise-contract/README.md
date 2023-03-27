@@ -20,6 +20,6 @@ failures.
 For additional information about Enterprise Contract, see the following
 resources:
 
-* [Enterprise Contract Documentation](https://hacbs-contract.github.io/)
+* [Enterprise Contract Documentation](https://enterprise-contract.github.io/)
 * [Book of Stonesoup](https://redhat-appstudio.github.io/book/book/enterprise-contract.html)
-* [Enterprise Contract GitHub Organization](https://github.com/hacbs-contract)
+* [Enterprise Contract GitHub Organization](https://github.com/enterprise-contract)
