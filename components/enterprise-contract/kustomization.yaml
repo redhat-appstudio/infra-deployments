@@ -1,13 +1,13 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - https://github.com/hacbs-contract/enterprise-contract-controller/config/crd?ref=2844b6da6e72a6b25f6b2ed3702c6fda8a88adc9
+  - https://github.com/enterprise-contract/enterprise-contract-controller/config/crd?ref=2844b6da6e72a6b25f6b2ed3702c6fda8a88adc9
   # Kustomize does not allow github.com urls that reference a single-file. They must always reference
   # a directory that contains a kustomization.yaml file. The directory /config/rbac does include a
   # kustomization.yaml file but it includes many other RBAC changes that are not desirable here. Use
   # a URL to the "raw" version of the file instead.
-  - https://raw.githubusercontent.com/hacbs-contract/enterprise-contract-controller/2844b6da6e72a6b25f6b2ed3702c6fda8a88adc9/config/rbac/enterprisecontractpolicy_viewer_role.yaml
-  - https://raw.githubusercontent.com/hacbs-contract/enterprise-contract-controller/2844b6da6e72a6b25f6b2ed3702c6fda8a88adc9/config/rbac/enterprisecontractpolicy_editor_role.yaml
+  - https://raw.githubusercontent.com/enterprise-contract/enterprise-contract-controller/2844b6da6e72a6b25f6b2ed3702c6fda8a88adc9/config/rbac/enterprisecontractpolicy_viewer_role.yaml
+  - https://raw.githubusercontent.com/enterprise-contract/enterprise-contract-controller/2844b6da6e72a6b25f6b2ed3702c6fda8a88adc9/config/rbac/enterprisecontractpolicy_editor_role.yaml
   - ecp.yaml
   - role.yaml
   - rolebinding.yaml
