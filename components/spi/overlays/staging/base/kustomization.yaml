@@ -3,4 +3,21 @@ kind: Kustomization
 resources:
   - ../../../base
   - ../../../base/external-secrets
+  - https://github.com/redhat-appstudio/service-provider-integration-operator/config/overlays/openshift_vault?ref=82aa57131a3d2426f9c26595bc27908bf2249417
+
 namespace: spi-system
+
+images:
+  - name:  quay.io/redhat-appstudio/service-provider-integration-operator
+    newName: quay.io/redhat-appstudio/service-provider-integration-operator
+    newTag: 82aa57131a3d2426f9c26595bc27908bf2249417
+  - name: quay.io/redhat-appstudio/service-provider-integration-oauth
+    newName: quay.io/redhat-appstudio/service-provider-integration-oauth
+    newTag: 82aa57131a3d2426f9c26595bc27908bf2249417
+
+patches:
+  - target:
+      kind: Deployment
+      name: spi-controller-manager
+    path: operator-limits-patch.json
+  - path: delete-shared-configuration-file.yaml
