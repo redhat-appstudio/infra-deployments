@@ -25,7 +25,7 @@ Process for production instance:
   - Administer Organization 
   - Administer Repositories
   - Create Repositories
-4. Put token from step 2. to app-sre vault to `stonesoup/production/build/image-controller`
+3. Put token from step 2. to app-sre vault to `stonesoup/production/build/image-controller`
 
 Process for stage instance:
 1. Reset Client Secret on [Application Oauth page](https://quay.io/organization/redhat-user-workloads-stage/application/259WVA0L323BVTQCQZ9B?tab=oauth)
@@ -33,4 +33,4 @@ Process for stage instance:
   - Administer Organization 
   - Administer Repositories
   - Create Repositories
-4. Put token from step 2. to app-sre vault to `stonesoup/staging/build/image-controller`
+3. Put token from step 2. to app-sre vault to `stonesoup/staging/build/image-controller`
