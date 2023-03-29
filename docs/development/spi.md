@@ -8,10 +8,7 @@ SPI has 3 deployment [overlays](https://github.com/redhat-appstudio/infra-deploy
 
 ## Post-bootstrap Service Provider Integration(SPI) Configuration
 
-SPI requires Service Provider to have configured OAuth application so it can process the OAuth flow. Follow [Configuring Service Providers](https://github.com/redhat-appstudio/service-provider-integration-operator/blob/main/docs/ADMIN.md#configuring-service-providers) in SPI admin documentation.
-
-> Authorization URL of staging server: `https://spi-oauth-spi-system.apps.appstudio-stage.x99m.p1.openshiftapps.com`  
-Callback URL of staging server: `https://spi-oauth-spi-system.apps.appstudio-stage.x99m.p1.openshiftapps.com/oauth/callback`
+SPI requires Service Provider to have configured OAuth application so it can process the OAuth flow. Follow [Configuring Service Providers](https://github.com/redhat-appstudio/service-provider-integration-operator/blob/main/docs/ADMIN.md#configuring-service-providers) in SPI admin documentation. [See URLs for known environments below](#known-urls).
 
 > **NOTE:**  Following process is automated in `preview` mode
 
@@ -42,3 +39,21 @@ git clone https://github.com/redhat-appstudio/service-provider-integration-opera
 ```bash
 `./hack/vault-init.sh`
 ```
+
+### [OAuth URLs for known deployment environments](known-urls)
+
+#### stg-rh01
+> Authorization URL: `https://spi-oauth-spi-system.apps.stone-stg-rh01.l2vh.p1.openshiftapps.com`  
+Callback URL: `https://spi-oauth-spi-system.apps.stone-stg-rh01.l2vh.p1.openshiftapps.com/oauth/callback`
+
+#### stg-m01
+> Authorization URL: `https://spi-oauth-spi-system.apps.stone-stg-m01.7ayg.p1.openshiftapps.com`  
+Callback URL: `https://spi-oauth-spi-system.apps.stone-stg-m01.7ayg.p1.openshiftapps.com/oauth/callback`
+
+#### prd-rh01
+> Authorization URL: `https://spi-oauth-spi-system.apps.stone-prd-rh01.pg1f.p1.openshiftapps.com`  
+Callback URL: `https://spi-oauth-spi-system.apps.stone-prd-rh01.pg1f.p1.openshiftapps.com/oauth/callback`
+
+#### prd-m01
+> Authorization URL: `https://spi-oauth-spi-system.apps.stone-prd-m01.84db.p1.openshiftapps.com`  
+Callback URL: `https://spi-oauth-spi-system.apps.stone-prd-m01.84db.p1.openshiftapps.com/oauth/callback`
