@@ -8,7 +8,7 @@ SPI has 3 deployment [overlays](https://github.com/redhat-appstudio/infra-deploy
 
 ## Post-bootstrap Service Provider Integration(SPI) Configuration
 
-SPI requires Service Provider to have configured OAuth application so it can process the OAuth flow. Follow [Configuring Service Providers](https://github.com/redhat-appstudio/service-provider-integration-operator/blob/main/docs/ADMIN.md#configuring-service-providers) in SPI admin documentation. [See URLs for known environments below](#known-oauth-urls).
+SPI requires Service Provider to have configured OAuth application so it can process the OAuth flow. Follow [Configuring Service Providers](https://github.com/redhat-appstudio/service-provider-integration-operator/blob/main/docs/ADMIN.md#configuring-service-providers) in SPI admin documentation. [See URLs for known environments below](#oauth-urls-for-known-environments-known-oauth-urls).
 
 > **NOTE:**  Following process is automated in `preview` mode
 
@@ -40,7 +40,7 @@ git clone https://github.com/redhat-appstudio/service-provider-integration-opera
 `./hack/vault-init.sh`
 ```
 
-### OAuth URLs for known environments {#known-oauth-urls}
+### OAuth URLs for known environments
 
 #### stg-rh01
 > Authorization URL: `https://spi-oauth-spi-system.apps.stone-stg-rh01.l2vh.p1.openshiftapps.com`  
