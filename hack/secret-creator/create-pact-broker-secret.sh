@@ -3,6 +3,8 @@
 
 main() {
     echo "Setting secrets for Pact Broker"
+    local BROKER_USERNAME=${1:?"BROKER_USERNAME was not provided"}
+    local BROKER_PASSWORD=${2:?"BROKER_PASSWORD was not provided"}
     kubectl create namespace hac-pact-broker -o yaml --dry-run=client | oc apply -f-
     if ! kubectl get secret -n hac-pact-broker pact-broker-secrets &>/dev/null; then
         kubectl create secret generic pact-broker-secrets \
