@@ -11,6 +11,20 @@ rules:
   - "users"
   verbs:
   - "impersonate"
+- apiGroups:
+  - "toolchain.dev.openshift.com"
+  resources:
+  - "spacerequests/finalizers"
+  verbs:
+  - "update"
+- apiGroups:
+  - "toolchain.dev.openshift.com"
+  resources:
+  - "spacerequests/status"
+  verbs:
+  - "get"
+  - "patch"
+  - "update"
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
