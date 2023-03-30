@@ -1,0 +1,23 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: dora-service
+  namespace: dora-metrics
+  labels:
+    control-plane: controller-manager
+    prometheus: appstudio-workload
+    app: exporter
+spec:
+  endpoints:
+  - interval: 120s
+    path: /metrics
+    port: metrics-port
+    tlsConfig:
+      insecureSkipVerify: true
+    scrapeTimeout: 30s
+  namespaceSelector:
+    matchNames:
+    - dora-metrics
+  selector:
+    matchLabels:
+      app: exporter
