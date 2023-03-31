@@ -9,8 +9,8 @@ spec:
     Use the policy rules from the "minimal" collection. This and other collections are defined in https://redhat-appstudio.github.io/docs.stonesoup.io/ec-policies/release_policy.html#_available_rule_collections The minimal collection is a small set of policy rules that should be easy to pass for brand new Stonesoup users. If a different policy configuration is desired, this resource can serve as a starting point. See the docs on how to include and exclude rules https://redhat-appstudio.github.io/docs.stonesoup.io/ec-policies/policy_configuration.html#_including_and_excluding_rules
 
   configuration:
-    collections:
-      - minimal
+    include:
+      - "@minimal"
     exclude:
       # This can be removed once https://issues.redhat.com/browse/OCPBUGS-8428 is addressed
       - step_image_registries
