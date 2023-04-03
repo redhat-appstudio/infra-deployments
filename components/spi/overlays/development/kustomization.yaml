@@ -2,6 +2,18 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ../../base
+  - https://github.com/redhat-appstudio/service-provider-integration-operator/config/overlays/openshift_vault?ref=3dbfd84ffd892d0d1d581de6b6d9fa2571fb6bbf
+
+namespace: spi-system
+
+images:
+  - name:  quay.io/redhat-appstudio/service-provider-integration-operator
+    newName: quay.io/redhat-appstudio/service-provider-integration-operator
+    newTag: 3dbfd84ffd892d0d1d581de6b6d9fa2571fb6bbf
+  - name: quay.io/redhat-appstudio/service-provider-integration-oauth
+    newName: quay.io/redhat-appstudio/service-provider-integration-oauth
+    newTag: 3dbfd84ffd892d0d1d581de6b6d9fa2571fb6bbf
+
 patches:
   - target:
       kind: ConfigMap
@@ -11,4 +23,8 @@ patches:
       kind: ConfigMap
       name: shared-environment-config
     path: config-patch.json
-namespace: spi-system
+  - target:
+      kind: Deployment
+      name: spi-controller-manager
+    path: operator-limits-patch.json
+  - path: delete-shared-configuration-file.yaml

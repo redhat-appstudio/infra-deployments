@@ -2,12 +2,13 @@
 title: Service Provider Integration Deployment
 ---
 
+## SPI Deployment environment promotion
+
+SPI has 3 deployment [overlays](https://github.com/redhat-appstudio/infra-deployments/tree/main/components/spi/overlays) - `development`, `staging` and `production`. `development` and `staging` are updated together by automatically created PR after each commit into `main` branch of [SPI Operator repository](https://github.com/redhat-appstudio/service-provider-integration-operator). To promote `staging` into `production`, manually create the PR. Typically, update commit and image hashes of base `production` [kustomization.yaml](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/spi/overlays/production/base/kustomization.yaml) to match the `staging` [kustomization.yaml](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/spi/overlays/staging/base/kustomization.yaml).
+
 ## Post-bootstrap Service Provider Integration(SPI) Configuration
 
-SPI requires Service Provider to have configured OAuth application so it can process the OAuth flow. Follow [Configuring Service Providers](https://github.com/redhat-appstudio/service-provider-integration-operator/blob/main/docs/ADMIN.md#configuring-service-providers) in SPI admin documentation.
-
-> Authorization URL of staging server: `https://spi-oauth-spi-system.apps.appstudio-stage.x99m.p1.openshiftapps.com`  
-Callback URL of staging server: `https://spi-oauth-spi-system.apps.appstudio-stage.x99m.p1.openshiftapps.com/oauth/callback`
+SPI requires Service Provider to have configured OAuth application so it can process the OAuth flow. Follow [Configuring Service Providers](https://github.com/redhat-appstudio/service-provider-integration-operator/blob/main/docs/ADMIN.md#configuring-service-providers) in SPI admin documentation. [See URLs for known environments below](#oauth-urls-for-known-environments-known-oauth-urls).
 
 > **NOTE:**  Following process is automated in `preview` mode
 
@@ -38,3 +39,21 @@ git clone https://github.com/redhat-appstudio/service-provider-integration-opera
 ```bash
 `./hack/vault-init.sh`
 ```
+
+### OAuth URLs for known environments
+
+#### stg-rh01
+> Authorization URL: `https://spi-oauth-spi-system.apps.stone-stg-rh01.l2vh.p1.openshiftapps.com`  
+Callback URL: `https://spi-oauth-spi-system.apps.stone-stg-rh01.l2vh.p1.openshiftapps.com/oauth/callback`
+
+#### stg-m01
+> Authorization URL: `https://spi-oauth-spi-system.apps.stone-stg-m01.7ayg.p1.openshiftapps.com`  
+Callback URL: `https://spi-oauth-spi-system.apps.stone-stg-m01.7ayg.p1.openshiftapps.com/oauth/callback`
+
+#### prd-rh01
+> Authorization URL: `https://spi-oauth-spi-system.apps.stone-prd-rh01.pg1f.p1.openshiftapps.com`  
+Callback URL: `https://spi-oauth-spi-system.apps.stone-prd-rh01.pg1f.p1.openshiftapps.com/oauth/callback`
+
+#### prd-m01
+> Authorization URL: `https://spi-oauth-spi-system.apps.stone-prd-m01.84db.p1.openshiftapps.com`  
+Callback URL: `https://spi-oauth-spi-system.apps.stone-prd-m01.84db.p1.openshiftapps.com/oauth/callback`

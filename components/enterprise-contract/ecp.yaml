@@ -9,8 +9,8 @@ spec:
     Use the policy rules from the "minimal" collection. This and other collections are defined in https://redhat-appstudio.github.io/docs.stonesoup.io/ec-policies/release_policy.html#_available_rule_collections The minimal collection is a small set of policy rules that should be easy to pass for brand new Stonesoup users. If a different policy configuration is desired, this resource can serve as a starting point. See the docs on how to include and exclude rules https://redhat-appstudio.github.io/docs.stonesoup.io/ec-policies/policy_configuration.html#_including_and_excluding_rules
 
   configuration:
-    collections:
-      - minimal
+    include:
+      - "@minimal"
     exclude:
       # This can be removed once https://issues.redhat.com/browse/OCPBUGS-8428 is addressed
       - step_image_registries
@@ -18,9 +18,9 @@ spec:
   sources:
     - name: Release Policies
       data:
-        - oci::quay.io/hacbs-contract/ec-policy-data:git-0ba79c3@sha256:6f55c7887f0ed449c23d681514f43d841ed5ccb58b538fa924665ec53de1a169
+        - oci::quay.io/hacbs-contract/ec-policy-data:git-d995f67@sha256:eb713f2c0d9c944cbbb298a2c8a0ca1e5a741d149f033b145296d6f550ebd10b
       policy:
-        - oci::quay.io/hacbs-contract/ec-release-policy:git-a2d0125@sha256:ddfa0fd1c813a69cfbc226517d89372ad7b30461708045c21962ac0ebbb930ec
+        - oci::quay.io/hacbs-contract/ec-release-policy:git-d995f67@sha256:9d2cffae5ed8a541b4bff1acbaa9bb0b42290214de969e515e78f97b8cf8ff51
 ---
 apiVersion: appstudio.redhat.com/v1alpha1
 kind: EnterpriseContractPolicy
@@ -37,6 +37,6 @@ spec:
   sources:
     - name: Release Policies
       data:
-        - oci::quay.io/hacbs-contract/ec-policy-data:git-0ba79c3@sha256:6f55c7887f0ed449c23d681514f43d841ed5ccb58b538fa924665ec53de1a169
+        - oci::quay.io/hacbs-contract/ec-policy-data:git-d995f67@sha256:eb713f2c0d9c944cbbb298a2c8a0ca1e5a741d149f033b145296d6f550ebd10b
       policy:
-        - oci::quay.io/hacbs-contract/ec-release-policy:git-a2d0125@sha256:ddfa0fd1c813a69cfbc226517d89372ad7b30461708045c21962ac0ebbb930ec
+        - oci::quay.io/hacbs-contract/ec-release-policy:git-d995f67@sha256:9d2cffae5ed8a541b4bff1acbaa9bb0b42290214de969e515e78f97b8cf8ff51

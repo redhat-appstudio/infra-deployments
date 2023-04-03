@@ -1,12 +1,6 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-- install-prometheus.yaml
-- prometheus-view.yaml
-- configure-prometheus.yaml
 - ./servicemonitors/
 
 namespace: "appstudio-workload-monitoring"
-
-generatorOptions:
-  disableNameSuffixHash: true
