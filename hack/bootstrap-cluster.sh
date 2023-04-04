@@ -3,7 +3,7 @@
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"/..
 
 main() {
-    local mode keycloak toolchain broker
+    local mode keycloak toolchain
     while [[ $# -gt 0 ]]; do
         key=$1
         case $key in
@@ -13,10 +13,6 @@ main() {
             ;;
         --keycloak | -kc)
             keycloak="--keycloak"
-            shift
-            ;;
-        --broker | -b)
-            broker="--broker"
             shift
             ;;
         preview | upstream)
@@ -56,20 +52,19 @@ main() {
         fi
         ;;
     "preview")
-        $ROOT/hack/preview.sh $toolchain $keycloak $broker
+        $ROOT/hack/preview.sh $toolchain $keycloak
         ;;
     esac
 }
 
 print_help() {
-    echo "Usae: $0 MODE [-t|--toolchain] [-kc|--keycloak] [-b|--broker] [-h|--help]"
+    echo "Usae: $0 MODE [-t|--toolchain] [-kc|--keycloak] [-h|--help]"
     echo "  MODE             upstream/preview (default: upstream)"
     echo "  -t, --toolchain  (only in preview mode) Install toolchain operators"
     echo "  -kc, --keycloak  (only in preview mode) Configure the toolchain operator to use keycloak deployed on the cluster"
-    echo "  -b, --broker     (only in preview mode) Install Pact Broker"
     echo "  -h, --help       Show this help message and exit"
     echo
-    echo "Example usage: \`$0 preview --toolchain --keycloak --broker"
+    echo "Example usage: \`$0 preview --toolchain --keycloak"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
