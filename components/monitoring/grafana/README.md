@@ -17,6 +17,26 @@ First, create the `appstudio-workload-monitoring` namespace on each Prometheus o
 ```
 $ oc create namespace appstudio-workload-monitoring
 ```
+### Dev environment only
+
+The Grafana instance will be deployed by the Grafana operator and a route will be created automatically.
+
+After bootstrapping the cluster in `preview` mode, create the following yaml file:
+```
+spec:
+  config:
+    security:
+      admin_user: <username>
+      admin_password: <password> 
+```
+Add your desired username and password,  
+Save it as `grafana-login.yaml` and run the command:  
+```
+$ oc patch grafana appstudio-grafana -n appstudio-workload-monitoring --type merge --patch-file grafana-login.yaml
+```
+
+Now you can login to the Grafana UI using the provided credentials.
+ 
 
 ### OAuth2 proxy secrets
 
