@@ -1,138 +1,47 @@
-## On boarding to services to Monitoring
+## Onboarding Services to Monitoring
 
-### 1. Metrics exporter services
+### 1. Metrics-exporting services
 
-  - The intended service should export the metrics from the application so that prometheus is able to understand it. 
+- The intended service should export the metrics from the application so that prometheus is able to understand it.
 
-  - For reference, see 
-    [Writing Exporters](https://prometheus.io/docs/instrumenting/writing_exporters)
+- For reference, see
+  [Writing Exporters](https://prometheus.io/docs/instrumenting/writing_exporters)
 
-  - Exported port, service, route should be accessible to prometheus service.
+- The exported port, service and route should be accessible to the prometheus service.
 
-  - [Here](https://github.com/redhat-appstudio/service-provider-integration-operator/blob/main/config/rbac/auth_proxy_service.yaml) is an example for the spi-system
-
-```yaml
-apiVersion: v1
-kind: Service
-metadata:
-  labels:
-    control-plane: controller-manager
-  name: controller-manager-metrics-service
-  namespace: system
-spec:
-  ports:
-  - name: metrics
-    port: 8443
-    protocol: TCP
-    targetPort: https
-  selector:
-    control-plane: controller-manager
-    app.kubernetes.io/name: service-provider-integration-operator
-```
+- Check out [this example](./prometheus/development/dummy-service.yaml) of a
+  metrics-exporting service.
 
 #### 2. Service monitors
 
-  - Adding the servicemonitor declaration
+Creating a service monitor instructs Prometheus to create a new target to collect
+metrics from.
 
-    - If servicemonitor is for prometheus itself
+Copy and modify
+[this example](./prometheus/development/dummy-service-service-monitor.yaml)
+for adding the service monitor declaration:
 
-      - Add the servicemonitor declaration for scraping the prometheus service
+- The service monitor should be defined under the component which it monitors. Copy the
+  example under your [component](../../components/) and reference it in your
+  kustomization.yaml file.
 
-      - [Here](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/monitoring/prometheus/base/servicemonitors/prometheus.yaml) is an example servicemonitor for prometheus itself
-      
-      ```yaml
-      apiVersion: monitoring.coreos.com/v1
-      kind: ServiceMonitor
-      metadata:
-        namespace: appstudio-workload-monitoring
-        name: prometheus
-        labels:
-          prometheus: appstudio-workload
-      spec:
-        endpoints:
-        - bearerTokenSecret:
-            key: ""
-          interval: 15s
-          path: /metrics
-          port: oauth2-proxy
-          scheme: HTTPS
-          tlsConfig:
-            caFile: /etc/prometheus/tls/tls.crt 
-            serverName: "prometheus-oauth2.appstudio-workload-monitoring.svc"
-        namespaceSelector:
-          matchNames:
-          - appstudio-workload-monitoring
-        selector:
-          matchLabels:
-            app.kubernetes.io/instance: monitoring-workload-in-cluster
-      ```
-     
-      
+- Namespace: the service monitor should be defined under the same namespace as the
+  service it monitors. Same goes for the namespaces for the rest of the resources
+  defined for the service monitor. Namely, service, servicemonitor and the
+  servicemonitor's serviceaccount and secret.
 
-  - If the servicemonitor is for getting other components added to prometheus monitoring
-      - create a new file under [components/monitoring/prometheus/base/servicemonitors](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/monitoring/prometheus/base/servicemonitors)
-      - Add an entry into the [components/monitoring/prometheus/base/servicemonitors/kustomization.yaml](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/monitoring/prometheus/base/servicemonitors/kustomization.yaml)
-      - Add a ServiceMonitor along with a ClusterRoleBinding to scrape the intended service
-      - [Here](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/monitoring/prometheus/base/servicemonitors/spi-operator.yaml) is an example for servicemonitor
-      
-          ```yaml
-          apiVersion: monitoring.coreos.com/v1
-          kind: ServiceMonitor
-          metadata:
-            namespace: appstudio-workload-monitoring
-            name: spi-operator <name of the servicemonitor>
-            labels:
-              prometheus: appstudio-workload
-          spec:
-            endpoints:
-            - bearerTokenSecret:
-                name: <secret name for prometheus sa>
-                key: token
-              scheme: https
-              tlsConfig:
-                insecureSkipVerify: true
-              interval: 15s
-              path: /metrics
-              port: metrics <port for metrics exporter svc>
-            namespaceSelector:
-              matchNames:
-              - spi-system
-            selector:
-              matchLabels:
-                control-plane: "controller-manager"
-          ```
+- ClusterRole and ClusterRoleBinding: make sure you edit the cluster role and cluster
+  role binding definitions so their names are unique.
 
-      - Note: The namespace of the ServiceMonitor matches the namespace for the prometheus service, in this case, `appstudio-workload-monitoring`.
+- ServiceMonitor: Verify the validity of the service monitor's selector. For example,
+  it can be matching a label - make sure you specify your app's label appropriately
+  (e.g. `app: my-app`, `control-plane: controller-manager`).
 
-  - It should have the accessible port and route to the service (or service url)
+> **_IMPORTANT:_** make sure your service's namespace does NOT contain label
+                   `openshift.io/cluster-monitoring: 'true'`. Otherwise, it will not be
+                   monitored by the user workload Prometheus instance.
 
-  - Access token or service accounts as required.
-
-  - Use label selectors to select the desired service uniquely in the cluster.
-
-### 3. View access to the exporter service for Prometheus
-
-  - Prometheus should have view access to the metrics exporter service namespace
-
-  - Add the Rolebinding to give prometheus view access in the same servicemonitor file. 
-  - [Here](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/monitoring/prometheus/base/servicemonitors/spi-operator.yaml) is an example providing prometheus view access to the cluster
-
-  ```yaml
-  apiVersion: rbac.authorization.k8s.io/v1
-  kind: ClusterRoleBinding
-  metadata:
-    name: prometheus-spi-metrics-reader
-  roleRef:
-    apiGroup: rbac.authorization.k8s.io
-    kind: ClusterRole
-    name: spi-metrics-reader
-  subjects:
-  - kind: ServiceAccount
-    name: prometheus-k8s
-    namespace: appstudio-workload-monitoring
-  ```
-
-#### 4. Grafana dashboards
+#### 3. Grafana dashboards
 
 A dashboard is a set of one or more panels organized and arranged into one or more rows. It visualizes results from multiple data sources simultaneously.
 New dashboards can be added through the user interface, preconfigured in infra-deployment project, or imported from other projects.
