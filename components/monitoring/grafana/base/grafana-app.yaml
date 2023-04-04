@@ -1,354 +1,87 @@
-# vscode-kubernetes-tools: exclude
-# (because OpenShift routes seem to be interpreted as pods ¯\_(ツ)_/¯)
+# Create service account 
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  namespace: appstudio-workload-monitoring
-  name: grafana
-  annotations:
-    argocd.argoproj.io/compare-options: IgnoreExtraneous
+  name: metrics-reader
+  namespace: appstudio-grafana
 ---
-# used by Grafana to connect to Prometheus via the OAuth Proxy (SA requires the "get ns" permission)
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
+# Create secret for the service account
+apiVersion: v1
+kind: Secret
 metadata:
-  name: clusterrole-cluster-monitoring-view-grafana
+  name: metrics-reader
+  namespace: appstudio-grafana
+  annotations:
+    kubernetes.io/service-account.name: metrics-reader
+type: kubernetes.io/service-account-token
+---
+# Create cluster role binding
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: cluster-monitoring-view-grafana
+subjects:
+  - kind: ServiceAccount
+    name: metrics-reader
+    namespace: appstudio-grafana
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: cluster-monitoring-view
-subjects:
-- kind: ServiceAccount
-  name: grafana
-  namespace: appstudio-workload-monitoring
 ---
-apiVersion: apps/v1
-kind: Deployment
+# Create a Grafana instance
+# Do not add security to this yaml
+apiVersion: integreatly.org/v1alpha1
+kind: Grafana
 metadata:
-  namespace: appstudio-workload-monitoring
-  name: grafana
-  labels:
-    app: grafana
-spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      app: grafana
-  template:
-    metadata:
-      labels:
-        app: grafana
-        deploymentconfig: grafana
-    spec:
-      containers:
-      - name: grafana
-        args:
-        - -config=/etc/grafana/grafana.ini
-        env:
-        - name: GF_INSTALL_PLUGINS
-          value: "grafana-piechart-panel"
-        image: docker.io/grafana/grafana:9.1.6
-        imagePullPolicy: IfNotPresent
-        livenessProbe:
-          httpGet:
-            path: /api/health
-            port: 3001
-            scheme: HTTP
-          initialDelaySeconds: 5
-          periodSeconds: 5
-        ports:
-        - containerPort: 3001
-          name: http
-          protocol: TCP
-        readinessProbe:
-          httpGet:
-            path: /api/health
-            port: 3001
-            scheme: HTTP
-          initialDelaySeconds: 5
-          periodSeconds: 5
-        resources:
-          limits:
-            cpu: 200m
-            memory: 200Mi
-          requests:
-            cpu: 100m
-            memory: 100Mi
-        securityContext:
-          runAsNonRoot: true
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-            - ALL
-          seccompProfile:
-            type: RuntimeDefault
-        terminationMessagePath: /dev/termination-log
-        terminationMessagePolicy: File
-        volumeMounts:
-        # Grafana configuration
-        - mountPath: /etc/grafana
-          name: grafana-config
-        - mountPath: /var/lib/grafana
-          name: grafana-storage
-        - mountPath: /etc/grafana/provisioning/notifiers
-          name: grafana-notifiers
-        - mountPath: /etc/grafana/provisioning/datasources
-          name: grafana-datasources
-        - mountPath: /etc/grafana/provisioning/dashboards
-          name: grafana-dashboards
-        - mountPath: /var/lib/grafana/dashboards
-          name: grafana-dashboard-definitions
-        - mountPath: /var/lib/grafana/dashboards-spi
-          name: grafana-dashboard-spi-volume
-        - mountPath: /var/lib/grafana/dashboards-release-service
-          name: grafana-dashboard-release-service-volume
-        - mountPath: /var/lib/grafana/dashboards-build-service
-          name: grafana-dashboard-build-service-volume
-        - mountPath: /var/lib/grafana/dashboards-jvm-build-service
-          name: grafana-dashboard-jvm-build-service-volume
-        - mountPath: /var/lib/grafana/dashboards-dora-metrics
-          name: grafana-dashboard-dora-metrics-volume
-        - mountPath: /var/lib/grafana/dashboards-has
-          name: grafana-dashboard-has-volume
-        - mountPath: /var/lib/grafana/dashboards-gitops
-          name: grafana-dashboard-gitops-volume
-      - name: grafana-oauth2-proxy
-        args:
-        - --provider=github
-        - --https-address=:3000
-        - --email-domain=*
-        - --upstream=http://localhost:3001
-        - --tls-cert-file=/etc/tls/private/tls.crt
-        - --tls-key-file=/etc/tls/private/tls.key
-        - --skip-auth-regex=^/metrics
-        - --github-org=redhat-appstudio-sre
-        - --github-team=stage
-        env:
-        - name: OAUTH2_PROXY_CLIENT_ID
-          valueFrom:
-            secretKeyRef:
-              key: client-id
-              name: grafana-oauth2-proxy
-        - name: OAUTH2_PROXY_CLIENT_SECRET
-          valueFrom:
-            secretKeyRef:
-              key: client-secret
-              name: grafana-oauth2-proxy
-        - name: OAUTH2_PROXY_COOKIE_SECRET
-          valueFrom:
-            secretKeyRef:
-              key: cookie-secret
-              name: grafana-oauth2-proxy
-        image: quay.io/oauth2-proxy/oauth2-proxy:v7.2.1
-        imagePullPolicy: Always
-        resources:
-          limits:
-            cpu: 50m
-            memory: 100Mi
-          requests:
-            cpu: 20m
-            memory: 50Mi
-        ports:
-        - containerPort: 3000
-          name: https
-          protocol: TCP
-        readinessProbe:
-          failureThreshold: 3
-          periodSeconds: 10
-          successThreshold: 1
-          tcpSocket:
-            port: https
-          timeoutSeconds: 1
-        securityContext:
-          runAsNonRoot: true
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-            - ALL
-          seccompProfile:
-            type: RuntimeDefault
-        terminationMessagePath: /dev/termination-log
-        terminationMessagePolicy: File
-        volumeMounts:
-        - mountPath: /etc/tls/private
-          name: secret-grafana-tls
-      dnsPolicy: ClusterFirst
-      nodeSelector:
-        kubernetes.io/os: linux
-      restartPolicy: Always
-      schedulerName: default-scheduler
-      serviceAccount: grafana
-      serviceAccountName: grafana
-      terminationGracePeriodSeconds: 30
-      volumes:
-      - name: grafana-storage
-        emptyDir: {}
-      - name: grafana-notifiers
-        emptyDir: {}
-      - name: grafana-datasources
-        projected:
-          sources:
-          - secret:
-              name: prometheus-openshift-ds
-              items:
-              - key: prometheus-openshift-ds.yaml
-                path: prometheus-openshift-ds.yaml
-          - secret:
-              name: prometheus-appstudio-ds
-              items:
-              - key: prometheus-appstudio-ds.yaml
-                path: prometheus-appstudio-ds.yaml
-      - name: grafana-config
-        secret:
-          defaultMode: 420
-          secretName: grafana-config
-      - name: grafana-dashboards
-        configMap:
-          defaultMode: 420
-          name: grafana-dashboards
-      - name: grafana-dashboard-definitions
-        configMap:
-          name: grafana-dashboard-definitions
-      - name: grafana-dashboard-spi-volume
-        projected:
-          sources:
-          - configMap:
-              name: grafana-dashboard-spi-health
-          - configMap:
-              name: grafana-dashboard-spi-outbound-traffic
-          - configMap:
-              name: grafana-dashboard-spi-slo
-      - name: grafana-dashboard-release-service-volume
-        projected:
-          sources:
-            - configMap:
-                name: grafana-dashboard-release-release-attempts
-      - name: grafana-dashboard-build-service-volume
-        projected:
-          sources:
-            - configMap:
-                name: grafana-dashboard-initial-build-pipeline
-            - configMap:
-                name: grafana-dashboard-pac-provision
-      - name: grafana-dashboard-jvm-build-service-volume
-        projected:
-          sources:
-            - configMap:
-                name: grafana-dashboard-jvm-dependency-builds
-      - name: grafana-dashboard-dora-metrics-volume
-        projected:
-          sources:
-            - configMap:
-                name: grafana-dashboard-dora-metrics
-      - name: grafana-dashboard-has-volume
-        projected:
-          sources:
-            - configMap:
-                name: grafana-dashboard-has-gitops-repo-metrics
-      - name: grafana-dashboard-gitops-volume
-        projected:
-          sources:
-            - configMap:
-                name: grafana-dashboard-gitops-service
-      - name: secret-grafana-tls
-        secret:
-          defaultMode: 420
-          secretName: grafana-tls
----
-# ConfigMap for the Dashboards, which defines where the JSON files should be stored (and read from)
-# The files are "mounted from a ConfigMap" which is created by the `configure grafana` command
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  namespace: appstudio-workload-monitoring
-  name: grafana-dashboards
-data:
-  default.yaml: |
-    apiVersion: 1
-    providers:
-      - name: Default     # A uniquely identifiable name for the provider
-        folder:           # The default folder
-        type: file
-        options:
-          path: /var/lib/grafana/dashboards
-      - name: Spi
-        folder: spi
-        type: file
-        disableDeletion: true
-        options:
-          path: /var/lib/grafana/dashboards-spi
-      - name: Release Service
-        folder: release
-        type: file
-        disableDeletion: true
-        options:
-          path: /var/lib/grafana/dashboards-release-service
-      - name: Build Service Operator
-        folder: "Build Service Operator"
-        type: file
-        disableDeletion: true
-        options:
-          path: /var/lib/grafana/dashboards-build-service
-      - name: JVM Build Service
-        folder: "JVM Build Service"
-        type: file
-        disableDeletion: true
-        options:
-          path: /var/lib/grafana/dashboards-jvm-build-service
-      - name: Dora Metrics
-        folder: QE
-        type: file
-        disableDeletion: true
-        options:
-          path: /var/lib/grafana/dashboards-dora-metrics
-      - name: HAS 
-        folder: has
-        type: file
-        disableDeletion: true
-        options:
-          path: /var/lib/grafana/dashboards-has
-      - name: "GitOps Service"
-        folder: "GitOps Service"
-        type: file
-        disableDeletion: true
-        options:
-          path: /var/lib/grafana/dashboards-gitops
----
-# Route and service to provide a secured access to Grafana
-apiVersion: route.openshift.io/v1
-kind: Route
-metadata:
-  namespace: appstudio-workload-monitoring
-  name: grafana
   annotations:
-    kubernetes.io/tls-acme: "true"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  name: appstudio-grafana
+  namespace: appstudio-grafana
 spec:
-  port:
-    targetPort: https
-  to:
-    kind: Service
-    name: grafana
-    weight: 100
-  tls:
-    insecureEdgeTerminationPolicy: Redirect
-    termination: reencrypt
+  config:
+    auth:
+      disable_signout_menu: true
+    auth.anonymous:
+      enabled: true
+    log:
+      level: warn
+      mode: console
+  dashboardLabelSelector:
+    - matchExpressions:
+        - key: app
+          operator: In
+          values:
+            - appstudio-grafana
+  deployment:
+    envFrom:
+      - prefix: thanos
+        secretRef:
+          name: metrics-reader
+  ingress:
+    enabled: true
 ---
-apiVersion: v1
-kind: Service
+# Add prometheus Datasource to Grafana
+# Using the thanos-querier url for the datasource
+apiVersion: integreatly.org/v1alpha1
+kind: GrafanaDataSource
 metadata:
-  namespace: appstudio-workload-monitoring
-  name: grafana
   annotations:
-    service.alpha.openshift.io/serving-cert-secret-name: grafana-tls
-  labels:
-    app: grafana
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  name: prometheus-grafanadatasource
+  namespace: appstudio-grafana
 spec:
-  ports:
-  - name: https
-    port: 3000
-    protocol: TCP
-    targetPort: https
-  selector:
-    app: grafana
-  sessionAffinity: None
-  type: ClusterIP
+  name: prometheus-thanos-grafanadatasource.yaml
+  datasources:
+    - access: proxy
+      editable: true
+      isDefault: true
+      jsonData:
+        httpHeaderName1: Authorization
+        timeInterval: 5s
+        tlsSkipVerify: true
+      name: Prometheus
+      secureJsonData:
+        httpHeaderValue1: 'Bearer ${thanostoken}'
+      type: prometheus
+      url: 'https://thanos-querier.openshift-monitoring.svc.cluster.local:9091'

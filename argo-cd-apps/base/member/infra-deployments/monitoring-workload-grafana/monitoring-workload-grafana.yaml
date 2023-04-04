@@ -4,21 +4,31 @@ metadata:
   name: monitoring-workload-grafana
 spec:
   generators:
-    - clusters: {}
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              values:
+                sourceRoot: components/monitoring/grafana
+                environment: staging
+                clusterDir: ""
+          - list:
+              elements: []
   template:
     metadata:
       name: monitoring-workload-grafana-{{nameNormalized}}
     spec:
       project: default
       source:
-        path: components/monitoring/grafana/base
+        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
         repoURL: https://github.com/redhat-appstudio/infra-deployments.git
         targetRevision: main
       destination:
-        namespace: appstudio-workload-monitoring
+        namespace: appstudio-grafana
         server: '{{server}}'
       syncPolicy:
-        automated:
+        automated: 
           prune: true
           selfHeal: true
         syncOptions:
@@ -26,4 +36,6 @@ spec:
         retry:
           limit: 50
           backoff:
-            duration: 15s
+            duration: 10s
+            factor: 2
+            maxDuration: 3m
