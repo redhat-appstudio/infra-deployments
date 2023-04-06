@@ -117,4 +117,4 @@ patchfeenv
 deployProxy
 
 echo "Eph cluster namespace: $NAMESPACE"
-echo "Stonesoup URL: https://$(oc get feenv env-$NAMESPACE -o jsonpath="{.spec.hostname}")/hac/stonesoup"
+echo "Stonesoup URL: https://$(oc get feenv env-$NAMESPACE --kubeconfig="$HAC_KUBECONFIG" -o jsonpath="{.spec.hostname}")/hac/stonesoup"
