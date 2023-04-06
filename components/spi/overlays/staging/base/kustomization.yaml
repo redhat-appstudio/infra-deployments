@@ -3,19 +3,18 @@ kind: Kustomization
 resources:
   - ../../../base
   - ../../../base/external-secrets
-  - https://github.com/redhat-appstudio/service-provider-integration-operator/config/overlays/openshift_aws?ref=6444c804324e550fdb5492e1d744a76558e7d623
+  - https://github.com/redhat-appstudio/service-provider-integration-operator/config/overlays/openshift_aws?ref=131d6b64ef6cb287a14cfdf4fa35c41324e35267
   - spi-aws-credentials-external-secret.yaml
-  - spi-aws-credentials-external-secret-v2.yaml
 
 namespace: spi-system
 
 images:
   - name:  quay.io/redhat-appstudio/service-provider-integration-operator
     newName: quay.io/redhat-appstudio/service-provider-integration-operator
-    newTag: 6444c804324e550fdb5492e1d744a76558e7d623
+    newTag: 131d6b64ef6cb287a14cfdf4fa35c41324e35267
   - name: quay.io/redhat-appstudio/service-provider-integration-oauth
     newName: quay.io/redhat-appstudio/service-provider-integration-oauth
-    newTag: 6444c804324e550fdb5492e1d744a76558e7d623
+    newTag: 131d6b64ef6cb287a14cfdf4fa35c41324e35267
 
 patches:
   - target:
@@ -23,3 +22,5 @@ patches:
       name: spi-controller-manager
     path: operator-limits-patch.json
   - path: delete-shared-configuration-file.yaml
+  - path: delete-vault-approle-operator-secret.yaml
+  - path: delete-vault-approle-oauth-secret.yaml
