@@ -8,52 +8,15 @@ In a multi-cluster topology, there will be a single cluster on which Grafana is 
 
 ## Prerequisites
 
-### `appstudio-workload-monitoring` Namespace
+### `appstudio-grafana` Namespace
 
 Note: The steps below should be handled by Argo CD
 
-First, create the `appstudio-workload-monitoring` namespace on each Prometheus or Grafana cluster, if it does not exist yet:
+First, create the `appstudio-grafana` namespace on each Prometheus or Grafana cluster, if it does not exist yet:
 
 ```
-$ oc create namespace appstudio-workload-monitoring
+$ oc create namespace appstudio-grafana
 ```
-### Dev environment only
-
-The Grafana instance will be deployed by the Grafana operator and a route will be created automatically.
-
-After bootstrapping the cluster in `preview` mode, create the following yaml file:
-```
-spec:
-  config:
-    security:
-      admin_user: <username>
-      admin_password: <password> 
-```
-Add your desired username and password,  
-Save it as `grafana-login.yaml` and run the command:  
-```
-$ oc patch grafana appstudio-grafana -n appstudio-workload-monitoring --type merge --patch-file grafana-login.yaml
-```
-
-Now you can login to the Grafana UI using the provided credentials.
- 
-
-### OAuth2 proxy secrets
-
-Grafana UI is protected by an OAuth2 proxy running as a sidecar container and which delegates the authentication to GitHub. 
-Users must belong to the [Red Hat Appstudio SRE organization](https://github.com/redhat-appstudio-sre) team to be allowed to access the UI.
-
-Create the secret with the following commands:
-
-```
-$ ./hack/setup-monitoring.sh oauth2-secret grafana-oauth2-proxy $GRAFANA_GITHUB_CLIENT_ID $GRAFANA_GITHUB_CLIENT_SECRET $GRAFANA_GITHUB_COOKIE_SECRET
-```
-
-The `GRAFANA_GITHUB_CLIENT_ID`/`GRAFANA_GITHUB_CLIENT_SECRET` value pair must match an existing "OAuth Application" on GitHub - see [OAuth apps](https://github.com/organizations/redhat-appstudio-sre/settings/applications) in the [Red Hat Appstudio SRE organization](https://github.com/organizations/redhat-appstudio-sre). 
-The `GRAFANA_GITHUB_COOKIE_SECRET` can be generated using the [following instructions](https://oauth2-proxy.github.io/oauth2-proxy/docs/configuration/overview#generating-a-cookie-secret).
-
-
-The `grafana-oauth2-proxy` secret must be created before deploying Prometheus and Grafana, otherwise the pods will fail to run.
 
 ### Grafana Datasources
 
