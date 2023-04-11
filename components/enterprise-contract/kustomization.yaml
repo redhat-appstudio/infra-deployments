@@ -1,13 +1,7 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - https://github.com/enterprise-contract/enterprise-contract-controller/config/crd?ref=a44c4f60da41e15f8a78a58205eae6dda1c109c8
-  # Kustomize does not allow github.com urls that reference a single-file. They must always reference
-  # a directory that contains a kustomization.yaml file. The directory /config/rbac does include a
-  # kustomization.yaml file but it includes many other RBAC changes that are not desirable here. Use
-  # a URL to the "raw" version of the file instead.
-  - https://raw.githubusercontent.com/enterprise-contract/enterprise-contract-controller/a44c4f60da41e15f8a78a58205eae6dda1c109c8/config/rbac/enterprisecontractpolicy_viewer_role.yaml
-  - https://raw.githubusercontent.com/enterprise-contract/enterprise-contract-controller/a44c4f60da41e15f8a78a58205eae6dda1c109c8/config/rbac/enterprisecontractpolicy_editor_role.yaml
+  - https://github.com/enterprise-contract/enterprise-contract-controller/config/crd?ref=b8166da93dc95c52320813e14174aaebd84ebbd0
   - ecp.yaml
   - role.yaml
   - rolebinding.yaml
@@ -23,4 +17,4 @@ configMapGenerator:
 images:
   - name: quay.io/redhat-appstudio/enterprise-contract-controller
     newName: quay.io/redhat-appstudio/enterprise-contract-controller
-    newTag: a44c4f60da41e15f8a78a58205eae6dda1c109c8
+    newTag: b8166da93dc95c52320813e14174aaebd84ebbd0
