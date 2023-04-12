@@ -1,13 +1,7 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - https://github.com/enterprise-contract/enterprise-contract-controller/config/crd?ref=a44c4f60da41e15f8a78a58205eae6dda1c109c8
-  # Kustomize does not allow github.com urls that reference a single-file. They must always reference
-  # a directory that contains a kustomization.yaml file. The directory /config/rbac does include a
-  # kustomization.yaml file but it includes many other RBAC changes that are not desirable here. Use
-  # a URL to the "raw" version of the file instead.
-  - https://raw.githubusercontent.com/enterprise-contract/enterprise-contract-controller/a44c4f60da41e15f8a78a58205eae6dda1c109c8/config/rbac/enterprisecontractpolicy_viewer_role.yaml
-  - https://raw.githubusercontent.com/enterprise-contract/enterprise-contract-controller/a44c4f60da41e15f8a78a58205eae6dda1c109c8/config/rbac/enterprisecontractpolicy_editor_role.yaml
+  - https://github.com/enterprise-contract/enterprise-contract-controller/config/crd?ref=b8166da93dc95c52320813e14174aaebd84ebbd0
   - ecp.yaml
   - role.yaml
   - rolebinding.yaml
@@ -17,10 +11,10 @@ configMapGenerator:
   - name: ec-defaults
     namespace: enterprise-contract-service
     literals:
-      - verify_ec_task_bundle=quay.io/hacbs-contract/ec-task-bundle:e18a97905c6a9e9f96ce39575062084e2c57ea45@sha256:64cf61db656fc8b49e9d5ef966a672a943db47f27c9531deacc9ffe2b5e581b7
+      - verify_ec_task_bundle=quay.io/hacbs-contract/ec-task-bundle:6ee2076b11f464107eee530f08f71f524c6dc592@sha256:e0f696cbc65399f91f80e56a623b38a7fa29e5533b94a689640708814ee5e108
       - ec_policy_source=oci::https://quay.io/hacbs-contract/ec-release-policy:git-8ca675b@sha256:caf2a8991ca3feb80edfc8ff7c1930ed09481a7c8d934bb719007bffc1153ecc
       - ec_data_source=oci::https://quay.io/hacbs-contract/ec-policy-data:git-a3ca9be@sha256:d548e0808348c017782ae87920c94d45ad7117e0e630b5b991c8df557c22a844
 images:
   - name: quay.io/redhat-appstudio/enterprise-contract-controller
     newName: quay.io/redhat-appstudio/enterprise-contract-controller
-    newTag: a44c4f60da41e15f8a78a58205eae6dda1c109c8
+    newTag: b8166da93dc95c52320813e14174aaebd84ebbd0
