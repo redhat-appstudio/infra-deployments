@@ -1,33 +1,44 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: pipeline-service-metrics-reader-sa
+  namespace: openshift-pipelines
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: pipeline-service-metrics-reader
+rules:
+  - nonResourceURLs:
+      - /metrics
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus-pipeline-service-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: pipeline-service-metrics-reader
+subjects:
+  - kind: ServiceAccount
+    name: pipeline-service-metrics-reader-sa
+    namespace: openshift-pipelines
+---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: pipeline-service
-  namespace: appstudio-workload-monitoring
-  labels:
-    app: pipeline-metrics-exporter
-    prometheus: appstudio-workload
+  namespace: openshift-pipelines
 spec:
-  selector:
-    matchLabels:
-      app: pipeline-metrics-exporter
   endpoints:
     - path: /metrics
       port: metrics
       interval: 15s
       scheme: http
-  namespaceSelector:
-    matchNames:
-      - openshift-pipelines
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: pipeline-service-exporter-reader-binding
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: pipeline-service-exporter-reader
-subjects:
-  - kind: ServiceAccount
-    name: prometheus-k8s
-    namespace: appstudio-workload-monitoring
+  selector:
+    matchLabels:
+      app: pipeline-metrics-exporter
