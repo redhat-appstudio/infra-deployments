@@ -105,7 +105,7 @@ spec:
       mode: "console"
       level: "warn"
     auth.anonymous:
-      enabled: True
+      enabled: false
     auth:
       disable_login_form: False
       disable_signout_menu: True
@@ -122,6 +122,11 @@ spec:
           operator: In
           values:
             - appstudio-grafana
+  deployment:
+    envFrom:
+      - prefix: thanos
+        secretRef:
+          name: metrics-reader
   containers:
     - args:
         - '-provider=openshift'
