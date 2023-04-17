@@ -9,10 +9,7 @@ spec:
           - nameNormalized
         generators:
           - clusters:
-              values:
-                sourceRoot: configs/disable-csvcopy-for-all-cluster
-                environment: staging
-                clusterDir: ""
+              values: []
           - list:
               elements: []
   template:
@@ -21,7 +18,7 @@ spec:
     spec:
       project: default
       source:
-        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
+        path: configs/disable-csvcopy-for-all-cluster
         repoURL: https://github.com/redhat-appstudio/infra-deployments.git
         targetRevision: main
       destination:
