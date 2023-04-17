@@ -1,0 +1,10 @@
+apiVersion: integreatly.org/v1alpha1
+kind: GrafanaDashboard
+metadata:
+  name: grafana-dashboard-has-gitops-repo-metrics
+  labels: 
+    app: appstudio-grafana
+spec:
+  configMapRef:
+    name: grafana-dashboard-has-gitops-repo-metrics
+    key: has-gitops-repo-metrics.json
