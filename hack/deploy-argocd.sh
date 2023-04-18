@@ -26,7 +26,7 @@ verify_permissions() {
 create_subscription() {
 
     echo "Installing the OpenShift GitOps operator subscription:"
-    kubectl apply -k "$ROOT/components/gitops/openshift-gitops"
+    kubectl apply -k "$ROOT/components/gitops/openshift-gitops/overlays/production-and-dev"
     echo -n "Waiting for default project (and namespace) to exist: "
     while ! kubectl get appproject/default -n openshift-gitops &>/dev/null; do
         echo -n .
@@ -89,7 +89,7 @@ spec:
 
 add_role_binding() {
     echo "Add Role/RoleBindings for OpenShift GitOps:"
-    kubectl apply --kustomize $ROOT/components/gitops/openshift-gitops/cluster-rbac
+    kubectl apply --kustomize $ROOT/components/gitops/openshift-gitops/base/cluster-rbac
 }
 
 print_url() {
