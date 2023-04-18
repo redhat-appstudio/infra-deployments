@@ -1,0 +1,33 @@
+---
+apiVersion: integreatly.org/v1alpha1
+kind: GrafanaDashboard
+metadata:
+  name: grafana-dashboard-spi-health
+  labels: 
+    app: appstudio-grafana
+spec:
+  configMapRef:
+    name: grafana-dashboard-spi-health
+    key: spi-health.json
+---
+apiVersion: integreatly.org/v1alpha1
+kind: GrafanaDashboard
+metadata:
+  name: grafana-dashboard-spi-outbound-traffic
+  labels: 
+    app: appstudio-grafana
+spec:
+  configMapRef:
+    name: grafana-dashboard-spi-outbound-traffic
+    key: spi-outbound-traffic.json
+---
+apiVersion: integreatly.org/v1alpha1
+kind: GrafanaDashboard
+metadata:
+  name: grafana-dashboard-spi-slo
+  labels: 
+    app: appstudio-grafana
+spec:
+  configMapRef:
+    name: grafana-dashboard-spi-slo
+    key: spi-slo.json
