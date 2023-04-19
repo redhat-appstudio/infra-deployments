@@ -29,11 +29,11 @@ kubectl delete -f $ROOT/argo-cd-apps/app-of-apps/all-applications-staging.yaml
 
 echo
 echo "Remove RBAC for OpenShift GitOps:"
-kubectl delete -k $ROOT/openshift-gitops/cluster-rbac
+kubectl delete -k $ROOT/openshift-gitops/base/cluster-rbac
 
 echo 
 echo "Remove the OpenShift GitOps operator subscription:"
-kubectl delete -f $ROOT/openshift-gitops/subscription-openshift-gitops.yaml
+kubectl delete -f $ROOT/openshift-gitops/overlays/production-and-dev/subscription-openshift-gitops.yaml
 
 echo 
 echo "Removing operators and operands:"
