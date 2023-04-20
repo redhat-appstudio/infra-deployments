@@ -2,10 +2,9 @@ apiVersion: operator.external-secrets.io/v1alpha1
 kind: OperatorConfig
 metadata:
   name: cluster
-  namespace: external-secrets-operator
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-    argocd.argoproj.io/sync-wave: "0"
+    argocd.argoproj.io/sync-wave: "-1"
 spec:
   prometheus:
     enabled: true
