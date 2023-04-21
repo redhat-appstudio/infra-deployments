@@ -2,5 +2,9 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - dora-metrics
+  - external-secrets-operator
+  - cluster-secret-store
+  - monitoring-workload-prometheus
+  - monitoring-workload-grafana
 components:
   - ../../../k-components/inject-infra-deployments-repo-details
