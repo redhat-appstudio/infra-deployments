@@ -10,6 +10,7 @@ resources:
 - dora-metrics/
 - has/
 - jvm-build-service/
+- migration
 
 # Skip applying the grafana operands (integreatly.org) while the grafana operator is being installed.
 # See more information about this option, here:
@@ -19,5 +20,5 @@ commonAnnotations:
 
 namespace: "appstudio-grafana"
 
-generatorOptions:
-  disableNameSuffixHash: true
+configurations:
+  - cm-dashboard.yaml
