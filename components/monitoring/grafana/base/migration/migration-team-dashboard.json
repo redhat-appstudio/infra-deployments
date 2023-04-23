@@ -24,7 +24,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": 6,
+  "id": 13,
   "links": [],
   "panels": [
     {
@@ -143,7 +143,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum by (namespace) (increase(tekton_pipelines_controller_pipelinerun_duration_seconds_count{namespace!~\"tekton-ci|build-templates-e2e\", status=\"success\"}[$__range]) / increase(tekton_pipelines_controller_pipelinerun_duration_seconds_count{namespace!~\"tekton-ci|build-templates-e2e\"}[$__range])) * 100",
+          "expr": "sum by (namespace)\n(increase(tekton_pipelines_controller_pipelinerun_duration_seconds_count{namespace!~\"tekton-ci|build-templates-e2e\", status=\"success\"}[$__range])) \n/\nsum by (namespace)\n(increase(tekton_pipelines_controller_pipelinerun_duration_seconds_count{namespace!~\"tekton-ci|build-templates-e2e\"}[$__range])) * 100",
           "interval": "",
           "legendFormat": "{{namespace}}",
           "refId": "A"
@@ -163,12 +163,12 @@
     "list": []
   },
   "time": {
-    "from": "now-7d",
+    "from": "now-2d",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "Migration Team",
-  "uid": "34f3f2250ecdf7637f8f92b920f5dcfd5da27b3a",
-  "version": 1
+  "uid": "8a7574168f9441c2877e355d80b03199b0fa94b2",
+  "version": 2
 }
