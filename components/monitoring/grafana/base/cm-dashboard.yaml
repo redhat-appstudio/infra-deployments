@@ -1,0 +1,10 @@
+apiVersion: builtin
+kind: ConfigMapGenerator
+metadata:
+  name: cm-dashboard
+nameReference:
+  - kind: ConfigMap
+    fieldSpecs:
+      - kind: GrafanaDashboard
+        path: spec/configMapRef/name
+
