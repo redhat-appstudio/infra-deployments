@@ -4,12 +4,11 @@ resources:
   - ../base
   - ../base/external-secrets
 
-replicas:
-- name: controller-system
-  count: 3
-
 configMapGenerator:
 - literals:
   - GITHUB_ORG="redhat-appstudio-appdata-staging"
   name: github-config
   behavior: replace
+
+patches:
+- ./replicas_patch.yaml

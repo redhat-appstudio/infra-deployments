@@ -4,10 +4,6 @@ resources:
   - ../base
   - ../base/external-secrets
 
-replicas:
-- name: controller-system
-  count: 3
-
 configMapGenerator:
 - literals:
   - GITHUB_ORG="redhat-appstudio-appdata"
@@ -21,3 +17,4 @@ patches:
       kind: ExternalSecret
       group: external-secrets.io
       version: v1beta1
+  - ./replicas_patch.yaml
