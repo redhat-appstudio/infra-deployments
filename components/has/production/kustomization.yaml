@@ -4,12 +4,6 @@ resources:
   - ../base
   - ../base/external-secrets
 
-namespace: application-service
-
-replicas:
-- name: controller-system
-  count: 3
-
 configMapGenerator:
 - literals:
   - GITHUB_ORG="redhat-appstudio-appdata"
