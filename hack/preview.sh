@@ -141,12 +141,12 @@ yq -i e ".0.value=\"$SPI_API_SERVER\"" $ROOT/components/spi/overlays/development
 $ROOT/hack/util-patch-spi-config.sh
 # configure the secrets and providers in SPI
 TMP_FILE=$(mktemp)
-yq e ".serviceProviders[0].type=\"${SPI_TYPE:-GitHub}\"" $ROOT/components/spi/base/config.yaml | \
-    yq e ".serviceProviders[0].clientId=\"${SPI_CLIENT_ID:-app-client-id}\"" - | \
-    yq e ".serviceProviders[0].clientSecret=\"${SPI_CLIENT_SECRET:-app-secret}\"" - | \
-    yq e ".serviceProviders[1].type=\"${SPI_TYPE:-Quay}\"" - | \
-    yq e ".serviceProviders[1].clientId=\"${SPI_CLIENT_ID:-app-client-id}\"" - | \
-    yq e ".serviceProviders[1].clientSecret=\"${SPI_CLIENT_SECRET:-app-secret}\"" - > $TMP_FILE
+yq e ".serviceProviders[0].type=\"GitHub\"" $ROOT/components/spi/base/config.yaml | \
+    yq e ".serviceProviders[0].clientId=\"${SPI_GITHUB_CLIENT_ID:-app-client-id}\"" - | \
+    yq e ".serviceProviders[0].clientSecret=\"${SPI_GITHUB_CLIENT_SECRET:-app-secret}\"" - | \
+    yq e ".serviceProviders[1].type=\"Quay\"" - | \
+    yq e ".serviceProviders[1].clientId=\"${SPI_QUAY_CLIENT_ID:-app-client-id}\"" - | \
+    yq e ".serviceProviders[1].clientSecret=\"${SPI_QUAY_CLIENT_SECRET:-app-secret}\"" - > $TMP_FILE
 oc create namespace spi-system --dry-run=client -o yaml | oc apply -f -
 oc create -n spi-system secret generic shared-configuration-file --from-file=config.yaml=$TMP_FILE --dry-run=client -o yaml | oc apply -f -
 echo "SPI configured"
@@ -210,7 +210,7 @@ if ! timeout 100s bash -c "while ! kubectl get applications.argoproj.io -n opens
 else
   if [ "$(oc get applications.argoproj.io spi-in-cluster-local -n openshift-gitops -o jsonpath='{.status.health.status} {.status.sync.status}')" != "Healthy Synced" ]; then
     echo Initializing SPI
-    curl https://raw.githubusercontent.com/redhat-appstudio/e2e-tests/${E2E_TESTS_COMMIT_SHA:-main}/scripts/spi-e2e-setup.sh | VAULT_PODNAME='vault-0' VAULT_NAMESPACE='spi-vault' bash -s
+    curl https://raw.githubusercontent.com/redhat-appstudio/service-provider-integration-operator/main/hack/vault-init.sh | VAULT_PODNAME='vault-0' VAULT_NAMESPACE='spi-vault' bash -s 
     SPI_APP_ROLE_FILE=$ROOT/.tmp/approle_secret.yaml
     if [ -f "$SPI_APP_ROLE_FILE" ]; then
         echo "$SPI_APP_ROLE_FILE exists."
