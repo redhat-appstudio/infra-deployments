@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-
+##### TESTING
 main() {
     echo "Setting secrets for Quality Dashboard"
     kubectl create namespace quality-dashboard -o yaml --dry-run=client | oc apply -f-
