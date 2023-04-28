@@ -1,0 +1,36 @@
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: has-admin
+  namespace: application-service
+rules:
+  - verbs:
+      - get
+      - delete
+    apiGroups:
+      - ''
+    resources:
+      - pods
+  - verbs:
+      - "patch"
+    apiGroups:
+      - "apps"
+    resources:
+      - "deployments/scale"
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: has-admin
+  namespace: application-service
+subjects:
+  - kind: User
+    name: johnmcollier
+  - kind: User
+    name: kim-tsao
+  - kind: User
+    name: maysunfaisal
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: has-admin
