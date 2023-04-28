@@ -1,7 +1,8 @@
 resources:
 - allow-argocd-to-manage.yaml
 - argocd-permissions.yaml
-- https://github.com/redhat-appstudio/application-service/config/default?ref=70bfa426ea9a79e3bc50fd430233177dc388c94d
+- https://github.com/redhat-appstudio/application-service/config/default?ref=df4cd6732afa5f13d8d354b493ed11958288ac31
+- https://github.com/redhat-appstudio/application-service/config/prometheus/?ref=df4cd6732afa5f13d8d354b493ed11958288ac31
 
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
@@ -9,7 +10,7 @@ kind: Kustomization
 images:
 - name: quay.io/redhat-appstudio/application-service
   newName: quay.io/redhat-appstudio/application-service
-  newTag: 70bfa426ea9a79e3bc50fd430233177dc388c94d
+  newTag: df4cd6732afa5f13d8d354b493ed11958288ac31
 
 configMapGenerator:
 - literals:
