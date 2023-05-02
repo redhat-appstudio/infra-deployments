@@ -24,7 +24,7 @@ create_db_secret() {
     kubectl create secret generic -n tekton-results tekton-results-database \
       --from-literal=db.user=tekton \
       --from-literal=db.password="$(openssl rand -base64 20)" \
-      --from-literal=db.host="tekton-results-database-service.tekton-results.svc.cluster.local" \
+      --from-literal=db.host="postgres-postgresql.tekton-results.svc.cluster.local" \
       --from-literal=db.name="tekton_results"
 }
 
