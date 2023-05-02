@@ -8,7 +8,7 @@ commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 
 resources:
-  - git::https://github.com/openshift-pipelines/pipeline-service.git/operator/gitops/argocd/pipeline-service?ref=062d00d304d6fba316085784f3b948217fc99d12
+  - github.com/openshift-pipelines/pipeline-service.git/operator/gitops/argocd/pipeline-service?ref=729cd6ba4dc2d08b173cfda729b6087dbffcec93
   - ../../base/external-secrets
   - ../../base/testing
 
@@ -20,4 +20,9 @@ patches:
     target:
       kind: ConfigMap
       name: pipelines-as-code
+      namespace: openshift-pipelines
+  - path: pac-app-secret.yaml
+    target:
+      kind: ExternalSecret
+      name: pipelines-as-code-secret
       namespace: pipelines-as-code

@@ -15,3 +15,10 @@ patches:
       kind: ClusterSecretStore
       group: external-secrets.io
       version: v1beta1
+  - patch: |-
+      - op: replace
+        path: /spec/conditions/0/namespaces/7
+        value: pipelines-as-code
+    target:
+      kind: ClusterSecretStore
+      name: appsre-stonesoup-vault

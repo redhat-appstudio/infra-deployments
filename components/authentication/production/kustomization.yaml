@@ -2,6 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ../base
+  - pac-sre.yaml
 patches:
   - path: github-redhat-appstudio-secret-patch.yaml
     target:
@@ -15,3 +16,10 @@ patches:
       kind: ExternalSecret
       group: external-secrets.io
       version: v1beta1
+  - patch: |-
+      - op: replace
+        path: /metadata/namespace
+        value: pipelines-as-code
+    target:
+      kind: RoleBinding
+      name: pipelines-as-code-maintainers

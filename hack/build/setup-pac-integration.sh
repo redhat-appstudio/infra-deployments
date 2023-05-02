@@ -46,9 +46,9 @@ setup-pac-app() (
 
         webhook_secret=$(openssl rand -hex 20)
 
-        if ! oc get -n pipelines-as-code secret pipelines-as-code-secret &>/dev/null; then         
+        if ! oc get -n openshift-pipelines secret pipelines-as-code-secret &>/dev/null; then
                 token=$(sign rs256 "$payload" "$(echo "$PAC_GITHUB_APP_PRIVATE_KEY" | base64 -d)")
-                webhook_url=$(oc whoami --show-console | sed 's/console-openshift-console/pipelines-as-code-controller-pipelines-as-code/')
+                webhook_url=$(oc whoami --show-console | sed 's/console-openshift-console/pipelines-as-code-controller-openshift-pipelines/')
                 curl \
                 -X PATCH \
                 -H "Accept: application/vnd.github.v3+json" \
@@ -78,7 +78,7 @@ if [ -n "${PAC_GITLAB_TOKEN}" ]; then
         GITLAB_WEBHOOK_DATA="--from-literal gitlab.token='${PAC_GITLAB_TOKEN}'"
 fi
 
-PAC_NAMESPACE='pipelines-as-code'
+PAC_NAMESPACE='openshift-pipelines'
 PAC_SECRET_NAME='pipelines-as-code-secret'
 
 oc create namespace -o yaml --dry-run=client ${PAC_NAMESPACE} | oc apply -f-

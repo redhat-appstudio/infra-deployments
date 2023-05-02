@@ -27,3 +27,11 @@ patches:
       kind: ConfigMap
       name: pipelines-as-code
       namespace: pipelines-as-code
+  - patch: |-
+      - op: replace
+        path: /metadata/namespace
+        value: pipelines-as-code
+    target:
+      kind: ExternalSecret
+      name: pipelines-as-code-secret
+      namespace: openshift-pipelines
