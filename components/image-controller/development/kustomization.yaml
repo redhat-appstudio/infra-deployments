@@ -2,3 +2,11 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
 - ../base
+
+patches:
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: controller-manager
+    path: logs-in-console-format-cmd-arg-patch.yaml
