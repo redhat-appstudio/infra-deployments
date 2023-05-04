@@ -1,3 +1,4 @@
+---
 apiVersion: integreatly.org/v1alpha1
 kind: GrafanaDashboard
 metadata:
@@ -8,3 +9,14 @@ spec:
   configMapRef:
     name: grafana-dashboard-has-gitops-repo-metrics
     key: has-gitops-repo-metrics.json
+---
+apiVersion: integreatly.org/v1alpha1
+kind: GrafanaDashboard
+metadata:
+  name: grafana-dashboard-has-rate-limiting-metrics
+  labels:
+    app: appstudio-grafana
+spec:
+  configMapRef:
+    name: grafana-dashboard-has-rate-limiting-metrics
+    key: has-rate-limiting-metrics.json
