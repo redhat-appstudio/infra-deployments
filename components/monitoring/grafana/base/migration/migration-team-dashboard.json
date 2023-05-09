@@ -24,7 +24,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": 13,
+  "id": 10,
   "links": [],
   "panels": [
     {
@@ -120,10 +120,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
+        "h": 9,
         "w": 12,
-        "x": 0,
-        "y": 9
+        "x": 12,
+        "y": 0
       },
       "id": 4,
       "options": {
@@ -153,6 +153,64 @@
       "timeShift": null,
       "title": "Pipelines Success Rate",
       "type": "gauge"
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 24,
+        "x": 0,
+        "y": 9
+      },
+      "id": 6,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "text": {}
+      },
+      "pluginVersion": "7.5.17",
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "avg by (namespace) (tekton_pipelines_controller_taskruns_pod_latency) / 10^9",
+          "interval": "",
+          "legendFormat": "{{ namespace }}",
+          "refId": "A"
+        }
+      ],
+      "title": "Taskrun Pod Latency",
+      "type": "gauge"
     }
   ],
   "refresh": "1d",
@@ -170,5 +228,5 @@
   "timezone": "",
   "title": "Migration Team",
   "uid": "8a7574168f9441c2877e355d80b03199b0fa94b2",
-  "version": 2
+  "version": 3
 }
