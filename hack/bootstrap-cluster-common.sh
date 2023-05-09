@@ -9,7 +9,7 @@ main() {
     [[ -z "$DOCKER_IO_AUTH" ]] || \
         "${ROOT}/secret-creator/set-docker-hub-pull-secret.sh" "$DOCKER_IO_AUTH"
     "${ROOT}/secret-creator/create-dora-metrics-exporter-secrets.sh" \
-        "$MY_GITHUB_TOKEN"
+        "$GITHUB_TOKEN"
 }
 
 
