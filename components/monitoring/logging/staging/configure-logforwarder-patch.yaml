@@ -1,0 +1,20 @@
+---
+- op: add
+  path: /spec/outputs/-
+  value:
+    name: splunk-receiver
+    secret:
+      name: splunk-forwarder-secret
+    type: splunk 
+    url: https://http-inputs-rhcorporate.splunkcloud.com
+- op: add
+  path: /spec/pipelines/-
+  value:
+    name: fluentd-splunk-logforward
+    inputRefs:
+      - application
+      - infrastructure
+      - audit
+    outputRefs:
+      - splunk-receiver
+    parse: json
