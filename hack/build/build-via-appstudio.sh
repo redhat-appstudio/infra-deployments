@@ -25,8 +25,8 @@ if [ -z "$GENERATE_IMAGE" ]; then
   oc secret link pipeline redhat-appstudio-registry-pull-secret
 fi
 
-# Label namespace to be managed by gitops-service-argocd
-oc label namespace $(oc config view --minify -o 'jsonpath={..namespace}') --overwrite argocd.argoproj.io/managed-by=gitops-service-argocd
+# Configure namespace
+$SCRIPTDIR/setup-namespace.sh
 
 oc delete --ignore-not-found -f $SCRIPTDIR/templates/application.yaml
 oc create -f $SCRIPTDIR/templates/application.yaml
