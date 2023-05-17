@@ -1,0 +1,31 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: sprayproxy-rbac-for-support
+  namespace: sprayproxy
+subjects:
+  - kind: User
+    name: adambkaplan
+    apiGroup: rbac.authorization.k8s.io
+  - kind: User
+    name: Roming22
+    apiGroup: rbac.authorization.k8s.io
+  - kind: User
+    name: gabemontero
+    apiGroup: rbac.authorization.k8s.io
+  - kind: User
+    name: avinal
+    apiGroup: rbac.authorization.k8s.io
+  - kind: User
+    name: sayan-biswas
+    apiGroup: rbac.authorization.k8s.io
+  - kind: User
+    name: enarha
+    apiGroup: rbac.authorization.k8s.io
+  - kind: User
+    name: AndrienkoAleksandr
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: view
+  apiGroup: rbac.authorization.k8s.io
