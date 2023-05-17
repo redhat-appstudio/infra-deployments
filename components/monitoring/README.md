@@ -1,5 +1,6 @@
 ## Onboarding Services to Monitoring
 
+
 ### 1. Metrics-exporting services
 
 - The intended service should export the metrics from the application so that prometheus is able to understand it.
@@ -12,7 +13,8 @@
 - Check out [this example](./prometheus/development/dummy-service.yaml) of a
   metrics-exporting service.
 
-#### 2. Service monitors
+
+### 2. Service monitors
 
 Creating a service monitor instructs Prometheus to create a new target to collect
 metrics from.
@@ -40,160 +42,170 @@ for adding the service monitor declaration:
 > **_IMPORTANT:_** make sure your service's namespace does NOT contain label
                    `openshift.io/cluster-monitoring: 'true'`. Otherwise, it will not be
                    monitored by the user workload Prometheus instance.
+                  
 
-#### 3. Grafana dashboards
+### 3. Grafana Datasource
 
-A dashboard is a set of one or more panels organized and arranged into one or more rows. It visualizes results from multiple data sources simultaneously.
-New dashboards can be added through the user interface, preconfigured in infra-deployment project, or imported from other projects.
+Grafana datasources contain the connection settings to the Prometheus instances.
 
-##### Manual export
+A single [datasource (Thanos querier)](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/monitoring/grafana/base/grafana-app.yaml#L206), `appstudio-datasource` is defined and it lets us query metrics from the Platform and User Workload Monitoring Prometheus.
 
-  - Create a new folder in [grafana](https://grafana-appstudio-workload-monitoring.apps.appstudio-stage.x99m.p1.openshiftapps.com) for your service. (In the left nav, + Create Folder)
+To use this default datasource any definition of a datasource in the dashboard json file should be removed or a `templating` should be used.
 
-  - [Create a dashboard](https://grafana.com/docs/grafana/v9.0/dashboards/) for your team's view of your service's Service Level Indicators. (After navigating to your folder, + Create Dashboard)
 
-  - Add tiles on the dashboard to track your initial set of service level indicators. If you correctly added your servicemonitor to the stage Prometheus datasource, it will show up in the Query list when you edit a tile.
+### 4. Grafana dashboards
 
-  - Export the dashboard definition in JSON format. (At the top of the screen, the icon with 3 dots lets you "Share dashboard or panel". Select Export... Save to file.)
+A dashboard is a set of one or more panels organized and arranged into one or more rows. 
+It visualizes results from multiple data sources simultaneously.
+New dashboards can be added through the user interface, preconfigured in the infra-deployments repository, 
+or imported from other projects.
 
-  -  Store the dashboard definition in git, in infra-deployments. 
 
-  - Add your dashboard to the [kustomization file](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/monitoring/grafana/base/kustomization.yaml#L15) to automatically add it to future deployments.
+#### Create a dashboard
 
-  - [Here](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/monitoring/grafana/base/dashboards/example.json) is an example for the default dashboard.
+  1. [Create a dashboard](https://grafana.com/docs/grafana/v9.0/dashboards/)
+  for your team's view of your service's Service Level Indicators.
+  (After navigating to your folder, + Create Dashboard)  
+  ***Note:***  
+  Creating a new dashboard manually is available only for development environment.  
+  You may copy and edit the `example` dashboard json instead, and test the new dashboard on the staging and production environments. 
 
-##### In place configuration
+      The `example` dashboard json definition can be found 
+      [here](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/monitoring/grafana/base/dashboards/example.json)
 
-  - Add dashboard json to the [dashboards](https://github.com/redhat-appstudio/infra-deployments/tree/main/components/monitoring/grafana/base/dashboards) folder
 
-  - Add dashboard's file name to [kustomization.yaml](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/monitoring/grafana/base/kustomization.yaml#L15)
-    ```yaml
-    configMapGenerator:
-    - name: grafana-dashboard-definitions
-      files:
-      - example.json=dashboards/example.json
-    ```
+  2. Add tiles to the dashboard to track your initial set of service level indicators.  
+  If the servicemonitor was added correctly to the stage Prometheus datasource, 
+  it will show up in the query list when you edit a tile.
 
-##### External configuration
-  - Create in your project `kustomization.yaml` which will provide a configmaps with Grafana dashboards.
-    ```yaml
-    kind: Kustomization
-    apiVersion: kustomize.config.k8s.io/v1beta1
-    
-    generatorOptions:
-      disableNameSuffixHash: true
-    
-    
-    configMapGenerator:
-      - name: grafana-dashboard-spi-health
-        files:
-          - grafana-dashboards/spi-health.json
-      - name: grafana-dashboard-spi-outbound-traffic
-        files:
-          - grafana-dashboards/spi-outbound-traffic.json
-      - name: grafana-dashboard-spi-slo
-        files:
-          - grafana-dashboards/spi-slo.json
-    ```
+  3. Export the dashboard definition in JSON format. 
+  (At the top of the screen, the icon with 3 dots lets you "Share dashboard or panel". Select Export... Save to file.)
+   
 
-  - Include a reference to this dashboard in [kustomization.yaml](https://github.com/redhat-appstudio/infra-deployments/blob/f0d3956f4a11d25291e91773d74b5942ce943f39/components/monitoring/grafana/base/spi/kustomization.yaml#L4)
-    ```yaml
-    apiVersion: kustomize.config.k8s.io/v1beta1
-    kind: Kustomization
-    resources:
-    - https://github.com/redhat-appstudio/service-provider-integration-operator/config/monitoring/base?ref=8456502ae3a4dca0688bc70abfac2db58ee8acb4
-    ```
-  - Ensure that project's kustomization.yaml is included in [grafana/base/kustomization.yaml](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/monitoring/grafana/base/kustomization.yaml)
-  ```yaml
-     apiVersion: kustomize.config.k8s.io/v1beta1
-     kind: Kustomization
-     resources:
-     ...
-       - spi/
-     ...
-  ```
-  - Note: to keep the `ref={id}` up to date such a configuration of PipelineRun can be used
-    ```yaml
-    apiVersion: tekton.dev/v1beta1
-    kind: PipelineRun
-    metadata:
-      name: spi-controller-on-push
-    annotations:
-      pipelinesascode.tekton.dev/on-event: "[push]"
-      pipelinesascode.tekton.dev/on-target-branch: "[main]"
-      pipelinesascode.tekton.dev/max-keep-runs: "5"
-    spec:
-      params:
-      ...
-      - name: infra-deployment-update-script
-        value: |
-         sed -i -e 's|\(https://github.com/redhat-appstudio/service-provider-integration-operator/config/monitoring/base?ref=\)\(.*\)|\1{{ revision }}|' components/monitoring/grafana/base/spi/kustomization.yaml
-        pipelineRef:
-         name: docker-build
-         bundle: quay.io/redhat-appstudio/hacbs-core-service-templates-bundle:latest
-      ...
-    ```
+#### Team's repository
 
-  - Add a [volume](https://github.com/redhat-appstudio/infra-deployments/blob/2a6e4dcb272fa01d330b393d87b8f5ea5c434687/components/monitoring/grafana/base/grafana-app.yaml#L175) to `grafana-app.yaml` 
-    ```yaml
-    - name: grafana-dashboard-dora-metrics-volume
-      projected:
-       sources:
-         - configMap:
-             name: grafana-dashboard-dora-metrics
-     ```
+Follow the next steps to define a dashboard in your team's repository
 
-  - Add a [volumeMounts](https://github.com/redhat-appstudio/infra-deployments/blob/2a6e4dcb272fa01d330b393d87b8f5ea5c434687/components/monitoring/grafana/base/grafana-app.yaml#L87) to `grafana-app.yaml`
-    ```yaml
-    volumeMounts:
-    - mountPath: /var/lib/grafana/dashboards-dora-metrics
-      name: grafana-dashboard-dora-metrics-volume
-    ```
+  1. The dashboard should be located in the team’s repository, no change in `infra-deployments` is required,
+  the recommended structure is:
+      ```
+      ├── grafana
+      │   ├── dashboards
+      │   │   └── <teams_dashboard>.json
+      │   ├── <GrafanaDashboard resource file>
+      │   └── kustomization.yaml
+      ```
+      For example:
+      ```
+      ├── grafana
+      │   ├── dashboards
+      │   │   └── o11y-dashboard.json
+      │   ├── dashboard.yaml
+      │   └── kustomization.yaml
+      ```
 
-  - Add a link to the new maps folder in `appstudio-workload-monitoring` [ConfigMap](https://github.com/redhat-appstudio/infra-deployments/blob/2a6e4dcb272fa01d330b393d87b8f5ea5c434687/components/monitoring/grafana/base/grafana-app.yaml#L234) in  `grafana-app.yaml`
-    ```yaml
-    apiVersion: v1
-    kind: ConfigMap
-    metadata:
-      namespace: appstudio-workload-monitoring
-      name: grafana-dashboards
-    data:
-      default.yaml: |
-        apiVersion: 1
-        providers:
-          - name: Dora Metrics
-            folder: QE
-            type: file
-            disableDeletion: true
-            options:
-              path: /var/lib/grafana/dashboards-dora-metrics
-    ```
+  2. Create a folder in your team's repository to maintain the dashboard configuration (e.g. grafana)
   
-  - Note: Grafana dashboards has to have a predefined datasource name. It is recommended to use templating to select them. For example:
-    ```json
-      "templating": {
-        "list": [
-          {
-            "current": {
-              "selected": true,
-              "text": "prometheus-appstudio-ds",
-              "value": "prometheus-appstudio-ds"
-            },
-            "hide": 0,
-            "includeAll": false,
-            "multi": false,
-            "name": "datasource",
-            "options": [],
-            "query": "prometheus",
-            "queryValue": "",
-            "refresh": 1,
-            "regex": ".*-(appstudio)-.*",
-            "skipUrlSync": false,
-            "type": "datasource"
-          }
-        ]
-      },
-    ```
-    In this example dashboard will use `prometheus-appstudio-ds` datasource, with ability to use other datasource that contains `appstudio` in the name.
-    
+  3. Edit the dashboard json file:  
+      - to pick the default predefined datasource Edit the dashboard json file and **remove** `datasource` from it, for example:
+          ```yaml 
+            "datasource": {
+              "type": "prometheus",
+              "uid": "PF224BEF3374A25F8"
+            }
+          ```
+        
+      - Alternatively it is possible to use templating to select a datasource, for example: 
+          ```json
+          "templating": {
+            "list": [
+              {
+                "current": {
+                  "selected": true,
+                  "text": "Prometheus",
+                  "value": "Prometheus"
+                },
+                "hide": 0,
+                "includeAll": false,
+                "multi": false,
+                "name": "datasource",
+                "options": [],
+                "query": "prometheus",
+                "queryValue": "",
+                "refresh": 1,
+                "regex": ".*-(appstudio)-.*",
+                "skipUrlSync": false,
+                "type": "datasource"
+              }
+            ]
+          },
+          ```
+        
+        In this example, the dashboard will use `Prometheus` datasource, with ability to use other datasource that contains `appstudio` in the name.
+      
+  4. Add the dashboard json file to the folder you created.
 
+  5. Create a `kustomization.yaml` to generate a config map from the dashboard json, 
+  and to add the `GrafanaDashboard` resource file (`dashboard.yaml`), for example: 
+      ```yaml
+      kind: Kustomization
+      apiVersion: kustomize.config.k8s.io/v1beta1
+
+      namespace: o11y
+
+      configMapGenerator:
+        - name: grafana-dashboard-o11y
+          files:
+            - dashboards/o11y-dashboard.json
+
+      resources:
+        - dashboard.yaml
+      ```
+  
+  6. Create the `GrafanaDashboard` resource file that uses the config map to create the dashboard
+      ```yaml
+      apiVersion: integreatly.org/v1alpha1
+      kind: GrafanaDashboard
+      metadata:
+        name: grafana-dashboard-o11y
+        labels:
+          app: appstudio-grafana
+      spec:
+        configMapRef:
+          name: grafana-dashboard-o11y
+          key: o11y-dashboard.json
+      ```
+ 7. Push the code to the team's repository
+
+ - Check out [this example o11y PR](https://github.com/redhat-appstudio/o11y/pull/39) 
+ for creating a dashboard in the team's repository
+  
+
+#### infra-deployments repository
+Follow these steps to add a dashboard to the `infra-deployments` repository
+
+  1. Create a team folder under `components/monitoring/grafana/base/<team_name>`
+  
+  2. Create a `kustomization.yaml` file and add the dashboard you created as a resource by using the commit sha as ref, 
+  for example:
+      ```yaml
+      apiVersion: kustomize.config.k8s.io/v1beta1
+      kind: Kustomization
+      resources:
+        - https://github.com/redhat-appstudio/o11y/grafana/?ref=82bec1c488250ae32d458c77755e432329be1b45
+      ```
+    
+  3. Add your team's folder to the base [kustomization file](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/monitoring/grafana/base/kustomization.yaml#L14) to automatically add it to future deployments.
+   
+  4. Push the code to the `infra-deployments` repository
+
+
+#### Verification
+
+Follow the next steps to to verify and check your dashboard after merging the configurations
+
+1. Open the Grafana UI
+
+2. Click the `Manage` option in the `Dashboards` menu
+
+3. Verify that your team’s dashboard is located under `appstudio-grafana` folder 
