@@ -33,7 +33,7 @@ spec:
       ignoreDifferences:
       - group: ""
         kind: "ServiceAccount"
-        name: pipeline
+        name: appstudio-pipeline
         jqPathExpressions:
         - .imagePullSecrets[] | select(.name | startswith("appstudio-pipeline-dockercfg"))
       syncPolicy:
