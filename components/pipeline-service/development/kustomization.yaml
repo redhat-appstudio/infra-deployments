@@ -11,9 +11,6 @@ resources:
   - git::https://github.com/openshift-pipelines/pipeline-service.git/developer/openshift/gitops/argocd/pipeline-service?ref=9644d47a6cc62016af1b350aa8feb0e31cd7dd8b
   - git::https://github.com/openshift-pipelines/pipeline-service.git/developer/openshift/gitops/argocd/pipeline-service-storage?ref=9644d47a6cc62016af1b350aa8feb0e31cd7dd8b
 
-components:
-  - ../components/tekton-chains
-
 patches:
   - path: scale-down-exporter.yaml
     target:
