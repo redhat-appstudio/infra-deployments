@@ -27,3 +27,8 @@ patches:
       kind: ConfigMap
       name: pipelines-as-code
       namespace: pipelines-as-code
+  - path: scale-down-exporter.yaml
+    target:
+      kind: Deployment
+      name: pipeline-metrics-exporter
+      namespace: openshift-pipelines
