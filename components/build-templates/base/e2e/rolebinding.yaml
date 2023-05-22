@@ -9,7 +9,7 @@ roleRef:
   name:  edit
 subjects:
 - kind: ServiceAccount
-  name: pipeline
+  name: appstudio-pipeline
   namespace: tekton-ci
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -22,7 +22,7 @@ roleRef:
   name:  edit-namespace
 subjects:
 - kind: ServiceAccount
-  name: pipeline
+  name: appstudio-pipeline
   namespace: tekton-ci
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -35,5 +35,5 @@ roleRef:
   name:  admin-buildpipelineselectors
 subjects:
 - kind: ServiceAccount
-  name: pipeline
+  name: appstudio-pipeline
   namespace: tekton-ci
