@@ -1,0 +1,56 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cm
+  namespace: openshift-gitops
+data:
+  resource.customizations: |
+    logging.openshift.io/ClusterLogForwarder:
+      health.lua: |
+        local obj = resource
+        local hs = {
+          status = "Progressing",
+          message = "Waiting for fluentd-splunk-logforward and fluentd-cloudwatch-logforward readiness status"
+        }
+        local splunkReady = false
+        local cloudwatchReady = false
+
+        if obj.status and obj.status.pipelines then
+            for _, pipeline in ipairs(obj.status.pipelines) do
+                if pipeline.name == "fluentd-splunk-logforward" or pipeline.name == "fluentd-cloudwatch-logforward" then
+                    if pipeline.conditions then
+                        for _, condition in ipairs(pipeline.conditions) do
+                            if condition.type == "Ready" then
+                                hs.message = condition.message
+                                hs.status = condition.status == "False" and "Degraded" or "Healthy"
+                                if pipeline.name == "fluentd-splunk-logforward" then
+                                    splunkReady = hs.status == "Healthy"
+                                elseif pipeline.name == "fluentd-cloudwatch-logforward" then
+                                    cloudwatchReady = hs.status == "Healthy"
+                                end
+                            end
+                        end
+                    else  
+                        hs.status = "Progressing"
+                        hs.message = "The conditions field is missing for " .. pipeline.name
+                        return hs
+                    end
+                end
+            end
+        end
+
+        if splunkReady and cloudwatchReady then
+            hs.status = "Healthy"
+            hs.message = "Both fluentd-splunk-logforward and fluentd-cloudwatch-logforward are ready"
+        elseif splunkReady then
+            hs.status = "Degraded"
+            hs.message = "fluentd-splunk-logforward is not ready"
+        elseif cloudwatchReady then
+            hs.status = "Degraded"
+            hs.message = "fluentd-cloudwatch-logforward is not ready"
+        else
+            hs.status = "Degraded"
+            hs.message = "Both fluentd-splunk-logforward and fluentd-cloudwatch-logforward are not ready"
+        end
+        return hs
+
