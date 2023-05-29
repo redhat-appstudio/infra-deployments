@@ -1,0 +1,11 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - dashboard.yaml
+configMapGenerator:
+  - name: performance-team-cluster-monitoring
+    files:
+      - dashboards/kubernetes-cluster-monitoring.json
+  - name: kubernetes-persistent-volumes
+    files:
+      - dashboards/kubernetes-persistent-volumes.json
