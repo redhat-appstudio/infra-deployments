@@ -1,0 +1,10 @@
+apiVersion: integreatly.org/v1alpha1
+kind: GrafanaDashboard
+metadata:
+  name: performance-team-dashboard-cluster-monitoring
+  labels: 
+    app: appstudio-grafana
+spec:
+  configMapRef:
+    name: performance-team-dashboard-cluster-monitoring
+    key: kubernetes-cluster-monitoring-dashboard.json
