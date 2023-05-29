@@ -3,6 +3,9 @@ kind: Kustomization
 resources:
   - dashboard.yaml
 configMapGenerator:
-  - name: performance-team-cluster-monitoring-dashboard
+  - name: performance-team-cluster-monitoring
     files:
-      - dashboards/kubernetes-cluster-monitoring-dashboard.json
+      - dashboards/kubernetes-cluster-monitoring.json
+  - name: kubernetes-persistent-volumes
+    files:
+      - dashboards/kubernetes-persistent-volumes.json
