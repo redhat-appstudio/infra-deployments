@@ -7,15 +7,14 @@ spec:
   template:
     spec:
       containers:
-      - name: manager
-        resources:
-          limits:
-            cpu: 500m
-            memory: 2Gi
-          requests:
-            cpu: 100m
-            memory: 20Mi
-        env:
-          - name: IMAGE_REPOSITORY
-            value: ""
-
+        - name: manager
+          resources:
+            limits:
+              cpu: 500m
+              memory: 2Gi
+            requests:
+              cpu: 100m
+              memory: 20Mi
+          env:
+            - name: IMAGE_REPOSITORY
+              value: "quay.io/stonesoup_perfscale/test-images"
