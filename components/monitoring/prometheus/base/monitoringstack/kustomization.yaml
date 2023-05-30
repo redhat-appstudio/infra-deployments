@@ -1,10 +1,9 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+
 resources:
-- cluster-monitoring-config.yaml
-- dummy-service-service-monitor.yaml
-- dummy-service.yaml
-- monitoringstack/
+- monitoringstack.yaml
 
 commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+
