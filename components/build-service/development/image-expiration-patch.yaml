@@ -1,13 +1,12 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: image-expiration
-  namespace: system
+  name: build-service-controller-manager
 spec:
   template:
     spec:
       containers:
       - name: manager
         env:
-          - name: BUILD_SERVICE_IMAGE_TAG_EXPIRATION
+          - name: IMAGE_TAG_ON_PR_EXPIRATION
             value: ""
