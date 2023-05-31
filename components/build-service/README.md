@@ -8,7 +8,6 @@ The StoneSoup Build System is composed of the following components:
 - [Tekton Chains](https://github.com/tektoncd/chains)
 - [Tekton Results](https://github.com/tektoncd/results)
 - [Pipelines as Code](https://pipelinesascode.com/)
-- [Shared Resources](https://github.com/openshift/csi-driver-shared-resource)
 - [App Studio Build Service](https://github.com/redhat-appstudio/build-service/)
 - [HACBS JVM Build Service](https://github.com/redhat-appstudio/jvm-build-service)
 - [PVC Cleaner](https://github.com/redhat-appstudio/pvc-cleaner/)
@@ -54,35 +53,9 @@ By default, the bundle is defined in `components/build-service/build-pipeline-se
 
 Before creating component in Stage cluster it's necessary install GitHub application [AppStudio Staging CI](https://github.com/apps/appstudio-staging-ci) into managed repository or into whole GitHub organization.
 
-## Shared Resources
-
-Shared Secrets are provided to be used by projects, secrets is defined in one project but can be used by other projects.
-
-Available secrets:
-
-| Name | Source | Description | Access |
-| -- | -- | -- | -- |
-| redhat-appstudio-user-workload | redhat-appstudio-user-workload secret in build-templates namespace | Quay secret allowing to push into default AppStudio repository | users/serviceaccounts with edit role |
-
 ### Repository secrets
 
-There are three ways to provide repository secret into PipelineRun.
-
-By priority (1. is highest):
-
-1. `redhat-appstudio-registry-pull-secret` secret in the execution namespace
-2. linked secret to `pipeline` service account in the execution namespace
-3. shared secret `redhat-appstudio-user-workload`
-
-### Use SharedSecret with Tekton Chains
-
-During the build pipeline, it is possible to use the `redhat-appstudio-user-workload`
-[SharedSecret](https://github.com/openshift/csi-driver-shared-resource) to specify the credentials
-for pushing container images. If this is used, Tekton Chains must also be configured to use the
-same `SharedSecret`. This is done by default. However, the `Secret` referred to by the
-`SharedSecret` may not exist at bootstrap time. This is ok. The underlying `Secret` can be created
-at a later time, and/or updated as needed. The changes should be reflected automatically within the
-Tekton Chains Controller without requiring a Pod restart.
+The secret must be linked secret to `appstudio-pipeline` service account in the execution namespace
 
 ## Build Service secrets
 
