@@ -38,7 +38,7 @@ More examples of using Kustomize to drive deployments using GitOps can be [found
 [Pipelines as Code](https://pipelinesascode.com/) is deployed and available for testing and building of images.
 To test and run builds for a component, add your github repository to `components/tekton-ci/repository.yaml`.
 
-Target repository has to have installed GitHub app - [StoneSoup Staging CI](https://github.com/apps/appstudio-staging-ci) and pipelineRuns created in `.tekton` folder, example [Build Service](https://github.com/redhat-appstudio/build-service/tree/main/.tekton). Target image repository in quay.io must exist and robot account `redhat-appstudio+staginguser` has to have `write` permission on the repository.
+Target repository has to have installed GitHub app - [Red Hat Trusted App Pipeline](https://github.com/apps/red-hat-trusted-app-pipeline) and pipelineRuns created in `.tekton` folder, example [Build Service](https://github.com/redhat-appstudio/build-service/tree/main/.tekton). Target image repository in quay.io must exist and robot account `redhat-appstudio+production_tektonci` has to have `write` permission on the repository.
 
 
 ## Maintaining your components
