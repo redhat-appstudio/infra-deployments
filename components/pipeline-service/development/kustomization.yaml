@@ -10,10 +10,3 @@ commonAnnotations:
 resources:
   - git::https://github.com/openshift-pipelines/pipeline-service.git/developer/openshift/gitops/argocd/pipeline-service?ref=aacffd568cf9f320362cc98a60b38673f5892b03
   - git::https://github.com/openshift-pipelines/pipeline-service.git/developer/openshift/gitops/argocd/pipeline-service-storage?ref=aacffd568cf9f320362cc98a60b38673f5892b03
-
-patches:
-  - path: scale-down-exporter.yaml
-    target:
-      kind: Deployment
-      name: pipeline-metrics-exporter
-      namespace: openshift-pipelines
