@@ -46,8 +46,8 @@ If you don't already have a test OpenShift cluster available, OpenShift Local is
 
 3. Run `./hack/setup/prepare-crc.sh` to configure OpenShift Local with the recommended minimum memory (16 GiB) and CPUs (6) for StoneSoup. The script has optional parameters for customizing `memory` and `cpu` allowance. It also supports `force delete` of existing cluster. Run `./hack/setup/prepare-crc.sh --help` to see the options. The script will also enable cluster monitoring and log you in as the cluster administrator.
 
-### Quicklab storage setup for clusters
+### QuickCluster storage setup for clusters
 
-If you are using Quicklab to provision your development cluster, you will need to setup storage prior to running the bootstrap script.
+If you are using QuickCluster to provision your development cluster, you will need to setup storage prior to running the bootstrap script.
 
-See [Configuring NFS storage provisioner on Quicklab clusters](../../hack/quicklab/README.html)
+See [Configuring NFS storage provisioner on QuickCluster clusters](../../hack/quickcluster/README.html)
