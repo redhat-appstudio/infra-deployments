@@ -2,19 +2,35 @@
 - op: add
   path: /spec/outputs/-
   value:
-    name: splunk-receiver
+    name: splunk-receiver-application
     secret:
-      name: splunk-forwarder-secret
+      name: log-forwarder-splunk-rhtap-staging-application-secret
+    type: splunk
+    url: https://http-inputs-rhcorporate.splunkcloud.com
+- op: add
+  path: /spec/outputs/-
+  value:
+    name: splunk-receiver-audit
+    secret:
+      name: log-forwarder-splunk-rhtap-staging-audit-secret
     type: splunk
     url: https://http-inputs-rhcorporate.splunkcloud.com
 - op: add
   path: /spec/pipelines/-
   value:
-    name: fluentd-splunk-logforward
+    name: fluentd-forward-logs-to-splunk-rhtap-stage-app-index
     inputRefs:
       - application
+    outputRefs:
+      - splunk-receiver-application
+    parse: json
+- op: add
+  path: /spec/pipelines/-
+  value:
+    name: fluentd-forward-logs-to-splunk-rhtap-stage-audit-index
+    inputRefs:      
       - infrastructure
       - audit
     outputRefs:
-      - splunk-receiver
+      - splunk-receiver-audit
     parse: json
