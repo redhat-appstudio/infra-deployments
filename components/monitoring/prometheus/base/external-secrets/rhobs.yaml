@@ -1,24 +1,19 @@
 apiVersion: external-secrets.io/v1beta1
 kind: ExternalSecret
 metadata:
-  name: redhat-appstudio-user-workload
+  name: rhobs
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
     argocd.argoproj.io/sync-wave: "-1"
 spec:
   dataFrom:
     - extract:
-        key: staging/build/redhat-appstudio-user-workload
+        key: # will be added by the overlays
   refreshInterval: 1h
   secretStoreRef:
     kind: ClusterSecretStore
     name: appsre-stonesoup-vault
   target:
-    name: redhat-appstudio-user-workload
     creationPolicy: Owner
     deletionPolicy: Delete
-    template:
-      engineVersion: v2
-      type: kubernetes.io/dockerconfigjson
-      data:
-        .dockerconfigjson: "{{ .config }}"
+    name: rhobs

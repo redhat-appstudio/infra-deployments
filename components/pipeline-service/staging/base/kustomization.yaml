@@ -12,9 +12,6 @@ resources:
   - ../../base/external-secrets
   - ../../base/testing
 
-components:
-  - ../../components/tekton-chains
-
 patches:
   - path: pac-app-name.yaml
     target:
@@ -26,3 +23,7 @@ patches:
       kind: Deployment
       name: pipeline-metrics-exporter
       namespace: openshift-pipelines
+  - path: update-tekton-config-performance.yaml
+    target:
+      kind: TektonConfig
+      name: config
