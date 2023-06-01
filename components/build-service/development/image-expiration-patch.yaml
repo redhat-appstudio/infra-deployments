@@ -1,0 +1,12 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: build-service-controller-manager
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        env:
+          - name: IMAGE_TAG_ON_PR_EXPIRATION
+            value: ""
