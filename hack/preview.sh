@@ -36,35 +36,6 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if $TOOLCHAIN ; then
-  echo "Deploying toolchain"
-  "$ROOT/hack/sandbox-development-mode.sh"
-
-  if $KEYCLOAK; then
-    echo "Patching toolchain config to use keylcoak installed on the cluster"
-
-    BASE_URL=$(oc get ingresses.config.openshift.io/cluster -o jsonpath={.spec.domain})
-    RHSSO_URL="https://keycloak-dev-sso.$BASE_URL"
-
-    oc patch ToolchainConfig/config -n toolchain-host-operator --type=merge --patch-file=/dev/stdin << EOF
-spec:
-  host:
-    registrationService:
-      auth:
-        authClientConfigRaw: '{
-                  "realm": "redhat-external",
-                  "auth-server-url": "$RHSSO_URL/auth",
-                  "ssl-required": "none",
-                  "resource": "cloud-services",
-                  "clientId": "cloud-services",
-                  "public-client": true
-                }'
-        authClientLibraryURL: $RHSSO_URL/auth/js/keycloak.js
-        authClientPublicKeysURL: $RHSSO_URL/auth/realms/redhat-external/protocol/openid-connect/certs
-EOF
-  fi
-fi
-
 if [ -f $ROOT/hack/preview.env ]; then
     source $ROOT/hack/preview.env
 fi
@@ -197,6 +168,35 @@ fi
 
 # Create the root Application
 oc apply -k $ROOT/argo-cd-apps/app-of-app-sets/development
+
+if $TOOLCHAIN ; then
+  echo "Deploying toolchain"
+  "$ROOT/hack/sandbox-development-mode.sh"
+
+  if $KEYCLOAK; then
+    echo "Patching toolchain config to use keylcoak installed on the cluster"
+
+    BASE_URL=$(oc get ingresses.config.openshift.io/cluster -o jsonpath={.spec.domain})
+    RHSSO_URL="https://keycloak-dev-sso.$BASE_URL"
+
+    oc patch ToolchainConfig/config -n toolchain-host-operator --type=merge --patch-file=/dev/stdin << EOF
+spec:
+  host:
+    registrationService:
+      auth:
+        authClientConfigRaw: '{
+                  "realm": "redhat-external",
+                  "auth-server-url": "$RHSSO_URL/auth",
+                  "ssl-required": "none",
+                  "resource": "cloud-services",
+                  "clientId": "cloud-services",
+                  "public-client": true
+                }'
+        authClientLibraryURL: $RHSSO_URL/auth/js/keycloak.js
+        authClientPublicKeysURL: $RHSSO_URL/auth/realms/redhat-external/protocol/openid-connect/certs
+EOF
+  fi
+fi
 
 while [ "$(oc get applications.argoproj.io all-application-sets -n openshift-gitops -o jsonpath='{.status.health.status} {.status.sync.status}')" != "Healthy Synced" ]; do
   echo Waiting for sync of all-application-sets argoCD app
