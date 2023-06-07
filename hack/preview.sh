@@ -216,14 +216,27 @@ else
         echo "$SPI_APP_ROLE_FILE exists."
         kubectl apply -f $SPI_APP_ROLE_FILE  -n spi-system
     fi
+    echo "Vault init complete"
+  else
+     echo "Vault initialization skipped"
+  fi
+fi
+
+if ! timeout 100s bash -c "while ! kubectl get applications.argoproj.io -n openshift-gitops -o name | grep -q remote-secret-controller-in-cluster-local; do printf '.'; sleep 5; done"; then
+  printf "Application remote-secret-controller-in-cluster-local not found (timeout)\n"
+  kubectl get apps -n openshift-gitops -o name
+  exit 1
+else
+  if [ "$(oc get applications.argoproj.io  remote-secret-controller-in-cluster-local -n openshift-gitops -o jsonpath='{.status.health.status} {.status.sync.status}')" != "Healthy Synced" ]; then
+    echo Initializing remote secret controller
     REMOTE_SECRET_APP_ROLE_FILE=$ROOT/.tmp/approle_remote_secret.yaml
     if [ -f "$REMOTE_SECRET_APP_ROLE_FILE" ]; then
         echo "$REMOTE_SECRET_APP_ROLE_FILE exists."
         kubectl apply -f $REMOTE_SECRET_APP_ROLE_FILE  -n remotesecret
     fi
-    echo "Vault init complete"
+    echo "Vault init complete for remote secret controller"
   else
-     echo "Vault initialization skipped"
+     echo "Vault initialization skipped for remote secret controller"
   fi
 fi
 
