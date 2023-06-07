@@ -5,14 +5,13 @@ resources:
   - ../base
 
 patches:
-
   - target:
       kind: ConfigMap
       name: controller-manager-environment-config
     path: config-patch.json
-  - path: spi-aws-credentials-path-patch.yaml
+  - path: aws-credentials-path-patch.yaml
     target:
-      name: spi-aws-secretsmanager-credentials
+      name: aws-secretsmanager-credentials
       group: external-secrets.io
       version: v1beta1
       kind: ExternalSecret
