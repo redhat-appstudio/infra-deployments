@@ -216,6 +216,11 @@ else
         echo "$SPI_APP_ROLE_FILE exists."
         kubectl apply -f $SPI_APP_ROLE_FILE  -n spi-system
     fi
+    REMOTE_SECRET_APP_ROLE_FILE=$ROOT/.tmp/approle_remote_secret.yaml
+    if [ -f "$REMOTE_SECRET_APP_ROLE_FILE" ]; then
+        echo "$REMOTE_SECRET_APP_ROLE_FILE exists."
+        kubectl apply -f $REMOTE_SECRET_APP_ROLE_FILE  -n remotesecret
+    fi
     echo "Vault init complete"
   else
      echo "Vault initialization skipped"
