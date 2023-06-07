@@ -14,10 +14,33 @@ spec:
       secret:
         name: cloudwatch-forwarder
       type: cloudwatch
+    - name: splunk-receiver-application
+      secret:
+        name: log-forwarder-splunk-rhtap-application-secret
+      type: splunk
+      url: https://http-inputs-rhcorporate.splunkcloud.com
+    - name: splunk-receiver-audit
+      secret:
+        name: log-forwarder-splunk-rhtap-audit-secret
+      type: splunk
+      url: https://http-inputs-rhcorporate.splunkcloud.com
   pipelines:
     - inputRefs:
         - application
       name: fluentd-cloudwatch-logforward
       outputRefs:
         - remote-cloudwatch
+      parse: json
+    - name: fluentd-forward-logs-to-splunk-rhtap-app-index
+      inputRefs:
+        - application
+      outputRefs:
+        - splunk-receiver-application
+      parse: json
+    - name: fluentd-forward-logs-to-splunk-rhtap-audit-index
+      inputRefs:      
+        - infrastructure
+        - audit
+      outputRefs:
+        - splunk-receiver-audit
       parse: json
