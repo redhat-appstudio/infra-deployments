@@ -7,6 +7,10 @@ patches:
     target:
       name: appstudio-federate-smon
       kind: ServiceMonitor
+  - path: cluster-type-patch.yaml
+    target:
+      name: appstudio-federate-uwm-smon
+      kind: ServiceMonitor
 
 commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
