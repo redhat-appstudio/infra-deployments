@@ -5,10 +5,10 @@
 # 2. is the base URL of SPI (defaults to https://spi-oauth-spi-system.apps.<cluster URL>)
 
 patchConfig() {
-    if [[ $# -ne 4 ]]; then
+    if [[ $# -ne 2 ]]; then
       echo "invalid number of arguments"
       echo "usage:"
-      echo "  $0 patchConfig PATCH_FILE"
+      echo "  $0 PATCH_SCRIPT PATCH_FILE"
       exit 1
     fi
   PATCH_SCRIPT=$1
