@@ -17,28 +17,22 @@ EOF
 )
 
 patchConfig() {
-    if [[ $# -ne 1 ]]; then
-      echo "invalid number of arguments"$#
-      echo "usage:"
-      echo "  $0 PATCH_FILE"
-      exit 1
-    fi
   PATCH_FILE=$1
   echo 'Patching VAULTHOST and BASEURL for '"$PATCH_FILE"
-  if [ -z ${1} ]; then
+  if [ -z ${2} ]; then
       APPS_BASE_URL=$(oc get ingress.config cluster -o jsonpath='{.spec.domain}')
       VAULT_HOST="https://vault-spi-vault.${APPS_BASE_URL}"
   else
-      VAULT_HOST=${1}
+      VAULT_HOST=${2}
   fi
 
-  if [ -z ${2} ]; then
+  if [ -z ${3} ]; then
       if [ -z $APPS_BASE_URL ]; then
          APPS_BASE_URL=$(oc get ingress.config cluster -o jsonpath='{.spec.domain}')
       fi
       SPI_BASE_URL="https://spi-oauth-spi-system.${APPS_BASE_URL}"
   else
-      SPI_BASE_URL=${2}
+      SPI_BASE_URL=${3}
   fi
 
 
@@ -57,5 +51,5 @@ patchConfig() {
 
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/..
 
-patchConfig "$ROOT/components/spi/overlays/development/config-patch.json"
-patchConfig "$ROOT/components/remote-secret-controller/overlays/development/config-patch.json"
+patchConfig "$ROOT/components/spi/overlays/development/config-patch.json" ${1} ${2}
+patchConfig "$ROOT/components/remote-secret-controller/overlays/development/config-patch.json" ${1} ${2}
