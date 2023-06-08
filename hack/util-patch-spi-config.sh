@@ -6,7 +6,7 @@
 
 patchConfig() {
     if [[ $# -ne 2 ]]; then
-      echo "invalid number of arguments"
+      echo "invalid number of arguments"$#
       echo "usage:"
       echo "  $0 PATCH_SCRIPT PATCH_FILE"
       exit 1
