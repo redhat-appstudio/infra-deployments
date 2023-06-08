@@ -12,6 +12,17 @@ resources:
   - git::https://github.com/openshift-pipelines/pipeline-service.git/developer/openshift/gitops/argocd/pipeline-service-storage?ref=12862f674f40f65cf94d48691e3fe1a2d3bf95a6
   - ../base/servicemonitors
 
+images:
+  - name: ghcr.io/openshift-pipelines/pipelines-as-code-controller
+    newName: registry.redhat.io/openshift-pipelines/pipelines-pipelines-as-code-rhel8
+    newTag: v1.10.4-1
+  - name: ghcr.io/openshift-pipelines/pipelines-as-code-watcher
+    newName: registry.redhat.io/openshift-pipelines/pipelines-pipelines-as-code-rhel8
+    newTag: v1.10.4-1
+  - name: ghcr.io/openshift-pipelines/pipelines-as-code-webhook
+    newName: registry.redhat.io/openshift-pipelines/pipelines-pipelines-as-code-rhel8
+    newTag: v1.10.4-1
+
 patches:
 #  - path: scale-down-exporter.yaml
 #    target:
