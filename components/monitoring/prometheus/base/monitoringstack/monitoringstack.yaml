@@ -18,14 +18,37 @@ spec:
       monitoring.rhobs/stack: appstudio-federate-ms
   logLevel: info # use debug for verbose logs
   retention: 3h
-  prometheusConfig:
-    replicas: 2  # ensures that at least one prometheus is running during upgrade
   alertmanagerConfig:
     disabled: true
   resources: # ensure that you provide sufficient amount of resources
     requests:
       cpu: 500m
       memory: 1Gi
+  prometheusConfig:
+    externalLabels: {} # added by overlays
+    replicas: 2  # ensures that at least one prometheus is running during upgrade
+    remoteWrite:
+    - oauth2:
+        clientId:
+          secret:
+            key: client-id
+            name: rhobs
+        clientSecret:
+          key: client-secret
+          name: rhobs
+        endpointParams:
+          audience: # added by overlays
+        tokenUrl: https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token
+      url: # added by overlays
+      writeRelabelConfigs:
+      - action: LabelKeep
+        regex: "__name__|source_environment|source_cluster|namespace|pod|container|\
+          label_pipelines_appstudio_openshift_io_type|health_status|dest_namespace|\
+          controller|service|reason|phase|type|resource|resourcequota|le|app|image|\
+          commit_hash|job|operation|tokenName|rateLimited|state|persistentvolumeclaim|\
+          storageclass|volumename|release_reason|instance|result|deployment_reason|\
+          validation_reason|strategy|succeeded|target|name|method|code|sp|\
+          unexpected_status|failure|hostname"
 ---
 # Grant permission to Federate In-Cluster Prometheus
 apiVersion: rbac.authorization.k8s.io/v1
@@ -73,7 +96,6 @@ spec:
         - '{__name__="kube_pod_status_unschedulable", namespace!~".*-tenant|openshift-.*|kube-.*"}'
         - '{__name__="kube_pod_container_status_waiting_reason", namespace!~".*-tenant|openshift-.*|kube-.*"}'
         - '{__name__="kube_pod_status_phase", namespace!~".*-tenant|openshift-.*|kube-.*"}'
-        - '{__name__="kube_pod_status_unschedulable", namespace!~".*-tenant|openshift-.*|kube-.*"}'
         - '{__name__="kube_persistentvolume_status_phase", namespace!~".*-tenant|openshift-.*|kube-.*"}'
         - '{__name__="kube_resourcequota", namespace!~".*-tenant|openshift-.*|kube-.*"}'
     relabelings:
