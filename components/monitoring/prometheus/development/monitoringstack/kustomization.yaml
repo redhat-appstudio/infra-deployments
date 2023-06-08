@@ -12,6 +12,10 @@ patches:
     target:
       name: appstudio-federate-uwm-smon
       kind: ServiceMonitor
+  - path: remote-write-env-details.yaml
+    target:
+      name: appstudio-federate-ms
+      kind: MonitoringStack
 
 commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
