@@ -3,4 +3,4 @@
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/..
 
 echo "Changing AppStudio Gitlab Org to \"$1\""
-yq e -i "(.configMapGenerator[].literals[] | select(. == \"*GITHUB*\")) = \"GITHUB_ORG=$1\"" $ROOT/components/has/overlays/development/kustomization.yaml
+yq e -i "(.configMapGenerator[].literals[] | select(. == \"*GITHUB*\")) = \"GITHUB_ORG=$1\"" $ROOT/components/has/base/kustomization.yaml

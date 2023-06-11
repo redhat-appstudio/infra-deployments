@@ -7,13 +7,14 @@ resources:
   - https://github.com/redhat-appstudio/application-service/config/prometheus/?ref=7eebefbff59b5937f0036b5158fcc9cf3221f06a
 
 components:
-  - ../../components/manager-resources
-  - ../../components/enable-profiling
+  - ../../k-components/manager-resources
+  - ../../k-components/enable-profiling
+  - ../../k-components/replicas-patch
 
 images:
   - name: quay.io/redhat-appstudio/application-service
     newName: quay.io/redhat-appstudio/application-service
-    newTag: 05ee33115e4cd7ebfad61d96ffe5ef36c8159dab
+    newTag: 7eebefbff59b5937f0036b5158fcc9cf3221f06a
 
 configMapGenerator:
 - literals:
@@ -28,5 +29,4 @@ patches:
       kind: ExternalSecret
       group: external-secrets.io
       version: v1beta1
-  - path: ./replicas_patch.yaml
 namespace: application-service
