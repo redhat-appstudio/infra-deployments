@@ -18,14 +18,37 @@ spec:
       monitoring.rhobs/stack: appstudio-federate-ms
   logLevel: info # use debug for verbose logs
   retention: 3h
-  prometheusConfig:
-    replicas: 2  # ensures that at least one prometheus is running during upgrade
   alertmanagerConfig:
     disabled: true
   resources: # ensure that you provide sufficient amount of resources
     requests:
       cpu: 500m
       memory: 1Gi
+  prometheusConfig:
+    externalLabels: {} # added by overlays
+    replicas: 2  # ensures that at least one prometheus is running during upgrade
+    remoteWrite:
+    - oauth2:
+        clientId:
+          secret:
+            key: client-id
+            name: rhobs
+        clientSecret:
+          key: client-secret
+          name: rhobs
+        endpointParams:
+          audience: # added by overlays
+        tokenUrl: https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token
+      url: # added by overlays
+      writeRelabelConfigs:
+      - action: LabelKeep
+        regex: "__name__|source_environment|source_cluster|namespace|pod|container|\
+          label_pipelines_appstudio_openshift_io_type|health_status|dest_namespace|\
+          controller|service|reason|phase|type|resource|resourcequota|le|app|image|\
+          commit_hash|job|operation|tokenName|rateLimited|state|persistentvolumeclaim|\
+          storageclass|volumename|release_reason|instance|result|deployment_reason|\
+          validation_reason|strategy|succeeded|target|name|method|code|sp|\
+          unexpected_status|failure|hostname"
 ---
 # Grant permission to Federate In-Cluster Prometheus
 apiVersion: rbac.authorization.k8s.io/v1
@@ -46,7 +69,7 @@ subjects:
   name: appstudio-federate-ms-prometheus
   namespace: appstudio-monitoring
 ---
-# Create ServiceMonitor for Federation
+# Create ServiceMonitor for cluster prometheus Federation
 apiVersion: monitoring.rhobs/v1
 kind: ServiceMonitor
 metadata:
@@ -73,7 +96,6 @@ spec:
         - '{__name__="kube_pod_status_unschedulable", namespace!~".*-tenant|openshift-.*|kube-.*"}'
         - '{__name__="kube_pod_container_status_waiting_reason", namespace!~".*-tenant|openshift-.*|kube-.*"}'
         - '{__name__="kube_pod_status_phase", namespace!~".*-tenant|openshift-.*|kube-.*"}'
-        - '{__name__="kube_pod_status_unschedulable", namespace!~".*-tenant|openshift-.*|kube-.*"}'
         - '{__name__="kube_persistentvolume_status_phase", namespace!~".*-tenant|openshift-.*|kube-.*"}'
         - '{__name__="kube_resourcequota", namespace!~".*-tenant|openshift-.*|kube-.*"}'
     relabelings:
@@ -95,6 +117,48 @@ spec:
     bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
     tlsConfig:
       serverName: prometheus-k8s.openshift-monitoring.svc
+      ca:
+        configMap: # automatically created by serving-ca operator
+          key: service-ca.crt
+          name: openshift-service-ca.crt
+---
+# Create ServiceMonitor for user workload prometheus Federation
+apiVersion: monitoring.rhobs/v1
+kind: ServiceMonitor
+metadata:
+  name: appstudio-federate-uwm-smon
+  namespace: appstudio-monitoring
+  labels:
+    kubernetes.io/part-of: appstudio-federate-ms
+    monitoring.rhobs/stack: appstudio-federate-ms
+spec:
+  selector: # use the prometheus service to create a "dummy" target.
+    matchLabels:
+      app.kubernetes.io/managed-by: observability-operator
+      app.kubernetes.io/name: appstudio-federate-ms-prometheus
+  endpoints:
+  - params:
+      'match[]': # scrape only required metrics from UWM prometheus
+        - '{__name__=~".*"}' # all the metrics from UWM prometheus
+    relabelings:
+    # override the target's address by the prometheus-UWM service name.
+    - action: replace
+      targetLabel: __address__
+      replacement: prometheus-user-workload.openshift-user-workload-monitoring.svc:9092
+    # remove the default target labels as they aren't relevant in case of federation.
+    - action: labeldrop
+      regex: pod|namespace|service|endpoint|container
+    # 30s interval creates 4 scrapes per minute
+    # prometheus-user-workload.svc x 2 ms-prometheus x (60s/ 30s) = 4
+    interval: 30s
+    # ensure that the scraped labels are preferred over target's labels.
+    honorLabels: true
+    port: web
+    scheme: https
+    path: "/federate"
+    bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    tlsConfig:
+      serverName: prometheus-user-workload.openshift-user-workload-monitoring.svc
       ca:
         configMap: # automatically created by serving-ca operator
           key: service-ca.crt
