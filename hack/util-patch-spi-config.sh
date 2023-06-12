@@ -43,13 +43,9 @@ patchConfig() {
 
   rm "$TMP_FILE"
 
-
 }
-
-
-
 
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/..
 
-patchConfig "$ROOT/components/spi/overlays/development/config-patch.json" ${1} ${2}
-patchConfig "$ROOT/components/remote-secret-controller/overlays/development/config-patch.json" ${1} ${2}
+patchConfig "$ROOT/components/spi/overlays/development/config-patch.json" "${1}" "${2}"
+patchConfig "$ROOT/components/remote-secret-controller/overlays/development/config-patch.json" "${1}" "${2}"
