@@ -10,8 +10,31 @@ Scrapes generic metrics produced by cAdvisor, kube-state-metrics, etc.
 Scrapes custom metrics provided by services deployed by the different teams.
 
 In Production and Staging, UWM Prometheus is enabled using OCM (since it maintains the
-Prometheus configurations).
-In Development it's enabled by deploying a configmap using ArgoCD.
+Prometheus configurations).  
+The retention is set to 3 days and the retention size is set to 10GiB.  
+It is defined in `components/monitoring/prometheus/base/uwm-config/uwm-config.yaml`
+and it is controlled by ArgoCD.
+
+
+In Development it's enabled without deploying a ConfigMap using ArgoCD 
+(The ConfigMap is created automatically when UWM is enabled)  
+
+The retention is set to default (24h).  
+To configure the retention for development environment, edit the 
+`user-workload-monitoring-config` ConfigMap in `openshift-user-workload-monitoring` namespace.  
+For example:
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: user-workload-monitoring-config
+  namespace: openshift-user-workload-monitoring
+data: 
+  config.yaml: | 
+    prometheus: 
+      retention: 2d 
+      retentionSize: 1GiB
+```
 
 ### Observability Operator (OBO) Prometheus
 Federates the Platform Prometheus instance.
