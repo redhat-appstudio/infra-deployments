@@ -14,6 +14,11 @@ resources:
   - ../../base/servicemonitors
 
 patches:
+  - path: osp-channel.yaml
+    target:
+      kind: Subscription
+      name: openshift-pipelines-operator
+      namespace: openshift-operators
   - path: pac-app-name.yaml
     target:
       kind: ConfigMap
