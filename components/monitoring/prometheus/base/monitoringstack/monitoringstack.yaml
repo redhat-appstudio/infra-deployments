@@ -2,6 +2,9 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: appstudio-monitoring
+  labels:
+    kubernetes.io/part-of: appstudio-federate-billing-ms
+    monitoring.rhobs/stack: appstudio-federate-billing-ms
 spec: {}
 ---
 # Deploy Monitoring Stack
@@ -86,10 +89,6 @@ spec:
   endpoints:
   - params:
       'match[]': # scrape only required metrics from in-cluster prometheus
-        - '{__name__="container_network_transmit_bytes_total", namespace!~".*-tenant|openshift-.*|kube-.*"}'
-        - '{__name__=~"kube_pod_.*container_resource_limits", namespace!~".*-tenant|openshift-.*|kube-.*"}'
-        - '{__name__="kube_pod_labels", namespace!~".*-tenant|openshift-.*|kube-.*"}'
-        - '{__name__="container_last_seen", namespace!~".*-tenant|openshift-.*|kube-.*"}'
         - '{__name__="argocd_app_info", namespace!~".*-tenant|openshift-.*|kube-.*"}'
         - '{__name__="controller_runtime_reconcile_errors_total", namespace!~".*-tenant|openshift-.*|kube-.*"}'
         - '{__name__="controller_runtime_reconcile_total", namespace!~".*-tenant|openshift-.*|kube-.*"}'
@@ -159,6 +158,120 @@ spec:
     bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
     tlsConfig:
       serverName: prometheus-user-workload.openshift-user-workload-monitoring.svc
+      ca:
+        configMap: # automatically created by serving-ca operator
+          key: service-ca.crt
+          name: openshift-service-ca.crt
+---
+# Deploy Monitoring Stack for federating billing-related metrics
+apiVersion: monitoring.rhobs/v1alpha1
+kind: MonitoringStack
+metadata:
+  name: appstudio-federate-billing-ms
+  namespace: appstudio-monitoring
+spec:
+  # Selects the ServiceMonitor for federating the platform prometheus and the
+  # PrometheusRule defining the recording rules
+  # resourceSelector sets all non-namespace-related selectors
+  # (e.g. ruleSelector, ServiceMonitorSelector)
+  resourceSelector:
+    matchLabels:
+      monitoring.rhobs/stack: appstudio-federate-billing-ms
+  # Selects the appstudio-monitoring and o11y namespaces
+  # namespaceSelector sets all namespace-related selectors
+  # (e.g. ruleNamespaceSelector, serviceMonitorNamespaceSelector)
+  namespaceSelector:
+    matchLabels:
+      monitoring.rhobs/stack: appstudio-federate-billing-ms
+  logLevel: info # use debug for verbose logs
+  retention: 3d # overridden by dev overlay
+  alertmanagerConfig:
+    disabled: true
+  resources: # ensure that you provide sufficient amount of resources
+    requests:
+      cpu: 500m
+      memory: 1Gi
+  prometheusConfig:
+    externalLabels: {} # added by overlays
+    replicas: 2  # ensures that at least one prometheus is running during upgrade
+    remoteWrite:
+    - oauth2:
+        clientId:
+          secret:
+            key: client-id
+            name: rhobs
+        clientSecret:
+          key: client-secret
+          name: rhobs
+        endpointParams:
+          audience: # added by overlays
+        tokenUrl: https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token
+      url: # added by overlays
+      writeRelabelConfigs:
+      - action: LabelKeep
+        regex: "__name__|source_environment|source_cluster|namespace|pod|container|\
+          resource|unit|label_pipelines_appstudio_openshift_io_type|\
+          label_app_kubernetes_io_managed_by"
+---
+# Grant permission to Federate In-Cluster Prometheus billing-related metrics
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: appstudio-federate-billing-ms-view
+  labels:
+    kubernetes.io/part-of: appstudio-federate-billing-ms
+    monitoring.rhobs/stack: appstudio-federate-billing-ms
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-monitoring-view
+subjects:
+- kind: ServiceAccount
+  # ServiceAccount used in the prometheus deployed by ObO.
+  # SA name follows <monitoring stack name>-prometheus nomenclature
+  name: appstudio-federate-billing-ms-prometheus
+  namespace: appstudio-monitoring
+---
+# Create ServiceMonitor for cluster prometheus Federation billing-related metrics
+apiVersion: monitoring.rhobs/v1
+kind: ServiceMonitor
+metadata:
+  name: appstudio-federate-billing-smon
+  namespace: appstudio-monitoring
+  labels:
+    kubernetes.io/part-of: appstudio-federate-billing-ms
+    monitoring.rhobs/stack: appstudio-federate-billing-ms
+spec:
+  selector: # use the prometheus service to create a "dummy" target.
+    matchLabels:
+      app.kubernetes.io/managed-by: observability-operator
+      app.kubernetes.io/name: appstudio-federate-billing-ms-prometheus
+  endpoints:
+  - params:
+      'match[]': # scrape only required metrics from in-cluster prometheus
+        - '{__name__="container_network_transmit_bytes_total", namespace=~".*-tenant"}'
+        - '{__name__=~"kube_pod_.*container_resource_limits", namespace=~".*-tenant"}'
+        - '{__name__="kube_pod_labels", namespace=~".*-tenant"}'
+        - '{__name__="container_last_seen", namespace=~".*-tenant"}'
+    relabelings:
+    # override the target's address by the prometheus-k8s service name.
+    - action: replace
+      targetLabel: __address__
+      replacement: prometheus-k8s.openshift-monitoring.svc:9091
+    # remove the default target labels as they aren't relevant in case of federation.
+    - action: labeldrop
+      regex: pod|namespace|service|endpoint|container
+    # 30s interval creates 4 scrapes per minute
+    # prometheus-k8s.svc x 2 ms-prometheus x (60s/ 30s) = 4
+    interval: 30s
+    # ensure that the scraped labels are preferred over target's labels.
+    honorLabels: true
+    port: web
+    scheme: https
+    path: "/federate"
+    bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    tlsConfig:
+      serverName: prometheus-k8s.openshift-monitoring.svc
       ca:
         configMap: # automatically created by serving-ca operator
           key: service-ca.crt

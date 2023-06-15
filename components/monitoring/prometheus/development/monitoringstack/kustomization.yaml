@@ -16,6 +16,18 @@ patches:
     target:
       name: appstudio-federate-ms
       kind: MonitoringStack
+  - path: cluster-type-patch.yaml
+    target:
+      name: appstudio-federate-billing-smon
+      kind: ServiceMonitor
+  - path: remote-write-env-details.yaml
+    target:
+      name: appstudio-federate-billing-ms
+      kind: MonitoringStack
+  - path: retention-period.yaml
+    target:
+      name: appstudio-federate-billing-ms
+      kind: MonitoringStack
 
 commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
