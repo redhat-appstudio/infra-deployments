@@ -4,14 +4,24 @@ metadata:
   name: jvm-build-service
 spec:
   generators:
-    - clusters: {}
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              values:
+                sourceRoot: components/jvm-build-service
+                environment: staging
+                clusterDir: ""
+          - list:
+              elements: []
   template:
     metadata:
       name: jvm-build-service-{{nameNormalized}}
     spec:
       project: default
       source:
-        path: components/jvm-build-service
+        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
         repoURL: https://github.com/redhat-appstudio/infra-deployments.git
         targetRevision: main
       destination:
