@@ -1,0 +1,12 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
+metadata:
+  name: custom-pipeline-service-source
+  namespace: openshift-marketplace
+spec:
+  sourceType: grpc
+  image: quay.io/openshift-pipeline/openshift-pipelines-operator-index:2023-06-16-24-00
+  displayName: custom-pipeline-service-source
+  updateStrategy:
+    registryPoll:
+      interval: 30m
