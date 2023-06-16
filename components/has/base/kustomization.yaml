@@ -19,6 +19,10 @@ configMapGenerator:
       - GITHUB_ORG=""
     name: github-config
     behavior: replace
+  - literals:
+      - ENVIRONMENT="development"
+    name: feature-flag-config
+    behavior: replace
 
 
 namespace: application-service

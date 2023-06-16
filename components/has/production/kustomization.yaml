@@ -17,10 +17,14 @@ images:
     newTag: 7147e9827cb1faab1ee54bbed7ec0d420647d03c
 
 configMapGenerator:
-- literals:
-  - GITHUB_ORG="redhat-appstudio-appdata"
-  name: github-config
-  behavior: replace
+  - literals:
+    - GITHUB_ORG="redhat-appstudio-appdata"
+    name: github-config
+    behavior: replace
+  - literals:
+    - ENVIRONMENT="production"
+    name: feature-flag-config
+    behavior: replace
 
 patches:
   - path: has-github-token-patch.yaml

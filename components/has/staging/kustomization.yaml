@@ -14,5 +14,9 @@ configMapGenerator:
       - GITHUB_ORG="redhat-appstudio-appdata-staging"
     name: github-config
     behavior: replace
+  - literals:
+      - ENVIRONMENT="staging"
+    name: feature-flag-config
+    behavior: replace
 
 namespace: application-service
