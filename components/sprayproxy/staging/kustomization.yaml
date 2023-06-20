@@ -1,14 +1,14 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - https://github.com/redhat-appstudio/sprayproxy/config?ref=94d5165db684a31a347162363ec9ab1c801d946f
+  - https://github.com/redhat-appstudio/sprayproxy/config?ref=a0cc064c0d3576154b2542c15978f27b623446c1
   - pipelines-as-code-secret.yaml
   - team-support-rbac.yaml
 
 images:
   - name: ko://github.com/redhat-appstudio/sprayproxy
     newName: quay.io/redhat-appstudio/sprayproxy
-    newTag: 94d5165db684a31a347162363ec9ab1c801d946f
+    newTag: a0cc064c0d3576154b2542c15978f27b623446c1
 
 patches:
   - path: add-backends.yml
