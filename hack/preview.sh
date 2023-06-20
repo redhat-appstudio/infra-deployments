@@ -163,10 +163,10 @@ sed -i.bak "s/rekor-server.enterprise-contract-service.svc/$rekor_server/" $ROOT
 [ -n "${BUILD_SERVICE_IMAGE_TAG}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/redhat-appstudio/build-service\")) |=.newTag=\"${BUILD_SERVICE_IMAGE_TAG}\"" $ROOT/components/build-service/base/kustomization.yaml
 [ -n "${BUILD_SERVICE_IMAGE_TAG_EXPIRATION}" ] && yq -i e "(.spec.template.spec.containers[].env[] | select(.name==\"IMAGE_TAG_ON_PR_EXPIRATION\") | .value) |= \"${BUILD_SERVICE_IMAGE_TAG_EXPIRATION}\"" $ROOT/components/build-service/development/image-expiration-patch.yaml
 [[ -n "${BUILD_SERVICE_PR_OWNER}" && "${BUILD_SERVICE_PR_SHA}" ]] && yq -i e "(.resources[] | select(. ==\"*github.com/redhat-appstudio/build-service*\")) |= \"https://github.com/${BUILD_SERVICE_PR_OWNER}/build-service/config/default?ref=${BUILD_SERVICE_PR_SHA}\"" $ROOT/components/build-service/base/kustomization.yaml
-[ -n "${JVM_BUILD_SERVICE_IMAGE_REPO}" ] && yq -i e "(.images.[] | select(.name==\"hacbs-jvm-operator\")) |=.newName=\"${JVM_BUILD_SERVICE_IMAGE_REPO}\"" $ROOT/components/jvm-build-service/kustomization.yaml
-[ -n "${JVM_BUILD_SERVICE_IMAGE_TAG}" ] && yq -i e "(.images.[] | select(.name==\"hacbs-jvm-operator\")) |=.newTag=\"${JVM_BUILD_SERVICE_IMAGE_TAG}\"" $ROOT/components/jvm-build-service/kustomization.yaml
-[[ -n "${JVM_BUILD_SERVICE_PR_OWNER}" && "${JVM_BUILD_SERVICE_PR_SHA}" ]] && sed -i -e "s|\(https://github.com/\)redhat-appstudio\(/jvm-build-service/.*?ref=\)\(.*\)|\1${JVM_BUILD_SERVICE_PR_OWNER}\2${JVM_BUILD_SERVICE_PR_SHA}|" -e "s|\(https://raw.githubusercontent.com/\)redhat-appstudio\(/jvm-build-service/\)[^/]*\(/.*\)|\1${JVM_BUILD_SERVICE_PR_OWNER}\2${JVM_BUILD_SERVICE_PR_SHA}\3|" $ROOT/components/jvm-build-service/kustomization.yaml
-[[ -n "${JVM_BUILD_SERVICE_CACHE_IMAGE}" && ${JVM_BUILD_SERVICE_REQPROCESSOR_IMAGE} ]] && yq -i e "select(.[].path == \"/spec/template/spec/containers/0/env\") | .[].value |= . + [{\"name\" : \"JVM_BUILD_SERVICE_CACHE_IMAGE\", \"value\": \"${JVM_BUILD_SERVICE_CACHE_IMAGE}\"}, {\"name\": \"JVM_BUILD_SERVICE_REQPROCESSOR_IMAGE\", \"value\": \"${JVM_BUILD_SERVICE_REQPROCESSOR_IMAGE}\"}] | (.[].value[] | select(.name == \"IMAGE_TAG\")) |= .value = \"\"" $ROOT/components/jvm-build-service/operator_env_patch.yaml
+[ -n "${JVM_BUILD_SERVICE_IMAGE_REPO}" ] && yq -i e "(.images.[] | select(.name==\"hacbs-jvm-operator\")) |=.newName=\"${JVM_BUILD_SERVICE_IMAGE_REPO}\"" $ROOT/components/jvm-build-service/base/kustomization.yaml
+[ -n "${JVM_BUILD_SERVICE_IMAGE_TAG}" ] && yq -i e "(.images.[] | select(.name==\"hacbs-jvm-operator\")) |=.newTag=\"${JVM_BUILD_SERVICE_IMAGE_TAG}\"" $ROOT/components/jvm-build-service/base/kustomization.yaml
+[[ -n "${JVM_BUILD_SERVICE_PR_OWNER}" && "${JVM_BUILD_SERVICE_PR_SHA}" ]] && sed -i -e "s|\(https://github.com/\)redhat-appstudio\(/jvm-build-service/.*?ref=\)\(.*\)|\1${JVM_BUILD_SERVICE_PR_OWNER}\2${JVM_BUILD_SERVICE_PR_SHA}|" -e "s|\(https://raw.githubusercontent.com/\)redhat-appstudio\(/jvm-build-service/\)[^/]*\(/.*\)|\1${JVM_BUILD_SERVICE_PR_OWNER}\2${JVM_BUILD_SERVICE_PR_SHA}\3|" $ROOT/components/jvm-build-service/base/kustomization.yaml
+[[ -n "${JVM_BUILD_SERVICE_CACHE_IMAGE}" && ${JVM_BUILD_SERVICE_REQPROCESSOR_IMAGE} ]] && yq -i e "select(.[].path == \"/spec/template/spec/containers/0/env\") | .[].value |= . + [{\"name\" : \"JVM_BUILD_SERVICE_CACHE_IMAGE\", \"value\": \"${JVM_BUILD_SERVICE_CACHE_IMAGE}\"}, {\"name\": \"JVM_BUILD_SERVICE_REQPROCESSOR_IMAGE\", \"value\": \"${JVM_BUILD_SERVICE_REQPROCESSOR_IMAGE}\"}] | (.[].value[] | select(.name == \"IMAGE_TAG\")) |= .value = \"\"" $ROOT/components/jvm-build-service/base/operator_env_patch.yaml
 
 [ -n "${HAS_IMAGE_REPO}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/redhat-appstudio/application-service\")) |=.newName=\"${HAS_IMAGE_REPO}\"" $ROOT/components/has/base/kustomization.yaml
 [ -n "${HAS_IMAGE_TAG}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/redhat-appstudio/application-service\")) |=.newTag=\"${HAS_IMAGE_TAG}\"" $ROOT/components/has/base/kustomization.yaml
@@ -210,7 +210,7 @@ if ! timeout 100s bash -c "while ! kubectl get applications.argoproj.io -n opens
 else
   if [ "$(oc get applications.argoproj.io spi-in-cluster-local -n openshift-gitops -o jsonpath='{.status.health.status} {.status.sync.status}')" != "Healthy Synced" ]; then
     echo Initializing SPI
-    curl https://raw.githubusercontent.com/redhat-appstudio/service-provider-integration-operator/main/hack/vault-init.sh | VAULT_PODNAME='vault-0' VAULT_NAMESPACE='spi-vault' bash -s 
+    curl https://raw.githubusercontent.com/redhat-appstudio/service-provider-integration-operator/main/hack/vault-init.sh | VAULT_PODNAME='vault-0' VAULT_NAMESPACE='spi-vault' bash -s
     SPI_APP_ROLE_FILE=$ROOT/.tmp/approle_secret.yaml
     if [ -f "$SPI_APP_ROLE_FILE" ]; then
         echo "$SPI_APP_ROLE_FILE exists."
@@ -219,6 +219,24 @@ else
     echo "Vault init complete"
   else
      echo "Vault initialization skipped"
+  fi
+fi
+
+if ! timeout 100s bash -c "while ! kubectl get applications.argoproj.io -n openshift-gitops -o name | grep -q remote-secret-controller-in-cluster-local; do printf '.'; sleep 5; done"; then
+  printf "Application remote-secret-controller-in-cluster-local not found (timeout)\n"
+  kubectl get apps -n openshift-gitops -o name
+  exit 1
+else
+  if [ "$(oc get applications.argoproj.io  remote-secret-controller-in-cluster-local -n openshift-gitops -o jsonpath='{.status.health.status} {.status.sync.status}')" != "Healthy Synced" ]; then
+    echo Initializing remote secret controller
+    REMOTE_SECRET_APP_ROLE_FILE=$ROOT/.tmp/approle_remote_secret.yaml
+    if [ -f "$REMOTE_SECRET_APP_ROLE_FILE" ]; then
+        echo "$REMOTE_SECRET_APP_ROLE_FILE exists."
+        kubectl apply -f $REMOTE_SECRET_APP_ROLE_FILE  -n remotesecret
+    fi
+    echo "Vault init complete for remote secret controller"
+  else
+     echo "Vault initialization skipped for remote secret controller"
   fi
 fi
 

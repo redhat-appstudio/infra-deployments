@@ -3,13 +3,20 @@ kind: Kustomization
 resources:
   - ../base
   - ../base/external-secrets
-  - https://github.com/redhat-appstudio/application-service/config/prometheus/?ref=7eebefbff59b5937f0036b5158fcc9cf3221f06a
+  - https://github.com/redhat-appstudio/application-service/config/prometheus/?ref=7147e9827cb1faab1ee54bbed7ec0d420647d03c
+
+
+components:
+  - ../k-components/replicas-patch
 
 configMapGenerator:
-- literals:
-  - GITHUB_ORG="redhat-appstudio-appdata-staging"
-  name: github-config
-  behavior: replace
+  - literals:
+      - GITHUB_ORG="redhat-appstudio-appdata-staging"
+    name: github-config
+    behavior: replace
+  - literals:
+      - ENVIRONMENT="staging"
+    name: feature-flag-config
+    behavior: replace
 
-patches:
-- path: ./replicas_patch.yaml
+namespace: application-service
