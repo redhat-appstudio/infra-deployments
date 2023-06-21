@@ -1,8 +1,8 @@
 resources:
 - allow-argocd-to-manage.yaml
-- https://github.com/redhat-appstudio/jvm-build-service/deploy/crds/base?ref=840e7767d7b78e5d9223e34dd5172e13e44ee4aa
-- https://github.com/redhat-appstudio/jvm-build-service/deploy/operator/base?ref=840e7767d7b78e5d9223e34dd5172e13e44ee4aa
-- https://github.com/redhat-appstudio/jvm-build-service/deploy/operator/config?ref=840e7767d7b78e5d9223e34dd5172e13e44ee4aa
+- https://github.com/redhat-appstudio/jvm-build-service/deploy/crds/base?ref=6158a2c40fc8d2b62bfe6577716aa32cd7523661
+- https://github.com/redhat-appstudio/jvm-build-service/deploy/operator/base?ref=6158a2c40fc8d2b62bfe6577716aa32cd7523661
+- https://github.com/redhat-appstudio/jvm-build-service/deploy/operator/config?ref=6158a2c40fc8d2b62bfe6577716aa32cd7523661
 - monitoring.yaml
 
 # Skip applying the jvm-build-service operands (SystemConfig) while the jvm-build-service operator is being installed.
@@ -16,7 +16,7 @@ namespace: jvm-build-service
 images:
 - name: hacbs-jvm-operator
   newName: quay.io/redhat-appstudio/hacbs-jvm-controller
-  newTag: 840e7767d7b78e5d9223e34dd5172e13e44ee4aa
+  newTag: 6158a2c40fc8d2b62bfe6577716aa32cd7523661
 
 patches:
 - path: ./operator_env_patch.yaml
