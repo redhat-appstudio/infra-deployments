@@ -2,11 +2,12 @@
 apiVersion: "logging.openshift.io/v1"
 kind: "ClusterLogging"
 metadata:
-  annotations:
-    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
   name: "instance"
+  annotations:
+    logging.openshift.io/preview-vector-collector: enabled
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
   collection:
     logs:
-      fluentd: {}
-      type: fluentd
+      type: vector
+      vector: {}
