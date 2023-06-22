@@ -21,15 +21,14 @@ To try out a pre-configured, follow these steps.
 | Steps    |    |
 | ----------- | ----------- |
 | 1.  Create project for your pipelines execution. This can be run as any non-admin user (or admin)  and is needed to hold your execution pipelines.  |  oc new-project demo     |
-| 2.  Run build-deploy example with a quarkus app. | MY_QUAY_USER=mkovarik ./hack/build/build-via-appstudio.sh https://github.com/devfile-samples/devfile-sample-code-with-quarkus
+| 2.  Run build-deploy example with a quarkus app. | ./hack/build/build-via-appstudio.sh https://github.com/devfile-samples/devfile-sample-code-with-quarkus
 | 3.  View your build on the OpenShift Console under the pipelines page or view the logs via CLI. | `tkn pipelinerun logs`      |
 
-## Tests via StoneSoup
+## Tests via RHTAP
 
-To validate execution via StoneSoup you can run `./hack/build/build-via-appstudio.sh` script which sets credentials and StoneSoup application and components. Without parameters it creates example components.
+To validate execution via RHTAP you can run `./hack/build/build-via-appstudio.sh` script which sets credentials and RHTAP application and components. Without parameters it creates example components.
 
 ```
-export MY_QUAY_USER=mkovarik
 ./hack/build/build-via-appstudio.sh https://github.com/devfile-samples/devfile-sample-java-springboot-basic
 ```
 
@@ -40,7 +39,7 @@ Alternatively, to use GitHub webhook set `PAC_GITHUB_TOKEN` with [required permi
 Then run:
 
 ```
-MY_QUAY_USER=mkovarik PIPELINESASCODE=1 ./hack/build/build-via-appstudio.sh https://github.com/Michkov/devfile-sample-go-basic
+PIPELINESASCODE=1 ./hack/build/build-via-appstudio.sh https://github.com/Michkov/devfile-sample-go-basic
 ```
 
 ### Change of default pipeline bundle
