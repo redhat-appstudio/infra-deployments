@@ -27,6 +27,7 @@ To try out a pre-configured, follow these steps.
 ## Tests via RHTAP
 
 To validate execution via RHTAP you can run `./hack/build/build-via-appstudio.sh` script which sets credentials and RHTAP application and components. Without parameters it creates example components.
+To build specific repository, pass its URL as argument as shown below:
 
 ```
 ./hack/build/build-via-appstudio.sh https://github.com/devfile-samples/devfile-sample-java-springboot-basic
