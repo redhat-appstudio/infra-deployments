@@ -2,7 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ./argocd-roles
-  - https://github.com/redhat-appstudio/application-service/config/default?ref=bb05b81c1348a37837b541f073a7536e0a9b948a
+  - https://github.com/redhat-appstudio/application-service/config/default?ref=22ac5461ad0a22ada9d1d173e9a9ba45658ca69a
 
 
 components:
@@ -12,7 +12,7 @@ components:
 images:
   - name: quay.io/redhat-appstudio/application-service
     newName: quay.io/redhat-appstudio/application-service
-    newTag: bb05b81c1348a37837b541f073a7536e0a9b948a
+    newTag: 22ac5461ad0a22ada9d1d173e9a9ba45658ca69a
 
 configMapGenerator:
   - literals:
