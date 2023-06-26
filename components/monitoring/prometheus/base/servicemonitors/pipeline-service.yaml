@@ -27,18 +27,3 @@ subjects:
   - kind: ServiceAccount
     name: pipeline-service-metrics-reader-sa
     namespace: openshift-pipelines
----
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
-  name: pipeline-service
-  namespace: openshift-pipelines
-spec:
-  endpoints:
-    - path: /metrics
-      port: metrics
-      interval: 15s
-      scheme: http
-  selector:
-    matchLabels:
-      app: pipeline-metrics-exporter
