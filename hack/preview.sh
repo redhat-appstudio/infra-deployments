@@ -222,7 +222,7 @@ else
   fi
 fi
 
-if ! timeout 100s bash -c "while ! kubectl get applications.argoproj.io -n openshift-gitops -o name | grep -q remote-secret-controller-in-cluster-local; do printf '.'; sleep 5; done"; then
+if ! timeout 300s bash -c "while ! kubectl get applications.argoproj.io -n openshift-gitops -o name | grep -q remote-secret-controller-in-cluster-local; do printf '.'; sleep 5; done"; then
   printf "Application remote-secret-controller-in-cluster-local not found (timeout)\n"
   kubectl get apps -n openshift-gitops -o name
   exit 1
@@ -230,10 +230,10 @@ else
   if [ "$(oc get applications.argoproj.io  remote-secret-controller-in-cluster-local -n openshift-gitops -o jsonpath='{.status.health.status} {.status.sync.status}')" != "Healthy Synced" ]; then
     echo Initializing remote secret controller
     REMOTE_SECRET_APP_ROLE_FILE=$ROOT/.tmp/approle_remote_secret.yaml
-    if [ -f "$REMOTE_SECRET_APP_ROLE_FILE" ]; then
-        echo "$REMOTE_SECRET_APP_ROLE_FILE exists."
-        kubectl apply -f $REMOTE_SECRET_APP_ROLE_FILE  -n remotesecret
+    if [ ! -f "$REMOTE_SECRET_APP_ROLE_FILE" ]; then
+      curl https://raw.githubusercontent.com/redhat-appstudio/service-provider-integration-operator/main/hack/vault-init.sh | VAULT_PODNAME='vault-0' VAULT_NAMESPACE='spi-vault' bash -s
     fi
+    kubectl apply -f $REMOTE_SECRET_APP_ROLE_FILE  -n remotesecret
     echo "Vault init complete for remote secret controller"
   else
      echo "Vault initialization skipped for remote secret controller"
