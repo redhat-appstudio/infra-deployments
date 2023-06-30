@@ -1,0 +1,30 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus-gitops-appstudio-service-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: gitops-appstudio-service-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: metrics-reader
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: gitops-appstudio-service
+spec:
+  endpoints:
+  - path: /metrics
+    interval: 15s
+    port: metrics
+    scheme: https
+    bearerTokenSecret:
+      name: "metrics-reader"
+      key: token
+    tlsConfig:
+      insecureSkipVerify: true
+  selector:
+    matchLabels:
+      control-plane: appstudio-controller-manager
