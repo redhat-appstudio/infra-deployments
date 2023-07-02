@@ -2,13 +2,13 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: metrics-reader
-  namespace: o11y
+  namespace: dummy-service
 ---
 apiVersion: v1
 kind: Secret
 metadata:
   name: metrics-reader
-  namespace: o11y
+  namespace: dummy-service
   annotations:
     kubernetes.io/service-account.name: metrics-reader
 type: kubernetes.io/service-account-token
@@ -34,13 +34,13 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: metrics-reader
-  namespace: o11y
+  namespace: dummy-service
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: o11y-dummy-service
-  namespace: o11y
+  namespace: dummy-service
 spec:
   endpoints:
   - path: /metrics
