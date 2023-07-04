@@ -112,5 +112,9 @@ remote-writes selected labels for those metrics to RHOBS, which in turn, makes t
 metrics accessible to AppSRE Grafana.
 
 This Prometheus instance is deployed using a MonitoringStack custom resource provided
-by the Observability Operator. This operator is installed by default in Production and
-Staging clusters. In Development clusters, it's installed and configured using ArgoCD.
+by the Observability Operator. This operator is installed by default in Production and Staging clusters.  
+In Development clusters, it's not installed by default to prevent conflicts with other deployments. 
+It can be installed and configured in development by using the `--obo/-o` flags.  
+For example:  
+`./hack/bootstrap-cluster.sh preview --obo`  
+`./hack/bootstrap-cluster.sh preview -o`
