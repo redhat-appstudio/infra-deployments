@@ -1,0 +1,11 @@
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: ReleasePlan
+metadata:
+  name: release-to-quay
+  namespace: rhtap-gitops-tenant
+  labels:
+    release.appstudio.openshift.io/auto-release: 'true'
+spec:
+  application: external-secrets
+  displayName: build release-to-quay
+  target: rhtap-servicerelease-tenant
