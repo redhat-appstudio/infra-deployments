@@ -5,15 +5,17 @@ ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/..
 
 # Print help message
 function print_help() {
-  echo "Usage: $0 MODE [--toolchain] [--keycloak] [-h|--help]"
+  echo "Usage: $0 MODE [--toolchain] [--keycloak] [--obo] [-h|--help]"
   echo "  MODE             upstream/preview (default: upstream)"
   echo "  --toolchain  (only in preview mode) Install toolchain operators"
-  echo "  --keycloak  (only in preview mode) Configure the toolchain operator to use keycloak deployed on the cluster"
+  echo "  --keycloak   (only in preview mode) Configure the toolchain operator to use keycloak deployed on the cluster"
+  echo "  --obo        (only in preview mode) Install Observability operator and Prometheus instance for federation"
   echo
-  echo "Example usage: \`$0 --toolchain --keycloak"
+  echo "Example usage: \`$0 --toolchain --keycloak --obo"
 }
 TOOLCHAIN=false
 KEYCLOAK=false
+OBO=false
 
 while [[ $# -gt 0 ]]; do
   key=$1
@@ -26,6 +28,10 @@ while [[ $# -gt 0 ]]; do
       KEYCLOAK=true
       shift
       ;;
+    --obo)
+      OBO=true
+      shift
+      ;;
     -h|--help)
       print_help
       exit 0
@@ -35,6 +41,8 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+
 
 if $TOOLCHAIN ; then
   echo "Deploying toolchain"
@@ -111,6 +119,11 @@ update_patch_file () {
 }
 update_patch_file "${ROOT}/argo-cd-apps/k-components/inject-infra-deployments-repo-details/application-patch.yaml"
 update_patch_file "${ROOT}/argo-cd-apps/k-components/inject-infra-deployments-repo-details/application-set-patch.yaml"
+
+if $OBO ; then
+  echo "Adding Observability operator and Prometheus for federation"
+  yq -i '.resources += ["monitoringstack/"]' $ROOT/components/monitoring/prometheus/development/kustomization.yaml
+fi
 
 # delete argoCD applications which are not in DEPLOY_ONLY env var if it's set
 if [ -n "$DEPLOY_ONLY" ]; then
