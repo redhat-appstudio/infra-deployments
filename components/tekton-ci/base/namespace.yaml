@@ -3,4 +3,5 @@ kind: Namespace
 metadata:
   name: tekton-ci
   annotations:
-    operator.tekton.dev/prune.skip: "true"
+    # Keeps PipelineRuns for 24h.
+    operator.tekton.dev/prune.keep-since: 1440
