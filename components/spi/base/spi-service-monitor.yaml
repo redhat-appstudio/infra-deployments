@@ -42,6 +42,11 @@ spec:
     - path: /metrics
       port: metrics
       scheme: https
+      bearerTokenSecret:
+        name: "metrics-reader"
+        key: token
+      tlsConfig:
+        insecureSkipVerify: true
   selector:
     matchLabels:
       app.kubernetes.io/part-of: service-provider-integration-operator
