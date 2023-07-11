@@ -2,14 +2,15 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-- https://github.com/redhat-appstudio/managed-gitops/manifests/overlays/stonesoup-member-cluster?ref=b646f96364e2e2d62f4c4f0f49b4405a695e4877
+- https://github.com/redhat-appstudio/managed-gitops/manifests/overlays/stonesoup-member-cluster?ref=5580df032639c2e96962f321dcac954769df875c
 - ../../openshift-gitops/overlays/production-and-dev
 - ../../base/external-secrets
+- ../../base/monitoring
 
 images:
   - name: \${COMMON_IMAGE}
     newName: quay.io/redhat-appstudio/gitops-service
-    newTag: b646f96364e2e2d62f4c4f0f49b4405a695e4877
+    newTag: 5580df032639c2e96962f321dcac954769df875c
 
 commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true

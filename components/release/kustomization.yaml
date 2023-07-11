@@ -1,7 +1,8 @@
 resources:
 - allow-argocd-to-manage.yaml
 - argocd-permissions.yaml
-- https://github.com/redhat-appstudio/release-service/config/default?ref=f870adcd34610c6b39a8ae88535f2c0abff5ea0b
+- https://github.com/redhat-appstudio/release-service/config/default?ref=bc67ba2f68c4719d059b3b295f1dfd7ba1571e36
+- release-pipeline-resources-clusterrole.yaml
 
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
@@ -9,9 +10,9 @@ kind: Kustomization
 images:
 - name: quay.io/redhat-appstudio/release-service
   newName: quay.io/redhat-appstudio/release-service
-  newTag: f870adcd34610c6b39a8ae88535f2c0abff5ea0b
+  newTag: bc67ba2f68c4719d059b3b295f1dfd7ba1571e36
 
 namespace: release-service
 
 patches:
-  - ./manager_resources_patch.yaml
+  - path: ./manager_resources_patch.yaml

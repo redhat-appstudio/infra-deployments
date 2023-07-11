@@ -3,8 +3,6 @@ kind: Kustomization
 resources:
 - ../base
 - ../base/external-secrets
-- configure-logging
-- external-secrets
 patches:
   - path: monitoring-logging-cloudwatch-forwarder-path.yaml
     target:
@@ -12,9 +10,21 @@ patches:
       group: external-secrets.io
       version: v1beta1
       kind: ExternalSecret
-  - path: configure-logging/cluster-log-forwarder-patch.yaml
-    target:
-      group: logging.openshift.io
-      version: v1
-      kind: ClusterLogForwarder
-      name: instance
+  - target:
+      group: external-secrets.io
+      version: v1beta1
+      kind: ExternalSecret
+      name: log-forwarder-splunk-rhtap-application-external-secret
+    patch: |
+      - op: replace
+        path: /spec/dataFrom/0/extract/key
+        value: staging/monitoring/logging/fluentd/splunk-forwarder-rhtap-staging-application
+  - target:
+      group: external-secrets.io
+      version: v1beta1
+      kind: ExternalSecret
+      name: log-forwarder-splunk-rhtap-audit-external-secret
+    patch: |
+      - op: replace
+        path: /spec/dataFrom/0/extract/key
+        value: staging/monitoring/logging/fluentd/splunk-forwarder-rhtap-staging-audit

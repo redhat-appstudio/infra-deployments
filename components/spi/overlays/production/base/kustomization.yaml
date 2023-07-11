@@ -3,7 +3,7 @@ kind: Kustomization
 resources:
   - ../../../base
   - ../../../base/external-secrets
-  - https://github.com/redhat-appstudio/service-provider-integration-operator/config/overlays/openshift_aws?ref=9f6b160a41913656d8cad110860a34052d86ffb5
+  - https://github.com/redhat-appstudio/service-provider-integration-operator/config/overlays/openshift_aws?ref=c9a014ddbe71b2637d5a828f2b2f3a9ebde58e97
   - spi-aws-credentials-external-secret.yaml
 
 namespace: spi-system
@@ -11,14 +11,18 @@ namespace: spi-system
 images:
   - name:  quay.io/redhat-appstudio/service-provider-integration-operator
     newName: quay.io/redhat-appstudio/service-provider-integration-operator
-    newTag: 9f6b160a41913656d8cad110860a34052d86ffb5
+    newTag: c9a014ddbe71b2637d5a828f2b2f3a9ebde58e97
   - name: quay.io/redhat-appstudio/service-provider-integration-oauth
     newName: quay.io/redhat-appstudio/service-provider-integration-oauth
-    newTag: 9f6b160a41913656d8cad110860a34052d86ffb5
+    newTag: c9a014ddbe71b2637d5a828f2b2f3a9ebde58e97
 
 patches:
   - target:
       kind: Deployment
       name: spi-controller-manager
     path: operator-limits-patch.json
+  - target:
+      kind: ConfigMap
+      name: shared-environment-config
+    path: config-patch.json
   - path: delete-shared-configuration-file.yaml

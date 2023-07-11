@@ -528,6 +528,7 @@ spec:
         optionalClientScopes:
           - address
           - phone
+          - profile_level.name_and_dev_terms
           - offline_access
           - microprofile-jwt
       - id: 1a447574-fcac-48e6-a70a-ca4fd5de7f91
@@ -861,6 +862,12 @@ spec:
               access.token.claim: "true"
               claim.name: middle_name
               jsonType.label: String
+      - id: 672455b2-1e92-44f6-9fb6-fe2017995aed
+        name: profile_level.name_and_dev_terms
+        protocol: openid-connect
+        attributes:
+          include.in.token.scope: "true"
+          display.on.consent.screen: "true"
       - id: 45e1900d-2199-45fc-9028-a39497a6cdd5
         name: email
         description: 'OpenID Connect built-in scope: email'
