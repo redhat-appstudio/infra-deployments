@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+PAC_NAMESPACE='openshift-pipelines'
+PAC_SECRET_NAME='pipelines-as-code-secret'
+
 setup-pac-app() (
         # Inspired by implementation by Will Haley at:
         #   http://willhaley.com/blog/generate-jwt-with-bash/
@@ -46,15 +49,15 @@ setup-pac-app() (
 
         webhook_secret=$(openssl rand -hex 20)
 
-        if ! oc get -n pipelines-as-code secret pipelines-as-code-secret &>/dev/null; then         
+        if ! oc get -n $PAC_NAMESPACE secret $PAC_SECRET_NAME &>/dev/null; then
                 token=$(sign rs256 "$payload" "$(echo "$PAC_GITHUB_APP_PRIVATE_KEY" | base64 -d)")
-                webhook_url=$(oc whoami --show-console | sed 's/console-openshift-console/pipelines-as-code-controller-pipelines-as-code/')
+                pac_host=$(oc get -n $PAC_NAMESPACE route pipelines-as-code-controller -o go-template="{{ .spec.host }}")
                 curl \
                 -X PATCH \
                 -H "Accept: application/vnd.github.v3+json" \
                 -H "Authorization: Bearer $token" \
                 https://api.github.com/app/hook/config \
-                -d "{\"content_type\":\"json\",\"insecure_ssl\":\"1\",\"secret\":\"$webhook_secret\",\"url\":\"$webhook_url\"}" &>/dev/null
+                -d "{\"content_type\":\"json\",\"insecure_ssl\":\"1\",\"secret\":\"$webhook_secret\",\"url\":\"https://$pac_host\"}" &>/dev/null
         fi
 
         echo $webhook_secret
@@ -77,9 +80,6 @@ fi
 if [ -n "${PAC_GITLAB_TOKEN}" ]; then
         GITLAB_WEBHOOK_DATA="--from-literal gitlab.token='${PAC_GITLAB_TOKEN}'"
 fi
-
-PAC_NAMESPACE='pipelines-as-code'
-PAC_SECRET_NAME='pipelines-as-code-secret'
 
 oc create namespace -o yaml --dry-run=client ${PAC_NAMESPACE} | oc apply -f-
 oc create namespace -o yaml --dry-run=client build-service | oc apply -f-
