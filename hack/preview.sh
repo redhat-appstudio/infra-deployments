@@ -204,13 +204,13 @@ while [ "$(oc get applications.argoproj.io all-application-sets -n openshift-git
 done
 
 if ! timeout 100s bash -c "while ! kubectl get applications.argoproj.io -n openshift-gitops -o name | grep -q spi-in-cluster-local; do printf '.'; sleep 5; done"; then
-  printf "Application spi-in-cluster-local not found (timeout)\n" 
+  printf "Application spi-in-cluster-local not found (timeout)\n"
   kubectl get apps -n openshift-gitops -o name
   exit 1
 else
   if [ "$(oc get applications.argoproj.io spi-in-cluster-local -n openshift-gitops -o jsonpath='{.status.health.status} {.status.sync.status}')" != "Healthy Synced" ]; then
     echo Initializing SPI
-    curl https://raw.githubusercontent.com/redhat-appstudio/service-provider-integration-operator/main/hack/vault-init.sh | VAULT_PODNAME='vault-0' VAULT_NAMESPACE='spi-vault' bash -s 
+    curl https://raw.githubusercontent.com/redhat-appstudio/service-provider-integration-operator/main/hack/vault-init.sh | VAULT_PODNAME='vault-0' VAULT_NAMESPACE='spi-vault' bash -s
     SPI_APP_ROLE_FILE=$ROOT/.tmp/approle_secret.yaml
     if [ -f "$SPI_APP_ROLE_FILE" ]; then
         echo "$SPI_APP_ROLE_FILE exists."
@@ -284,7 +284,7 @@ while :; do
   jq -r '.message' <<< "$STATE"
   sleep $INTERVAL
 done
-
+### TEST
 
 if $KEYCLOAK && $TOOLCHAIN ; then
   echo "Restarting toolchain registration service to pick up keycloak's certs."
