@@ -284,6 +284,25 @@ while :; do
   [ "$(jq -r '.status' <<< "$STATE")" == "True" ] && echo All required tekton resources are installed and ready && break
   echo Some tekton resources are not ready yet:
   jq -r '.message' <<< "$STATE"
+  # start temporary work around for https://issues.redhat.com/browse/SRVKP-3245
+  MSG=$(jq -r '.message' <<< "$STATE")
+  if echo "$MSG" | grep -q 'Components not in ready state: OpenShiftPipelinesAsCode: reconcile again and proceed'; then
+    if [[ "$(oc get deployment/pipelines-as-code-controller -n openshift-pipelines -o jsonpath='{.status.conditions[?(@.type=="Available")].status}')" != "True" ]]; then
+      echo "pipelines-as-code-controller still not available"
+      continue
+    fi
+    if [[ "$(oc get deployment/pipelines-as-code-watcher -n openshift-pipelines -o jsonpath='{.status.conditions[?(@.type=="Available")].status}')" != "True" ]]; then
+      echo "pipelines-as-code-watcher still not available"
+      continue
+    fi
+    if [[ "$(oc get deployment/pipelines-as-code-webhook -n openshift-pipelines -o jsonpath='{.status.conditions[?(@.type=="Available")].status}')" != "True" ]]; then
+      echo "pipelines-as-code-webhook still not available"
+      continue
+    fi
+    echo "BYPASSING tektonconfig CHECK BECAUSE OF https://issues.redhat.com/browse/SRVKP-3245 FOR OpenShiftPipelinesAsCode"
+    break
+  fi
+  # end temporary work around for https://issues.redhat.com/browse/SRVKP-3245
   sleep $INTERVAL
 done
 
