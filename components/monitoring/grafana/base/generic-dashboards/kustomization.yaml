@@ -1,0 +1,11 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- dashboard.yaml
+configMapGenerator:
+  - name: grafana-dashboard-controller-runtime-controllers-detail
+    files:
+      - controller-runtime-controllers-detail_rev1.json
+  - name: grafana-dashboard-go-processes
+    files:
+      - go-processes_rev1.json
