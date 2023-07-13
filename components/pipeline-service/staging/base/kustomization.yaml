@@ -8,10 +8,11 @@ commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 
 resources:
-  - git::https://github.com/openshift-pipelines/pipeline-service.git/operator/gitops/argocd/pipeline-service?ref=5bfee7ea5b973bcd504ff4fe03b6bf444f6dffcb
+  - git::https://github.com/openshift-pipelines/pipeline-service.git/operator/gitops/argocd/pipeline-service?ref=3c76bc5057b7aa8477c776d507f7f3080c972aa1
+  - pipelines-as-code-namespace.yaml
+  - pipelines-as-code-secret.yaml
   - ../../base/external-secrets
   - ../../base/testing
-  - ../../base/servicemonitors
 
 patches:
   - path: greedy-pruner.yaml
@@ -22,7 +23,7 @@ patches:
     target:
       kind: ConfigMap
       name: pipelines-as-code
-      namespace: pipelines-as-code
+      namespace: openshift-pipelines
 #  - path: scale-down-exporter.yaml
 #    target:
 #      kind: Deployment

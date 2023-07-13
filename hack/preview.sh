@@ -181,7 +181,7 @@ rm $TMP_FILE
 
 $ROOT/hack/util-set-github-org $MY_GITHUB_ORG
 
-domain=$(kubectl get ingresses.config.openshift.io cluster --template={{.spec.domain}})
+domain=$(oc get ingresses.config.openshift.io cluster --template={{.spec.domain}})
 
 rekor_server="rekor.$domain"
 sed -i.bak "s/rekor-server.enterprise-contract-service.svc/$rekor_server/" $ROOT/argo-cd-apps/base/member/optional/helm/rekor/rekor.yaml && rm $ROOT/argo-cd-apps/base/member/optional/helm/rekor/rekor.yaml.bak
@@ -230,51 +230,22 @@ while [ "$(oc get applications.argoproj.io all-application-sets -n openshift-git
   sleep 5
 done
 
-if ! timeout 100s bash -c "while ! kubectl get applications.argoproj.io -n openshift-gitops -o name | grep -q spi-in-cluster-local; do printf '.'; sleep 5; done"; then
-  printf "Application spi-in-cluster-local not found (timeout)\n" 
-  kubectl get apps -n openshift-gitops -o name
-  exit 1
-else
-  if [ "$(oc get applications.argoproj.io spi-in-cluster-local -n openshift-gitops -o jsonpath='{.status.health.status} {.status.sync.status}')" != "Healthy Synced" ]; then
-    echo Initializing SPI
-    curl https://raw.githubusercontent.com/redhat-appstudio/service-provider-integration-operator/main/hack/vault-init.sh | VAULT_PODNAME='vault-0' VAULT_NAMESPACE='spi-vault' bash -s
-    SPI_APP_ROLE_FILE=$ROOT/.tmp/approle_secret.yaml
-    if [ -f "$SPI_APP_ROLE_FILE" ]; then
-        echo "$SPI_APP_ROLE_FILE exists."
-        kubectl apply -f $SPI_APP_ROLE_FILE  -n spi-system
-    fi
-    echo "Vault init complete"
-  else
-     echo "Vault initialization skipped"
-  fi
-fi
+# Init Vault
+$ROOT/hack/spi/vault-init.sh
 
-if ! timeout 300s bash -c "while ! kubectl get applications.argoproj.io -n openshift-gitops -o name | grep -q remote-secret-controller-in-cluster-local; do printf '.'; sleep 5; done"; then
-  printf "Application remote-secret-controller-in-cluster-local not found (timeout)\n"
-  kubectl get apps -n openshift-gitops -o name
-  exit 1
-else
-  if [ "$(oc get applications.argoproj.io  remote-secret-controller-in-cluster-local -n openshift-gitops -o jsonpath='{.status.health.status} {.status.sync.status}')" != "Healthy Synced" ]; then
-    echo Initializing remote secret controller
-    REMOTE_SECRET_APP_ROLE_FILE=$ROOT/.tmp/approle_remote_secret.yaml
-    if [ ! -f "$REMOTE_SECRET_APP_ROLE_FILE" ]; then
-      curl https://raw.githubusercontent.com/redhat-appstudio/service-provider-integration-operator/main/hack/vault-init.sh | VAULT_PODNAME='vault-0' VAULT_NAMESPACE='spi-vault' bash -s
-    fi
-    kubectl apply -f $REMOTE_SECRET_APP_ROLE_FILE  -n remotesecret
-    echo "Vault init complete for remote secret controller"
-  else
-     echo "Vault initialization skipped for remote secret controller"
-  fi
-fi
+# Init SPI
+$ROOT/hack/spi/spi-init.sh
 
+# Init Remote Secret
+$ROOT/hack/spi/remote-secret-init.sh
 
 # Configure Pipelines as Code and required credentials
 $ROOT/hack/build/setup-pac-integration.sh
 
-APPS=$(kubectl get apps -n openshift-gitops -o name)
+APPS=$(oc get apps -n openshift-gitops -o name)
 # trigger refresh of apps
 for APP in $APPS; do
-  kubectl patch $APP -n openshift-gitops --type merge -p='{"metadata": {"annotations":{"argocd.argoproj.io/refresh": "hard"}}}' &
+  oc patch $APP -n openshift-gitops --type merge -p='{"metadata": {"annotations":{"argocd.argoproj.io/refresh": "hard"}}}' &
 done
 wait
 
@@ -285,7 +256,7 @@ done
 
 INTERVAL=10
 while :; do
-  STATE=$(kubectl get apps -n openshift-gitops --no-headers)
+  STATE=$(oc get apps -n openshift-gitops --no-headers)
   NOT_DONE=$(echo "$STATE" | grep -v "Synced[[:blank:]]*Healthy" || true)
   echo "$NOT_DONE"
   if [ -z "$NOT_DONE" ]; then
@@ -298,7 +269,7 @@ while :; do
          ERROR=$(oc get -n openshift-gitops applications.argoproj.io $app -o jsonpath='{.status.conditions}')
          if echo "$ERROR" | grep -q 'context deadline exceeded'; then
            echo Refreshing $app
-           kubectl patch applications.argoproj.io $app -n openshift-gitops --type merge -p='{"metadata": {"annotations":{"argocd.argoproj.io/refresh": "soft"}}}'
+           oc patch applications.argoproj.io $app -n openshift-gitops --type merge -p='{"metadata": {"annotations":{"argocd.argoproj.io/refresh": "soft"}}}'
            while [ -n "$(oc get applications.argoproj.io -n openshift-gitops $app -o jsonpath='{.metadata.annotations.argocd\.argoproj\.io/refresh}')" ]; do
              sleep 5
            done
@@ -327,6 +298,25 @@ while :; do
   [ "$(jq -r '.status' <<< "$STATE")" == "True" ] && echo All required tekton resources are installed and ready && break
   echo Some tekton resources are not ready yet:
   jq -r '.message' <<< "$STATE"
+  # start temporary work around for https://issues.redhat.com/browse/SRVKP-3245
+  MSG=$(jq -r '.message' <<< "$STATE")
+  if echo "$MSG" | grep -q 'Components not in ready state: OpenShiftPipelinesAsCode: reconcile again and proceed'; then
+    if [[ "$(oc get deployment/pipelines-as-code-controller -n openshift-pipelines -o jsonpath='{.status.conditions[?(@.type=="Available")].status}')" != "True" ]]; then
+      echo "pipelines-as-code-controller still not available"
+      continue
+    fi
+    if [[ "$(oc get deployment/pipelines-as-code-watcher -n openshift-pipelines -o jsonpath='{.status.conditions[?(@.type=="Available")].status}')" != "True" ]]; then
+      echo "pipelines-as-code-watcher still not available"
+      continue
+    fi
+    if [[ "$(oc get deployment/pipelines-as-code-webhook -n openshift-pipelines -o jsonpath='{.status.conditions[?(@.type=="Available")].status}')" != "True" ]]; then
+      echo "pipelines-as-code-webhook still not available"
+      continue
+    fi
+    echo "BYPASSING tektonconfig CHECK BECAUSE OF https://issues.redhat.com/browse/SRVKP-3245 FOR OpenShiftPipelinesAsCode"
+    break
+  fi
+  # end temporary work around for https://issues.redhat.com/browse/SRVKP-3245
   sleep $INTERVAL
 done
 
