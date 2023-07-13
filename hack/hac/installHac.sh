@@ -1,4 +1,5 @@
 #!/bin/bash
+set -x
 
 # Display help information about this script bash
 function helpUsage() {
@@ -98,10 +99,15 @@ EOF
 
 patchfeenv() {
     KEYCLOAK_ENDPOINT=https://$(oc get route/keycloak --kubeconfig="$STONESOUP_KUBECONFIG" -n dev-sso -o jsonpath="{.spec.host}")/auth
-    oc patch feenv/env-"$NAMESPACE" --kubeconfig="$HAC_KUBECONFIG" --type=merge --patch-file=/dev/stdin << EOF
-    spec:
-        sso: $KEYCLOAK_ENDPOINT
-EOF
+    oc whoami -c
+    oc whoami -c --kubeconfig="$HAC_KUBECONFIG"
+    oc whoami -c --kubeconfig="$STONESOUP_KUBECONFIG"
+
+#     oc patch feenv/env-"$NAMESPACE" --kubeconfig="$HAC_KUBECONFIG" --type=merge --patch-file=/dev/stdin << EOF
+#     spec:
+#         sso: $KEYCLOAK_ENDPOINT
+# EOF
+    oc patch feenv env-"$NAMESPACE" --kubeconfig="$HAC_KUBECONFIG" --type=merge -p '{"spec":{"sso": "'$KEYCLOAK_ENDPOINT'" }}'
 }
 
 deployProxy() {
