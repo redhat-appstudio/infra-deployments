@@ -1,0 +1,13 @@
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: ReleasePlanAdmission
+metadata:
+  name: rhtap-build-rpa
+  namespace: rhtap-servicerelease-tenant
+  labels:
+    release.appstudio.openshift.io/auto-release: 'true'
+    release.appstudio.openshift.io/standing-attribution: 'true'
+spec:
+  application: build
+  displayName: ''
+  origin: rhtap-build-tenant
+  releaseStrategy: push-to-external-registry-strategy
