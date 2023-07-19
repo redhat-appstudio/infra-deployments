@@ -1,0 +1,62 @@
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: gitops-namespace-read-access
+  namespace: gitops
+subjects:
+  - kind: Group
+    apiGroup: rbac.authorization.k8s.io
+    name: GitOps Service Team
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: gitops-namespaces-read-access
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: gitops-service-argocd-namespace-read-access
+  namespace: gitops-service-argocd
+subjects:
+  - kind: Group
+    apiGroup: rbac.authorization.k8s.io
+    name: GitOps Service Team
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: gitops-namespaces-read-access
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: gitops-namespace-all-access
+  namespace: gitops
+subjects:
+  - kind: User
+    apiGroup: rbac.authorization.k8s.io
+    name: jgwest
+  - kind: User
+    apiGroup: rbac.authorization.k8s.io
+    name: jannfis
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: gitops-namespaces-all-access
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: gitops-service-argocd-namespace-all-access
+  namespace: gitops-service-argocd
+subjects:
+  - kind: User
+    apiGroup: rbac.authorization.k8s.io
+    name: jgwest
+  - kind: User
+    apiGroup: rbac.authorization.k8s.io
+    name: jannfis
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: gitops-namespaces-all-access
