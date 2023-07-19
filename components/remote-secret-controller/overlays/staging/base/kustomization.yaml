@@ -2,7 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ../../../base
-  - https://github.com/redhat-appstudio/remote-secret/config/overlays/openshift_aws?ref=a6094c7124363b55d655036a63daf4eb43f34f8e
+  - https://github.com/redhat-appstudio/remote-secret/config/overlays/openshift_aws?ref=86d211ac75e31980628be3bd74232d4f871b9297
   - aws-credentials-external-secret.yaml
 
 namespace: remotesecret
@@ -10,4 +10,4 @@ namespace: remotesecret
 images:
   - name:  quay.io/redhat-appstudio/remote-secret-controller
     newName: quay.io/redhat-appstudio/remote-secret-controller
-    newTag: a6094c7124363b55d655036a63daf4eb43f34f8e
+    newTag: 86d211ac75e31980628be3bd74232d4f871b9297
