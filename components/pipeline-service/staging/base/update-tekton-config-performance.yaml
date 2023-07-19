@@ -17,3 +17,14 @@
   #value: 10
   # upstream large scale env recommendation
   value: 50
+- op: add
+  path: /spec/pipeline/default-pod-template
+  # Add a topology spread constraint to distribute the pods
+  value: |
+    topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/managed-by: tekton-pipelines
