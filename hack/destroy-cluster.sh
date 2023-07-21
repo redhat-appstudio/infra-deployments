@@ -24,16 +24,15 @@ echo
 echo "Starting with removing application, you can see progress $ARGO_CD_URL"
 echo "If there is running Sync then cancel it manually"
 echo "Remove Argo CD Applications:"
-kubectl delete -f $ROOT/argo-cd-apps/app-of-apps/all-applications-staging.yaml
-#kubectl -k $ROOT/argo-cd-apps/overlays/staging
+kubectl delete -k "$ROOT/argo-cd-apps/app-of-app-sets/staging"
 
 echo
 echo "Remove RBAC for OpenShift GitOps:"
-kubectl delete -k $ROOT/openshift-gitops/base/cluster-rbac
+kubectl delete -k "$ROOT/components/gitops/openshift-gitops/base/cluster-rbac"
 
 echo 
 echo "Remove the OpenShift GitOps operator subscription:"
-kubectl delete -f $ROOT/openshift-gitops/overlays/production-and-dev/subscription-openshift-gitops.yaml
+kubectl delete -f "$ROOT/components/gitops/openshift-gitops/overlays/production-and-dev/subscription-openshift-gitops.yaml"
 
 echo 
 echo "Removing operators and operands:"
