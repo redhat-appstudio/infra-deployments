@@ -1,0 +1,10 @@
+apiVersion: integreatly.org/v1alpha1
+kind: GrafanaDashboard
+metadata:
+  name: grafana-dashboard-gitops-service-argocd
+  labels: 
+    app: appstudio-grafana
+spec:
+  configMapRef:
+    name: grafana-dashboard-gitops-service
+    key: gitops-argocd-dashboard.json
