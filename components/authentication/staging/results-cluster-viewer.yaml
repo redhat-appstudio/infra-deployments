@@ -1,0 +1,29 @@
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: results-cluster-viewer
+rules:
+  - apiGroups:
+      - results.tekton.dev
+    resources:
+      - results
+      - records
+    verbs:
+      - get
+      - list
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: results-cluster-viewer
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: results-cluster-viewer
+subjects:
+  - kind: User
+    name: gabemontero
+    apiGroup: rbac.authorization.k8s.io
+  - kind: User
+    name: sayan-biswas
+    apiGroup: rbac.authorization.k8s.io
