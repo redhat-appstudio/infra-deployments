@@ -8,14 +8,18 @@ commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 
 resources:
-  - git::https://github.com/openshift-pipelines/pipeline-service.git/operator/gitops/argocd/pipeline-service?ref=1f64281aeaf44cb99372f456740499ce9b40929f
+  - git::https://github.com/openshift-pipelines/pipeline-service.git/operator/gitops/argocd/pipeline-service?ref=d0abddfa7f3ca89a09d3c0f59f59ca676c2a3bd3
+  - pipelines-as-code-namespace.yaml # preserve old PAC namespace until 1.11 rolled out through production
+  - pipelines-as-code-secret.yaml # create extenrnal secret in openshift-pipelines namespace
   - ../../base/external-secrets
   - ../../base/testing
 
 patches:
+  # still do this patch for the external secret kept in the pipelines-as-code namespace per components/pipeline-service/base/external-secrets/pipelines-as-code
   - path: pipelines-as-code-secret-path.yaml
     target:
       name: pipelines-as-code-secret
+      namespace: pipelines-as-code
       group: external-secrets.io
       version: v1beta1
       kind: ExternalSecret
