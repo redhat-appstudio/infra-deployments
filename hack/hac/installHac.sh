@@ -61,7 +61,7 @@ installBonfire(){
     VENV_DIR=$(mktemp -d)
     python3 -m venv "$VENV_DIR"
     . "$VENV_DIR"/bin/activate
-    pip install crc-bonfire
+    pip install crc-bonfire==4.16.0
 }
 
 reserveNamespace() {
@@ -112,9 +112,9 @@ deployProxy() {
 
 installBonfire
 reserveNamespace
-installHac
 patchfeenv
 deployProxy
+installHac
 
 echo "Eph cluster namespace: $NAMESPACE"
-echo "Stonesoup URL: https://$(oc get feenv env-$NAMESPACE -o jsonpath="{.spec.hostname}")/hac/stonesoup"
+echo "Stonesoup URL: https://$(oc get feenv env-$NAMESPACE --kubeconfig="$HAC_KUBECONFIG" -o jsonpath="{.spec.hostname}")/hac/stonesoup"
