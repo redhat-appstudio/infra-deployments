@@ -103,6 +103,8 @@ metadata:
   name: grafana-oauth
   labels: 
     dashboards: "appstudio-grafana"
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
   config:
     users:
