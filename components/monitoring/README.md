@@ -164,13 +164,16 @@ Follow the next steps to define a dashboard in your team's repository
   
   6. Create the `GrafanaDashboard` resource file that uses the config map to create the dashboard
       ```yaml
-      apiVersion: integreatly.org/v1alpha1
+      apiVersion: grafana.integreatly.org/v1beta1
       kind: GrafanaDashboard
       metadata:
         name: grafana-dashboard-example
         labels:
           app: appstudio-grafana
       spec:
+        instanceSelector:
+          matchLabels:
+            dashboards: "appstudio-grafana"
         configMapRef:
           name: grafana-dashboard-example
           key: example-dashboard.json
