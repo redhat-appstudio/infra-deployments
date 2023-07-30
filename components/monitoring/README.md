@@ -99,7 +99,7 @@ Follow the next steps to define a dashboard in your team's repository
       ```
       ├── grafana
       │   ├── dashboards
-      │   │   └── o11y-dashboard.json
+      │   │   └── example-dashboard.json
       │   ├── dashboard.yaml
       │   └── kustomization.yaml
       ```
@@ -151,12 +151,12 @@ Follow the next steps to define a dashboard in your team's repository
       kind: Kustomization
       apiVersion: kustomize.config.k8s.io/v1beta1
 
-      namespace: o11y
+      namespace: example
 
       configMapGenerator:
-        - name: grafana-dashboard-o11y
+        - name: grafana-dashboard-example
           files:
-            - dashboards/o11y-dashboard.json
+            - dashboards/example-dashboard.json
 
       resources:
         - dashboard.yaml
@@ -164,16 +164,19 @@ Follow the next steps to define a dashboard in your team's repository
   
   6. Create the `GrafanaDashboard` resource file that uses the config map to create the dashboard
       ```yaml
-      apiVersion: integreatly.org/v1alpha1
+      apiVersion: grafana.integreatly.org/v1beta1
       kind: GrafanaDashboard
       metadata:
-        name: grafana-dashboard-o11y
+        name: grafana-dashboard-example
         labels:
           app: appstudio-grafana
       spec:
+        instanceSelector:
+          matchLabels:
+            dashboards: "appstudio-grafana"
         configMapRef:
-          name: grafana-dashboard-o11y
-          key: o11y-dashboard.json
+          name: grafana-dashboard-example
+          key: example-dashboard.json
       ```
  7. Push the code to the team's repository
 
