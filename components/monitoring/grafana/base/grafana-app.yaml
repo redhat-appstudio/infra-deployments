@@ -248,6 +248,8 @@ metadata:
   name: example-dashboard
   labels: 
     app: appstudio-grafana
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
   url: https://raw.githubusercontent.com/redhat-appstudio/infra-deployments/main/components/monitoring/grafana/base/generic-dashboards/example.json
   instanceSelector:

@@ -3,3 +3,5 @@ kind: Kustomization
 resources:
 - monitoring-grafana-oauth-config.yaml
 namespace: appstudio-workload-monitoring
+commonAnnotations:
+  argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
