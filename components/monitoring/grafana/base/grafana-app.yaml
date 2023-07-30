@@ -30,22 +30,24 @@ metadata:
 type: kubernetes.io/service-account-token
 ---
 # Create service account to connect to Grafana
+# Although the service account is created by the Grafana operator (named <Grafana_name>-sa)
+# We create it in advanced and assign a secret to it
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: grafana-serviceaccount
+  name: grafana-oauth-sa
   namespace: appstudio-grafana
   annotations:
     argocd.argoproj.io/compare-options: IgnoreExtraneous
 ---
-# Create secret for the Grafana service account
+# Create and assign a secret for the Grafana service account
 apiVersion: v1
 kind: Secret
 metadata:
   name: grafana-proxy
   namespace: appstudio-grafana
   annotations:
-    kubernetes.io/service-account.name: grafana-serviceaccount
+    kubernetes.io/service-account.name: grafana-oauth-sa
 type: kubernetes.io/service-account-token
 ---
 # Create Cluster Role for the Grafana service account
@@ -75,7 +77,7 @@ metadata:
   name: grafana-proxy
 subjects:
   - kind: ServiceAccount
-    name: grafana-serviceaccount
+    name: grafana-oauth-sa
     namespace: appstudio-grafana
 roleRef:
   kind: ClusterRole
@@ -92,99 +94,102 @@ metadata:
   name: ocp-injected-certs
 ---
 # Create the Grafana instance
-apiVersion: integreatly.org/v1alpha1
+# A service account is created automatically by the operator, the name is 
+# derived from the grafana name: <Grafana_name>-sa
+apiVersion: grafana.integreatly.org/v1beta1
 kind: Grafana
 metadata:
   namespace: appstudio-grafana
   name: grafana-oauth
+  labels: 
+    dashboards: "appstudio-grafana"
 spec:
   config:
     users:
-      viewers_can_edit: true
+      viewers_can_edit: "True"
     log:
       mode: "console"
       level: "warn"
     auth.anonymous:
-      enabled: false
+      enabled: "False"
     auth:
-      disable_login_form: False
-      disable_signout_menu: True
+      disable_login_form: "False"
+      disable_signout_menu: "True"
     auth.basic:
-      enabled: True
+      enabled: "True"
     auth.proxy:
-      enabled: True
-      enable_login_token: True
+      enabled: "True"
+      enable_login_token: "True"
       header_property: username
-      header_name: X-Forwarded-User
-  dashboardLabelSelector:
-    - matchExpressions:
-        - key: app
-          operator: In
-          values:
-            - appstudio-grafana
-  deployment:
-    envFrom:
-      - prefix: thanos
-        secretRef:
-          name: metrics-reader
-  containers:
-    - args:
-        - '-provider=openshift'
-        - '-pass-basic-auth=false'
-        - '-https-address=:9091'
-        - '-http-address='
-        - '-email-domain=*'
-        - '-upstream=http://localhost:3000'
-        - '-openshift-sar={"resource": "namespaces", "resourceName": "appstudio-grafana", "namespace": "appstudio-grafana", "verb": "get"}'
-        - '-openshift-delegate-urls={"/": {"resource": "namespaces", "verb": "get"}}'
-        - '-tls-cert=/etc/tls/private/tls.crt'
-        - '-tls-key=/etc/tls/private/tls.key'
-        - '-client-secret-file=/var/run/secrets/kubernetes.io/serviceaccount/token'
-        - '-cookie-secret-file=/etc/proxy/secrets/token'
-        - '-openshift-service-account=grafana-serviceaccount'
-        - '-openshift-ca=/etc/pki/tls/cert.pem'
-        - '-openshift-ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt'
-        - '-openshift-ca=/etc/grafana-configmaps/ocp-injected-certs/ca-bundle.crt'
-        - '-skip-auth-regex=^/metrics'
-      image: quay.io/openshift/origin-oauth-proxy@sha256:b6536bfcfaf30a6425d589facd672bae3245f933b2a7399bda3f12e393bd671b
-      name: grafana-proxy
-      ports:
-        - containerPort: 9091
-          name: https
-      resources: {}
-      volumeMounts:
-        - mountPath: /etc/tls/private
-          name: secret-grafana-tls
-          readOnly: false
-        - mountPath: /etc/proxy/secrets
-          name: secret-grafana-proxy
-          readOnly: false
-  secrets:
-    - grafana-tls
-    - grafana-proxy
-  configMaps:
-    - ocp-injected-certs
-  service:
-    ports:
-      - name: https
-        port: 9091
-        protocol: TCP
-        targetPort: https
-    annotations:
-      service.beta.openshift.io/serving-cert-secret-name: grafana-tls
-  ingress:
-    enabled: false
-    targetPort: https
-    termination: reencrypt
-    annotations:
-      service.beta.openshift.io/serving-cert-secret-name: grafana-tls
-  client:
-    preferService: True
+      header_name: "X-Forwarded-User"
   serviceAccount:
-    annotations:
-      serviceaccounts.openshift.io/oauth-redirectreference.primary: '{"kind":"OAuthRedirectReference","apiVersion":"v1","reference":{"kind":"Route","name":"grafana-access"}}'
+    metadata:
+      annotations:
+        serviceaccounts.openshift.io/oauth-redirectreference.primary: '{"kind":"OAuthRedirectReference","apiVersion":"v1","reference":{"kind":"Route","name":"grafana-access"}}'
+  deployment:
+    spec:
+      template:
+        spec:
+          volumes:
+          - name: grafana-tls
+            secret:
+              secretName: grafana-tls
+          - name: grafana-proxy
+            secret:
+              secretName: grafana-proxy
+          - name: ocp-injected-certs
+            configMap:
+              name: ocp-injected-certs
+          containers:
+            - name: grafana-proxy
+              args:
+                - '-provider=openshift'
+                - '-pass-basic-auth=false'
+                - '-https-address=:9091'
+                - '-http-address='
+                - '-email-domain=*'
+                - '-upstream=http://localhost:3000'
+                - '-openshift-sar={"resource": "namespaces", "resourceName": "appstudio-grafana", "namespace": "appstudio-grafana", "verb": "get"}'
+                - '-openshift-delegate-urls={"/": {"resource": "namespaces", "verb": "get"}}'
+                - '-tls-cert=/etc/tls/private/tls.crt'
+                - '-tls-key=/etc/tls/private/tls.key'
+                - '-client-secret-file=/var/run/secrets/kubernetes.io/serviceaccount/token'
+                - '-cookie-secret-file=/etc/proxy/secrets/token'
+                - '-openshift-service-account=grafana-oauth-sa'
+                - '-openshift-ca=/etc/pki/tls/cert.pem'
+                - '-openshift-ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt'
+                - '-openshift-ca=/etc/proxy/certs/ca-bundle.crt'
+                - '-skip-auth-regex=^/metrics'            
+              image: quay.io/openshift/origin-oauth-proxy@sha256:b6536bfcfaf30a6425d589facd672bae3245f933b2a7399bda3f12e393bd671b
+              ports:
+                - containerPort: 9091
+                  name: https
+              resources: { }
+              volumeMounts:
+                - mountPath: /etc/tls/private
+                  name: grafana-tls
+                  readOnly: false
+                - mountPath: /etc/proxy/secrets
+                  name: grafana-proxy
+                  readOnly: false
+                - mountPath: /etc/proxy/certs
+                  name: ocp-injected-certs
+                  readOnly: false
+             
+  service:
+    metadata:
+      annotations:
+        service.beta.openshift.io/serving-cert-secret-name: grafana-tls
+    spec:
+      ports:
+        - name: https
+          port: 9091
+          protocol: TCP
+          targetPort: https
+    
 ---
 # Adding route to Grafana
+# The service is created by the operator and named <Grafana_name>-service
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
@@ -199,37 +204,45 @@ spec:
     termination: reencrypt
   to:
     kind: Service
-    name: grafana-service
+    name: grafana-oauth-service
     weight: 100
   wildcardPolicy: None
 ---  
 # Add prometheus Datasource to Grafana
 # Using the thanos-querier url for the datasource
-apiVersion: integreatly.org/v1alpha1
-kind: GrafanaDataSource
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDatasource
 metadata:
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
   name: prometheus-appstudio-ds
   namespace: appstudio-grafana
 spec:
-  name: prometheus-thanos-grafanadatasource.yaml
-  datasources:
-    - access: proxy
+  valuesFrom:
+    - targetPath: "secureJsonData.httpHeaderValue1"
+      valueFrom:
+        secretKeyRef:
+          name: "metrics-reader"
+          key: "token"
+  instanceSelector:
+    matchLabels:
+      dashboards: "appstudio-grafana"
+  datasource:
+      access: proxy
       editable: true
       isDefault: true
       jsonData:
-        httpHeaderName1: Authorization
+        httpHeaderName1: "Authorization"
         timeInterval: 5s
         tlsSkipVerify: true
       name: prometheus-appstudio-ds
       secureJsonData:
-        httpHeaderValue1: 'Bearer ${thanostoken}'
+        httpHeaderValue1: "Bearer ${token}"
       type: prometheus
       url: 'https://thanos-querier.openshift-monitoring.svc.cluster.local:9091'
 ---
 # Add example dashboard
-apiVersion: integreatly.org/v1alpha1
+apiVersion: grafana.integreatly.org/v1beta1
 kind: GrafanaDashboard
 metadata:
   name: example-dashboard
@@ -237,3 +250,6 @@ metadata:
     app: appstudio-grafana
 spec:
   url: https://raw.githubusercontent.com/redhat-appstudio/infra-deployments/main/components/monitoring/grafana/base/generic-dashboards/example.json
+  instanceSelector:
+    matchLabels:
+      dashboards: "appstudio-grafana"

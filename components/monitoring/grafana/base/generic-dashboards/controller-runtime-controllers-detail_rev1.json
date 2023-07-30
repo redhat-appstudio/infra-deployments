@@ -45,10 +45,6 @@
       "id": 6,
       "panels": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PF224BEF3374A25F8"
-          },
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -119,10 +115,6 @@
           },
           "targets": [
             {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "PF224BEF3374A25F8"
-              },
               "exemplar": true,
               "expr": "controller_runtime_active_workers{namespace=\"$Namespace\", service=\"$Service\", pod=\"$Pod\"}",
               "interval": "",
@@ -134,10 +126,6 @@
           "type": "timeseries"
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PF224BEF3374A25F8"
-          },
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -208,10 +196,6 @@
           },
           "targets": [
             {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "PF224BEF3374A25F8"
-              },
               "exemplar": true,
               "expr": "sum by (result) (rate(controller_runtime_reconcile_total{namespace=\"$Namespace\", service=\"$Service\", pod=\"$Pod\"}[$__rate_interval]))",
               "interval": "",
@@ -225,10 +209,6 @@
       ],
       "targets": [
         {
-          "datasource": {
-            "type": "datasource",
-            "uid": "grafana"
-          },
           "refId": "A"
         }
       ],
@@ -263,10 +243,6 @@
       "type": "row"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PF224BEF3374A25F8"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -340,10 +316,6 @@
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PF224BEF3374A25F8"
-          },
           "exemplar": true,
           "expr": "rate(controller_runtime_reconcile_total{namespace=\"$Namespace\", service=\"$Service\", pod=\"$Pod\", controller=\"$Controller\"}[$__rate_interval])",
           "interval": "",
@@ -364,10 +336,6 @@
         "mode": "spectrum"
       },
       "dataFormat": "tsbuckets",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PF224BEF3374A25F8"
-      },
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -437,10 +405,6 @@
       "reverseYBuckets": false,
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PF224BEF3374A25F8"
-          },
           "exemplar": true,
           "expr": "rate(controller_runtime_reconcile_time_seconds_bucket{namespace='$Namespace', service='$Service', pod='$Pod', controller='$Controller'}[$__rate_interval])",
           "format": "heatmap",
@@ -478,10 +442,6 @@
           "text": "toolchain-member-operator",
           "value": "toolchain-member-operator"
         },
-        "datasource": {
-          "type": "prometheus",
-          "uid": "PF224BEF3374A25F8"
-        },
         "definition": "label_values(controller_runtime_active_workers, namespace)",
         "hide": 0,
         "includeAll": false,
@@ -503,10 +463,6 @@
           "selected": false,
           "text": "member-operator-metrics-service",
           "value": "member-operator-metrics-service"
-        },
-        "datasource": {
-          "type": "prometheus",
-          "uid": "PF224BEF3374A25F8"
         },
         "definition": "label_values(controller_runtime_active_workers{namespace=\"$Namespace\"}, service)",
         "hide": 0,
@@ -530,10 +486,6 @@
           "text": "member-operator-controller-manager-987bbbb6c-4j69n",
           "value": "member-operator-controller-manager-987bbbb6c-4j69n"
         },
-        "datasource": {
-          "type": "prometheus",
-          "uid": "PF224BEF3374A25F8"
-        },
         "definition": "label_values(controller_runtime_active_workers{namespace=\"$Namespace\", service=\"$Service\"},  pod)",
         "hide": 0,
         "includeAll": false,
@@ -555,10 +507,6 @@
           "selected": false,
           "text": "idler",
           "value": "idler"
-        },
-        "datasource": {
-          "type": "prometheus",
-          "uid": "PF224BEF3374A25F8"
         },
         "definition": "label_values(controller_runtime_active_workers{namespace=\"$Namespace\", service=\"$Service\", pod=\"$Pod\"},  controller)",
         "hide": 0,

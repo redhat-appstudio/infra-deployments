@@ -1,21 +1,27 @@
-apiVersion: integreatly.org/v1alpha1
+apiVersion: grafana.integreatly.org/v1beta1
 kind: GrafanaDashboard
 metadata:
   name: grafana-dashboard-go-processes
   labels: 
     app: appstudio-grafana
 spec:
+  instanceSelector:
+    matchLabels:
+      dashboards: "appstudio-grafana"
   configMapRef:
     name: grafana-dashboard-go-processes
     key: go-processes_rev1.json
 ---
-apiVersion: integreatly.org/v1alpha1
+apiVersion: grafana.integreatly.org/v1beta1
 kind: GrafanaDashboard
 metadata:
   name: grafana-dashboard-controller-runtime-controllers-detail
   labels: 
     app: appstudio-grafana
 spec:
+  instanceSelector:
+    matchLabels:
+      dashboards: "appstudio-grafana"
   configMapRef:
     name: grafana-dashboard-controller-runtime-controllers-detail
     key: controller-runtime-controllers-detail_rev1.json
