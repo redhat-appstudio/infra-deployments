@@ -21,6 +21,8 @@ kind: OperatorGroup
 metadata:
   name: appstudio-grafana
   namespace: appstudio-grafana
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
 spec:
   targetNamespaces:
   - appstudio-grafana
