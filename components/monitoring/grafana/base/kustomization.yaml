@@ -3,26 +3,6 @@ kind: Kustomization
 resources:
 - grafana-operator.yaml
 - grafana-app.yaml
-- spi/
-- build-service/
-- managed-gitops/
-- dora-metrics/
-- has/
-- jvm-build-service/
-- integration/
-- migration/
-- release/
-- performance/
-- pipeline-service/
-- generic-dashboards/
-
-# Skip applying the grafana operands (integreatly.org) while the grafana operator is being installed.
-# See more information about this option, here:
-# https://argo-cd.readthedocs.io/en/stable/user-guide/sync-options/#skip-dry-run-for-new-custom-resources-types
-commonAnnotations:
-  argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+- dashboards
 
 namespace: "appstudio-grafana"
-
-configurations:
-  - cm-dashboard.yaml
