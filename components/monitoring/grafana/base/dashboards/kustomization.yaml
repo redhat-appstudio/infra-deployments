@@ -22,20 +22,3 @@ commonAnnotations:
 
 configurations:
   - cm-dashboard.yaml
-
-# Migration patch from Grafana v4 to v5, should be removed when all projects are migrated
-patchesJson6902:
-  - target:
-      group: integreatly.org
-      version: v1alpha1
-      kind: GrafanaDashboard
-      name: '.*'
-    patch: |-
-      - op: replace
-        path: "/apiVersion"
-        value: grafana.integreatly.org/v1beta1
-      - op: add
-        path: /spec/instanceSelector
-        value:
-          matchLabels:
-            dashboards: "appstudio-grafana"
