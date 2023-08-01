@@ -1,7 +1,7 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - https://github.com/enterprise-contract/enterprise-contract-controller/config/crd?ref=e530516490628fb72f0f2dfda0cf9223791fc044
+  - https://github.com/enterprise-contract/enterprise-contract-controller/config/crd?ref=01746f725ee1ff9e9101b3db5f79373f88ebccba
   - ecp.yaml
   - role.yaml
   - rolebinding.yaml
@@ -11,8 +11,8 @@ configMapGenerator:
   - name: ec-defaults
     namespace: enterprise-contract-service
     literals:
-      - verify_ec_task_bundle=quay.io/hacbs-contract/ec-task-bundle:084b0ee30df73482142a20f07f731432f03036c7@sha256:186dfea62534ef7c2121f612648e9c5e3ade8ab3bd869f93334e984786633c0a
+      - verify_ec_task_bundle=quay.io/hacbs-contract/ec-task-bundle:5a7d1cc1228d2cc44cd6bec8c27911c59b3a7db0@sha256:8d7eac17febbc1bfa0ad624189b5d432899e60285fd598a70df2ee6619c4252b
 images:
   - name: quay.io/redhat-appstudio/enterprise-contract-controller
     newName: quay.io/redhat-appstudio/enterprise-contract-controller
-    newTag: e530516490628fb72f0f2dfda0cf9223791fc044
+    newTag: 01746f725ee1ff9e9101b3db5f79373f88ebccba
