@@ -1,0 +1,45 @@
+name: Check Kubernetes YAMLs with kube-linter
+
+on:
+  # Note that both `push` and `pull_request` triggers should be present for GitHub to consistently present kube-linter
+  # SARIF reports.
+  pull_request:
+    branches: [ main ]
+jobs:
+  scan:
+    permissions: write-all
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      # This prepares directory where github/codeql-action/upload-sarif@v1 looks up report files by default.
+      - name: Create ../results directory for SARIF report files
+        shell: bash
+        run: mkdir -p ../results
+
+      - name: Scan yaml files with kube-linter
+        uses: stackrox/kube-linter-action@v1.0.4
+        id: kube-linter-action-scan
+        with:
+          # Adjust this to the location of kube-linter config you're using, or remove the setting if you'd like to use
+          # the default config.
+          config: ./.kubelinter.yaml
+          # Adjust this directory to the location where your kubernetes resources and helm charts are located.
+          directory: .
+          # The following two settings make kube-linter produce scan analysis in SARIF format which would then be
+          # made available in GitHub UI via upload-sarif action below.
+          format: sarif
+          output-file: ../results/kube-linter.sarif
+        # The following line prevents aborting the workflow immediately in case your files fail kube-linter checks.
+        # This allows the following upload-sarif action to still upload the results to your GitHub repo.
+        continue-on-error: true
+
+      - name: Upload SARIF report files to GitHub
+        uses: github/codeql-action/upload-sarif@v2
+
+      # Ensure the workflow eventually fails if files did not pass kube-linter checks.
+      - name: Verify kube-linter-action succeeded
+        shell: bash
+        run: |
+          echo "If this step fails, kube-linter found issues. Check the output of the scan step above."
+          [[ "${{ steps.kube-linter-action-scan.outcome }}" == "success" ]]
