@@ -3,8 +3,8 @@ kind: Kustomization
 resources:
   - ../../../base
   - ../../../base/external-secrets
-  - https://github.com/redhat-appstudio/service-provider-integration-operator/config/overlays/openshift_aws?ref=d445fa87177c57fb052104fcd3da9d08082224e5
-  - https://github.com/redhat-appstudio/service-provider-integration-operator/config/monitoring/prometheus/base?ref=d445fa87177c57fb052104fcd3da9d08082224e5
+  - https://github.com/redhat-appstudio/service-provider-integration-operator/config/overlays/openshift_aws?ref=52883d03b114b1325f9e94acd22f2f93492a661f
+  - https://github.com/redhat-appstudio/service-provider-integration-operator/config/monitoring/prometheus/base?ref=52883d03b114b1325f9e94acd22f2f93492a661f
   - spi-aws-credentials-external-secret.yaml
 
 namespace: spi-system
@@ -12,10 +12,10 @@ namespace: spi-system
 images:
   - name:  quay.io/redhat-appstudio/service-provider-integration-operator
     newName: quay.io/redhat-appstudio/service-provider-integration-operator
-    newTag: d445fa87177c57fb052104fcd3da9d08082224e5
+    newTag: 52883d03b114b1325f9e94acd22f2f93492a661f
   - name: quay.io/redhat-appstudio/service-provider-integration-oauth
     newName: quay.io/redhat-appstudio/service-provider-integration-oauth
-    newTag: d445fa87177c57fb052104fcd3da9d08082224e5
+    newTag: 52883d03b114b1325f9e94acd22f2f93492a661f
 
 patches:
   - target:
