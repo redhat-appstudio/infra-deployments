@@ -15,7 +15,16 @@ jobs:
       # This prepares directory where github/codeql-action/upload-sarif@v1 looks up report files by default.
       - name: Create ../results directory for SARIF report files
         shell: bash
-        run: mkdir -p ../results
+        run: mkdir -p ../results kustomizedfiles
+
+      - name: Setup Kustomize
+        uses: multani/action-setup-kustomize@v1
+        with:
+          version: 5.1.1
+
+      - name: run kustomize
+        run: |
+          for p in $(find * -name "*kustomization.yaml*"); do kustomize build ${p%/*} -o kustomizedfiles/${p//\//-} || echo "error in $p\n\n"; done
 
       - name: Scan yaml files with kube-linter
         uses: stackrox/kube-linter-action@v1.0.4
@@ -25,7 +34,7 @@ jobs:
           # the default config.
           config: ./.kubelinter.yaml
           # Adjust this directory to the location where your kubernetes resources and helm charts are located.
-          directory: .
+          directory: kustomizedfiles
           # The following two settings make kube-linter produce scan analysis in SARIF format which would then be
           # made available in GitHub UI via upload-sarif action below.
           format: sarif
