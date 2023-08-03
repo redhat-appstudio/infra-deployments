@@ -1,0 +1,11 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - git::https://github.com/openshift-pipelines/pipeline-service.git/developer/openshift/gitops/argocd/pipeline-service?ref=153ce437712b2da250c5d9b168ac0fed5e0ffd85
+
+patches:
+  - path: update-tekton-config-performance.yaml
+    target:
+      kind: TektonConfig
+      name: config
