@@ -4,14 +4,24 @@ metadata:
   name: application-api
 spec:
   generators:
-    - clusters: {}
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              values:
+                sourceRoot: components/application-api
+                environment: staging
+                clusterDir: ""
+          - list:
+              elements: []
   template:
     metadata:
       name: application-api-{{nameNormalized}}
     spec:
       project: default
       source:
-        path: components/application-api
+        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
         repoURL: https://github.com/redhat-appstudio/infra-deployments.git
         targetRevision: main
       destination:
