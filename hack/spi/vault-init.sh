@@ -23,7 +23,7 @@ SPI_POLICY_NAME=${SPI_DATA_PATH_PREFIX//\//-}
 function init() {
 	INIT_STATE=$(isInitialized)
 	if [ "$INIT_STATE" == "false" ]; then
-	    echo '' > ${KEYS_FILE}
+		echo '' >${KEYS_FILE}
 		vaultExec "vault operator init" >"${KEYS_FILE}"
 		echo "Keys written at ${KEYS_FILE}"
 	elif [ "$INIT_STATE" == "true" ]; then
