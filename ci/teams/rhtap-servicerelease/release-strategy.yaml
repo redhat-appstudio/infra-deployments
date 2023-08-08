@@ -1,0 +1,25 @@
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: ReleaseStrategy
+metadata:
+  name: push-to-external-registry-strategy
+  namespace: rhtap-servicerelease-tenant
+spec:
+  bundle: 'quay.io/hacbs-release/pipeline-push-to-external-registry:main'
+  params:
+    - name: extraConfigGitUrl
+      value: 'https://github.com/hacbs-release/strategy-configs.git'
+    - name: extraConfigPath
+      value: rhtap.yaml
+    - name: extraConfigRevision
+      value: main
+    - name: pyxisServerType
+      value: stage
+    - name: pyxisSecret
+      value: pyxis
+    - name: tag
+      value: latest
+    - name: addGitShaTag
+      value: 'true'
+  pipeline: push-to-external-registry
+  policy: rh-policy
+  serviceAccount: rhtap-servicerelease-sa
