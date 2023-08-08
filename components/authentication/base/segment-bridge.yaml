@@ -1,0 +1,64 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: segment-bridge-read-access
+  namespace: toolchain-host-operator
+rules:
+- apiGroups: [""]
+  resources: ["UserSignup"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: segment-bridge-host-sa
+  namespace: toolchain-host-operator
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: sa-read-permissions
+  namespace: toolchain-host-operator
+subjects:
+  - kind: ServiceAccount
+    name: segment-bridge-host-sa
+    namespace: toolchain-host-operator
+roleRef:
+  kind: Role
+  name: segment-bridge-read-access
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: segment-bridge-host
+  namespace: toolchain-host-operator
+  annotations:
+    kubernetes.io/service-account.name: segment-bridge-host-sa
+type: kubernetes.io/service-account-token
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: segment-bridge-read-host-sa-secret
+  namespace: toolchain-host-operator
+rules:
+- apiGroups: [""]
+  resources: ["secrets"]
+  resourceNames: ["segment-bridge-host"]
+  verbs: ["get"]
+--- 
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: segment-bridge-read-host-sa-secret-binding
+  namespace: toolchain-host-operator
+subjects:
+  - kind: User
+    name: Omeramsc
+  - kind: User
+    name: ifireball
+roleRef:
+  kind: Role
+  name: segment-bridge-read-host-sa-secret
+  apiGroup: rbac.authorization.k8s.io

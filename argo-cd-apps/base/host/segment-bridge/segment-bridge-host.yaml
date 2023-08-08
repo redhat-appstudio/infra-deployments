@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: segment-bridge
+  name: segment-bridge-host
 spec:
   generators:
     - merge:
@@ -17,7 +17,7 @@ spec:
               elements: []
   template:
     metadata:
-      name: segment-bridge-{{nameNormalized}}
+      name: segment-bridge-host-{{nameNormalized}}
     spec:
       project: default
       source:
@@ -28,7 +28,7 @@ spec:
         namespace: segment-bridge
         server: '{{server}}'
       syncPolicy:
-        automated: 
+        automated:
           prune: true
           selfHeal: true
         syncOptions:
