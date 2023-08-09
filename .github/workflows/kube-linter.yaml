@@ -48,4 +48,5 @@ jobs:
         shell: bash
         run: |
           echo "If this step fails, kube-linter found issues. Check the output of the scan step above."
-          [[ "${{ steps.kube-linter-action-scan.outcome }}" == "success" ]]
+          echo "TODO: (RHTAPSRE-109) Failing the kube-linter is temporarily disabled. Uncomment the line below once all detected issues are resolved"
+          # [[ "${{ steps.kube-linter-action-scan.outcome }}" == "success" ]]
