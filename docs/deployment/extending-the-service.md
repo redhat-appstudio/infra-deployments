@@ -12,24 +12,105 @@ You may use the [gitops](../../components/gitops/) component as an example for h
 These are the steps to add your own component:
 
 1. Create a new directory for your team's components, under `components/(team-name)`.
+    ```
+    📂 INFRA-DEPLOYMENTS
+        📂 argo-cd-apps
+        📂 components
+            📂 (team-name)  --> Your team-name
+    ```
 
 2. Add a `kustomization.yaml` file under that directory, which points to the individual K8s YAML resources you wish to deploy.
-    - You may also structure your deployment into directories and files. See the Kustomize documentation for more information, and/or examples below.
-    - See `components/gitops/staging` for an example of this.
+    - Depending on your application, you may also structure your deployment into directories and files. See the Kustomize documentation for more information, and/or examples below.
+        - Exmaple: 1 (team-name directory containing application resources in its root e.g. `file-1.yaml` and `file-2.yaml`, they can be deployments, services, configmaps etc.)
+            ```
+            📂 INFRA-DEPLOYMENTS
+                📂 argo-cd-apps
+                📂 components
+                    📂 (team-name)  --> Your team-name
+                        📄 file-1.yaml
+                        📄 file-2.yaml
+                        📄 kustomization.yaml  --> This file points to file-1.yaml and file-2.yaml
+            ```
+            More information about kustomize fundamentals can be [found here](https://kubectl.docs.kubernetes.io/guides/introduction/kustomize/)
 
-3. Create an Argo CD `Application` resource in `argo-cd-apps/base/(team-name).yaml`).
-    - See `gitops.yaml` for a template of how this should look.
-    - The `.spec.source.path` value should point to the directory you created in previous step.
-    - The `.spec.destination.namespace` should match the target namespace you wish to deploy your resources to.
-    - The `.metadata.name` should correspond to your `(team-name)`
+        - Example: 2 (Application with base and overlays in its root)
+            ```
+            📂 INFRA-DEPLOYMENTS
+                📂 argo-cd-apps
+                📂 components
+                    📂 (team-name)  --> Your team-name
+                        📂 base
+                            📄 file-1.yaml
+                            📄 file-2.yaml
+                            📄 kustomization.yaml
+                        📂 overlays
+                            📂 development
+                                📄 development-patch-1.yaml
+                                📄 development-patch-2.yaml
+                                📄 kustomization.yaml
+                            📂 staging
+                                📄 staging-patch-1.yaml
+                                📄 staging-patch-2.yaml
+                                📄 kustomization.yaml
+                            📂 production
+                                📄 production-patch-1.yaml
+                                📄 production-patch-2.yaml
+                                📄 kustomization.yaml
+            ```
 
-4. Add a reference to your new `(team-name).yaml` file, to `argo-cd-apps/base/kustomization.yaml` (the reference to your YAML file should be in the `resources:` list field).
+            See `components/spi` for an example of this
 
-5. Run `kustomize build (repo root)/argo-cd-apps/overlays/staging` and ensure it passes, and outputs your new Argo CD Application CR.
+    - See `components/gitops/staging` for more complex structure, where overlays are further structured for cluster specific configurations.
 
-6. Add an entry in `argo-cd-apps/overlays/development/repo-overlay.yaml` for your new component so you can use the preview mode for testing.
+3. Create an Argo CD `ApplicationSet` resource in `argo-cd-apps/base/directory/team-name/(team-name).yaml` or `argo-cd-apps/base/team-name/(team-name).yaml` depending on your application.
+    - There are quite a few directories in `argo-cd-apps/` directory, such as `base/member/` (for member clusters), `base/host/` (for host cluster), `base/all-clusters/` (for all the clusters) etc. Therefore, please choose the      appropriate directory to create `ApplicationSet` for your application or create a new directory `team-name` if none of the existing directories suits your application.
 
-7. Open a PR for all of the above.
+    - See `argo-cd-apps/base/member/gitops/gitops.yaml` for a template of how `ApplicationSet` should look like.
+    - The `.spec.template.spec.source.path` value should point to the directory you created in previous step.
+    - The `.spec.template.spec.destination.namespace` should match the target namespace you wish to deploy your resources to.
+    - The `.metadata.name` should correspond to your `(team-name)`.
+>
+4. Add a reference to your new `(team-name).yaml` file, to `argo-cd-apps/base/directory/team-name/kustomization.yaml` or `argo-cd-apps/base/team-name/kustomization.yaml` (the reference to your YAML file should be in the `resources:` list field).
+
+    ```YAML
+    apiVersion: kustomize.config.k8s.io/v1beta1
+    kind: Kustomization
+    resources:
+    - team-name.yaml
+    ```
+5. Kustomize Components a new kind of Kustomization that allows users to define reusable kustomizations. Components can be included from higher-level overlays to create variants of an application, with a subset of its features enabled. We have `argo-cd-apps/k-components` directory in this reposiroty to place `kustomization.yaml` with `kind: Component`. 
+
+    See `argo-cd-apps/k-components` for such example. 
+    
+    An example for Kustomize Components looks like below:
+
+    ```YAML
+    apiVersion: kustomize.config.k8s.io/v1alpha1
+    kind: Component
+    commonLabels:
+      appstudio.redhat.com/host-cluster: "true"
+    ```
+
+    and `kustomization.yaml` referencing above looks like below:
+
+    ```YAML
+    apiVersion: kustomize.config.k8s.io/v1beta1
+    kind: Kustomization
+    resources:
+      - ../base
+    components:
+      - ../../../k-components/assign-host-role-to-local-cluster
+    ```
+
+    >**Note:** A component cannot be added to the `resources:` list, and a resource/`Kustomization `cannot be added to the `components:` list
+
+    You can find more information about *Kustomize Components* [here](https://github.com/kubernetes/enhancements/blob/master/keps/sig-cli/1802-kustomize-components/README.md)
+
+6. Run `kustomize build (repo root)/argo-cd-apps/overlays/staging` and ensure it passes, and outputs your new Argo CD Application CR.
+
+7. Add an entry in `argo-cd-apps/overlays/development/repo-overlay.yaml` for your new component so you can use the preview mode for testing.
+
+8. Open a PR for all of the above.
 
 More examples of using Kustomize to drive deployments using GitOps can be [found here](https://github.com/redhat-cop/gitops-catalog).
 
