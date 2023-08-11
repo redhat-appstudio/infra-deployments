@@ -64,7 +64,11 @@ setup-pac-app() (
 )
 
 if [ -n "${PAC_GITHUB_APP_ID}" ] && [ -n "${PAC_GITHUB_APP_PRIVATE_KEY}" ]; then
-        WEBHOOK_SECRET=$(setup-pac-app)
+        if [ -n "${PAC_GITHUB_APP_WEBHOOK_SECRET}" ]; then
+                WEBHOOK_SECRET="$PAC_GITHUB_APP_WEBHOOK_SECRET"
+        else
+                WEBHOOK_SECRET=$(setup-pac-app)
+        fi
         GITHUB_APP_PRIVATE_KEY=$(echo "$PAC_GITHUB_APP_PRIVATE_KEY" | base64 -d)
         GITHUB_APP_DATA="--from-literal github-private-key='$GITHUB_APP_PRIVATE_KEY' --from-literal github-application-id='${PAC_GITHUB_APP_ID}' --from-literal webhook.secret='$WEBHOOK_SECRET'"                
 fi
