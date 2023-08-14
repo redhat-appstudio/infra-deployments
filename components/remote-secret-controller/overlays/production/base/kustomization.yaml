@@ -11,4 +11,10 @@ namespace: remotesecret
 images:
   - name:  quay.io/redhat-appstudio/remote-secret-controller
     newName: quay.io/redhat-appstudio/remote-secret-controller
+
     newTag: d7532823ec79959e046c9e5f60a5ae1cb15ec482
+patches:
+  - target:
+      kind: Deployment
+      name: remote-secret-controller-manager
+    path: operator-limits-patch.json
