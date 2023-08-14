@@ -12,3 +12,9 @@ images:
   - name:  quay.io/redhat-appstudio/remote-secret-controller
     newName: quay.io/redhat-appstudio/remote-secret-controller
     newTag: 1f1a541eb25c3237715e3a67a90c8f0029142bfa
+
+patches:
+  - target:
+      kind: Deployment
+      name: remote-secret-controller-manager
+    path: operator-limits-patch.json
