@@ -1,0 +1,49 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: horreum
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              values:
+                sourceRoot: components/horreum
+                environment: staging
+                clusterDir: base
+          - list:
+              elements:
+                - nameNormalized: stone-stg-m01
+                  values.clusterDir: stone-stg-m01
+                - nameNormalized: stone-stg-rh01
+                  values.clusterDir: stone-stg-rh01
+                - nameNormalized: stone-prd-m01
+                  values.clusterDir: stone-prd-m01
+                - nameNormalized: stone-prd-rh01
+                  values.clusterDir: stone-prd-rh01
+  template:
+    metadata:
+      name: horreum-{{nameNormalized}}
+    spec:
+      project: default
+      source:
+        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+        targetRevision: main
+      destination:
+        namespace: horreum
+        server: '{{server}}'
+      syncPolicy:
+        automated: 
+          prune: true
+          selfHeal: true
+        syncOptions:
+        - CreateNamespace=true
+        retry:
+          limit: -1
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 3m
