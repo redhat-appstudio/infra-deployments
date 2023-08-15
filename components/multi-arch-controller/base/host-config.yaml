@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    build.appstudio.redhat.com/multi-arch-config: hosts
+  name: host-config
+  namespace: multi-arch-controller
+data:
+  host1.address: "ec2-54-165-44-192.compute-1.amazonaws.com"
+  host1.secret: "awskeys"
+  host1.concurrency: "4"
+  host1.user: "ec2-user"
+  host1.arch: "arm64"
+  host2.address: "ec2-34-227-115-211.compute-1.amazonaws.com"
+  host2.secret: "awskeys"
+  host2.concurrency: "4"
+  host2.user: "ec2-user"
+  host2.arch: "arm64"
