@@ -7,6 +7,9 @@ resources:
   - ../../base/tekton-ci
   - ../../base/ci-workspaces
 namespace: argocd
+
+patchesStrategicMerge:
+  - delete-applications.yaml
 patches:
   - path: production-overlay-patch.yaml
     target:

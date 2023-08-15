@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- allow-argocd-to-manage.yaml
+- host-config.yaml
+- https://github.com/redhat-appstudio/multi-arch-controller/deploy/operator?ref=74d7049e1200a273dc294de8c0521a7d6e5de8a0
+
+images:
+- name: multi-arch-controller
+  newName: quay.io/redhat-user-workloads/rhtap-build-tenant/multi-arch-controller/multi-arch-controller
+  newTag: 74d7049e1200a273dc294de8c0521a7d6e5de8a0
+
+namespace: multi-arch-controller
+
+
