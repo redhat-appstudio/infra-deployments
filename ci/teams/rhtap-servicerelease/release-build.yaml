@@ -10,4 +10,12 @@ spec:
   application: build
   displayName: ''
   origin: rhtap-build-tenant
-  releaseStrategy: push-to-external-registry-strategy
+  releaseStrategy: rhtap-service-push-strategy
+  extraData:
+    infra-deployment-update-script: >
+      sed -i -e 's|\(https://github.com/redhat-appstudio/build-service/.*?ref=\)\(.*\)|\1{{ revision }}
+      |' -e 's/\(newTag: \).*/\1{{ revision }}/' components/build-service/base/kustomization.yaml
+
+      sed -i -e 's|\(https://github.com/redhat-appstudio/build-service/.*?ref=\)\(.*\)|\1{{ revision }}
+      |' components/monitoring/grafana/base/dashboards/build-service/kustomization.yaml
+    slack-webhook-notification-secret-keyname: "build"
