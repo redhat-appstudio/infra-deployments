@@ -7,24 +7,24 @@ spec:
     - name: FBC
       pipelineRef:
         name: fbc-builder
-        bundle: quay.io/redhat-appstudio-tekton-catalog/pipeline-fbc-builder:12a26600ba76537f685fee66056d85f977063a79
+        bundle: quay.io/redhat-appstudio-tekton-catalog/pipeline-fbc-builder:10d203ecbffc18bceb784853da8339ba78a5a191
       when:
         language: fbc
     - name: Docker build
       pipelineRef:
         name: docker-build
-        bundle: quay.io/redhat-appstudio-tekton-catalog/pipeline-docker-build:12a26600ba76537f685fee66056d85f977063a79
+        bundle: quay.io/redhat-appstudio-tekton-catalog/pipeline-docker-build:10d203ecbffc18bceb784853da8339ba78a5a191
       when:
         dockerfile: true
     - name: Java
       pipelineRef:
         name: java-builder
-        bundle: quay.io/redhat-appstudio-tekton-catalog/pipeline-java-builder:12a26600ba76537f685fee66056d85f977063a79
+        bundle: quay.io/redhat-appstudio-tekton-catalog/pipeline-java-builder:10d203ecbffc18bceb784853da8339ba78a5a191
       when:
         language: java
     - name: NodeJS
       pipelineRef:
         name: nodejs-builder
-        bundle: quay.io/redhat-appstudio-tekton-catalog/pipeline-nodejs-builder:12a26600ba76537f685fee66056d85f977063a79
+        bundle: quay.io/redhat-appstudio-tekton-catalog/pipeline-nodejs-builder:10d203ecbffc18bceb784853da8339ba78a5a191
       when:
         language: nodejs,node
