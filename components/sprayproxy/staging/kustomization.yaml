@@ -1,19 +1,4 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - promotion-candidates
-  - pipelines-as-code-secret.yaml
-  - team-support-rbac.yaml
-
-patches:
-  - path: add-backends.yml
-    target:
-      name: sprayproxy
-      group: apps
-      version: v1
-  - path: add-webhook-secret.yaml
-    target:
-      name: sprayproxy
-      group: apps
-      version: v1
-      kind: Deployment
+  - staging-build.yaml

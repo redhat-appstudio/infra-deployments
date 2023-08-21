@@ -1,0 +1,317 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sprayproxy
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: metrics-reader
+  namespace: sprayproxy
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sprayproxy
+  namespace: sprayproxy
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: sprayproxy-backend-register
+rules:
+- nonResourceURLs:
+  - /backends
+  verbs:
+  - get
+  - create
+  - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: sprayproxy-kube-rbac-proxy
+rules:
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: sprayproxy-metrics-reader
+rules:
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: sprayproxy-rbac-for-support
+  namespace: sprayproxy
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view
+subjects:
+- apiGroup: rbac.authorization.k8s.io
+  kind: User
+  name: adambkaplan
+- apiGroup: rbac.authorization.k8s.io
+  kind: User
+  name: Roming22
+- apiGroup: rbac.authorization.k8s.io
+  kind: User
+  name: gabemontero
+- apiGroup: rbac.authorization.k8s.io
+  kind: User
+  name: avinal
+- apiGroup: rbac.authorization.k8s.io
+  kind: User
+  name: sayan-biswas
+- apiGroup: rbac.authorization.k8s.io
+  kind: User
+  name: enarha
+- apiGroup: rbac.authorization.k8s.io
+  kind: User
+  name: ramessesii2
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: sprayproxy-backend-register
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: sprayproxy-backend-register
+subjects:
+- kind: ServiceAccount
+  name: sprayproxy
+  namespace: sprayproxy
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: sprayproxy-kube-rbac-proxy
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: sprayproxy-kube-rbac-proxy
+subjects:
+- kind: ServiceAccount
+  name: sprayproxy
+  namespace: sprayproxy
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: sprayproxy-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: sprayproxy-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: metrics-reader
+  namespace: sprayproxy
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  annotations:
+    kubernetes.io/service-account.name: metrics-reader
+  name: metrics-reader
+  namespace: sprayproxy
+type: kubernetes.io/service-account-token
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: metrics
+    app.kubernetes.io/part-of: sprayproxy
+  name: metrics
+  namespace: sprayproxy
+spec:
+  ports:
+  - name: metrics
+    port: 9443
+    protocol: TCP
+    targetPort: metrics
+  selector:
+    app.kubernetes.io/name: sprayproxy
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: sprayproxy-tls
+  labels:
+    app.kubernetes.io/name: sprayproxy
+  name: sprayproxy
+  namespace: sprayproxy
+spec:
+  ports:
+  - name: proxy
+    port: 8443
+    protocol: TCP
+    targetPort: proxy
+  selector:
+    app.kubernetes.io/name: sprayproxy
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: sprayproxy
+  name: sprayproxy
+  namespace: sprayproxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: sprayproxy
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: sprayproxy
+    spec:
+      containers:
+      - args:
+        - server
+        env:
+        - name: SPRAYPROXY_SERVER_BACKEND
+          value: |
+            https://pipelines-as-code-controller-openshift-pipelines.apps.stone-stg-m01.7ayg.p1.openshiftapps.com https://pipelines-as-code-controller-openshift-pipelines.apps.stone-stg-rh01.l2vh.p1.openshiftapps.com
+        - name: GH_APP_WEBHOOK_SECRET
+        - name: GH_APP_WEBHOOK_SECRET
+          valueFrom:
+            secretKeyRef:
+              key: webhook.secret
+              name: pipelines-as-code-secret
+        image: quay.io/redhat-appstudio/sprayproxy:1c18ffcf6e25d6095dc794b10cbb79385a4663a1
+        name: sprayproxy
+        ports:
+        - containerPort: 8080
+          name: server
+        resources:
+          limits:
+            cpu: 500m
+            memory: 384Mi
+      - args:
+        - --secure-listen-address=0.0.0.0:8443
+        - --upstream=http://127.0.0.1:8080/
+        - --ignore-paths=/proxy,/healthz
+        - --logtostderr=true
+        - --v=4
+        - --tls-cert-file=/etc/tls/tls.crt
+        - --tls-private-key-file=/etc/tls/tls.key
+        image: registry.redhat.io/openshift4/ose-kube-rbac-proxy:v4.12
+        name: kube-rbac-proxy
+        ports:
+        - containerPort: 8443
+          name: proxy
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+          requests:
+            cpu: 5m
+            memory: 64Mi
+        volumeMounts:
+        - mountPath: /etc/tls
+          name: tls
+          readOnly: true
+      - args:
+        - --secure-listen-address=0.0.0.0:9443
+        - --upstream=http://127.0.0.1:9090/
+        - --logtostderr=true
+        - --v=4
+        image: registry.redhat.io/openshift4/ose-kube-rbac-proxy:v4.12
+        name: kube-rbac-metrics
+        ports:
+        - containerPort: 9443
+          name: metrics
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+          requests:
+            cpu: 5m
+            memory: 64Mi
+      serviceAccountName: sprayproxy
+      volumes:
+      - name: tls
+        secret:
+          defaultMode: 420
+          secretName: sprayproxy-tls
+---
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "-1"
+  name: pipelines-as-code-secret
+spec:
+  dataFrom:
+  - extract:
+      key: staging/pipeline-service/github-app
+  refreshInterval: 1h
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: appsre-stonesoup-vault
+  target:
+    creationPolicy: Owner
+    deletionPolicy: Delete
+    name: pipelines-as-code-secret
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: sprayproxy
+  namespace: sprayproxy
+spec:
+  endpoints:
+  - bearerTokenSecret:
+      key: token
+      name: metrics-reader
+    path: /metrics
+    port: metrics
+    scheme: https
+    tlsConfig:
+      insecureSkipVerify: true
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: metrics
+      app.kubernetes.io/part-of: sprayproxy
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  annotations:
+    haproxy.router.openshift.io/hsts_header: max-age=63072000
+  name: sprayproxy-route
+  namespace: sprayproxy
+spec:
+  port:
+    targetPort: proxy
+  tls:
+    insecureEdgeTerminationPolicy: Redirect
+    termination: reencrypt
+  to:
+    kind: Service
+    name: sprayproxy
