@@ -8,7 +8,7 @@ commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 
 resources:
-  - git::https://github.com/openshift-pipelines/pipeline-service.git/operator/gitops/argocd/pipeline-service?ref=5dede97c85bda3b0a4661e02a70e46ae354aa5ac
+  - git::https://github.com/openshift-pipelines/pipeline-service.git/operator/gitops/argocd/pipeline-service?ref=b1c87b7dc26c5b7f40105f5709c6353601686f04
   - pipelines-as-code-namespace.yaml
   - pipelines-as-code-secret.yaml
   - ../../base/external-secrets
@@ -20,11 +20,10 @@ patches:
     target:
       kind: TektonConfig
       name: config
-  - path: pac-app-name.yaml
+  - path: update-tekton-config-pac.yaml
     target:
-      kind: ConfigMap
-      name: pipelines-as-code
-      namespace: openshift-pipelines
+      kind: TektonConfig
+      name: config
 #  - path: scale-down-exporter.yaml
 #    target:
 #      kind: Deployment
