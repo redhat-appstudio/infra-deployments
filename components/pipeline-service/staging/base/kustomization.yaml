@@ -21,11 +21,10 @@ patches:
     target:
       kind: TektonConfig
       name: config
-  - path: pac-config.yaml
+  - path: update-tekton-config-pac.yaml
     target:
-      kind: ConfigMap
-      name: pipelines-as-code
-      namespace: openshift-pipelines
+      kind: TektonConfig
+      name: config
 #  - path: scale-down-exporter.yaml
 #    target:
 #      kind: Deployment
