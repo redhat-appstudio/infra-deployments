@@ -4,6 +4,10 @@ metadata:
   name: horreum
   namespace: horreum
 spec:
+  image: quay.io/hyperfoil/horreum:0.7.11
+  keycloak:
+    image: quay.io/keycloak/keycloak:22.0
   postgres:
+    image: registry.redhat.io/rhel8/postgresql-12:1-144
     persistentVolumeClaim: horreum-postgres
   nodeHost: 127.0.0.1
