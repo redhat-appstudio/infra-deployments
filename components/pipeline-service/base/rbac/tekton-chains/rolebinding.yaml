@@ -1,0 +1,36 @@
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: pipeline-service-admin
+  namespace: tekton-chains
+subjects:
+  - kind: Group
+    apiGroup: rbac.authorization.k8s.io
+    name: Pipeline Service
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: admin
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: component-maintainers
+  namespace: tekton-chains
+subjects:
+  - kind: Group
+    apiGroup: rbac.authorization.k8s.io
+    name: Pipeline Service
+  - kind: User
+    apiGroup: rbac.authorization.k8s.io
+    name: sbose78
+  - kind: User
+    apiGroup: rbac.authorization.k8s.io
+    name: jduimovich
+  - kind: User
+    apiGroup: rbac.authorization.k8s.io
+    name: Michkov
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: component-maintainer
