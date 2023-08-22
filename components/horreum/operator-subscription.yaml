@@ -6,6 +6,7 @@ metadata:
 spec:
   targetNamespaces:
     - horreum
+  upgradeStrategy: Default
 ---
 apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription
@@ -18,3 +19,4 @@ spec:
   name: horreum-operator
   source: community-operators
   sourceNamespace: openshift-marketplace
+  startingCSV: horreum-operator.v0.7.9
