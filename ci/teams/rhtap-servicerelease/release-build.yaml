@@ -13,9 +13,6 @@ spec:
   releaseStrategy: rhtap-service-push-strategy
   extraData:
     infra-deployment-update-script: >
-      sed -i -e 's|\(https://github.com/redhat-appstudio/build-service/.*?ref=\)\(.*\)|\1{{ revision }}
-      |' -e 's/\(newTag: \).*/\1{{ revision }}/' components/build-service/base/kustomization.yaml
-
-      sed -i -e 's|\(https://github.com/redhat-appstudio/build-service/.*?ref=\)\(.*\)|\1{{ revision }}
-      |' components/monitoring/grafana/base/dashboards/build-service/kustomization.yaml
+      sed -i -e 's|\(https://github.com/redhat-appstudio/image-controller/.*?ref=\)\(.*\)|\1{{ revision }}
+      |' -e 's/\(newTag: \).*/\1{{ revision }}/' components/image-controller/base/kustomization.yaml
     slack-webhook-notification-secret-keyname: "build"
