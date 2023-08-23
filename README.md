@@ -7,3 +7,4 @@ This repository is an initial set of Argo-CD-based deployments of StoneSoup comp
 This repository is structured as a GitOps monorepo (e.g. the repository contains the K8s resources for *multiple* applications), using [Kustomize](https://kustomize.io/).
 
 The contents of this repository are not owned by any single individual, and should instead be collectively managed and maintained through PRs by individual teams. More information about that can be found in the documentation section about how to [Extend The Service](https://redhat-appstudio.github.io/infra-deployments/docs/deployment/extending-the-service.html).
+getting baseline load test run to examine workqueue metrics
