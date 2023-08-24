@@ -18,6 +18,11 @@ case $OSTYPE in
     echo $OSNAME
 
     case $OSNAME in
+      *"Red Hat Enterprise Linux"*)
+        echo "I am in RHEL"
+        $ROOT/redhat-based.sh
+        ;;
+
       *"Fedora"*)
         echo "I am in Fedora"
         $ROOT/redhat-based.sh
@@ -27,6 +32,13 @@ case $OSTYPE in
         echo "I am in Ubuntu"
         $ROOT/debian-based.sh
         ;;
+
+      *)
+        echo "OS not supported by this script"
+        ;;
     esac
+    ;;
+  *)
+    echo "OS not supported by this script"
     ;;
 esac
