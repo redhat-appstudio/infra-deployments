@@ -1,0 +1,19 @@
+#
+# This file grants access to some specific tenant namespaces, to GitOps Service team members, to allow debugging/testing in those Namespaces.
+# - Note: this grants access to the team members's GitHub ID, not to their Red Hat ID.
+#
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: gitops-allow-team-access-to-jgwest-tenant
+  namespace: jgwest-tenant
+subjects:
+  - kind: Group
+    apiGroup: rbac.authorization.k8s.io
+    name: GitOps Service Team
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: gitops-namespaces-all-access
+---
