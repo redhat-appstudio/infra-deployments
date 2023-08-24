@@ -13,18 +13,20 @@ deploy StoneSoup.
 
 ## Getting Started
 
-Steps:
+***Note:** Running the bootstrap script in preview mode with `./hack/bootstrap-cluster.sh preview` will deploy the environment with your local feature branch **committed** changes. To run in preview mode, the required fields in `./hack/preview.env` must be completed. This includes API tokens for both GitHub and Quay. See [Preview mode for your clusters](#preview-mode-for-your-clusters) for details before starting these steps.*
 
-1. Run `./hack/bootstrap-cluster.sh [preview]` which will bootstrap Argo CD (using OpenShift GitOps) and setup the Argo CD `Application` Custom Resources (CRs) for each component. This command will output the Argo CD Web UI route when it's finished. `preview` will enable preview mode used for development and testing on non-production clusters, described in section [Preview mode for your clusters](#preview-mode-for-your-clusters).
+### Steps:
+
+1. Run `./hack/bootstrap-cluster.sh [preview]`, which will bootstrap Argo CD (using OpenShift GitOps) and setup the Argo CD `Application` Custom Resources (CRs) for each component. This command will output the Argo CD Web UI route when it's finished. `preview` will enable preview mode used for development and testing on non-production clusters, described in section [Preview mode for your clusters](#preview-mode-for-your-clusters).
 
 2. Open the Argo CD Web UI to see the status of your deployments. You can use the route from the previous step and login using your OpenShift credentials (using the 'Login with OpenShift' button), or login to the OpenShift Console and navigate to Argo CD using the OpenShift Gitops menu in the Applications pulldown.
 ![OpenShift Gitops menu with Cluster Argo CD menu option](./argo-cd-login.png?raw=true "OpenShift Gitops menu")
 
 3. If your deployment was successful, you should see several applications running.
 
-## Preview mode for your clusters
+## Upstream mode
 
-Once you bootstrap a cluster without `preview` argument, the root ArgoCD Application and all of the component applications will each point to the upstream repository. Or you can bootstrap cluster directly in mode which you need.
+When you bootstrap a cluster without `preview` argument, the root ArgoCD Application and all of the component applications will each point to the upstream repository. Or you can bootstrap cluster directly in mode which you need.
 
 To enable development for a team or individual to test changes on your own cluster, you need to replace the references to `https://github.com/redhat-appstudio/infra-deployments.git` with references to your own fork.
 
@@ -33,28 +35,31 @@ There are a set of scripts that help with this, and minimize the changes needed 
 The [development configuration](https://github.com/redhat-appstudio/infra-deployments/tree/main/argo-cd-apps/overlays/development) includes a kustomize overlay that can redirect the default components individual repositories to your fork.
 The script also supports branches automatically. If you work in a checked out branch, each of the components in the overlays will mapped to that branch by setting `targetRevision:`.
 
-Preview mode works in a feature branch, apply script which creates new preview branch and create additional commit with customization.
+## Preview mode for your clusters
+
+Preview mode works from a local feature branch for testing. The `./hack/preview.sh` script creates a new `preview-<name-of-current-branch>` branch and pushes it to your GitHub repo. This includes an additional commit with customizations, including for your ArgoCD environment to load applications from your GitHub repository.
 
 ### Setting Preview mode
 
-Steps:
+1. Copy `./hack/preview-template.env` to `./hack/preview.env` and update new file based on the instructions within. **The file `./hack/preview.env` should never be included in a commit.**
 
-1. Copy `hack/preview-template.env` to `hack/preview.env` and update new file based on instructions. File `hack/preview.env` should never be included in commit.
+2. Work on your changes in a feature branch.
 
-2. Work on your changes in a feature branch
+3. Commit your changes.
 
-3. Commit your changes
+4. Run `./hack/preview.sh`, which will do the following:
 
-4. Run `./hack/preview.sh`, which will do:
-  1. New branch is created from your current branch, the name of new branch is `preview-<name-of-current-branch>`
+    1. A new branch is created from your current branch, the name of new branch is `preview-<name-of-current-branch>`.
 
-  2. Commit with changes related to your environment is added into preview branch
+    2. A commit with changes related to your environment is added into the preview branch.
 
-  3. Preview branch is pushed into your fork
+    3. The preview branch is pushed into your GitHub fork.
 
-  4. ArgoCD is set to point to your fork and the preview branch
+    4. The ArgoCD configuration is set to point to your fork and the preview branch
 
   4. User is switched back to feature branch to create additional changes
+
+***Note:** The `./hack/preview.sh` script is run automatically at the end of the `./hack/bootstrap-cluster.sh preview` script. Once the cluster is bootstrapped, you just need to run `./hack/preview.sh` again to update your environment with new committed changes from your feature branch.*
 
 If you want to reset your environment you can run the `hack/util-update-app-of-apps.sh https://github.com/redhat-appstudio/infra-deployments.git staging main` to reset everything including your cluster to `https://github.com/redhat-appstudio/infra-deployments.git` and match the upstream config.
 
