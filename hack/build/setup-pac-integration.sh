@@ -49,24 +49,37 @@ setup-pac-app() (
 
         webhook_secret=$(openssl rand -hex 20)
 
-        if ! oc get -n $PAC_NAMESPACE secret $PAC_SECRET_NAME &>/dev/null; then
-                token=$(sign rs256 "$payload" "$(echo "$PAC_GITHUB_APP_PRIVATE_KEY" | base64 -d)")
-                pac_host=$(oc get -n $PAC_NAMESPACE route pipelines-as-code-controller -o go-template="{{ .spec.host }}")
-                curl \
-                -X PATCH \
-                -H "Accept: application/vnd.github.v3+json" \
-                -H "Authorization: Bearer $token" \
-                https://api.github.com/app/hook/config \
-                -d "{\"content_type\":\"json\",\"insecure_ssl\":\"1\",\"secret\":\"$webhook_secret\",\"url\":\"https://$pac_host\"}" &>/dev/null
-        fi
+        token=$(sign rs256 "$payload" "$(echo "$PAC_GITHUB_APP_PRIVATE_KEY" | base64 -d)")
 
-        echo $webhook_secret
+        local retry=0
+        while ! oc get -n $PAC_NAMESPACE route pipelines-as-code-controller >/dev/null 2>&1 ; do
+                if [ "$retry" -eq "10" ]; then
+                        echo "[ERROR] Failed to wait for Pac route to be available" >&2
+                        exit
+                fi
+                echo "Waiting for Pac route to be available" >&2
+                sleep 5
+                retry=$((retry+1))
+        done
+        pac_host=$(oc get -n $PAC_NAMESPACE route pipelines-as-code-controller -o go-template="{{ .spec.host }}")
+        curl \
+        -X PATCH \
+        -H "Accept: application/vnd.github.v3+json" \
+        -H "Authorization: Bearer $token" \
+        https://api.github.com/app/hook/config \
+        -d "{\"content_type\":\"json\",\"insecure_ssl\":\"1\",\"secret\":\"$webhook_secret\",\"url\":\"https://$pac_host\"}" &>/dev/null
+
+        echo "$webhook_secret"
 )
 
 if [ -n "${PAC_GITHUB_APP_ID}" ] && [ -n "${PAC_GITHUB_APP_PRIVATE_KEY}" ]; then
+        # if using the existing QE sprayproxy, we suppose the setup between sprayproxy and github App is already done
         if [ -n "${PAC_GITHUB_APP_WEBHOOK_SECRET}" ]; then
+                echo "Setup Pac with existing QE sprayproxy and github App"
                 WEBHOOK_SECRET="$PAC_GITHUB_APP_WEBHOOK_SECRET"
         else
+        # if not, we setup pac with github App directly, this step will update the webhook secret and webhook url in the github App
+                echo "Setup Pac with github App"
                 WEBHOOK_SECRET=$(setup-pac-app)
         fi
         GITHUB_APP_PRIVATE_KEY=$(echo "$PAC_GITHUB_APP_PRIVATE_KEY" | base64 -d)
