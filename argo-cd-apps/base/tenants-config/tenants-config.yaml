@@ -1,0 +1,36 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: tenants-config
+spec:
+  generators:
+    - git:
+        repoUrl: https://github.com/redhat-appstudio/tenants-config
+        revision: main
+        directories:
+          - path: auto-generated/cluster/stone-prd-rh01/*
+  template:
+    metadata:
+      name: '{{path.basename}}-{{path[2]}}'
+    spec:
+      # The project is created using app-interface
+      project: tenants-config
+      source:
+        path: '{{path}}'
+        repoURL: https://github.com/redhat-appstudio/tenants-config
+        targetRevision: main
+      destination:
+        namespace: '{{path.basename}}'
+        name: '{{path[2]}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+        retry:
+          limit: 10
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 3m
