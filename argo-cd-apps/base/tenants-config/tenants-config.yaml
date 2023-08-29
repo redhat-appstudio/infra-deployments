@@ -22,6 +22,12 @@ spec:
       destination:
         namespace: '{{path.basename}}'
         name: '{{path[2]}}'
+      ignoreDifferences:
+        - group: ""
+          kind: "ServiceAccount"
+          name: appstudio-pipeline
+          jqPathExpressions:
+            - .imagePullSecrets[] | select(.name | startswith("appstudio-pipeline-dockercfg"))
       syncPolicy:
         automated:
           prune: true
