@@ -1,0 +1,36 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: rh-managed-workspaces-config
+spec:
+  generators:
+    - git:
+        repoURL: https://github.com/redhat-appstudio/rh-managed-workspaces-config
+        revision: main
+        directories:
+          - path: auto-generated/cluster/stone-prd-rh01/*
+  template:
+    metadata:
+      name: '{{path.basename}}-{{path[2]}}'
+    spec:
+      # The project is created using app-interface
+      project: rh-managed-workspaces-config
+      source:
+        path: '{{path}}'
+        repoURL: https://github.com/redhat-appstudio/rh-managed-workspaces-config
+        targetRevision: main
+      destination:
+        namespace: '{{path.basename}}'
+        name: '{{path[2]}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+        retry:
+          limit: 10
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 3m
