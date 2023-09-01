@@ -38,7 +38,7 @@ main() {
     "${ROOT}/hack/bootstrap-member-cluster.sh"
     "${ROOT}/hack/bootstrap-cluster-common.sh"
 
-    echo "Setting Cluster Mode: ${MODE:-Upstream}"
+    echo "Setting Cluster Mode: ${mode:-Upstream}"
     case $mode in
     "" | "upstream")
         kubectl create -k $ROOT/argo-cd-apps/app-of-app-sets/staging
