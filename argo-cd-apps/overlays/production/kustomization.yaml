@@ -6,6 +6,8 @@ resources:
   - ../../base/all-clusters
   - ../../base/tekton-ci
   - ../../base/ci-workspaces
+  - ../../base/tenants-config
+  - ../../base/cluster-secret-store-rh
 namespace: argocd
 
 patchesStrategicMerge:
@@ -111,4 +113,8 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: toolchain-member-operator
-
+  - path: production-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: cluster-secret-store-rh

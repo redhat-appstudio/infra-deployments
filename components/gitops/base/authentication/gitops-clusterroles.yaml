@@ -20,6 +20,18 @@ rules:
       - delete
 
   - apiGroups:
+    - toolchain.dev.openshift.com
+    resources:
+    - spacerequests
+    verbs:
+    - list
+    - watch
+    - create
+    - update
+    - patch
+    - delete
+
+  - apiGroups:
       - operators.coreos.com
     resources:
       - installplans

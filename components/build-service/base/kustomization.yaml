@@ -1,8 +1,9 @@
 resources:
 - allow-argocd-to-manage.yaml
-- https://github.com/redhat-appstudio/build-service/config/default?ref=335273c12ae67a635fa73229e2e9a14fa5c41a5f
+- https://github.com/redhat-appstudio/build-service/config/default?ref=3dd6990ebc2092feba34fd4062dc9033b2e8168c
 - build-pipeline-selector.yaml
 - monitoring.yaml
+- rbac
 
 # Skip applying the build-service operands (BuildPipelineSelector) while the build-service operator is being installed.
 # See more information about this option, here:
@@ -15,7 +16,7 @@ namespace: build-service
 images:
 - name: quay.io/redhat-appstudio/build-service
   newName: quay.io/redhat-appstudio/build-service
-  newTag: 335273c12ae67a635fa73229e2e9a14fa5c41a5f
+  newTag: 3dd6990ebc2092feba34fd4062dc9033b2e8168c
 
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
