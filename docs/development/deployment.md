@@ -61,9 +61,15 @@ Preview mode works from a local feature branch for testing. The `./hack/preview.
 
 ***Note:** The `./hack/preview.sh` script is run automatically at the end of the `./hack/bootstrap-cluster.sh preview` script. Once the cluster is bootstrapped, you just need to run `./hack/preview.sh` again to update your environment with new committed changes from your feature branch.*
 
-If you want to reset your environment you can run the `hack/util-update-app-of-apps.sh https://github.com/redhat-appstudio/infra-deployments.git staging main` to reset everything including your cluster to `https://github.com/redhat-appstudio/infra-deployments.git` and match the upstream config.
+~~If you want to reset your environment you can run the `hack/util-update-app-of-apps.sh https://github.com/redhat-appstudio/infra-deployments.git staging main` to reset everything including your cluster to `https://github.com/redhat-appstudio/infra-deployments.git` and match the upstream config.~~
 
 Note running these scripts in a clone repo will have no effect as the repo will remain `https://github.com/redhat-appstudio/infra-deployments.git`
+
+### Storage for Persistent Volume Claims
+
+The PVCs for the deployment need a default StorageClass and available PVs or automation to create those PVs. You can use [Configuring NFS storage provisioner on QuickCluster clusters](../../hack/quickcluster/README.html) to connect to an existing NFS provider.
+
+Another option for a stand-alone test environment is to use the **Local Storage Operator** to create a **LocalVolumeSet** from available disks on your worker nodes. Use the name `managed-nfs-storage` for the LocalVolumeSet and the StorageClass to match the deployment expectations, and annotate the StorageClass with `storageclass.kubernetes.io/is-default-class=true` to set it as the default. Having around 6 or more available PVs of 8GB or greater is a good simple starting point, but YMMV.
 
 ## Optional: OpenShift Local Post-Bootstrap Configuration
 
