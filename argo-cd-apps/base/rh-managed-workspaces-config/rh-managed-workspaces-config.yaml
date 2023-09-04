@@ -1,20 +1,20 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: tenants-config
+  name: rh-managed-workspaces-config
 spec:
   generators:
     - git:
         repoURL: https://github.com/redhat-appstudio/tenants-config
         revision: main
         directories:
-          - path: auto-generated/cluster/stone-prd-rh01/tenants/*
+          - path: auto-generated/cluster/stone-prd-rh01/managed/*
   template:
     metadata:
       name: '{{path.basename}}-{{path[2]}}'
     spec:
       # The project is created using app-interface
-      project: tenants-config
+      project: rh-managed-workspaces-config
       source:
         path: '{{path}}'
         repoURL: https://github.com/redhat-appstudio/tenants-config
