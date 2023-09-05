@@ -10,6 +10,7 @@ commonAnnotations:
 resources:
   - git::https://github.com/openshift-pipelines/pipeline-service.git/operator/gitops/argocd/pipeline-service?ref=153ce437712b2da250c5d9b168ac0fed5e0ffd85
   - pipelines-as-code-namespace.yaml # preserve old PAC namespace until 1.11 rolled out through production
+  - pipelines-as-code-secret-deleteme.yaml # keep prod unchanged, remove after validation in staging
   - pipelines-as-code-secret.yaml # create external secret in openshift-pipelines namespace
   - ../../base/external-secrets
   - ../../base/testing
@@ -17,14 +18,6 @@ resources:
   - team-support-rbac.yaml
 
 patches:
-  # still do this patch for the external secret kept in the pipelines-as-code namespace per components/pipeline-service/base/external-secrets/pipelines-as-code
-  - path: pipelines-as-code-secret-path.yaml
-    target:
-      name: pipelines-as-code-secret
-      namespace: pipelines-as-code
-      group: external-secrets.io
-      version: v1beta1
-      kind: ExternalSecret
   - path: pac-config.yaml
     target:
       kind: ConfigMap
