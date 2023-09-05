@@ -61,7 +61,7 @@ installBonfire(){
     VENV_DIR=$(mktemp -d)
     python3 -m venv "$VENV_DIR"
     . "$VENV_DIR"/bin/activate
-    pip install crc-bonfire==4.16.0
+    pip install 'crc-bonfire>=4.18.0'
 }
 
 reserveNamespace() {
@@ -70,30 +70,11 @@ reserveNamespace() {
 }
 
 installHac() {
-    echo "Preparing bonfire config"
-    CONFIG_DIR=$(mktemp -d)
-    cat > "$CONFIG_DIR/config.yaml" << EOF
-# Bonfire deployment configuration
-
-# Defines where to fetch the file that defines application configs
-appsFile:
-  host: gitlab
-  repo: insights-platform/cicd-common
-  path: bonfire_configs/ephemeral_apps.yaml
-
-# (optional) define any apps locally. An app defined here with <name> will override config for app
-# <name> in above fetched config.
-apps:
-- name: insights-ephemeral
-  components:
-    - name: frontend-configs
-      host: github
-      repo: redhat-appstudio-qe/frontend-configs
-      path: deploy/deploy.yaml
-EOF
+    # Only deploy necessary frontend dependencies
+    export BONFIRE_FRONTEND_DEPENDENCIES=chrome-service,insights-chrome
 
     echo "Installing HAC on Ephemeral cluster"
-    KUBECONFIG=$HAC_KUBECONFIG bonfire deploy -c "$CONFIG_DIR/config.yaml" hac --frontends true --source=appsre --clowd-env env-"${NAMESPACE}" --namespace="$NAMESPACE"
+    KUBECONFIG=$HAC_KUBECONFIG bonfire deploy hac --frontends true --source=appsre --clowd-env env-"${NAMESPACE}" --namespace="$NAMESPACE"
 }
 
 patchfeenv() {
