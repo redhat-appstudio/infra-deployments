@@ -3,6 +3,8 @@ kind: Horreum
 metadata:
   name: horreum
   namespace: horreum
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
   image: quay.io/hyperfoil/horreum:0.7.11
   keycloak:
