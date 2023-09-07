@@ -22,6 +22,11 @@ spec:
       destination:
         namespace: '{{path.basename}}'
         name: '{{path[2]}}'
+      ignoreDifferences:
+        - group: appstudio.redhat.com
+          kind: Component
+          jsonPointers:
+            - /metadata/annotations/build.appstudio.openshift.io~1request
       syncPolicy:
         automated:
           prune: true
