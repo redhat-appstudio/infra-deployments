@@ -1,0 +1,15 @@
+# https://docs.openshift.com/container-platform/4.13/cicd/gitops/installing-openshift-gitops.html#installing-gitops-operator-using-cli_installing-openshift-gitops
+
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: openshift-gitops-operator
+  namespace: openshift-operators
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  channel: latest 
+  installPlanApproval: Automatic
+  name: openshift-gitops-operator 
+  source: redhat-operators 
+  sourceNamespace: openshift-marketplace

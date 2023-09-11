@@ -1,0 +1,109 @@
+apiVersion: generators.external-secrets.io/v1alpha1
+kind: Fake
+metadata:
+  name: application-fake-token
+  namespace: openshift-logging
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  data:
+    key: 71a657fe-ea4c-4994-adc8-2032d95c9861
+---
+
+apiVersion: generators.external-secrets.io/v1alpha1
+kind: Fake
+metadata:
+  name: audit-fake-token
+  namespace: openshift-logging
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  data:
+    key: 5ab43f3f-0eae-4066-9151-d5d2cbfd3a5a
+---
+
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: log-forwarder-splunk-rhtap-application-fake-secret
+  namespace: openshift-logging
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  dataFrom:
+  - sourceRef:
+      generatorRef:
+        apiVersion: generators.external-secrets.io/v1alpha1
+        kind: Fake
+        name: "application-fake-token"
+  refreshInterval: 1h
+  target:
+    name: log-forwarder-splunk-rhtap-application-secret
+---
+
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: log-forwarder-splunk-rhtap-audit-fake-secret
+  namespace: openshift-logging
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  dataFrom:
+  - sourceRef:
+      generatorRef:
+        apiVersion: generators.external-secrets.io/v1alpha1
+        kind: Fake
+        name: "audit-fake-token"
+  refreshInterval: 1h
+  target:
+    name: log-forwarder-splunk-rhtap-audit-secret
+---
+
+apiVersion: logging.openshift.io/v1
+kind: ClusterLogForwarder
+metadata:
+  name: instance
+  namespace: openshift-logging
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  outputs:
+    - name: splunk-receiver-application
+      type: splunk
+      url: http://splunk-hec-splunk.apps.erancluster1.lab.psi.pnq2.redhat.com
+      secret:
+        name: log-forwarder-splunk-rhtap-application-fake-secret
+    - name: splunk-receiver-audit
+      type: splunk
+      url: http://splunk-hec-splunk.apps.erancluster1.lab.psi.pnq2.redhat.com
+      secret:
+        name: log-forwarder-splunk-rhtap-audit-fake-secret
+  pipelines:
+    - name: forward-logs-to-splunk-rhtap-app-index
+      inputRefs:
+        - application
+      outputRefs:
+        - splunk-receiver-application
+      parse: json
+    - name: forward-logs-to-splunk-rhtap-audit-index
+      inputRefs:
+        - infrastructure
+        - audit
+      outputRefs:
+        - splunk-receiver-audit
+      parse: json
+---
+
+apiVersion: "logging.openshift.io/v1"
+kind: "ClusterLogging"
+metadata:
+  namespace: openshift-logging
+  name: "instance"
+  annotations:
+    logging.openshift.io/preview-vector-collector: enabled
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  collection:
+    logs:
+      type: vector

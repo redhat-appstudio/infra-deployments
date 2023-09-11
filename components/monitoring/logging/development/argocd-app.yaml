@@ -1,0 +1,14 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: logging-app
+spec:
+  source:
+    repoURL: https://github.com/eisraeli/infra-deployments.git
+    path: components/monitoring/logging/development
+    targetRevision: RHTAPWATCH-499  
+  project: default
+  destination:
+    server: https://kubernetes.default.svc
+  syncPolicy:
+    automated: {}

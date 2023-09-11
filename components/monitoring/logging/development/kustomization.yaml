@@ -1,2 +1,16 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+resources:
+# gitops-operator
+# - github.com/redhat-cop/gitops-catalog/openshift-gitops-operator/operator/overlays/latest?ref=main
+
+# external-secrets-operator
+#- github.com/redhat-cop/gitops-catalog/external-secrets-operator/operator/overlays/stable?ref=main
+#- github.com/redhat-cop/gitops-catalog/external-secrets-operator/instance/overlays/default?ref=main
+
+# logging-operator
+#- github.com/redhat-cop/gitops-catalog/openshift-logging/operator/overlays/stable?ref=main
+
+- install-external-secrets-operator.yaml
+- install-openshift-logging-operator.yaml
+- logging-configuration.yaml
