@@ -1,0 +1,25 @@
++++ dirname hack/bootstrap-cluster.sh
+++ cd hack
+++ pwd
++ ROOT=/home/jcullina/repo/infra-deployments/hack/..
++ [[ hack/bootstrap-cluster.sh == \h\a\c\k\/\b\o\o\t\s\t\r\a\p\-\c\l\u\s\t\e\r\.\s\h ]]
++ main preview
++ local mode keycloak toolchain obo
++ [[ 1 -gt 0 ]]
++ key=preview
++ case $key in
++ mode=preview
++ shift
++ [[ 0 -gt 0 ]]
++ /home/jcullina/repo/infra-deployments/hack/../hack/deploy-argocd.sh
++ /home/jcullina/repo/infra-deployments/hack/../hack/bootstrap-host-cluster.sh
++ /home/jcullina/repo/infra-deployments/hack/../hack/bootstrap-member-cluster.sh
+Creating DB secret
+Creating S3 secret
+Creating MinIO config
+Creating DB secret
++ /home/jcullina/repo/infra-deployments/hack/../hack/bootstrap-cluster-common.sh
++ echo 'Setting Cluster Mode: Upstream'
++ case $mode in
++ /home/jcullina/repo/infra-deployments/hack/../hack/preview.sh
+Already on 'main'
