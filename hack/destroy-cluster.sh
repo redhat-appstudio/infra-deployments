@@ -16,7 +16,7 @@ ARGO_CD_URL="https://$ARGO_CD_ROUTE"
 # there is an issue with deletion of chains-pods
 function wait_and_delete_chains {
   sleep 10
-  oc delete -n tekton-chains --force pod --all
+  kubectl delete pod -n openshift-pipelines -l app=tekton-chains-controller
 }
 wait_and_delete_chains &
 
