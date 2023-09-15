@@ -2,3 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ../base
+
+# remove `tekton-chains` ns from appsre-stonesoup-vault
+patchesStrategicMerge:
+  - cluster-secret-store-patch.yaml
