@@ -25,11 +25,14 @@ spec:
         repoURL: https://github.com/redhat-appstudio/infra-deployments.git
         targetRevision: main
       destination:
+        namespace: deployment-validation-operator
         server: '{{server}}'
       syncPolicy:
         automated:
           prune: true
           selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
         retry:
           limit: -1
           backoff:
