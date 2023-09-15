@@ -57,6 +57,18 @@ rules:
   - create
   - delete
   - patch
+- apiGroups:
+  - results.tekton.dev
+  resources:
+  - results
+  - records
+  - logs
+  verbs:
+  - get
+  - list
+  - create
+  - delete
+  - update
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
