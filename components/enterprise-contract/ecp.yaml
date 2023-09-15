@@ -1,3 +1,8 @@
+#
+# The contents of this file are automatically generated based on the RHTAP configs defined in the
+# github.com/enterprise-contract/config repo. Any manual modifications will be overridden.
+#
+
 ---
 apiVersion: appstudio.redhat.com/v1alpha1
 kind: EnterpriseContractPolicy
@@ -5,23 +10,24 @@ metadata:
   name: default
   namespace: enterprise-contract-service
 spec:
-  description: >
-    Use the policy rules from the "minimal" collection. This and other collections are defined in https://redhat-appstudio.github.io/docs.stonesoup.io/ec-policies/release_policy.html#_available_rule_collections The minimal collection is a small set of policy rules that should be easy to pass for brand new Stonesoup users. If a different policy configuration is desired, this resource can serve as a starting point. See the docs on how to include and exclude rules https://redhat-appstudio.github.io/docs.stonesoup.io/ec-policies/policy_configuration.html#_including_and_excluding_rules
-
   configuration:
-    include:
-      - "@minimal"
     exclude:
-      # This can be removed once https://issues.redhat.com/browse/OCPBUGS-8428 is addressed
+      # Exclude step_image_registries for now since it can cause false
+      # positives due to https://issues.redhat.com/browse/OCPBUGS-8428
       - step_image_registries
+    include:
+      - '@slsa1'
+      - '@slsa2'
+      - '@slsa3'
+  description: Includes rules for levels 1, 2 & 3 of SLSA v0.1. This is the default config used for new RHTAP applications.
   publicKey: k8s://openshift-pipelines/public-key
   sources:
-    - name: Release Policies
-      data:
+    - data:
         - github.com/release-engineering/rhtap-ec-policy//data?ref=be7e1ef73bdeef2752dde400a52f9eab9b7542ca
-        - oci::quay.io/redhat-appstudio-tekton-catalog/data-acceptable-bundles:latest@sha256:021515caf0a4fb6455ada88fcd155baef5b5e5e229e62a587c44e0ff8c5024a0
+        - oci::quay.io/redhat-appstudio-tekton-catalog/data-acceptable-bundles:latest@sha256:19236f2fd7e8c086ea91a45640aff9377a0d31d69e489205955e4d53f3f53c0c
+      name: Default
       policy:
-        - oci::quay.io/enterprise-contract/ec-release-policy:git-1f33b3b@sha256:e9a2feafa17a2b189b20376e29d787a2f7816885491bd19ea37d4e95876ed380
+        - oci::quay.io/enterprise-contract/ec-release-policy:git-80c0d38@sha256:950c47f4fd464df21db086d7bf7f2f7dd8aa689e2359d913753dd2730fcbd591
 ---
 apiVersion: appstudio.redhat.com/v1alpha1
 kind: EnterpriseContractPolicy
@@ -29,16 +35,68 @@ metadata:
   name: all
   namespace: enterprise-contract-service
 spec:
-  description: >
-    Evaluate components with all of the available policy rules. The policy rules are described in https://redhat-appstudio.github.io/docs.stonesoup.io/ec-policies/release_policy.html
-
-  # An empty configuration, by default, means all policy rules.
-  configuration: {}
+  configuration:
+    exclude:
+      # Exclude step_image_registries for now since it can cause false
+      # positives due to https://issues.redhat.com/browse/OCPBUGS-8428
+      - step_image_registries
+    include:
+      - '*'
+  description: Include every rule in the default policy source. For experiments only. This is not expected to pass for RHTAP builds without excluding some rules.
   publicKey: k8s://openshift-pipelines/public-key
   sources:
-    - name: Release Policies
-      data:
+    - data:
         - github.com/release-engineering/rhtap-ec-policy//data?ref=be7e1ef73bdeef2752dde400a52f9eab9b7542ca
-        - oci::quay.io/redhat-appstudio-tekton-catalog/data-acceptable-bundles:latest@sha256:021515caf0a4fb6455ada88fcd155baef5b5e5e229e62a587c44e0ff8c5024a0
+        - oci::quay.io/redhat-appstudio-tekton-catalog/data-acceptable-bundles:latest@sha256:19236f2fd7e8c086ea91a45640aff9377a0d31d69e489205955e4d53f3f53c0c
+      name: Default
       policy:
-        - oci::quay.io/enterprise-contract/ec-release-policy:git-1f33b3b@sha256:e9a2feafa17a2b189b20376e29d787a2f7816885491bd19ea37d4e95876ed380
+        - oci::quay.io/enterprise-contract/ec-release-policy:git-80c0d38@sha256:950c47f4fd464df21db086d7bf7f2f7dd8aa689e2359d913753dd2730fcbd591
+---
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: EnterpriseContractPolicy
+metadata:
+  name: redhat
+  namespace: enterprise-contract-service
+spec:
+  configuration:
+    exclude:
+      # Exclude step_image_registries for now since it can cause false
+      # positives due to https://issues.redhat.com/browse/OCPBUGS-8428
+      - step_image_registries
+    include:
+      - '@redhat'
+  description: Includes the full set of rules and policies required internally by Red Hat when building Red Hat products.
+  publicKey: k8s://openshift-pipelines/public-key
+  sources:
+    - data:
+        - github.com/release-engineering/rhtap-ec-policy//data?ref=be7e1ef73bdeef2752dde400a52f9eab9b7542ca
+        - oci::quay.io/redhat-appstudio-tekton-catalog/data-acceptable-bundles:latest@sha256:19236f2fd7e8c086ea91a45640aff9377a0d31d69e489205955e4d53f3f53c0c
+      name: Default
+      policy:
+        - oci::quay.io/enterprise-contract/ec-release-policy:git-80c0d38@sha256:950c47f4fd464df21db086d7bf7f2f7dd8aa689e2359d913753dd2730fcbd591
+---
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: EnterpriseContractPolicy
+metadata:
+  name: slsa3
+  namespace: enterprise-contract-service
+spec:
+  configuration:
+    exclude:
+      # Exclude step_image_registries for now since it can cause false
+      # positives due to https://issues.redhat.com/browse/OCPBUGS-8428
+      - step_image_registries
+    include:
+      - '@minimal'
+      - '@slsa1'
+      - '@slsa2'
+      - '@slsa3'
+  description: Rules specifically related to levels 1, 2 & 3 of SLSA v0.1, plus a set of basic checks that are expected to pass for all RHTAP builds.
+  publicKey: k8s://openshift-pipelines/public-key
+  sources:
+    - data:
+        - github.com/release-engineering/rhtap-ec-policy//data?ref=be7e1ef73bdeef2752dde400a52f9eab9b7542ca
+        - oci::quay.io/redhat-appstudio-tekton-catalog/data-acceptable-bundles:latest@sha256:19236f2fd7e8c086ea91a45640aff9377a0d31d69e489205955e4d53f3f53c0c
+      name: Default
+      policy:
+        - oci::quay.io/enterprise-contract/ec-release-policy:git-80c0d38@sha256:950c47f4fd464df21db086d7bf7f2f7dd8aa689e2359d913753dd2730fcbd591
