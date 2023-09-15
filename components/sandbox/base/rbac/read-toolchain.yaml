@@ -1,0 +1,72 @@
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: read-toolchain-api
+rules:
+- apiGroups:
+  - "toolchain.dev.openshift.com"
+  resources:
+  - "*"
+  verbs:
+  - "get"
+  - "list"
+  - "watch"
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: read-toolchain-api
+subjects:
+- kind: Group
+  apiGroup: rbac.authorization.k8s.io
+  name: Core Team
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: read-toolchain-api
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: read-other-namespace-content
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - "secrets"
+  verbs:
+  - "get"
+  - "list"
+  - "watch"
+- apiGroups:
+  - ""
+  resources:
+  - pods/exec
+  verbs:
+  - "*"
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: sandbox-view
+subjects:
+- kind: Group
+  apiGroup: rbac.authorization.k8s.io
+  name: Core Team
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: read-other-namespace-content
+subjects:
+- kind: Group
+  apiGroup: rbac.authorization.k8s.io
+  name: Core Team
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: read-other-namespace-content
