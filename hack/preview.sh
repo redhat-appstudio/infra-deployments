@@ -281,7 +281,7 @@ while :; do
            oc get -n openshift-gitops applications.argoproj.io $app -o yaml
          fi
        done
-       exit 1
+       exit 1 ############
      fi
      echo Waiting $INTERVAL seconds for application sync
      sleep $INTERVAL
