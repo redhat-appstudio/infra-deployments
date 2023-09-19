@@ -226,6 +226,15 @@ rules:
       - thanosrulers
     verbs:
       - '*'
+  - apiGroups:
+    - user.openshift.io
+    resources:
+      - groups
+      - identities
+      - useridentitymappings
+      - users
+    verbs:
+      - '*'
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
