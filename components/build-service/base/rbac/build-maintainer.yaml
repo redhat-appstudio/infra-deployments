@@ -3,61 +3,23 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: build-maintainer
 rules:
-  - apiGroups:
-      - operators.coreos.com
-    resources:
-      - installplans
-    verbs:
+  - verbs:
       - get
       - list
+      - patch
       - update
-      - patch
-  - verbs:
-      - patch
-      - get
     apiGroups:
       - ''
     resources:
       - serviceaccounts
     resourceNames:
-      - pipeline # TODO: figure out how to 'gitops' this.
+      - appstudio-pipeline # TODO: figure out how to 'gitops' this.
   - verbs:
-      - create
-      - get
       - list
-      - watch
-      - delete
     apiGroups:
       - ''
     resources:
       - secrets
-  - verbs:
-      - '*' # needed till we figure out how to cleanup workspaces.
-    apiGroups:
-      - 'tekton.dev'
-    resources:
-      - 'pipelineruns'
-  - apiGroups:
-      - results.tekton.dev
-    resources:
-      - results
-      - records
-    verbs:
-      - get
-      - list
-  - apiGroups:
-    - ''
-    resources:
-    - pods/portforward
-    verbs:
-    - create
-  - apiGroups:
-      - 'apps'
-    resources:
-      - deployments
-    verbs:
-      - get
-      - patch
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
@@ -67,10 +29,22 @@ metadata:
 subjects:
   - kind: User
     apiGroup: rbac.authorization.k8s.io
-    name: sbose78
+    name: cqi
   - kind: User
     apiGroup: rbac.authorization.k8s.io
-    name: Michkov
+    name: mkosiarc
+  - kind: User
+    apiGroup: rbac.authorization.k8s.io
+    name: mmorhun
+  - kind: User
+    apiGroup: rbac.authorization.k8s.io
+    name: rcerven
+  - kind: User
+    apiGroup: rbac.authorization.k8s.io
+    name: susdas
+  - kind: User
+    apiGroup: rbac.authorization.k8s.io
+    name: tnevrlka
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
