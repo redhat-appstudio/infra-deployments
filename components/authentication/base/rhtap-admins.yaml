@@ -210,6 +210,15 @@ rules:
     verbs:
       - '*'
   - apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - clusterrolebindings
+      - rolebindings
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
       - autoscaling
     resources:
       - horizontalpodautoscalers
