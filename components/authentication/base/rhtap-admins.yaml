@@ -189,12 +189,26 @@ rules:
     verbs:
       - '*'
   - apiGroups:
+      - config.openshift.io
+    resources:
+      - '*'
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
       - image.openshift.io
     resources:
       - imagestreams
       - imagestreamimages
       - imagestreammappings
       - imagetags
+    verbs:
+      - '*'
+  - apiGroups:
+      - operators.coreos.com
+    resources:
+      - '*'
     verbs:
       - '*'
   - apiGroups:
