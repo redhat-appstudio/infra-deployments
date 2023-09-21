@@ -1,0 +1,42 @@
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
+metadata:
+  name: deployment-validation-operator-catalog
+  labels:
+    name: deployment-validation-operator
+spec:
+  displayName: Deployment Validation Operator
+  grpcPodConfig:
+    securityContextConfig: restricted
+  image: quay.io/app-sre/deployment-validation-operator-catalog:latest
+  publisher: OperatorHub.io
+  sourceType: grpc
+
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: deployment-validation-operator
+  labels:
+    name: deployment-validation-operator
+  namespace: deployment-validation-operator
+spec:
+  channel: alpha
+  installPlanApproval: Automatic
+  name: deployment-validation-operator
+  source: community-operators
+  sourceNamespace: openshift-marketplace
+  startingCSV: deployment-validation-operator.v0.6.0
+
+---
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  name: deployment-validation-operator
+  labels:
+    name: deployment-validation-operator
+  namespace: deployment-validation-operator
+spec:
+  targetNamespaces:
+  - deployment-validation-operator
