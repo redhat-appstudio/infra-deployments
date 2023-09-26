@@ -2,29 +2,10 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   labels:
-    build.appstudio.redhat.com/multi-arch-config: hosts
     build.appstudio.redhat.com/multi-platform-config: hosts
   name: host-config
-  namespace: multi-arch-controller
+  namespace: multi-platform-controller
 data:
-  #Legacy Config, remove after update
-  host1.address: "ec2-54-165-44-192.compute-1.amazonaws.com"
-  host1.secret: "awskeys"
-  host1.concurrency: "4"
-  host1.user: "ec2-user"
-  host1.arch: "arm64"
-  ppc1.address: "150.240.147.198"
-  ppc1.arch: "ppc64le"
-  ppc1.user: "root"
-  ppc1.secret: "awskeys"
-  ppc1.concurrency: "4"
-  ibmz1.address: "169.59.165.178"
-  ibmz1.arch: "s390x"
-  ibmz1.user: "root"
-  ibmz1.secret: "awskeys"
-  ibmz1.concurrency: "4"
-
-  #new platform config
   host.host1.address: "ec2-54-165-44-192.compute-1.amazonaws.com"
   host.host1.secret: "awskeys"
   host.host1.concurrency: "4"
