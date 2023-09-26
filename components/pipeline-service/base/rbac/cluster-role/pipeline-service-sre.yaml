@@ -47,56 +47,7 @@ subjects:
   - kind: Group
     apiGroup: rbac.authorization.k8s.io
     name: Pipeline Service
-  - kind: User
-    apiGroup: rbac.authorization.k8s.io
-    name: sbose78
-  - kind: User
-    apiGroup: rbac.authorization.k8s.io
-    name: jduimovich
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: pipeline-service-sre
----
-# Grant access to the OpenShift-Pipelines operator namespace
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: pipeline-service-sre
-  namespace: openshift-pipelines
-subjects:
-  - kind: Group
-    name: pipeline-grp
-    apiGroup: rbac.authorization.k8s.io
-  - kind: User
-    apiGroup: rbac.authorization.k8s.io
-    name: sbose78
-  - kind: User
-    apiGroup: rbac.authorization.k8s.io
-    name: jduimovich
-roleRef:
-  kind: ClusterRole
-  name: admin
-  apiGroup: rbac.authorization.k8s.io
----
-# Grant access to the Tekton Result namespace
-# This binding is needed until Tekton Result is deployed by OpenShift Pipelines
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: pipeline-service-sre
-  namespace: tekton-results
-subjects:
-  - kind: Group
-    name: pipeline-grp
-    apiGroup: rbac.authorization.k8s.io
-  - kind: User
-    apiGroup: rbac.authorization.k8s.io
-    name: sbose78
-  - kind: User
-    apiGroup: rbac.authorization.k8s.io
-    name: jduimovich
-roleRef:
-  kind: ClusterRole
-  name: admin
-  apiGroup: rbac.authorization.k8s.io
