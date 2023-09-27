@@ -2,7 +2,7 @@
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: multi-arch-controller-maintainer
+  name: multi-platform-controller-maintainer
 rules:
   - apiGroups:
       - operators.coreos.com
@@ -63,8 +63,8 @@ rules:
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: multi-arch-controller-maintainers
-  namespace: multi-arch-controller
+  name: multi-platform-controller-maintainers
+  namespace: multi-platform-controller
 subjects:
   - kind: User
     apiGroup: rbac.authorization.k8s.io
@@ -75,4 +75,4 @@ subjects:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: multi-arch-controller-maintainer
+  name: multi-platform-controller-maintainer
