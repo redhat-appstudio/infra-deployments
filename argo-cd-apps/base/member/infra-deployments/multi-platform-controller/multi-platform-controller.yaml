@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: multi-arch-controller
+  name: multi-platform-controller
 spec:
   generators:
     - merge:
@@ -10,14 +10,14 @@ spec:
         generators:
           - clusters:
               values:
-                sourceRoot: components/multi-arch-controller
+                sourceRoot: components/multi-platform-controller
                 environment: staging
                 clusterDir: ""
           - list:
               elements: []
   template:
     metadata:
-      name: multi-arch-controller-{{nameNormalized}}
+      name: multi-platform-controller-{{nameNormalized}}
     spec:
       project: default
       source:
