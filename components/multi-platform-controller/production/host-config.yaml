@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    build.appstudio.redhat.com/multi-platform-config: hosts
+  name: host-config
+  namespace: multi-platform-controller
+data:
+
+  dynamic-platforms: linux/arm64
+  instance-tag: rhtap-prod
+
+  dynamic.linux-arm64.type: aws
+  dynamic.linux-arm64.region: us-east-1
+  dynamic.linux-arm64.ami: ami-03d6a5256a46c9feb
+  dynamic.linux-arm64.instance-type: t4g.small
+  dynamic.linux-arm64.key-name: multi-platform-aws-prod
+  dynamic.linux-arm64.aws-secret: aws-account
+  dynamic.linux-arm64.ssh-secret: aws-ssh-key
+  dynamic.linux-arm64.security-group: "launch-wizard-1"
+  dynamic.linux-arm64.max-instances: "10"
+
+  host.power-rhtap-prod-1.address: "150.240.147.196"
+  host.power-rhtap-prod-1.platform: "linux/ppc64le"
+  host.power-rhtap-prod-1.user: "root"
+  host.power-rhtap-prod-1.secret: "ibm-ssh-key"
+  host.power-rhtap-prod-1.concurrency: "4"
+
+  host.power-rhtap-prod-2.address: "150.240.147.194"
+  host.power-rhtap-prod-2.platform: "linux/ppc64le"
+  host.power-rhtap-prod-2.user: "root"
+  host.power-rhtap-prod-2.secret: "ibm-ssh-key"
+  host.power-rhtap-prod-2.concurrency: "4"
+
+  host.sysz-rhtap-prod-1.address: "169.59.160.96"
+  host.sysz-rhtap-prod-1.platform: "linux/s390x"
+  host.sysz-rhtap-prod-1.user: "root"
+  host.sysz-rhtap-prod-1.secret: "ibm-ssh-key"
+  host.sysz-rhtap-prod-1.concurrency: "4"
+
+  host.sysz-rhtap-prod-2.address: "169.63.178.13"
+  host.sysz-rhtap-prod-2.platform: "linux/s390x"
+  host.sysz-rhtap-prod-2.user: "root"
+  host.sysz-rhtap-prod-2.secret: "ibm-ssh-key"
+  host.sysz-rhtap-prod-2.concurrency: "4"
