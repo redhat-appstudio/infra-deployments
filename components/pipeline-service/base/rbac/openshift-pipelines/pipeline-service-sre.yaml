@@ -1,0 +1,15 @@
+---
+# Grant access to the OpenShift-Pipelines operator namespace
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: pipeline-service-sre-ns-edit
+  namespace: openshift-pipelines
+subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: Pipeline Service
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: edit

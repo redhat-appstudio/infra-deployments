@@ -1,0 +1,34 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    build.appstudio.redhat.com/multi-platform-config: hosts
+  name: host-config
+  namespace: multi-platform-controller
+data:
+
+  dynamic-platforms: linux/arm64
+  instance-tag: rhtap-staging
+
+  dynamic.linux-arm64.type: aws
+  dynamic.linux-arm64.region: us-east-1
+  dynamic.linux-arm64.ami: ami-03d6a5256a46c9feb
+  dynamic.linux-arm64.instance-type: t4g.small
+  dynamic.linux-arm64.key-name: multi-platform-aws-stage
+  dynamic.linux-arm64.aws-secret: aws-account
+  dynamic.linux-arm64.ssh-secret: aws-ssh-key
+  dynamic.linux-arm64.security-group: "launch-wizard-1"
+  dynamic.linux-arm64.max-instances: "10"
+
+  host.ppc1.address: "150.240.147.198"
+  host.ppc1.platform: "linux/ppc64le"
+  host.ppc1.user: "root"
+  host.ppc1.secret: "ibm-ssh-key"
+  host.ppc1.concurrency: "4"
+
+  host.ibmz1.address: "169.63.177.141"
+  host.ibmz1.platform: "linux/s390x"
+  host.ibmz1.user: "root"
+  host.ibmz1.secret: "ibm-ssh-key"
+
+  host.ibmz1.concurrency: "4"
