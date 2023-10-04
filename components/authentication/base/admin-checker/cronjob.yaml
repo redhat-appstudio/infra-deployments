@@ -1,0 +1,51 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: check-cluster-admins
+spec:
+  schedule: "0 7 * * 1" # every Monday at 7:00
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: admin-checker
+              image: registry.redhat.io/openshift4/ose-cli:v4.12
+              env:
+                - name: ADMIN_CHECKER_WORKFLOW_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: rhtap-infra-secrets
+                      key: admin-checker-workflow-url
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  validate_and_notify_for_group(){
+                    local group="$1"
+                    local users
+                    users=$(oc get group "${group}" -o jsonpath='{.users}' | tr -d '"[]')
+                    if [[ -n "${users}" ]]; then
+                      echo "The list of ${group} is: ${users}"
+                      curl -s -X POST "${ADMIN_CHECKER_WORKFLOW_URL}" \
+                      -H 'Content-Type: application/json' \
+                      -d '{"clusterName": "'$(oc whoami --show-console)'", "userNames": "'${users}'", "groupName": "'${group}'" }'
+                    else
+                      echo "The is no one part of ${group}"
+                    fi
+                  }
+
+                  validate_and_notify_for_group "cluster-admins"
+                  validate_and_notify_for_group "dedicated-admins"
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 10Mi
+                limits:
+                  cpu: 100m
+                  memory: 100Mi
+              securityContext:
+                readOnlyRootFilesystem: true
+                runAsNonRoot: true
+          restartPolicy: OnFailure
+          serviceAccountName: admin-checker-sa
