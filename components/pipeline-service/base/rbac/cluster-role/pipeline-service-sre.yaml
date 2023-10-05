@@ -12,6 +12,26 @@ rules:
       - delete
     resources:
       - secrets
+  # This rule is needed to deal with situations like RHTAPBUGS-256, where we followed up via PLNSRVCE-1328
+  - apiGroups:
+      - quota.openshift.io
+    verbs:
+      - list
+      - get
+      - watch
+    resources:
+      - clusterresourcequotas
+  # This rule is needed to deal with situations like RHTAPBUGS-256, where we followed up via PLNSRVCE-1328.
+  # It also serves as the replacement for the list/delete rule above, which will be removed when we upgrade
+  # to OSP 1.12.
+  - apiGroups:
+      - ""
+    verbs:
+      - get
+      - list
+      - watch
+    resources:
+      - secrets
   # Grant access to the default account used to run pipelines
   - apiGroups:
       - ""
