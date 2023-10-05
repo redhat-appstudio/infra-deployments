@@ -20,7 +20,7 @@ spec:
           serviceAccountName: sandbox-sre-olm-restart-sa
           containers:
           - name: olm-restart
-            image: quay.io/codeready-toolchain/oc-client-base:latest
+            image: registry.redhat.io/openshift4/ose-cli:v4.12
             imagePullPolicy: IfNotPresent
             command:
             - /bin/sh
@@ -29,4 +29,14 @@ spec:
               oc delete pod --all -n openshift-operator-lifecycle-manager --ignore-not-found --wait &&
               oc delete pod --all -n openshift-marketplace --ignore-not-found --wait && 
               echo "Completed restart"
+            resources:
+              requests:
+                cpu: 100m
+                memory: 10Mi
+              limits:
+                cpu: 100m
+                memory: 100Mi
+            securityContext:
+              readOnlyRootFilesystem: true
+              runAsNonRoot: true
           restartPolicy: OnFailure
