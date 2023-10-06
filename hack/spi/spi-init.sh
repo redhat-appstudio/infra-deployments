@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # !!! Note that this script should not be used for production purposes !!!
+###########
 
 source $(dirname "$0")/utils.sh
 
