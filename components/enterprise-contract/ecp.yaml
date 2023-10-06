@@ -11,10 +11,7 @@ metadata:
   namespace: enterprise-contract-service
 spec:
   configuration:
-    exclude:
-      # Exclude step_image_registries for now since it can cause false
-      # positives due to https://issues.redhat.com/browse/OCPBUGS-8428
-      - step_image_registries
+    exclude: []
     include:
       - '@slsa1'
       - '@slsa2'
@@ -25,10 +22,10 @@ spec:
   sources:
     - data:
         - github.com/release-engineering/rhtap-ec-policy//data?ref=be7e1ef73bdeef2752dde400a52f9eab9b7542ca
-        - oci::quay.io/redhat-appstudio-tekton-catalog/data-acceptable-bundles:latest@sha256:d38d8804d0636e46d31fc317c3f759458f76e822d02554afc1953fa6e3252970
+        - oci::quay.io/redhat-appstudio-tekton-catalog/data-acceptable-bundles:latest@sha256:24a0195a03f949a943e4c305ac2ef95103392332e3896e9143487bcf98113a66
       name: Default
       policy:
-        - oci::quay.io/enterprise-contract/ec-release-policy:git-af84959@sha256:d5fe1e771369388e7bbac80a5d3b7274a19c6729dfeaf44a1dc4d5bf471c5823
+        - oci::quay.io/enterprise-contract/ec-release-policy:git-81167b1@sha256:3f288b3ffe1e3289b1c6570e70690d1397aa9ad740e053d492aa1814c0557acf
 ---
 apiVersion: appstudio.redhat.com/v1alpha1
 kind: EnterpriseContractPolicy
@@ -37,10 +34,7 @@ metadata:
   namespace: enterprise-contract-service
 spec:
   configuration:
-    exclude:
-      # Exclude step_image_registries for now since it can cause false
-      # positives due to https://issues.redhat.com/browse/OCPBUGS-8428
-      - step_image_registries
+    exclude: []
     include:
       - '*'
   description: Include every rule in the default policy source. For experiments only. This is not expected to pass for RHTAP builds without excluding some rules. Available collections are defined in https://redhat-appstudio.github.io/docs.stonesoup.io/ec-policies/release_policy.html#_available_rule_collections. If a different policy configuration is desired, this resource can serve as a starting point. See the docs on how to include and exclude rules https://redhat-appstudio.github.io/docs.stonesoup.io/ec-policies/policy_configuration.html#_including_and_excluding_rules.
@@ -49,10 +43,10 @@ spec:
   sources:
     - data:
         - github.com/release-engineering/rhtap-ec-policy//data?ref=be7e1ef73bdeef2752dde400a52f9eab9b7542ca
-        - oci::quay.io/redhat-appstudio-tekton-catalog/data-acceptable-bundles:latest@sha256:d38d8804d0636e46d31fc317c3f759458f76e822d02554afc1953fa6e3252970
+        - oci::quay.io/redhat-appstudio-tekton-catalog/data-acceptable-bundles:latest@sha256:24a0195a03f949a943e4c305ac2ef95103392332e3896e9143487bcf98113a66
       name: Default
       policy:
-        - oci::quay.io/enterprise-contract/ec-release-policy:git-af84959@sha256:d5fe1e771369388e7bbac80a5d3b7274a19c6729dfeaf44a1dc4d5bf471c5823
+        - oci::quay.io/enterprise-contract/ec-release-policy:git-81167b1@sha256:3f288b3ffe1e3289b1c6570e70690d1397aa9ad740e053d492aa1814c0557acf
 ---
 apiVersion: appstudio.redhat.com/v1alpha1
 kind: EnterpriseContractPolicy
@@ -62,11 +56,8 @@ metadata:
 spec:
   configuration:
     exclude:
-      # Exclude step_image_registries for now since it can cause false
-      # positives due to https://issues.redhat.com/browse/OCPBUGS-8428
       - hermetic_build_task
       - tasks.required_tasks_found:prefetch-dependencies
-      - step_image_registries
     include:
       - '@redhat'
   description: Includes most of the rules and policies required internally by Red Hat when building Red Hat products. It excludes the requirement of hermetic builds. Available collections are defined in https://redhat-appstudio.github.io/docs.stonesoup.io/ec-policies/release_policy.html#_available_rule_collections. If a different policy configuration is desired, this resource can serve as a starting point. See the docs on how to include and exclude rules https://redhat-appstudio.github.io/docs.stonesoup.io/ec-policies/policy_configuration.html#_including_and_excluding_rules.
@@ -75,10 +66,10 @@ spec:
   sources:
     - data:
         - github.com/release-engineering/rhtap-ec-policy//data?ref=be7e1ef73bdeef2752dde400a52f9eab9b7542ca
-        - oci::quay.io/redhat-appstudio-tekton-catalog/data-acceptable-bundles:latest@sha256:d38d8804d0636e46d31fc317c3f759458f76e822d02554afc1953fa6e3252970
+        - oci::quay.io/redhat-appstudio-tekton-catalog/data-acceptable-bundles:latest@sha256:24a0195a03f949a943e4c305ac2ef95103392332e3896e9143487bcf98113a66
       name: Default
       policy:
-        - oci::quay.io/enterprise-contract/ec-release-policy:git-af84959@sha256:d5fe1e771369388e7bbac80a5d3b7274a19c6729dfeaf44a1dc4d5bf471c5823
+        - oci::quay.io/enterprise-contract/ec-release-policy:git-81167b1@sha256:3f288b3ffe1e3289b1c6570e70690d1397aa9ad740e053d492aa1814c0557acf
 ---
 apiVersion: appstudio.redhat.com/v1alpha1
 kind: EnterpriseContractPolicy
@@ -87,10 +78,7 @@ metadata:
   namespace: enterprise-contract-service
 spec:
   configuration:
-    exclude:
-      # Exclude step_image_registries for now since it can cause false
-      # positives due to https://issues.redhat.com/browse/OCPBUGS-8428
-      - step_image_registries
+    exclude: []
     include:
       - '@redhat'
   description: Includes the full set of rules and policies required internally by Red Hat when building Red Hat products. Available collections are defined in https://redhat-appstudio.github.io/docs.stonesoup.io/ec-policies/release_policy.html#_available_rule_collections. If a different policy configuration is desired, this resource can serve as a starting point. See the docs on how to include and exclude rules https://redhat-appstudio.github.io/docs.stonesoup.io/ec-policies/policy_configuration.html#_including_and_excluding_rules.
@@ -99,10 +87,10 @@ spec:
   sources:
     - data:
         - github.com/release-engineering/rhtap-ec-policy//data?ref=be7e1ef73bdeef2752dde400a52f9eab9b7542ca
-        - oci::quay.io/redhat-appstudio-tekton-catalog/data-acceptable-bundles:latest@sha256:d38d8804d0636e46d31fc317c3f759458f76e822d02554afc1953fa6e3252970
+        - oci::quay.io/redhat-appstudio-tekton-catalog/data-acceptable-bundles:latest@sha256:24a0195a03f949a943e4c305ac2ef95103392332e3896e9143487bcf98113a66
       name: Default
       policy:
-        - oci::quay.io/enterprise-contract/ec-release-policy:git-af84959@sha256:d5fe1e771369388e7bbac80a5d3b7274a19c6729dfeaf44a1dc4d5bf471c5823
+        - oci::quay.io/enterprise-contract/ec-release-policy:git-81167b1@sha256:3f288b3ffe1e3289b1c6570e70690d1397aa9ad740e053d492aa1814c0557acf
 ---
 apiVersion: appstudio.redhat.com/v1alpha1
 kind: EnterpriseContractPolicy
@@ -111,10 +99,7 @@ metadata:
   namespace: enterprise-contract-service
 spec:
   configuration:
-    exclude:
-      # Exclude step_image_registries for now since it can cause false
-      # positives due to https://issues.redhat.com/browse/OCPBUGS-8428
-      - step_image_registries
+    exclude: []
     include:
       - '@minimal'
       - '@slsa1'
@@ -126,7 +111,7 @@ spec:
   sources:
     - data:
         - github.com/release-engineering/rhtap-ec-policy//data?ref=be7e1ef73bdeef2752dde400a52f9eab9b7542ca
-        - oci::quay.io/redhat-appstudio-tekton-catalog/data-acceptable-bundles:latest@sha256:d38d8804d0636e46d31fc317c3f759458f76e822d02554afc1953fa6e3252970
+        - oci::quay.io/redhat-appstudio-tekton-catalog/data-acceptable-bundles:latest@sha256:24a0195a03f949a943e4c305ac2ef95103392332e3896e9143487bcf98113a66
       name: Default
       policy:
-        - oci::quay.io/enterprise-contract/ec-release-policy:git-af84959@sha256:d5fe1e771369388e7bbac80a5d3b7274a19c6729dfeaf44a1dc4d5bf471c5823
+        - oci::quay.io/enterprise-contract/ec-release-policy:git-81167b1@sha256:3f288b3ffe1e3289b1c6570e70690d1397aa9ad740e053d492aa1814c0557acf
