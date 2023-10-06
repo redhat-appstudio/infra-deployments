@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- allow-argocd-to-manage.yaml
+- https://github.com/redhat-appstudio/multi-platform-controller/deploy/operator?ref=b62ea163e5876e466208feda29cfdf8613be9b70
+
+images:
+- name: multi-platform-controller
+  newName: quay.io/redhat-user-workloads/rhtap-build-tenant/multi-arch-controller/multi-arch-controller
+  newTag: b62ea163e5876e466208feda29cfdf8613be9b70
+
+namespace: multi-platform-controller
+
+
