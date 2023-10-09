@@ -17,7 +17,7 @@ jobs:
      - uses: actions/setup-python@v4
        with:
           python-version: "3.x"
-     - name: Run delete_unused_branches script
+     - name: Run cleanup_old_preview_branches script
        run: |
           pip3 install -r .github/scripts/requirements.txt
           python3 .github/scripts/cleanup_old_preview_branches.py ${{secrets.GITHUB_TOKEN}} 30
