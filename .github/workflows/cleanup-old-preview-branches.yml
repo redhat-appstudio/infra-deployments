@@ -1,0 +1,23 @@
+name: Cleanup old ´preview-´ branches
+
+on:
+  schedule:
+    # every day at midnight
+    - cron: "0 0 * * *"
+    
+  workflow_dispatch:
+
+jobs:
+  delete_unused_branches:
+    runs-on: ubuntu-latest
+    name: Cleanup old ´preview-´ branches
+    steps:
+     - name: Checkout Source
+       uses: actions/checkout@v3
+     - uses: actions/setup-python@v4
+       with:
+          python-version: "3.x"
+     - name: Run delete_unused_branches script
+       run: |
+          pip3 install -r .github/scripts/requirements.txt
+          python3 .github/scripts/cleanup_old_preview_branches.py ${{secrets.GITHUB_TOKEN}} 30
