@@ -1,7 +1,7 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - https://github.com/enterprise-contract/enterprise-contract-controller/config/crd?ref=5ca61f4b86455e5d00188ee436f6b1e3240bb188
+  - https://github.com/enterprise-contract/enterprise-contract-controller/config/crd?ref=e0beee317112d75deca3456739ad5ed1e85b94cc
   - ecp.yaml
   - role.yaml
   - rolebinding.yaml
@@ -18,4 +18,4 @@ configMapGenerator:
 images:
   - name: quay.io/redhat-appstudio/enterprise-contract-controller
     newName: quay.io/redhat-appstudio/enterprise-contract-controller
-    newTag: 5ca61f4b86455e5d00188ee436f6b1e3240bb188
+    newTag: e0beee317112d75deca3456739ad5ed1e85b94cc
