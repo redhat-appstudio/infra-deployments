@@ -24,7 +24,7 @@ spec:
                   validate_and_notify_for_group(){
                     local group="$1"
                     local users
-                    users=$(oc get group "${group}" -o jsonpath='{.users}' | tr -d '"[]')
+                    users=$(oc get group "${group}" -o jsonpath='{.users}' | sed "s/<nil>//g" | tr -d '"[]')
                     if [[ -n "${users}" ]]; then
                       echo "The list of ${group} is: ${users}"
                       curl -s -X POST "${ADMIN_CHECKER_WORKFLOW_URL}" \
