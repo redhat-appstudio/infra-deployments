@@ -20,9 +20,10 @@ rules:
       - delete
 
   - apiGroups:
-    - toolchain.dev.openshift.com
+    - admissionregistration.k8s.io
     resources:
-    - spacerequests
+    - validatingwebhookconfigurations
+    - mutatingwebhookconfigurations
     verbs:
     - list
     - watch
