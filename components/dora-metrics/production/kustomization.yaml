@@ -1,7 +1,7 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-- ../base
+- https://github.com/redhat-appstudio/dora-metrics/deploy/base?ref=630e08a427f4a6cd3a5fd869d224de34d03874c2
 - ../base/external-secrets
 patches:
   - path: exporters-secrets-patch.yaml
@@ -10,3 +10,8 @@ patches:
       kind: ExternalSecret
       group: external-secrets.io
       version: v1beta1
+
+images:
+  - name: quay.io/redhat-appstudio/dora-metrics
+    newName: quay.io/redhat-appstudio/dora-metrics
+    newTag: 630e08a427f4a6cd3a5fd869d224de34d03874c2
