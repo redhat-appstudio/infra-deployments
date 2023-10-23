@@ -1,0 +1,16 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sprayproxy
+  namespace: sprayproxy
+spec:
+  template:
+    spec:
+      containers:
+        - name: sprayproxy
+          env:
+            - name: SPRAYPROXY_SERVER_BACKEND
+              value: >
+                https://pipelines-as-code-controller-openshift-pipelines.apps.stone-stg-m01.7ayg.p1.openshiftapps.com
+                https://pipelines-as-code-controller-openshift-pipelines.apps.stone-stg-rh01.l2vh.p1.openshiftapps.com
