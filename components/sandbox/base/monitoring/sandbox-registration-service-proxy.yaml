@@ -1,0 +1,17 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  namespace: toolchain-host-operator
+  name: sandbox-registration-service-proxy
+  labels:
+    prometheus: appstudio-workload
+spec:
+  endpoints:
+    - interval: 15s
+      scheme: http
+      path: /metrics
+      port: proxy-metrics
+  selector:
+    matchLabels:
+      run: proxy-metrics
+
