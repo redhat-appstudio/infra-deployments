@@ -7,7 +7,7 @@ metadata:
   namespace: multi-platform-controller
 data:
 
-  dynamic-platforms: linux/arm64
+  dynamic-platforms: linux/arm64,linux/amd64
   instance-tag: rhtap-staging
 
   dynamic.linux-arm64.type: aws
@@ -19,6 +19,16 @@ data:
   dynamic.linux-arm64.ssh-secret: aws-ssh-key
   dynamic.linux-arm64.security-group: "launch-wizard-1"
   dynamic.linux-arm64.max-instances: "10"
+
+  dynamic.linux-amd64.type: aws
+  dynamic.linux-amd64.region: us-east-1
+  dynamic.linux-amd64.ami: ami-026ebd4cfe2c043b2
+  dynamic.linux-amd64.instance-type: m5.large
+  dynamic.linux-amd64.key-name: multi-platform-aws-stage
+  dynamic.linux-amd64.aws-secret: aws-account
+  dynamic.linux-amd64.ssh-secret: aws-ssh-key
+  dynamic.linux-amd64.security-group: "launch-wizard-1"
+  dynamic.linux-amd64.max-instances: "10"
 
   host.ppc1.address: "150.240.147.198"
   host.ppc1.platform: "linux/ppc64le"
