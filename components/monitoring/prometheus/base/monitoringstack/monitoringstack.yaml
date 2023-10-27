@@ -48,7 +48,8 @@ spec:
           commit_hash|job|operation|tokenName|rateLimited|state|persistentvolumeclaim|\
           storageclass|volumename|release_reason|instance|result|deployment_reason|\
           validation_reason|strategy|succeeded|target|name|method|code|sp|\
-          unexpected_status|failure|hostname|label_app_kubernetes_io_managed_by|status"
+          unexpected_status|failure|hostname|label_app_kubernetes_io_managed_by|status|\
+          pipeline|pipelinename|pipelinerun"
 ---
 # Grant permission to Federate In-Cluster Prometheus
 apiVersion: rbac.authorization.k8s.io/v1
@@ -86,6 +87,12 @@ spec:
   endpoints:
   - params:
       'match[]': # scrape only required metrics from in-cluster prometheus
+        - '{__name__="pipelinerun_duration_scheduled_seconds_sum", namespace="openshift-pipelines"}'
+        - '{__name__="pipelinerun_duration_scheduled_seconds_count", namespace="openshift-pipelines"}'
+        - '{__name__="pipelinerun_gap_between_taskruns_milliseconds_sum", namespace="openshift-pipelines"}'
+        - '{__name__="pipelinerun_gap_between_taskruns_milliseconds_count", namespace="openshift-pipelines"}'
+        - '{__name__="tekton_pipelines_controller_pipelinerun_duration_seconds_sum", namespace="openshift-pipelines"}'
+        - '{__name__="tekton_pipelines_controller_pipelinerun_duration_seconds_count", namespace="openshift-pipelines"}'
         - '{__name__="controller_runtime_reconcile_errors_total", namespace!~".*-tenant|openshift-.*|kube-.*"}'
         - '{__name__="controller_runtime_reconcile_total", namespace!~".*-tenant|openshift-.*|kube-.*"}'
         - '{__name__="kube_pod_status_unschedulable", namespace!~".*-tenant|openshift-.*|kube-.*"}'
