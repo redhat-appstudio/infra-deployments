@@ -1,0 +1,190 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  name: appstudio-monitoring
+spec: {}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    kubernetes.io/part-of: appstudio-federate-ms
+    monitoring.rhobs/stack: appstudio-federate-ms
+  name: appstudio-federate-ms-view
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-monitoring-view
+subjects:
+- kind: ServiceAccount
+  name: appstudio-federate-ms-prometheus
+  namespace: appstudio-monitoring
+---
+apiVersion: v1
+data:
+  config.yaml: "prometheus: \n  retention: 3d \n  retentionSize: 10GiB\n"
+kind: ConfigMap
+metadata:
+  name: user-workload-monitoring-config
+  namespace: openshift-user-workload-monitoring
+---
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "-1"
+  name: rhobs
+  namespace: appstudio-monitoring
+spec:
+  dataFrom:
+  - extract:
+      key: staging/monitoring/rhobs
+  refreshInterval: 1h
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: appsre-stonesoup-vault
+  target:
+    creationPolicy: Owner
+    deletionPolicy: Delete
+    name: rhobs
+---
+apiVersion: monitoring.rhobs/v1
+kind: ServiceMonitor
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    kubernetes.io/part-of: appstudio-federate-ms
+    monitoring.rhobs/stack: appstudio-federate-ms
+  name: appstudio-federate-smon
+  namespace: appstudio-monitoring
+spec:
+  endpoints:
+  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    honorLabels: true
+    interval: 30s
+    params:
+      match[]:
+      - '{__name__="controller_runtime_reconcile_errors_total", namespace!~".*-tenant|openshift-.*|kube-.*"}'
+      - '{__name__="controller_runtime_reconcile_total", namespace!~".*-tenant|openshift-.*|kube-.*"}'
+      - '{__name__="kube_pod_status_unschedulable", namespace!~".*-tenant|openshift-.*|kube-.*"}'
+      - '{__name__="kube_pod_container_status_waiting_reason", namespace!~".*-tenant|openshift-.*|kube-.*"}'
+      - '{__name__="kube_pod_status_phase", namespace!~".*-tenant|openshift-.*|kube-.*"}'
+      - '{__name__="kube_persistentvolume_status_phase", namespace!~".*-tenant|openshift-.*|kube-.*"}'
+      - '{__name__="kube_resourcequota", namespace!~".*-tenant|openshift-.*|kube-.*"}'
+    path: /federate
+    port: web
+    relabelings:
+    - replacement: staging-cluster
+      targetLabel: source_environment
+    - action: replace
+      replacement: prometheus-k8s.openshift-monitoring.svc:9091
+      targetLabel: __address__
+    - action: replace
+      replacement: $1
+      sourceLabels:
+      - prometheus_replica
+      targetLabel: datasource_replica
+    - action: labeldrop
+      regex: pod|namespace|service|endpoint|container|prometheus_replica
+    scheme: https
+    tlsConfig:
+      ca:
+        configMap:
+          key: service-ca.crt
+          name: openshift-service-ca.crt
+      serverName: prometheus-k8s.openshift-monitoring.svc
+  selector:
+    matchLabels:
+      app.kubernetes.io/managed-by: observability-operator
+      app.kubernetes.io/name: appstudio-federate-ms-prometheus
+---
+apiVersion: monitoring.rhobs/v1
+kind: ServiceMonitor
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    kubernetes.io/part-of: appstudio-federate-ms
+    monitoring.rhobs/stack: appstudio-federate-ms
+  name: appstudio-federate-uwm-smon
+  namespace: appstudio-monitoring
+spec:
+  endpoints:
+  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    honorLabels: true
+    interval: 30s
+    params:
+      match[]:
+      - '{__name__=~".*"}'
+    path: /federate
+    port: web
+    relabelings:
+    - replacement: staging-cluster
+      targetLabel: source_environment
+    - action: replace
+      replacement: prometheus-user-workload.openshift-user-workload-monitoring.svc:9092
+      targetLabel: __address__
+    - action: replace
+      replacement: $1
+      sourceLabels:
+      - prometheus_replica
+      targetLabel: datasource_replica
+    - action: labeldrop
+      regex: pod|namespace|service|endpoint|container|prometheus_replica
+    scheme: https
+    tlsConfig:
+      ca:
+        configMap:
+          key: service-ca.crt
+          name: openshift-service-ca.crt
+      serverName: prometheus-user-workload.openshift-user-workload-monitoring.svc
+  selector:
+    matchLabels:
+      app.kubernetes.io/managed-by: observability-operator
+      app.kubernetes.io/name: appstudio-federate-ms-prometheus
+---
+apiVersion: monitoring.rhobs/v1alpha1
+kind: MonitoringStack
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  name: appstudio-federate-ms
+  namespace: appstudio-monitoring
+spec:
+  alertmanagerConfig:
+    disabled: true
+  logLevel: info
+  prometheusConfig:
+    externalLabels:
+      source_cluster: stone-stg-m01
+    remoteWrite:
+    - oauth2:
+        clientId:
+          secret:
+            key: client-id
+            name: rhobs
+        clientSecret:
+          key: client-secret
+          name: rhobs
+        endpointParams:
+          audience: observatorium-osd-staging
+        tokenUrl: https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token
+      url: https://observatorium-mst.api.stage.openshift.com/api/metrics/v1/rhtap/api/v1/receive
+      writeRelabelConfigs:
+      - action: LabelKeep
+        regex: __name__|source_environment|source_cluster|namespace|pod|container|label_pipelines_appstudio_openshift_io_type|health_status|dest_namespace|controller|service|reason|phase|type|resource|resourcequota|le|app|image|commit_hash|job|operation|tokenName|rateLimited|state|persistentvolumeclaim|storageclass|volumename|release_reason|instance|result|deployment_reason|validation_reason|strategy|succeeded|target|name|method|code|sp|unexpected_status|failure|hostname|label_app_kubernetes_io_managed_by|status|prometheus_replica|datasource_replica
+    replicas: 2
+  resourceSelector:
+    matchLabels:
+      monitoring.rhobs/stack: appstudio-federate-ms
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+  retention: 3h
