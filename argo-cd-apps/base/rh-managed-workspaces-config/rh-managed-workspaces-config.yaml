@@ -9,6 +9,11 @@ spec:
         revision: main
         directories:
           - path: auto-generated/cluster/stone-prd-rh01/managed/*
+    - git:
+        repoURL: https://github.com/redhat-appstudio/tenants-config
+        revision: main
+        directories:
+          - path: auto-generated/cluster/stone-stg-rh01/managed/*
   template:
     metadata:
       name: '{{path.basename}}-{{path[2]}}'
