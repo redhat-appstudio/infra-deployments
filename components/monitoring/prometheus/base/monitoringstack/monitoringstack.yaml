@@ -87,12 +87,12 @@ spec:
   endpoints:
   - params:
       'match[]': # scrape only required metrics from in-cluster prometheus
-        - '{__name__="pipelinerun_duration_scheduled_seconds_sum", namespace~".*-tenant|tekton-ci"}'
-        - '{__name__="pipelinerun_duration_scheduled_seconds_count", namespace~".*-tenant|tekton-ci"}'
-        - '{__name__="pipelinerun_gap_between_taskruns_milliseconds_sum", namespace~".*-tenant|tekton-ci"}'
-        - '{__name__="pipelinerun_gap_between_taskruns_milliseconds_count", namespace~".*-tenant|tekton-ci"}'
-        - '{__name__="tekton_pipelines_controller_pipelinerun_duration_seconds_sum", namespace~".*-tenant|tekton-ci"}'
-        - '{__name__="tekton_pipelines_controller_pipelinerun_duration_seconds_count", namespace~".*-tenant|tekton-ci"}'
+        - '{__name__="pipelinerun_duration_scheduled_seconds_sum"}'
+        - '{__name__="pipelinerun_duration_scheduled_seconds_count"}'
+        - '{__name__="pipelinerun_gap_between_taskruns_milliseconds_sum"}'
+        - '{__name__="pipelinerun_gap_between_taskruns_milliseconds_count"}'
+        - '{__name__="tekton_pipelines_controller_pipelinerun_duration_seconds_sum"}'
+        - '{__name__="tekton_pipelines_controller_pipelinerun_duration_seconds_count"}'
         - '{__name__="controller_runtime_reconcile_errors_total", namespace!~".*-tenant|openshift-.*|kube-.*"}'
         - '{__name__="controller_runtime_reconcile_total", namespace!~".*-tenant|openshift-.*|kube-.*"}'
         - '{__name__="kube_pod_status_unschedulable", namespace!~".*-tenant|openshift-.*|kube-.*"}'
