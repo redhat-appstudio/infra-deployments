@@ -7,7 +7,6 @@ resources:
   - ../../base/member
   - ../../base/member/optional/infra-deployments/spi-vault
   - ../../base/all-clusters
-  - ../../base/quality-dashboard
 
 patchesStrategicMerge:
   - delete-applications.yaml
@@ -53,11 +52,6 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: dora-metrics
-  - path: development-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: quality-dashboard
   - path: development-overlay-patch.yaml
     target:
       kind: ApplicationSet
