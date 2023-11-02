@@ -31,17 +31,17 @@ echo
 echo "Remove RBAC for OpenShift GitOps:"
 kubectl delete -k $ROOT/openshift-gitops/base/cluster-rbac
 
-echo 
+echo
 echo "Remove the OpenShift GitOps operator subscription:"
 kubectl delete -f $ROOT/openshift-gitops/overlays/production-and-dev/subscription-openshift-gitops.yaml
 
-echo 
+echo
 echo "Removing operators and operands:"
 oc delete clusterserviceversions.operators.coreos.com --all -n openshift-operators
 
 echo
 echo "Removing custom projects"
-oc delete project enterprise-contract-service gitops quality-dashboard internal-services application-api
+oc delete project enterprise-contract-service gitops internal-services application-api
 
 echo
 echo "Removing dev-sso"
@@ -53,5 +53,5 @@ rm -rf ${TOOLCHAIN_E2E_TEMP_DIR} 2>/dev/null || true
 git clone --depth=1 https://github.com/codeready-toolchain/toolchain-e2e.git ${TOOLCHAIN_E2E_TEMP_DIR}
 make -C ${TOOLCHAIN_E2E_TEMP_DIR} appstudio-cleanup
 
-echo 
+echo
 echo "Complete."
