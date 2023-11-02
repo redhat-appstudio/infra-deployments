@@ -56,7 +56,7 @@ Prometheus instance deployed by the RHOBS
 [Observability Operator](https://github.com/rhobs/observability-operator).
 
 #### Platform Prometheus
-Scrapes generic metrics produced by built-in exports such as cAdvisor,
+Mainly scrapes generic metrics produced by built-in exports such as cAdvisor,
 kube-state-metrics, etc.
 
 #### User Workload Monitoring (UWM) Prometheus
@@ -107,7 +107,7 @@ namespaces).
 For those reasons, another instance is needed to federate the other instances, and
 write metrics to RHOBS.
 
-This instance collect selected metrics from Platform Prometheus and UWM Prometheus, and
+This instance collects selected metrics from Platform Prometheus and UWM Prometheus, and
 remote-writes selected labels for those metrics to RHOBS, which in turn, makes the
 metrics accessible to AppSRE Grafana.
 
@@ -115,6 +115,75 @@ This Prometheus instance is deployed using a MonitoringStack custom resource pro
 by the Observability Operator. This operator is installed by default in Production and Staging clusters.  
 In Development clusters, it's not installed by default to prevent conflicts with other deployments. 
 It can be installed and configured in development by using the `--obo/-o` flags.  
-For example:  
+For example:
+
 `./hack/bootstrap-cluster.sh preview --obo`  
 `./hack/bootstrap-cluster.sh preview -o`
+
+#### Federation and Remote-write
+
+Through Federation and remote-write configurations, only a subset of the metrics and
+the labels collected within the data plane clusters reach RHOBS. For that reason, it
+might be that metrics that are visible via the OCP web console (under Observe -->
+Metrics) do not reach RHOBS and are not visible in AppSRE Grafana.
+
+The Platform Prometheus instance monitors a wide variety of resources which are, in
+nature, of an unbound cardinality (e.g. containers, pods, jobs). Consequently, it
+generates a substantial amount of metrics time series that cannot all be forwarded to
+RHOBS. For that reason, we only allow a very small subset of the metrics it scrapes
+to be federated by the OBO Prometheus instance (and later remote-written to RHOBS).
+
+The UWM Prometheus instance, on the other hand, generates a very few time series by
+default, and the metrics it is configured to scrape for services are generally of
+constant cardinality. I.e. the number of time series stored for a given service does
+not grow based on the service load. For this reason, we allow all metrics it scrapes
+to be federated by the OBO Prometheus instance (and reach RHOBS).
+
+All **metrics** reaching the OBO instance are remote-written to RHOBS, but not all
+**labels** are. This means that it might be that time series visible in AppSRE Grafana
+will not include some of the labels the same time series have on the data plane
+clusters. The OBO instance is configured to remote-write only specific labels, and if
+the presence of a new label is required in alerting rules or AppSRE Grafana dashboards,
+then this label should be added to the configurations.
+
+##### Troubleshooting Missing Metrics and Labels
+
+There are a few steps to follow when specific metrics or labels are required for new
+alerting rules or Grafana dashboards, but are not present in AppSRE Grafana.
+
+> **_NOTE:_**  While we remote-write the metrics to RHOBS rather than to AppSRE Grafana,
+we don't have an easy way to directly confirm whether metrics are reaching RHOBS or not.
+Instead, we check AppSRE Grafana, assuming no metrics/labels are dropped between RHOBS
+and AppSRE Grafana. Nevertheless, such drops are possible, although far less probable
+comparing to MonitoringStack misconfigurations.
+
+If the metric is missing altogether:
+
+1. Verify that the metric does exist inside its expected cluster of origin by querying
+   for it on the Observe --> Metrics screen on the OCP web console.
+    * If it doesn't, further troubleshoot the service monitor expected to collect the
+      metric and the Kubernetes resource expected to generate it.
+2. While querying for the metric, check the value of its `prometheus` label.
+    * if the value is `openshift-monitoring/k8s`, it means it's being collected by the
+      Platform Prometheus instance. As we only federate specific metrics from this
+      instance, the metric needs to be added to the `match` list under the
+      `appstudio-federate-smon` ServiceMonitor resource within the
+      [MonitoringStack configurations].
+    * if the label value is different, reach out to the o11y team on [Slack][o11y-slack]
+3. Once added, the metric should be federated by the OBO instance and remote-written to
+   RHOBS.
+
+If the metric is present, but labels are missing:
+
+1. Verify that the labels do exist when querying for the metric through the OCP web
+   console.
+    * If not, further troubleshoot the resource that should export or instrument
+      the metric.
+2. Add the missing labels to the `LabelKeep` action's `regex` field within the
+   `MonitoringStack` resource definition in the [MonitoringStack configurations].
+3. Once added, the label should be remote-written by the OBO instance to RHOBS.
+
+For further assistance, reach out to the o11y team on [Slack][o11y-slack].
+
+[MonitoringStack configurations]: base/monitoringstack/monitoringstack.yaml
+[o11y-slack]: https://redhat-internal.slack.com/archives/C04FDFTF8EB
