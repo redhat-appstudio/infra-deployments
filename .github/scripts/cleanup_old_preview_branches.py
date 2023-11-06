@@ -18,7 +18,7 @@ def get_branches_url(page: int):
 
 def delete_branch(branch_name: str, headers: dict[str, str]):
     delete_branch_url = (
-        f"https://api.github.com/repos/rsoaresd/multi-components/git/refs/heads/{branch_name}"
+        f"https://api.github.com/repos/redhat-appstudio-qe/infra-deployments/git/refs/heads/{branch_name}"
     )
 
     response = requests.request(method="DELETE", url=delete_branch_url, headers=headers)
