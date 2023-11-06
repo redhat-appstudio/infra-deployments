@@ -29,6 +29,10 @@ spec:
             - /metadata/annotations/build.appstudio.openshift.io~1request
             - /metadata/annotations/image.redhat.com~1image
             - /metadata/annotations/image.redhat.com~1generate
+        - group: appstudio.redhat.com
+          kind: ReleasePlan
+          jsonPointers:
+            - /metadata/labels/release.appstudio.openshift.io~author
       syncPolicy:
         automated:
           prune: true
