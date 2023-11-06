@@ -1,0 +1,10 @@
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: backup-stone-stg-m01
+spec:
+  dataFrom:
+  - extract:
+      key: integrations-output/terraform-resources/stonesoups01ue1/stonesoup-infra-stage-backup/backup-stone-stg-m01
+  target:
+    name: backup-stone-stg-m01
