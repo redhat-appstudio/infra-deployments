@@ -4,5 +4,11 @@ resources:
 - ../base
 - host-config.yaml
 - external-secrets.yaml
+- https://github.com/redhat-appstudio/multi-platform-controller/deploy/otp?ref=ae1b67d34f8f35b8b5888b019a4daafd0b19eab3
 
 namespace: multi-platform-controller
+
+images:
+  - name: multi-platform-otp-server
+    newName: quay.io/redhat-user-workloads/rhtap-build-tenant/multi-arch-controller/multi-platform-controller-otp-service
+    newTag: ae1b67d34f8f35b8b5888b019a4daafd0b19eab3
