@@ -179,6 +179,48 @@ Finally, install the application for your organization. See the [GitHub docs: In
 GitHub App][github-install-app]. Select `All repositories` when installing to make sure it will have
 access to all the repos you're going to create/fork into your org in the future.
 
+### Verifying your setup
+
+**Simple build:**
+
+* Fork <https://github.com/devfile-samples/devfile-sample-python-basic> into your GitHub organization.
+* Run `hack/build/build-via-appstudio.sh https://github.com/MY_STONESOUP_ORG/devfile-sample-python-basic`
+
+The script will create a test application and a component for you:
+
+```shell
+$ oc get application
+NAME               AGE   STATUS   REASON
+test-application   74s   True     OK
+
+$ oc get component
+NAME                          AGE   STATUS   REASON   TYPE
+devfile-sample-python-basic   86s   True     OK       Created
+```
+
+Build-service should start a pipeline for your new component almost immediately:
+
+```shell
+$ tkn pipelinerun list
+NAME                                STARTED         DURATION   STATUS
+devfile-sample-python-basic-jpg29   2 minutes ago   ---        Running
+```
+
+You can also see the PipelineRun in the OpenShift console in your cluster.
+
+**Pipelines as Code onboarding:**
+
+```shell
+$ oc annotate component devfile-sample-python-basic build.appstudio.openshift.io/request=configure-pac
+component.appstudio.redhat.com/devfile-sample-python-basic annotated
+```
+
+Build-service should create a new pull request in your forked devfile-sample-python-basic repository.
+
+If your cluster is accessible on the public internet, commenting `/ok-to-test` on the pull request
+will trigger the on-pull-request PipelineRun. Merging the pull request will trigger the on-push PipelineRun.
+If your cluster is hidden behind a VPN, this won't work.
+
 ## Optional: OpenShift Local Post-Bootstrap Configuration
 
 Even with 6 CPU cores, you will need to reduce the CPU resource requests for each StoneSoup application. Either run `./hack/reduce-gitops-cpu-requests.sh` which will set resources.requests.cpu values to 50m or use `kubectl edit argocd/openshift-gitops -n openshift-gitops` to reduce the values to some other value. More details are in the FAQ below.
