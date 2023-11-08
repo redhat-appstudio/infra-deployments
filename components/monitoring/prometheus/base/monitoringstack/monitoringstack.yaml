@@ -100,6 +100,11 @@ spec:
         - '{__name__="kube_pod_status_phase", namespace!~".*-tenant|openshift-.*|kube-.*"}'
         - '{__name__="kube_persistentvolume_status_phase", namespace!~".*-tenant|openshift-.*|kube-.*"}'
         - '{__name__="kube_resourcequota", namespace!~".*-tenant|openshift-.*|kube-.*"}'
+        - '{__name__="kube_statefulset_status_replicas_ready", namespace="gitops-service-argocd"}'
+        - '{__name__="kube_statefulset_replicas", namespace="gitops-service-argocd"}'
+        - '{__name__="openshift_route_status", namespace="gitops-service-argocd"}'
+        - '{__name__="kube_deployment_status_replicas_ready", namespace="gitops-service-argocd"}'
+        - '{__name__="kube_deployment_spec_replicas", namespace="gitops-service-argocd"}'
     relabelings:
     # override the target's address by the prometheus-k8s service name.
     - action: replace
