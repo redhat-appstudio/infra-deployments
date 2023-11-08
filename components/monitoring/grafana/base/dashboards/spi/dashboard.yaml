@@ -40,3 +40,17 @@ spec:
   configMapRef:
     name: grafana-dashboard-spi-slo
     key: spi-slo.json
+---
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDashboard
+metadata:
+  name: remotesecret-metrics-dashboard
+  labels:
+    app: appstudio-grafana
+spec:
+  instanceSelector:
+    matchLabels:
+      dashboards: "appstudio-grafana"
+  configMapRef:
+    name: grafana-dashboard-remotesecret-metrics
+    key: remotesecret-metrics.json
