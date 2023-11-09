@@ -58,6 +58,26 @@ rules:
       - patch
       - update
       - watch
+  # This rule is needed to be able to diagnose Cluster Health. A diagnosis can be made in situations like
+  # PipelineRun Execution/Scheduling Overhead alert starts firing.
+  - apiGroups:
+      - ""
+    resources:
+      - "nodes"
+    verbs:
+      - get
+      - list
+      - watch
+  # This rule is needed to be able to diagnose Cluster Health. A diagnosis can be made in situations like
+  # PipelineRun Execution/Scheduling Overhead alert starts firing.
+  - apiGroups:
+      - metrics.k8s.io
+    resources:
+      - "nodes"
+    verbs:
+      - get
+      - list
+      - watch
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
