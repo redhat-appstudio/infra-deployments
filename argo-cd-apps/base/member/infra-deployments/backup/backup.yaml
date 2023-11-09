@@ -12,7 +12,6 @@ spec:
               values:
                 sourceRoot: components/backup
                 environment: staging
-                clusterDir: ""
           - list:
               elements: []
   template:
@@ -21,7 +20,7 @@ spec:
     spec:
       project: default
       source:
-        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
+        path: '{{values.sourceRoot}}/{{values.environment}}/{{nameNormalized}}'
         repoURL: https://github.com/redhat-appstudio/infra-deployments.git
         targetRevision: main
       destination:
