@@ -8,6 +8,9 @@ resources:
   - ../../base/tenants-config
   - ../../base/cluster-secret-store-rh
   - ../../base/rh-managed-workspaces-config
+
+patchesStrategicMerge:
+  - delete-applications.yaml
 namespace: argocd
 
 patches:
