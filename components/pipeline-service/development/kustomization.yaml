@@ -11,8 +11,13 @@ resources:
   - https://github.com/openshift-pipelines/pipeline-service.git/developer/openshift/gitops/argocd/pipeline-service?ref=589d6e4688334ed09eb4e10ddd5bdd7a01a5122b
   - https://github.com/openshift-pipelines/pipeline-service.git/developer/openshift/gitops/argocd/pipeline-service-storage?ref=589d6e4688334ed09eb4e10ddd5bdd7a01a5122b
   - ../base/rbac
-  
+
 patches:
+  - path: metrics-exporter-trace.yaml
+    target:
+      kind: Deployment
+      name: pipeline-metrics-exporter
+      namespace: openshift-pipelines
 #  - path: scale-down-exporter.yaml
 #    target:
 #      kind: Deployment

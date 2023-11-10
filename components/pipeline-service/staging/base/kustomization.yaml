@@ -19,6 +19,11 @@ patches:
     target:
       kind: TektonConfig
       name: config
+  - path: metrics-exporter-trace.yaml
+    target:
+      kind: Deployment
+      name: pipeline-metrics-exporter
+      namespace: openshift-pipelines
   - path: update-tekton-config-pac.yaml
     target:
       kind: TektonConfig
