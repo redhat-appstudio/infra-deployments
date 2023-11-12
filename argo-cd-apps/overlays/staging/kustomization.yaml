@@ -4,3 +4,16 @@ resources:
   - ../../base/host
   - ../../base/member
   - ../../base/all-clusters
+  - ../../base/rh-managed-workspaces-config
+  - ../../base/tenants-config
+patches:
+  - path: tenants-config-managed.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: rh-managed-workspaces-config
+  - path: tenants-config-tenant.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: tenants-config
