@@ -6,25 +6,49 @@ spec:
   selectors:
     - name: FBC
       pipelineRef:
-        name: fbc-builder
-        bundle: quay.io/redhat-appstudio-tekton-catalog/pipeline-fbc-builder:06784ffb837be23caeab4248bf563fa79b9b27f5
+        resolver: bundles
+        params:
+        - name: name
+          value: fbc-builder
+        - name: bundle
+          value: quay.io/redhat-appstudio-tekton-catalog/pipeline-fbc-builder:06784ffb837be23caeab4248bf563fa79b9b27f5
+        - name: kind
+          value: pipeline
       when:
         language: fbc
     - name: Docker build
       pipelineRef:
-        name: docker-build
-        bundle: quay.io/redhat-appstudio-tekton-catalog/pipeline-docker-build:06784ffb837be23caeab4248bf563fa79b9b27f5
+        resolver: bundles
+        params:
+        - name: name
+          value: docker-build
+        - name: bundle
+          value: quay.io/redhat-appstudio-tekton-catalog/pipeline-docker-build:06784ffb837be23caeab4248bf563fa79b9b27f5
+        - name: kind
+          value: pipeline
       when:
         dockerfile: true
     - name: Java
       pipelineRef:
-        name: java-builder
-        bundle: quay.io/redhat-appstudio-tekton-catalog/pipeline-java-builder:06784ffb837be23caeab4248bf563fa79b9b27f5
+        resolver: bundles
+        params:
+        - name: name
+          value: java-builder
+        - name: bundle
+          value: quay.io/redhat-appstudio-tekton-catalog/pipeline-java-builder:06784ffb837be23caeab4248bf563fa79b9b27f5
+        - name: kind
+          value: pipeline
       when:
         language: java
     - name: NodeJS
       pipelineRef:
-        name: nodejs-builder
-        bundle: quay.io/redhat-appstudio-tekton-catalog/pipeline-nodejs-builder:06784ffb837be23caeab4248bf563fa79b9b27f5
+        resolver: bundles
+        params:
+        - name: name
+          value: nodejs-builder
+        - name: bundle
+          value: quay.io/redhat-appstudio-tekton-catalog/pipeline-nodejs-builder:06784ffb837be23caeab4248bf563fa79b9b27f5
+        - name: kind
+          value: pipeline
       when:
         language: nodejs,node
