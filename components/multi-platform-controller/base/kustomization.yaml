@@ -4,10 +4,15 @@ kind: Kustomization
 resources:
 - allow-argocd-to-manage.yaml
 - https://github.com/redhat-appstudio/multi-platform-controller/deploy/operator?ref=dc43d6e0cdd711a06c46c43ebb081e37777a2009
+- https://github.com/redhat-appstudio/multi-platform-controller/deploy/otp?ref=dc43d6e0cdd711a06c46c43ebb081e37777a2009
+
 
 images:
 - name: multi-platform-controller
   newName: quay.io/redhat-user-workloads/rhtap-build-tenant/multi-arch-controller/multi-arch-controller
+  newTag: dc43d6e0cdd711a06c46c43ebb081e37777a2009
+- name: multi-platform-otp-server
+  newName: quay.io/redhat-user-workloads/rhtap-build-tenant/multi-arch-controller/multi-platform-controller-otp-service
   newTag: dc43d6e0cdd711a06c46c43ebb081e37777a2009
 
 namespace: multi-platform-controller
