@@ -2,7 +2,7 @@
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: register-cluster-extra-permissions
+  name: register-cluster-extra-member-permissions
 rules:
 - apiGroups:
   - ""
@@ -11,6 +11,18 @@ rules:
   - "users"
   verbs:
   - "impersonate"
+- apiGroups:
+  - "authentication.k8s.io"
+  resources:
+  - "tokenreviews"
+  verbs:
+  - "create"
+- apiGroups:
+  - "toolchain.dev.openshift.com"
+  resources:
+  - "spacerequests"
+  verbs:
+  - "*"
 - apiGroups:
   - "toolchain.dev.openshift.com"
   resources:
@@ -28,10 +40,26 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - "namespaces"
+  verbs:
+  - "get"
+  - "list"
+  - "watch"
+- apiGroups:
+  - ""
+  resources:
   - "secrets"
   - "serviceaccounts/token"
   verbs:
   - "*"
+- apiGroups:
+  - "route.openshift.io"
+  resources:
+  - "routes"
+  verbs:
+  - "get"
+  - "list"
+  - "watch"
 - apiGroups:
   - "toolchain.dev.openshift.com"
   resources:
@@ -52,44 +80,22 @@ rules:
   - "get"
   - "patch"
   - "update"
-- apiGroups:
-  - "rbac.authorization.k8s.io"
-  resources:
-  - "clusterroles"
-  - "clusterrolebindings"
-  verbs:
-  - "create"
-  - "delete"
-  - "get"
-  - "list"
-  - "patch"
-  - "update"
-  - "watch"
-- apiGroups:
-  - "authorization.openshift.io"
-  resources:
-  - "clusterroles"
-  - "clusterrolebindings"
-  verbs:
-  - "get"
-  - "list"
-  - "watch"
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: sandbox-sre-admins-can-register-clusters
+  name: sandbox-sre-admins-can-register-member-clusters
 subjects:
-  - kind: User
-    apiGroup: rbac.authorization.k8s.io
-    name: MatousJobanek
-  - kind: User
-    apiGroup: rbac.authorization.k8s.io
-    name: alexeykazakov
-  - kind: User
-    apiGroup: rbac.authorization.k8s.io
-    name: xcoulon
+- kind: User
+  apiGroup: rbac.authorization.k8s.io
+  name: MatousJobanek
+- kind: User
+  apiGroup: rbac.authorization.k8s.io
+  name: alexeykazakov
+- kind: User
+  apiGroup: rbac.authorization.k8s.io
+  name: xcoulon
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: register-cluster-extra-permissions
+  name: register-cluster-extra-member-permissions
