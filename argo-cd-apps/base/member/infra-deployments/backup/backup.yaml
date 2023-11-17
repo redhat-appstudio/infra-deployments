@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: quality-dashboard
+  name: backup
 spec:
   generators:
     - merge:
@@ -9,33 +9,29 @@ spec:
           - nameNormalized
         generators:
           - clusters:
-              selector:
-                matchLabels:
-                  appstudio.redhat.com/quality-dashboard: "true"
               values:
-                sourceRoot: components/quality-dashboard
+                sourceRoot: components/backup
                 environment: staging
-                clusterDir: ""
           - list:
               elements: []
   template:
     metadata:
-      name: quality-dashboard-{{nameNormalized}}
+      name: backup-{{nameNormalized}}
     spec:
       project: default
       source:
-        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
+        path: '{{values.sourceRoot}}/{{values.environment}}/{{nameNormalized}}'
         repoURL: https://github.com/redhat-appstudio/infra-deployments.git
         targetRevision: main
       destination:
-        namespace: quality-dashboard
+        namespace: default
         server: '{{server}}'
       syncPolicy:
-        automated:
+        automated: 
           prune: true
           selfHeal: true
         syncOptions:
-          - CreateNamespace=true
+        - CreateNamespace=true
         retry:
           limit: -1
           backoff:

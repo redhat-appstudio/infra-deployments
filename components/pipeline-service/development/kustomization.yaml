@@ -8,11 +8,16 @@ commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 
 resources:
-  - https://github.com/openshift-pipelines/pipeline-service.git/developer/openshift/gitops/argocd/pipeline-service?ref=cad76877d5abd32d1c9f7943a928ad2e07bcf9f1
-  - https://github.com/openshift-pipelines/pipeline-service.git/developer/openshift/gitops/argocd/pipeline-service-storage?ref=cad76877d5abd32d1c9f7943a928ad2e07bcf9f1
+  - https://github.com/openshift-pipelines/pipeline-service.git/developer/openshift/gitops/argocd/pipeline-service?ref=c36e75cea7e9e15d20bcde54d8e16048d0ffdb19
+  - https://github.com/openshift-pipelines/pipeline-service.git/developer/openshift/gitops/argocd/pipeline-service-storage?ref=c36e75cea7e9e15d20bcde54d8e16048d0ffdb19
   - ../base/rbac
-  
+
 patches:
+  - path: metrics-exporter-trace.yaml
+    target:
+      kind: Deployment
+      name: pipeline-metrics-exporter
+      namespace: openshift-pipelines
 #  - path: scale-down-exporter.yaml
 #    target:
 #      kind: Deployment

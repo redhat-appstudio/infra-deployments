@@ -8,6 +8,7 @@ resources:
   - ../../base/tenants-config
   - ../../base/cluster-secret-store-rh
   - ../../base/rh-managed-workspaces-config
+
 namespace: argocd
 
 patches:
@@ -126,3 +127,8 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: release
+  - path: production-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: backup
