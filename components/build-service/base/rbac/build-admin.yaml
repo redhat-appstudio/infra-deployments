@@ -1,0 +1,45 @@
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: build-admin
+  namespace: build-service
+rules:
+  - apiGroups:
+      - ''
+    resources:
+      - secrets
+    verbs:
+      - get
+      - list
+      - watch
+      - update
+      - patch
+      - delete
+
+  - apiGroups:
+      - ''
+    resources:
+      - pods
+    verbs:
+      - get
+      - list
+      - watch
+      - delete
+
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: build-admins
+  namespace: build-service
+subjects:
+  - kind: User
+    apiGroup: rbac.authorization.k8s.io
+    name: mmorhun
+  - kind: User
+    apiGroup: rbac.authorization.k8s.io
+    name: arewm
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: build-admin
