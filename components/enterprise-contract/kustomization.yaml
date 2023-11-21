@@ -1,7 +1,7 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - https://github.com/enterprise-contract/enterprise-contract-controller/config/crd?ref=830b71ea12be4d3ffd16742338804c9fb7ed70d2
+  - https://github.com/enterprise-contract/enterprise-contract-controller/config/crd?ref=8208107306c96568a274113816b1e54108bc0bc3
   - ecp.yaml
   - role.yaml
   - rolebinding.yaml
@@ -11,11 +11,11 @@ configMapGenerator:
   - name: ec-defaults
     namespace: enterprise-contract-service
     literals:
-      - verify_ec_task_bundle=quay.io/enterprise-contract/ec-task-bundle:ece604c4939992abadc77762014affbe67c433a1@sha256:1955a41c18dac0af5a702ff1fd16168891d798223760390f9aa56ed787dd1fc7
+      - verify_ec_task_bundle=quay.io/enterprise-contract/ec-task-bundle:c97b84a2b9c0ff0e553de0ade2a60fbc18fde370@sha256:d6c979c3b65544bac825580748c9a5f62a505c74071cf7ad8d2c98c8d8ee18b4
       - verify_ec_task_git_url=https://github.com/enterprise-contract/ec-cli.git
-      - verify_ec_task_git_revision=ece604c4939992abadc77762014affbe67c433a1
+      - verify_ec_task_git_revision=c97b84a2b9c0ff0e553de0ade2a60fbc18fde370
       - verify_ec_task_git_pathInRepo=tasks/verify-enterprise-contract/0.1/verify-enterprise-contract.yaml
 images:
   - name: quay.io/redhat-appstudio/enterprise-contract-controller
     newName: quay.io/redhat-appstudio/enterprise-contract-controller
-    newTag: 830b71ea12be4d3ffd16742338804c9fb7ed70d2
+    newTag: 8208107306c96568a274113816b1e54108bc0bc3
