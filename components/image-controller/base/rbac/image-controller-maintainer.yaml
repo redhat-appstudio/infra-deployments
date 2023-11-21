@@ -41,24 +41,9 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: image-controller-maintainers
 subjects:
-  - kind: User
-    apiGroup: rbac.authorization.k8s.io
-    name: cqi
-  - kind: User
-    apiGroup: rbac.authorization.k8s.io
-    name: mkosiarc
-  - kind: User
-    apiGroup: rbac.authorization.k8s.io
-    name: mmorhun
-  - kind: User
-    apiGroup: rbac.authorization.k8s.io
-    name: rcerven
-  - kind: User
-    apiGroup: rbac.authorization.k8s.io
-    name: susdas
-  - kind: User
-    apiGroup: rbac.authorization.k8s.io
-    name: chmeliik
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: Build team
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
