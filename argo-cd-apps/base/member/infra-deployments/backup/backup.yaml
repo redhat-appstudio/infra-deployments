@@ -4,10 +4,16 @@ metadata:
   name: backup
 spec:
   generators:
-    - clusters:
-        values:
-          sourceRoot: components/backup
-          environment: staging
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              values:
+                sourceRoot: components/backup
+                environment: staging
+          - list:
+              elements: []
   template:
     metadata:
       name: backup-{{nameNormalized}}
