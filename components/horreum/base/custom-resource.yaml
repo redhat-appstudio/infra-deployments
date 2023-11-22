@@ -1,0 +1,15 @@
+apiVersion: hyperfoil.io/v1alpha1
+kind: Horreum
+metadata:
+  name: horreum
+  namespace: horreum
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  image: quay.io/hyperfoil/horreum:0.7.11
+  keycloak:
+    image: quay.io/keycloak/keycloak:22.0
+  postgres:
+    image: registry.redhat.io/rhel8/postgresql-12:1-144
+    persistentVolumeClaim: horreum-postgres
+  nodeHost: 127.0.0.1
