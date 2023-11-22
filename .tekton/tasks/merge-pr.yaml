@@ -1,0 +1,39 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: merge-pr
+  namespace: rhtap-staging-testing
+spec:
+  description: |
+    merge the pull request into main branch.
+  params:
+    - name: pull_request_number
+    - name: TARGET_GH_OWNER
+      description: Owner of GitHub repository of the infra-deployments code
+      default: redhat-appstudio
+    - name: TARGET_GH_REPO
+      description: GitHub repository of the infra-deployments code
+      default: infra-deployments
+    - name: source_branch
+  workspaces:
+   - name: shared-file-path
+   - name: infra-deployment-git
+  steps:
+    - name: merge-pull-request
+      image: quay.io/redhat-appstudio/github-app-token@sha256:b4f2af12e9beea68055995ccdbdb86cfe1be97688c618117e5da2243dc1da18e
+      workingDir: $(workspaces.infra-deployment-git.path)
+      env:
+        - name: PULL_REQUEST_NUMBER
+          value: $(params.pull_request_number)
+        - name: SOURCE_BRANCH
+          value: $(params.source_branch)
+        - name: TARGET_GH_OWNER
+          value: "$(params.TARGET_GH_OWNER)"
+        - name: TARGET_GH_REPO
+          value: "$(params.TARGET_GH_REPO)"
+      script: |
+        #!/usr/bin/env bash
+
+        token=$(cat '$(workspaces.shared-file-path.path)/github-token.txt')
+
+        ".tekton/hack/merge-pr.py" --token ${token} --branch ${SOURCE_BRANCH} -o ${TARGET_GH_OWNER} -r ${TARGET_GH_REPO} -n ${PULL_REQUEST_NUMBER}

@@ -1,0 +1,37 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: remove-pr-labels
+  namespace: rhtap-staging-testing
+spec:
+  description: |
+    Remove the 'ok-to-merge' label on the PR so the final rebase does not trigger a new execution of the pipelinerun
+  params:
+    - name: pull_request_number
+    - name: match_label
+    - name: TARGET_GH_OWNER
+      description: Owner of GitHub repository of the infra-deployments code
+      default: redhat-appstudio
+    - name: TARGET_GH_REPO
+      description: GitHub repository of the infra-deployments code
+      default: infra-deployments
+  workspaces:
+   - name: shared-file-path
+   - name: infra-deployment-git
+  steps:
+    - name: remove-pr-label
+      image: quay.io/redhat-appstudio/github-app-token@sha256:b4f2af12e9beea68055995ccdbdb86cfe1be97688c618117e5da2243dc1da18e
+      workingDir: $(workspaces.infra-deployment-git.path)
+      env:
+        - name: PULL_REQUEST_NUMBER
+          value: $(params.pull_request_number)
+        - name: TARGET_GH_OWNER
+          value: "$(params.TARGET_GH_OWNER)"
+        - name: TARGET_GH_REPO
+          value: "$(params.TARGET_GH_REPO)"
+      script: |
+        #!/usr/bin/env bash
+
+        token=$(cat '$(workspaces.shared-file-path.path)/github-token.txt')
+
+        ".tekton/hack/remove-pr-label.py" --token ${token} --label "$(params.match_label)" -o ${TARGET_GH_OWNER} -r ${TARGET_GH_REPO} -n ${PULL_REQUEST_NUMBER}

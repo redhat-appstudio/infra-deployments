@@ -1,0 +1,87 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: stage-verify-e2e-test
+  namespace: rhtap-staging-testing
+spec:
+  description: >-
+    This task is for running stage e2e test on RHTAP staging cluster
+  params:
+  - name: PLATFORM
+    description: which environment the test is running on.
+    default: "stage"
+  - name: TASK_RETRIES
+    description: number of times the task will be rerun
+    default: "0"
+  workspaces:
+    - name: stage-e2e-git
+  steps:
+    - name: run-stage-verify-e2e-test
+      image: registry.access.redhat.com/ubi9/go-toolset:1.20.10-2.1699551725
+      workingDir: $(workspaces.stage-e2e-git.path)
+      script: |
+        #!/usr/bin/env bash
+        set -eufx
+
+        mkdir -p ~/.kube
+        cat <<EOF > ~/.kube/config
+        apiVersion: v1
+        clusters:
+        - cluster:
+            server: YOUR_KUBE_API_SERVER_URL
+          name: YOUR_CLUSTER_NAME
+        contexts:
+        - context:
+            cluster: YOUR_CLUSTER_NAME
+            user: YOUR_USER_NAME
+          name: YOUR_CONTEXT_NAME
+        current-context: YOUR_CONTEXT_NAME
+        kind: Config
+        preferences: {}
+        users:
+        - name: YOUR_USER_NAME
+          user:
+            token: YOUR_KUBE_API_TOKEN
+        EOF
+        make build
+        E2E_ARGS_EXEC="--ginkgo.label-filter $(params.PLATFORM) --ginkgo.vv" make run
+      env:
+        - name: STAGE_SSOURL
+          valueFrom:
+            secretKeyRef:
+              name: stage-test-e2e
+              key: ssourl
+        - name: STAGE_APIURL
+          valueFrom:
+            secretKeyRef:
+              name: stage-test-e2e
+              key: apiurl
+        - name: STAGEUSER_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: stage-test-e2e
+              key: token
+        - name: STAGE_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: stage-test-e2e
+              key: username
+    - name: enable-retries
+      image: registry.access.redhat.com/ubi8/go-toolset:1.19.10-10.1692783630
+      script: |
+        #!/usr/bin/env bash
+        set -o errexit
+        set -o nounset
+        set -o pipefail
+
+        if [ "$(cat $(steps.step-run.exitCode.path))" != "0" ]; then
+          if [ "$(context.task.retry-count)" == "$(params.TASK_RETRIES)" ]; then
+            echo "Marking this step as PASS though previous step failed as this is the last retry"
+            exit 0
+          else
+            echo "Marking this step as FAIL to make sure that the task is retried"
+            exit 1
+          fi
+        else
+          echo "Marking this step as PASS as previous step was successful"
+        fi

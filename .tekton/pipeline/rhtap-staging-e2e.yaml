@@ -1,0 +1,270 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: rhtap-staging-e2e
+  namespace: rhtap-staging-testing
+spec:
+  params:
+    - name: repo_url
+    - name: revision
+    - name: pull_request_number
+    - name: source_branch
+  workspaces:
+    - name: git
+    - name: shared-file
+  tasks:
+    - name: get-github-token
+      taskRef:
+        name: get-github-token
+      runAfter:
+        - clone-infra-deployment-git
+      workspaces:
+        - name: shared-file-path
+          workspace: shared-file
+        - name: infra-deployment-git
+          workspace: git
+          subPath: infra-deployment-git
+    - name: check-merge-label
+      taskRef:
+        name: pr-labels
+      params:
+        - name: pull_request_number
+          value: $(params.pull_request_number)
+        - name: match_label
+          value: "ok-to-merge"
+      runAfter:
+        - get-github-token
+        - clone-infra-deployment-git
+      workspaces:
+        - name: shared-file-path
+          workspace: shared-file
+        - name: infra-deployment-git
+          workspace: git
+          subPath: infra-deployment-git
+    - name: clone-infra-deployment-git
+      taskRef:
+        name: git-clone
+      params:
+        - name: url
+          value: $(params.repo_url)
+        - name: deleteExisting
+          value: "true"
+        - name: revision
+          value: $(params.revision)
+        - name: depth
+          value: "3"
+      workspaces:
+      - name: output
+        workspace: git
+        subPath: infra-deployment-git
+    - name: get-pr-modified-files
+      taskRef:
+        name: get-pr-modified-files
+      runAfter:
+        - check-merge-label
+      when:
+        - input: $(tasks.check-merge-label.results.matched-merge-label)
+          operator: in
+          values: ["True"]
+      workspaces:
+        - name: infra-deployment-git
+          workspace: git
+          subPath: infra-deployment-git
+        - name: shared-file-path
+          workspace: shared-file
+    - name: changed-component-app-name
+      taskRef:
+        name: component-app-name
+      workspaces:
+        - name: infra-deployment-git
+          workspace: git
+          subPath: infra-deployment-git
+        - name: shared-file-path
+          workspace: shared-file
+      when:
+        - input: $(tasks.check-merge-label.results.matched-merge-label)
+          operator: in
+          values: ["True"]
+      runAfter:
+        - get-pr-modified-files
+    - name: check-rebase-label-pre-test
+      taskRef:
+        name: pr-rebase-labels
+      runAfter:
+        - get-pr-modified-files
+      when:
+        - input: $(tasks.check-merge-label.results.matched-merge-label)
+          operator: in
+          values: ["True"]
+      workspaces:
+        - name: infra-deployment-git
+          workspace: git
+          subPath: infra-deployment-git
+    - name: rebase-pr-pre-test
+      taskRef:
+        name: rebase-pr
+      workspaces:
+        - name: infra-deployment-git
+          workspace: git
+          subPath: infra-deployment-git
+        - name: shared-file-path
+          workspace: shared-file
+      when:
+        - input: $(tasks.check-rebase-label-pre-test.results.matched-rebase-label)
+          operator: in
+          values: ["True"]
+        - input: $(tasks.check-merge-label.results.matched-merge-label)
+          operator: in
+          values: ["True"]
+      runAfter:
+        - check-rebase-label-pre-test
+    - name: replace-revision
+      taskRef:
+        name: replace-revision
+      params:
+        - name: pr_branch_revision
+          value: $(params.revision)
+      workspaces:
+        - name: infra-deployment-git
+          workspace: git
+          subPath: infra-deployment-git
+        - name: shared-file-path
+          workspace: shared-file
+      when:
+        - input: $(tasks.check-rebase-label-pre-test.results.matched-rebase-label)
+          operator: in
+          values: ["False"]
+        - input: $(tasks.check-merge-label.results.matched-merge-label)
+          operator: in
+          values: ["True"]
+      runAfter:
+        - changed-component-app-name
+        - check-rebase-label-pre-test
+    - name: clone-stage-e2e-git
+      taskRef:
+        name: git-clone
+      params:
+        - name: url
+          value: 'https://github.com/sawood14012/e2e-tests.git'
+        - name: deleteExisting
+          value: "true"
+        - name: revision
+          value: "verify-stage"
+      runAfter:
+        - check-merge-label
+      when:
+        - input: $(tasks.check-merge-label.results.matched-merge-label)
+          operator: in
+          values: ["True"]
+      workspaces:
+      - name: output
+        workspace: git
+        subPath: stage-e2e-git
+    - name: stage-verify-e2e-test
+      taskRef:
+        name: stage-verify-e2e-test
+      params:
+      - name: TASK_RETRIES
+        value: "$(context.pipelineTask.retries)"
+      workspaces:
+      - name: stage-e2e-git
+        workspace: git
+        subPath: stage-e2e-git
+      runAfter:
+        - replace-revision
+        - clone-stage-e2e-git
+      when:
+        - input: $(tasks.check-rebase-label-pre-test.results.matched-rebase-label)
+          operator: in
+          values: ["False"]
+        - input: $(tasks.check-merge-label.results.matched-merge-label)
+          operator: in
+          values: ["True"]
+    - name: check-rebase-label-post-test
+      taskRef:
+        name: pr-rebase-labels
+      runAfter:
+        - stage-verify-e2e-test
+      when:
+        - input: $(tasks.check-rebase-label-pre-test.results.matched-rebase-label)
+          operator: in
+          values: ["False"]
+        - input: $(tasks.check-merge-label.results.matched-merge-label)
+          operator: in
+          values: ["True"]
+      workspaces:
+        - name: infra-deployment-git
+          workspace: git
+          subPath: infra-deployment-git
+    - name: remove-merge-label
+      taskRef:
+        name: remove-pr-labels
+      params:
+        - name: match_label
+          value: "ok-to-merge"
+        - name: pull_request_number
+          value: $(params.pull_request_number)
+      when:
+        - input: $(tasks.check-rebase-label-post-test.results.matched-rebase-label)
+          operator: in
+          values: ["True"]
+        - input: $(tasks.check-merge-label.results.matched-merge-label)
+          operator: in
+          values: ["True"]
+      workspaces:
+        - name: shared-file-path
+          workspace: shared-file
+        - name: infra-deployment-git
+          workspace: git
+          subPath: infra-deployment-git
+      runAfter:
+        - check-rebase-label-post-test
+    - name: rebase-pr-post-test
+      taskRef:
+        name: rebase-pr
+      workspaces:
+        - name: infra-deployment-git
+          workspace: git
+          subPath: infra-deployment-git
+        - name: shared-file-path
+          workspace: shared-file
+      runAfter:
+        - remove-merge-label
+      when:
+        - input: $(tasks.check-merge-label.results.matched-merge-label)
+          operator: in
+          values: ["True"]
+        - input: $(tasks.check-rebase-label-post-test.results.matched-rebase-label)
+          operator: in
+          values: ["True"]
+    - name: merge-pr
+      taskRef:
+        name: merge-pr
+      params:
+        - name: pull_request_number
+          value: $(params.pull_request_number)
+        - name: source_branch
+          value: $(params.source_branch)
+      workspaces:
+        - name: infra-deployment-git
+          workspace: git
+          subPath: infra-deployment-git
+        - name: shared-file-path
+          workspace: shared-file
+      runAfter:
+        - rebase-pr-post-test
+      when:
+        - input: $(tasks.check-rebase-label-pre-test.results.matched-rebase-label)
+          operator: in
+          values: ["False"]
+        - input: $(tasks.check-merge-label.results.matched-merge-label)
+          operator: in
+          values: ["True"]
+  finally:
+    - name: revert-replace-revision
+      taskRef:
+        name: revert-replace-revision
+      when:
+        - input: $(tasks.check-merge-label.results.matched-merge-label)
+          operator: in
+          values: ["True"]

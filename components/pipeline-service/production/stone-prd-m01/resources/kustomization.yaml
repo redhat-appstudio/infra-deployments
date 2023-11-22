@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+patches:
+  - path: tekton-results-database-secret-path.yaml
+    target:
+      name: tekton-results-database
+      group: external-secrets.io
+      version: v1beta1
+      kind: ExternalSecret
+  - path: tekton-results-s3-secret-path.yaml
+    target:
+      name: tekton-results-s3
+      group: external-secrets.io
+      version: v1beta1
+      kind: ExternalSecret
