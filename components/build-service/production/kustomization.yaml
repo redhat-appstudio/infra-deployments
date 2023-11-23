@@ -3,6 +3,18 @@ kind: Kustomization
 resources:
 - ../base
 - ../base/external-secrets
+- https://github.com/redhat-appstudio/build-service/config/default?ref=9e87bc42e8f1963fa685cf8e01b15219cae1cdbe
+
+images:
+- name: quay.io/redhat-appstudio/build-service
+  newName: quay.io/redhat-appstudio/build-service
+  newTag: 9e87bc42e8f1963fa685cf8e01b15219cae1cdbe
+
+namespace: build-service
+
+commonAnnotations:
+  argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+
 patches:
   - path: pipelines-as-code-secret-patch.yaml
     target:
