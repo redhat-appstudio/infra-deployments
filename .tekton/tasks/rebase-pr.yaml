@@ -1,0 +1,26 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: rebase-pr
+  namespace: rhtap-staging-testing
+spec:
+  description: |
+    rebase the pull request for which the test is running on staging.
+  workspaces:
+   - name: infra-deployment-git
+   - name: shared-file-path
+  steps:
+    - name: rebase-pull-request
+      image: quay.io/redhat-appstudio/github-app-token@sha256:b4f2af12e9beea68055995ccdbdb86cfe1be97688c618117e5da2243dc1da18e
+      workingDir: $(workspaces.infra-deployment-git.path)
+      script: |
+        #!/usr/bin/env bash
+        set -eufx
+
+        git config --global --add safe.directory $(pwd)
+        git fetch
+        git config --global user.email "rhtap-ci-bot@redhat.com"
+        git config --global user.name "RHTAP CI Robot"
+        git rebase origin/main
+
+        echo "successfully rebased"

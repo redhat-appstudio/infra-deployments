@@ -1,0 +1,46 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: get-github-token
+  namespace: rhtap-staging-testing
+spec:
+  description: |
+    get the github app token for infra-deployment
+  params:
+    - name: shared-secret
+      default: infra-deployments-pr-creator
+      description: secret in the namespace which contains private key for the GitHub App
+    - name: GITHUB_APP_ID
+      description: ID of Github app used for updating PR
+      default: "305606"
+    - name: GITHUB_APP_INSTALLATION_ID
+      description: Installation ID of Github app in the organization
+      default: "35269675"
+  workspaces:
+   - name: shared-file-path
+   - name: infra-deployment-git
+  volumes:
+    - name: infra-deployments-pr-creator
+      secret:
+        # 'private-key' - private key for Github app
+        secretName: $(params.shared-secret)
+  steps:
+    - name: get-token
+      image: quay.io/redhat-appstudio/github-app-token@sha256:b4f2af12e9beea68055995ccdbdb86cfe1be97688c618117e5da2243dc1da18e
+      workingDir: $(workspaces.infra-deployment-git.path)
+      volumeMounts:
+        - name: infra-deployments-pr-creator
+          mountPath: /secrets/deploy-key
+      env:
+        - name: GITHUBAPP_KEY_PATH
+          value: /secrets/deploy-key/private-key
+        - name: GITHUBAPP_APP_ID
+          value: "$(params.GITHUB_APP_ID)"
+        - name: GITHUBAPP_INSTALLATION_ID
+          value: "$(params.GITHUB_APP_INSTALLATION_ID)"
+      script: |
+        #!/usr/bin/env bash
+
+        ".tekton/hack/get-git-token.py" --token-path '$(workspaces.shared-file-path.path)/github-token.txt' --private-key-path ${GITHUBAPP_KEY_PATH} --git-app-id ${GITHUBAPP_APP_ID} --git-installation-id ${GITHUBAPP_INSTALLATION_ID}
+
+        echo "successfully got the token"

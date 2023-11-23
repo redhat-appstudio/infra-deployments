@@ -1,0 +1,17 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: revert-replace-revision
+  namespace: rhtap-staging-testing
+spec:
+  description: |
+    revert the argocd applicationset target revision to original branch state.
+  steps:
+    - name: revert-revision
+      image: image-registry.openshift-image-registry.svc:5000/openshift/cli:latest
+      script: |
+        #!/usr/bin/env bash
+        set -eufx
+
+        echo "Enable auto sync for all-application-sets"
+        oc patch applications.argoproj.io/all-application-sets -n openshift-gitops --type merge -p '{"spec":{"syncPolicy": {"automated":{"prune":true, "selfHeal":true}}}}'
