@@ -1,0 +1,50 @@
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: image-controller-maintainer
+rules:
+  - apiGroups:
+      - 'appstudio.redhat.com'
+    resources:
+      - imagerepositories
+    verbs:
+      - get
+      - list
+      - watch
+
+  - apiGroups:
+      - 'appstudio.redhat.com'
+    resources:
+      - imagerepositories/status
+    verbs:
+      - get
+
+  - apiGroups:
+      - 'appstudio.redhat.com'
+    resources:
+      - remotesecrets
+    verbs:
+      - get
+      - list
+      - watch
+
+  - apiGroups:
+      - 'appstudio.redhat.com'
+    resources:
+      - remotesecrets/status
+    verbs:
+      - get
+
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: image-controller-maintainers
+subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: Build team
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: image-controller-maintainer
