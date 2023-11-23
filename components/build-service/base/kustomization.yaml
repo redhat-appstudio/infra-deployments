@@ -1,6 +1,6 @@
 resources:
 - allow-argocd-to-manage.yaml
-- https://github.com/redhat-appstudio/build-service/config/default?ref=c15259110678d6bce1f05d9c5e3c98453ed10090
+- https://github.com/redhat-appstudio/build-service/config/default?ref=1822dc9d2f5a734b8367f64e3aad43e5eec85857
 - build-pipeline-selectors/build-pipeline-selector.yaml
 - monitoring.yaml
 - rbac
@@ -9,14 +9,13 @@ resources:
 # See more information about this option, here:
 # https://argo-cd.readthedocs.io/en/stable/user-guide/sync-options/#skip-dry-run-for-new-custom-resources-types
 commonAnnotations:
-  argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  argocd.argoproj.io/sync-options: SkipDbryRunOnMissingResource=true
 
 namespace: build-service
 
 images:
 - name: quay.io/redhat-appstudio/build-service
-  newName: quay.io/redhat-appstudio/build-service
-  newTag: c15259110678d6bce1f05d9c5e3c98453ed10090
-
+  newName: quay.io/redhat-appstudio/pull-request-builds
+  newTag: buildserv-1822dc9d2f5a734b8367f64e3aad43e5eec85857
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
