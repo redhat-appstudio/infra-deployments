@@ -5,3 +5,20 @@ metadata:
   namespace: system
 spec:
   replicas: 3
+  template:
+    metadata:
+      labels:
+        app: application-service-controller-manager
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - application-service-controller-manager
+              topologyKey: kubernetes.io/hostname
