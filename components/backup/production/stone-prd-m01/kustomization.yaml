@@ -3,4 +3,9 @@ kind: Kustomization
 resources:
   - ../../base/
 patches:
-  - path: backup-stone-prd-m01.yaml
+  - target:
+      group: external-secrets.io
+      version: v1beta1
+      kind: ExternalSecret
+      name: backup-s3-credentials
+    path: backup-s3-credentials-patch.yaml
