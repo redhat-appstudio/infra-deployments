@@ -10,7 +10,7 @@ subjects:
     name: GitOps Service Team
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
+  kind: Role
   name: gitops-namespaces-read-all-access
 ---
 kind: RoleBinding
@@ -24,7 +24,7 @@ subjects:
     name: GitOps Service Team
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
+  kind: Role
   name: gitops-namespaces-read-all-access
 ---
 kind: RoleBinding
@@ -38,7 +38,7 @@ subjects:
     name: GitOps Service Team
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
+  kind: Role
   name: gitops-namespaces-delete-pods-access
 ---
 kind: RoleBinding
@@ -52,5 +52,5 @@ subjects:
     name: GitOps Service Team
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
+  kind: Role
   name: gitops-namespaces-delete-pods-access

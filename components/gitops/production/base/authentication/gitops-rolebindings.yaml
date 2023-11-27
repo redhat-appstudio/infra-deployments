@@ -10,7 +10,7 @@ subjects:
     name: GitOps Service Team
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
+  kind: Role
   name: gitops-namespaces-read-access
 ---
 kind: RoleBinding
@@ -24,7 +24,7 @@ subjects:
     name: GitOps Service Team
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
+  kind: Role
   name: gitops-namespaces-read-access
 ---
 kind: RoleBinding
@@ -33,12 +33,9 @@ metadata:
   name: gitops-namespace-all-access
   namespace: gitops
 subjects:
-  - kind: User
+  - kind: Group
     apiGroup: rbac.authorization.k8s.io
-    name: jgwest
-  - kind: User
-    apiGroup: rbac.authorization.k8s.io
-    name: jannfis
+    name: GitOps Service Team Admins
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -50,12 +47,9 @@ metadata:
   name: gitops-service-argocd-namespace-all-access
   namespace: gitops-service-argocd
 subjects:
-  - kind: User
+  - kind: Group
     apiGroup: rbac.authorization.k8s.io
-    name: jgwest
-  - kind: User
-    apiGroup: rbac.authorization.k8s.io
-    name: jannfis
+    name: GitOps Service Team Admins
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
