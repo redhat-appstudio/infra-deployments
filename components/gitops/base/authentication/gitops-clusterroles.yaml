@@ -3,14 +3,62 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: gitops-component-maintainer
 rules:
+
   - apiGroups:
-      - '*'
-    resources:
-      - '*'
+      - apiextensions.k8s.io
     verbs:
       - get
       - list
       - watch
+    resources:
+      - customresourcedefinitions
+
+  - apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - clusterrolebindings
+      - clusterroles
+    verbs:
+      - get
+      - list
+      - watch
+
+  - apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - rolebindings
+      - roles
+    verbs:
+      - get
+      - list
+      - watch
+
+
+  - apiGroups:
+      - ''
+      - 'apps'
+    resources:
+      - 'bindings'
+      - 'configmaps'
+      - 'daemonsets'
+      - 'deployments'
+      - 'events'
+      - 'namespaces'
+      - 'nodes'
+      - 'pods'
+      - 'pods/log'
+      - 'replicas'
+      - 'replicasets'
+      - 'routes'
+      - 'secrets'
+      - 'serviceaccounts'
+      - 'services'
+      - 'statefulsets'
+    verbs:
+      - 'get'
+      - 'list'
+      - 'watch'
+
 
   - apiGroups:
       - appstudio.redhat.com
@@ -20,17 +68,49 @@ rules:
       - delete
 
   - apiGroups:
-    - admissionregistration.k8s.io
+      - admissionregistration.k8s.io
     resources:
-    - validatingwebhookconfigurations
-    - mutatingwebhookconfigurations
+      - validatingwebhookconfigurations
+      - mutatingwebhookconfigurations
     verbs:
-    - list
-    - watch
-    - create
-    - update
-    - patch
-    - delete
+      - get
+      - list
+      - watch
+      - delete
+
+  - apiGroups: 
+      - operators.coreos.com
+    resources:
+      - catalogsources
+      - clusterserviceversions
+      - installplans
+      - operatorgroups
+      - subscriptions
+    verbs:
+      - 'get'
+      - 'list'
+      - 'watch'
+
+  - apiGroups:
+      - "toolchain.dev.openshift.com"
+    resources:
+      - "spacerequests"
+    verbs:
+      - 'get'
+      - 'list'
+      - 'watch'
+
+  - apiGroups:
+      - monitoring.coreos.com
+    resources:
+      - alertmanagers
+      - prometheuses
+      - prometheusrules
+      - servicemonitors
+    verbs:
+      - 'get'
+      - 'list'
+      - 'watch'
 
   - apiGroups:
       - operators.coreos.com
@@ -41,64 +121,3 @@ rules:
       - list
       - update
       - patch
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: gitops-namespaces-all-access
-rules:
-  - apiGroups:
-      - '*'
-    resources:
-      - '*'
-    verbs:
-      - '*'
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: gitops-namespaces-read-all-access
-rules:
-  - apiGroups:
-      - '*'
-    resources:
-      - '*'
-    verbs:
-      - 'get'
-      - 'list'
-      - 'watch'
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: gitops-namespaces-read-access
-rules:
-  - apiGroups:
-      - ''
-      - 'apps'
-    resources:
-      - 'pods'
-      - 'pods/log'
-      - 'deployments'
-      - 'events'
-      - 'bindings'
-      - 'replicas'
-      - 'configmaps'
-      - 'namespaces'
-    verbs:
-      - 'get'
-      - 'list'
-      - 'watch'
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: gitops-namespaces-delete-pods-access
-rules:
-  - apiGroups:
-      - ''
-      - 'apps'
-    resources:
-      - 'pods'
-    verbs:
-      - 'delete'
