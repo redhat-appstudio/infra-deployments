@@ -3,12 +3,13 @@ kind: Kustomization
 resources:
 - ../base
 - ../base/external-secrets
-- https://github.com/redhat-appstudio/build-service/config/default?ref=9e87bc42e8f1963fa685cf8e01b15219cae1cdbe
+- https://github.com/redhat-appstudio/build-service/config/default?ref=7069c7708a122ad24eabfe67b650e9065ebff942
+- build-pipeline-selectors/stage-build-pipeline-selector.yaml
 
 images:
 - name: quay.io/redhat-appstudio/build-service
   newName: quay.io/redhat-appstudio/build-service
-  newTag: 9e87bc42e8f1963fa685cf8e01b15219cae1cdbe
+  newTag: 7069c7708a122ad24eabfe67b650e9065ebff942
 
 namespace: build-service
 
