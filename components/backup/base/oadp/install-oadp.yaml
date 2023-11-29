@@ -3,6 +3,8 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription
 metadata:
   name: redhat-oadp-operator
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
 spec:
   channel: stable-1.2
   installPlanApproval: Automatic
@@ -15,6 +17,8 @@ apiVersion: operators.coreos.com/v1
 kind: OperatorGroup
 metadata:
   name: openshift-adp
+  annotations:
+    argocd.argoproj.io/sync-wave: "-3"
 spec:
   targetNamespaces:
   - openshift-adp
