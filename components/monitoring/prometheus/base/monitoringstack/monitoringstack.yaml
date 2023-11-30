@@ -87,6 +87,10 @@ spec:
   endpoints:
   - params:
       'match[]': # scrape only required metrics from in-cluster prometheus
+        - '{__name__="pipeline_service_schedule_overhead_percentage_sum"}'
+        - '{__name__="pipeline_service_schedule_overhead_percentage_count"}'
+        - '{__name__="pipeline_service_execution_overhead_percentage_sum"}'
+        - '{__name__="pipeline_service_execution_overhead_percentage_count"}'
         - '{__name__="pipelinerun_duration_scheduled_seconds_sum"}'
         - '{__name__="pipelinerun_duration_scheduled_seconds_count"}'
         - '{__name__="pipelinerun_gap_between_taskruns_milliseconds_sum"}'
