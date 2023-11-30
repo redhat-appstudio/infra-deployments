@@ -12,9 +12,11 @@ spec:
               values:
                 sourceRoot: components/segment-bridge
                 environment: staging
-                clusterDir: ""
+                clusterDir: base
           - list:
-              elements: []
+              elements:
+                - nameNormalized: stone-stg-host
+                  values.clusterDir: stone-stg-host
   template:
     metadata:
       name: segment-bridge-host-{{nameNormalized}}
@@ -39,4 +41,3 @@ spec:
             duration: 10s
             factor: 2
             maxDuration: 3m
-
