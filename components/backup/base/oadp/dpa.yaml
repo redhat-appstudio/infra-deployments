@@ -2,6 +2,8 @@ apiVersion: oadp.openshift.io/v1alpha1
 kind: DataProtectionApplication
 metadata:
   name: velero-aws
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
 spec:
   backupLocations:
     - velero:
