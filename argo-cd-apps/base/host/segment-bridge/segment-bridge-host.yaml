@@ -17,18 +17,20 @@ spec:
               elements:
                 - nameNormalized: stone-stg-host
                   values.clusterDir: stone-stg-host
+                - nameNormalized: stone-prd-host
+                  values.clusterDir: stone-stg-host
   template:
     metadata:
       name: segment-bridge-host-{{nameNormalized}}
     spec:
       project: default
       source:
-        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
+        path: "{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}"
         repoURL: https://github.com/redhat-appstudio/infra-deployments.git
         targetRevision: main
       destination:
         namespace: segment-bridge
-        server: '{{server}}'
+        server: "{{server}}"
       syncPolicy:
         automated:
           prune: true
