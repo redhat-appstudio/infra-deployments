@@ -21,4 +21,4 @@ jobs:
      - name: Run cleanup_old_preview_branches script
        run: |
           pip3 install -r .github/scripts/requirements.txt
-          python3 .github/scripts/cleanup_old_preview_branches.py ${{secrets.GITHUB_TOKEN}} 30
+          python3 .github/scripts/cleanup_old_preview_branches.py ${{secrets.PAT}} 30
