@@ -109,6 +109,7 @@ spec:
         - '{__name__="openshift_route_status", namespace="gitops-service-argocd"}'
         - '{__name__="kube_deployment_status_replicas_ready", namespace="gitops-service-argocd"}'
         - '{__name__="kube_deployment_spec_replicas", namespace="gitops-service-argocd"}'
+        - '{__name__="argocd_app_reconcile_bucket", namespace="gitops-service-argocd"}'
     relabelings:
     # override the target's address by the prometheus-k8s service name.
     - action: replace
