@@ -1,0 +1,15 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: gosmee
+  name: smee
+spec:
+  ports:
+  - name: "http"
+    port: 3333
+    protocol: TCP
+    targetPort: "gosmee-http"
+  selector:
+    app: gosmee
