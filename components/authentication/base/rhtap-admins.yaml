@@ -59,7 +59,6 @@ rules:
       - ''
     resources:
       - clusterpolicybindings
-      - clusterresourcequotas
       - images
       - netnamespaces
       - nodes
@@ -274,6 +273,13 @@ rules:
       - delete
       - get
       - list
+  - apiGroups:
+      - quota.openshift.io
+    resources:
+      - appliedclusterresourcequota
+      - clusterresourcequotas
+    verbs:
+      - '*'
   - apiGroups:
     - user.openshift.io
     resources:
