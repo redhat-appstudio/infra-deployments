@@ -22,3 +22,9 @@ patches:
       kind: ExternalSecret
       group: external-secrets.io
       version: v1beta1
+
+configMapGenerator:
+  - literals:
+      - ENVIRONMENT="production"
+    name: feature-flag-config
+    behavior: replace

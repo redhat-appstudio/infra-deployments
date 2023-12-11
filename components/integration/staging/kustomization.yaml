@@ -14,3 +14,9 @@ namespace: integration-service
 
 components:
   - ../k-components/manager-resources-patch
+
+configMapGenerator:
+  - literals:
+      - ENVIRONMENT="staging"
+    name: feature-flag-config
+    behavior: replace
