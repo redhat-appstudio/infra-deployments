@@ -281,6 +281,15 @@ rules:
     verbs:
       - '*'
   - apiGroups:
+      - tekton.dev
+    resources:
+      - pipelineruns
+    verbs:
+      - get
+      - list
+      - patch
+      - watch
+  - apiGroups:
     - user.openshift.io
     resources:
       - groups
