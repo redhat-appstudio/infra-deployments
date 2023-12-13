@@ -1,0 +1,8 @@
+apiVersion: pipelinesascode.tekton.dev/v1alpha1
+kind: Repository
+metadata:
+  name: infra-deployments
+  namespace: rhtap-promotion-staging
+spec:
+  concurrency_limit: 1
+  url: "https://github.com/redhat-appstudio/infra-deployments"
