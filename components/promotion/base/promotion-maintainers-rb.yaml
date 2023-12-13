@@ -1,0 +1,22 @@
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: promotion-maintainers
+  namespace: rhtap-promotion-staging
+subjects:
+  - kind: User
+    apiGroup: rbac.authorization.k8s.io
+    name: prietyc123
+  - kind: User
+    apiGroup: rbac.authorization.k8s.io
+    name: sawood14012
+  - kind: User
+    apiGroup: rbac.authorization.k8s.io
+    name: rhopp
+  - kind: User
+    apiGroup: rbac.authorization.k8s.io
+    name: xinredhat
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: component-maintainer

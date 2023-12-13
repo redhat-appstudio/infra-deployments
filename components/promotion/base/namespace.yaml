@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: rhtap-promotion-staging
+  annotations:
+    # Keeps PipelineRuns for 24h.
+    operator.tekton.dev/prune.keep-since: 1440
