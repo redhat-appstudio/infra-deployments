@@ -2,3 +2,10 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ../base
+patches:
+  - path: rhtap-promotion-staging-patch.yaml
+    target:
+      name: appsre-stonesoup-vault
+      kind: ClusterSecretStore
+      group: external-secrets.io
+      version: v1beta1
