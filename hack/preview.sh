@@ -342,7 +342,7 @@ fi
 retry=0
 while true; do
   if [ "$retry" -eq 5 ]; then
-    printf "Error: Tekton CRDs cannot be ready on the cluster.\n" >&2
+    printf "Error: Tekton CRDs are not yet available on the cluster.\n" >&2
     exit 1
   fi
   tekton_crds=$(oc api-resources --api-group="tekton.dev" --no-headers)
