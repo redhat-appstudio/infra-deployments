@@ -1,0 +1,33 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gosmee-client
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gosmee-client
+  template:
+    metadata:
+      labels:
+        app: gosmee-client
+    spec:
+      containers:
+        - image: "ghcr.io/chmouel/gosmee:v0.20.2"
+          imagePullPolicy: Always
+          name: gosmee
+          args:
+            - "client"
+            - "https://smee-smee.apps.stone-stg-host.qc0p.p1.openshiftapps.com/redhathook12"
+            - "http://pipelines-as-code-controller.openshift-pipelines:8080"
+          securityContext:
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+          resources:
+            limits:
+              cpu: 1
+              memory: 32Mi
+            requests:
+              cpu: 1
+              memory: 32Mi
