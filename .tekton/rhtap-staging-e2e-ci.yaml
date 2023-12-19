@@ -2,7 +2,7 @@ apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
 metadata:
   generateName: rhtap-staging-e2e-
-  namespace: rhtap-staging-testing
+  namespace: rhtap-promotion-staging
   annotations:
     pipelinesascode.tekton.dev/on-cel-expression: |
       event == "pull_request" && target_branch == "main" &&
