@@ -20,9 +20,9 @@ spec:
           - name: SCRIPT
             value: |
               STAGE_SHA=$(grep -oE '[0-9a-f]{40}' components/build-service/staging/base/kustomization.yaml -m1)
-              OLD_PROD_SHA=$(grep -oE '[0-9a-f]{40}' components/build-service/production/kustomization.yaml -m1)
+              OLD_PROD_SHA=$(grep -oE '[0-9a-f]{40}' components/build-service/production/base/kustomization.yaml -m1)
               echo "Changing prod sha from ${OLD_PROD_SHA} to ${STAGE_SHA}"
-              sed -i "s/$OLD_PROD_SHA/$STAGE_SHA/g" components/build-service/production/kustomization.yaml
+              sed -i "s/$OLD_PROD_SHA/$STAGE_SHA/g" components/build-service/production/base/kustomization.yaml
               sed -i "s/$OLD_PROD_SHA/$STAGE_SHA/g" components/monitoring/grafana/base/dashboards/build-service/kustomization.yaml
         taskRef:
           name: promote-component
