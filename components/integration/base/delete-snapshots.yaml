@@ -1,0 +1,25 @@
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: delete-snapshots
+rules:
+  - apiGroups:
+    - "appstudio.redhat.com"
+    resources:
+      - "snapshots"
+    verbs:
+      - "delete"
+      - "deletecollection"
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: delete-snapshots
+subjects:
+  - kind: Group
+    apiGroup: rbac.authorization.k8s.io
+    name: Integration Team
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: delete-snapshots
