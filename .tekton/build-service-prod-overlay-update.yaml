@@ -1,0 +1,30 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: build-service-prod-overlay-update
+  namespace: rhtap-promotion-staging
+  annotations:
+     pipelinesascode.tekton.dev/on-cel-expression: |
+      event == "push" && target_branch == "main" && "components/build-service/staging/base/kustomization.yaml".pathChanged()
+    pipelinesascode.tekton.dev/max-keep-runs: "5"
+    pipelinesascode.tekton.dev/task: "[.tekton/tasks/promote-component.yaml]"
+spec:
+  pipelineSpec:
+    tasks:
+      - name: promote-component-from-stage-to-prod
+        params:
+          - name: BRANCH_NAME
+            value: stage-to-prod-build
+          - name: COMPONENT_NAME
+            value: build-service
+          - name: SCRIPT
+            value: |
+              STAGE_SHA=$(grep -oE '[0-9a-f]{40}' components/build-service/staging/base/kustomization.yaml -m1)
+              OLD_PROD_SHA=$(grep -oE '[0-9a-f]{40}' components/build-service/production/base/kustomization.yaml -m1)
+              echo "Changing prod sha from ${OLD_PROD_SHA} to ${STAGE_SHA}"
+              sed -i "s/$OLD_PROD_SHA/$STAGE_SHA/g" components/build-service/production/base/kustomization.yaml
+              sed -i "s/$OLD_PROD_SHA/$STAGE_SHA/g" components/monitoring/grafana/base/dashboards/build-service/kustomization.yaml
+        taskRef:
+          name: promote-component
+        
+
