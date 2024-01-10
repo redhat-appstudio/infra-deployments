@@ -1,0 +1,29 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: image-controller-prod-overlay-update
+  namespace: rhtap-promotion-staging
+  annotations:
+     pipelinesascode.tekton.dev/on-cel-expression: |
+      event == "push" && target_branch == "main" && "components/image-controller/staging/kustomization.yaml".pathChanged()
+    pipelinesascode.tekton.dev/max-keep-runs: "5"
+    pipelinesascode.tekton.dev/task: "[.tekton/tasks/promote-component.yaml]"
+spec:
+  pipelineSpec:
+    tasks:
+      - name: promote-component-from-stage-to-prod
+        params:
+          - name: BRANCH_NAME
+            value: stage-to-prod-image-controller
+          - name: COMPONENT_NAME
+            value: image-controller
+          - name: SCRIPT
+            value: |
+              STAGE_SHA=$(grep -oE '[0-9a-f]{40}' components/image-controller/staging/kustomization.yaml -m1)
+              OLD_PROD_SHA=$(grep -oE '[0-9a-f]{40}' components/image-controller/production/kustomization.yaml -m1)
+              echo "Changing prod sha from ${OLD_PROD_SHA} to ${STAGE_SHA}"
+              sed -i "s/$OLD_PROD_SHA/$STAGE_SHA/g" components/image-controller/production/kustomization.yaml
+        taskRef:
+          name: promote-component
+        
+
