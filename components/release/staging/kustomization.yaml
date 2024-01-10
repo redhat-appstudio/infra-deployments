@@ -2,7 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ../base
-  - https://github.com/redhat-appstudio/release-service/config/default?ref=bb760ff178d79b459b3851083b88fdbf4fb9a1bf
+  - https://github.com/redhat-appstudio/release-service/config/default?ref=405596bf32f4b42e41f637925d82992a303bf336
 
 components:
   - ../k-components/manager-resources-patch
@@ -10,7 +10,7 @@ components:
 images:
   - name: quay.io/redhat-appstudio/release-service
     newName: quay.io/redhat-appstudio/release-service
-    newTag: bb760ff178d79b459b3851083b88fdbf4fb9a1bf
+    newTag: 405596bf32f4b42e41f637925d82992a303bf336
 
 namespace: release-service
 
