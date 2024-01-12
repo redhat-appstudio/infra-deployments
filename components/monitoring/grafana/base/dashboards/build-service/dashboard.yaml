@@ -2,22 +2,22 @@
 apiVersion: grafana.integreatly.org/v1beta1
 kind: GrafanaDashboard
 metadata:
-  name: grafana-dashboard-initial-build-pipeline
-  labels: 
+  name: grafana-dashboard-component-onboarding
+  labels:
     app: appstudio-grafana
 spec:
   instanceSelector:
     matchLabels:
       dashboards: "appstudio-grafana"
   configMapRef:
-    name: grafana-dashboard-initial-build-pipeline
-    key: grafana-dashboard-initial-build-pipeline.json    
+    name: grafana-dashboard-component-onboarding
+    key: grafana-dashboard-component-onboarding.json
 ---
 apiVersion: grafana.integreatly.org/v1beta1
 kind: GrafanaDashboard
 metadata:
   name: grafana-dashboard-pac-provision
-  labels: 
+  labels:
     app: appstudio-grafana
 spec:
   instanceSelector:
@@ -26,4 +26,46 @@ spec:
   configMapRef:
     name: grafana-dashboard-pac-provision
     key: grafana-dashboard-pac-provision.json
+---
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDashboard
+metadata:
+  name: grafana-dashboard-pac-unprovision
+  labels:
+    app: appstudio-grafana
+spec:
+  instanceSelector:
+    matchLabels:
+      dashboards: "appstudio-grafana"
+  configMapRef:
+    name: grafana-dashboard-pac-unprovision
+    key: grafana-dashboard-pac-unprovision.json
+---
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDashboard
+metadata:
+  name: grafana-dashboard-push-pipeline-rebuild-trigger
+  labels:
+    app: appstudio-grafana
+spec:
+  instanceSelector:
+    matchLabels:
+      dashboards: "appstudio-grafana"
+  configMapRef:
+    name: grafana-dashboard-push-pipeline-rebuild-trigger
+    key: grafana-dashboard-push-pipeline-rebuild-trigger.json
+---
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDashboard
+metadata:
+  name: grafana-dashboard-simple-build-pipeline
+  labels:
+    app: appstudio-grafana
+spec:
+  instanceSelector:
+    matchLabels:
+      dashboards: "appstudio-grafana"
+  configMapRef:
+    name: grafana-dashboard-simple-build-pipeline
+    key: grafana-dashboard-simple-build-pipeline.json
 
