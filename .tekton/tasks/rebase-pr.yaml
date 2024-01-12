@@ -21,6 +21,11 @@ spec:
         git fetch
         git config --global user.email "rhtap-ci-bot@redhat.com"
         git config --global user.name "RHTAP CI Robot"
-        git rebase origin/main
+
+        if ! git rebase origin/main; then
+          echo "Rebase failed, output the diff in the files"
+          git diff origin/main
+          exit 1
+        fi
 
         echo "successfully rebased"
