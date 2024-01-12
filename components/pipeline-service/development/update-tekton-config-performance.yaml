@@ -17,3 +17,13 @@
   # value: 10
   # upstream large scale env recommendation
   value: 50
+- op: replace
+  path: /spec/pipeline/performance/buckets
+  # default pipeline-service setting is 1
+  # we make buckets twice the replica number per the
+  # convention adopted in https://github.com/openshift-pipelines/performance/blob/main/ci-scripts/setup-cluster.sh
+  value: 4
+- op: replace
+  path: /spec/pipeline/performance/replicas
+  # default pipeline-service setting is 1
+  value: 2
