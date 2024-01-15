@@ -9,7 +9,7 @@ There are four components for the ui.
 
 [hac](https://github.com/openshift/hac-core) - A plugin for `chrome` (loaded by `chrome`).
 
-[hav-dev](https://github.com/openshift/hac-dev) - A plugin for `hac` (loaded by `hac`).
+[hac-dev](https://github.com/openshift/hac-dev) - A plugin for `hac` (loaded by `hac`).
 
 `proxy` - Forwards requests to the kube api, and hosts
 static files required by the chrome component

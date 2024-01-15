@@ -2,17 +2,17 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ../../base
-  - https://github.com/redhat-appstudio/service-provider-integration-operator/config/overlays/openshift_vault?ref=444b8cd04901787c64b2e22fdf64c3cece8b2d55
+  - https://github.com/redhat-appstudio/service-provider-integration-operator/config/overlays/openshift_vault?ref=5194cbefe5e5802e51931e105f15f62472a88ee9
 
 namespace: spi-system
 
 images:
   - name:  quay.io/redhat-appstudio/service-provider-integration-operator
     newName: quay.io/redhat-appstudio/service-provider-integration-operator
-    newTag: 444b8cd04901787c64b2e22fdf64c3cece8b2d55
+    newTag: 5194cbefe5e5802e51931e105f15f62472a88ee9
   - name: quay.io/redhat-appstudio/service-provider-integration-oauth
     newName: quay.io/redhat-appstudio/service-provider-integration-oauth
-    newTag: 444b8cd04901787c64b2e22fdf64c3cece8b2d55
+    newTag: 5194cbefe5e5802e51931e105f15f62472a88ee9
 
 patches:
   - target:
