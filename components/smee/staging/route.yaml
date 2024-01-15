@@ -6,6 +6,18 @@ metadata:
   annotations:
     haproxy.router.openshift.io/timeout: 86410s
     router.openshift.io/haproxy.health.check.interval: 86400s
+    haproxy.router.openshift.io/ip_whitelist: >
+      192.30.252.0/22
+      185.199.108.0/22
+      140.82.112.0/20
+      143.55.64.0/20
+      2a0a:a440::/29
+      2606:50c0::/32
+      34.74.90.64/28
+      34.74.226.0/24
+      34.200.130.154
+      44.221.157.128
+      54.162.238.133
 spec:
   port:
     targetPort: "http"
