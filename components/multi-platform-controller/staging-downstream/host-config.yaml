@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    build.appstudio.redhat.com/multi-platform-config: hosts
+  name: host-config
+  namespace: multi-platform-controller
+data:
+
+  host.ip-10-29-64-251.address: "10.29.64.251"
+  host.ip-10-29-64-251.platform: "linux/amd64"
+  host.ip-10-29-64-251.user: "ec2-user"
+  host.ip-10-29-64-251.secret: "aws-ssh-key"
+  host.ip-10-29-64-251.concurrency: "4"
+
+  host.ip-10-29-64-249.address: "10.29.64.249"
+  host.ip-10-29-64-249.platform: "linux/arm64"
+  host.ip-10-29-64-249.user: "ec2-user"
+  host.ip-10-29-64-249.secret: "aws-ssh-key"
+  host.ip-10-29-64-249.concurrency: "4"
