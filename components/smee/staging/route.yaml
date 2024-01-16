@@ -6,7 +6,16 @@ metadata:
   annotations:
     haproxy.router.openshift.io/timeout: 86410s
     router.openshift.io/haproxy.health.check.interval: 86400s
-    haproxy.router.openshift.io/ip_whitelist: >
+    # The IP whitelist below allows getting webhook traffic from GitHub [1],
+    # GitLab.com [2] and our internal cluster.
+    #
+    # [1]: https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/about-githubs-ip-addresses
+    # [2]: https://docs.gitlab.com/ee/user/gitlab_com/#ip-range
+    #
+    # Note that the configuration string below is very sensitive. It has to be
+    # a single-space-separated list of IPs and CIDR ranges. Any extra whitespace
+    # added to it makes OpenShift ignore it.
+    haproxy.router.openshift.io/ip_whitelist: >-
       192.30.252.0/22
       185.199.108.0/22
       140.82.112.0/20
