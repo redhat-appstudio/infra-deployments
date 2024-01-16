@@ -37,6 +37,9 @@ spec:
       value: "{{ source_branch }}"
   pipelineRef:
     name: rhtap-staging-e2e
+  podTemplate:
+    securityContext:
+      fsGroup: 65532
   workspaces:
     - name: git
       volumeClaimTemplate:

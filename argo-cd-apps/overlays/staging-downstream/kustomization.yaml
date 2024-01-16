@@ -6,3 +6,9 @@ resources:
   - ../../base/ui
 patchesStrategicMerge:
   - delete-applications.yaml
+patches:
+  - path: staging-downstream-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: multi-platform-controller
