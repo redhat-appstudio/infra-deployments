@@ -20,6 +20,11 @@ patches:
   #     kind: Deployment
   #     name: pipeline-metrics-exporter
   #     namespace: openshift-pipelines
+  - path: bump-exporter-mem.yaml
+    target:
+      kind: Deployment
+      name: pipeline-metrics-exporter
+      namespace: openshift-pipelines
   - path: update-tekton-config-pac.yaml
     target:
       kind: TektonConfig
