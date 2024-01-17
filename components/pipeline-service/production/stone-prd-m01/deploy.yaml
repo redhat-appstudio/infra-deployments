@@ -1199,7 +1199,7 @@ spec:
     spec:
       containers:
       - args: []
-        image: quay.io/redhat-appstudio/pipeline-service-exporter:8f321cb4da5a2f939199e2bc12924c15de32d5ac
+        image: quay.io/redhat-appstudio/pipeline-service-exporter:42a1938a18bf5b999241fafbf0d57a1c7d19e0f2
         name: pipeline-metrics-exporter
         ports:
         - containerPort: 9117
@@ -1207,7 +1207,7 @@ spec:
         resources:
           limits:
             cpu: 500m
-            memory: 512Mi
+            memory: 1Gi
           requests:
             cpu: 250m
             memory: 128Mi
@@ -1872,8 +1872,11 @@ spec:
     enable-hub-resolver: true
     enable-tekton-oci-bundles: true
     performance:
+      buckets: 1
+      disable-ha: false
       kube-api-burst: 50
       kube-api-qps: 50
+      replicas: 1
       threads-per-controller: 32
   platforms:
     openshift:
@@ -1887,10 +1890,7 @@ spec:
           custom-console-url-pr-tasklog: https://console.redhat.com/preview/application-pipeline
   profile: all
   pruner:
-    keep: 10
-    resources:
-    - pipelinerun
-    schedule: 0/2 * * * *
+    disabled: true
   targetNamespace: openshift-pipelines
 ---
 apiVersion: operators.coreos.com/v1alpha1
