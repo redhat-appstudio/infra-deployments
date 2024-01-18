@@ -24,7 +24,8 @@ jobs:
 
       - name: Run kustomize build
         run: |
-          for p in $(find argo-cd-apps components -name "*kustomization.yaml*"); do kustomize build ${p%/*} -o kustomizedfiles/${p//\//-} || echo "^ ERROR when running kustomize build for ${p%/*} ^"; done
+          find argo-cd-apps components -name 'kustomization.yaml' ! -path '*/k-components/*' | \
+            xargs -I {} -n1 -P0  bash -c 'dir=$(dirname "{}"); output_file=$(echo $dir | tr / -)-kustomization.yaml; if ! log=$(kustomize build "$dir" -o "kustomizedfiles/$output_file" 2>&1); then echo "Error when running kustomize build for $dir: $log" && exit 1;fi'
 
       - name: Scan yaml files with kube-linter
         uses: stackrox/kube-linter-action@v1.0.4
