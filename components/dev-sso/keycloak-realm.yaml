@@ -525,6 +525,7 @@ spec:
           - profile
           - roles
           - email
+          - api.console
         optionalClientScopes:
           - address
           - phone
@@ -992,6 +993,12 @@ spec:
         attributes:
           include.in.token.scope: "true"
           display.on.consent.screen: "true"
+      - id: 1d8a366c-3fae-4134-b58a-4ed5dc3b0022
+        name: api.console
+        protocol: openid-connect
+        attributes: 
+          include.in.token.scope: "true"
+          display.on.consent.screen: "true"
       - id: b4120472-4f73-4659-ae6b-d24bd45c4fa3
         name: address
         description: 'OpenID Connect built-in scope: address'
@@ -1023,6 +1030,7 @@ spec:
       - roles
       - web-origins
       - acr
+      - api.console
     smtpServer: {}
     loginTheme: rh-sso
     eventsEnabled: false
