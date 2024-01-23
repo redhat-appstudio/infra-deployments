@@ -7,9 +7,12 @@ spec:
   description: >-
     This task is for running stage e2e test on RHTAP staging cluster
   params:
-  - name: PLATFORM
+  - name: ENVIRONMENT
     description: which environment the test is running on.
-    default: "verify-stage"
+    default: "stage"
+  - name: TEST_LABEL
+    description: a label name which identifies the specific test to run
+    default: "rhtap-demo"
   - name: TASK_RETRIES
     description: number of times the task will be rerun
     default: "0"
@@ -44,7 +47,7 @@ spec:
             token: YOUR_KUBE_API_TOKEN
         EOF
         make build
-        E2E_ARGS_EXEC="--ginkgo.label-filter $(params.PLATFORM) --ginkgo.vv" make run
+        TEST_ENVIRONMENT=$(params.ENVIRONMENT) E2E_ARGS_EXEC="--ginkgo.label-filter $(params.TEST_LABEL) --ginkgo.vv" make run
       env:
         - name: STAGE_SSOURL
           valueFrom:
