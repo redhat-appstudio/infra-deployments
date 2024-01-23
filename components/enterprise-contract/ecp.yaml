@@ -111,3 +111,23 @@ spec:
       name: Default
       policy:
         - oci::quay.io/enterprise-contract/ec-release-policy:git-0d277bf@sha256:4a78622534901a4563cf5e52a79ca259ce7b6f571ccd0cc201876131742d6ce2
+---
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: EnterpriseContractPolicy
+metadata:
+  name: redhat-trusted-tasks
+  namespace: enterprise-contract-service
+spec:
+  description: Rules used to verify Tekton Task definitions comply to Red Hat's standards.
+  name: Red Hat Trusted Tasks
+  sources:
+    - config:
+        exclude: []
+        include:
+          - kind
+          - step_image_registries
+      data:
+        - github.com/release-engineering/rhtap-ec-policy//data
+      name: Default
+      policy:
+        - oci::quay.io/enterprise-contract/ec-task-policy:git-00f3625@sha256:4d249ef259ebb821dc350ca657b7b053296e902314d6c2821fa893b1f5b6097d
