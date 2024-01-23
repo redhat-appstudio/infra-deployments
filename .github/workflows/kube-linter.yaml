@@ -31,6 +31,9 @@ jobs:
         uses: stackrox/kube-linter-action@v1.0.4
         id: kube-linter-action-scan
         with:
+          # version 0.6.6 contains a new liveness check. We do have a few liveness issue already so use previous version for now
+          # Once we fix all issues, we will revert to use latest again.
+          version: v0.6.5
           # Adjust this directory to the location where your kubernetes resources and helm charts are located.
           directory: kustomizedfiles
           # The following two settings make kube-linter produce scan analysis in SARIF format which would then be
