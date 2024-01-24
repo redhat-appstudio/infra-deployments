@@ -1,7 +1,7 @@
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: rhtap-admins
+  name: konflux-admins
 rules:
   - apiGroups:
       - appstudio.redhat.com
@@ -13,7 +13,7 @@ rules:
       - enterprisecontractpolicies
       - environments
       - integrationtestscenarios
-      # RHTAP Admins should not be permitted to create or edit InternalRequest resources.
+      # konflux-admins should not be permitted to create or edit InternalRequest resources.
       # - internalrequests
       - promotionruns
       - releaseplanadmissions
@@ -314,20 +314,20 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: rhtap-admins
+  name: konflux-admins
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: rhtap-admins
+  name: konflux-admins
 subjects:
   - apiGroup: rbac.authorization.k8s.io
     kind: Group
-    name: RHTAP Admins
+    name: konflux-admins
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: rhtap-admins-view
+  name: konflux-admins-view
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -335,4 +335,4 @@ roleRef:
 subjects:
   - apiGroup: rbac.authorization.k8s.io
     kind: Group
-    name: RHTAP Admins
+    name: konflux-admins
