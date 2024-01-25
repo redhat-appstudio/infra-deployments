@@ -114,7 +114,8 @@ spec:
               set -o pipefail
 
               function handle_error {
-                sleep infinity
+                printf 'Error on line #%s\nCommand: %s\n' "$(caller)" "${BASH_COMMAND}"
+                exit 1
               }
               trap handle_error ERR
 
