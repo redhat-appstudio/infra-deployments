@@ -54,10 +54,9 @@ metadata:
   name: segment-bridge-read-host-sa-secret-binding
   namespace: toolchain-host-operator
 subjects:
-  - kind: User
-    name: Omeramsc
-  - kind: User
-    name: ifireball
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: konflux-o11y
 roleRef:
   kind: Role
   name: segment-bridge-read-host-sa-secret
