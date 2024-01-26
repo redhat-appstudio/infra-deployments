@@ -2,8 +2,8 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ../../../base
-  - https://github.com/redhat-appstudio/remote-secret/config/overlays/openshift_aws?ref=4ab990acc7cde19e686ccfdd72a9a88549bce96f
-  - https://github.com/redhat-appstudio/remote-secret/config/monitoring/prometheus?ref=4ab990acc7cde19e686ccfdd72a9a88549bce96f
+  - https://github.com/redhat-appstudio/remote-secret/config/overlays/openshift_aws?ref=b775f294ad025b00af142479e74a35074ac90019
+  - https://github.com/redhat-appstudio/remote-secret/config/monitoring/prometheus?ref=b775f294ad025b00af142479e74a35074ac90019
   - aws-credentials-external-secret.yaml
 
 namespace: remotesecret
@@ -11,7 +11,7 @@ namespace: remotesecret
 images:
   - name:  quay.io/redhat-appstudio/remote-secret-controller
     newName: quay.io/redhat-appstudio/remote-secret-controller
-    newTag: 4ab990acc7cde19e686ccfdd72a9a88549bce96f
+    newTag: b775f294ad025b00af142479e74a35074ac90019
 
 patches:
   - target:
