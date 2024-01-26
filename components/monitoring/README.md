@@ -71,7 +71,7 @@ or imported from other projects.
   You may copy and edit the `example` dashboard json instead, and test the new dashboard on the staging and production environments. 
 
       The `example` dashboard json definition can be found 
-      [here](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/monitoring/grafana/base/dashboards/example.json)
+      [here](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/monitoring/grafana/base/dashboards/generic-dashboards/example.json)
 
 
   2. Add tiles to the dashboard to track your initial set of service level indicators.  
