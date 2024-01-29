@@ -30,3 +30,9 @@ It's required to customize the manifests before deploying them. Two customizatio
 1. Updating the hostname that will be used for the routes.
 
 2. Creating a `fed-modules.json` file that configures the frontend. **Important**: this file contains the `Keycloak` endpoint that will be used for authentication.
+
+**Note**: To display the default ingress domain run:
+
+```bash
+oc get ingresses.config/cluster -o jsonpath={.spec.domain}
+```
