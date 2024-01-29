@@ -1,0 +1,18 @@
+---
+# Taken from https://github.com/openshift/oadp-operator/blob/498109cc0f4162b3ecab5b7329e0dec4556ffc21/docs/oadp_monitoring.md
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app: oadp-service-monitor
+  name: oadp-service-monitor
+  namespace: openshift-adp
+spec:
+  endpoints:
+  - interval: 30s
+    path: /metrics
+    targetPort: 8085
+    scheme: http
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: "velero"
