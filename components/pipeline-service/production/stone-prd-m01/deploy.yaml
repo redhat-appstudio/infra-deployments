@@ -1,4 +1,3 @@
----
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -317,6 +316,7 @@ rules:
   - results.tekton.dev
   - tekton.dev
   - triggers.tekton.dev
+  - resolution.tekton.dev
   resources:
   - '*'
   verbs:
@@ -585,7 +585,7 @@ roleRef:
 subjects:
 - apiGroup: rbac.authorization.k8s.io
   kind: Group
-  name: Pipeline Service
+  name: konflux-pipeline-service
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -618,7 +618,7 @@ roleRef:
 subjects:
 - apiGroup: rbac.authorization.k8s.io
   kind: Group
-  name: Pipeline Service
+  name: konflux-pipeline-service
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -634,7 +634,7 @@ roleRef:
 subjects:
 - apiGroup: rbac.authorization.k8s.io
   kind: Group
-  name: Pipeline Service
+  name: konflux-pipeline-service
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -764,7 +764,7 @@ roleRef:
 subjects:
 - apiGroup: rbac.authorization.k8s.io
   kind: Group
-  name: Pipeline Service
+  name: konflux-pipeline-service
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -900,7 +900,8 @@ data:
     DB_HOST=
     DB_PORT=5432
     DB_NAME=
-    DB_SSLMODE=require
+    DB_SSLMODE=disable
+    DB_SSLROOTCERT=
     DB_ENABLE_AUTO_MIGRATION=true
     SERVER_PORT=8080
     PROMETHEUS_PORT=9090
@@ -1109,6 +1110,8 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
     argocd.argoproj.io/sync-wave: "0"
+    ignore-check.kube-linter.io/dangling-service: This service is not dangling, it
+      exposes metric for an OSP deployment
   labels:
     app: tekton-chains-controller
     app.kubernetes.io/component: metrics
@@ -1196,7 +1199,7 @@ spec:
     spec:
       containers:
       - args: []
-        image: quay.io/redhat-appstudio/pipeline-service-exporter:8f321cb4da5a2f939199e2bc12924c15de32d5ac
+        image: quay.io/redhat-appstudio/pipeline-service-exporter:cdff9b19bf4b6e7009412ae6103be882a3a36f9b
         name: pipeline-metrics-exporter
         ports:
         - containerPort: 9117
@@ -1204,7 +1207,7 @@ spec:
         resources:
           limits:
             cpu: 500m
-            memory: 512Mi
+            memory: 1Gi
           requests:
             cpu: 250m
             memory: 128Mi
@@ -1320,7 +1323,7 @@ spec:
             secretKeyRef:
               key: db.name
               name: tekton-results-database
-        image: quay.io/redhat-appstudio/tekton-results-api:6c008b21d9bb5000f2e42dbd010b5984095e4d6a
+        image: quay.io/redhat-appstudio/tekton-results-api:dd067cad783501dc87fdec7285ca62e573fd85e3
         livenessProbe:
           httpGet:
             path: /healthz
@@ -1342,12 +1345,10 @@ spec:
             memory: 512Mi
           requests:
             cpu: 5m
-            memory: 32Mi
+            memory: 128Mi
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
-            add:
-            - NET_BIND_SERVICE
             drop:
             - ALL
           readOnlyRootFilesystem: true
@@ -1391,7 +1392,7 @@ spec:
             secretKeyRef:
               key: db.name
               name: tekton-results-database
-        image: quay.io/redhat-appstudio/tekton-results-migrator:6c008b21d9bb5000f2e42dbd010b5984095e4d6a
+        image: quay.io/redhat-appstudio/tekton-results-migrator:dd067cad783501dc87fdec7285ca62e573fd85e3
         name: migrator
         resources:
           limits:
@@ -1483,6 +1484,7 @@ spec:
         - tekton-results-api-service.tekton-results.svc.cluster.local:8080
         - -auth_mode
         - token
+        - -check_owner=false
         - -completed_run_grace_period
         - 10m
         env:
@@ -1498,18 +1500,27 @@ spec:
           value: tekton-results-config-observability
         - name: METRICS_DOMAIN
           value: tekton.dev/results
-        image: quay.io/redhat-appstudio/tekton-results-watcher:6c008b21d9bb5000f2e42dbd010b5984095e4d6a
+        - name: TEKTON_RESULTS_API_SERVICE
+          value: tekton-results-api-service.tekton-pipelines.svc.cluster.local:8080
+        - name: AUTH_MODE
+          value: token
+        image: quay.io/redhat-appstudio/tekton-results-watcher:dd067cad783501dc87fdec7285ca62e573fd85e3
         name: watcher
         ports:
         - containerPort: 9090
           name: metrics
         - containerPort: 8008
           name: profiling
+        resources:
+          limits:
+            cpu: 250m
+            memory: 3Gi
+          requests:
+            cpu: 100m
+            memory: 64Mi
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
-            add:
-            - NET_BIND_SERVICE
             drop:
             - ALL
           readOnlyRootFilesystem: true
@@ -1569,11 +1580,19 @@ spec:
             image: registry.redhat.io/openshift4/ose-tools-rhel8@sha256:1054e906ee0183531b401d3c0b0d777cecb25ef95b1c9c48387c6cd7b0e57b9d
             imagePullPolicy: Always
             name: delete-pac-secrets
+            resources:
+              limits:
+                cpu: 200m
+                memory: 200Mi
+              requests:
+                cpu: 10m
+                memory: 10Mi
             securityContext:
               allowPrivilegeEscalation: false
               capabilities:
                 drop:
                 - ALL
+              readOnlyRootFilesystem: true
               runAsNonRoot: true
               seccompProfile:
                 type: RuntimeDefault
@@ -1691,7 +1710,7 @@ metadata:
 spec:
   dataFrom:
   - extract:
-      key: integrations-output/terraform-resources/app-sre-prod-01/stonesoup-infra-production/multi-tenant-prod-plnsvc-rds
+      key: integrations-output/terraform-resources/appsrep07ue1/stonesoup-infra-production/multi-tenant-prod-plnsvc-rds
   refreshInterval: 1h
   secretStoreRef:
     kind: ClusterSecretStore
@@ -1712,7 +1731,7 @@ metadata:
 spec:
   dataFrom:
   - extract:
-      key: integrations-output/terraform-resources/app-sre-prod-01/stonesoup-infra-production/multi-tenant-prod-plnsvc-s3
+      key: integrations-output/terraform-resources/appsrep07ue1/stonesoup-infra-production/multi-tenant-prod-plnsvc-s3
   refreshInterval: 1h
   secretStoreRef:
     kind: ClusterSecretStore
@@ -1853,8 +1872,11 @@ spec:
     enable-hub-resolver: true
     enable-tekton-oci-bundles: true
     performance:
+      buckets: 4
+      disable-ha: false
       kube-api-burst: 50
       kube-api-qps: 50
+      replicas: 2
       threads-per-controller: 32
   platforms:
     openshift:
@@ -1868,10 +1890,7 @@ spec:
           custom-console-url-pr-tasklog: https://console.redhat.com/preview/application-pipeline
   profile: all
   pruner:
-    keep: 10
-    resources:
-    - pipelinerun
-    schedule: 0/2 * * * *
+    disabled: true
   targetNamespace: openshift-pipelines
 ---
 apiVersion: operators.coreos.com/v1alpha1
@@ -1883,7 +1902,7 @@ metadata:
   name: openshift-pipelines-operator
   namespace: openshift-operators
 spec:
-  channel: pipelines-1.12
+  channel: pipelines-1.13
   name: openshift-pipelines-operator-rh
   source: redhat-operators
   sourceNamespace: openshift-marketplace

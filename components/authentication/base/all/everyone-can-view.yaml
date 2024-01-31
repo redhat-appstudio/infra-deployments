@@ -1,0 +1,108 @@
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: view-appstudio
+rules:
+- apiGroups:
+  - appstudio.redhat.com
+  resources:
+  - applications
+  - buildpipelineselectors
+  - componentdetectionqueries
+  - components
+  - enterprisecontractpolicies
+  - environments
+  - integrationtestscenarios
+  - internalrequests
+  - promotionruns
+  - releaseplanadmissions
+  - releaseplans
+  - releases
+  - releaseserviceconfigs
+  - releasestrategies
+  - snapshotenvironmentbindings
+  - snapshots
+  - spiaccesschecks
+  - spiaccesstokenbindings
+  - spifilecontentrequests
+  - remotesecrets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - managed-gitops.redhat.com
+  resources:
+  - gitopsdeploymentmanagedenvironments
+  - gitopsdeployments
+  - gitopsdeploymentsyncruns
+  - operations
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - jvmbuildservice.io
+  resources:
+  - artifactbuilds
+  - dependencybuilds
+  - rebuiltartifacts
+  - systemconfigs
+  - tektonwrappers
+  - jbsconfigs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - pipelinesascode.tekton.dev
+  resources:
+  - repositories
+  verbs:
+  - get
+  - list
+  - watch
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: view-cluster-version
+rules:
+- apiGroups:
+  - config.openshift.io
+  resources:
+  - clusterversions
+  verbs:
+  - get
+  - list
+  - watch
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: everyone-view
+subjects: [] # added by auth specific overlay, e.g. github
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: everyone-view-appstudio
+subjects: [] # added by auth specific overlay, e.g. github
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view-appstudio
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: everyone-view-cluster-version
+subjects: [] # added by auth specific overlay, e.g. github
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view-cluster-version

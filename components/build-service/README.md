@@ -69,18 +69,4 @@ Rotation rule: Secrets must be rotated within 7 days after someone with access l
 
 ### Instructions for rotation of pipelines-as-code-secret
 
-Prerequisite:
-- User must have admin role on the organization owning the GitHub Application.
-- The GitHub Application is shared between Build team and Pipeline Service team - both teams must be aware of the rotation
-
-Process for production instance:
-1. Go to https://github.com/organizations/redhat-appstudio/settings/apps/red-hat-trusted-app-pipeline
-2. In section 'Webhook secret (optional)' - click on Change Secret
-3. In section 'Private Keys' - generate new private key and remove the old one.
-4. Put new secrets from step 2. and 3. to app-sre vault to `stonesoup/production/pipeline-service/github-app` and `stonesoup/production/build/build-service`
-
-Process for stage instance:
-1. Go to https://github.com/organizations/redhat-appstudio/settings/apps/rhtap-staging
-2. In section 'Webhook secret (optional)' - click on Change Secret
-3. In section 'Private Keys' - generate new private key and remove the old one.
-4. Put new secrets from step 2. and 3. to app-sre vault to `stonesoup/staging/pipeline-service/github-app` and `stonesoup/staging/build/build-service`
+The secret is shared and is managed by Pipeline Service team. We load the secret from the Pipeline Service vault. We don't need to take any steps for rotation. After they rotate the secret it will be updated automatically on next external secret sync-up.

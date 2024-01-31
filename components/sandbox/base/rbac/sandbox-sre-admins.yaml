@@ -35,7 +35,7 @@ rules:
 - apiGroups:
   - "toolchain.dev.openshift.com"
   resources:
-  - "spacebindingrequests"
+  - "*"
   verbs:
   - "*"
 - apiGroups:
@@ -89,6 +89,9 @@ subjects:
   - kind: User
     apiGroup: rbac.authorization.k8s.io
     name: xcoulon
+  - kind: User
+    apiGroup: rbac.authorization.k8s.io
+    name: mfrancisc
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole

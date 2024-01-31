@@ -1,0 +1,24 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- ../../base
+- ../../base/external-secrets
+patches:
+  - target:
+      group: external-secrets.io
+      version: v1beta1
+      kind: ExternalSecret
+      name: log-forwarder-splunk-rhtap-application-external-secret
+    patch: |
+      - op: replace
+        path: /spec/dataFrom/0/extract/key
+        value: production/monitoring/logging/fluentd/splunk-forwarder-rhtap-production-application
+  - target:
+      group: external-secrets.io
+      version: v1beta1
+      kind: ExternalSecret
+      name: log-forwarder-splunk-rhtap-audit-external-secret
+    patch: |
+      - op: replace
+        path: /spec/dataFrom/0/extract/key
+        value: production/monitoring/logging/fluentd/splunk-forwarder-rhtap-production-audit

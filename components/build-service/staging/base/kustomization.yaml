@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- ../../base
+- ../../base/external-secrets
+- https://github.com/redhat-appstudio/build-service/config/default?ref=f0efbb6ad6e23c0912a61a1b19c7fda8c9fa968d
+
+namespace: build-service
+
+images:
+- name: quay.io/redhat-appstudio/build-service
+  newName: quay.io/redhat-appstudio/build-service
+  newTag: f0efbb6ad6e23c0912a61a1b19c7fda8c9fa968d
+
+commonAnnotations:
+  argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true

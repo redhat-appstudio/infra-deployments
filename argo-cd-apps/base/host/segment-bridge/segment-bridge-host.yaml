@@ -12,21 +12,25 @@ spec:
               values:
                 sourceRoot: components/segment-bridge
                 environment: staging
-                clusterDir: ""
+                clusterDir: base
           - list:
-              elements: []
+              elements:
+                - nameNormalized: stone-stg-host
+                  values.clusterDir: stone-stg-host
+                - nameNormalized: stone-prd-host1
+                  values.clusterDir: stone-prd-host1
   template:
     metadata:
       name: segment-bridge-host-{{nameNormalized}}
     spec:
       project: default
       source:
-        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
+        path: "{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}"
         repoURL: https://github.com/redhat-appstudio/infra-deployments.git
         targetRevision: main
       destination:
         namespace: segment-bridge
-        server: '{{server}}'
+        server: "{{server}}"
       syncPolicy:
         automated:
           prune: true
@@ -39,4 +43,3 @@ spec:
             duration: 10s
             factor: 2
             maxDuration: 3m
-

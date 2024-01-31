@@ -3,7 +3,17 @@ kind: Kustomization
 resources:
 - ../base
 - ../base/external-secrets
+- https://github.com/redhat-appstudio/image-controller/config/default?ref=88e3b1cede3a4cb6871b75d92bd4da408122d991
+
+images:
+- name: quay.io/redhat-appstudio/image-controller
+  newName: quay.io/redhat-appstudio/image-controller
+  newTag: 88e3b1cede3a4cb6871b75d92bd4da408122d991
+
+namespace: image-controller
+
 patches:
+  - path: ./manager_resources_patch.yaml
   - path: quaytoken.yaml
     target:
       name: quaytoken

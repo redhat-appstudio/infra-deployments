@@ -24,12 +24,16 @@ jobs:
 
       - name: Run kustomize build
         run: |
-          for p in $(find argo-cd-apps components -name "*kustomization.yaml*"); do kustomize build ${p%/*} -o kustomizedfiles/${p//\//-} || echo "^ ERROR when running kustomize build for ${p%/*} ^"; done
+          find argo-cd-apps components -name 'kustomization.yaml' ! -path '*/k-components/*' | \
+            xargs -I {} -n1 -P0  bash -c 'dir=$(dirname "{}"); output_file=$(echo $dir | tr / -)-kustomization.yaml; if ! log=$(kustomize build "$dir" -o "kustomizedfiles/$output_file" 2>&1); then echo "Error when running kustomize build for $dir: $log" && exit 1;fi'
 
       - name: Scan yaml files with kube-linter
         uses: stackrox/kube-linter-action@v1.0.4
         id: kube-linter-action-scan
         with:
+          # version 0.6.6 contains a new liveness check. We do have a few liveness issue already so use previous version for now
+          # Once we fix all issues, we will revert to use latest again.
+          version: v0.6.5
           # Adjust this directory to the location where your kubernetes resources and helm charts are located.
           directory: kustomizedfiles
           # The following two settings make kube-linter produce scan analysis in SARIF format which would then be
@@ -48,5 +52,4 @@ jobs:
         shell: bash
         run: |
           echo "If this step fails, kube-linter found issues. Check the output of the scan step above."
-          echo "TODO: (RHTAPSRE-109) Failing the kube-linter is temporarily disabled. Uncomment the line below once all detected issues are resolved"
-          # [[ "${{ steps.kube-linter-action-scan.outcome }}" == "success" ]]
+          [[ "${{ steps.kube-linter-action-scan.outcome }}" == "success" ]]

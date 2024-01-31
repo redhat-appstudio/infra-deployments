@@ -1,0 +1,28 @@
+apiVersion: oadp.openshift.io/v1alpha1
+kind: DataProtectionApplication
+metadata:
+  name: velero-aws
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  backupLocations:
+    - velero:
+        config:
+          kmsKeyId: CHANGE_ME
+          profile: default
+          region: us-east-1
+        credential:
+          key: cloud
+          name: backup-s3-credentials
+        default: true
+        objectStorage:
+          bucket: CHANGE_ME
+          prefix: velero
+        provider: aws
+  configuration:
+    restic:
+      enable: false
+    velero:
+      defaultPlugins:
+        - openshift
+        - aws

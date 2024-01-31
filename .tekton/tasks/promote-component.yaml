@@ -1,0 +1,263 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  labels:
+    app.kubernetes.io/version: "0.1"
+  annotations:
+    tekton.dev/pipelines.minVersion: "0.12.1"
+    tekton.dev/tags: "appstudio, hacbs"
+  name: promote-component
+spec:
+  description: |
+    Clones redhat-appstudio/infra-deployments repository, runs script in 'SCRIPT' parameter, generates pull-request for redhat-appstudio/infra-deployments repository.
+  params:
+    - name: SCRIPT
+      description: Bash script for changing the infra-deployments
+    - name: BRANCH_NAME
+      description: Source branch in infra-deployment repo
+    - name: COMPONENT_NAME
+      description: Component to promote
+    - name: GH_REPO
+      description: GitHub repository of the infra-deployments code
+      default: redhat-appstudio/infra-deployments
+    - name: IMAGE
+      description: Image reference containing git and other utility required for executing the SCRIPT
+       # this image is built using https://github.com/redhat-appstudio/build-tasks-dockerfiles/blob/main/update-infra-deployments-task-scripts-image/Dockerfile
+      default: quay.io/redhat-appstudio/update-infra-deployments-task-script-image@sha256:2748f1a4f1af4e35214745aed4e56a9d06f6bdbd30572e7ade13729e67f23cc9
+    - name: shared-secret
+      default: infra-deployments-pr-creator
+      description: secret in the namespace which contains private key for the GitHub App
+    - name: GITHUB_APP_ID
+      description: ID of Github app used for updating PR
+      default: "305606"
+    - name: GITHUB_APP_INSTALLATION_ID
+      description: Installation ID of Github app in the organization
+      default: "35269675"
+  volumes:
+    - name: infra-deployments-pr-creator
+      secret:
+        # 'private-key' - private key for Github app
+        secretName: $(params.shared-secret)
+    - name: shared-dir
+      emptyDir: {}
+
+  steps:
+    - name: git-clone-infra-deployments
+      image: $(params.IMAGE)
+      volumeMounts:
+        - name: shared-dir
+          mountPath: /shared
+      workingDir: /shared
+      env:
+        - name: GH_REPO
+          value: "$(params.GH_REPO)"
+      script: |
+        git clone "https://github.com/${GH_REPO}.git" cloned
+    - name: run-update-script
+      image: $(params.IMAGE)
+      volumeMounts:
+        - name: shared-dir
+          mountPath: /shared
+      workingDir: /shared
+      env:
+        - name: SCRIPT
+          value: $(params.SCRIPT)
+      script: |
+        cd cloned
+        echo "$SCRIPT" | sh
+    - name: get-diff-files
+      image: $(params.IMAGE)
+      volumeMounts:
+        - name: shared-dir
+          mountPath: /shared
+      workingDir: /shared
+      script: |
+        cd cloned
+        git status -s --porcelain | cut -c4- > ../updated_files.txt
+    # Based on https://github.com/tektoncd/catalog/tree/main/task/github-app-token/0.2/
+    - name: create-mr
+      image: quay.io/redhat-appstudio/github-app-token@sha256:b4f2af12e9beea68055995ccdbdb86cfe1be97688c618117e5da2243dc1da18e
+      # per https://kubernetes.io/docs/concepts/containers/images/#imagepullpolicy-defaulting
+      # the cluster will set imagePullPolicy to IfNotPresent
+      # also per direction from Ralph Bean, we want to use image digest based tags to use a cue to automation like dependabot or renovatebot to periodially submit pull requests that update the digest as new images are released.
+      volumeMounts:
+        - name: infra-deployments-pr-creator
+          mountPath: /secrets/deploy-key
+        - name: shared-dir
+          mountPath: /shared
+      workingDir: /shared
+      env:
+        - name: GITHUBAPP_KEY_PATH
+          value: /secrets/deploy-key/private-key
+        - name: GITHUBAPP_APP_ID
+          value: "$(params.GITHUB_APP_ID)"
+        - name: GITHUBAPP_INSTALLATION_ID
+          value: "$(params.GITHUB_APP_INSTALLATION_ID)"
+        - name: GITHUB_API_URL
+          value: https://api.github.com
+        - name: BRANCH_NAME
+          value: $(params.BRANCH_NAME)
+        - name: GH_REPO
+          value: "$(params.GH_REPO)"
+        - name: COMPONENT_NAME
+          value: "$(params.COMPONENT_NAME)"
+      script: |
+        #!/usr/bin/env python3
+        import json
+        import logging
+        import os
+        import time
+        import base64
+
+        import requests
+        from jwcrypto import jwk, jwt
+
+        logging.basicConfig(level=logging.DEBUG, format="%(asctime)s:%(name)s:%(levelname)s:%(message)s")
+        logger = logging.getLogger("updater")
+
+        EXPIRE_MINUTES_AS_SECONDS = int(os.environ.get('GITHUBAPP_TOKEN_EXPIRATION_MINUTES', 10)) * 60
+        # TODO support github enteprise
+        GITHUB_API_URL = os.environ["GITHUB_API_URL"]
+
+        BRANCH_NAME = os.environ["BRANCH_NAME"]
+        GH_REPO = os.environ["GH_REPO"]
+        COMPONENT_NAME = os.environ["COMPONENT_NAME"]
+
+
+        class GitHub():
+            token = None
+
+            def __init__(self, private_key, app_id=None, installation_id=None):
+                if not isinstance(private_key, bytes):
+                    raise ValueError(f'"{private_key}" parameter must be byte-string')
+                self._private_key = private_key
+                self.app_id = app_id
+                self.token = self._get_token(installation_id)
+
+            def _load_private_key(self, pem_key_bytes):
+                return jwk.JWK.from_pem(pem_key_bytes)
+
+            def _app_token(self, expire_in=EXPIRE_MINUTES_AS_SECONDS):
+                key = self._load_private_key(self._private_key)
+                now = int(time.time())
+                token = jwt.JWT(
+                    header={"alg": "RS256"},
+                    claims={
+                        "iat": now,
+                        "exp": now + expire_in,
+                        "iss": self.app_id
+                    },
+                    algs=["RS256"],
+                )
+                token.make_signed_token(key)
+                return token.serialize()
+
+            def _get_token(self, installation_id=None):
+                app_token = self._app_token()
+                if not installation_id:
+                    return app_token
+
+                req = self._request(
+                    "POST",
+                    f"/app/installations/{installation_id}/access_tokens",
+                    headers={
+                        "Authorization": f"Bearer {app_token}",
+                        "Accept": "application/vnd.github.machine-man-preview+json"
+                    })
+
+                ret = req.json()
+                if 'token' not in ret:
+                    raise Exception(f"Authentication errors: {ret}")
+
+                return ret['token']
+
+            def _request(self, method, url, headers={}, data={}):
+                if self.token and 'Authorization' not in headers:
+                    headers.update({"Authorization": "Bearer " + self.token})
+                if not url.startswith("http"):
+                    url = f"{GITHUB_API_URL}{url}"
+                return requests.request(method,
+                                        url,
+                                        headers=headers,
+                                        data=json.dumps(data))
+
+            def create_mr(self, title, description):
+                logger.info("Create/update pull request, head: %s, base: main", BRANCH_NAME)
+                req = self._request(
+                    "POST",
+                    f"/repos/{GH_REPO}/pulls",
+                    headers={
+                        "Authorization": f"Bearer {self.token}",
+                        "Accept": "application/vnd.github.v3+json"
+                    },
+                    data={
+                        "head": BRANCH_NAME,
+                        "base": "main",
+                        "title": title,
+                        "body": description,
+                        "maintainer_can_modify": False
+                    })
+                json_output = req.json()
+                print(json_output)
+                return json_output
+
+            def create_reset_branch(self):
+                target_branch = self._request("GET", f"/repos/{GH_REPO}/git/refs/heads/{BRANCH_NAME}").json()
+                main_branch_sha = self._request("GET", f"/repos/{GH_REPO}/git/refs/heads/main").json()['object']['sha']
+                if "ref" in target_branch:
+                    logger.info("Update branch %s", BRANCH_NAME)
+                    self._request(
+                        "PATCH",
+                        f"/repos/{GH_REPO}/git/refs/heads/{BRANCH_NAME}",
+                        data={"sha": main_branch_sha, "force": True}
+                    )
+                else:
+                    logger.info("Create branch %s", BRANCH_NAME)
+                    self._request(
+                        "POST",
+                        f"/repos/{GH_REPO}/git/refs",
+                        data={"sha": main_branch_sha, "ref": f"refs/heads/{BRANCH_NAME}"}
+                    )
+
+            def upload_content(self):
+                for file in open('updated_files.txt').readlines():
+                    file = file.strip()
+                    with open(f"cloned/{file}", "rb") as fd:
+                        encoded_string = base64.b64encode(fd.read()).decode("utf-8")
+                    old_sha = self._request("GET", f'/repos/{GH_REPO}/contents/{file}').json().get("sha")
+                    if old_sha is None:
+                        logger.info("Upload a new file %s", file)
+                        self._request("PUT", f'/repos/{GH_REPO}/contents/{file}', data={"message": f"update {file}", "branch": BRANCH_NAME, "content": encoded_string})
+                    else:
+                        logger.info("Update file %s", file)
+                        self._request("PUT", f'/repos/{GH_REPO}/contents/{file}', data={"message": f"update {file}", "branch": BRANCH_NAME, "content": encoded_string, "sha": old_sha})
+
+
+        def main():
+            with open(os.environ['GITHUBAPP_KEY_PATH'], 'rb') as key_file:
+                key = key_file.read()
+
+            if os.environ.get('GITHUBAPP_APP_ID'):
+                app_id = os.environ['GITHUBAPP_APP_ID']
+            else:
+                raise Exception("application id is not set")
+
+            print(f"Getting user token for application_id: {app_id}")
+            github_app = GitHub(
+                key,
+                app_id=app_id,
+                installation_id=os.environ.get('GITHUBAPP_INSTALLATION_ID'))
+
+            github_app.create_reset_branch()
+            github_app.upload_content()
+            title = f"Promoting component {COMPONENT_NAME} from stage to prod"
+            description = f"Promote from stage to production"
+            github_app.create_mr(title, description)
+
+        if __name__ == '__main__':
+            main()
+
+  workspaces:
+    - name: artifacts
+      description: Workspace containing arbitrary artifacts used during the task run.
+      optional: true
