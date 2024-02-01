@@ -2,6 +2,8 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ../../base/github
+components:
+  - ../k-components/rhtap-infra-secrets-patch
 patches:
   - path: github-redhat-appstudio-secret-patch.yaml
     target:
@@ -12,12 +14,6 @@ patches:
   - path: github-redhat-appstudio-sre-secret-patch.yaml
     target:
       name: github-redhat-appstudio-sre
-      kind: ExternalSecret
-      group: external-secrets.io
-      version: v1beta1
-  - path: rhtap-infra-secrets-patch.yaml
-    target:
-      name: rhtap-infra-secrets
       kind: ExternalSecret
       group: external-secrets.io
       version: v1beta1
