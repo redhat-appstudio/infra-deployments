@@ -1,0 +1,15 @@
+# permissions to be able to create a SpaceRequest
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: appstudio-pipelines-namespace-creator
+rules:
+- apiGroups:
+  - toolchain.dev.openshift.com
+  resources:
+  - spacerequests
+  verbs:
+  - get
+  - create
+  - delete
+

@@ -54,6 +54,19 @@ roleRef:
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
+  name: appstudio-pipelines-namespace-creator-rolebinding
+subjects:
+  - kind: ServiceAccount
+    name: appstudio-pipeline
+    namespace: build-templates-e2e
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: appstudio-pipelines-namespace-creator
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
   name: build-admins
   namespace: build-templates-e2e
 subjects:
