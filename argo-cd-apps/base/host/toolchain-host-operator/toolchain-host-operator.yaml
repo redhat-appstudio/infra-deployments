@@ -14,7 +14,15 @@ spec:
                 environment: staging
                 clusterDir: ""
           - list:
-              elements: []
+              elements:
+                - nameNormalized: stone-prod-p01
+                  values.clusterDir: stone-prod-p01
+                - nameNormalized: stone-stage-p01
+                  values.clusterDir: stone-stage-p01
+                - nameNormalized: stone-stg-host
+                  values.clusterDir: stone-stg-host
+                - nameNormalized: stone-prd-host1
+                  values.clusterDir: stone-prd-host1
   template:
     metadata:
       name: toolchain-host-operator-{{nameNormalized}}
