@@ -24,18 +24,9 @@ metadata:
   name: has-admin
   namespace: application-service
 subjects:
-  - kind: User
-    name: johnmcollier
-  - kind: User
-    name: kim-tsao
-  - kind: User
-    name: maysunfaisal
-  - kind: User
-    name: yangcao77
-  - kind: User
-    name: thepetk
-  - kind: User
-    name: michael-valdron
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: konflux-has
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role

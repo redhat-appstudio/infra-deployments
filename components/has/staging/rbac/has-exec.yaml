@@ -17,8 +17,9 @@ metadata:
   name: has-exec
   namespace: application-service
 subjects:
-  - kind: User
-    name: johnmcollier
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: konflux-has
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
