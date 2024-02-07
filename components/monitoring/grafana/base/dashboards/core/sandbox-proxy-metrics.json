@@ -179,7 +179,7 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "sum (rate(sandbox_proxy_workspace_http_request_time_sum{kube_verb=\"List\"}[5m])/rate(sandbox_proxy_workspace_http_request_time_count{kube_verb=\"List\"}[5m])) by (status_code)",
+          "expr": "sum (rate(sandbox_proxy_workspace_http_request_time_sum{kube_verb=\"List\"}[5m])) by (status_code)/sum(rate(sandbox_proxy_workspace_http_request_time_count{kube_verb=\"List\"}[5m])) by (status_code)",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
@@ -351,7 +351,7 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "sum (rate(sandbox_proxy_workspace_http_request_time_sum{kube_verb=\"Get\"}[5m])/rate(sandbox_proxy_workspace_http_request_time_count{kube_verb=\"Get\"}[5m])) by (status_code)",
+          "expr": "sum (rate(sandbox_proxy_workspace_http_request_time_sum{kube_verb=\"Get\"}[5m])) by (status_code)/sum(rate(sandbox_proxy_workspace_http_request_time_count{kube_verb=\"Get\"}[5m])) by (status_code)",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
@@ -529,7 +529,7 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "sum (rate(sandbox_proxy_api_http_request_time_sum[5m])/rate(sandbox_proxy_api_http_request_time_count[5m])) by (status_code)",
+          "expr": "sum (rate(sandbox_proxy_api_http_request_time_sum[5m])) by (status_code) / sum(rate(sandbox_proxy_api_http_request_time_count[5m])) by (status_code)",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
