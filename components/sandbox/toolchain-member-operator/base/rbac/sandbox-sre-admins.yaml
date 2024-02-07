@@ -5,18 +5,9 @@ metadata:
   name: sandbox-sre-member-admins
   namespace: sandbox-sre-member
 subjects:
-  - kind: User
+  - kind: Group
     apiGroup: rbac.authorization.k8s.io
-    name: MatousJobanek
-  - kind: User
-    apiGroup: rbac.authorization.k8s.io
-    name: alexeykazakov
-  - kind: User
-    apiGroup: rbac.authorization.k8s.io
-    name: xcoulon
-  - kind: User
-    apiGroup: rbac.authorization.k8s.io
-    name: mfrancisc
+    name: konflux-core
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -28,18 +19,9 @@ roleRef:
    name: sandbox-sre-member-operator-admins
    namespace: toolchain-member-operator
  subjects:
-   - kind: User
+   - kind: Group
      apiGroup: rbac.authorization.k8s.io
-     name: MatousJobanek
-   - kind: User
-     apiGroup: rbac.authorization.k8s.io
-     name: alexeykazakov
-   - kind: User
-     apiGroup: rbac.authorization.k8s.io
-     name: xcoulon
-   - kind: User
-     apiGroup: rbac.authorization.k8s.io
-     name: mfrancisc
+     name: konflux-core
  roleRef:
    apiGroup: rbac.authorization.k8s.io
    kind: ClusterRole
