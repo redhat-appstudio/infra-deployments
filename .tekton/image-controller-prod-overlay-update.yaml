@@ -2,7 +2,7 @@ apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
 metadata:
   name: image-controller-prod-overlay-update
-  namespace: rhtap-promotion-staging
+  namespace: tekton-ci
   annotations:
     pipelinesascode.tekton.dev/on-cel-expression: |
       event == "push" && target_branch == "main" && "components/image-controller/staging/kustomization.yaml".pathChanged()
