@@ -1883,6 +1883,15 @@ spec:
     enable-git-resolver: true
     enable-hub-resolver: true
     enable-tekton-oci-bundles: true
+    options:
+      deployments:
+        tekton-operator-proxy-webhook:
+          spec:
+            replicas: 1
+        tekton-pipelines-webhook:
+          spec:
+            replicas: 1
+      disabled: false
     performance:
       buckets: 4
       disable-ha: false
