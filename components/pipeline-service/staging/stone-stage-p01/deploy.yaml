@@ -1616,6 +1616,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   annotations:
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
     argocd.argoproj.io/sync-wave: "1"
   name: tekton-chains-signing-secret
@@ -1892,6 +1893,11 @@ spec:
     artifacts.pipelinerun.storage: oci
     artifacts.taskrun.format: in-toto
     artifacts.taskrun.storage: ""
+    options:
+      deployments:
+        tekton-chains-controller:
+          spec:
+            replicas: 1
     transparency.enabled: "false"
   params:
   - name: createRbacResource
@@ -1909,7 +1915,7 @@ spec:
         tekton-operator-proxy-webhook:
           spec:
             replicas: 2
-        tekton-pipelines-webhook:
+        tekton-pipelines-remote-resolvers:
           spec:
             replicas: 1
       disabled: false
@@ -1924,6 +1930,14 @@ spec:
     openshift:
       pipelinesAsCode:
         enable: true
+        options:
+          deployments:
+            pipelines-as-code-watcher:
+              spec:
+                replicas: 1
+            pipelines-as-code-webhook:
+              spec:
+                replicas: 1
         settings:
           application-name: Konflux Staging Internal
           custom-console-name: Konflux Staging Internal
