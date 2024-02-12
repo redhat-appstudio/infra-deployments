@@ -31,3 +31,15 @@
   path: /spec/pipeline/options/deployments/tekton-operator-proxy-webhook/spec/replicas
   # default pipeline-service setting is 1
   value: 2
+- op: replace
+  path: /spec/pipeline/options/deployments/tekton-pipelines-remote-resolvers/spec/replicas
+  # default pipeline-service setting is 1
+  value: 2
+- op: replace
+  path: /spec/platforms/openshift/pipelinesAsCode/options/deployments/pipelines-as-code-watcher/spec/replicas
+  # default pipeline-service setting is 1
+  value: 2
+- op: replace
+  path: /spec/platforms/openshift/pipelinesAsCode/options/deployments/pipelines-as-code-webhook/spec/replicas
+  # default pipeline-service setting is 1
+  value: 2

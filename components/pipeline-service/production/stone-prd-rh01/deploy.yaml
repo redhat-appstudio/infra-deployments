@@ -1615,6 +1615,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   annotations:
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
     argocd.argoproj.io/sync-wave: "1"
   name: tekton-chains-signing-secret
@@ -1887,9 +1888,9 @@ spec:
         tekton-operator-proxy-webhook:
           spec:
             replicas: 2
-        tekton-pipelines-webhook:
+        tekton-pipelines-remote-resolvers:
           spec:
-            replicas: 1
+            replicas: 2
       disabled: false
     performance:
       buckets: 4
@@ -1902,6 +1903,14 @@ spec:
     openshift:
       pipelinesAsCode:
         enable: true
+        options:
+          deployments:
+            pipelines-as-code-watcher:
+              spec:
+                replicas: 2
+            pipelines-as-code-webhook:
+              spec:
+                replicas: 2
         settings:
           application-name: Red Hat Konflux
           custom-console-name: Red Hat Konflux
