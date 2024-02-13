@@ -1616,6 +1616,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   annotations:
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
     argocd.argoproj.io/sync-wave: "1"
   name: tekton-chains-signing-secret
@@ -1710,6 +1711,27 @@ spec:
     creationPolicy: Owner
     deletionPolicy: Delete
     name: pipelines-as-code-secret
+---
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "-1"
+  name: tekton-chains-signing-secret
+  namespace: openshift-pipelines
+spec:
+  dataFrom:
+  - extract:
+      key: staging/pipeline-service/stone-stage-m01/chains-signing-secret
+  refreshInterval: 5m
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: appsre-stonesoup-vault
+  target:
+    creationPolicy: Owner
+    deletionPolicy: Delete
+    name: signing-secrets-vault
 ---
 apiVersion: external-secrets.io/v1beta1
 kind: ExternalSecret
@@ -1883,6 +1905,15 @@ spec:
     enable-git-resolver: true
     enable-hub-resolver: true
     enable-tekton-oci-bundles: true
+    options:
+      deployments:
+        tekton-operator-proxy-webhook:
+          spec:
+            replicas: 2
+        tekton-pipelines-remote-resolvers:
+          spec:
+            replicas: 2
+      disabled: false
     performance:
       buckets: 4
       disable-ha: false
@@ -1894,6 +1925,14 @@ spec:
     openshift:
       pipelinesAsCode:
         enable: true
+        options:
+          deployments:
+            pipelines-as-code-watcher:
+              spec:
+                replicas: 2
+            pipelines-as-code-webhook:
+              spec:
+                replicas: 2
         settings:
           application-name: Konflux Staging
           custom-console-name: Konflux Staging
