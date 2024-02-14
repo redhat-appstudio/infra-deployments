@@ -15,6 +15,12 @@ resources:
   - ../../base/rbac
 
 patches:
+  - path: tekton-chains-signing-secret-name.yaml
+    target:
+      name: tekton-chains-signing-secret
+      group: external-secrets.io
+      version: v1beta1
+      kind: ExternalSecret
   - path: metrics-exporter-trace.yaml
     target:
       kind: Deployment
