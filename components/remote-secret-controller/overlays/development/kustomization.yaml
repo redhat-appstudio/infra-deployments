@@ -2,14 +2,14 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ../../base
-  - https://github.com/konflux-ci/remote-secret/config/overlays/openshift_vault?ref=68d500a6a5b5f1003e149f5c7f992edee6b66412
+  - https://github.com/konflux-ci/remote-secret/config/overlays/openshift_vault?ref=9a90cc435901c5eb1d0d0527d6d92c3937866526
 
 namespace: remotesecret
 
 images:
   - name:  quay.io/redhat-appstudio/remote-secret-controller
     newName: quay.io/redhat-appstudio/remote-secret-controller
-    newTag: a6a2d4d7a6179fa695aa615910f7b6073f9ee465
+    newTag: 9a90cc435901c5eb1d0d0527d6d92c3937866526
 
 patches:
   - target:
