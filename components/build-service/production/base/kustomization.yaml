@@ -3,14 +3,14 @@ kind: Kustomization
 resources:
 - ../../base
 - ../../base/external-secrets
-- https://github.com/redhat-appstudio/build-service/config/default?ref=118aeb4f8c1c9b187140d8dc17a8beeb4eab2581
+- https://github.com/redhat-appstudio/build-service/config/default?ref=b57970c32618ec2bb0170144f530c868dbb1dbd3
 
 namespace: build-service
 
 images:
 - name: quay.io/redhat-appstudio/build-service
   newName: quay.io/redhat-appstudio/build-service
-  newTag: 118aeb4f8c1c9b187140d8dc17a8beeb4eab2581
+  newTag: b57970c32618ec2bb0170144f530c868dbb1dbd3
 
 commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
