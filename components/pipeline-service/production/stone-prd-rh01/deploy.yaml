@@ -1449,7 +1449,7 @@ metadata:
   name: tekton-results-watcher
   namespace: tekton-results
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app.kubernetes.io/name: tekton-results-watcher
@@ -1462,6 +1462,23 @@ spec:
         app.kubernetes.io/name: tekton-results-watcher
         app.kubernetes.io/version: devel
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/os
+                operator: NotIn
+                values:
+                - windows
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: tekton-results-watcher
+              topologyKey: kubernetes.io/hostname
+            weight: 100
       containers:
       - args:
         - --secure-listen-address=0.0.0.0:8443
@@ -1728,9 +1745,8 @@ spec:
     kind: ClusterSecretStore
     name: appsre-stonesoup-vault
   target:
-    creationPolicy: Owner
-    deletionPolicy: Delete
-    name: signing-secrets-vault
+    creationPolicy: Orphan
+    name: signing-secrets
 ---
 apiVersion: external-secrets.io/v1beta1
 kind: ExternalSecret
