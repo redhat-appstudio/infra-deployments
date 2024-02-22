@@ -1,0 +1,50 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: miner-detector
+  namespace: toolchain-host-operator
+spec:
+  schedule: "*/30 * * * *"
+  concurrencyPolicy: "Forbid"
+  startingDeadlineSeconds: 200
+  successfulJobsHistoryLimit: 4
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            provider: "codeready-toolchain"
+            app: "miner-detector"
+        spec:
+          restartPolicy: Never
+          imagePullPolicy: Always
+          containers:
+          - name: find-miners
+            image: quay.io/codeready-toolchain/miner-detector:latest
+            command: ["find-miners.sh"]
+            args: ['--in-cluster', 'true', '--environment', 'AppStudio', '--recipient', 'rhtap-infra@redhat.com', '--ns-suffix-regex', '-tenant$\|-env$', '--only-suspicious', 'true', '--check-files', 'false','--host-kubeconfig', '/root/.kube/config_appstudio_host_sa', '--member-kubeconfigs', '/root/.kube/config_appstudio_m1_sa,/root/.kube/config_appstudio_rh1_sa']
+            volumeMounts:
+            - name: kubeconfig-sandbox
+              mountPath: /root/.kube/
+            - name: miner-detector-sandbox-cli
+              mountPath: /root/
+            - name: cache
+              mountPath: /root/.kube/cache/
+          imagePullSecrets:
+          - name: miner-detector-quay-pull
+          volumes:
+          - name: kubeconfig-sandbox
+            projected:
+              sources:
+                - secret:
+                    name: config-appstudio-host-sa
+                - secret:
+                    name: config-appstudio-m1-sa
+                - secret:
+                    name: config-appstudio-rh1-sa
+          - name: miner-detector-sandbox-cli
+            secret:
+              secretName: miner-detector-sandbox-cli
+          - name: cache
+            emptyDir: {}
