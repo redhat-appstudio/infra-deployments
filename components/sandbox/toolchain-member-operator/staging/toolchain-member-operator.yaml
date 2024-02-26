@@ -1,0 +1,35 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
+metadata:
+  labels:
+    opsrc-provider: codeready-toolchain
+  name: dev-sandbox-member
+  namespace: toolchain-member-operator
+spec:
+  displayName: Dev Sandbox Operators
+  image: quay.io/codeready-toolchain/member-operator-index:latest
+  sourceType: grpc
+  updateStrategy:
+    registryPoll:
+      interval: 5m0s
+---
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  name: dev-sandbox-member
+  namespace: toolchain-member-operator
+spec:
+  targetNamespaces:
+  - toolchain-member-operator
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: dev-sandbox-member
+  namespace: toolchain-member-operator
+spec:
+  channel: staging
+  installPlanApproval: Automatic
+  name: toolchain-member-operator
+  source: dev-sandbox-member
+  sourceNamespace: toolchain-member-operator
