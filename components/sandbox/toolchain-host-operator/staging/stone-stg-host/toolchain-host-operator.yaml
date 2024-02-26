@@ -1,0 +1,35 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
+metadata:
+  labels:
+    opsrc-provider: codeready-toolchain
+  name: dev-sandbox-host
+  namespace: toolchain-host-operator
+spec:
+  displayName: Dev Sandbox Operators
+  image: quay.io/codeready-toolchain/host-operator-index:latest
+  sourceType: grpc
+  updateStrategy:
+    registryPoll:
+      interval: 5m0s
+---
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  name: dev-sandbox-host
+  namespace: toolchain-host-operator
+spec:
+  targetNamespaces:
+  - toolchain-host-operator
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: dev-sandbox-host
+  namespace: toolchain-host-operator
+spec:
+  channel: staging
+  installPlanApproval: Automatic
+  name: toolchain-host-operator
+  source: dev-sandbox-host
+  sourceNamespace: toolchain-host-operator
