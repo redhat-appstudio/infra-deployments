@@ -7,6 +7,7 @@ resources:
   - ../../base/member
   - ../../base/member/optional/infra-deployments/spi-vault
   - ../../base/all-clusters
+  - ../../base/ca-bundle
 
 patchesStrategicMerge:
   - delete-applications.yaml
@@ -107,3 +108,8 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: smee
+  - path: development-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: ca-bundle
