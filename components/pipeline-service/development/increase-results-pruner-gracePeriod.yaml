@@ -1,0 +1,21 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tekton-results-watcher
+spec:
+  template:
+    spec:
+      containers:
+        - name: watcher
+          args:
+            [
+              "-api_addr",
+              "tekton-results-api-service.tekton-results.svc.cluster.local:8080",
+              "-auth_mode",
+              "token",
+              "-check_owner=false",
+              "-completed_run_grace_period",
+              # default pipeline-service configuration has a greacePeriod of "10m" and will be moving towards immediate pruning in future
+              "2h",
+            ]
