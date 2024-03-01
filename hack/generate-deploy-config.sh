@@ -11,7 +11,7 @@ function print_help() {
   echo "  -c, --component SUBDIR    Path to a directory. Defaults to the current directory."
   echo "  -h, --help                Help message"
   echo
-  echo "Example usage: \`$0 components/pipeline-service/production"
+  echo "Example usage: \`$0 -c components/pipeline-service/production"
 }
 
 function parse_args() {
