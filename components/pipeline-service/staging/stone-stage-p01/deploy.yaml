@@ -1473,6 +1473,8 @@ spec:
         - -check_owner=false
         - -completed_run_grace_period
         - 10m
+        - -threadiness
+        - "32"
         env:
         - name: SYSTEM_NAMESPACE
           valueFrom:
@@ -1500,10 +1502,10 @@ spec:
         resources:
           limits:
             cpu: 250m
-            memory: 2Gi
+            memory: 4Gi
           requests:
-            cpu: 100m
-            memory: 64Mi
+            cpu: 250m
+            memory: 4Gi
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
