@@ -1,0 +1,9 @@
+To apply any changes done in sandbox-config.yaml file run:
+```
+sandbox-cli adm setup -c sandbox-config.yaml --out-dir generated-manifests/
+```
+
+To generate sandbox.yaml files for all ServiceAccounts listed in sandbox-config.yaml file, run:
+```
+sandbox-cli adm generate-cli-configs -c sandbox-config.yaml -k <./paths/to/all/production-kubeconfigs>
+```
