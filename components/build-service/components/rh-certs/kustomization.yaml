@@ -7,10 +7,8 @@ patches:
       name: build-service-controller-manager
       kind: Deployment
 configMapGenerator:
-  - name: rh-certs-2015
-    files: 
-      - 2015-RH-IT-Root-CA.pem
-  - name: rh-certs-2022
-    files: 
-      - 2022-IT-Root-CA.pem
+  - name: trusted-ca
+    options:
+      labels:
+        "config.openshift.io/inject-trusted-cabundle": "true"
 namespace: build-service
