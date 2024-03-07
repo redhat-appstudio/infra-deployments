@@ -9,22 +9,13 @@ spec:
       containers:
       - name: manager
         volumeMounts:
-          - name: rh-certs-2015
-            mountPath: /etc/pki/tls/certs/2015-RH-IT-Root-CA.pem
-            subPath: 2015-RH-IT-Root-CA.pem
-          - name: rh-certs-2022
-            mountPath: /etc/pki/tls/certs/2022-IT-Root-CA.pem
-            subPath: 2022-IT-Root-CA.pem
+          - name: trusted-ca
+            mountPath: /etc/pki/ca-trust/extracted/pem
+            readOnly: true
       volumes:
-        - name: rh-certs-2015
-          configMap:
-            name: rh-certs-2015
-            items:
-              - key: 2015-RH-IT-Root-CA.pem
-                path: 2015-RH-IT-Root-CA.pem 
-        - name: rh-certs-2022
-          configMap:
-            name: rh-certs-2022
-            items:
-              - key: 2022-IT-Root-CA.pem
-                path: 2022-IT-Root-CA.pem
+      - name: trusted-ca
+        configMap:
+          name: trusted-ca
+          items:
+            - key: ca-bundle.crt
+              path: tls-ca-bundle.pem
