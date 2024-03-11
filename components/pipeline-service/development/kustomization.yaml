@@ -33,3 +33,12 @@ patches:
       namespace: tekton-results
       name: tekton-results-watcher
   - path: increase-results-pruner-gracePeriod.yaml
+    target:
+      kind: Deployment
+      namespace: tekton-results
+      name: tekton-results-watcher
+  - path: reduce-watcher-cpu-mem-reqs.yaml
+    target:
+      kind: Deployment
+      namespace: tekton-results
+      name: tekton-results-watcher
