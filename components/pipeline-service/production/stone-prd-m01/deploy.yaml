@@ -1955,8 +1955,10 @@ spec:
           application-name: Red Hat Konflux
           custom-console-name: Red Hat Konflux
           custom-console-url: https://console.redhat.com/preview/application-pipeline
-          custom-console-url-pr-details: https://console.redhat.com/preview/application-pipeline
-          custom-console-url-pr-tasklog: https://console.redhat.com/preview/application-pipeline
+          custom-console-url-pr-details: https://console.redhat.com/preview/application-pipeline/ns/{{
+            namespace }}/pipelinerun/{{ pr }}
+          custom-console-url-pr-tasklog: https://console.redhat.com/preview/application-pipeline/ns/{{
+            namespace }}/pipelinerun/{{ pr }}/logs/{{ task }}
   profile: all
   pruner:
     disabled: true
