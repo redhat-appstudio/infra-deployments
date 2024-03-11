@@ -1880,6 +1880,7 @@ spec:
     enable-git-resolver: true
     enable-hub-resolver: true
     enable-tekton-oci-bundles: true
+    max-result-size: 12288
     options:
       deployments:
         tekton-operator-proxy-webhook:
@@ -1955,6 +1956,7 @@ spec:
       kube-api-qps: 50
       replicas: 2
       threads-per-controller: 32
+    results-from: sidecar-logs
   platforms:
     openshift:
       pipelinesAsCode:
