@@ -11,6 +11,7 @@ resources:
   - https://github.com/openshift-pipelines/pipeline-service.git/developer/openshift/gitops/argocd/pipeline-service?ref=e605798a3007da71f9d812273b97249a77b5635a
   - https://github.com/openshift-pipelines/pipeline-service.git/developer/openshift/gitops/argocd/pipeline-service-storage?ref=e605798a3007da71f9d812273b97249a77b5635a
   - ../base/rbac
+  - tekton-pipelines-controller-pods-log-access-rbac.yaml
 
 patches:
   - path: chains-deployment-perf-bump.yaml
@@ -22,6 +23,10 @@ patches:
       kind: Deployment
       name: pipeline-metrics-exporter
       namespace: openshift-pipelines
+  - path: update-tekton-config-features.yaml
+    target:
+      kind: TektonConfig
+      name: config
 #  - path: scale-down-exporter.yaml
 #    target:
 #      kind: Deployment
