@@ -14,3 +14,34 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: edit
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: pipeline-service-sre-exec-pprof-data
+  namespace: tekton-results
+rules:
+  # recent memory leak or hung grpc call issues will require development support running 'oc exec' into the results
+  # watcher pod to collect goroutine dumps and/or pprof data
+  - apiGroups:
+      - ""
+    verbs:
+      - get
+      - list
+      - create
+    resources:
+      - "pod/exec"
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: pipeline-service-sre-exec-pprof-data
+  namespace: tekton-results
+subjects:
+  - kind: Group
+    apiGroup: rbac.authorization.k8s.io
+    name: konflux-pipeline-service
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: pipeline-service-sre-exec-pprof-data
