@@ -65,7 +65,7 @@ $SSH -C 'sudo chmod -R 0777 /opt/nfs/*'
 $SSH -C 'cp /etc/exports ./exports; echo "/opt/nfs/pv0001 *(no_root_squash,rw,sync)" >> ./exports ; sudo cp ./exports /etc/exports ; rm ./exports'
 
 #START AND ENABLE RPCBIND AND NFS SERVICES
-$SSH -C "sudo systemctl restart rpcbind && sudo systemctl restart nfs"
+$SSH -C "sudo systemctl restart rpcbind && (sudo systemctl restart nfs || (echo 'Restarting nfs-server service instead..' && sudo systemctl restart nfs-server))"
 
 set +e
 oc create namespace $NAMESPACE
