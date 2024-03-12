@@ -20,16 +20,12 @@ serviceAccounts:
       - view-secrets
       - deactivate-user
       - ban-user
-      - register-cluster
       - promote-user
       - retarget-user
       - gdpr-delete
       clusterRoles:
       - view
       - edit
-    clusterRoleBindings:
-      clusterRoles:
-      - register-cluster-extra-permissions
 
   member:
     roleBindings:
@@ -38,14 +34,9 @@ serviceAccounts:
       - install-operator
       - restart-deployment
       - view-secrets
-      - register-cluster
       clusterRoles:
       - view
       - edit
-    clusterRoleBindings:
-      clusterRoles:
-      - register-cluster-extra-permissions
-      - register-cluster-extra-member-permissions
 
 - name: mjobanek
   host:
@@ -56,7 +47,6 @@ serviceAccounts:
       - view-secrets
       - deactivate-user
       - ban-user
-      - register-cluster
       - promote-user
       - retarget-user
       - gdpr-delete
@@ -65,84 +55,12 @@ serviceAccounts:
       clusterRoles:
       - view
       - edit
-    clusterRoleBindings:
-      clusterRoles:
-      - register-cluster-extra-permissions
 
   member:
     roleBindings:
     - namespace: toolchain-member-operator
       roles:
       - install-operator
-      - restart-deployment
-      - view-secrets
-      - register-cluster
-      clusterRoles:
-      - view
-      - edit
-    clusterRoleBindings:
-      clusterRoles:
-      - register-cluster-extra-permissions
-      - register-cluster-extra-member-permissions
-
-- name: xcoulon
-  host:
-    roleBindings:
-    - namespace: toolchain-host-operator
-      roles:
-      - approve-user
-      - view-secrets
-      - deactivate-user
-      - ban-user
-      - register-cluster
-      - promote-user
-      - retarget-user
-      - gdpr-delete
-      - install-operator
-      - restart-deployment
-      clusterRoles:
-      - view
-      - edit
-    clusterRoleBindings:
-      clusterRoles:
-      - register-cluster-extra-permissions
-
-  member:
-    roleBindings:
-    - namespace: toolchain-member-operator
-      roles:
-      - install-operator
-      - restart-deployment
-      - view-secrets
-      - register-cluster
-      clusterRoles:
-      - view
-      - edit
-    clusterRoleBindings:
-      clusterRoles:
-      - register-cluster-extra-permissions
-      - register-cluster-extra-member-permissions
-
-- name: rsenthil
-  host:
-    roleBindings:
-    - namespace: toolchain-host-operator
-      roles:
-      - approve-user
-      - view-secrets
-      - deactivate-user
-      - ban-user
-      - promote-user
-      - retarget-user
-      - gdpr-delete
-      - restart-deployment
-      clusterRoles:
-      - edit
-      - view
-  member:
-    roleBindings:
-    - namespace: toolchain-member-operator
-      roles:
       - restart-deployment
       - view-secrets
       clusterRoles:
@@ -150,32 +68,6 @@ serviceAccounts:
       - edit
 
 - name: fmuntean
-  host:
-    roleBindings:
-    - namespace: toolchain-host-operator
-      roles:
-      - approve-user
-      - view-secrets
-      - deactivate-user
-      - ban-user
-      - promote-user
-      - retarget-user
-      - gdpr-delete
-      - restart-deployment
-      clusterRoles:
-      - edit
-      - view
-  member:
-    roleBindings:
-    - namespace: toolchain-member-operator
-      roles:
-      - restart-deployment
-      - view-secrets
-      clusterRoles:
-      - edit
-      - view
-
-- name: krana
   host:
     roleBindings:
     - namespace: toolchain-host-operator
@@ -237,8 +129,6 @@ serviceAccounts:
     - namespace: toolchain-member-operator
       clusterRoles:
       - view
-
-#Stone Soup PMs with permissions to manage users
 
 - name: pdave
   host:
