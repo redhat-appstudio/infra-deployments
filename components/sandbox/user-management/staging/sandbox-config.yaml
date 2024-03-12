@@ -9,6 +9,35 @@ clusters:
 
 serviceAccounts:
 ## service accounts to be used by humans via `sandbox-cli`
+- name: dperaza4dustbit
+  host:
+    roleBindings:
+    - namespace: toolchain-host-operator
+      roles:
+      - install-operator
+      - restart-deployment
+      - approve-user
+      - view-secrets
+      - deactivate-user
+      - ban-user
+      - promote-user
+      - retarget-user
+      - gdpr-delete
+      clusterRoles:
+      - view
+      - edit
+
+  member:
+    roleBindings:
+    - namespace: toolchain-member-operator
+      roles:
+      - install-operator
+      - restart-deployment
+      - view-secrets
+      clusterRoles:
+      - view
+      - edit
+
 - name: alkazako
   host:
     roleBindings:
