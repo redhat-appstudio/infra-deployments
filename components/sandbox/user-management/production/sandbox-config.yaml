@@ -14,10 +14,8 @@ serviceAccounts:
     roleBindings:
     - namespace: toolchain-host-operator
       roles:
-      - install-operator
       - restart-deployment
       - approve-user
-      - view-secrets
       - deactivate-user
       - ban-user
       - promote-user
@@ -25,18 +23,14 @@ serviceAccounts:
       - gdpr-delete
       clusterRoles:
       - view
-      - edit
 
   member:
     roleBindings:
     - namespace: toolchain-member-operator
       roles:
-      - install-operator
       - restart-deployment
-      - view-secrets
       clusterRoles:
       - view
-      - edit
 
 - name: mjobanek
   host:
@@ -44,28 +38,22 @@ serviceAccounts:
     - namespace: toolchain-host-operator
       roles:
       - approve-user
-      - view-secrets
       - deactivate-user
       - ban-user
       - promote-user
       - retarget-user
       - gdpr-delete
-      - install-operator
       - restart-deployment
       clusterRoles:
       - view
-      - edit
 
   member:
     roleBindings:
     - namespace: toolchain-member-operator
       roles:
-      - install-operator
       - restart-deployment
-      - view-secrets
       clusterRoles:
       - view
-      - edit
 
 - name: fmuntean
   host:
@@ -73,23 +61,20 @@ serviceAccounts:
     - namespace: toolchain-host-operator
       roles:
       - approve-user
-      - view-secrets
       - deactivate-user
       - ban-user
       - promote-user
+      - retarget-user
       - gdpr-delete
       - restart-deployment
       clusterRoles:
-      - edit
       - view
   member:
     roleBindings:
     - namespace: toolchain-member-operator
       roles:
       - restart-deployment
-      - view-secrets
       clusterRoles:
-      - edit
       - view
 
 - name: bkundu
