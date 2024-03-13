@@ -11,6 +11,11 @@ images:
   newName: quay.io/redhat-appstudio/integration-service
   newTag: 55b2bae85419df8cd8b9e633d212826a7b9567ee
 
+configMapGenerator:
+- name: console-url
+  literals:
+    - CONSOLE_URL="https://console.dev.redhat.com/preview/application-pipeline/ns/{{ .Namespace }}/pipelinerun/{{ .PipelineRunName }}"
+
 namespace: integration-service
 
 patches:
