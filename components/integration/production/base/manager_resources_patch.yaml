@@ -15,3 +15,10 @@ spec:
           requests:
             cpu: 200m
             memory: 600Mi
+        env:
+        - name: CONSOLE_URL
+          valueFrom:
+              configMapKeyRef:
+                name: console-url
+                key: CONSOLE_URL
+                optional: true
