@@ -30,7 +30,7 @@ spec:
                   NOW=$(date +%s)
                   kubectl get release --all-namespaces \
                   --sort-by=.status.expirationTime \
-                  --template '{{range .items}}{{.metadata.name}}{{"\t"}}{{.metadata.namespace}}{{"\t"}}{{.status.expirationTime}}{{"\n"}}{{end}}' > /tmp/kubectl-out
+                  --template '{{range .items}}{{.metadata.name}}{{"\t"}}{{.metadata.namespace}}{{"\t"}}{{.status.expirationTime}}{{"\n"}}{{end}}' > /var/tmp/kubectl-out
                   awk -v now=${NOW} '{
                        # parsing the expirationTime and converting it to epoch
                        # so we can calculate easier the expired Releases
