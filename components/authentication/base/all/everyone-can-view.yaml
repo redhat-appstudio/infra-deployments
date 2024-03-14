@@ -81,7 +81,7 @@ kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: everyone-view
-subjects: [] # added by auth specific overlay, e.g. github
+subjects: [] # added by patch to avoid duplicating the groups
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -91,7 +91,7 @@ kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: everyone-view-appstudio
-subjects: [] # added by auth specific overlay, e.g. github
+subjects: [] # added by patch to avoid duplicating the groups
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -101,7 +101,7 @@ kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: everyone-view-cluster-version
-subjects: [] # added by auth specific overlay, e.g. github
+subjects: [] # added by patch to avoid duplicating the groups
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
