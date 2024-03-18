@@ -1,14 +1,60 @@
 clusters:
   host:
-    api: https://api.stone-prd-host1.wdlc.p1.openshiftapps.com:6443
+    api: https://api.stone-stg-host.qc0p.p1.openshiftapps.com:6443
   members:
-  - api: https://api.stone-prd-m01.84db.p1.openshiftapps.com:6443
+  - api: https://api.stone-stg-m01.7ayg.p1.openshiftapps.com:6443
     name: member-1
-  - api: https://api.stone-prd-rh01.pg1f.p1.openshiftapps.com:6443
+  - api: https://api.stone-stg-rh01.l2vh.p1.openshiftapps.com:6443
     name: member-rh-1
 
 serviceAccounts:
-## service accounts to be used by humans via `sandbox-cli`
+## service accounts to be used by humans via `ksctl`
+- name: filariow
+  host:
+    roleBindings:
+    - namespace: toolchain-host-operator
+      roles:
+      - restart-deployment
+      - approve-user
+      - deactivate-user
+      - ban-user
+      - promote-user
+      - retarget-user
+      - gdpr-delete
+      clusterRoles:
+      - view
+
+  member:
+    roleBindings:
+    - namespace: toolchain-member-operator
+      roles:
+      - restart-deployment
+      clusterRoles:
+      - view
+
+- name: dperaza4dustbit
+  host:
+    roleBindings:
+    - namespace: toolchain-host-operator
+      roles:
+      - restart-deployment
+      - approve-user
+      - deactivate-user
+      - ban-user
+      - promote-user
+      - retarget-user
+      - gdpr-delete
+      clusterRoles:
+      - view
+
+  member:
+    roleBindings:
+    - namespace: toolchain-member-operator
+      roles:
+      - restart-deployment
+      clusterRoles:
+      - view
+
 - name: alkazako
   host:
     roleBindings:
@@ -83,6 +129,10 @@ serviceAccounts:
     - namespace: toolchain-host-operator
       roles:
       - approve-user
+      - deactivate-user
+      - promote-user
+      - retarget-user
+      - gdpr-delete
       clusterRoles:
       - view
   member:
@@ -99,6 +149,9 @@ serviceAccounts:
     - namespace: toolchain-host-operator
       roles:
       - approve-user
+      - deactivate-user
+      - gdpr-delete
+      - retarget-user
       clusterRoles:
       - view
   member:
@@ -113,6 +166,10 @@ serviceAccounts:
     - namespace: toolchain-host-operator
       roles:
       - approve-user
+      - deactivate-user
+      - gdpr-delete
+      - retarget-user
+      - promote-user
       clusterRoles:
       - view
   member:
@@ -194,6 +251,21 @@ serviceAccounts:
       roles:
       - approve-user
       - retarget-user
+      clusterRoles:
+      - view
+  member:
+    roleBindings:
+    - namespace: toolchain-member-operator
+      clusterRoles:
+      - view
+
+- name: jhutar
+  host:
+    roleBindings:
+    - namespace: toolchain-host-operator
+      roles:
+      - approve-user
+      - gdpr-delete
       clusterRoles:
       - view
   member:
