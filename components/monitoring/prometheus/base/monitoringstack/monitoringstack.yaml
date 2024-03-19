@@ -108,7 +108,8 @@ spec:
         - '{__name__="kube_statefulset_replicas", namespace="gitops-service-argocd"}'
         - '{__name__="openshift_route_status", namespace="gitops-service-argocd"}'
         - '{__name__="kube_deployment_status_replicas_ready", namespace="gitops-service-argocd"}'
-        - '{__name__="kube_deployment_spec_replicas", namespace="gitops-service-argocd"}'
+        - '{__name__="kube_deployment_spec_replicas", namespace=~"gitops-service-argocd|smee.*"}'
+        - '{__name__="kube_deployment_status_replicas_available", namespace=~"smee.*"}'
         - '{__name__="argocd_app_reconcile_bucket", namespace="gitops-service-argocd"}'
         - '{__name__="argocd_app_info", namespace="gitops-service-argocd"}'
     relabelings:
