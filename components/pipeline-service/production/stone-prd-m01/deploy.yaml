@@ -1783,6 +1783,10 @@ spec:
   target:
     creationPolicy: Orphan
     name: signing-secrets
+    template:
+      metadata:
+        annotations:
+          argocd.argoproj.io/sync-options: Prune=false
 ---
 apiVersion: external-secrets.io/v1beta1
 kind: ExternalSecret
