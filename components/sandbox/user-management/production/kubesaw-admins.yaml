@@ -121,6 +121,20 @@ serviceAccounts:
       clusterRoles:
       - view
 
+- name: eedri
+  host:
+    roleBindings:
+    - namespace: toolchain-host-operator
+      roles:
+      - approve-user
+      clusterRoles:
+      - view
+  member:
+    roleBindings:
+    - namespace: toolchain-member-operator
+      clusterRoles:
+      - view
+
 - name: bsutter
   host:
     roleBindings:
