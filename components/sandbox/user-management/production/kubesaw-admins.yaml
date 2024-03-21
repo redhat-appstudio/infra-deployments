@@ -139,6 +139,24 @@ serviceAccounts:
       clusterRoles:
       - view
 
+- name: hugares
+  host:
+    roleBindings:
+    - namespace: toolchain-host-operator
+      roles:
+      - approve-user
+      - deactivate-user
+      - gdpr-delete
+      - retarget-user
+      - promote-user
+      clusterRoles:
+      - view
+  member:
+    roleBindings:
+    - namespace: toolchain-member-operator
+      clusterRoles:
+      - view
+
 - name: bcook
   host:
     roleBindings:
