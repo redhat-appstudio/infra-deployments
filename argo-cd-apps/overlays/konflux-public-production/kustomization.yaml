@@ -5,6 +5,7 @@ resources:
   - ../../base/member
   - ../../base/all-clusters
   - ../../base/tekton-ci
+  - ../../base/konflux-ci
   - ../../base/tenants-config
   - ../../base/cluster-secret-store-rh
   - ../../base/rh-managed-workspaces-config
@@ -72,6 +73,11 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: tekton-ci
+  - path: production-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: konflux-ci
   - path: production-overlay-patch.yaml
     target:
       kind: ApplicationSet
