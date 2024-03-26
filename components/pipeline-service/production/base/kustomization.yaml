@@ -20,6 +20,10 @@ patches:
   #     kind: Deployment
   #     name: pipeline-metrics-exporter
   #     namespace: openshift-pipelines
+  - path: chains-deployment-perf-bump.yaml
+    target:
+      kind: TektonConfig
+      name: config
   - path: bump-exporter-mem.yaml
     target:
       kind: Deployment
