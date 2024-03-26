@@ -13,6 +13,10 @@ resources:
   - ../base/rbac
 
 patches:
+  - path: chains-deployment-perf-bump.yaml
+    target:
+      kind: TektonConfig
+      name: config
   - path: metrics-exporter-trace.yaml
     target:
       kind: Deployment
