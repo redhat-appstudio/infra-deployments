@@ -1853,6 +1853,18 @@ spec:
     artifacts.pipelinerun.storage: oci
     artifacts.taskrun.format: in-toto
     artifacts.taskrun.storage: ""
+    options:
+      deployments:
+        tekton-chains-controller:
+          spec:
+            template:
+              spec:
+                containers:
+                - args:
+                  - --threads-per-controller=32
+                  - --kube-api-qps=50
+                  - --kube-api-burst=50
+                  name: tekton-chains-controller
     transparency.enabled: "false"
   params:
   - name: createRbacResource
