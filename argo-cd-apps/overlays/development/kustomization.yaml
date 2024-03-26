@@ -8,6 +8,7 @@ resources:
   - ../../base/member/optional/infra-deployments/spi-vault
   - ../../base/all-clusters
   - ../../base/ca-bundle
+  - ../../base/repository-validator
 
 patchesStrategicMerge:
   - delete-applications.yaml
@@ -113,3 +114,8 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: ca-bundle
+  - path: development-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: repository-validator
