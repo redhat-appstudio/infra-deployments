@@ -5,6 +5,7 @@ resources:
   - ../../base/smee-client
   - ../../base/ui
   - ../../base/ca-bundle
+  - ../../base/keycloak
 patchesStrategicMerge:
   - delete-applications.yaml
 namespace: argocd
@@ -159,3 +160,8 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: ca-bundle
+  - path: production-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: keycloak
