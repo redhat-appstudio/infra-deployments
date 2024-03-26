@@ -6,6 +6,7 @@ resources:
   - ../../base/ui
   - ../../base/ca-bundle
   - ../../base/keycloak
+  - ../../base/repository-validator
 patchesStrategicMerge:
   - delete-applications.yaml
 namespace: argocd
@@ -165,3 +166,8 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: keycloak
+  - path: production-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: repository-validator
