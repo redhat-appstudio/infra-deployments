@@ -1,0 +1,21 @@
+---
+- op: add
+  path: /spec/template/spec/containers/0/args/-
+  value: '-webhook-config-path=/mnt/webhook-config.json'
+
+- op: add
+  path: /spec/template/spec/containers/0/volumeMounts/-
+  value:
+    name: webhook-config
+    mountPath: /mnt
+    readOnly: true
+
+- op: add
+  path: /spec/template/spec/volumes/-
+  value: 
+    name: webhook-config
+    configMap:
+      name: webhook-config
+      items:
+        - key: webhook-config.json
+          path: webhook-config.json
