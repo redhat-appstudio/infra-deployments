@@ -1,0 +1,39 @@
+---
+issuer: https://dex-quality-dashboard.<cluster-domain>/dex
+storage:
+  type: sqlite3
+web:
+  http: 0.0.0.0:5556
+  allowedOrigins: ["*"]
+oauth2:
+  skipApprovalScreen: true
+telemetry:
+  http: 0.0.0.0:5558
+  enableProfiling: true
+expiry:
+  deviceRequests: "5m"
+  signingKeys: "6h"
+  idTokens: "1h"
+  refreshTokens:
+    reuseInterval: "3s"
+    validIfNotUsedFor: "2160h"
+    absoluteLifetime: "3960h"
+staticClients:
+- id: "<APP_ID>"
+  redirectURIs:
+  - "https://frontend-quality-dashboard.<cluster-domain>/home/overview"
+  - "https://frontend-quality-dashboard.<cluster-domain>/login"
+  - "https://frontend-quality-dashboard.<cluster-domain>/"
+  name: "Red Hat Quality Studio"
+  public: true
+connectors:
+- type: github
+  id: github
+  name: GitHub
+  config:
+    orgs:
+    - name: <GITHUB_ORG>
+    clientID: <OAUTH_CLIENT_ID>
+    clientSecret: <OAUTH_CLIENT_SECRET>
+    # Dex's issuer URL + "/callback"
+    redirectURI: https://dex-quality-dashboard.<cluster-domain>/dex/callback

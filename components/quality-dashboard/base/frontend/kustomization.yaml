@@ -1,0 +1,10 @@
+resources:
+- https://github.com/redhat-appstudio/quality-dashboard/frontend/deploy/base?ref=3217a5cca527b367f054b80a0c9936efc6f71a3c
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+images:
+  - name: quay.io/redhat-appstudio/quality-dashboard-frontend
+    newName: quay.io/redhat-appstudio/pull-request-builds
+    newTag: quality-dashboard-frontend-3217a5cca527b367f054b80a0c9936efc6f71a3c
