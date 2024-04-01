@@ -2,12 +2,12 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ../base
-  - https://github.com/redhat-appstudio/o11y/config/exporters/monitoring/grafana/base?ref=bb66da4ffb20a4fc586318027702b292b1124cf7
+  - https://github.com/redhat-appstudio/o11y/config/exporters/monitoring/grafana/base?ref=38d33115ac41b2595a18c2ac6ca0f7102cc286a1
 
 images:
 - name: quay.io/redhat-appstudio/o11y
   newName: quay.io/redhat-appstudio/o11y
-  newTag: bb66da4ffb20a4fc586318027702b292b1124cf7
+  newTag: 38d33115ac41b2595a18c2ac6ca0f7102cc286a1
 
 patches:
   - path: auto-assign-role-patch.yaml
