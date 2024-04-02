@@ -1,0 +1,47 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: redhat-appstudio-tekton-catalog-pr-cronjob
+spec:
+  schedule: "0 1 * * *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: redhat-appstudio-tekton-catalog-pr-pruner
+            image: registry.redhat.io/rhel8/python-39:1-120.1684740828
+            env:
+              - name: QUAY_TOKEN
+                valueFrom:
+                  secretKeyRef:
+                    name: redhat-appstudio-tekton-catalog-pr-token
+                    key: quaytoken
+            imagePullPolicy: IfNotPresent
+            command:
+              - /bin/bash
+              - '-c'
+              - python /image-pruner/prune_images.py --namespace=redhat-appstudio-tekton-catalog --repo-name=pull-request-builds
+            volumeMounts:
+              - name: redhat-appstudio-tekton-catalog-pr-volume
+                mountPath: /image-pruner
+            resources:
+              limits:
+                cpu: 500m
+                memory: 512Mi
+              requests:
+                cpu: 150m
+                memory: 128Mi
+            securityContext:
+              readOnlyRootFilesystem: true
+          restartPolicy: OnFailure
+          securityContext:
+            runAsNonRoot: true
+          volumes:
+            - name: redhat-appstudio-tekton-catalog-pr-volume
+              configMap:
+                name: single-image-pruner-configmap
+            - name: redhat-appstudio-tekton-catalog-pr-token
+              secret:
+                secretName: redhat-appstudio-tekton-catalog-pr-token
