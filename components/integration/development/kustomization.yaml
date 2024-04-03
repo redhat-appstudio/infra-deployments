@@ -2,18 +2,19 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
 - ../base
-- https://github.com/redhat-appstudio/integration-service/config/default?ref=2b89dd379969c6fbd5ee33a8cc7d4a85fb736237
-- https://github.com/redhat-appstudio/integration-service/config/snapshotgc?ref=2b89dd379969c6fbd5ee33a8cc7d4a85fb736237
+- https://github.com/redhat-appstudio/integration-service/config/default?ref=1cf98dbb0b7fea4fc9e8118713d34f57323c341c
+- https://github.com/redhat-appstudio/integration-service/config/snapshotgc?ref=1cf98dbb0b7fea4fc9e8118713d34f57323c341c
 
 images:
 - name: quay.io/redhat-appstudio/integration-service
   newName: quay.io/redhat-appstudio/integration-service
-  newTag: 2b89dd379969c6fbd5ee33a8cc7d4a85fb736237
+  newTag: 1cf98dbb0b7fea4fc9e8118713d34f57323c341c
 
 configMapGenerator:
 - name: console-url
   literals:
     - CONSOLE_URL=""
+    - CONSOLE_URL_TASKLOG=""
 
 namespace: integration-service
 

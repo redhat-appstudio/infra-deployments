@@ -3,18 +3,19 @@ kind: Kustomization
 resources:
 - ../../base
 - ../../base/external-secrets
-- https://github.com/redhat-appstudio/integration-service/config/default?ref=0766dfb1c84bd0ad954a2f2c65fec1980f095f40
+- https://github.com/redhat-appstudio/integration-service/config/default?ref=c25c29fb82da14a96095e3aeba6f0d17ee062f6c
 - https://github.com/redhat-appstudio/integration-service/config/snapshotgc?ref=f7bb0788791c37b7a82a98555dc710d434e36a56
 
 images:
 - name: quay.io/redhat-appstudio/integration-service
   newName: quay.io/redhat-appstudio/integration-service
-  newTag: 0766dfb1c84bd0ad954a2f2c65fec1980f095f40
+  newTag: c25c29fb82da14a96095e3aeba6f0d17ee062f6c
 
 configMapGenerator:
 - name: console-url
   literals:
     - CONSOLE_URL="https://console.redhat.com/preview/application-pipeline/ns/{{ .Namespace }}/pipelinerun/{{ .PipelineRunName }}"
+    - CONSOLE_URL_TASKLOG=""="https://console.redhat.com/preview/application-pipeline/ns/{{ .Namespace }}/pipelinerun/{{ .PipelineRunName }}/logs/{{ .TaskName }}"
 
 namespace: integration-service
 

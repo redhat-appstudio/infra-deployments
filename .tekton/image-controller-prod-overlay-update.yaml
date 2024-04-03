@@ -5,7 +5,7 @@ metadata:
   namespace: tekton-ci
   annotations:
     pipelinesascode.tekton.dev/on-cel-expression: |
-      event == "push" && target_branch == "main" && "components/image-controller/staging/kustomization.yaml".pathChanged()
+      event == "push" && target_branch == "main" && "components/image-controller/staging/base/kustomization.yaml".pathChanged()
     pipelinesascode.tekton.dev/max-keep-runs: "5"
     pipelinesascode.tekton.dev/task: "[.tekton/tasks/promote-component.yaml]"
 spec:
@@ -19,9 +19,9 @@ spec:
             value: image-controller
           - name: SCRIPT
             value: |
-              STAGE_SHA=$(grep -oE '[0-9a-f]{40}' components/image-controller/staging/kustomization.yaml -m1)
-              OLD_PROD_SHA=$(grep -oE '[0-9a-f]{40}' components/image-controller/production/kustomization.yaml -m1)
+              STAGE_SHA=$(grep -oE '[0-9a-f]{40}' components/image-controller/staging/base/kustomization.yaml -m1)
+              OLD_PROD_SHA=$(grep -oE '[0-9a-f]{40}' components/image-controller/production/base/kustomization.yaml -m1)
               echo "Changing prod sha from ${OLD_PROD_SHA} to ${STAGE_SHA}"
-              sed -i "s/$OLD_PROD_SHA/$STAGE_SHA/g" components/image-controller/production/kustomization.yaml
+              sed -i "s/$OLD_PROD_SHA/$STAGE_SHA/g" components/image-controller/production/base/kustomization.yaml
         taskRef:
           name: promote-component
