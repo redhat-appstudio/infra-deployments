@@ -77,6 +77,75 @@ serviceAccounts:
       clusterRoles:
       - view
 
+- name: filariow
+  host:
+    roleBindings:
+    - namespace: toolchain-host-operator
+      roles:
+      - restart-deployment
+      - approve-user
+      - deactivate-user
+      - ban-user
+      - promote-user
+      - retarget-user
+      - gdpr-delete
+      clusterRoles:
+      - view
+
+  member:
+    roleBindings:
+    - namespace: toolchain-member-operator
+      roles:
+      - restart-deployment
+      clusterRoles:
+      - view
+
+- name: dperaza4dustbit
+  host:
+    roleBindings:
+    - namespace: toolchain-host-operator
+      roles:
+      - restart-deployment
+      - approve-user
+      - deactivate-user
+      - ban-user
+      - promote-user
+      - retarget-user
+      - gdpr-delete
+      clusterRoles:
+      - view
+
+  member:
+    roleBindings:
+    - namespace: toolchain-member-operator
+      roles:
+      - restart-deployment
+      clusterRoles:
+      - view
+
+- name: sadlerap
+  host:
+    roleBindings:
+    - namespace: toolchain-host-operator
+      roles:
+      - restart-deployment
+      - approve-user
+      - deactivate-user
+      - ban-user
+      - promote-user
+      - retarget-user
+      - gdpr-delete
+      clusterRoles:
+      - view
+
+  member:
+    roleBindings:
+    - namespace: toolchain-member-operator
+      roles:
+      - restart-deployment
+      clusterRoles:
+      - view
+
 - name: bkundu
   host:
     roleBindings:
