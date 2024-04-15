@@ -12,6 +12,9 @@ spec:
           kind: Secret
           name: mtls-ca-validators
           namespace: group-sync-operator
+        credentialsSecret:
+          name: konflux-ldap-sa
+          namespace: group-sync-operator
         insecure: false
         prune: true
         rfc2307:
@@ -34,6 +37,6 @@ spec:
             filter: (&(objectClass=rhatRoverGroup)(cn=konflux-*))
             scope: sub
           userUIDAttribute: dn
-        url: 'ldaps://ldap.corp.redhat.com'
+        url: 'ldaps://ldapfrac.corp.redhat.com'
       name: ldap-corp
   schedule: '*/15 * * * *'
