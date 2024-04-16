@@ -1,13 +1,23 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - ../../base/github
-components:
-  - ../k-components/rhtap-infra-secrets-patch
+  - ../../base
 patches:
-  - path: github-redhat-appstudio-secret-patch.yaml
+  - path: rhtap-infra-secrets-patch.yaml
     target:
-      name: github-redhat-appstudio
+      name: rhtap-infra-secrets
+      kind: ExternalSecret
+      group: external-secrets.io
+      version: v1beta1
+  - path: konflux-ldap-sa-patch.yaml
+    target:
+      name: konflux-ldap-sa
+      kind: ExternalSecret
+      group: external-secrets.io
+      version: v1beta1
+  - path: mtls-ca-validators-patch.yaml
+    target:
+      name: mtls-ca-validators
       kind: ExternalSecret
       group: external-secrets.io
       version: v1beta1
