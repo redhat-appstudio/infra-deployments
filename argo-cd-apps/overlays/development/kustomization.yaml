@@ -9,6 +9,7 @@ resources:
   - ../../base/all-clusters
   - ../../base/ca-bundle
   - ../../base/repository-validator
+  - ../../base/quality-dashboard
 
 patchesStrategicMerge:
   - delete-applications.yaml
@@ -129,3 +130,8 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: spacerequest-cleaner
+  - path: development-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: quality-dashboard
