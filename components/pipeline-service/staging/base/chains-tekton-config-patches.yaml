@@ -1,0 +1,40 @@
+---
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  chain:
+    # Configure TaskRun attestation.
+    # RHTAP does not leverage the TaskRun attestations.
+    # This tells Tekton Chains to not store them in the OCI registry.
+    artifacts.taskrun.format: "in-toto"
+    artifacts.taskrun.storage: ""
+
+    # Configure image signing
+    artifacts.oci.storage: "oci"
+
+    # Configure deep inspection
+    artifacts.pipelinerun.enable-deep-inspection: true
+
+    # Configure PipelineRun attestation
+    artifacts.pipelinerun.format: "in-toto"
+    artifacts.pipelinerun.storage: "oci"
+
+    # Rekor integration is disabled for now. It is planned to be re-introduced in the future.
+    transparency.enabled: "false"
+
+    options:
+      deployments:
+        tekton-chains-controller:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: tekton-chains-controller
+                    args:
+                      [
+                        '--threads-per-controller=32',
+                        '--kube-api-qps=50',
+                        '--kube-api-burst=50',
+                      ]
