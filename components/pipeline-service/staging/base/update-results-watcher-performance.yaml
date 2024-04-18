@@ -5,3 +5,21 @@
 - op: replace
   path: /spec/template/spec/containers/1/resources/limits/cpu
   value: "250m"
+- op: add
+  path: /spec/template/spec/containers/1/args/-
+  value: -threadiness
+- op: add
+  path: /spec/template/spec/containers/1/args/-
+  value: "50"
+- op: add
+  path: /spec/template/spec/containers/1/args/-
+  value: -qps
+- op: add
+  path: /spec/template/spec/containers/1/args/-
+  value: "50"
+- op: add
+  path: /spec/template/spec/containers/1/args/-
+  value: -burst
+- op: add
+  path: /spec/template/spec/containers/1/args/-
+  value: "100"
