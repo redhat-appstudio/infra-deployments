@@ -41,7 +41,7 @@ spec:
                        #
                        # expirationTime should be smaller than today in seconds so it can be deleted
                        if(now > expirationTime) {
-                         args="%s:%s"
+                         args="%s:%s\n"
                          printf(args, $1, $2)
                        } 
                     }' $KUBECTL_OUTPUT > $EXPIRED_RELEASES_FILE
