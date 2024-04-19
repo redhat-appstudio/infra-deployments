@@ -25,14 +25,14 @@ spec:
         repoURL: https://github.com/redhat-appstudio/infra-deployments.git
         targetRevision: main
       destination:
-        namespace: kubesaw-common
+        namespace: ksaw-common
         server: '{{server}}'
       syncPolicy:
         automated:
           prune: true
           selfHeal: true
         syncOptions:
-          - CreateNamespace=false
+          - CreateNamespace=true
         retry:
           limit: -1
           backoff:
