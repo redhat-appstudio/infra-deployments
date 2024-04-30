@@ -2,14 +2,14 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
 - ../base
-- https://github.com/redhat-appstudio/build-service/config/default?ref=d314aeee0b89b93354e08d8e6997e73933f3bcdb
+- https://github.com/redhat-appstudio/build-service/config/default?ref=b19e3a30aa621ed898d64488e4c8785420b87f3e
 
 namespace: build-service
 
 images:
 - name: quay.io/redhat-appstudio/build-service
   newName: quay.io/redhat-appstudio/build-service
-  newTag: d314aeee0b89b93354e08d8e6997e73933f3bcdb
+  newTag: b19e3a30aa621ed898d64488e4c8785420b87f3e
 
 commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
