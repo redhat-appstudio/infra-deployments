@@ -1,0 +1,11 @@
+---
+- op: add
+  path: /spec/generators/0/merge/generators/0/clusters/selector
+  value:
+      matchLabels:
+        appstudio.redhat.com/eaas-cluster: "true"
+
+- op: replace
+  path: /spec/generators/0/merge/generators/1/list
+  value:
+      elements: []
