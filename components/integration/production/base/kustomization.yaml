@@ -16,6 +16,11 @@ configMapGenerator:
   literals:
     - CONSOLE_URL="https://console.redhat.com/preview/application-pipeline/ns/{{ .Namespace }}/pipelinerun/{{ .PipelineRunName }}"
     - CONSOLE_URL_TASKLOG="https://console.redhat.com/preview/application-pipeline/ns/{{ .Namespace }}/pipelinerun/{{ .PipelineRunName }}/logs/{{ .TaskName }}"
+- name: pipelinerun-options
+  literals:
+    - PIPELINE_TIMEOUT="3h"
+    - TASKS_TIMEOUT="2h"
+    - FINALLY_TIMEOUT="1h"
 
 namespace: integration-service
 
