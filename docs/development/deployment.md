@@ -248,7 +248,7 @@ it's in [components/build-service/base/kustomization.yaml][build-service-kustomi
 ```yaml
 resources:
 - allow-argocd-to-manage.yaml
-- https://github.com/redhat-appstudio/build-service/config/default?ref=99cebd0a67a6b25b8ccffb76522861f526c762de
+- https://github.com/konflux-ci/build-service/config/default?ref=99cebd0a67a6b25b8ccffb76522861f526c762de
 ```
 
 Replace this reference with a reference to your fork and the commit you would like to test. Create

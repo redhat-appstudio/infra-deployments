@@ -8,7 +8,7 @@ The StoneSoup Build System is composed of the following components:
 - [Tekton Chains](https://github.com/tektoncd/chains)
 - [Tekton Results](https://github.com/tektoncd/results)
 - [Pipelines as Code](https://pipelinesascode.com/)
-- [App Studio Build Service](https://github.com/redhat-appstudio/build-service/)
+- [App Studio Build Service](https://github.com/konflux-ci/build-service/)
 - [HACBS JVM Build Service](https://github.com/redhat-appstudio/jvm-build-service)
 - [PVC Cleaner](https://github.com/redhat-appstudio/pvc-cleaner/)
 
