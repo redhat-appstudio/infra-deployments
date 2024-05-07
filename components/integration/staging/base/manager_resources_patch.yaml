@@ -28,3 +28,21 @@ spec:
               name: console-url
               key: CONSOLE_URL_TASKLOG
               optional: true
+        - name: PIPELINE_TIMEOUT
+          valueFrom:
+            configMapKeyRef:
+              name: pipelinerun-options
+              key: PIPELINE_TIMEOUT
+              optional: true
+        - name: TASKS_TIMEOUT
+          valueFrom:
+            configMapKeyRef:
+              name: pipelinerun-options
+              key: TASKS_TIMEOUT
+              optional: true
+        - name: FINALLY_TIMEOUT
+          valueFrom:
+            configMapKeyRef:
+              name: pipelinerun-options
+              key: FINALLY_TIMEOUT
+              optional: true

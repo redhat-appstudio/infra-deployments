@@ -15,6 +15,11 @@ configMapGenerator:
   literals:
     - CONSOLE_URL=""
     - CONSOLE_URL_TASKLOG=""
+- name: pipelinerun-options
+  literals:
+    - PIPELINE_TIMEOUT="3h"
+    - TASKS_TIMEOUT="2h"
+    - FINALLY_TIMEOUT="1h"
 
 namespace: integration-service
 
