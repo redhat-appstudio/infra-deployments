@@ -20,6 +20,10 @@ configMapGenerator:
     name: api-config
     options:
       disableNameSuffixHash: true
+  - behavior: merge
+    name: config-observability
+    literals:
+      - profiling.enable="true"
 
 patches:
   - path: chains-tekton-config-patches.yaml
