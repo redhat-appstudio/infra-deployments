@@ -897,7 +897,7 @@ subjects:
 ---
 apiVersion: v1
 data:
-  config.env: |
+  config.env: |-
     DB_USER=
     DB_PASSWORD=
     DB_HOST=
@@ -929,6 +929,8 @@ data:
     K8S_QPS=50
     K8S_BURST=100
     GRPC_WORKER_POOL=50
+    PROFILING=true
+    PROFILING_PORT=6060
 kind: ConfigMap
 metadata:
   annotations:
