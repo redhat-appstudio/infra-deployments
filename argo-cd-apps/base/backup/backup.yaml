@@ -9,6 +9,9 @@ spec:
           - nameNormalized
         generators:
           - clusters:
+              selector:
+                matchLabels:
+                  appstudio.redhat.com/backup: 'true'
               values:
                 sourceRoot: components/backup
                 environment: staging
