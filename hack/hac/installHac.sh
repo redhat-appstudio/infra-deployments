@@ -10,7 +10,7 @@ function helpUsage() {
     echo -e "   -ehk, --eph-hac-kubeconfig    A valid kubeconfig pointing to HAC Ephemeral cluster"
     echo -e "   -sk, --stonesoup-kubeconfig   A valid kubeconfig pointing to a cluster where Stonesoup controllers are installed."
     echo
-    echo -e "This command uses internal app-interface endpoint https://app-interface.apps.appsrep05ue1.zqxk.p1.openshiftapps.com/graphql (VPN required)"
+    echo -e "This command uses internal app-interface endpoint https://app-interface.apps.appsrep09ue1.03r5.p3.openshiftapps.com/graphql (VPN required)"
     echo -e "In order to use this without VPN, env vars QONTRACT_BASE_URL, QONTRACT_USERNAME and QONTRACT_PASSWORD need to be set."
 }
 
@@ -35,7 +35,7 @@ done
 
 if [[ -z "$QONTRACT_BASE_URL" ]]; then
     echo "[INFO] QONTRACT_BASE_URL env variable was not provided. Using default endpoint (RH VPN required)"
-    if ! curl --connect-timeout 3 https://app-interface.apps.appsrep05ue1.zqxk.p1.openshiftapps.com/graphql; then
+    if ! curl --connect-timeout 3 https://app-interface.apps.appsrep09ue1.03r5.p3.openshiftapps.com/graphql; then
         echo "[ERROR] QONTRACT_BASE_URL was not provided and default app-interface endpint cannot be reached (Are you on VPN?)."
         helpUsage & exit 1
     fi
