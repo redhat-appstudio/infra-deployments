@@ -8,22 +8,9 @@ commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 
 resources:
-  - https://github.com/openshift-pipelines/pipeline-service.git/developer/openshift/gitops/argocd/pipeline-service?ref=3b07d3edb07237a26e60b5c9ea7d90cd358f2a2e
-  - https://github.com/openshift-pipelines/pipeline-service.git/developer/openshift/gitops/argocd/pipeline-service-storage?ref=3b07d3edb07237a26e60b5c9ea7d90cd358f2a2e
+  - https://github.com/openshift-pipelines/pipeline-service.git/developer/openshift/gitops/argocd/pipeline-service?ref=e52f83e174efb8f308f6e32d1e0fc9f8eb9ed893
+  - https://github.com/openshift-pipelines/pipeline-service.git/developer/openshift/gitops/argocd/pipeline-service-storage?ref=e52f83e174efb8f308f6e32d1e0fc9f8eb9ed893
   - ../base/rbac
-
-# generate a new configmap with updated values (logs api, db ssl mode) and replace the default one
-configMapGenerator:
-  - behavior: replace
-    files:
-      - config.env
-    name: api-config
-    options:
-      disableNameSuffixHash: true
-  - behavior: merge
-    name: config-observability
-    literals:
-      - profiling.enable="true"
 
 patches:
   - path: chains-tekton-config-patches.yaml
@@ -55,11 +42,6 @@ patches:
       namespace: tekton-results
       name: tekton-results-watcher
   - path: reduce-watcher-cpu-mem-reqs.yaml
-    target:
-      kind: Deployment
-      namespace: tekton-results
-      name: tekton-results-watcher
-  - path: update-results-watcher-performance.yaml
     target:
       kind: Deployment
       namespace: tekton-results
