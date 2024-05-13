@@ -22,4 +22,4 @@ resources:
 * [Integration Service Architecture](https://github.com/redhat-appstudio/book/blob/main/diagrams/integration-service/integration-service-data-flow.jpg)
 * [Book of RHTAP](https://redhat-appstudio.github.io/book/book/integration-service.html)
 * [API](https://redhat-appstudio.github.io/book/ref/integration-service.html)
-* [Integration Service GitHub Organization](https://github.com/redhat-appstudio/integration-service/)
+* [Integration Service GitHub Organization](https://github.com/konflux-ci/integration-service/)
