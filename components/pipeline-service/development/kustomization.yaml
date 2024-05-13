@@ -12,6 +12,12 @@ resources:
   - https://github.com/openshift-pipelines/pipeline-service.git/developer/openshift/gitops/argocd/pipeline-service-storage?ref=e52f83e174efb8f308f6e32d1e0fc9f8eb9ed893
   - ../base/rbac
 
+images:
+  - name: quay.io/redhat-appstudio/tekton-results-api
+    newTag: bae7851ff584423503af324200f52cd28ca99116
+  - name: quay.io/redhat-appstudio/tekton-results-watcher
+    newTag: bae7851ff584423503af324200f52cd28ca99116
+
 patches:
   - path: chains-tekton-config-patches.yaml
     target:
