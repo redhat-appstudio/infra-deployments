@@ -9,6 +9,9 @@ spec:
           - nameNormalized
         generators:
           - clusters:
+              selector:
+                matchLabels:
+                  appstudio.redhat.com/ci-helper-app: "true"
               values:
                 sourceRoot: components/ci-helper-app
                 environment: staging
