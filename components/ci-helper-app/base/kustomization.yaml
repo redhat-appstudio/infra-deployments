@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- rbac
+- https://github.com/konflux-ci/ci-helper-app/deploy/base?ref=bda888fd5b7a72f27b486429bde3ae7b361d6bd1
+
+
+images:
+- name: quay.io/konflux-ci/ci-helper-app
+  newName: quay.io/konflux-ci/ci-helper-app
+  newTag: bda888fd5b7a72f27b486429bde3ae7b361d6bd1
+
+namespace: ci-helper-app
