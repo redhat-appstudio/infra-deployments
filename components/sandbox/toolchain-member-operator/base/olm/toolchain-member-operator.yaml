@@ -3,6 +3,8 @@ kind: CatalogSource
 metadata:
   labels:
     opsrc-provider: codeready-toolchain
+  annotations:
+    argocd.argoproj.io/sync-wave: "-4"
   name: dev-sandbox-member
   namespace: toolchain-member-operator
 spec:
@@ -18,6 +20,8 @@ kind: OperatorGroup
 metadata:
   name: dev-sandbox-member
   namespace: toolchain-member-operator
+  annotations:
+    argocd.argoproj.io/sync-wave: "-3"
 spec:
   targetNamespaces:
   - toolchain-member-operator
@@ -27,6 +31,8 @@ kind: Subscription
 metadata:
   name: dev-sandbox-member
   namespace: toolchain-member-operator
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
 spec:
   channel: staging
   installPlanApproval: Automatic
