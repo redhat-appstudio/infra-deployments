@@ -16,6 +16,15 @@ The authentication flow has the following steps:
 4. Keycloak reads the user's identity from Openshift and returns a token to the UI.
 5. When the user do an action in the ui, a request is sent to dev-sandbox with the token, dev-sandbox verifies the token using the Keycloak realm public key and authenticates the user.
 
+## Updating Routes
+
+The Keycloak configuration will change based on the fqdn of the cluster.
+The files that should be updated are `set-ocp-idp.yaml` and `set-redirect-url.yaml`.
+For getting the details of the OCP oauth server, run the following from any pod on the cluster:
+
+bash```
+curl --insecure https://openshift.default.svc/.well-known/oauth-authorization-server
+```
 
 ## Updating the client secret for Openshift
 
