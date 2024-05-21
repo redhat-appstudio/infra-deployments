@@ -3,15 +3,14 @@
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"/..
 
 main() {
+    local argocd=${1:?"Kustomization directory for ArgoCD subscription not provided"}
     verify_permissions || exit $?
-    create_subscription
+    create_subscription $argocd
     wait_for_route
     switch_route_to_reencrypt
     grant_admin_role_to_all_authenticated_users
     mark_pending_pvc_as_healty
-    add_role_binding
     print_url
-
 }
 
 verify_permissions() {
@@ -24,9 +23,8 @@ verify_permissions() {
 }
 
 create_subscription() {
-
     echo "Installing the OpenShift GitOps operator subscription:"
-    kubectl apply -k "$ROOT/components/gitops/openshift-gitops/overlays/production-and-dev"
+    kubectl apply -k "$1"
     echo -n "Waiting for default project (and namespace) to exist: "
     while ! kubectl get appproject/default -n openshift-gitops &>/dev/null; do
         echo -n .
@@ -85,11 +83,6 @@ spec:
         hs.status = "Progressing"
         return hs
 ' --type=merge
-}
-
-add_role_binding() {
-    echo "Add Role/RoleBindings for OpenShift GitOps:"
-    kubectl apply --kustomize $ROOT/components/gitops/openshift-gitops/base/cluster-rbac
 }
 
 print_url() {

@@ -5,17 +5,29 @@ ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/..
 
 # Print help message
 function print_help() {
-  echo "Usage: $0 MODE [--toolchain] [--keycloak] [--obo] [-h|--help]"
+  echo "Usage: $0 MODE [--toolchain] [--keycloak] [--obo] [--eaas] [-h|--help]"
   echo "  MODE             upstream/preview (default: upstream)"
   echo "  --toolchain  (only in preview mode) Install toolchain operators"
   echo "  --keycloak   (only in preview mode) Configure the toolchain operator to use keycloak deployed on the cluster"
   echo "  --obo        (only in preview mode) Install Observability operator and Prometheus instance for federation"
+  echo "  --eaas       (only in preview mode) Install environment as a service components"
   echo
-  echo "Example usage: \`$0 --toolchain --keycloak --obo"
+  echo "Example usage: \`$0 --toolchain --keycloak --obo --eaas"
 }
+
+function disable_component() {
+  echo '---' >> $ROOT/argo-cd-apps/overlays/development/delete-applications.yaml
+  yq e -n ".apiVersion=\"argoproj.io/v1alpha1\"
+    | .kind=\"ApplicationSet\"
+    | .metadata.name = \"$1\"
+    | .\$patch = \"delete\"" \
+    >> $ROOT/argo-cd-apps/overlays/development/delete-applications.yaml
+}
+
 TOOLCHAIN=false
 KEYCLOAK=false
 OBO=false
+EAAS=false
 
 while [[ $# -gt 0 ]]; do
   key=$1
@@ -32,6 +44,10 @@ while [[ $# -gt 0 ]]; do
       OBO=true
       shift
       ;;
+    --eaas)
+      EAAS=true
+      shift
+      ;;
     -h|--help)
       print_help
       exit 0
@@ -41,8 +57,6 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
-
-
 
 if $TOOLCHAIN ; then
   echo "Deploying toolchain"
@@ -125,6 +139,15 @@ if $OBO ; then
   yq -i '.resources += ["monitoringstack/"]' $ROOT/components/monitoring/prometheus/development/kustomization.yaml
 fi
 
+if $EAAS; then
+  echo "Enabling EaaS cluster role"
+  yq -i '.components += ["../../../k-components/assign-eaas-role-to-local-cluster"]' \
+    $ROOT/argo-cd-apps/base/local-cluster-secret/all-in-one/kustomization.yaml
+
+  echo "Disabling gitops components to avoid conflicts with competing ArgoCD dependencies"
+  disable_component "gitops"
+fi
+
 # delete argoCD applications which are not in DEPLOY_ONLY env var if it's set
 if [ -n "$DEPLOY_ONLY" ]; then
   APPLICATIONS=$(\
@@ -135,11 +158,7 @@ if [ -n "$DEPLOY_ONLY" ]; then
   for APP in $APPLICATIONS; do
     if ! grep -q "\b$APP\b" <<< $DEPLOY_ONLY && ! grep -q "\b$APP\b" <<< $DELETED; then
       echo Disabling $APP based on DEPLOY_ONLY variable
-      echo '---' >> $ROOT/argo-cd-apps/overlays/development/delete-applications.yaml
-      yq e -n ".apiVersion=\"argoproj.io/v1alpha1\"
-                 | .kind=\"ApplicationSet\"
-                 | .metadata.name = \"$APP\"
-                 | .\$patch = \"delete\"" >> $ROOT/argo-cd-apps/overlays/development/delete-applications.yaml
+      disable_component $APP
     fi
   done
 fi

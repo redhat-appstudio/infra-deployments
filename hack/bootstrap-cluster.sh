@@ -3,7 +3,8 @@
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"/..
 
 main() {
-    local mode keycloak toolchain obo
+    local mode keycloak toolchain obo eaas
+    local argocd="$ROOT/components/gitops/openshift-gitops/overlays/production-and-dev"
     while [[ $# -gt 0 ]]; do
         key=$1
         case $key in
@@ -17,6 +18,11 @@ main() {
             ;;
         --obo | -o)
             obo="--obo"
+            shift
+            ;;
+        --eaas | -e)
+            eaas="--eaas"
+            argocd="$ROOT/components/openshift-gitops"
             shift
             ;;
         preview | upstream)
@@ -33,9 +39,10 @@ main() {
         esac
     done
 
-    "${ROOT}/hack/deploy-argocd.sh"
+    "${ROOT}/hack/deploy-argocd.sh" $argocd
     "${ROOT}/hack/bootstrap-host-cluster.sh"
     "${ROOT}/hack/bootstrap-member-cluster.sh"
+    "${ROOT}/hack/bootstrap-eaas-cluster.sh"
     "${ROOT}/hack/bootstrap-cluster-common.sh"
 
     echo "Setting Cluster Mode: ${mode:-Upstream}"
@@ -58,20 +65,21 @@ main() {
         fi
         ;;
     "preview")
-        $ROOT/hack/preview.sh $toolchain $keycloak $obo
+        $ROOT/hack/preview.sh $toolchain $keycloak $obo $eaas
         ;;
     esac
 }
 
 print_help() {
-    echo "Usae: $0 MODE [-t|--toolchain] [-kc|--keycloak] [-o|--obo] [-h|--help]"
+    echo "Usae: $0 MODE [-t|--toolchain] [-kc|--keycloak] [-o|--obo] [-e|--eaas] [-h|--help]"
     echo "  MODE             upstream/preview (default: upstream)"
     echo "  -t, --toolchain  (only in preview mode) Install toolchain operators"
     echo "  -kc, --keycloak  (only in preview mode) Configure the toolchain operator to use keycloak deployed on the cluster"
     echo "  -o, --obo        (only in preview mode) Install Observability operator and Prometheus instance for federation"
+    echo "  -e  --eaas       (only in preview mode) Install environment as a service components"
     echo "  -h, --help       Show this help message and exit"
     echo
-    echo "Example usage: \`$0 preview --toolchain --keycloak --obo"
+    echo "Example usage: \`$0 preview --toolchain --keycloak --obo --eaas"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

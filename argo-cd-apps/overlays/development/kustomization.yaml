@@ -11,6 +11,7 @@ resources:
   - ../../base/repository-validator
   - ../../base/keycloak
   - ../../base/ui
+  - ../../base/eaas
 
 patchesStrategicMerge:
   - delete-applications.yaml
@@ -151,3 +152,8 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: spacerequest-cleaner
+  - path: development-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: cluster-as-a-service
