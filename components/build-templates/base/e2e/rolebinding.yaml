@@ -14,6 +14,9 @@ subjects:
 - kind: ServiceAccount
   name: appstudio-pipeline
   namespace: konflux-ci
+- kind: ServiceAccount
+  name: appstudio-pipeline
+  namespace: rhtap-build-tenant
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -30,6 +33,9 @@ subjects:
 - kind: ServiceAccount
   name: appstudio-pipeline
   namespace: konflux-ci
+- kind: ServiceAccount
+  name: appstudio-pipeline
+  namespace: rhtap-build-tenant
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -46,6 +52,9 @@ subjects:
 - kind: ServiceAccount
   name: appstudio-pipeline
   namespace: konflux-ci
+- kind: ServiceAccount
+  name: appstudio-pipeline
+  namespace: rhtap-build-tenant
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
