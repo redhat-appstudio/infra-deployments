@@ -41,7 +41,6 @@ main() {
     "${ROOT}/hack/bootstrap-host-cluster.sh"
     "${ROOT}/hack/bootstrap-member-cluster.sh"
     "${ROOT}/hack/bootstrap-cluster-common.sh"
-    [ ! -z "$eaas" ] && "${ROOT}/hack/bootstrap-eaas-cluster.sh"
 
     echo "Setting Cluster Mode: ${mode:-Upstream}"
     case $mode in
@@ -66,6 +65,9 @@ main() {
         $ROOT/hack/preview.sh $toolchain $keycloak $obo $eaas
         ;;
     esac
+
+    # OIDC secrets must be deployed after the MCE operator creates the local-cluster namespace
+    [ ! -z "$eaas" ] && "${ROOT}/hack/bootstrap-eaas-cluster.sh"
 }
 
 print_help() {

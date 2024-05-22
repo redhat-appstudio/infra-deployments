@@ -33,9 +33,9 @@ create_namespace() {
 create_oidc_provider_s3_secret() {
   echo "Creating hypershift OIDC provider S3 secret"
   local creds=$(mktemp)
-  echo "[$3]" >> $creds
-  echo "$aws_access_key_id" >> $creds
-  echo "$aws_secret_access_key" >> $creds
+  echo "[default]" >> $creds
+  echo "aws_access_key_id=$1" >> $creds
+  echo "aws_secret_access_key=$2" >> $creds
   kubectl create secret generic hypershift-operator-oidc-provider-s3-credentials \
     --from-file=credentials=$creds \
     --from-literal=region=$3 \
