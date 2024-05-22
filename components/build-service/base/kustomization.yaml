@@ -1,11 +1,10 @@
 resources:
 - allow-argocd-to-manage.yaml
-- build-pipeline-selectors/build-pipeline-selector.yaml
 - build-pipeline-config/build-pipeline-config.yaml
 - monitoring.yaml
 - rbac
 
-# Skip applying the build-service operands (BuildPipelineSelector) while the build-service operator is being installed.
+# Skip applying the build-service operands while the build-service operator is being installed.
 # See more information about this option, here:
 # https://argo-cd.readthedocs.io/en/stable/user-guide/sync-options/#skip-dry-run-for-new-custom-resources-types
 commonAnnotations:
