@@ -3,9 +3,8 @@
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"/..
 
 main() {
-    local argocd=${1:?"Kustomization directory for ArgoCD subscription not provided"}
     verify_permissions || exit $?
-    create_subscription $argocd
+    create_subscription
     wait_for_route
     switch_route_to_reencrypt
     grant_admin_role_to_all_authenticated_users
@@ -24,7 +23,7 @@ verify_permissions() {
 
 create_subscription() {
     echo "Installing the OpenShift GitOps operator subscription:"
-    kubectl apply -k "$1"
+    kubectl apply -k "$ROOT/components/openshift-gitops"
     echo -n "Waiting for default project (and namespace) to exist: "
     while ! kubectl get appproject/default -n openshift-gitops &>/dev/null; do
         echo -n .

@@ -15,15 +15,6 @@ function print_help() {
   echo "Example usage: \`$0 --toolchain --keycloak --obo --eaas"
 }
 
-function disable_component() {
-  echo '---' >> $ROOT/argo-cd-apps/overlays/development/delete-applications.yaml
-  yq e -n ".apiVersion=\"argoproj.io/v1alpha1\"
-    | .kind=\"ApplicationSet\"
-    | .metadata.name = \"$1\"
-    | .\$patch = \"delete\"" \
-    >> $ROOT/argo-cd-apps/overlays/development/delete-applications.yaml
-}
-
 TOOLCHAIN=false
 KEYCLOAK=false
 OBO=false
@@ -143,9 +134,6 @@ if $EAAS; then
   echo "Enabling EaaS cluster role"
   yq -i '.components += ["../../../k-components/assign-eaas-role-to-local-cluster"]' \
     $ROOT/argo-cd-apps/base/local-cluster-secret/all-in-one/kustomization.yaml
-
-  echo "Disabling gitops components to avoid conflicts with competing ArgoCD dependencies"
-  disable_component "gitops"
 fi
 
 # delete argoCD applications which are not in DEPLOY_ONLY env var if it's set
@@ -158,7 +146,11 @@ if [ -n "$DEPLOY_ONLY" ]; then
   for APP in $APPLICATIONS; do
     if ! grep -q "\b$APP\b" <<< $DEPLOY_ONLY && ! grep -q "\b$APP\b" <<< $DELETED; then
       echo Disabling $APP based on DEPLOY_ONLY variable
-      disable_component $APP
+      echo '---' >> $ROOT/argo-cd-apps/overlays/development/delete-applications.yaml
+      yq e -n ".apiVersion=\"argoproj.io/v1alpha1\"
+                 | .kind=\"ApplicationSet\"
+                 | .metadata.name = \"$APP\"
+                 | .\$patch = \"delete\"" >> $ROOT/argo-cd-apps/overlays/development/delete-applications.yaml
     fi
   done
 fi

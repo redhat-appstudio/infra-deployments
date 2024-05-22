@@ -4,7 +4,6 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"/..
 
 main() {
     local mode keycloak toolchain obo eaas
-    local argocd="$ROOT/components/gitops/openshift-gitops/overlays/production-and-dev"
     while [[ $# -gt 0 ]]; do
         key=$1
         case $key in
@@ -22,7 +21,6 @@ main() {
             ;;
         --eaas | -e)
             eaas="--eaas"
-            argocd="$ROOT/components/openshift-gitops"
             shift
             ;;
         preview | upstream)
@@ -39,7 +37,7 @@ main() {
         esac
     done
 
-    "${ROOT}/hack/deploy-argocd.sh" $argocd
+    "${ROOT}/hack/deploy-argocd.sh"
     "${ROOT}/hack/bootstrap-host-cluster.sh"
     "${ROOT}/hack/bootstrap-member-cluster.sh"
     "${ROOT}/hack/bootstrap-cluster-common.sh"
