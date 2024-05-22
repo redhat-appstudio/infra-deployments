@@ -43,8 +43,8 @@ create_oidc_provider_s3_secret() {
     --save-config=true \
     --dry-run=client \
     -n local-cluster \
-    -o yaml | \
-    kubectl apply -f -
+    -o yaml \
+    | kubectl apply -f -
   rm "$creds"
 }
 
