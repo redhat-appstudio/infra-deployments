@@ -42,8 +42,8 @@ main() {
     "${ROOT}/hack/deploy-argocd.sh" $argocd
     "${ROOT}/hack/bootstrap-host-cluster.sh"
     "${ROOT}/hack/bootstrap-member-cluster.sh"
-    "${ROOT}/hack/bootstrap-eaas-cluster.sh"
     "${ROOT}/hack/bootstrap-cluster-common.sh"
+    [ ! -z "$eaas" ] && "${ROOT}/hack/bootstrap-eaas-cluster.sh"
 
     echo "Setting Cluster Mode: ${mode:-Upstream}"
     case $mode in
