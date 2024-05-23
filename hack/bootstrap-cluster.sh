@@ -67,7 +67,9 @@ main() {
     esac
 
     # OIDC secrets must be deployed after the MCE operator creates the local-cluster namespace
-    [ ! -z "$eaas" ] && "${ROOT}/hack/bootstrap-eaas-cluster.sh"
+    if [ ! -z "$eaas" ]; then
+        "${ROOT}/hack/bootstrap-eaas-cluster.sh"
+    fi
 }
 
 print_help() {
