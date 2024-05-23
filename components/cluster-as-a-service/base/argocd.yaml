@@ -2,7 +2,9 @@
 apiVersion: argoproj.io/v1beta1
 kind: ArgoCD
 metadata:
- name: openshift-gitops
- namespace: openshift-gitops
+  name: openshift-gitops
+  namespace: openshift-gitops
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
- resourceTrackingMethod: annotation
+  resourceTrackingMethod: annotation
