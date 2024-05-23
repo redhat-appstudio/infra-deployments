@@ -7,14 +7,51 @@ metadata:
   namespace: multi-platform-controller
 data:
 
-  host.ip-10-29-64-251.address: "10.29.64.251"
-  host.ip-10-29-64-251.platform: "linux/amd64"
-  host.ip-10-29-64-251.user: "ec2-user"
-  host.ip-10-29-64-251.secret: "aws-ssh-key"
-  host.ip-10-29-64-251.concurrency: "4"
+  dynamic-platforms: linux/arm64,linux/amd64,linux-root/arm64,linux-root/amd64
+  instance-tag: rhtap-staging
 
-  host.ip-10-29-64-249.address: "10.29.64.249"
-  host.ip-10-29-64-249.platform: "linux/arm64"
-  host.ip-10-29-64-249.user: "ec2-user"
-  host.ip-10-29-64-249.secret: "aws-ssh-key"
-  host.ip-10-29-64-249.concurrency: "4"
+  dynamic.linux-arm64.type: aws
+  dynamic.linux-arm64.region: us-east-1
+  dynamic.linux-arm64.ami: ami-03d6a5256a46c9feb
+  dynamic.linux-arm64.instance-type: t4g.small
+  dynamic.linux-arm64.key-name: konflux-stage-int-mab01
+  dynamic.linux-arm64.aws-secret: aws-account
+  dynamic.linux-arm64.ssh-secret: aws-ssh-key
+  dynamic.linux-arm64.security-group-id: sg-0482e8ccae008b240
+  dynamic.linux-arm64.max-instances: "10"
+  dynamic.linux-arm64.subnet-id: subnet-07597d1edafa2b9d3
+
+  dynamic.linux-amd64.type: aws
+  dynamic.linux-amd64.region: us-east-1
+  dynamic.linux-amd64.ami: ami-026ebd4cfe2c043b2
+  dynamic.linux-amd64.instance-type: m5.large
+  dynamic.linux-amd64.key-name: konflux-stage-int-mab01
+  dynamic.linux-amd64.aws-secret: aws-account
+  dynamic.linux-amd64.ssh-secret: aws-ssh-key
+  dynamic.linux-amd64.security-group-id: sg-0482e8ccae008b240
+  dynamic.linux-amd64.max-instances: "10"
+  dynamic.linux-amd64.subnet-id: subnet-07597d1edafa2b9d3
+
+  dynamic.linux-root-arm64.type: aws
+  dynamic.linux-root-arm64.region: us-east-1
+  dynamic.linux-root-arm64.ami: ami-03d6a5256a46c9feb
+  dynamic.linux-root-arm64.instance-type: t4g.large
+  dynamic.linux-root-arm64.key-name: konflux-stage-int-mab01
+  dynamic.linux-root-arm64.aws-secret: aws-account
+  dynamic.linux-root-arm64.ssh-secret: aws-ssh-key
+  dynamic.linux-root-arm64.security-group-id: sg-0482e8ccae008b240
+  dynamic.linux-root-arm64.max-instances: "10"
+  dynamic.linux-root-arm64.subnet-id: subnet-07597d1edafa2b9d3
+  dynamic.linux-root-arm64.sudo-commands: "/usr/bin/podman"
+
+  dynamic.linux-root-amd64.type: aws
+  dynamic.linux-root-amd64.region: us-east-1
+  dynamic.linux-root-amd64.ami: ami-026ebd4cfe2c043b2
+  dynamic.linux-root-amd64.instance-type: m5.large
+  dynamic.linux-root-amd64.key-name: konflux-stage-int-mab01
+  dynamic.linux-root-amd64.aws-secret: aws-account
+  dynamic.linux-root-amd64.ssh-secret: aws-ssh-key
+  dynamic.linux-root-amd64.security-group-id: sg-0482e8ccae008b240
+  dynamic.linux-root-amd64.max-instances: "10"
+  dynamic.linux-root-amd64.subnet-id: subnet-07597d1edafa2b9d3
+  dynamic.linux-root-amd64.sudo-commands: "/usr/bin/podman"
