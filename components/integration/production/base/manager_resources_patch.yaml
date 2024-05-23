@@ -16,6 +16,12 @@ spec:
             cpu: 200m
             memory: 600Mi
         env:
+        - name: CONSOLE_NAME
+          valueFrom:
+              configMapKeyRef:
+                name: console-name
+                key: CONSOLE_NAME
+                optional: true
         - name: CONSOLE_URL
           valueFrom:
               configMapKeyRef:
