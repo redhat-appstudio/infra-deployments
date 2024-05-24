@@ -7,7 +7,7 @@ metadata:
   namespace: multi-platform-controller
 data:
 
-  dynamic-platforms: linux/arm64,linux/amd64,linux-root/arm64,linux-root/amd64
+  dynamic-platforms: linux/arm64,linux/amd64,linux-root/arm64,linux-root/amd64,linux/s390x,linux/ppc64le
   instance-tag: rhtap-staging
 
   dynamic.linux-arm64.type: aws
@@ -56,8 +56,6 @@ data:
   dynamic.linux-root-amd64.subnet-id: subnet-07597d1edafa2b9d3
   dynamic.linux-root-amd64.sudo-commands: "/usr/bin/podman"
 
-  dynamic-platforms: linux/s390x
-  instance-tag: internal-konflux-staging
   dynamic.linux-s390x.type: ibmz
   dynamic.linux-s390x.ssh-secret: "internal-stage-ibm-ssh-key"
   dynamic.linux-s390x.secret: "internal-stage-ibm-api-key"
