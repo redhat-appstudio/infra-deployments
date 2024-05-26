@@ -20,6 +20,8 @@ metadata:
   labels:
     app: sso
   name: keycloak
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
   external:
     enabled: false
@@ -40,6 +42,8 @@ metadata:
   labels:
     realm: redhat-external
     app: sso
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
   instanceSelector:
     matchLabels:
@@ -284,6 +288,8 @@ metadata:
   name: cloud-services
   labels:
     app: sso
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
   client:
     enabled: true
