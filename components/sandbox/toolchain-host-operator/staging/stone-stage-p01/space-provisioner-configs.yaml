@@ -3,6 +3,8 @@ kind: SpaceProvisionerConfig
 metadata:
   name: member-stone-stage-p01.hpmt.p1.openshiftapps.com
   namespace: toolchain-host-operator
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
   toolchainCluster: member-stone-stage-p01.hpmt.p1.openshiftapps.com
   enabled: true
