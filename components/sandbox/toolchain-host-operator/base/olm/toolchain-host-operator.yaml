@@ -39,3 +39,26 @@ spec:
   name: toolchain-host-operator
   source: dev-sandbox-host
   sourceNamespace: toolchain-host-operator
+---
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: allow-from-olm
+  namespace: toolchain-host-operator
+  annotations:
+    argocd.argoproj.io/sync-wave: "-5"
+spec:
+  podSelector:
+    matchLabels:
+      olm.catalogSource: dev-sandbox-host
+  ingress:
+    - ports:
+        - protocol: TCP
+          port: 50051
+      from:
+        - podSelector: {}
+          namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-operator-lifecycle-manager
+  policyTypes:
+    - Ingress
