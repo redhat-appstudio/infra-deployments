@@ -1,0 +1,31 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cleanup-stale-resources
+spec:
+  schedule: "0 1 * * *" #Daily at 01:00
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: appstudio-pipeline
+          containers:
+          - name: remove-stale-resources
+            image: registry.redhat.io/openshift4/ose-cli:v4.12
+            command:
+            - /bin/sh
+            - -c
+            - |
+              date; echo Cleaning up the stale applications
+              oc get application -n build-templates-e2e -o go-template --template '{{range .items}}{{.metadata.name}} {{.metadata.creationTimestamp}}{{"\n"}}{{end}}' | awk '$2 <= "'$(date -d'now-3 days' --iso-8601=seconds --utc | sed 's/+00:00/Z/')'" { print $1 }' | xargs --no-run-if-empty oc delete application -n build-templates-e2e
+            resources:
+              limits:
+                cpu: 100m
+                memory: 256Mi
+              requests:
+                cpu: 50m
+                memory: 128Mi
+            securityContext:
+              readOnlyRootFilesystem: true
+              runAsUser: 1000
+          restartPolicy: Never
