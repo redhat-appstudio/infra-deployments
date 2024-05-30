@@ -9,9 +9,7 @@ main() {
     switch_route_to_reencrypt
     grant_admin_role_to_all_authenticated_users
     mark_pending_pvc_as_healty
-    add_role_binding
     print_url
-
 }
 
 verify_permissions() {
@@ -24,9 +22,8 @@ verify_permissions() {
 }
 
 create_subscription() {
-
     echo "Installing the OpenShift GitOps operator subscription:"
-    kubectl apply -k "$ROOT/components/gitops/openshift-gitops/overlays/production-and-dev"
+    kubectl apply -k "$ROOT/components/openshift-gitops"
     echo -n "Waiting for default project (and namespace) to exist: "
     while ! kubectl get appproject/default -n openshift-gitops &>/dev/null; do
         echo -n .
@@ -85,11 +82,6 @@ spec:
         hs.status = "Progressing"
         return hs
 ' --type=merge
-}
-
-add_role_binding() {
-    echo "Add Role/RoleBindings for OpenShift GitOps:"
-    kubectl apply --kustomize $ROOT/components/gitops/openshift-gitops/base/cluster-rbac
 }
 
 print_url() {

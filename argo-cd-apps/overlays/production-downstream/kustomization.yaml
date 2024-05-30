@@ -2,7 +2,6 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ../konflux-public-staging
-  - ../../base/eaas
   - ../../base/smee-client
   - ../../base/ui
   - ../../base/ca-bundle
@@ -182,3 +181,8 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: spacerequest-cleaner
+  - path: production-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: cluster-as-a-service
