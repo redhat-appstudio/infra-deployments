@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: some-component
+  name: cluster-as-a-service
 spec:
   generators:
     - merge:
@@ -10,14 +10,14 @@ spec:
         generators:
           - clusters:
               values:
-                sourceRoot: components/some-component
+                sourceRoot: components/cluster-as-a-service
                 environment: staging
                 clusterDir: ""
           - list:
               elements: []
   template:
     metadata:
-      name: some-component-{{nameNormalized}}
+      name: cluster-as-a-service-{{nameNormalized}}
     spec:
       project: default
       source:
@@ -25,7 +25,7 @@ spec:
         repoURL: https://github.com/redhat-appstudio/infra-deployments.git
         targetRevision: main
       destination:
-        namespace: some-component
+        namespace: cluster-as-a-service
         server: "{{server}}"
       syncPolicy:
         automated:
