@@ -13,6 +13,7 @@ resources:
   - ../../base/external-secrets
   - ../../base/testing
   - ../../base/rbac
+  - tekton-pipelines-controller-pods-log-access-rbac.yaml
 
 images:
   - name: quay.io/redhat-appstudio/tekton-results-api
@@ -41,6 +42,10 @@ patches:
       namespace: tekton-results
       name: tekton-results-watcher
   - path: update-tekton-config-pac.yaml
+    target:
+      kind: TektonConfig
+      name: config
+  - path: update-tekton-config-features.yaml
     target:
       kind: TektonConfig
       name: config
