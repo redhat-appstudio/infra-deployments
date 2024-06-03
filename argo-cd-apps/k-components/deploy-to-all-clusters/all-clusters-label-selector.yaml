@@ -8,3 +8,7 @@
       - key: app.kubernetes.io/name
         operator: NotIn
         values: [argocd-default-cluster-config]
+      # Prevent clusters provisioned by the cluster-as-a-service component from being used in
+      # an AppSet cluster generator.
+      - key: clustertemplateinstance.openshift.io/name
+        operator: DoesNotExist

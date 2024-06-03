@@ -1,0 +1,13 @@
+---
+apiVersion: clustertemplate.openshift.io/v1alpha1
+kind: ClusterTemplateQuota
+metadata:
+  name: quota
+  namespace: clusters
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  budget: 100
+  allowedTemplates:
+    - name: hypershift-aws-cluster
+      deleteAfter: 2h
