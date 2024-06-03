@@ -7,8 +7,10 @@ patches:
       group: argoproj.io
       version: v1alpha1
       kind: ApplicationSet
+      labelSelector: noSourceTransform != true
   - path: application-patch.yaml
     target:
       group: argoproj.io
       version: v1alpha1
       kind: Application
+      labelSelector: noSourceTransform != true
