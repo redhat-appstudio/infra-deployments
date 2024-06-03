@@ -1,0 +1,28 @@
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: caas-operator
+  # OLM dependency resolution forces us to install the CaaS operator in the same namespace as the
+  # openshift-gitops operator. Otherwise, OLM will resolve and install the ArgoCD operator from the
+  # community catalog.
+  namespace: openshift-operators
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  channel: alpha
+  installPlanApproval: Automatic
+  name: cluster-aas-operator
+  source: community-operators
+  sourceNamespace: openshift-marketplace
+
+---
+apiVersion: clustertemplate.openshift.io/v1alpha1
+kind: Config
+metadata:
+  name: config
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  argoCDNamespace: openshift-gitops
+  uiEnabled: false

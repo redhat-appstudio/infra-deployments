@@ -27,6 +27,12 @@ spec:
       destination:
         namespace: cluster-as-a-service
         server: "{{server}}"
+      ignoreDifferences:
+        # Ignore generators applied by the CaaS operator to cluster template AppSets
+        - group: argoproj.io
+          kind: ApplicationSet
+          jqPathExpressions:
+            - .spec.generators
       syncPolicy:
         automated:
           prune: true

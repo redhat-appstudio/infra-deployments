@@ -1,0 +1,125 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cluster-provisioner
+  namespace: clusters
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cluster-provisioner
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - "*"
+- apiGroups:
+  - hypershift.openshift.io
+  resources:
+  - hostedclusters
+  - nodepools
+  verbs:
+  - "*"
+- apiGroups:
+  - clustertemplate.openshift.io
+  resources:
+  - clustertemplateinstances
+  verbs:
+  - "*"
+- apiGroups:
+  - clustertemplate.openshift.io
+  resources:
+  - clustertemplates
+  verbs:
+  - get
+  - list
+
+---
+# Allow the cluster-provisioner SA in the clusters namespace to manage clusters
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cluster-provisioner-rb
+  namespace: clusters
+subjects:
+- kind: ServiceAccount
+  name: cluster-provisioner
+  namespace: clusters
+roleRef:
+  kind: ClusterRole
+  name: cluster-provisioner
+  apiGroup: rbac.authorization.k8s.io
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: oidc-configmap-reader
+  namespace: kube-public
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  resourceNames:
+  - oidc-storage-provider-s3-config
+  verbs:
+  - get
+
+---
+# Allow all service accounts to read the OIDC bucket configuration
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: oidc-configmap-reader-rb
+  namespace: kube-public
+subjects:
+- kind: Group
+  name: system:serviceaccounts
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: oidc-configmap-reader
+  apiGroup: rbac.authorization.k8s.io
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: supported-versions-reader
+  namespace: hypershift
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  resourceNames:
+  - supported-versions
+  verbs:
+  - get
+
+---
+# Allow all authenticated users to read the supported hypershift versions
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: supported-versions-reader-rb
+  namespace: hypershift
+subjects:
+- kind: Group
+  name: system:authenticated
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: supported-versions-reader
+  apiGroup: rbac.authorization.k8s.io

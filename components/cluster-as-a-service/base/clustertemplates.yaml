@@ -1,0 +1,53 @@
+---
+apiVersion: clustertemplate.openshift.io/v1alpha1
+kind: ClusterTemplate
+metadata:
+  name: hypershift-aws-cluster
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  clusterDefinition: hypershift-aws-cluster
+  skipClusterRegistration: true
+  cost: 1
+
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: hypershift-aws-cluster
+  namespace: openshift-gitops
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  generators:
+    - {}
+  template:
+    metadata:
+      # Workaround for https://github.com/argoproj/argo-cd/issues/17181
+      finalizers:
+        - resources-finalizer.argocd.argoproj.io
+        - post-delete-finalizer.argocd.argoproj.io
+        - post-delete-finalizer.argocd.argoproj.io/cleanup
+    spec:
+      destination:
+        namespace: clusters
+        server: '{{ url }}'
+      project: default
+      source:
+        chart: hypershift-aws-template
+        repoURL: https://konflux-ci.dev/cluster-template-charts/
+        targetRevision: 0.0.2
+        helm:
+          parameters:
+            - name: region
+              value: us-east-1
+            - name: secret
+              value: hypershift
+            - name: serviceAccount
+              value: cluster-provisioner
+            - name: hypershiftImageTag
+              value: "4.14"
+            - name: nodePoolReplicas
+              value: "3"
+      syncPolicy:
+        automated: {}
