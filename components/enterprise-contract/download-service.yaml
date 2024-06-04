@@ -142,7 +142,7 @@ spec:
                 echo "Downloading ${base}@${digest} for ${os}/${architecture}"
 
                 mkdir -p "${os}_${architecture}"
-                oc image extract "${base}@${digest}" --path /usr/bin/ec:"${os}_${architecture}" --confirm
+                oc image extract "${base}@${digest}" --path /usr/local/bin/ec:"${os}_${architecture}" --confirm
                 chmod +x "${os}_${architecture}/ec"
                 tar czf "${os}_${architecture}/ec_${os}_${architecture}.tar.gz" -C "${os}_${architecture}" ec
                 echo "Downloaded ${base}@${digest}"
