@@ -4,3 +4,10 @@ kind: ApplicationSet
 metadata:
   name: gitops
 $patch: delete
+---
+# otel-collector is dev only.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: tracing-workload-otel-collector
+$patch: delete
