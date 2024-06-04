@@ -1,14 +1,14 @@
 apiVersion: external-secrets.io/v1beta1
 kind: ExternalSecret
 metadata:
-  name: redhat-appstudio-tekton-catalog-pr-token
+  name: konflux-ci-pull-request-builds-pruner-token
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
     argocd.argoproj.io/sync-wave: "-1"
 spec:
   dataFrom:
     - extract:
-        key: production/build/redhat-appstudio-tekton-catalog-pr-token
+        key: production/build/konflux-ci-pull-request-builds-pruner-token
   refreshInterval: 20h
   secretStoreRef:
     kind: ClusterSecretStore
@@ -16,4 +16,4 @@ spec:
   target:
     creationPolicy: Owner
     deletionPolicy: Delete
-    name: redhat-appstudio-tekton-catalog-pr-token
+    name: konflux-ci-pull-request-builds-pruner-token
