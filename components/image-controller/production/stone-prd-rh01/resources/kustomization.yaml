@@ -2,9 +2,9 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
 - redhat-appstudio-pr-token.yaml
-- redhat-appstudio-tekton-catalog-pr-token.yaml
 - redhat-appstudio-pr-cronjob.yaml
-- redhat-appstudio-tekton-catalog-pr-cronjob.yaml
+- konflux-ci-pull-request-builds-pruner-token.yaml
+- konflux-ci-pull-request-builds-pruner-cronjob.yaml
 configMapGenerator:
 - name: single-image-pruner-configmap
   files:

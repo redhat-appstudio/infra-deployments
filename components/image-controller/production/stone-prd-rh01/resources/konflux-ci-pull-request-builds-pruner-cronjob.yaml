@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: redhat-appstudio-tekton-catalog-pr-cronjob
+  name: konflux-ci-pull-request-builds-pruner-cronjob
 spec:
   schedule: "0 1 * * *"
   concurrencyPolicy: Forbid
@@ -10,21 +10,21 @@ spec:
       template:
         spec:
           containers:
-          - name: redhat-appstudio-tekton-catalog-pr-pruner
+          - name: konflux-ci-pull-request-builds-pruner
             image: registry.redhat.io/rhel8/python-39:1-120.1684740828
             env:
               - name: QUAY_TOKEN
                 valueFrom:
                   secretKeyRef:
-                    name: redhat-appstudio-tekton-catalog-pr-token
+                    name: konflux-ci-pull-request-builds-pruner-token
                     key: quaytoken
             imagePullPolicy: IfNotPresent
             command:
               - /bin/bash
               - '-c'
-              - python /image-pruner/prune_images.py --namespace=redhat-appstudio-tekton-catalog --repo-name=pull-request-builds
+              - python /image-pruner/prune_images.py --namespace=konflux-ci --repo-name=pull-request-builds
             volumeMounts:
-              - name: redhat-appstudio-tekton-catalog-pr-volume
+              - name: konflux-ci-pull-request-builds-pruner-volume
                 mountPath: /image-pruner
             resources:
               limits:
@@ -39,9 +39,9 @@ spec:
           securityContext:
             runAsNonRoot: true
           volumes:
-            - name: redhat-appstudio-tekton-catalog-pr-volume
+            - name: konflux-ci-pull-request-builds-pruner-volume
               configMap:
                 name: single-image-pruner-configmap
-            - name: redhat-appstudio-tekton-catalog-pr-token
+            - name: konflux-ci-pull-request-builds-pruner-token
               secret:
-                secretName: redhat-appstudio-tekton-catalog-pr-token
+                secretName: konflux-ci-pull-request-builds-pruner-token
