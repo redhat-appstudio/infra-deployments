@@ -19,19 +19,19 @@ spec:
         - name: CONSOLE_NAME
           valueFrom:
               configMapKeyRef:
-                name: console-url
+                name: integration-config
                 key: CONSOLE_NAME
                 optional: true
         - name: CONSOLE_URL
           valueFrom:
               configMapKeyRef:
-                name: console-url
+                name: integration-config
                 key: CONSOLE_URL
                 optional: true
         - name: CONSOLE_URL_TASKLOG
           valueFrom:
             configMapKeyRef:
-              name: console-url
+              name: integration-config
               key: CONSOLE_URL_TASKLOG
               optional: true
         - name: PIPELINE_TIMEOUT
