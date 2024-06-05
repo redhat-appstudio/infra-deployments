@@ -1,0 +1,56 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: otel-collector
+  namespace: openshift-gitops
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              values:
+                sourceRoot: components/tracing/otel-collector
+                environment: staging
+                clusterDir: ""
+          - list:
+              elements: []
+  template:
+    metadata:
+      name: otel-collector-{{nameNormalized}}
+    spec:
+      project: default
+      sources:
+          # Chart from OTel Project
+        - chart: opentelemetry-collector
+          repoURL: https://open-telemetry.github.io/opentelemetry-helm-charts
+          targetRevision: 0.90.1
+          helm:
+            parameters:
+              - name: "image.repository"
+                value: otel/opentelemetry-collector-k8s
+              - name: "mode"
+                value: deployment
+            valueFiles:
+            - $values/components/tracing/otel-collector/{{environment}}/otel-collector-helm-values.yaml
+          #releaseName: open-telemetry
+          # Values for chart from git
+        - repoURL: https://github.com/mike-kingsbury/infra-deployments.git
+          targetRevision: tracing
+          ref: values
+      destination:
+        namespace: konflux-otel
+        server: '{{server}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+        retry:
+          limit: 50
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 3m
