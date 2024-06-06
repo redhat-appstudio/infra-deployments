@@ -6,6 +6,7 @@ main() {
     verify_permissions || exit $?
     create_subscription
     wait_for_route
+    update_repo_server_requests_and_timeout
     switch_route_to_reencrypt
     grant_admin_role_to_all_authenticated_users
     mark_pending_pvc_as_healty
@@ -39,6 +40,20 @@ wait_for_route() {
         sleep 1
     done
     echo "OK"
+}
+
+update_repo_server_requests_and_timeout() {
+    kubectl patch argocd/openshift-gitops -n openshift-gitops -p '
+spec:
+  repo:
+    env:
+      - name: ARGOCD_EXEC_TIMEOUT
+        value: 5m
+    resources:
+      requests:
+        cpu: 100m
+        memory: 100Mi
+' --type=merge
 }
 
 switch_route_to_reencrypt() {
