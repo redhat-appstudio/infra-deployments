@@ -49,6 +49,18 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+oc patch ArgoCD/openshift-gitops -n openshift-gitops --type=merge --patch-file=/dev/stdin << EOF
+spec:
+  repo:
+    env:
+      - name: ARGOCD_EXEC_TIMEOUT
+        value: 5m
+    resources:
+      requests:
+        cpu: 100m
+        memory: 100Mi
+EOF
+
 if $TOOLCHAIN ; then
   echo "Deploying toolchain"
   "$ROOT/hack/sandbox-development-mode.sh"
