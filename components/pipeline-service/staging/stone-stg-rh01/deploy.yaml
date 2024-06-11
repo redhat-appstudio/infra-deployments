@@ -903,8 +903,8 @@ data:
     DB_HOST=
     DB_PORT=5432
     DB_NAME=
-    DB_SSLMODE=disable
-    DB_SSLROOTCERT=
+    DB_SSLMODE=verify-full
+    DB_SSLROOTCERT=/etc/tls/db/tekton-results-db-ca.pem
     DB_ENABLE_AUTO_MIGRATION=true
     SERVER_PORT=8080
     PROMETHEUS_PORT=9090
@@ -1381,6 +1381,9 @@ spec:
           initialDelaySeconds: 5
           periodSeconds: 10
         volumeMounts:
+        - mountPath: /etc/tls/db
+          name: db-tls-ca
+          readOnly: true
         - mountPath: /etc/tekton/results
           name: config
           readOnly: true
@@ -1389,6 +1392,9 @@ spec:
           readOnly: true
       serviceAccountName: tekton-results-api
       volumes:
+      - configMap:
+          name: rds-root-crt
+        name: db-tls-ca
       - configMap:
           name: tekton-results-api-config
         name: config
