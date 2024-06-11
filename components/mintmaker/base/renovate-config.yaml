@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: renovate-config
+  namespace: mintmaker
+data:
+  renovate.json: |
+    {
+      "onboarding": false,
+      "requireConfig": "ignored",
+      "platformCommit": true,
+      "autodiscover": false,
+      "tekton": {
+        "fileMatch": ["\\.yaml$","\\.yml$"],
+        "includePaths": [".tekton/**"],
+        "packageRules": [
+        {
+            "matchPackagePatterns": [
+              "[*]"
+            ],
+            "enabled": false
+          },
+          {
+            "matchPackagePatterns": [
+              "^quay.io/redhat-appstudio-tekton-catalog/"
+            ],
+            "enabled": true,
+            "matchDepPatterns": [
+              "^quay.io/redhat-appstudio-tekton-catalog/"
+            ],
+            "semanticCommits": "enabled"
+          }
+        ]
+      }
+    }
