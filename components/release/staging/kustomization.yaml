@@ -2,15 +2,15 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ../base
-  - https://github.com/konflux-ci/release-service/config/default?ref=386031571e33e33fa211b1029b359c93ee363c62
+  - https://github.com/konflux-ci/release-service/config/default?ref=5e27ea8bc9073de6a18dee73534ec93dffb93aba
 
 components:
   - ../k-components/manager-resources-patch
 
 images:
-  - name: quay.io/redhat-appstudio/release-service
-    newName: quay.io/redhat-appstudio/release-service
-    newTag: 386031571e33e33fa211b1029b359c93ee363c62
+  - name: quay.io/konflux-ci/release-service
+    newName: quay.io/konflux-ci/release-service
+    newTag: 5e27ea8bc9073de6a18dee73534ec93dffb93aba
 
 namespace: release-service
 
