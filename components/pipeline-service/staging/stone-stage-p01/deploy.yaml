@@ -1335,7 +1335,7 @@ spec:
             secretKeyRef:
               key: db.name
               name: tekton-results-database
-        image: quay.io/redhat-appstudio/tekton-results-api:bae7851ff584423503af324200f52cd28ca99116
+        image: quay.io/redhat-appstudio/tekton-results-api:3ed2e97d4eacb0252b153edd2d6006637acb528e
         livenessProbe:
           httpGet:
             path: /healthz
@@ -1487,7 +1487,7 @@ spec:
           value: tekton-results-api-service.tekton-pipelines.svc.cluster.local:8080
         - name: AUTH_MODE
           value: token
-        image: quay.io/redhat-appstudio/tekton-results-watcher:bae7851ff584423503af324200f52cd28ca99116
+        image: quay.io/redhat-appstudio/tekton-results-watcher:3ed2e97d4eacb0252b153edd2d6006637acb528e
         name: watcher
         ports:
         - containerPort: 9090
@@ -1635,7 +1635,7 @@ spec:
             )" \
             --dry-run=client \
             -o yaml | kubectl apply -f -
-        image: quay.io/konflux-ci/appstudio-utils:ab6b0b8e40e440158e7288c73aff1cf83a2cc8a9@sha256:24179f0efd06c65d16868c2d7eb82573cce8e43533de6cea14fec3b7446e0b14
+        image: quay.io/redhat-appstudio/appstudio-utils:dbbdd82734232e6289e8fbae5b4c858481a7c057
         imagePullPolicy: Always
         name: chains-secret-generation
         resources:
