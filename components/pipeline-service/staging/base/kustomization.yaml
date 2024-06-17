@@ -8,17 +8,24 @@ commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 
 resources:
-  - https://github.com/openshift-pipelines/pipeline-service.git/operator/gitops/argocd/pipeline-service?ref=72287aca6503f631b917debc27683a508f7e45ad
+  - https://github.com/openshift-pipelines/pipeline-service.git/operator/gitops/argocd/pipeline-service?ref=3ed2e97d4eacb0252b153edd2d6006637acb528e
   - pipelines-as-code-secret.yaml
   - ../../base/external-secrets
   - ../../base/testing
   - ../../base/rbac
 
-images:
-  - name: quay.io/redhat-appstudio/tekton-results-api
-    newTag: bae7851ff584423503af324200f52cd28ca99116
-  - name: quay.io/redhat-appstudio/tekton-results-watcher
-    newTag: bae7851ff584423503af324200f52cd28ca99116
+# generate a new configmap with updated values (logs api, db ssl mode) and replace the default one
+configMapGenerator:
+  - behavior: replace
+    files:
+      - config.env
+    name: api-config
+    options:
+      disableNameSuffixHash: true
+  - behavior: merge
+    name: config-observability
+    literals:
+      - profiling.enable="true"
 
 patches:
   - path: chains-tekton-config-patches.yaml

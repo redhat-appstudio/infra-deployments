@@ -5,3 +5,33 @@
 - op: replace
   path: /spec/template/spec/containers/1/resources/limits/cpu
   value: "250m"
+- op: add
+  path: /spec/template/spec/containers/1/args/-
+  value: -threadiness
+- op: add
+  path: /spec/template/spec/containers/1/args/-
+  value: "50"
+- op: add
+  path: /spec/template/spec/containers/1/args/-
+  value: -qps
+- op: add
+  path: /spec/template/spec/containers/1/args/-
+  value: "50"
+- op: add
+  path: /spec/template/spec/containers/1/args/-
+  value: -burst
+- op: add
+  path: /spec/template/spec/containers/1/args/-
+  value: "100"
+- op: add
+  path: /spec/template/spec/containers/1/args/-
+  value: -update_log_timeout
+- op: add
+  path: /spec/template/spec/containers/1/args/-
+  value: "9m"
+- op: add
+  path: /spec/template/spec/containers/1/args/-
+  value: -dynamic_reconcile_timeout
+- op: add
+  path: /spec/template/spec/containers/1/args/-
+  value: "9m"
