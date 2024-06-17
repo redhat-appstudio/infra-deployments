@@ -897,7 +897,7 @@ subjects:
 ---
 apiVersion: v1
 data:
-  config.env: |
+  config.env: |-
     DB_USER=
     DB_PASSWORD=
     DB_HOST=
@@ -926,6 +926,10 @@ data:
     S3_MULTI_PART_SIZE=5242880
     GCS_BUCKET_NAME=
     STORAGE_EMULATOR_HOST=
+    K8S_QPS=50
+    K8S_BURST=100
+    PROFILING=true
+    PROFILING_PORT=6060
 kind: ConfigMap
 metadata:
   annotations:
@@ -1054,6 +1058,7 @@ data:
     metrics.taskrun.duration-type: "histogram"
     metrics.pipelinerun.level: "pipeline"
     metrics.pipelinerun.duration-type: "histogram"
+  profiling.enable: "true"
 kind: ConfigMap
 metadata:
   annotations:
@@ -1335,7 +1340,7 @@ spec:
             secretKeyRef:
               key: db.name
               name: tekton-results-database
-        image: quay.io/redhat-appstudio/tekton-results-api:bae7851ff584423503af324200f52cd28ca99116
+        image: quay.io/redhat-appstudio/tekton-results-api:ed360eccc021ad5eedf8ea9c0732912ef602b15a
         livenessProbe:
           httpGet:
             path: /healthz
@@ -1404,7 +1409,7 @@ metadata:
   name: tekton-results-watcher
   namespace: tekton-results
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: tekton-results-watcher
@@ -1470,6 +1475,16 @@ spec:
         - -check_owner=false
         - -completed_run_grace_period
         - 10m
+        - -threadiness
+        - "50"
+        - -qps
+        - "50"
+        - -burst
+        - "100"
+        - -update_log_timeout
+        - 9m
+        - -dynamic_reconcile_timeout
+        - 9m
         env:
         - name: SYSTEM_NAMESPACE
           valueFrom:
@@ -1487,7 +1502,7 @@ spec:
           value: tekton-results-api-service.tekton-pipelines.svc.cluster.local:8080
         - name: AUTH_MODE
           value: token
-        image: quay.io/redhat-appstudio/tekton-results-watcher:bae7851ff584423503af324200f52cd28ca99116
+        image: quay.io/redhat-appstudio/tekton-results-watcher:ed360eccc021ad5eedf8ea9c0732912ef602b15a
         name: watcher
         ports:
         - containerPort: 9090
@@ -1635,7 +1650,7 @@ spec:
             )" \
             --dry-run=client \
             -o yaml | kubectl apply -f -
-        image: quay.io/konflux-ci/appstudio-utils:ab6b0b8e40e440158e7288c73aff1cf83a2cc8a9@sha256:24179f0efd06c65d16868c2d7eb82573cce8e43533de6cea14fec3b7446e0b14
+        image: quay.io/redhat-appstudio/appstudio-utils:dbbdd82734232e6289e8fbae5b4c858481a7c057
         imagePullPolicy: Always
         name: chains-secret-generation
         resources:
