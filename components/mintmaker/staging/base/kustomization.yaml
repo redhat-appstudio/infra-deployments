@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- ../../base
+- ../../base/external-secrets
+- https://github.com/konflux-ci/mintmaker/config/default?ref=f6a6a9c25b02d3ca6cd808d5d440529de006d994
+
+namespace: mintmaker
+
+images:
+- name: quay.io/konflux-ci/mintmaker
+  newName: quay.io/konflux-ci/mintmaker
+  newTag: f6a6a9c25b02d3ca6cd808d5d440529de006d994
+
+commonAnnotations:
+  argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
