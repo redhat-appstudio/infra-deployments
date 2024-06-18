@@ -7,19 +7,14 @@ data:
   renovate.json: |
     {
       "onboarding": false,
-      "requireConfig": "ignored",
+      "requireConfig": "optional",
       "platformCommit": true,
       "autodiscover": false,
+      "enabledManagers": ["tekton", "dockerfile", "lockFileMaintenance"],
       "tekton": {
         "fileMatch": ["\\.yaml$","\\.yml$"],
         "includePaths": [".tekton/**"],
         "packageRules": [
-        {
-            "matchPackagePatterns": [
-              "[*]"
-            ],
-            "enabled": false
-          },
           {
             "matchPackagePatterns": [
               "^quay.io/redhat-appstudio-tekton-catalog/"
@@ -28,8 +23,31 @@ data:
             "matchDepPatterns": [
               "^quay.io/redhat-appstudio-tekton-catalog/"
             ],
-            "semanticCommits": "enabled"
+            "groupName": "Konflux references",
+            "branchName": "konflux/references/{{baseBranch}}",
+            "commitBody": "Signed-off-by: {{{gitAuthor}}}",
+            "commitMessageTopic": "Konflux references",
+            "semanticCommits": "enabled",
+            "prFooter": "To execute skipped test pipelines write comment `/ok-to-test`",
+            "prBodyColumns": [
+              "Package",
+              "Change",
+              "Notes"
+            ],
+            "prBodyDefinitions": "{ \"Notes\": \"{{#if (or (containsString updateType 'minor') (containsString updateType 'major'))}}:warning:[migration](https://github.com/redhat-appstudio/build-definitions/blob/main/task/{{{replace '^quay.io/redhat-appstudio-tekton-catalog/task-' '' packageName}}}/{{{newVersion}}}/MIGRATION.md):warning:{{/if}}\" }",
+            "prBodyTemplate": "{{{header}}}{{{table}}}{{{notes}}}{{{changelogs}}}{{{footer}}}",
+            "recreateWhen": "always",
+            "rebaseWhen": "behind-base-branch"
           }
         ]
-      }
+      },
+      "lockFileMaintenance": {
+        "enabled": true,
+        "recreateWhen": "always",
+        "rebaseStalePrs": true,
+        "branchTopic": "lock-file-maintenance",
+        "schedule": ["at any time"]
+      },
+      "forkProcessing": "enabled",
+      "dependencyDashboard": true
     }
