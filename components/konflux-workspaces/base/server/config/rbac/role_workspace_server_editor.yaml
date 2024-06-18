@@ -1,0 +1,15 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: workspace-server-editor
+  namespace: system
+rules:
+- apiGroups:
+  - workspaces.konflux.io
+  resources:
+  - internalworkspaces
+  verbs:
+  - list
+  - get
+  - watch
+  - update
