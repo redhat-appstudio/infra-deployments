@@ -1,0 +1,76 @@
+config:
+  exporters:
+    otlphttp:
+      endpoint: https://api.honeycomb.io:443
+      headers:
+        "x-honeycomb-team": ${HONEYCOMB_API_TOKEN}
+  extensions:
+    # The health_check extension is mandatory for this chart.
+    # Without the health_check extension the collector will fail the readiness and liveliness probes.
+    # The health_check extension can be modified, but should never be removed.
+    health_check: {}
+    memory_ballast: {}
+  processors:
+    batch: {}
+    # If set to null, will be overridden with values based on k8s resource limits
+    memory_limiter:
+      check_interval: 2s
+      limit_mib: 512
+      spike_limit_percentage: 100
+    attributes/collector-info:
+      actions:
+        - key: collector.hostname
+          action: insert
+          value: ${env:HOSTNAME}
+        - key: collector.clustername
+          action: insert
+          value: staging
+  receivers:
+    jaeger: null
+    prometheus: null
+    zipkin: null
+    otlp:
+      protocols:
+        grpc:
+          endpoint: 0.0.0.0:4317
+          max_recv_msg_size_mib: 999999999
+        http:
+          endpoint: 0.0.0.0:4318
+  service:
+    extensions:
+      - health_check
+      - memory_ballast
+    pipelines:
+      traces:
+        exporters:
+          - debug
+        processors:
+          - memory_limiter
+          - attributes/collector-info
+          - batch
+        receivers:
+          - otlp
+      metrics: null
+# Configuration for ports
+ports:
+  otlp:
+    enabled: true
+    containerPort: 4317
+    servicePort: 4317
+    hostPort: 4317
+    protocol: TCP
+  otlp-http:
+    enabled: true
+    containerPort: 4318
+    servicePort: 4318
+    hostPort: 4318
+    protocol: TCP
+  jaeger-compact:
+    enabled: false
+  jaeger-thrift:
+    enabled: false
+  jaeger-grpc:
+    enabled: false
+  zipkin:
+    enabled: false
+
