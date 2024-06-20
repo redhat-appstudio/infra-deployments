@@ -11,13 +11,6 @@ resources:
   - https://github.com/gabemontero/pipeline-service.git/developer/openshift/gitops/argocd/pipeline-service?ref=test-latest-grpc-deep-dive
   - https://github.com/gabemontero/pipeline-service.git/developer/openshift/gitops/argocd/pipeline-service-storage?ref=test-latest-grpc-deep-dive
   - ../base/rbac
-    name: api-config
-    options:
-      disableNameSuffixHash: true
-  - behavior: merge
-    name: config-observability
-    literals:
-      - profiling.enable="true"
 
 patches:
   - path: chains-tekton-config-patches.yaml
