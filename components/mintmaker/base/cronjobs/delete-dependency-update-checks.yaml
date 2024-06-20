@@ -1,0 +1,68 @@
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: delete-dependencyupdatechecks
+  namespace: mintmaker
+spec:
+  schedule: "0 1,13 * * *"
+  successfulJobsHistoryLimit: 7
+  failedJobsHistoryLimit: 7
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          serviceAccountName: mintmaker-controller-manager
+          volumes:
+            - name: temp-directory
+              emptyDir: {}
+          containers:
+            - name: cleanup
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  set -o pipefail
+
+                  # Deletes processed DependencyUpdateCheck CRs that are older than 48 hours.
+                  NAMESPACE="mintmaker"
+                  CUTOFF_DATE=$(date -u -d '48 hours ago' +"%Y-%m-%dT%H:%M:%SZ")
+                  CRS=$(oc get DependencyUpdateCheck -n $NAMESPACE \
+                    --sort-by=.metadata.creationTimestamp \
+                    -o custom-columns=NAME:.metadata.name,CREATION_TIMESTAMP:.metadata.creationTimestamp,PROCESSED:.metadata.annotations.mintmaker\\.appstudio\\.redhat\\.com/processed \
+                    --no-headers=true)
+
+                  # Loop through each CR and check the criteria
+                  while IFS= read -r CR; do
+                    NAME=$(echo $CR | awk '{print $1}')
+                    CREATION_TIMESTAMP=$(echo $CR | awk '{print $2}')
+                    PROCESSED=$(echo $CR | awk '{print $3}')
+
+                    # Check if the creationTimestamp is older than 48 hours and processed annotation is true
+                    if [[ "$CREATION_TIMESTAMP" < "$CUTOFF_DATE" && "$PROCESSED" == "true" ]]; then
+                      oc delete DependencyUpdateCheck "$NAME" -n $NAMESPACE
+                      echo "Deleted DependencyUpdateCheck: $NAME"
+                    fi
+                  done <<< "$CRS"
+              imagePullPolicy: IfNotPresent
+              image: quay.io/openshift/origin-cli:4.14
+              volumeMounts:
+                - mountPath: /var/tmp
+                  name: temp-directory
+              resources:
+                limits:
+                  cpu: 100m
+                  memory: 300Mi
+                requests:
+                  cpu: 50m
+                  memory: 200Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                  - ALL
+                readOnlyRootFilesystem: true
+                runAsNonRoot: true
+                seccompProfile:
+                  type: RuntimeDefault
