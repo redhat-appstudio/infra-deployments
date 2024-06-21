@@ -184,7 +184,7 @@ access to all the repos you're going to create/fork into your org in the future.
 **Simple build:**
 
 * Fork <https://github.com/devfile-samples/devfile-sample-python-basic> into your GitHub organization.
-* Run `hack/build/build-via-appstudio.sh https://github.com/MY_STONESOUP_ORG/devfile-sample-python-basic`
+* Run `hack/build/build-via-appstudio.sh https://github.com/MY_STONESOUP_ORG/devfile-sample-python-basic <path-to-repository-dockerfile>`
 
 The script will create a test application and a component for you:
 
