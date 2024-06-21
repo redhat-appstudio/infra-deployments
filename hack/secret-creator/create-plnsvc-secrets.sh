@@ -5,6 +5,7 @@ main() {
     create_namespace
     create_db_secret
     create_s3_secret
+    create_db_cert_secret_and_configmap
 }
 
 create_namespace() {
@@ -62,6 +63,48 @@ stringData:
     export MINIO_STORAGE_CLASS_STANDARD="EC:2"
     export MINIO_BROWSER="on"
 EOF
+}
+
+create_db_cert_secret_and_configmap() {
+    echo "Creating Postgres TLS certs" >&2
+    if kubectl get secret -n tekton_results postgresql-tls &>/dev/null; then
+        echo "Postgres DB cert secret already exists, skipping creation"
+        return
+    fi
+    mkdir -p .tmp/tekton-results
+    openssl req -new -nodes -text \
+        -keyout ".tmp/tekton-results/ca.key" \
+        -out ".tmp/tekton-results/ca.csr" \
+        -subj "/CN=cluster.local" \
+        > /dev/null
+    chmod og-rwx ".tmp/tekton-results/ca.key"
+    openssl x509 -req -days 7 -text -extensions v3_ca \
+        -signkey ".tmp/tekton-results/ca.key" \
+        -in ".tmp/tekton-results/ca.csr" \
+        -extfile "/etc/ssl/openssl.cnf" \
+        -out ".tmp/tekton-results/ca.crt" \
+        > /dev/null
+    openssl req -new -nodes -text \
+        -subj "/CN=postgres-postgresql.tekton-results.svc.cluster.local" \
+        -addext "subjectAltName=DNS:postgres-postgresql.tekton-results.svc.cluster.local" \
+        -out ".tmp/tekton-results/tls.csr" \
+        -keyout ".tmp/tekton-results/tls.key" \
+        > /dev/null
+    chmod og-rwx ".tmp/tekton-results/tls.key"
+    openssl x509 -req -text -days 7 -CAcreateserial \
+        -extfile <(printf "subjectAltName=DNS:postgres-postgresql.tekton-results.svc.cluster.local") \
+        -in ".tmp/tekton-results/tls.csr" \
+        -CA ".tmp/tekton-results/ca.crt" \
+        -CAkey ".tmp/tekton-results/ca.key" \
+        -out ".tmp/tekton-results/tls.crt" \
+        > /dev/null
+    cat ".tmp/tekton-results/ca.crt" > ".tmp/tekton-results/tekton-results-db-ca.pem"
+    kubectl create secret generic -n tekton-results postgresql-tls \
+        --from-file=.tmp/tekton-results/ca.crt \
+        --from-file=.tmp/tekton-results/tls.crt \
+        --from-file=.tmp/tekton-results/tls.key
+    kubectl create configmap -n tekton-results rds-root-crt \
+        --from-file=.tmp/tekton-results/tekton-results-db-ca.pem
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
