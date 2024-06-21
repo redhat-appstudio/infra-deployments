@@ -8,22 +8,9 @@ commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 
 resources:
-  - https://github.com/openshift-pipelines/pipeline-service.git/developer/openshift/gitops/argocd/pipeline-service?ref=3ed2e97d4eacb0252b153edd2d6006637acb528e
-  - https://github.com/openshift-pipelines/pipeline-service.git/developer/openshift/gitops/argocd/pipeline-service-storage?ref=3ed2e97d4eacb0252b153edd2d6006637acb528e
+  - https://github.com/gabemontero/pipeline-service.git/developer/openshift/gitops/argocd/pipeline-service?ref=test-latest-grpc-deep-dive
+  - https://github.com/gabemontero/pipeline-service.git/developer/openshift/gitops/argocd/pipeline-service-storage?ref=test-latest-grpc-deep-dive
   - ../base/rbac
-
-# generate a new configmap with updated values (logs api, db ssl mode) and replace the default one
-configMapGenerator:
-  - behavior: replace
-    files:
-      - config.env
-    name: api-config
-    options:
-      disableNameSuffixHash: true
-  - behavior: merge
-    name: config-observability
-    literals:
-      - profiling.enable="true"
 
 patches:
   - path: chains-tekton-config-patches.yaml
@@ -49,7 +36,7 @@ patches:
       kind: Deployment
       namespace: tekton-results
       name: tekton-results-watcher
-  - path: increase-results-pruner-gracePeriod.yaml
+  - path: update-results-watcher-args.yaml
     target:
       kind: Deployment
       namespace: tekton-results
@@ -63,8 +50,8 @@ patches:
     target:
       kind: TektonConfig
       name: config
-  - path: update-results-watcher-performance.yaml
-    target:
-        kind: Deployment
-        namespace: tekton-results
-        name: tekton-results-watcher
+#  - path: update-results-watcher-performance.yaml
+#    target:
+#      kind: Deployment
+#      namespace: tekton-results
+#      name: tekton-results-watcher
