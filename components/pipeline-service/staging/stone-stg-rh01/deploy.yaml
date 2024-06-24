@@ -1615,16 +1615,6 @@ spec:
         - -check_owner=false
         - -completed_run_grace_period
         - 10m
-        - -threadiness
-        - "50"
-        - -qps
-        - "50"
-        - -burst
-        - "100"
-        - -update_log_timeout
-        - 9m
-        - -dynamic_reconcile_timeout
-        - 9m
         env:
         - name: SYSTEM_NAMESPACE
           valueFrom:
@@ -1642,7 +1632,7 @@ spec:
           value: tekton-results-api-service.tekton-pipelines.svc.cluster.local:8080
         - name: AUTH_MODE
           value: token
-        image: quay.io/redhat-appstudio/tekton-results-watcher:ed360eccc021ad5eedf8ea9c0732912ef602b15a
+        image: quay.io/redhat-appstudio/tekton-results-watcher:bae7851ff584423503af324200f52cd28ca99116
         name: watcher
         ports:
         - containerPort: 9090
