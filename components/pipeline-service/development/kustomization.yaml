@@ -12,6 +12,10 @@ resources:
   - https://github.com/openshift-pipelines/pipeline-service.git/developer/openshift/gitops/argocd/pipeline-service-storage?ref=ad974044255725077080ace5e4be8840ee85b2da
   - ../base/rbac
 
+images:
+  - name: quay.io/redhat-appstudio/tekton-results-watcher
+    newTag: bae7851ff584423503af324200f52cd28ca99116
+
 # generate a new configmap with updated values (logs api, db ssl mode) and replace the default one
 configMapGenerator:
   - behavior: replace
@@ -63,8 +67,3 @@ patches:
     target:
       kind: TektonConfig
       name: config
-  - path: update-results-watcher-performance.yaml
-    target:
-        kind: Deployment
-        namespace: tekton-results
-        name: tekton-results-watcher
