@@ -67,7 +67,7 @@ EOF
 
 create_db_cert_secret_and_configmap() {
     echo "Creating Postgres TLS certs" >&2
-    if kubectl get secret -n tekton_results postgresql-tls &>/dev/null; then
+    if kubectl get secret -n tekton-results postgresql-tls &>/dev/null; then
         echo "Postgres DB cert secret already exists, skipping creation"
         return
     fi
