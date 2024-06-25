@@ -21,16 +21,16 @@ To try out a pre-configured, follow these steps.
 | Steps    |    |
 | ----------- | ----------- |
 | 1.  Create project for your pipelines execution. This can be run as any non-admin user (or admin)  and is needed to hold your execution pipelines.  |  oc new-project demo     |
-| 2.  Run build-deploy example with a quarkus app. | ./hack/build/build-via-appstudio.sh https://github.com/devfile-samples/devfile-sample-code-with-quarkus
+| 2.  Run build-deploy example with a quarkus app. | ./hack/build/build-via-appstudio.sh https://github.com/devfile-samples/devfile-sample-code-with-quarkus src/main/docker/Dockerfile.jvm.staged
 | 3.  View your build on the OpenShift Console under the pipelines page or view the logs via CLI. | `tkn pipelinerun logs`      |
 
 ## Tests via RHTAP
 
 To validate execution via RHTAP you can run `./hack/build/build-via-appstudio.sh` script which sets credentials and RHTAP application and components. Without parameters it creates example components.
-To build specific repository, pass its URL as argument as shown below:
+To build specific repository, pass its URL and path to repository's Dockerfile as arguments as shown below:
 
 ```
-./hack/build/build-via-appstudio.sh https://github.com/devfile-samples/devfile-sample-java-springboot-basic
+./hack/build/build-via-appstudio.sh https://github.com/devfile-samples/devfile-sample-java-springboot-basic docker/Dockerfile
 ```
 
 To enable PipelineAsCode integration you need to set `PIPELINESASCODE` env variable to `1` and also have to have set GitHub credentials in your `./hack/preview.env`.
@@ -40,7 +40,7 @@ Alternatively, to use GitHub webhook set `PAC_GITHUB_TOKEN` with [required permi
 Then run:
 
 ```
-PIPELINESASCODE=1 ./hack/build/build-via-appstudio.sh https://github.com/Michkov/devfile-sample-go-basic
+PIPELINESASCODE=1 ./hack/build/build-via-appstudio.sh https://github.com/Michkov/devfile-sample-go-basic docker/Dockerfile
 ```
 
 ### Change of default pipeline bundle
