@@ -4,15 +4,15 @@ kind: Kustomization
 resources:
 - monitoring.yaml
 - allow-argocd-to-manage.yaml
-- https://github.com/redhat-appstudio/multi-platform-controller/deploy/operator?ref=3a6fa5f72ac3ffa4acd018427b3b9cb0f900ca50
-- https://github.com/redhat-appstudio/multi-platform-controller/deploy/otp?ref=3a6fa5f72ac3ffa4acd018427b3b9cb0f900ca50
+- https://github.com/konflux-ci/multi-platform-controller/deploy/operator?ref=3a6fa5f72ac3ffa4acd018427b3b9cb0f900ca50
+- https://github.com/konflux-ci/multi-platform-controller/deploy/otp?ref=3a6fa5f72ac3ffa4acd018427b3b9cb0f900ca50
 
 images:
 - name: multi-platform-controller
-  newName: quay.io/redhat-user-workloads/rhtap-build-tenant/multi-arch-controller/multi-arch-controller
+  newName: quay.io/konflux-ci/multi-platform-controller
   newTag: 3a6fa5f72ac3ffa4acd018427b3b9cb0f900ca50
 - name: multi-platform-otp-server
-  newName: quay.io/redhat-user-workloads/rhtap-build-tenant/multi-arch-controller/multi-platform-controller-otp-service
+  newName: quay.io/konflux-ci/multi-platform-controller-otp-service
   newTag: 3a6fa5f72ac3ffa4acd018427b3b9cb0f900ca50
 
 namespace: multi-platform-controller
