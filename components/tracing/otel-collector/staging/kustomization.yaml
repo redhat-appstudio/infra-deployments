@@ -3,12 +3,6 @@ kind: Kustomization
 resources:
   - ../base
 patches:
-  - path: patch-otel-helm-values-path.yaml
-    target:
-      name: otel-collector
-      kind: Application
-      group: argoproj.io
-      version: v1alpha1
   - path: honeycomb-api-key-secret-path.yaml
     target:
       name: honeycomb-api-key

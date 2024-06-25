@@ -2,28 +2,43 @@ apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
   name: tracing-workload-otel-collector
+  labels:
+    noSourceTransform: "true"
 spec:
   generators:
-    - merge:
-        mergeKeys:
-          - nameNormalized
-        generators:
-          - clusters:
-              values:
-                sourceRoot: components/tracing/otel-collector
-                environment: staging
-                clusterDir: ""
-          - list:
-              elements: []
+  - merge:
+      mergeKeys:
+        - nameNormalized
+      generators:
+        - clusters:
+            values:
+              sourceRoot: components/tracing/otel-collector
+              environment: staging
+              clusterDir: ""
+        - list:
+            elements: []
   template:
     metadata:
       name: tracing-workload-otel-collector-{{nameNormalized}}
     spec:
       project: default
-      source:
-        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
-        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
-        targetRevision: main
+      sources:
+          # Chart from OTel Project
+        - chart: opentelemetry-collector
+          repoURL: https://open-telemetry.github.io/opentelemetry-helm-charts
+          targetRevision: 0.90.1
+          helm:
+            parameters:
+              - name: "image.repository"
+                value: otel/opentelemetry-collector-k8s
+              - name: "mode"
+                value: deployment
+            valueFiles:
+            - $values/{{values.sourceRoot}}/{{values.environment}}/otel-collector-helm-values.yaml
+          # Values for chart from git
+        - repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+          targetRevision: main
+          ref: values
       destination:
         namespace: konflux-otel
         server: '{{server}}'
@@ -32,7 +47,7 @@ spec:
           prune: true
           selfHeal: true
         syncOptions:
-        - CreateNamespace=true
+          - CreateNamespace=true
         retry:
           limit: 50
           backoff:
