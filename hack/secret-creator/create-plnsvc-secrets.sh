@@ -78,7 +78,7 @@ create_db_cert_secret_and_configmap() {
         -subj "/CN=cluster.local" \
         > /dev/null
     chmod og-rwx ".tmp/tekton-results/ca.key"
-    openssl x509 -req -days 7 -text -extensions v3_ca \
+    openssl x509 -req -days 9999 -text -extensions v3_ca \
         -signkey ".tmp/tekton-results/ca.key" \
         -in ".tmp/tekton-results/ca.csr" \
         -extfile "/etc/ssl/openssl.cnf" \
@@ -91,7 +91,7 @@ create_db_cert_secret_and_configmap() {
         -keyout ".tmp/tekton-results/tls.key" \
         > /dev/null
     chmod og-rwx ".tmp/tekton-results/tls.key"
-    openssl x509 -req -text -days 7 -CAcreateserial \
+    openssl x509 -req -text -days 9999 -CAcreateserial \
         -extfile <(printf "subjectAltName=DNS:postgres-postgresql.tekton-results.svc.cluster.local") \
         -in ".tmp/tekton-results/tls.csr" \
         -CA ".tmp/tekton-results/ca.crt" \
