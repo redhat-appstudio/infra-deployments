@@ -2,7 +2,8 @@ name: Close PRs and delete branches daily
 
 on:
   schedule:
-    - cron: '55 8 * * *' 
+    - cron: '20 9 * * *' 
+
 
 jobs:
   close_and_delete_prs:
@@ -10,22 +11,25 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v2
 
-    - name: Set up GitHub CLI
-      uses: dev-hanz-ops/install-gh-cli-action@v0.1.0
-      with:
-        gh-cli-version: 2.32.0
 
     - name: Close all open pull requests and delete branches
       env:
         GITHUB_TOKEN: ${{ secrets.TEST_TOKEN }}
       run: |
-        gh auth login --with-token <<< "${{ secrets.TEST_TOKEN }}"
-        PRs=$(gh pr list --state open --json number,headRefName --jq '.[] | "\(.number) \(.headRefName)"')
-        while read -r pr branch; do
-          gh pr close $pr
-          if [[ $branch != "main" && $branch != "master" ]]; then
-            git push origin --delete $branch
-          fi
-        done <<< "$PRs"
+          prs=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/pulls?state=open" | jq -c '.[]')
+
+          for pr in $prs; do
+            pr_number=$(echo $pr | jq -r '.number')
+            branch=$(echo $pr | jq -r '.head.ref')
+
+            curl -X PATCH -s -H "Authorization: token $GITHUB_TOKEN" \
+              -d '{"state": "closed"}' \
+              "https://api.github.com/repos/${{ github.repository }}/pulls/$pr_number"
+
+            curl -X DELETE -s -H "Authorization: token $GITHUB_TOKEN" \
+              "https://api.github.com/repos/${{ github.repository }}/git/refs/heads/$branch"
+          done
+
