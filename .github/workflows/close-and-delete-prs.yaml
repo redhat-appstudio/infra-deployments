@@ -9,11 +9,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
+    - name: Checkout
+        uses: actions/checkout@v4
 
     - name: Set up GitHub CLI
-      uses: dawidd6/action-install-gh-cli@v1
+      uses: dev-hanz-ops/install-gh-cli-action@v0.1.0
+  with:
+    gh-cli-version: 2.32.0
 
     - name: Close all open pull requests and delete branches
       env:
