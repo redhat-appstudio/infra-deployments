@@ -2,10 +2,7 @@ name: Close PRs and delete branches daily
 
 on:
   schedule:
-
-    - cron: '36 7 * * *' 
-
-
+    - cron: '0 8 * * *' 
 jobs:
   close_and_delete_prs:
     runs-on: ubuntu-latest
@@ -21,7 +18,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
+        gh auth login --with-token <<< "${{ secrets.TEST_TOKEN }}"
         PRs=$(gh pr list --state open --json number,headRefName --jq '.[] | "\(.number) \(.headRefName)"')
         while read -r pr branch; do
           gh pr close $pr
