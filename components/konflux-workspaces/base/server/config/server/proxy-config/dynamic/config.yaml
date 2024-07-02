@@ -1,0 +1,31 @@
+http:
+  services:
+    web:
+      loadBalancer:
+        servers:
+        - url: "http://localhost:8080/"
+  routers:
+    app-apis:
+      service: web
+      entrypoints:
+      - web
+      rule: PathPrefix(`/apis/workspaces.konflux.io`) && ( Method(`GET`) || Method(`PUT`) )
+      middlewares:
+        - jwt-authorizer
+    app-healthz:
+      service: web
+      entrypoints:
+      - web
+      rule: Path(`/healthz`)
+
+# Middlewares
+  middlewares:
+
+# JWT Auth
+    jwt-authorizer:
+      plugin:
+        jwt:
+          required: true
+          keys: []
+          jwtHeaders:
+            X-Subject: sub

@@ -1,0 +1,116 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: rest-api-server
+  name: rest-api-server
+  namespace: system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rest-api-server
+  template:
+    metadata:
+      labels:
+        app: rest-api-server
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+      - image: traefik:v2.11.0
+        name: proxy
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+        - name: "traefik-static-config"
+          mountPath: "/etc/traefik"
+        - name: "traefik-dynamic-config"
+          mountPath: "/etc/traefik/dynamic"
+        - name: "traefik-plugin-storage"
+          mountPath: "/plugins-storage" 
+        securityContext:
+          readOnlyRootFilesystem: true
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+          requests:
+            cpu: 10m
+            memory: 64Mi
+      - image: workspaces/rest-api:index
+        name: rest-api
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: KUBESAW_NAMESPACE
+          valueFrom:
+            configMapKeyRef:
+              name: rest-api-server-config
+              key: kubesaw.namespace
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: rest-api-server-config
+              key: log.level
+        - name: WORKSPACES_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+              - "ALL"
+        # livenessProbe:
+        #   httpGet:
+        #     path: /healthz
+        #     port: 8080
+        #   initialDelaySeconds: 15
+        #   periodSeconds: 20
+        # readinessProbe:
+        #   httpGet:
+        #     path: /readyz
+        #     port: 8081
+        #   initialDelaySeconds: 5
+        #   periodSeconds: 10
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+          requests:
+            cpu: 10m
+            memory: 64Mi
+        ports:
+          - containerPort: 8080
+            name: http
+      volumes:
+      - name: "traefik-plugin-storage"
+        emptyDir:
+          sizeLimit: 20Mi
+      - name: "traefik-static-config"
+        configMap:
+          name: "traefik-sidecar-static-config"
+      - name: "traefik-dynamic-config"
+        configMap:
+          name: "traefik-sidecar-dynamic-config"
+      serviceAccountName: rest-api-server
+      terminationGracePeriodSeconds: 60
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rest-api-server-config
+data:
+  kubesaw.namespace=system
+---
+apiVersion: v1
+data: {}
+kind: ConfigMap
+metadata:
+  name: traefik-sidecar-static-config
+---
+apiVersion: v1
+data: {}
+kind: ConfigMap
+metadata:
+  name: traefik-sidecar-dynamic-config

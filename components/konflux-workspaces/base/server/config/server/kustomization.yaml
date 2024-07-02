@@ -1,0 +1,22 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- deployment.yaml
+- service.yaml
+configMapGenerator:
+- behavior: merge
+  files:
+  - traefik.yaml=./proxy-config/traefik.yaml
+  name: traefik-sidecar-static-config
+  options:
+    disableNameSuffixHash: true
+- behavior: merge
+  files:
+  - config.yaml=./proxy-config/dynamic/config.yaml
+  name: traefik-sidecar-dynamic-config
+  options:
+    disableNameSuffixHash: true
+images:
+- name: workspaces/rest-api
+  newName: quay.io/konflux-workspaces/workspaces-operator
+  newTag: v0.1.0-alpha2
