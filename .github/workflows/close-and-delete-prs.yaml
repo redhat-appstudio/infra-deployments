@@ -4,6 +4,7 @@ on:
   schedule:
     - cron: '20 9 * * *' 
 
+
 jobs:
   close_and_delete_prs:
     runs-on: ubuntu-latest
@@ -12,11 +13,12 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
 
+
     - name: Close all open pull requests and delete branches
       env:
         GITHUB_TOKEN: ${{ secrets.TEST_TOKEN }}
       run: |
-           prs=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+          prs=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
             "https://api.github.com/repos/${{ github.repository }}/pulls?state=open" | jq -c '.[]')
 
           for pr in $prs; do
@@ -30,3 +32,4 @@ jobs:
             curl -X DELETE -s -H "Authorization: token $GITHUB_TOKEN" \
               "https://api.github.com/repos/${{ github.repository }}/git/refs/heads/$branch"
           done
+
