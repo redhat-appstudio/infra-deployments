@@ -2,7 +2,7 @@ name: Close PRs and delete branches daily
 
 on:
   schedule:
-    - cron: '13 8 * * *' 
+    - cron: '25 8 * * *' 
 
 jobs:
   close_and_delete_prs:
@@ -10,12 +10,12 @@ jobs:
 
     steps:
     - name: Checkout
-        uses: actions/checkout@v4
+      uses: actions/checkout@v4
 
     - name: Set up GitHub CLI
       uses: dev-hanz-ops/install-gh-cli-action@v0.1.0
-  with:
-    gh-cli-version: 2.32.0
+      with:
+        gh-cli-version: 2.32.0
 
     - name: Close all open pull requests and delete branches
       env:
