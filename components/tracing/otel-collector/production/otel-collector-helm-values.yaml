@@ -74,4 +74,10 @@ ports:
     enabled: false
   zipkin:
     enabled: false
+extraEnvs:
+  - name: HONEYCOMB_API_TOKEN
+    valueFrom:
+      secretKeyRef:
+        name: "honeycomb-api-key"
+        key: konflux-tracing-stage
 
