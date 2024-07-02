@@ -33,6 +33,8 @@ spec:
                 value: otel/opentelemetry-collector-k8s
               - name: "mode"
                 value: deployment
+              - name: "fullnameOverride"
+                value: "open-telemetry-opentelemetry-collector"
             valueFiles:
             - $values/{{values.sourceRoot}}/{{values.environment}}/otel-collector-helm-values.yaml
           # Values for chart from git
