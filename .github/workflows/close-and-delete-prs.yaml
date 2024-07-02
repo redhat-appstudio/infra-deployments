@@ -2,7 +2,7 @@ name: Close PRs and delete branches daily
 
 on:
   schedule:
-    - cron: '50 9 * * *' 
+    - cron: '10 12 * * *' 
 
 jobs:
   close_and_delete_prs:
@@ -20,11 +20,10 @@ jobs:
           prs=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
             "https://api.github.com/repos/${{ github.repository }}/pulls?state=open" | jq -c '.[]')
 
-          curl -X PATCH -s -H "Authorization: token $GITHUB_TOKEN" -d '{"state": "closed"}' "https://api.github.com/repos/${{ github.repository }}/pulls/$pr_number"
           for pr in $prs; do
             pr_number=$(echo $pr | jq -r '.number')
             branch=$(echo $pr | jq -r '.head.ref')
-            curl -X PATCH -s -H "Authorization: token $GITHUB_TOKEN" -d '{"state": "closed"}' "https://api.github.com/repos/${{ github.repository }}/pulls/$pr_number"
+            curl -X PATCH -H "Authorization: token $GITHUB_TOKEN" -d '{"state": "closed"}' "https://api.github.com/repos/${{ github.repository }}/pulls/$pr_number"
 
             curl -X DELETE -s -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/${{ github.repository }}/git/refs/heads/$branch"
           done
