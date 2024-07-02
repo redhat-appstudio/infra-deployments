@@ -16,6 +16,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.TEST_TOKEN }}
       run: |
+
           prs=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
             "https://api.github.com/repos/${{ github.repository }}/pulls?state=open" | jq -c '.[]')
 
@@ -24,5 +25,6 @@ jobs:
             pr_number=$(echo $pr | jq -r '.number')
             branch=$(echo $pr | jq -r '.head.ref')
             curl -X PATCH -s -H "Authorization: token $GITHUB_TOKEN" -d '{"state": "closed"}' "https://api.github.com/repos/${{ github.repository }}/pulls/$pr_number"
+
             curl -X DELETE -s -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/${{ github.repository }}/git/refs/heads/$branch"
           done
