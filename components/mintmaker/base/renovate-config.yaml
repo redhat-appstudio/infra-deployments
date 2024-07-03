@@ -21,12 +21,10 @@ data:
         "packageRules": [
           {
             "matchPackagePatterns": [
-              "^quay.io/redhat-appstudio-tekton-catalog/"
+              "^quay.io/redhat-appstudio-tekton-catalog/",
+              "^quay.io/konflux-ci/tekton-catalog/"
             ],
             "enabled": true,
-            "matchDepPatterns": [
-              "^quay.io/redhat-appstudio-tekton-catalog/"
-            ],
             "groupName": "Konflux references",
             "branchName": "konflux/references/{{baseBranch}}",
             "commitBody": "Signed-off-by: {{{gitAuthor}}}",
