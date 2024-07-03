@@ -8,7 +8,8 @@ data:
     {
       "$schema": "https://docs.renovatebot.com/renovate-schema.json",
       "extends": [
-        "config:recommended"
+        "config:recommended",
+        ":gitSignOff"
       ],
       "onboarding": false,
       "requireConfig": "optional",
@@ -27,7 +28,6 @@ data:
             "enabled": true,
             "groupName": "Konflux references",
             "branchName": "konflux/references/{{baseBranch}}",
-            "commitBody": "Signed-off-by: {{{gitAuthor}}}",
             "commitMessageTopic": "Konflux references",
             "semanticCommits": "enabled",
             "prFooter": "To execute skipped test pipelines write comment `/ok-to-test`",
