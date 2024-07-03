@@ -2,27 +2,37 @@ name: Close PRs and delete branches daily
 
 on:
   schedule:
+<<<<<<< HEAD
     - cron: '0 1 * * *' 
+=======
+    - cron: '0 4 * * *' 
+
+>>>>>>> 780f2c08b7731386ad349953accd9148aa453b4c
 
 jobs:
-  close_and_delete_prs:
+  close-pr-and-delete-branch:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-    - name: Close all open pull requests and delete branches
-      env:
-        GITHUB_TOKEN: ${{ secrets.TEST_TOKEN }}
-      run: |
+      - name: Install gh CLI
+        run: |
+          sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-key C99B11DEB97541F0
+          sudo apt-add-repository https://cli.github.com/packages
+          sudo apt-get update
+          sudo apt-get install gh
 
-          prs=$(curl -s -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/${{ github.repository }}/pulls?state=open" | jq -c '.[]')
-
-          for pr in $prs; do
-            pr_number=$(echo $pr | jq -r '.number')
-            branch=$(echo $pr | jq -r '.head.ref')
-            curl -X PATCH -H "Authorization: token $GITHUB_TOKEN" -d '{"state": "closed"}' "https://api.github.com/repos/${{ github.repository }}/pulls/$pr_number"
-
-            curl -X DELETE -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/${{ github.repository }}/git/refs/heads/$branch"
+      - name: List and close open PRs
+        run: |
+          prs=$(gh pr list --state open --json number,headRefName)
+          for pr in $(echo "${prs}" | jq -r '.[] | @base64'); do
+            _jq() {
+              echo ${pr} | base64 --decode | jq -r ${1}
+            }
+            PR_NUMBER=$(_jq '.number')
+            BRANCH_NAME=$(_jq '.headRefName')
+            gh pr close $PR_NUMBER
+            git push origin --delete $BRANCH_NAME
           done
