@@ -156,9 +156,6 @@ if [ -n "$DEPLOY_ONLY" ]; then
   done
 fi
 
-# set the API server which SPI uses to authenticate users to empty string (by default) so that multi-cluster
-# setup is not needed
-yq -i e ".0.value=\"$SPI_API_SERVER\"" $ROOT/components/spi/overlays/development/oauth-service-config-patch.json
 # patch the SPI configuration with the Vault host configuration to provided VAULT_HOST variable or to current cluster
 # and the base URL set to the SPI_BASE_URL variable or the URL of the  route to the SPI OAuth service in the current cluster
 # This script also sets up the Vault client to accept insecure TLS connections so that the custom vault host doesn't have
