@@ -22,8 +22,11 @@ jobs:
           gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
           PRs=$(gh pr list --state open --json number,headRefName --jq '.[] | "\(.number) \(.headRefName)"')
           while read -r pr branch; do
-            gh pr close $pr
-            if [[ $branch != "main" && $branch != "master" ]]; then
-              git push origin --delete $branch
+            if [[ "$pr" != " " && "$pr" != "" ]]
+            then
+              gh pr close $pr
+              if [[ $branch != "main" && $branch != "master" ]]; then
+                git push origin --delete $branch
+              fi
             fi
           done <<< "$PRs"
