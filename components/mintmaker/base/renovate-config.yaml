@@ -9,8 +9,10 @@ data:
       "$schema": "https://docs.renovatebot.com/renovate-schema.json",
       "extends": [
         "config:recommended",
-        ":gitSignOff"
+        ":gitSignOff",
+        ":disableDependencyDashboard"
       ],
+      "ignorePresets": [":dependencyDashboard"],
       "onboarding": false,
       "requireConfig": "optional",
       "platformCommit": true,
