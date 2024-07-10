@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: konflux-workspaces
+  name: workspaces
 spec:
   generators:
     - merge:
@@ -10,14 +10,14 @@ spec:
         generators:
           - clusters:
               values:
-                sourceRoot: components/konflux-workspaces
+                sourceRoot: components/workspaces
                 environment: staging
                 clusterDir: ""
           - list:
               elements: []
   template:
     metadata:
-      name: konflux-workspaces-{{nameNormalized}}
+      name: workspaces-{{nameNormalized}}
     spec:
       project: default
       source:
