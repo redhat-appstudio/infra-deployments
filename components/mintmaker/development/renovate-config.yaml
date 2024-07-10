@@ -1,0 +1,58 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: renovate-config
+  namespace: mintmaker
+data:
+  renovate.json: |
+    {
+      "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+      "extends": [
+        "config:recommended",
+        ":gitSignOff",
+        ":disableDependencyDashboard"
+      ],
+      "ignorePresets": [":dependencyDashboard"],
+      "onboarding": false,
+      "requireConfig": "optional",
+      "platformCommit": true,
+      "autodiscover": false,
+      "enabledManagers": ["tekton", "dockerfile", "rpm"],
+      "tekton": {
+        "fileMatch": ["\\.yaml$","\\.yml$"],
+        "includePaths": [".tekton/**"],
+        "packageRules": [
+          {
+            "matchPackagePatterns": [
+              "^quay.io/redhat-appstudio-tekton-catalog/",
+              "^quay.io/konflux-ci/tekton-catalog/"
+            ],
+            "enabled": true,
+            "groupName": "Konflux references",
+            "branchPrefix": "konflux/references/",
+            "branchTopic": "{{baseBranch}}",
+            "commitMessageTopic": "Konflux references",
+            "semanticCommits": "enabled",
+            "prFooter": "To execute skipped test pipelines write comment `/ok-to-test`",
+            "prBodyColumns": [
+              "Package",
+              "Change",
+              "Notes"
+            ],
+            "prBodyDefinitions": { "Notes": "{{#if (or (containsString updateType 'minor') (containsString updateType 'major'))}}:warning:[migration](https://github.com/redhat-appstudio/build-definitions/blob/main/task/{{{replace '^quay.io/redhat-appstudio-tekton-catalog/task-' '' packageName}}}/{{{newVersion}}}/MIGRATION.md):warning:{{/if}}" },
+            "prBodyTemplate": "{{{header}}}{{{table}}}{{{notes}}}{{{changelogs}}}{{{footer}}}",
+            "recreateWhen": "always",
+            "rebaseWhen": "behind-base-branch"
+          }
+        ]
+      },
+      "lockFileMaintenance": {
+        "enabled": true,
+        "recreateWhen": "always",
+        "rebaseWhen": "behind-base-branch",
+        "branchTopic": "lock-file-maintenance",
+        "schedule": ["at any time"]
+      },
+      "forkProcessing": "enabled",
+      "dependencyDashboard": false
+    }
