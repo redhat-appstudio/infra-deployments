@@ -10,3 +10,9 @@ images:
 - name: controller
   newName: quay.io/konflux-workspaces/workspaces-operator
   newTag: v0.1.0-alpha2
+
+configMapGenerator:
+- behavior: merge
+  literals:
+  - log.level=-4
+  name: rest-api-server-config
