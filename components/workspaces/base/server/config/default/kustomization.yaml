@@ -7,11 +7,6 @@ resources:
 namePrefix: workspaces-
 
 configMapGenerator:
-- literals:
-  - toolchain_namespace=toolchain-host-operator
-  name: rest-api-server-cm
-  options:
-    disableNameSuffixHash: true
 - behavior: replace
   literals:
   - log.level=0
@@ -24,9 +19,9 @@ configMapGenerator:
       # RoleBinding to read UserSignups should target the ServiceAccount in workspaces-system
 replacements:
 - source:
-    fieldPath: data.toolchain_namespace
+    fieldPath: data.[kubesaw.namespace]
     kind: ConfigMap
-    name: rest-api-server-cm
+    name: rest-api-server-config
     options:
       create: true
   targets:
