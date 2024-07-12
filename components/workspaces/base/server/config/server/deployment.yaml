@@ -29,7 +29,11 @@ spec:
         - name: "traefik-plugin-storage"
           mountPath: "/plugins-storage" 
         securityContext:
+          allowPrivilegeEscalation: false
           readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+              - "ALL"
         resources:
           limits:
             cpu: 500m
