@@ -50,6 +50,33 @@ spec:
       app: sso
   realm:
     clientScopes:
+      - name: first-and-last-name
+        protocol: openid-connect
+        protocolMappers:
+          - name: first_name
+            protocol: openid-connect
+            protocolMapper: oidc-usermodel-property-mapper
+            config:
+              user.attribute: firstName
+              claim.name: first_name
+              jsonType.label: String
+              id.token.claim: 'true'
+              access.token.claim: 'true'
+              lightweight.claim: 'false'
+              userinfo.token.claim: 'true'
+              introspection.token.claim: 'true'
+          - name: last_name
+            protocol: openid-connect
+            protocolMapper: oidc-usermodel-property-mapper
+            config:
+              user.attribute: lastName
+              claim.name: last_name
+              jsonType.label: String
+              id.token.claim: 'true'
+              access.token.claim: 'true'
+              lightweight.claim: 'false'
+              userinfo.token.claim: 'true'
+              introspection.token.claim: 'true'
       - attributes:
           display.on.consent.screen: 'true'
           include.in.token.scope: 'true'
@@ -310,6 +337,7 @@ spec:
       - profile
       - roles
       - email
+      - first-and-last-name
     implicitFlowEnabled: false
     secret: client-secret
     publicClient: true
