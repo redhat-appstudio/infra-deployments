@@ -1350,7 +1350,7 @@ spec:
         - -pprof-address
         - "6060"
         - -zap-log-level=6
-        image: quay.io/redhat-appstudio/pipeline-service-exporter:c18a1079e58315454fb3ddf2ea9dc3c5cd4dc954
+        image: quay.io/konflux-ci/pipeline-service-exporter:95fe19bf616c628e6e8f30487113b61861569a6e
         name: pipeline-metrics-exporter
         ports:
         - containerPort: 9117
@@ -1780,7 +1780,7 @@ spec:
             )" \
             --dry-run=client \
             -o yaml | kubectl apply -f -
-        image: quay.io/redhat-appstudio/appstudio-utils:dbbdd82734232e6289e8fbae5b4c858481a7c057
+        image: quay.io/konflux-ci/appstudio-utils:ab6b0b8e40e440158e7288c73aff1cf83a2cc8a9@sha256:24179f0efd06c65d16868c2d7eb82573cce8e43533de6cea14fec3b7446e0b14
         imagePullPolicy: Always
         name: chains-secret-generation
         resources:
@@ -2028,6 +2028,7 @@ spec:
     enable-cluster-resolver: true
     enable-git-resolver: true
     enable-hub-resolver: true
+    enable-step-actions: true
     enable-tekton-oci-bundles: true
     options:
       configMaps:
