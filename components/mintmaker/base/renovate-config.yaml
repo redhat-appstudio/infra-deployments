@@ -17,7 +17,7 @@ data:
       "requireConfig": "optional",
       "platformCommit": true,
       "autodiscover": false,
-      "enabledManagers": ["tekton", "dockerfile", "rpm"],
+      "enabledManagers": ["tekton", "dockerfile", "rpm", "git-submodules"],
       "tekton": {
         "fileMatch": ["\\.yaml$","\\.yml$"],
         "includePaths": [".tekton/**"],
@@ -44,6 +44,9 @@ data:
             "rebaseWhen": "behind-base-branch"
           }
         ]
+      },
+      "git-submodules": {
+        "enabled": true,
       },
       "lockFileMaintenance": {
         "enabled": true,
