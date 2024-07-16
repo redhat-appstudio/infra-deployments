@@ -1344,7 +1344,7 @@ spec:
       - args:
         - -pprof-address
         - "6060"
-        image: quay.io/redhat-appstudio/pipeline-service-exporter:c18a1079e58315454fb3ddf2ea9dc3c5cd4dc954
+        image: quay.io/konflux-ci/pipeline-service-exporter:95fe19bf616c628e6e8f30487113b61861569a6e
         name: pipeline-metrics-exporter
         ports:
         - containerPort: 9117
@@ -2022,8 +2022,8 @@ spec:
     enable-cluster-resolver: true
     enable-git-resolver: true
     enable-hub-resolver: true
-    enable-tekton-oci-bundles: true
     enable-step-actions: true
+    enable-tekton-oci-bundles: true
     options:
       configMaps:
         config-logging:
