@@ -4,7 +4,7 @@ metadata:
   labels:
     control-plane: controller-manager
     app.kubernetes.io/name: namespace
-    app.kubernetes.io/instance: system 
+    app.kubernetes.io/instance: system
     app.kubernetes.io/component: manager
     app.kubernetes.io/created-by: workspaces
     app.kubernetes.io/part-of: workspaces
@@ -51,7 +51,7 @@ spec:
         - /manager
         args:
         - "--leader-elect"
-        image: controller:index
+        image: controller:latest
         imagePullPolicy: IfNotPresent
         env:
         - name: KUBESAW_NAMESPACE
