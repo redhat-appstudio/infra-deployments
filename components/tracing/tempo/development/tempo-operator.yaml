@@ -1,0 +1,36 @@
+---
+# Namespace for Grafana Tempo Operator
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tempo-operator
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+---
+# Grafana Tempo Operator Group
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  name: tempo-operator
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+spec:
+  upgradeStrategy: Default
+---
+# Subscription for tempo-operator
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: tempo-product
+  namespace: tempo-operator
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+    argocd.argoproj.io/sync-options: Replace=true
+  labels:
+    operators.coreos.com/tempo-product.tempo-operator: ""
+spec:
+  channel: stable
+  installPlanApproval: Automatic
+  name: tempo-product
+  source: redhat-operators
+  sourceNamespace: openshift-marketplace
