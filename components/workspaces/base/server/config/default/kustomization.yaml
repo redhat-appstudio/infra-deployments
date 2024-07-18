@@ -6,13 +6,6 @@ resources:
 - ../server
 namePrefix: workspaces-
 
-configMapGenerator:
-- behavior: replace
-  literals:
-  - log.level=0
-  - kubesaw.namespace=toolchain-host-operator
-  name: rest-api-server-config
-
       # create Role and RoleBinding to read SpaceBinding into toolchain-host-operator
       # create Role and RoleBinding to read UserSignups into toolchain-host-operator
       # RoleBinding to read SpaceBinding should target the ServiceAccount in workspaces-system
@@ -79,3 +72,9 @@ replacements:
       kind: RoleBinding
       name: rest-api-server:usersignup-reader
 namespace: workspaces-system
+configMapGenerator:
+- behavior: replace
+  literals:
+  - log.level=0
+  - kubesaw.namespace=toolchain-host-operator
+  name: rest-api-server-config
