@@ -9,6 +9,9 @@ spec:
           - nameNormalized
         generators:
           - clusters:
+              selector:
+                matchLabels:
+                  appstudio.redhat.com/toolchain-member: 'true'
               values:
                 sourceRoot: components/sandbox/toolchain-member-operator
                 environment: staging
