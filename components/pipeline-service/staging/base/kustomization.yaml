@@ -8,7 +8,7 @@ commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 
 resources:
-  - https://github.com/openshift-pipelines/pipeline-service.git/operator/gitops/argocd/pipeline-service?ref=c8432d3352db3ff70828caeb500e86e6bf0cbcdd
+  - https://github.com/openshift-pipelines/pipeline-service.git/operator/gitops/argocd/pipeline-service?ref=dcd5b72748435ed46b9e1487b8a3011dabe2b9b8
   - pipelines-as-code-secret.yaml
   - ../../base/external-secrets
   - ../../base/testing
@@ -16,6 +16,9 @@ resources:
   - ../../base/certificates
 
 images:
+  - name: quay.io/konflux-ci/tekton-results-watcher
+    newName: quay.io/redhat-appstudio/tekton-results-watcher
+    newTag: dcd5b72748435ed46b9e1487b8a3011dabe2b9b8
   - name: quay.io/redhat-appstudio/tekton-results-watcher
     newTag: bae7851ff584423503af324200f52cd28ca99116
 

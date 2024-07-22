@@ -1,5 +1,9 @@
 config:
   exporters:
+    otlphttp:
+      endpoint: http://tempo-tempo.tempo-operator.svc.cluster.local:4318
+      tls:
+        insecure: true
     debug:
       verbosity: basic
   extensions:
@@ -42,6 +46,7 @@ config:
       traces:
         exporters:
           - debug
+          - otlphttp
         processors:
           - memory_limiter
           - attributes/collector-info
