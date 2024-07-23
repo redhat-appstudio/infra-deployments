@@ -10,6 +10,12 @@ rules:
       - jobs
     verbs:
       - '*'
+  - apiGroups:
+      - appstudio.redhat.com
+    resources:
+      - dependencyupdatechecks
+    verbs:
+      - '*'
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
