@@ -2073,6 +2073,17 @@ spec:
         tekton-pipelines-remote-resolvers:
           spec:
             replicas: 2
+            template:
+              spec:
+                containers:
+                - name: controller
+                  resources:
+                    limits:
+                      cpu: "1"
+                      memory: 8Gi
+                    requests:
+                      cpu: 100m
+                      memory: 100Mi
         tekton-pipelines-webhook:
           spec:
             template:
