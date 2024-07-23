@@ -241,6 +241,35 @@ objects:
     - update
     - patch
     - delete
+  - apiGroups:
+    - rbac.authorization.k8s.io
+    resources:
+    - roles
+    - rolebindings
+    verbs:
+    - get
+    - list
+    - create
+    - update
+    - patch
+    - delete
+  - apiGroups:
+    - ""
+    resources:
+    - serviceaccounts
+    verbs:
+    - get
+    - list
+    - create
+    - update
+    - patch
+    - delete
+  - apiGroups:
+    - ""
+    resources:
+    - serviceaccounts/token
+    verbs:
+    - create
 # RoleBinding that grants limited CRUD permissions to the User
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
