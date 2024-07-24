@@ -2162,7 +2162,11 @@ spec:
             namespace }}/pipelinerun/{{ pr }}/logs/{{ task }}
   profile: all
   pruner:
-    disabled: true
+    keep: 10
+    keep-since: 60
+    resources:
+    - pipelinerun
+    schedule: '*/15 * * * *'
   targetNamespace: openshift-pipelines
   trigger:
     options:
