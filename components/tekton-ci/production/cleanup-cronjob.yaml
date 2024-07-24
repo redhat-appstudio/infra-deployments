@@ -17,7 +17,7 @@ spec:
             - -c
             - |
               date; echo Cleaning up the stale applications
-              oc get application -n build-templates-e2e -o go-template --template '{{range .items}}{{.metadata.name}} {{.metadata.creationTimestamp}}{{"\n"}}{{end}}' | awk '$2 <= "'$(date -d'now-3 days' --iso-8601=seconds --utc | sed 's/+00:00/Z/')'" { print $1 }' | xargs --no-run-if-empty oc delete application -n build-templates-e2e
+              oc get application -n build-templates-e2e -o go-template --template '{{range .items}}{{.metadata.name}} {{.metadata.creationTimestamp}}{{"\n"}}{{end}}' | awk '$2 <= "'$(date -d'now-1 days' --iso-8601=seconds --utc | sed 's/+00:00/Z/')'" { print $1 }' | xargs --no-run-if-empty oc delete application -n build-templates-e2e
             resources:
               limits:
                 cpu: 100m
