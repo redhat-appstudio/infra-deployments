@@ -71,6 +71,27 @@ replacements:
       group: rbac.authorization.k8s.io
       kind: RoleBinding
       name: rest-api-server:usersignup-reader
+- source:
+    fieldPath: metadata.name
+    kind: ServiceAccount
+    name: rest-api-server
+  targets:
+  - fieldPaths:
+    - subjects.0.name
+    options:
+      create: true
+    select:
+      group: rbac.authorization.k8s.io
+      kind: RoleBinding
+      name: rest-api-server:spacebinding-reader
+  - fieldPaths:
+    - subjects.0.name
+    options:
+      create: true
+    select:
+      group: rbac.authorization.k8s.io
+      kind: RoleBinding
+      name: rest-api-server:usersignup-reader
 namespace: workspaces-system
 configMapGenerator:
 - behavior: replace
