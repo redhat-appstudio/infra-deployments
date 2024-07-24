@@ -31,14 +31,6 @@
   path: /spec/pipeline/options/deployments/tekton-operator-proxy-webhook/spec/replicas
   # default pipeline-service setting is 1
   value: 2
-- op: replace
-  path: /spec/pruner
-  value:
-    keep: 10
-    keep-since: 60
-    resources:
-      - pipelinerun
-    schedule: "*/15 * * * *"
 - op: add
   path: /spec/pipeline/options/deployments/tekton-pipelines-remote-resolvers/spec
   # replicas - default pipeline-service setting is 1
