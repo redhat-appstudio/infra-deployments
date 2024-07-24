@@ -3,7 +3,7 @@ kind: CronJob
 metadata:
   name: cleanup-stale-resources
 spec:
-  schedule: "0 1 * * *" #Daily at 01:00
+  schedule: "0 * * * *"  # hourly
   jobTemplate:
     spec:
       template:
