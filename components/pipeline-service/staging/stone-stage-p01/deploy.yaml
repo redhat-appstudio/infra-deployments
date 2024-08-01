@@ -287,9 +287,11 @@ rules:
   - get
 - apiGroups:
   - tekton.dev
+  - resolution.tekton.dev
   resources:
   - pipelineruns
   - taskruns
+  - resolutionrequests
   verbs:
   - get
   - list
@@ -1350,7 +1352,7 @@ spec:
         - -pprof-address
         - "6060"
         - -zap-log-level=6
-        image: quay.io/konflux-ci/pipeline-service-exporter:95fe19bf616c628e6e8f30487113b61861569a6e
+        image: quay.io/konflux-ci/pipeline-service-exporter:9d2439c8a77d2ce0527cc5aea3fc6561b7671b48
         name: pipeline-metrics-exporter
         ports:
         - containerPort: 9117
@@ -2157,7 +2159,11 @@ spec:
             namespace }}/pipelinerun/{{ pr }}/logs/{{ task }}
   profile: all
   pruner:
-    disabled: true
+    disable: false
+    keep-since: 60
+    resources:
+    - pipelinerun
+    schedule: '*/10 * * * *'
   targetNamespace: openshift-pipelines
   trigger:
     options:
