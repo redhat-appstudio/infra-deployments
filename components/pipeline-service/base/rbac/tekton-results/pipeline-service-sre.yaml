@@ -10,6 +10,9 @@ subjects:
   - apiGroup: rbac.authorization.k8s.io
     kind: Group
     name: konflux-pipeline-service
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: konflux-sre
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -41,6 +44,9 @@ subjects:
   - kind: Group
     apiGroup: rbac.authorization.k8s.io
     name: konflux-pipeline-service
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: konflux-sre
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
