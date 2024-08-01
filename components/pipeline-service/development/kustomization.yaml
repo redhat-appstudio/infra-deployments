@@ -8,14 +8,14 @@ commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 
 resources:
-  - https://github.com/openshift-pipelines/pipeline-service.git/developer/openshift/gitops/argocd/pipeline-service?ref=dcd5b72748435ed46b9e1487b8a3011dabe2b9b8
-  - https://github.com/openshift-pipelines/pipeline-service.git/developer/openshift/gitops/argocd/pipeline-service-storage?ref=dcd5b72748435ed46b9e1487b8a3011dabe2b9b8
+  - https://github.com/openshift-pipelines/pipeline-service.git/developer/openshift/gitops/argocd/pipeline-service?ref=86ba989760d3d9eb8452ebac9d27986356c28010
+  - https://github.com/openshift-pipelines/pipeline-service.git/developer/openshift/gitops/argocd/pipeline-service-storage?ref=86ba989760d3d9eb8452ebac9d27986356c28010
   - ../base/rbac
 
 images:
   - name: quay.io/konflux-ci/tekton-results-watcher
     newName: quay.io/redhat-appstudio/tekton-results-watcher
-    newTag: dcd5b72748435ed46b9e1487b8a3011dabe2b9b8
+    newTag: 86ba989760d3d9eb8452ebac9d27986356c28010
   - name: quay.io/redhat-appstudio/tekton-results-watcher
     newTag: bae7851ff584423503af324200f52cd28ca99116
 
