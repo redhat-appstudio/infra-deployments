@@ -32,9 +32,12 @@ configMapGenerator:
     options:
       disableNameSuffixHash: true
   - behavior: merge
-    name: config-observability
+    name: config-defaults
     literals:
-      - profiling.enable="true"
+      - default-container-resource-requirements.default.requests.memory="256Mi"
+      - default-container-resource-requirements.default.requests.cpu="250m"
+      - default-container-resource-requirements.default.limits.memory="512Mi"
+      - default-container-resource-requirements.default.limits.cpu="500m"
 
 patches:
   - path: chains-tekton-config-patches.yaml
