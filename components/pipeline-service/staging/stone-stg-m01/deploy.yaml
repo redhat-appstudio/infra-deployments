@@ -2104,6 +2104,17 @@ spec:
                   "callerEncoder": ""
                 }
               }
+      configmaps:
+        config-defaults:
+          data:
+            default-container-resource-requirements: |
+              default:
+                requests:
+                  memory: "256Mi"
+                  cpu: "250m"
+                limits:
+                  memory: "512Mi"
+                  cpu: "500m""
       deployments:
         tekton-operator-proxy-webhook:
           spec:
