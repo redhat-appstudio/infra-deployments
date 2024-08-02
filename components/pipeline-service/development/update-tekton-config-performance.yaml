@@ -43,3 +43,16 @@
   path: /spec/platforms/openshift/pipelinesAsCode/options/deployments/pipelines-as-code-webhook/spec/replicas
   # default pipeline-service setting is 1
   value: 2
+- op: add
+  path: /spec/pipeline/options/configmaps
+  value:
+    config-defaults:
+      data:
+        default-container-resource-requirements: |
+          default:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m""
