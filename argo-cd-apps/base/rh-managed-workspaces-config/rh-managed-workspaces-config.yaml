@@ -3,6 +3,8 @@ kind: ApplicationSet
 metadata:
   name: rh-managed-workspaces-config
 spec:
+  syncPolicy:
+    preserveResourcesOnDeletion: true
   generators:
     - git:
         repoURL: https://github.com/redhat-appstudio/tenants-config
