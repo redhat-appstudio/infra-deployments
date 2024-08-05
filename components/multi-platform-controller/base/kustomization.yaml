@@ -1,9 +1,10 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
+namespace: multi-platform-controller
+
 resources:
-- monitoring.yaml
-- allow-argocd-to-manage.yaml
+- common
 - https://github.com/konflux-ci/multi-platform-controller/deploy/operator?ref=f54047c5bc77752ce64eb78774535eb35eb406f2
 - https://github.com/konflux-ci/multi-platform-controller/deploy/otp?ref=f54047c5bc77752ce64eb78774535eb35eb406f2
 
@@ -14,7 +15,3 @@ images:
 - name: multi-platform-otp-server
   newName: quay.io/konflux-ci/multi-platform-controller-otp-service
   newTag: f54047c5bc77752ce64eb78774535eb35eb406f2
-
-namespace: multi-platform-controller
-
-
