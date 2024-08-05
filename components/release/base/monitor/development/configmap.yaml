@@ -1,0 +1,28 @@
+apiVersion: v1
+data:
+  server-config.yaml: |
+    ---
+    service:
+      listen_port: 8080
+      pool_interval: 120
+      metrics_prefix: release_service
+    checks:
+      git:
+        - name: github
+          url: https://github.com/konflux-ci/release-service-catalog
+          revision: development
+          path: pipelines/fbc-release/fbc-release.yaml
+      quay:
+        - name: quayio
+          tags:
+            - latest
+          username: test+testbot
+          pullspec: quay.io/konflux-ci/release-service-utils
+      http:
+        - name: pyxis
+          url: https://pyxis.preprod.api.redhat.com/v1/ping
+          insecure: true
+kind: ConfigMap
+metadata:
+  name: release-service-monitor-config
+  namespace: release-service
