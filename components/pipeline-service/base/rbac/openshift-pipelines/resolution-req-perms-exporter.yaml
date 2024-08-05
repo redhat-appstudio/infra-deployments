@@ -1,0 +1,26 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: pipeline-service-exporter-resolution-req-read-until-ocp-at-415
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+rules:
+  - apiGroups: ["resolution.tekton.dev"]
+    resources: ["resolutionrequests"]
+    verbs: ["get", "list", "watch", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: pipeline-service-exporter-resolution-req-read-until-ocp-at-415
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: pipeline-service-exporter-resolution-req-read-until-ocp-at-415
+subjects:
+  - kind: ServiceAccount
+    name: pipeline-service-exporter
+    namespace: openshift-pipelines
