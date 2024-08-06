@@ -25,11 +25,6 @@ spec:
       containers:
       - name: notification-controller
         image: quay.io/konflux-ci/notification-service@sha256:1e50bc62fd1d325736ea189e0ff1b66639f26e1503ab9a67443f8ede20fb3167
-        env:
-        - name: NOTIFICATION_TOPIC_ARN
-          value: "arn:aws:sns:us-east-1:663944276957:scan_topic"
-        - name: NOTIFICATION_REGION
-          value: "us-east-1"
         volumeMounts:
         - name: vol-secret
           mountPath: /.aws
