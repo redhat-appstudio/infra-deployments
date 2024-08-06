@@ -1,0 +1,4613 @@
+apiVersion: v1
+data:
+  pipeline-service-dashboard.json: |-
+    {
+      "__inputs": [
+        {
+          "name": "DS_PROMETHEUS-APPSTUDIO-DS",
+          "label": "prometheus-appstudio-ds",
+          "description": "",
+          "type": "datasource",
+          "pluginId": "prometheus",
+          "pluginName": "Prometheus"
+        }
+      ],
+      "__elements": {},
+      "__requires": [
+        {
+          "type": "panel",
+          "id": "bargauge",
+          "name": "Bar gauge",
+          "version": ""
+        },
+        {
+          "type": "grafana",
+          "id": "grafana",
+          "name": "Grafana",
+          "version": "10.4.3"
+        },
+        {
+          "type": "panel",
+          "id": "graph",
+          "name": "Graph (old)",
+          "version": ""
+        },
+        {
+          "type": "panel",
+          "id": "heatmap",
+          "name": "Heatmap",
+          "version": ""
+        },
+        {
+          "type": "datasource",
+          "id": "prometheus",
+          "name": "Prometheus",
+          "version": "1.0.0"
+        },
+        {
+          "type": "panel",
+          "id": "stat",
+          "name": "Stat",
+          "version": ""
+        },
+        {
+          "type": "panel",
+          "id": "timeseries",
+          "name": "Time series",
+          "version": ""
+        }
+      ],
+      "annotations": {
+        "list": [
+          {
+            "builtIn": 1,
+            "enable": true,
+            "hide": true,
+            "iconColor": "rgba(0, 211, 255, 1)",
+            "name": "Annotations & Alerts",
+            "target": {
+              "limit": 100,
+              "matchAny": false,
+              "tags": [],
+              "type": "dashboard"
+            },
+            "type": "dashboard"
+          }
+        ]
+      },
+      "editable": true,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 0,
+      "id": null,
+      "links": [],
+      "liveNow": false,
+      "panels": [
+        {
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 0
+          },
+          "id": 93,
+          "panels": [],
+          "repeat": "datasource",
+          "title": "Alerts",
+          "type": "row"
+        },
+        {
+          "description": "The ratio of time needed for the Tekton controller to start processing a PipelineRun after its creation vs. the time needed to execute successful PipelineRuns",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "max": 1,
+              "min": 0,
+              "noValue": "No data",
+              "thresholds": {
+                "mode": "percentage",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 5
+                  }
+                ]
+              },
+              "unit": "percentunit"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 9,
+            "w": 4,
+            "x": 0,
+            "y": 1
+          },
+          "id": 95,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "showPercentChange": false,
+            "text": {},
+            "textMode": "auto",
+            "wideLayout": true
+          },
+          "pluginVersion": "10.4.3",
+          "targets": [
+            {
+              "editorMode": "code",
+              "exemplar": true,
+              "expr": "sum(increase(pipeline_service_schedule_overhead_percentage_sum{status='succeded'}[30m])) / sum(increase(pipeline_service_schedule_overhead_percentage_count{status='succeded'}[30m]))",
+              "format": "table",
+              "hide": false,
+              "instant": false,
+              "interval": "",
+              "legendFormat": "",
+              "refId": "pipelinerun-success"
+            }
+          ],
+          "title": "Tekton Scheduling Overhead",
+          "transformations": [],
+          "type": "stat"
+        },
+        {
+          "description": "Time gaps between TaskRuns relative to the overall duration of successful PipelineRuns",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "max": 1,
+              "min": 0,
+              "noValue": "No data",
+              "thresholds": {
+                "mode": "percentage",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 5
+                  }
+                ]
+              },
+              "unit": "percentunit"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 9,
+            "w": 4,
+            "x": 4,
+            "y": 1
+          },
+          "id": 97,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "showPercentChange": false,
+            "textMode": "auto",
+            "wideLayout": true
+          },
+          "pluginVersion": "10.4.3",
+          "targets": [
+            {
+              "editorMode": "code",
+              "expr": "sum(increase(pipeline_service_execution_overhead_percentage_sum{status='succeded'}[30m])) / sum(increase(pipeline_service_execution_overhead_percentage_count{status='succeded'}[30m]))",
+              "legendFormat": "__auto",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Tekton Execution Overhead",
+          "type": "stat"
+        },
+        {
+          "description": "The number of times the pipelines controller has restarted",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "max": 1,
+              "min": 0,
+              "noValue": "No data",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 5
+                  }
+                ]
+              },
+              "unit": "none"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 9,
+            "w": 4,
+            "x": 8,
+            "y": 1
+          },
+          "id": 480,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "showPercentChange": false,
+            "textMode": "auto",
+            "wideLayout": true
+          },
+          "pluginVersion": "10.4.3",
+          "targets": [
+            {
+              "editorMode": "code",
+              "expr": "sum(increase(kube_pod_container_status_restarts_total{namespace=\"openshift-pipelines\", pod=~\"tekton-pipelines-controller-.*\"}[30m]))",
+              "legendFormat": "__auto",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Pipieline Controller Restarts",
+          "type": "stat"
+        },
+        {
+          "description": "Number of PipelineRuns outside of Kubernetes Throttling where the Tekton Controller has yet to attempt to process its correctly defined Task specifications for multiple scan iterations.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "max": 1,
+              "min": 0,
+              "noValue": "No data",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 30
+                  }
+                ]
+              },
+              "unit": "none"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 9,
+            "w": 4,
+            "x": 12,
+            "y": 1
+          },
+          "id": 481,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "showPercentChange": false,
+            "textMode": "auto",
+            "wideLayout": true
+          },
+          "pluginVersion": "10.4.3",
+          "targets": [
+            {
+              "editorMode": "code",
+              "expr": "sum(increase(pipelinerun_kickoff_not_attempted_count[30m]))",
+              "legendFormat": "__auto",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Pipeline Controller Kickoff After Kubernetes scheduling checks pass",
+          "type": "stat"
+        },
+        {
+          "description": "Number of TaskRuns outside of Kubernetes Throttling where the Tekton Controller has yet to attempt to create its underlying Pod, or the TaskRun is still in Pending state for multiple scan iterations",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "max": 1,
+              "min": 0,
+              "noValue": "No data",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 30
+                  }
+                ]
+              },
+              "unit": "none"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 9,
+            "w": 4,
+            "x": 16,
+            "y": 1
+          },
+          "id": 482,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "showPercentChange": false,
+            "textMode": "auto",
+            "wideLayout": true
+          },
+          "pluginVersion": "10.4.3",
+          "targets": [
+            {
+              "editorMode": "code",
+              "expr": "sum(increase(taskrun_pod_create_not_attempted_or_pending_count[30m]))",
+              "legendFormat": "__auto",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "TaskRun Controller kickoff after Kubernetes scheduling checks pass",
+          "type": "stat"
+        },
+        {
+          "collapsed": true,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 10
+          },
+          "id": 4,
+          "panels": [
+            {
+              "aliasColors": {},
+              "bars": false,
+              "dashLength": 10,
+              "dashes": false,
+              "description": "Completed PipelineRuns per hour",
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "short"
+                },
+                "overrides": []
+              },
+              "fill": 1,
+              "fillGradient": 0,
+              "gridPos": {
+                "h": 9,
+                "w": 12,
+                "x": 0,
+                "y": 11
+              },
+              "hiddenSeries": false,
+              "id": 2,
+              "legend": {
+                "alignAsTable": false,
+                "avg": false,
+                "current": false,
+                "max": false,
+                "min": false,
+                "rightSide": true,
+                "show": true,
+                "total": false,
+                "values": false
+              },
+              "lines": true,
+              "linewidth": 1,
+              "nullPointMode": "null as zero",
+              "options": {
+                "alertThreshold": true
+              },
+              "percentage": false,
+              "pluginVersion": "9.1.6",
+              "pointradius": 2,
+              "points": false,
+              "renderer": "flot",
+              "seriesOverrides": [
+                {
+                  "$$hashKey": "object:84",
+                  "alias": "{status=\"failed\"}",
+                  "color": "#F2495C"
+                },
+                {
+                  "$$hashKey": "object:92",
+                  "alias": "{status=\"success\"}",
+                  "color": "#96D98D"
+                }
+              ],
+              "spaceLength": 10,
+              "stack": true,
+              "steppedLine": false,
+              "targets": [
+                {
+                  "exemplar": true,
+                  "expr": "sum by (status) (rate(tekton_pipelines_controller_pipelinerun_count[1h]))* 3600",
+                  "interval": "",
+                  "intervalFactor": 1,
+                  "legendFormat": "",
+                  "refId": "A"
+                }
+              ],
+              "thresholds": [],
+              "timeRegions": [],
+              "title": "PipelineRuns Per Hour",
+              "tooltip": {
+                "shared": true,
+                "sort": 0,
+                "value_type": "individual"
+              },
+              "type": "graph",
+              "xaxis": {
+                "mode": "time",
+                "show": true,
+                "values": []
+              },
+              "yaxes": [
+                {
+                  "format": "short",
+                  "logBase": 1,
+                  "show": true
+                },
+                {
+                  "format": "short",
+                  "logBase": 1,
+                  "show": true
+                }
+              ],
+              "yaxis": {
+                "align": false
+              }
+            },
+            {
+              "description": "PipelineRun success per hour",
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "mappings": [],
+                  "max": 1,
+                  "min": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green"
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "percentunit"
+                },
+                "overrides": []
+              },
+              "gridPos": {
+                "h": 9,
+                "w": 4,
+                "x": 12,
+                "y": 11
+              },
+              "id": 8,
+              "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "text": {},
+                "textMode": "auto"
+              },
+              "pluginVersion": "9.1.6",
+              "targets": [
+                {
+                  "exemplar": true,
+                  "expr": "sum (rate(tekton_pipelines_controller_pipelinerun_count{status=\"success\"}[1h])) / sum (rate(tekton_pipelines_controller_pipelinerun_count[1h]))",
+                  "format": "table",
+                  "hide": false,
+                  "instant": false,
+                  "interval": "",
+                  "legendFormat": "",
+                  "refId": "pipelinerun-success"
+                }
+              ],
+              "title": "PipelineRun Success",
+              "transformations": [],
+              "type": "stat"
+            },
+            {
+              "aliasColors": {},
+              "bars": false,
+              "dashLength": 10,
+              "dashes": false,
+              "description": "Completed TaskRuns Per Hour",
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "short"
+                },
+                "overrides": []
+              },
+              "fill": 1,
+              "fillGradient": 0,
+              "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 20
+              },
+              "hiddenSeries": false,
+              "id": 6,
+              "legend": {
+                "avg": false,
+                "current": false,
+                "max": false,
+                "min": false,
+                "rightSide": true,
+                "show": true,
+                "total": false,
+                "values": false
+              },
+              "lines": true,
+              "linewidth": 1,
+              "nullPointMode": "null as zero",
+              "options": {
+                "alertThreshold": true
+              },
+              "percentage": false,
+              "pluginVersion": "9.1.6",
+              "pointradius": 2,
+              "points": false,
+              "renderer": "flot",
+              "seriesOverrides": [
+                {
+                  "$$hashKey": "object:198",
+                  "alias": "{status=\"failed\"}",
+                  "color": "#E02F44"
+                },
+                {
+                  "$$hashKey": "object:237",
+                  "alias": "{status=\"success\"}",
+                  "color": "#96D98D"
+                }
+              ],
+              "spaceLength": 10,
+              "stack": true,
+              "steppedLine": false,
+              "targets": [
+                {
+                  "exemplar": true,
+                  "expr": "sum by (status) (rate(tekton_pipelines_controller_taskrun_count[1h]))* 3600",
+                  "interval": "",
+                  "legendFormat": "",
+                  "refId": "A"
+                }
+              ],
+              "thresholds": [],
+              "timeRegions": [],
+              "title": "TaskRuns Per Hour",
+              "tooltip": {
+                "shared": true,
+                "sort": 0,
+                "value_type": "individual"
+              },
+              "type": "graph",
+              "xaxis": {
+                "mode": "time",
+                "show": true,
+                "values": []
+              },
+              "yaxes": [
+                {
+                  "format": "short",
+                  "logBase": 1,
+                  "show": true
+                },
+                {
+                  "format": "short",
+                  "logBase": 1,
+                  "show": true
+                }
+              ],
+              "yaxis": {
+                "align": false
+              }
+            },
+            {
+              "description": "TaskRun success per hour",
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "mappings": [],
+                  "max": 1,
+                  "min": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green"
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "percentunit"
+                },
+                "overrides": []
+              },
+              "gridPos": {
+                "h": 8,
+                "w": 4,
+                "x": 12,
+                "y": 20
+              },
+              "id": 9,
+              "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "text": {},
+                "textMode": "auto"
+              },
+              "pluginVersion": "9.1.6",
+              "targets": [
+                {
+                  "exemplar": true,
+                  "expr": "sum (rate(tekton_pipelines_controller_taskrun_count{status=\"success\"}[1h])) / sum (rate(tekton_pipelines_controller_taskrun_count[1h]))",
+                  "format": "table",
+                  "hide": false,
+                  "instant": false,
+                  "interval": "",
+                  "legendFormat": "",
+                  "refId": "pipelinerun-success"
+                }
+              ],
+              "title": "TaskRun Success",
+              "transformations": [],
+              "type": "stat"
+            }
+          ],
+          "title": "PipelineRun and TaskRun Rates",
+          "type": "row"
+        },
+        {
+          "collapsed": true,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 11
+          },
+          "id": 11,
+          "panels": [
+            {
+              "description": "Total average CPU usage of the Pipelines.",
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "cpu",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "drawStyle": "line",
+                    "fillOpacity": 20,
+                    "gradientMode": "opacity",
+                    "hideFrom": {
+                      "graph": false,
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "lineInterpolation": "smooth",
+                    "lineStyle": {
+                      "fill": "solid"
+                    },
+                    "lineWidth": 2,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "mappings": [],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "yellow"
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "short"
+                },
+                "overrides": []
+              },
+              "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 12
+              },
+              "id": 13,
+              "options": {
+                "graph": {},
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "mode": "multi",
+                  "sort": "none"
+                }
+              },
+              "pluginVersion": "7.5.17",
+              "targets": [
+                {
+                  "exemplar": true,
+                  "expr": "sum(rate(container_cpu_usage_seconds_total{pod=~\"tekton-pipelines-controller-.*\", namespace=\"openshift-pipelines\", container=\"\"}[5m]))",
+                  "format": "table",
+                  "interval": "",
+                  "legendFormat": "",
+                  "refId": "Pipelines Controller"
+                }
+              ],
+              "title": "CPU Usage",
+              "type": "timeseries"
+            },
+            {
+              "description": "Working set memory usage of Pipelines Controller Containers ",
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "memory",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "drawStyle": "line",
+                    "fillOpacity": 20,
+                    "gradientMode": "opacity",
+                    "hideFrom": {
+                      "graph": false,
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "lineInterpolation": "smooth",
+                    "lineWidth": 2,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "mappings": [],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "yellow"
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "short"
+                },
+                "overrides": []
+              },
+              "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 12
+              },
+              "id": 15,
+              "options": {
+                "graph": {},
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "mode": "multi",
+                  "sort": "none"
+                }
+              },
+              "pluginVersion": "7.5.17",
+              "targets": [
+                {
+                  "exemplar": true,
+                  "expr": "sum(container_memory_working_set_bytes{pod=~\"tekton-pipelines-controller-.*\", namespace=\"openshift-pipelines\", container=\"\"})",
+                  "interval": "",
+                  "legendFormat": "",
+                  "refId": "A"
+                }
+              ],
+              "title": "Memory Utilization",
+              "type": "timeseries"
+            }
+          ],
+          "repeat": "datasource",
+          "title": "Pipelines-Controller Resource Utlization",
+          "type": "row"
+        },
+        {
+          "collapsed": true,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 12
+          },
+          "id": 29,
+          "panels": [
+            {
+              "description": "Number of Pipelineruns executing currently",
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "mappings": [],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": null
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "gridPos": {
+                "h": 9,
+                "w": 6,
+                "x": 0,
+                "y": 13
+              },
+              "id": 31,
+              "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "text": {},
+                "textMode": "auto"
+              },
+              "pluginVersion": "9.1.6",
+              "targets": [
+                {
+                  "exemplar": true,
+                  "expr": "tekton_pipelines_controller_running_pipelineruns_count",
+                  "interval": "",
+                  "legendFormat": "",
+                  "refId": "A"
+                }
+              ],
+              "title": "Pipelineruns Running",
+              "type": "stat"
+            },
+            {
+              "description": "Number of Taskruns executing currently",
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "mappings": [],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green"
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "gridPos": {
+                "h": 9,
+                "w": 6,
+                "x": 6,
+                "y": 13
+              },
+              "id": 33,
+              "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "text": {},
+                "textMode": "auto"
+              },
+              "pluginVersion": "9.1.6",
+              "targets": [
+                {
+                  "exemplar": true,
+                  "expr": "tekton_pipelines_controller_running_taskruns_count",
+                  "interval": "",
+                  "legendFormat": "",
+                  "refId": "A"
+                }
+              ],
+              "title": "Taskruns Running",
+              "type": "stat"
+            },
+            {
+              "aliasColors": {},
+              "bars": false,
+              "dashLength": 10,
+              "dashes": false,
+              "description": "Frequency of Pipelines Controller restarts (This is experimental and may be removed in future)",
+              "fill": 1,
+              "fillGradient": 0,
+              "gridPos": {
+                "h": 9,
+                "w": 12,
+                "x": 12,
+                "y": 13
+              },
+              "hiddenSeries": false,
+              "id": 35,
+              "legend": {
+                "alignAsTable": false,
+                "avg": false,
+                "current": false,
+                "max": false,
+                "min": false,
+                "rightSide": false,
+                "show": true,
+                "total": false,
+                "values": false
+              },
+              "lines": true,
+              "linewidth": 1,
+              "nullPointMode": "null",
+              "options": {
+                "alertThreshold": true
+              },
+              "percentage": false,
+              "pluginVersion": "9.1.6",
+              "pointradius": 2,
+              "points": false,
+              "renderer": "flot",
+              "seriesOverrides": [],
+              "spaceLength": 10,
+              "stack": false,
+              "steppedLine": false,
+              "targets": [
+                {
+                  "exemplar": true,
+                  "expr": "rate(kube_pod_container_status_restarts_total{namespace=\"openshift-pipelines\", pod=~\"tekton-pipelines-controller-.*\"}[7d])",
+                  "interval": "",
+                  "legendFormat": "",
+                  "refId": "A"
+                }
+              ],
+              "thresholds": [],
+              "timeRegions": [],
+              "title": "Pipelines Controller Container Restarts",
+              "tooltip": {
+                "shared": true,
+                "sort": 0,
+                "value_type": "individual"
+              },
+              "type": "graph",
+              "xaxis": {
+                "mode": "time",
+                "show": true,
+                "values": []
+              },
+              "yaxes": [
+                {
+                  "format": "short",
+                  "logBase": 1,
+                  "show": true
+                },
+                {
+                  "format": "short",
+                  "logBase": 1,
+                  "show": true
+                }
+              ],
+              "yaxis": {
+                "align": false
+              }
+            },
+            {
+              "description": "The workqueue for the Tekton Pipelines Reconcilers",
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "drawStyle": "line",
+                    "fillOpacity": 10,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "graph": false,
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "mappings": [],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green"
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "short"
+                },
+                "overrides": []
+              },
+              "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 22
+              },
+              "id": 37,
+              "options": {
+                "graph": {},
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "mode": "single",
+                  "sort": "none"
+                }
+              },
+              "pluginVersion": "7.5.17",
+              "targets": [
+                {
+                  "exemplar": true,
+                  "expr": "avg(tekton_pipelines_controller_workqueue_depth)",
+                  "interval": "",
+                  "legendFormat": "",
+                  "refId": "A"
+                }
+              ],
+              "title": "Workqueue Depth",
+              "type": "timeseries"
+            },
+            {
+              "aliasColors": {},
+              "bars": false,
+              "dashLength": 10,
+              "dashes": false,
+              "description": "Number of taskruns executing currently whose underlying Pods or Containers are suspended by k8s because of Node level constraints",
+              "fill": 1,
+              "fillGradient": 0,
+              "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 22
+              },
+              "hiddenSeries": false,
+              "id": 77,
+              "legend": {
+                "avg": false,
+                "current": false,
+                "max": false,
+                "min": false,
+                "show": true,
+                "total": false,
+                "values": false
+              },
+              "lines": true,
+              "linewidth": 1,
+              "nullPointMode": "null",
+              "options": {
+                "alertThreshold": true
+              },
+              "percentage": false,
+              "pluginVersion": "9.1.6",
+              "pointradius": 2,
+              "points": false,
+              "renderer": "flot",
+              "seriesOverrides": [],
+              "spaceLength": 10,
+              "stack": false,
+              "steppedLine": false,
+              "targets": [
+                {
+                  "exemplar": true,
+                  "expr": "tekton_pipelines_controller_running_taskruns_throttled_by_node_count",
+                  "interval": "",
+                  "legendFormat": "",
+                  "refId": "A"
+                }
+              ],
+              "thresholds": [],
+              "timeRegions": [],
+              "title": "Taskruns Throttled by Node",
+              "tooltip": {
+                "shared": true,
+                "sort": 0,
+                "value_type": "individual"
+              },
+              "type": "graph",
+              "xaxis": {
+                "mode": "time",
+                "show": true,
+                "values": []
+              },
+              "yaxes": [
+                {
+                  "format": "short",
+                  "logBase": 1,
+                  "show": true
+                },
+                {
+                  "format": "short",
+                  "logBase": 1,
+                  "show": true
+                }
+              ],
+              "yaxis": {
+                "align": false
+              }
+            },
+            {
+              "description": "Total number of Kubernetes API requests by Tekton Controller",
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "drawStyle": "line",
+                    "fillOpacity": 10,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "graph": false,
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "mappings": [],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green"
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "short"
+                },
+                "overrides": []
+              },
+              "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 30
+              },
+              "id": 39,
+              "options": {
+                "graph": {},
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "mode": "single",
+                  "sort": "none"
+                }
+              },
+              "pluginVersion": "7.5.17",
+              "targets": [
+                {
+                  "exemplar": true,
+                  "expr": "rate(tekton_pipelines_controller_client_results[1h])*3600",
+                  "interval": "",
+                  "legendFormat": "",
+                  "refId": "A"
+                }
+              ],
+              "title": "Pipelines Client Results",
+              "type": "timeseries"
+            }
+          ],
+          "repeat": "datasource",
+          "title": "Pipelines Controller Monitoring",
+          "type": "row"
+        },
+        {
+          "collapsed": true,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 13
+          },
+          "id": 43,
+          "panels": [
+            {
+              "description": "Average duration of successful Pipelineruns in seconds over one hour time window grouped by namespace.",
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "mappings": [],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green"
+                      },
+                      {
+                        "color": "red",
+                        "value": 600
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 14
+              },
+              "id": 45,
+              "options": {
+                "displayMode": "gradient",
+                "minVizHeight": 10,
+                "minVizWidth": 0,
+                "orientation": "horizontal",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showUnfilled": true,
+                "text": {}
+              },
+              "pluginVersion": "9.1.6",
+              "targets": [
+                {
+                  "exemplar": true,
+                  "expr": "sum by (namespace) ((avg_over_time(tekton_pipelines_controller_pipelinerun_duration_seconds_sum{status=\"success\"}[1h]) / avg_over_time(tekton_pipelines_controller_pipelinerun_duration_seconds_count{status=\"success\"}[1h])))",
+                  "interval": "",
+                  "legendFormat": "",
+                  "refId": "A"
+                }
+              ],
+              "title": "Average duration of successful pipelineruns",
+              "type": "bargauge"
+            },
+            {
+              "description": "Average time for learning of pipelinerun creation in seconds for each namespace over the last 1 hour",
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "mappings": [],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green"
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 14
+              },
+              "id": 47,
+              "options": {
+                "displayMode": "gradient",
+                "minVizHeight": 10,
+                "minVizWidth": 0,
+                "orientation": "horizontal",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showUnfilled": true,
+                "text": {}
+              },
+              "pluginVersion": "9.1.6",
+              "targets": [
+                {
+                  "exemplar": true,
+                  "expr": "sum by (namespace) ((avg_over_time(pipelinerun_duration_scheduled_seconds_sum[1h]) / avg_over_time(pipelinerun_duration_scheduled_seconds_count[1h])))",
+                  "interval": "",
+                  "legendFormat": "",
+                  "refId": "A"
+                }
+              ],
+              "title": "Average time for learning of pipelinerun creation",
+              "type": "bargauge"
+            },
+            {
+              "description": "Average duration of the pods ultimately launched from PipelineRuns, using a descending sort and grouped by namespace.",
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "mappings": [],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green"
+                      },
+                      {
+                        "color": "red",
+                        "value": 600
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 14
+              },
+              "id": 451,
+              "options": {
+                "displayMode": "gradient",
+                "minVizHeight": 10,
+                "minVizWidth": 0,
+                "orientation": "horizontal",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showUnfilled": true,
+                "text": {}
+              },
+              "pluginVersion": "9.1.6",
+              "targets": [
+                {
+                  "exemplar": true,
+                  "expr": "sort_desc((sum by (namespace) (tekton_pods_create_to_complete_seconds_sum / tekton_pods_create_to_complete_seconds_count)) / (sum by (namespace) (tekton_pipelines_controller_pipelinerun_duration_seconds_count)))",
+                  "interval": "",
+                  "legendFormat": "",
+                  "refId": "A"
+                }
+              ],
+              "title": "Average duration of pipelinerunpods",
+              "type": "bargauge"
+            },
+            {
+              "description": "Average time for the kubelet to mark pipelinerun pods schedulable, using a descending sort and grouped by namespace.",
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "mappings": [],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green"
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 14
+              },
+              "id": 471,
+              "options": {
+                "displayMode": "gradient",
+                "minVizHeight": 10,
+                "minVizWidth": 0,
+                "orientation": "horizontal",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showUnfilled": true,
+                "text": {}
+              },
+              "pluginVersion": "9.1.6",
+              "targets": [
+                {
+                  "exemplar": true,
+                  "expr": "sort_desc((sum by (namespace) (taskrun_pod_duration_kubelet_acknowledged_milliseconds_sum / taskrun_pod_duration_kubelet_acknowledged_milliseconds_count / 1000)) / (sum by (namespace) (tekton_pipelines_controller_pipelinerun_duration_seconds_count)))",
+                  "interval": "",
+                  "legendFormat": "",
+                  "refId": "A"
+                }
+              ],
+              "title": "Average time for the kubelet to mark pipelinerun pods schedulable",
+              "type": "bargauge"
+            },
+            {
+              "description": "Average time for the kubelet's pulling of images and starting pipelinerun containers, using a descending sort and grouped by namespace.",
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "mappings": [],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green"
+                      },
+                      {
+                        "color": "red",
+                        "value": 600
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 14
+              },
+              "id": 452,
+              "options": {
+                "displayMode": "gradient",
+                "minVizHeight": 10,
+                "minVizWidth": 0,
+                "orientation": "horizontal",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showUnfilled": true,
+                "text": {}
+              },
+              "pluginVersion": "9.1.6",
+              "targets": [
+                {
+                  "exemplar": true,
+                  "expr": "sort_desc((sum by (namespace) (taskrun_pod_duration_kubelet_to_container_start_milliseconds_sum / taskrun_pod_duration_kubelet_to_container_start_milliseconds_count / 1000)) / (sum by (namespace) (tekton_pipelines_controller_pipelinerun_duration_seconds_count)))",
+                  "interval": "",
+                  "legendFormat": "",
+                  "refId": "A"
+                }
+              ],
+              "title": "Average time for the kubelet's pulling of images and starting pipelinerun containers",
+              "type": "bargauge"
+            },
+            {
+              "description": "Average pipelinerun pod durations by task, namespace, using a descending sort and grouped by task and namespace.",
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "mappings": [],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green"
+                      },
+                      {
+                        "color": "red",
+                        "value": 600
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 14
+              },
+              "id": 473,
+              "options": {
+                "displayMode": "gradient",
+                "minVizHeight": 10,
+                "minVizWidth": 0,
+                "orientation": "horizontal",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showUnfilled": true,
+                "text": {}
+              },
+              "pluginVersion": "9.1.6",
+              "targets": [
+                {
+                  "exemplar": true,
+                  "expr": "sort_desc((avg by (taskname,namespace) (tekton_pods_create_to_complete_seconds_sum / tekton_pods_create_to_complete_seconds_count)))",
+                  "interval": "",
+                  "legendFormat": "",
+                  "refId": "A"
+                }
+              ],
+              "title": "Average pipelinerun pod durations by task, namespace",
+              "type": "bargauge"
+            },
+            {
+              "aliasColors": {},
+              "bars": false,
+              "dashLength": 10,
+              "dashes": false,
+              "description": "Number of taskruns executing currently whose underlying Pods or Containers are suspended by k8s because of defined ResourceQuotas",
+              "fill": 1,
+              "fillGradient": 0,
+              "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 14
+              },
+              "hiddenSeries": false,
+              "id": 76,
+              "legend": {
+                "avg": false,
+                "current": false,
+                "max": false,
+                "min": false,
+                "show": true,
+                "total": false,
+                "values": false
+              },
+              "lines": true,
+              "linewidth": 1,
+              "nullPointMode": "null",
+              "options": {
+                "alertThreshold": true
+              },
+              "percentage": false,
+              "pluginVersion": "9.1.6",
+              "pointradius": 2,
+              "points": false,
+              "renderer": "flot",
+              "seriesOverrides": [],
+              "spaceLength": 10,
+              "stack": false,
+              "steppedLine": false,
+              "targets": [
+                {
+                  "exemplar": true,
+                  "expr": "tekton_pipelines_controller_running_taskruns_throttled_by_quota_count",
+                  "interval": "",
+                  "legendFormat": "",
+                  "refId": "A"
+                }
+              ],
+              "thresholds": [],
+              "timeRegions": [],
+              "title": "Taskruns Throttled by Quota",
+              "tooltip": {
+                "shared": true,
+                "sort": 0,
+                "value_type": "individual"
+              },
+              "type": "graph",
+              "xaxis": {
+                "mode": "time",
+                "show": true,
+                "values": []
+              },
+              "yaxes": [
+                {
+                  "format": "short",
+                  "logBase": 1,
+                  "show": true
+                },
+                {
+                  "format": "short",
+                  "logBase": 1,
+                  "show": true
+                }
+              ],
+              "yaxis": {
+                "align": false
+              }
+            },
+            {
+              "aliasColors": {},
+              "bars": false,
+              "dashLength": 10,
+              "dashes": false,
+              "description": "Number of taskruns executing currently whose underlying Pods or Containers are suspended by k8s because of Node level constraints",
+              "fill": 1,
+              "fillGradient": 0,
+              "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 30
+              },
+              "hiddenSeries": false,
+              "id": 478,
+              "legend": {
+                "avg": false,
+                "current": false,
+                "max": false,
+                "min": false,
+                "show": true,
+                "total": false,
+                "values": false
+              },
+              "lines": true,
+              "linewidth": 1,
+              "nullPointMode": "null",
+              "options": {
+                "alertThreshold": true
+              },
+              "percentage": false,
+              "pluginVersion": "9.1.6",
+              "pointradius": 2,
+              "points": false,
+              "renderer": "flot",
+              "seriesOverrides": [],
+              "spaceLength": 10,
+              "stack": false,
+              "steppedLine": false,
+              "targets": [
+                {
+                  "exemplar": true,
+                  "expr": "tekton_pipelines_controller_running_taskruns_throttled_by_node_count",
+                  "interval": "",
+                  "legendFormat": "",
+                  "refId": "A"
+                }
+              ],
+              "thresholds": [],
+              "timeRegions": [],
+              "title": "Taskruns Throttled by Node",
+              "tooltip": {
+                "shared": true,
+                "sort": 0,
+                "value_type": "individual"
+              },
+              "type": "graph",
+              "xaxis": {
+                "mode": "time",
+                "show": true,
+                "values": []
+              },
+              "yaxes": [
+                {
+                  "format": "short",
+                  "logBase": 1,
+                  "show": true
+                },
+                {
+                  "format": "short",
+                  "logBase": 1,
+                  "show": true
+                }
+              ],
+              "yaxis": {
+                "align": false
+              }
+            },
+            {
+              "aliasColors": {},
+              "bars": false,
+              "dashLength": 10,
+              "dashes": false,
+              "description": "Number of pipelineruns whose pods could not be started because of PVC quotas.",
+              "fill": 1,
+              "fillGradient": 0,
+              "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 14
+              },
+              "hiddenSeries": false,
+              "id": 479,
+              "legend": {
+                "avg": false,
+                "current": false,
+                "max": false,
+                "min": false,
+                "show": true,
+                "total": false,
+                "values": false
+              },
+              "lines": true,
+              "linewidth": 1,
+              "nullPointMode": "null",
+              "options": {
+                "alertThreshold": true
+              },
+              "percentage": false,
+              "pluginVersion": "9.1.6",
+              "pointradius": 2,
+              "points": false,
+              "renderer": "flot",
+              "seriesOverrides": [],
+              "spaceLength": 10,
+              "stack": false,
+              "steppedLine": false,
+              "targets": [
+                {
+                  "exemplar": true,
+                  "expr": "pipelinerun_failed_by_pvc_quota_count",
+                  "interval": "",
+                  "legendFormat": "",
+                  "refId": "A"
+                }
+              ],
+              "thresholds": [],
+              "timeRegions": [],
+              "title": "PIpelineruns failed by PVC Quota",
+              "tooltip": {
+                "shared": true,
+                "sort": 0,
+                "value_type": "individual"
+              },
+              "type": "graph",
+              "xaxis": {
+                "mode": "time",
+                "show": true,
+                "values": []
+              },
+              "yaxes": [
+                {
+                  "format": "short",
+                  "logBase": 1,
+                  "show": true
+                },
+                {
+                  "format": "short",
+                  "logBase": 1,
+                  "show": true
+                }
+              ],
+              "yaxis": {
+                "align": false
+              }
+            }
+          ],
+          "repeat": "datasource",
+          "title": "Pipelines Performance Analysis",
+          "type": "row"
+        },
+        {
+          "collapsed": true,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 14
+          },
+          "id": 17,
+          "panels": [
+            {
+              "aliasColors": {},
+              "bars": false,
+              "dashLength": 10,
+              "dashes": false,
+              "description": "Total average CPU usage of the Pipelines-as-code watcher and controller pods over the past hour.",
+              "fill": 1,
+              "fillGradient": 0,
+              "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 15
+              },
+              "hiddenSeries": false,
+              "id": 21,
+              "legend": {
+                "avg": false,
+                "current": false,
+                "max": false,
+                "min": false,
+                "rightSide": true,
+                "show": true,
+                "total": false,
+                "values": false
+              },
+              "lines": true,
+              "linewidth": 1,
+              "nullPointMode": "null",
+              "options": {
+                "alertThreshold": true
+              },
+              "percentage": false,
+              "pluginVersion": "9.1.6",
+              "pointradius": 2,
+              "points": false,
+              "renderer": "flot",
+              "seriesOverrides": [],
+              "spaceLength": 10,
+              "stack": false,
+              "steppedLine": false,
+              "targets": [
+                {
+                  "exemplar": true,
+                  "expr": "sum by (pod) (rate(container_cpu_usage_seconds_total{pod=~\"pipelines-as-code-(watcher|controller)-.*\", namespace=\"openshift-pipelines\", container=\"\"}[5m]))*100",
+                  "interval": "",
+                  "legendFormat": "",
+                  "refId": "A"
+                }
+              ],
+              "thresholds": [],
+              "timeRegions": [],
+              "title": "CPU Usage",
+              "tooltip": {
+                "shared": true,
+                "sort": 0,
+                "value_type": "individual"
+              },
+              "type": "graph",
+              "xaxis": {
+                "mode": "time",
+                "show": true,
+                "values": []
+              },
+              "yaxes": [
+                {
+                  "$$hashKey": "object:171",
+                  "format": "short",
+                  "logBase": 1,
+                  "show": true
+                },
+                {
+                  "$$hashKey": "object:172",
+                  "format": "short",
+                  "logBase": 1,
+                  "show": true
+                }
+              ],
+              "yaxis": {
+                "align": false
+              }
+            },
+            {
+              "aliasColors": {},
+              "bars": false,
+              "dashLength": 10,
+              "dashes": false,
+              "description": "Working set memory usage of Pipelines-as-code watcher and controller pods over the past hour.",
+              "fill": 1,
+              "fillGradient": 0,
+              "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 15
+              },
+              "hiddenSeries": false,
+              "id": 19,
+              "legend": {
+                "avg": false,
+                "current": false,
+                "max": false,
+                "min": false,
+                "rightSide": true,
+                "show": true,
+                "total": false,
+                "values": false
+              },
+              "lines": true,
+              "linewidth": 1,
+              "nullPointMode": "null",
+              "options": {
+                "alertThreshold": true
+              },
+              "percentage": false,
+              "pluginVersion": "9.1.6",
+              "pointradius": 2,
+              "points": false,
+              "renderer": "flot",
+              "seriesOverrides": [],
+              "spaceLength": 10,
+              "stack": false,
+              "steppedLine": false,
+              "targets": [
+                {
+                  "exemplar": true,
+                  "expr": "sum by (pod) (container_memory_working_set_bytes{pod=~\"pipelines-as-code-(watcher|controller)-.*\", namespace=\"openshift-pipelines\", container=\"\"})",
+                  "interval": "",
+                  "legendFormat": "",
+                  "refId": "A"
+                }
+              ],
+              "thresholds": [],
+              "timeRegions": [],
+              "title": "Memory Utilization",
+              "tooltip": {
+                "shared": true,
+                "sort": 0,
+                "value_type": "individual"
+              },
+              "type": "graph",
+              "xaxis": {
+                "mode": "time",
+                "show": true,
+                "values": []
+              },
+              "yaxes": [
+                {
+                  "$$hashKey": "object:80",
+                  "format": "short",
+                  "logBase": 1,
+                  "show": true
+                },
+                {
+                  "$$hashKey": "object:81",
+                  "format": "short",
+                  "logBase": 1,
+                  "show": true
+                }
+              ],
+              "yaxis": {
+                "align": false
+              }
+            },
+            {
+              "aliasColors": {},
+              "bars": false,
+              "dashLength": 10,
+              "dashes": false,
+              "description": "Number of Pipelineruns watched on pull_request and push events",
+              "fill": 1,
+              "fillGradient": 0,
+              "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 23
+              },
+              "hiddenSeries": false,
+              "id": 27,
+              "legend": {
+                "avg": false,
+                "current": false,
+                "max": false,
+                "min": false,
+                "rightSide": true,
+                "show": true,
+                "total": false,
+                "values": false
+              },
+              "lines": true,
+              "linewidth": 1,
+              "nullPointMode": "null",
+              "options": {
+                "alertThreshold": true
+              },
+              "percentage": false,
+              "pluginVersion": "9.1.6",
+              "pointradius": 2,
+              "points": false,
+              "renderer": "flot",
+              "seriesOverrides": [],
+              "spaceLength": 10,
+              "stack": false,
+              "steppedLine": false,
+              "targets": [
+                {
+                  "exemplar": true,
+                  "expr": "sum by (event_type) (rate(pac_watcher_pipelines_as_code_pipelinerun_count[1h]))*3600",
+                  "interval": "",
+                  "legendFormat": "",
+                  "refId": "A"
+                }
+              ],
+              "thresholds": [],
+              "timeRegions": [],
+              "title": "PipelineRuns Watched Per Hour",
+              "tooltip": {
+                "shared": true,
+                "sort": 0,
+                "value_type": "individual"
+              },
+              "type": "graph",
+              "xaxis": {
+                "mode": "time",
+                "show": true,
+                "values": []
+              },
+              "yaxes": [
+                {
+                  "$$hashKey": "object:440",
+                  "format": "short",
+                  "logBase": 1,
+                  "show": true
+                },
+                {
+                  "$$hashKey": "object:441",
+                  "format": "short",
+                  "logBase": 1,
+                  "show": true
+                }
+              ],
+              "yaxis": {
+                "align": false
+              }
+            },
+            {
+              "aliasColors": {},
+              "bars": false,
+              "dashLength": 10,
+              "dashes": false,
+              "description": "The workqueue depth for the Pipelines-as-code Reconcilers",
+              "fill": 1,
+              "fillGradient": 0,
+              "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 23
+              },
+              "hiddenSeries": false,
+              "id": 25,
+              "legend": {
+                "avg": false,
+                "current": false,
+                "max": false,
+                "min": false,
+                "show": true,
+                "total": false,
+                "values": false
+              },
+              "lines": true,
+              "linewidth": 1,
+              "nullPointMode": "null",
+              "options": {
+                "alertThreshold": true
+              },
+              "percentage": false,
+              "pluginVersion": "9.1.6",
+              "pointradius": 2,
+              "points": false,
+              "renderer": "flot",
+              "seriesOverrides": [],
+              "spaceLength": 10,
+              "stack": false,
+              "steppedLine": false,
+              "targets": [
+                {
+                  "exemplar": true,
+                  "expr": "avg(pac_watcher_workqueue_unfinished_work_seconds_count)",
+                  "interval": "",
+                  "legendFormat": "",
+                  "refId": "A"
+                }
+              ],
+              "thresholds": [],
+              "timeRegions": [],
+              "title": "Watcher Workqueue Depth",
+              "tooltip": {
+                "shared": true,
+                "sort": 0,
+                "value_type": "individual"
+              },
+              "type": "graph",
+              "xaxis": {
+                "mode": "time",
+                "show": true,
+                "values": []
+              },
+              "yaxes": [
+                {
+                  "$$hashKey": "object:351",
+                  "format": "short",
+                  "logBase": 1,
+                  "show": true
+                },
+                {
+                  "$$hashKey": "object:352",
+                  "format": "short",
+                  "logBase": 1,
+                  "show": true
+                }
+              ],
+              "yaxis": {
+                "align": false
+              }
+            },
+            {
+              "aliasColors": {},
+              "bars": false,
+              "dashLength": 10,
+              "dashes": false,
+              "description": "Total number of kubernetes api request for pipelines-as-code watcher",
+              "fill": 1,
+              "fillGradient": 0,
+              "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 31
+              },
+              "hiddenSeries": false,
+              "id": 23,
+              "legend": {
+                "avg": false,
+                "current": false,
+                "max": false,
+                "min": false,
+                "show": true,
+                "total": false,
+                "values": false
+              },
+              "lines": true,
+              "linewidth": 1,
+              "nullPointMode": "null",
+              "options": {
+                "alertThreshold": true
+              },
+              "percentage": false,
+              "pluginVersion": "9.1.6",
+              "pointradius": 2,
+              "points": false,
+              "renderer": "flot",
+              "seriesOverrides": [],
+              "spaceLength": 10,
+              "stack": false,
+              "steppedLine": false,
+              "targets": [
+                {
+                  "exemplar": true,
+                  "expr": "rate(pac_watcher_client_results[1h])*3600",
+                  "interval": "",
+                  "legendFormat": "",
+                  "refId": "A"
+                }
+              ],
+              "thresholds": [],
+              "timeRegions": [],
+              "title": "Watcher Client Results",
+              "tooltip": {
+                "shared": true,
+                "sort": 0,
+                "value_type": "individual"
+              },
+              "type": "graph",
+              "xaxis": {
+                "mode": "time",
+                "show": true,
+                "values": []
+              },
+              "yaxes": [
+                {
+                  "$$hashKey": "object:262",
+                  "format": "short",
+                  "logBase": 1,
+                  "show": true
+                },
+                {
+                  "$$hashKey": "object:263",
+                  "format": "short",
+                  "logBase": 1,
+                  "show": true
+                }
+              ],
+              "yaxis": {
+                "align": false
+              }
+            }
+          ],
+          "repeat": "datasource",
+          "title": "Pipelines-as-code Monitoring",
+          "type": "row"
+        },
+        {
+          "collapsed": true,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 15
+          },
+          "id": 49,
+          "panels": [
+            {
+              "aliasColors": {},
+              "bars": false,
+              "dashLength": 10,
+              "dashes": false,
+              "fill": 1,
+              "fillGradient": 0,
+              "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 16
+              },
+              "hiddenSeries": false,
+              "id": 51,
+              "legend": {
+                "avg": false,
+                "current": false,
+                "max": false,
+                "min": false,
+                "show": true,
+                "total": false,
+                "values": false
+              },
+              "lines": true,
+              "linewidth": 1,
+              "nullPointMode": "null",
+              "options": {
+                "alertThreshold": true
+              },
+              "percentage": false,
+              "pluginVersion": "9.1.6",
+              "pointradius": 2,
+              "points": false,
+              "renderer": "flot",
+              "seriesOverrides": [],
+              "spaceLength": 10,
+              "stack": false,
+              "steppedLine": false,
+              "targets": [
+                {
+                  "exemplar": true,
+                  "expr": "workqueue_depth{namespace='openshift-pipelines',pod=~'pipeline-metrics-exporter.+'}",
+                  "interval": "",
+                  "legendFormat": "",
+                  "refId": "A"
+                }
+              ],
+              "thresholds": [],
+              "timeRegions": [],
+              "title": "Workqueue Depth",
+              "tooltip": {
+                "shared": true,
+                "sort": 0,
+                "value_type": "individual"
+              },
+              "type": "graph",
+              "xaxis": {
+                "mode": "time",
+                "show": true,
+                "values": []
+              },
+              "yaxes": [
+                {
+                  "format": "short",
+                  "logBase": 1,
+                  "show": true
+                },
+                {
+                  "format": "short",
+                  "logBase": 1,
+                  "show": true
+                }
+              ],
+              "yaxis": {
+                "align": false
+              }
+            },
+            {
+              "aliasColors": {},
+              "bars": false,
+              "dashLength": 10,
+              "dashes": false,
+              "fill": 1,
+              "fillGradient": 0,
+              "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 24
+              },
+              "hiddenSeries": false,
+              "id": 53,
+              "legend": {
+                "avg": false,
+                "current": false,
+                "max": false,
+                "min": false,
+                "show": true,
+                "total": false,
+                "values": false
+              },
+              "lines": true,
+              "linewidth": 1,
+              "nullPointMode": "null",
+              "options": {
+                "alertThreshold": true
+              },
+              "percentage": false,
+              "pluginVersion": "9.1.6",
+              "pointradius": 2,
+              "points": false,
+              "renderer": "flot",
+              "seriesOverrides": [],
+              "spaceLength": 10,
+              "stack": false,
+              "steppedLine": false,
+              "targets": [
+                {
+                  "exemplar": true,
+                  "expr": "sum(rate(container_cpu_usage_seconds_total{namespace='openshift-pipelines',pod=~'pipeline-metrics-exporter-.*', container=\"\"}[5m]))",
+                  "interval": "",
+                  "legendFormat": "",
+                  "refId": "A"
+                }
+              ],
+              "thresholds": [],
+              "timeRegions": [],
+              "title": "CPU Utilization",
+              "tooltip": {
+                "shared": true,
+                "sort": 0,
+                "value_type": "individual"
+              },
+              "type": "graph",
+              "xaxis": {
+                "mode": "time",
+                "show": true,
+                "values": []
+              },
+              "yaxes": [
+                {
+                  "format": "short",
+                  "logBase": 1,
+                  "show": true
+                },
+                {
+                  "format": "short",
+                  "logBase": 1,
+                  "show": true
+                }
+              ],
+              "yaxis": {
+                "align": false
+              }
+            },
+            {
+              "aliasColors": {},
+              "bars": false,
+              "dashLength": 10,
+              "dashes": false,
+              "fill": 1,
+              "fillGradient": 0,
+              "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 32
+              },
+              "hiddenSeries": false,
+              "id": 55,
+              "legend": {
+                "avg": false,
+                "current": false,
+                "max": false,
+                "min": false,
+                "show": true,
+                "total": false,
+                "values": false
+              },
+              "lines": true,
+              "linewidth": 1,
+              "nullPointMode": "null",
+              "options": {
+                "alertThreshold": true
+              },
+              "percentage": false,
+              "pluginVersion": "9.1.6",
+              "pointradius": 2,
+              "points": false,
+              "renderer": "flot",
+              "seriesOverrides": [],
+              "spaceLength": 10,
+              "stack": false,
+              "steppedLine": false,
+              "targets": [
+                {
+                  "exemplar": true,
+                  "expr": "sum(container_memory_working_set_bytes{namespace='openshift-pipelines',pod=~'pipeline-metrics-exporter-.*', container=\"\"})",
+                  "interval": "",
+                  "legendFormat": "",
+                  "refId": "A"
+                }
+              ],
+              "thresholds": [],
+              "timeRegions": [],
+              "title": "Memory Utilization",
+              "tooltip": {
+                "shared": true,
+                "sort": 0,
+                "value_type": "individual"
+              },
+              "type": "graph",
+              "xaxis": {
+                "mode": "time",
+                "show": true,
+                "values": []
+              },
+              "yaxes": [
+                {
+                  "format": "short",
+                  "logBase": 1,
+                  "show": true
+                },
+                {
+                  "format": "short",
+                  "logBase": 1,
+                  "show": true
+                }
+              ],
+              "yaxis": {
+                "align": false
+              }
+            }
+          ],
+          "title": "Metrics Exporter Monitoring",
+          "type": "row"
+        },
+        {
+          "collapsed": true,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 16
+          },
+          "id": 60,
+          "panels": [
+            {
+              "description": "Status of API and Watcher",
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "continuous-RdYlGr"
+                  },
+                  "mappings": [
+                    {
+                      "options": {
+                        "0": {
+                          "text": "Down"
+                        },
+                        "1": {
+                          "text": "OK"
+                        }
+                      },
+                      "type": "value"
+                    }
+                  ],
+                  "max": 1,
+                  "min": 0,
+                  "noValue": "No Data",
+                  "thresholds": {
+                    "mode": "percentage",
+                    "steps": [
+                      {
+                        "color": "green"
+                      },
+                      {
+                        "color": "red",
+                        "value": 50
+                      }
+                    ]
+                  },
+                  "unit": "percentunit"
+                },
+                "overrides": []
+              },
+              "gridPos": {
+                "h": 6,
+                "w": 6,
+                "x": 0,
+                "y": 17
+              },
+              "id": 61,
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "text": {},
+                "textMode": "value_and_name"
+              },
+              "pluginVersion": "9.1.6",
+              "targets": [
+                {
+                  "exemplar": true,
+                  "expr": "sum(up{job=\"tekton-results-api\"})",
+                  "format": "time_series",
+                  "hide": false,
+                  "interval": "",
+                  "intervalFactor": 1,
+                  "legendFormat": "API",
+                  "refId": "api up"
+                },
+                {
+                  "exemplar": true,
+                  "expr": "sum(up{job=\"tekton-results-watcher\"})",
+                  "format": "time_series",
+                  "hide": false,
+                  "interval": "",
+                  "legendFormat": "Watcher",
+                  "refId": "watcher up"
+                }
+              ],
+              "title": "Deployment Status",
+              "transformations": [],
+              "type": "stat"
+            },
+            {
+              "description": "Request success rate",
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "mappings": [],
+                  "max": 1,
+                  "min": 0,
+                  "noValue": "No Data",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green"
+                      },
+                      {
+                        "color": "red",
+                        "value": 94
+                      }
+                    ]
+                  },
+                  "unit": "percentunit"
+                },
+                "overrides": []
+              },
+              "gridPos": {
+                "h": 6,
+                "w": 3,
+                "x": 6,
+                "y": 17
+              },
+              "id": 62,
+              "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "text": {},
+                "textMode": "auto"
+              },
+              "pluginVersion": "9.1.6",
+              "targets": [
+                {
+                  "exemplar": true,
+                  "expr": "1 - sum(grpc_server_handled_total{job=\"tekton-results-api\", grpc_service=~\"tekton.results.v1alpha2.*\", grpc_code=~\"Internal|Unavailable|Unknown|Unimplemented|Canceled|Unauthenticated|ResourceExhausted|PermissionDenied|OutOfRange|InvalidArgument|FailedPrecondition|DeadlineExceeded|DataLoss|Aborted\"}) / (sum(grpc_server_handled_total{job=\"tekton-results-api\", grpc_service=~\"tekton.results.v1alpha2.*\"}) - sum(grpc_server_handled_total{job=\"tekton-results-api\", grpc_service=~\"tekton.results.v1alpha2.*\", grpc_code=~\"NotFound\"}))",
+                  "format": "table",
+                  "hide": false,
+                  "instant": false,
+                  "interval": "",
+                  "legendFormat": "",
+                  "refId": "request success rate"
+                }
+              ],
+              "title": "API Success Rate",
+              "type": "stat"
+            },
+            {
+              "description": "Watcher work queue depth",
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "green",
+                    "mode": "thresholds"
+                  },
+                  "mappings": [],
+                  "noValue": "No Data",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green"
+                      }
+                    ]
+                  },
+                  "unit": "none"
+                },
+                "overrides": []
+              },
+              "gridPos": {
+                "h": 6,
+                "w": 3,
+                "x": 9,
+                "y": 17
+              },
+              "id": 63,
+              "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "text": {},
+                "textMode": "auto"
+              },
+              "pluginVersion": "9.1.6",
+              "targets": [
+                {
+                  "exemplar": true,
+                  "expr": "sum(watcher_workqueue_depth{job=\"tekton-results-watcher\"})",
+                  "interval": "",
+                  "intervalFactor": 1,
+                  "legendFormat": "Queue Depth",
+                  "refId": "work queue depth"
+                }
+              ],
+              "title": "Watcher Work Queue Depth",
+              "type": "stat"
+            },
+            {
+              "description": "Requests/Second",
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "green",
+                    "mode": "fixed"
+                  },
+                  "mappings": [],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green"
+                      }
+                    ]
+                  },
+                  "unit": "reqps"
+                },
+                "overrides": []
+              },
+              "gridPos": {
+                "h": 6,
+                "w": 4,
+                "x": 12,
+                "y": 17
+              },
+              "id": 64,
+              "interval": "15s",
+              "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "text": {},
+                "textMode": "auto"
+              },
+              "pluginVersion": "9.1.6",
+              "targets": [
+                {
+                  "exemplar": true,
+                  "expr": "sum(rate(grpc_server_started_total{job=\"tekton-results-api\", grpc_service=~\"tekton.results.v1alpha2.*\"}[10m]))",
+                  "interval": "",
+                  "intervalFactor": 4,
+                  "legendFormat": "Request Rate",
+                  "refId": "request per second"
+                }
+              ],
+              "title": "API Request Rate",
+              "type": "stat"
+            },
+            {
+              "description": "Request latency 99%-tile",
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "green",
+                    "mode": "fixed"
+                  },
+                  "mappings": [],
+                  "noValue": "No Data",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green"
+                      }
+                    ]
+                  },
+                  "unit": "s"
+                },
+                "overrides": []
+              },
+              "gridPos": {
+                "h": 6,
+                "w": 4,
+                "x": 16,
+                "y": 17
+              },
+              "id": 65,
+              "interval": "15s",
+              "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "text": {},
+                "textMode": "auto"
+              },
+              "pluginVersion": "9.1.6",
+              "targets": [
+                {
+                  "exemplar": true,
+                  "expr": "histogram_quantile(0.99, sum(rate(grpc_server_handling_seconds_bucket{job=\"tekton-results-api\", grpc_service=~\"tekton.results.v1alpha2.*\"}[10m])) by (le) )",
+                  "interval": "",
+                  "intervalFactor": 4,
+                  "legendFormat": "Latency",
+                  "refId": "request latency"
+                }
+              ],
+              "title": "API Request Latency",
+              "type": "stat"
+            },
+            {
+              "description": "Reconcile latency 99%-tile - \nLatency of reconcile operations.",
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "green",
+                    "mode": "thresholds"
+                  },
+                  "mappings": [],
+                  "noValue": "No Data",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green"
+                      }
+                    ]
+                  },
+                  "unit": "ms"
+                },
+                "overrides": []
+              },
+              "gridPos": {
+                "h": 6,
+                "w": 4,
+                "x": 20,
+                "y": 17
+              },
+              "id": 66,
+              "interval": "15s",
+              "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "text": {},
+                "textMode": "auto"
+              },
+              "pluginVersion": "9.1.6",
+              "targets": [
+                {
+                  "exemplar": true,
+                  "expr": "histogram_quantile(0.99, sum(rate(watcher_reconcile_latency_bucket{job=\"tekton-results-watcher\"}[10m])) by (le) )",
+                  "interval": "",
+                  "intervalFactor": 4,
+                  "legendFormat": "Latency",
+                  "refId": "reconcile latency"
+                }
+              ],
+              "title": "Watcher Reconcile Latency",
+              "type": "stat"
+            },
+            {
+              "description": "Pod CPU utilisation ",
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "CPU",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "drawStyle": "line",
+                    "fillOpacity": 20,
+                    "gradientMode": "opacity",
+                    "hideFrom": {
+                      "graph": false,
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "lineInterpolation": "smooth",
+                    "lineWidth": 2,
+                    "pointSize": 10,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "mappings": [],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green"
+                      }
+                    ]
+                  },
+                  "unit": "short"
+                },
+                "overrides": []
+              },
+              "gridPos": {
+                "h": 13,
+                "w": 12,
+                "x": 0,
+                "y": 23
+              },
+              "id": 67,
+              "interval": "15s",
+              "options": {
+                "graph": {},
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "mode": "multi",
+                  "sort": "none"
+                }
+              },
+              "pluginVersion": "7.5.17",
+              "targets": [
+                {
+                  "exemplar": true,
+                  "expr": "sum(rate(container_cpu_usage_seconds_total{pod=~\"tekton-results-api-.*\", namespace=\"tekton-results\", container=\"\"}[10m]))",
+                  "instant": false,
+                  "interval": "",
+                  "intervalFactor": 4,
+                  "legendFormat": "API Server",
+                  "refId": "api"
+                },
+                {
+                  "exemplar": true,
+                  "expr": "sum(rate(container_cpu_usage_seconds_total{pod=~\"tekton-results-watcher-.*\", namespace=\"tekton-results\", container=\"\"}[10m]))",
+                  "hide": false,
+                  "interval": "",
+                  "intervalFactor": 4,
+                  "legendFormat": "Watcher",
+                  "refId": "watcher"
+                }
+              ],
+              "title": "Container CPU Utilisation",
+              "type": "timeseries"
+            },
+            {
+              "description": "Pod memory utilisation",
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "Size",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "drawStyle": "line",
+                    "fillOpacity": 20,
+                    "gradientMode": "opacity",
+                    "hideFrom": {
+                      "graph": false,
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "lineInterpolation": "smooth",
+                    "lineWidth": 2,
+                    "pointSize": 10,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "mappings": [],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green"
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "bytes"
+                },
+                "overrides": []
+              },
+              "gridPos": {
+                "h": 13,
+                "w": 12,
+                "x": 12,
+                "y": 23
+              },
+              "id": 68,
+              "interval": "15s",
+              "options": {
+                "graph": {},
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "mode": "multi",
+                  "sort": "none"
+                }
+              },
+              "pluginVersion": "7.5.17",
+              "targets": [
+                {
+                  "exemplar": true,
+                  "expr": "sum(container_memory_working_set_bytes{pod=~\"tekton-results-api-.*\",namespace=\"tekton-results\", container=\"\"})",
+                  "format": "time_series",
+                  "interval": "",
+                  "intervalFactor": 4,
+                  "legendFormat": "API Server",
+                  "refId": "api"
+                },
+                {
+                  "exemplar": true,
+                  "expr": "sum(container_memory_working_set_bytes{pod=~\"tekton-results-watcher-.*\",namespace=\"tekton-results\", container=\"\"})",
+                  "hide": false,
+                  "interval": "",
+                  "intervalFactor": 4,
+                  "legendFormat": "Watcher",
+                  "refId": "watcher"
+                }
+              ],
+              "title": "Container Memory Utilisation",
+              "type": "timeseries"
+            },
+            {
+              "description": "RPC execution rate",
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "Response Rate",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "drawStyle": "bars",
+                    "fillOpacity": 20,
+                    "gradientMode": "opacity",
+                    "hideFrom": {
+                      "graph": false,
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "lineInterpolation": "smooth",
+                    "lineWidth": 2,
+                    "pointSize": 10,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "mappings": [],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green"
+                      }
+                    ]
+                  },
+                  "unit": "reqps"
+                },
+                "overrides": []
+              },
+              "gridPos": {
+                "h": 13,
+                "w": 12,
+                "x": 0,
+                "y": 36
+              },
+              "id": 69,
+              "interval": "15s",
+              "options": {
+                "graph": {},
+                "legend": {
+                  "calcs": [
+                    "mean"
+                  ],
+                  "displayMode": "table",
+                  "placement": "right",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "mode": "single",
+                  "sort": "none"
+                }
+              },
+              "pluginVersion": "7.5.17",
+              "targets": [
+                {
+                  "exemplar": true,
+                  "expr": "sum(rate(grpc_server_handled_total{job=\"tekton-results-api\", grpc_service=~\"tekton.results.v1alpha2.*\"}[10m])) by (grpc_method)",
+                  "interval": "",
+                  "intervalFactor": 4,
+                  "legendFormat": "{{grpc_method}}",
+                  "refId": "response rate"
+                }
+              ],
+              "title": "API Response Rate",
+              "type": "timeseries"
+            },
+            {
+              "cards": {
+                "cardPadding": 2,
+                "cardRound": 2
+              },
+              "color": {
+                "cardColor": "#73BF69",
+                "colorScale": "sqrt",
+                "colorScheme": "interpolateSpectral",
+                "exponent": 0.5,
+                "mode": "spectrum"
+              },
+              "dataFormat": "tsbuckets",
+              "description": "Latency Distribution",
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "scaleDistribution": {
+                      "type": "linear"
+                    }
+                  }
+                },
+                "overrides": []
+              },
+              "gridPos": {
+                "h": 13,
+                "w": 12,
+                "x": 12,
+                "y": 36
+              },
+              "heatmap": {},
+              "hideZeroBuckets": true,
+              "highlightCards": true,
+              "id": 70,
+              "interval": "15s",
+              "legend": {
+                "show": true
+              },
+              "options": {
+                "calculate": false,
+                "calculation": {},
+                "cellGap": 2,
+                "cellRadius": 2,
+                "cellValues": {},
+                "color": {
+                  "exponent": 0.5,
+                  "fill": "#73BF69",
+                  "mode": "scheme",
+                  "reverse": false,
+                  "scale": "exponential",
+                  "scheme": "Spectral",
+                  "steps": 128
+                },
+                "exemplars": {
+                  "color": "rgba(255,0,255,0.7)"
+                },
+                "filterValues": {
+                  "le": 1e-9
+                },
+                "legend": {
+                  "show": true
+                },
+                "rowsFrame": {
+                  "layout": "auto"
+                },
+                "showValue": "never",
+                "tooltip": {
+                  "show": true,
+                  "yHistogram": true
+                },
+                "yAxis": {
+                  "axisPlacement": "left",
+                  "decimals": 0,
+                  "reverse": false,
+                  "unit": "s"
+                }
+              },
+              "pluginVersion": "9.1.6",
+              "reverseYBuckets": false,
+              "targets": [
+                {
+                  "exemplar": true,
+                  "expr": "sum(increase(grpc_server_handling_seconds_bucket{job=\"tekton-results-api\", grpc_service=~\"tekton.results.v1alpha2.*\"}[10m])) by (le)",
+                  "interval": "",
+                  "intervalFactor": 4,
+                  "legendFormat": "{{le}}",
+                  "refId": "latency distribution"
+                }
+              ],
+              "title": "API Latency Distribution",
+              "tooltip": {
+                "show": true,
+                "showHistogram": true
+              },
+              "type": "heatmap",
+              "xAxis": {
+                "show": true
+              },
+              "yAxis": {
+                "decimals": 0,
+                "format": "s",
+                "logBase": 1,
+                "show": true
+              },
+              "yBucketBound": "auto"
+            },
+            {
+              "description": "Server error distribution across gRPC methods.               \nStatus Codes:\nInternal, Unavailable, Unknown, Unimplemented",
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "Request Rate",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "drawStyle": "line",
+                    "fillOpacity": 20,
+                    "gradientMode": "opacity",
+                    "hideFrom": {
+                      "graph": false,
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "lineInterpolation": "smooth",
+                    "lineWidth": 2,
+                    "pointSize": 10,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "mappings": [],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green"
+                      }
+                    ]
+                  },
+                  "unit": "reqps"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byFrameRefID",
+                      "options": "error codes"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.drawStyle",
+                        "value": "points"
+                      },
+                      {
+                        "id": "unit",
+                        "value": "percentunit"
+                      },
+                      {
+                        "id": "custom.axisLabel",
+                        "value": "Error Distribution"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "gridPos": {
+                "h": 13,
+                "w": 12,
+                "x": 0,
+                "y": 49
+              },
+              "id": 71,
+              "interval": "15s",
+              "options": {
+                "graph": {},
+                "legend": {
+                  "calcs": [
+                    "mean"
+                  ],
+                  "displayMode": "list",
+                  "placement": "right",
+                  "showLegend": false
+                },
+                "tooltip": {
+                  "mode": "single",
+                  "sort": "none"
+                }
+              },
+              "pluginVersion": "7.5.17",
+              "targets": [
+                {
+                  "exemplar": true,
+                  "expr": "sum(rate(grpc_server_handled_total{job=\"tekton-results-api\", grpc_service=~\"tekton.results.v1alpha2.*\", grpc_code!=\"OK\"}[10m])) by (grpc_method)",
+                  "interval": "",
+                  "intervalFactor": 4,
+                  "legendFormat": "RPC: {{grpc_method}}",
+                  "refId": "error methods"
+                },
+                {
+                  "exemplar": true,
+                  "expr": "sum(rate(grpc_server_handled_total{job=\"tekton-results-api\", grpc_service=~\"tekton.results.v1alpha2.*\", grpc_code=~\"Internal|Unavailable|Unknown|Unimplemented\"}[10m])) by (grpc_code) / ignoring(grpc_code) group_left sum(rate(grpc_server_handled_total{job=\"tekton-results-api\", grpc_service=~\"tekton.results.v1alpha2.*\", grpc_code!=\"OK\"}[10m]))",
+                  "hide": false,
+                  "interval": "",
+                  "intervalFactor": 4,
+                  "legendFormat": "Error: {{grpc_code}}",
+                  "refId": "error codes"
+                }
+              ],
+              "title": "API Server Errors",
+              "type": "timeseries"
+            },
+            {
+              "description": "Other error distribution across gRPC methods.           \nStatus Codes Except:\nInternal, Unavailable, Unknown, Unimplemented",
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "Request Rate",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "drawStyle": "line",
+                    "fillOpacity": 20,
+                    "gradientMode": "opacity",
+                    "hideFrom": {
+                      "graph": false,
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "lineInterpolation": "smooth",
+                    "lineWidth": 2,
+                    "pointSize": 10,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "mappings": [],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green"
+                      }
+                    ]
+                  },
+                  "unit": "reqps"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byFrameRefID",
+                      "options": "error codes"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.drawStyle",
+                        "value": "points"
+                      },
+                      {
+                        "id": "unit",
+                        "value": "percentunit"
+                      },
+                      {
+                        "id": "custom.axisLabel",
+                        "value": "Error Distribution"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "gridPos": {
+                "h": 13,
+                "w": 12,
+                "x": 12,
+                "y": 49
+              },
+              "id": 72,
+              "interval": "15s",
+              "options": {
+                "graph": {},
+                "legend": {
+                  "calcs": [
+                    "mean"
+                  ],
+                  "displayMode": "list",
+                  "placement": "right",
+                  "showLegend": false
+                },
+                "tooltip": {
+                  "mode": "single",
+                  "sort": "none"
+                }
+              },
+              "pluginVersion": "7.5.17",
+              "targets": [
+                {
+                  "exemplar": true,
+                  "expr": "sum(rate(grpc_server_handled_total{job=\"tekton-results-api\", grpc_service=~\"tekton.results.v1alpha2.*\", grpc_code!=\"OK\"}[10m])) by (grpc_method)",
+                  "interval": "",
+                  "intervalFactor": 4,
+                  "legendFormat": "RPC: {{grpc_method}}",
+                  "refId": "error methods"
+                },
+                {
+                  "exemplar": true,
+                  "expr": "sum(rate(grpc_server_handled_total{job=\"tekton-results-api\", grpc_service=~\"tekton.results.v1alpha2.*\", grpc_code!~\"Internal|Unavailable|Unknown|Unimplemented\"}[10m])) by (grpc_code) / ignoring(grpc_code) group_left sum(rate(grpc_server_handled_total{job=\"tekton-results-api\", grpc_service=~\"tekton.results.v1alpha2.*\", grpc_code!=\"OK\"}[10m]))",
+                  "hide": false,
+                  "interval": "",
+                  "intervalFactor": 4,
+                  "legendFormat": "Error: {{grpc_code}}",
+                  "refId": "error codes"
+                }
+              ],
+              "title": "API Other Errors",
+              "type": "timeseries"
+            },
+            {
+              "description": "Number of reconcile operations",
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "Reconcile Rate",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "drawStyle": "line",
+                    "fillOpacity": 20,
+                    "gradientMode": "opacity",
+                    "hideFrom": {
+                      "graph": false,
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "lineInterpolation": "smooth",
+                    "lineWidth": 2,
+                    "pointSize": 10,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "mappings": [],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green"
+                      }
+                    ]
+                  },
+                  "unit": "reqps"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Failed"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "red",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Success"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "green",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "gridPos": {
+                "h": 13,
+                "w": 12,
+                "x": 0,
+                "y": 62
+              },
+              "id": 73,
+              "interval": "15s",
+              "options": {
+                "graph": {},
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "mode": "multi",
+                  "sort": "none"
+                }
+              },
+              "pluginVersion": "7.5.17",
+              "targets": [
+                {
+                  "exemplar": true,
+                  "expr": "sum(rate(watcher_reconcile_count{job=\"tekton-results-watcher\"}[10m])) by (success)",
+                  "format": "time_series",
+                  "interval": "",
+                  "intervalFactor": 4,
+                  "legendFormat": "{{success}}",
+                  "refId": "work queue depth"
+                }
+              ],
+              "title": "Watcher Reconcile Rate",
+              "transformations": [
+                {
+                  "id": "renameByRegex",
+                  "options": {
+                    "regex": "(true)",
+                    "renamePattern": "Success"
+                  }
+                },
+                {
+                  "id": "renameByRegex",
+                  "options": {
+                    "regex": "(false)",
+                    "renamePattern": "Failed"
+                  }
+                }
+              ],
+              "type": "timeseries"
+            },
+            {
+              "description": "Work queue latency at queue depth",
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "Latency",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "drawStyle": "line",
+                    "fillOpacity": 20,
+                    "gradientMode": "opacity",
+                    "hideFrom": {
+                      "graph": false,
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "lineInterpolation": "smooth",
+                    "lineWidth": 2,
+                    "pointSize": 10,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "mappings": [],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green"
+                      }
+                    ]
+                  },
+                  "unit": "s"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byFrameRefID",
+                      "options": "work queue depth"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "none"
+                      },
+                      {
+                        "id": "custom.drawStyle",
+                        "value": "bars"
+                      },
+                      {
+                        "id": "custom.lineWidth",
+                        "value": 1
+                      },
+                      {
+                        "id": "custom.fillOpacity",
+                        "value": 10
+                      },
+                      {
+                        "id": "custom.gradientMode",
+                        "value": "none"
+                      },
+                      {
+                        "id": "custom.axisLabel",
+                        "value": "Items"
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "gridPos": {
+                "h": 13,
+                "w": 12,
+                "x": 12,
+                "y": 62
+              },
+              "id": 74,
+              "interval": "15s",
+              "options": {
+                "graph": {},
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "mode": "single",
+                  "sort": "none"
+                }
+              },
+              "pluginVersion": "7.5.17",
+              "targets": [
+                {
+                  "exemplar": true,
+                  "expr": "sum(rate(watcher_workqueue_queue_latency_seconds_count{job=\"tekton-results-watcher\"}[10m]))",
+                  "hide": false,
+                  "interval": "",
+                  "intervalFactor": 4,
+                  "legendFormat": "Queue Latency",
+                  "refId": "work queue latency"
+                },
+                {
+                  "exemplar": true,
+                  "expr": "sum(rate(watcher_reconcile_latency_count{job=\"tekton-results-watcher\"}[10m]))",
+                  "hide": false,
+                  "interval": "",
+                  "intervalFactor": 4,
+                  "legendFormat": "Reconcile Latency",
+                  "refId": "reconcile latency"
+                },
+                {
+                  "exemplar": true,
+                  "expr": "sum(watcher_work_queue_depth{job=\"tekton-results-watcher\"})",
+                  "format": "time_series",
+                  "interval": "",
+                  "intervalFactor": 4,
+                  "legendFormat": "Queue Depth",
+                  "refId": "work queue depth"
+                }
+              ],
+              "title": "Watcher Latency",
+              "type": "timeseries"
+            }
+          ],
+          "repeat": "datasource",
+          "title": "Tekton Results",
+          "type": "row"
+        },
+        {
+          "collapsed": true,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 17
+          },
+          "id": 79,
+          "panels": [
+            {
+              "description": "Tekton Chains work queue depth",
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "green",
+                    "mode": "thresholds"
+                  },
+                  "mappings": [],
+                  "noValue": "No Data",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": null
+                      }
+                    ]
+                  },
+                  "unit": "none"
+                },
+                "overrides": []
+              },
+              "gridPos": {
+                "h": 6,
+                "w": 3,
+                "x": 0,
+                "y": 67
+              },
+              "id": 476,
+              "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "text": {},
+                "textMode": "auto"
+              },
+              "pluginVersion": "9.5.17",
+              "targets": [
+                {
+                  "editorMode": "code",
+                  "exemplar": true,
+                  "expr": "sum(watcher_workqueue_depth{container='tekton-chains-controller',app='tekton-chains-controller'})",
+                  "interval": "",
+                  "intervalFactor": 1,
+                  "legendFormat": "Queue Depth",
+                  "range": true,
+                  "refId": "work queue depth"
+                }
+              ],
+              "title": "Tekton Chains Work Queue Depth",
+              "type": "stat"
+            },
+            {
+              "description": "Reconcile latency 99%-tile - \nLatency of reconcile operations.",
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "green",
+                    "mode": "thresholds"
+                  },
+                  "mappings": [],
+                  "noValue": "No Data",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": null
+                      }
+                    ]
+                  },
+                  "unit": "ms"
+                },
+                "overrides": []
+              },
+              "gridPos": {
+                "h": 6,
+                "w": 4,
+                "x": 3,
+                "y": 67
+              },
+              "id": 477,
+              "interval": "15s",
+              "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "text": {},
+                "textMode": "auto"
+              },
+              "pluginVersion": "9.5.17",
+              "targets": [
+                {
+                  "editorMode": "code",
+                  "exemplar": true,
+                  "expr": "histogram_quantile(0.99, sum(rate(watcher_reconcile_latency_bucket{job=\"tekton-chains\"}[30m])) by (le) ) / 1000",
+                  "interval": "",
+                  "intervalFactor": 4,
+                  "legendFormat": "Latency",
+                  "range": true,
+                  "refId": "reconcile latency"
+                }
+              ],
+              "title": "Tekton Chains Reconcile Latency",
+              "type": "stat"
+            },
+            {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "auto",
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "mappings": [],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green"
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 73
+              },
+              "id": 81,
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "mode": "single",
+                  "sort": "none"
+                }
+              },
+              "targets": [
+                {
+                  "editorMode": "builder",
+                  "expr": "rate(watcher_go_gc_cpu_fraction{app=\"tekton-chains-controller\"}[5m])",
+                  "legendFormat": "__auto",
+                  "range": true,
+                  "refId": "A"
+                }
+              ],
+              "title": "Tekton Chains CPU Fraction Use",
+              "type": "timeseries"
+            },
+            {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "auto",
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "mappings": [],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green"
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 67
+              },
+              "id": 83,
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "mode": "single",
+                  "sort": "none"
+                }
+              },
+              "targets": [
+                {
+                  "editorMode": "builder",
+                  "expr": "rate(watcher_workqueue_longest_running_processor_seconds_count{app=\"tekton-chains-controller\"}[5m])",
+                  "legendFormat": "__auto",
+                  "range": true,
+                  "refId": "A"
+                }
+              ],
+              "title": "Tekton Chains Workqueue Rate",
+              "type": "timeseries"
+            }
+          ],
+          "repeat": "datasource",
+          "repeatDirection": "h",
+          "title": "Tekton Chains",
+          "type": "row"
+        },
+        {
+          "collapsed": true,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 18
+          },
+          "id": 85,
+          "panels": [
+            {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "auto",
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "mappings": [],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green"
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 19
+              },
+              "id": 87,
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": false
+                },
+                "tooltip": {
+                  "mode": "single",
+                  "sort": "none"
+                }
+              },
+              "targets": [
+                {
+                  "editorMode": "code",
+                  "expr": "rate(sprayproxy_http_inbound_requests_total{namespace=\"sprayproxy\"}[5m]) * 300",
+                  "legendFormat": "__auto",
+                  "range": true,
+                  "refId": "A"
+                }
+              ],
+              "title": "Incoming Requests",
+              "type": "timeseries"
+            },
+            {
+              "description": "Forwarded attempts to backend server(s)",
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "auto",
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "mappings": [],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green"
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 19
+              },
+              "id": 89,
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "mode": "single",
+                  "sort": "none"
+                }
+              },
+              "targets": [
+                {
+                  "editorMode": "code",
+                  "expr": "rate(sprayproxy_http_forwarded_requests_total[5m]) * 300",
+                  "legendFormat": "__auto",
+                  "range": true,
+                  "refId": "A"
+                }
+              ],
+              "title": "Forwarded Requests",
+              "type": "timeseries"
+            },
+            {
+              "description": "Forwarded request duration in seconds",
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "mappings": [],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green"
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 27
+              },
+              "id": 91,
+              "options": {
+                "displayMode": "gradient",
+                "minVizHeight": 10,
+                "minVizWidth": 0,
+                "orientation": "auto",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showUnfilled": true
+              },
+              "pluginVersion": "9.1.6",
+              "targets": [
+                {
+                  "editorMode": "code",
+                  "exemplar": false,
+                  "expr": "rate(sprayproxy_http_response_time_duration_seconds_bucket[5m]) * 300",
+                  "format": "heatmap",
+                  "instant": false,
+                  "interval": "",
+                  "legendFormat": "{{le}}",
+                  "range": true,
+                  "refId": "A"
+                }
+              ],
+              "title": "Response Time Duration",
+              "type": "bargauge"
+            }
+          ],
+          "title": "Sprayproxy",
+          "type": "row"
+        }
+      ],
+      "refresh": "10s",
+      "schemaVersion": 37,
+      "style": "dark",
+      "tags": [],
+      "templating": {
+        "list": [
+          {
+            "current": {
+              "selected": false,
+              "text": "prometheus-appstudio-ds",
+              "value": "prometheus-appstudio-ds"
+            },
+            "hide": 0,
+            "includeAll": false,
+            "multi": false,
+            "name": "datasource",
+            "options": [],
+            "query": "prometheus",
+            "queryValue": "",
+            "refresh": 1,
+            "regex": ".*-(appstudio)-.*",
+            "skipUrlSync": false,
+            "type": "datasource"
+          }
+        ]
+      },
+      "time": {
+        "from": "now-1h",
+        "to": "now"
+      },
+      "timepicker": {},
+      "timezone": "",
+      "title": "Pipeline Service",
+      "uid": "02ebfdefeeed166624895c36b0c1af4ed3006c5d",
+      "version": 1,
+      "weekStart": ""
+    }
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-pipeline-service-49k4mt28kg
+  namespace: o11y
+---
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDashboard
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app: appstudio-grafana
+  name: grafana-dashboard-pipeline-service
+  namespace: o11y
+spec:
+  configMapRef:
+    key: pipeline-service-dashboard.json
+    name: grafana-dashboard-pipeline-service
+  instanceSelector:
+    matchLabels:
+      dashboards: appstudio-grafana
