@@ -75,6 +75,18 @@ installHac() {
 
     echo "Installing HAC on Ephemeral cluster"
     KUBECONFIG=$HAC_KUBECONFIG bonfire deploy hac --frontends true --source=appsre --clowd-env env-"${NAMESPACE}" --namespace="$NAMESPACE"
+    
+    # Patch clowder auth to use dev-sso
+    KC_URL=https://$(oc get route/keycloak --kubeconfig="$STONESOUP_KUBECONFIG" -n dev-sso -o jsonpath="{.spec.host}")
+    oc --kubeconfig="$HAC_KUBECONFIG" get clowdenvironment env-$NAMESPACE -o json | jq '.spec.disabled=true' | oc --kubeconfig="$HAC_KUBECONFIG" apply -f -
+    oc --kubeconfig="$HAC_KUBECONFIG" get deployment env-$NAMESPACE-mbop -o json | \
+      jq --arg url $KC_URL \
+        '(.spec.template.spec.containers[].env=[
+        {"name": "KEYCLOAK_SERVER", "value": $url},
+        {"name": "KEYCLOAK_USERNAME", "value": "user1"},
+        {"name": "KEYCLOAK_PASSWORD", "value": "user2"},
+        {"name": "KEYCLOAK_VERSION", "value": "23.0.1"}])' | oc --kubeconfig="$HAC_KUBECONFIG" replace -f -
+    oc --kubeconfig="$HAC_KUBECONFIG" rollout status deployment env-$NAMESPACE-mbop
 }
 
 patchfeenv() {
