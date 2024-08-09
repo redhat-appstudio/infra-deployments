@@ -287,9 +287,11 @@ rules:
   - get
 - apiGroups:
   - tekton.dev
+  - resolution.tekton.dev
   resources:
   - pipelineruns
   - taskruns
+  - resolutionrequests
   verbs:
   - get
   - list
@@ -2200,7 +2202,11 @@ spec:
             namespace }}/pipelinerun/{{ pr }}/logs/{{ task }}
   profile: all
   pruner:
-    disabled: true
+    disable: false
+    keep-since: 60
+    resources:
+    - pipelinerun
+    schedule: '*/10 * * * *'
   targetNamespace: openshift-pipelines
   trigger:
     options:
