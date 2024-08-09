@@ -3,8 +3,8 @@ kind: Kustomization
 resources:
   - ../../../base
   - ../../../base/external-secrets
-  - https://github.com/konflux-ci/service-provider-integration-operator/config/overlays/openshift_aws?ref=81e453a190e3d0a2c496e5cf3aeff380c4eccc45
-  - https://github.com/konflux-ci/service-provider-integration-operator/config/monitoring/prometheus/base?ref=81e453a190e3d0a2c496e5cf3aeff380c4eccc45
+  - https://github.com/konflux-ci/service-provider-integration-operator/config/overlays/openshift_aws?ref=c70a5c769f17295a816d66982c3bc935eb83a72b
+  - https://github.com/konflux-ci/service-provider-integration-operator/config/monitoring/prometheus/base?ref=c70a5c769f17295a816d66982c3bc935eb83a72b
   - spi-aws-credentials-external-secret.yaml
 
 namespace: spi-system
@@ -12,7 +12,7 @@ namespace: spi-system
 images:
   - name:  quay.io/redhat-appstudio/service-provider-integration-operator
     newName: quay.io/redhat-appstudio/service-provider-integration-operator
-    newTag: 81e453a190e3d0a2c496e5cf3aeff380c4eccc45
+    newTag: c70a5c769f17295a816d66982c3bc935eb83a72b
 
 patches:
   - target:
