@@ -1442,9 +1442,14 @@ spec:
         firstName: user1
         id: user1
         username: user1
+        attributes:
+          entitlements:
+            - '{"insights": {"is_entitled": true, "is_trial": false}}'
         clientRoles:
           realm-management:
             - "manage-users"
+        realmRoles:
+          - default-roles-redhat-external
       - credentials:
           - type: password
             value: e2e-hac-user2
@@ -1454,6 +1459,11 @@ spec:
         firstName: e2e-hac-user
         id: e2e-hac-user
         username: e2e-hac-user
+        attributes:
+          entitlements:
+            - '{"insights": {"is_entitled": true, "is_trial": false}}'
         clientRoles:
           realm-management:
             - "manage-users"
+        realmRoles:
+          - default-roles-redhat-external
