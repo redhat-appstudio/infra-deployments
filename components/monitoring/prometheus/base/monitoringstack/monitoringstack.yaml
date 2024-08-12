@@ -42,12 +42,12 @@ spec:
       url: # added by overlays
       writeRelabelConfigs:
       - action: LabelKeep
-        regex: "__name__|source_environment|source_cluster|namespace|pod|container|\
+        regex: "__name__|source_environment|source_cluster|namespace|app|pod|container|\
           label_pipelines_appstudio_openshift_io_type|health_status|dest_namespace|\
           controller|service|reason|phase|type|resource|resourcequota|le|app|image|\
           commit_hash|job|operation|tokenName|rateLimited|state|persistentvolumeclaim|\
           storageclass|volumename|release_reason|instance|result|deployment_reason|\
-          validation_reason|strategy|succeeded|target|name|method|code|sp|\
+          validation_reason|strategy|succeeded|target|name|method|code|sp|le|\
           unexpected_status|failure|hostname|label_app_kubernetes_io_managed_by|status|\
           pipeline|pipelinename|pipelinerun|schedule|check"
 ---
@@ -104,6 +104,8 @@ spec:
         - '{__name__="tekton_pipelines_controller_running_taskruns_throttled_by_node"}'
         - '{__name__="tekton_pipelines_controller_pipelinerun_duration_seconds_sum"}'
         - '{__name__="tekton_pipelines_controller_pipelinerun_duration_seconds_count"}'
+        - '{__name__="watcher_workqueue_depth"}'
+        - '{__name__="watcher_client_latency_bucket"}'
         - '{__name__="controller_runtime_reconcile_errors_total", namespace!~".*-tenant|openshift-.*|kube-.*"}'
         - '{__name__="controller_runtime_reconcile_total", namespace!~".*-tenant|openshift-.*|kube-.*"}'
         - '{__name__="kube_pod_status_unschedulable", namespace!~".*-tenant|openshift-.*|kube-.*"}'
