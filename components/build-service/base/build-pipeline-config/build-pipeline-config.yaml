@@ -5,9 +5,11 @@ metadata:
   namespace: build-service
 data:
   config.yaml: |
-    default-pipeline-name: docker-build
+    default-pipeline-name: docker-build-oci-ta
     pipelines:
     - name: fbc-builder
-      bundle: quay.io/konflux-ci/tekton-catalog/pipeline-fbc-builder:420bc92bb798935d84912c88eca05af798baa8ca
+      bundle: quay.io/konflux-ci/tekton-catalog/pipeline-fbc-builder:43cf5b8a617c87f7472b4f76542f8b7a428c511f
     - name: docker-build
-      bundle: quay.io/konflux-ci/tekton-catalog/pipeline-docker-build:420bc92bb798935d84912c88eca05af798baa8ca
+      bundle: quay.io/konflux-ci/tekton-catalog/pipeline-docker-build:43cf5b8a617c87f7472b4f76542f8b7a428c511f
+    - name: docker-build-oci-ta
+      bundle: quay.io/konflux-ci/tekton-catalog/pipeline-docker-build-oci-ta:43cf5b8a617c87f7472b4f76542f8b7a428c511f
