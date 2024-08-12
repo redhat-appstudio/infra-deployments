@@ -1,0 +1,195 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  name: openshift-minio-apply-tenants
+rules:
+- apiGroups:
+  - minio.min.io
+  resources:
+  - tenants
+  verbs:
+  - get
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - '*'
+- apiGroups:
+  - ""
+  resources:
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  name: openshift-minio-apply-tenants
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: openshift-minio-apply-tenants
+subjects:
+- kind: ServiceAccount
+  name: openshift-gitops-argocd-application-controller
+  namespace: openshift-gitops
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  name: postgres
+  namespace: openshift-gitops
+spec:
+  destination:
+    namespace: tekton-results
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    chart: postgresql
+    helm:
+      parameters:
+      - name: image.tag
+        value: 13.14.0
+      - name: tls.enabled
+        value: "true"
+      - name: tls.certificatesSecret
+        value: postgresql-tls
+      - name: tls.certFilename
+        value: tls.crt
+      - name: tls.certKeyFilename
+        value: tls.key
+      - name: auth.database
+        value: tekton_results
+      - name: auth.username
+        value: tekton
+      - name: auth.existingSecret
+        value: tekton-results-database
+      - name: auth.secretKeys.userPasswordKey
+        value: db.password
+      - name: auth.secretKeys.adminPasswordKey
+        value: db.password
+      - name: primary.resources.requests
+        value: "null"
+      - name: primary.podSecurityContext.fsGroup
+        value: "null"
+      - name: primary.podSecurityContext.seccompProfile.type
+        value: RuntimeDefault
+      - name: primary.containerSecurityContext.runAsUser
+        value: "null"
+      - name: primary.containerSecurityContext.allowPrivilegeEscalation
+        value: "false"
+      - name: primary.containerSecurityContext.runAsNonRoot
+        value: "true"
+      - name: primary.containerSecurityContext.seccompProfile.type
+        value: RuntimeDefault
+      - name: primary.containerSecurityContext.capabilities.drop[0]
+        value: ALL
+      - name: volumePermissions.enabled
+        value: "false"
+      - name: shmVolume.enabled
+        value: "false"
+      releaseName: postgres
+    repoURL: https://charts.bitnami.com/bitnami
+    targetRevision: 14.0.5
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    retry:
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m
+      limit: -1
+    syncOptions:
+    - CreateNamespace=false
+    - Validate=false
+---
+apiVersion: minio.min.io/v2
+kind: Tenant
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "0"
+    prometheus.io/path: /minio/v2/metrics/cluster
+    prometheus.io/port: "9000"
+    prometheus.io/scrape: "true"
+  labels:
+    app: minio
+  name: storage
+  namespace: tekton-results
+spec:
+  certConfig: {}
+  configuration:
+    name: minio-storage-configuration
+  env: []
+  exposeServices:
+    minio: false
+  externalCaCertSecret: []
+  externalCertSecret: []
+  externalClientCertSecrets: []
+  features:
+    bucketDNS: false
+    domains: {}
+  image: quay.io/minio/minio:RELEASE.2022-09-17T00-09-45Z
+  imagePullSecret: {}
+  mountPath: /export
+  podManagementPolicy: Parallel
+  pools:
+  - affinity:
+      nodeAffinity: {}
+      podAffinity: {}
+      podAntiAffinity: {}
+    containerSecurityContext: {}
+    name: pool-0
+    nodeSelector: {}
+    resources: {}
+    securityContext: {}
+    servers: 1
+    tolerations: []
+    volumeClaimTemplate:
+      apiVersion: v1
+      kind: persistentvolumeclaims
+      metadata: {}
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+      status: {}
+    volumesPerServer: 2
+  priorityClassName: ""
+  requestAutoCert: true
+  serviceMetadata:
+    consoleServiceAnnotations: {}
+    consoleServiceLabels: {}
+    minioServiceAnnotations: {}
+    minioServiceLabels: {}
+  subPath: ""
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  name: minio-operator
+  namespace: openshift-operators
+spec:
+  channel: stable
+  installPlanApproval: Automatic
+  name: minio-operator
+  source: certified-operators
+  sourceNamespace: openshift-marketplace
