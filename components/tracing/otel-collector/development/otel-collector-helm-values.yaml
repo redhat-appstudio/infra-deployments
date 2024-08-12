@@ -7,14 +7,14 @@ config:
     # Without the health_check extension the collector will fail the readiness and liveliness probes.
     # The health_check extension can be modified, but should never be removed.
     health_check: {}
-    memory_ballast: {}
   processors:
     batch: {}
     # If set to null, will be overridden with values based on k8s resource limits
     memory_limiter:
       check_interval: 2s
       limit_mib: 512
-      spike_limit_percentage: 100
+      limit_percentage: 95
+      spike_limit_percentage: 90
     attributes/collector-info:
       actions:
         - key: collector.hostname
@@ -37,7 +37,6 @@ config:
   service:
     extensions:
       - health_check
-      - memory_ballast
     pipelines:
       traces:
         exporters:
@@ -71,4 +70,9 @@ ports:
     enabled: false
   zipkin:
     enabled: false
+image:
+  repository: quay.io/konflux-ci/opentelemetry-collector-k8s
+  pullPolicy: Always
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "0.106.0"
 
