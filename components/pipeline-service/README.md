@@ -19,6 +19,8 @@ Configuration documentation:
 
 ## Kustomize verification commands
 
+All commands in this section are relative to the infra-deployments repository root directory
+
 - development overlay:
 
 ```shell
@@ -54,6 +56,8 @@ updating the production clusters.
 
 ## Update procedure
 
+All commands in this section are relative to the infra-deployments repository root directory
+
 - For development overlay: 
 
 Edit the yaml files under the development subdirectory as needed.  Run the 'kustomize build' command for the 
@@ -67,9 +71,7 @@ but there is a separate step.  Specific 'deploy.yaml' files are created for each
 To update them with your yaml changes:
 ```shell
 # cd to your infra-deployment git clone base directory
-$ cd components/pipeline-service/staging
-$ ../../../hack/generate-deploy-config.sh 
-$ cd -
+$ ./hack/generate-deploy-config.sh -c components/pipeline-service/staging
 # to see if your updates made it to the deploy.yaml files
 $ git status
 ```
@@ -81,9 +83,7 @@ use of 'generate-deploy-config.sh' similarily is tweaked to update the 'producti
 
 ```shell
 # cd to your infra-deployment git clone base directory
-$ cd components/pipeline-service/production
-$ ../../../hack/generate-deploy-config.sh 
-$ cd -
+$ ./hack/generate-deploy-config.sh -c components/pipeline-service/production
 # to see if your updates made it to the deploy.yaml files
 $ git status
 ```
