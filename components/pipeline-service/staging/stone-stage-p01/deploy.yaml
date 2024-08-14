@@ -2262,6 +2262,10 @@ metadata:
   namespace: openshift-operators
 spec:
   channel: latest
+  config:
+    env:
+    - name: AUTOINSTALL_COMPONENTS
+      value: "false"
   name: openshift-pipelines-operator-rh
   source: custom-operators
   sourceNamespace: openshift-marketplace

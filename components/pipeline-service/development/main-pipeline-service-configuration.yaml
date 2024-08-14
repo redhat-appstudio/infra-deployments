@@ -1853,6 +1853,10 @@ spec:
   name: openshift-pipelines-operator-rh
   source: custom-operators
   sourceNamespace: openshift-marketplace
+  config:
+    env:
+      - name: AUTOINSTALL_COMPONENTS
+        value: "false"
 ---
 apiVersion: route.openshift.io/v1
 kind: Route
