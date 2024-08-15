@@ -1,0 +1,40 @@
+---
+# Namespace for power monitoring operator
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: power-monitoring
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+---
+# Power monitoring operator group
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  name: power-monitoring
+  namespace: power-monitoring
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+    olm.providedAPIs: 
+      Kepler.v1alpha1.kepler.system.sustainable.computing.io,KeplerInternal.v1alpha1.kepler.system.sustainable.computing.io
+spec:
+  upgradeStrategy: Default
+---
+# Subscription for power-monitoring-operator
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: power-monitoring-operator
+  namespace: power-monitoring
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+    argocd.argoproj.io/sync-options: Replace=true
+  labels:
+    operators.coreos.com/power-monitoring-operator.power-monitoring: ""
+spec:
+  channel: tech-preview
+  installPlanApproval: Automatic
+  name: power-monitoring-operator
+  source: redhat-operators
+  sourceNamespace: openshift-marketplace
+  startingCSV: power-monitoring-operator.v0.2.0

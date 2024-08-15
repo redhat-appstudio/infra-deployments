@@ -1,0 +1,16 @@
+apiVersion: kepler.system.sustainable.computing.io/v1alpha1
+kind: Kepler
+metadata:
+  name: kepler
+  labels:
+    app.kubernetes.io/instance: kepler
+    app.kubernetes.io/name: kepler
+    app.kubernetes.io/part-of: kepler-operator
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  exporter:
+    deployment:
+      port: 9103
+      tolerations:
+        - operator: Exists
