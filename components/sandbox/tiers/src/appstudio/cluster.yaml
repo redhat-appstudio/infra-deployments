@@ -5,49 +5,6 @@ objects:
 - apiVersion: quota.openshift.io/v1
   kind: ClusterResourceQuota
   metadata:
-    name: for-${SPACE_NAME}-deployments
-  spec:
-    quota:
-      hard:
-        count/deployments.apps: ${{DEPLOYMENT_QUOTA}}
-        count/deploymentconfigs.apps: ${{DEPLOYMENT_QUOTA}}
-        count/pods: ${{POD_QUOTA}}
-    selector:
-      annotations: null
-      labels:
-        matchLabels:
-          toolchain.dev.openshift.com/space: ${SPACE_NAME}
-- apiVersion: quota.openshift.io/v1
-  kind: ClusterResourceQuota
-  metadata:
-    name: for-${SPACE_NAME}-replicas
-  spec:
-    quota:
-      hard:
-        count/replicasets.apps: ${{REPLICASET_QUOTA}}
-        count/replicationcontrollers: ${{REPLICASET_QUOTA}}
-    selector:
-      annotations: null
-      labels:
-        matchLabels:
-          toolchain.dev.openshift.com/space: ${SPACE_NAME}
-- apiVersion: quota.openshift.io/v1
-  kind: ClusterResourceQuota
-  metadata:
-    name: for-${SPACE_NAME}-routes
-  spec:
-    quota:
-      hard:
-        count/ingresses.extensions: ${{ROUTE_QUOTA}}
-        count/routes.route.openshift.io: ${{ROUTE_QUOTA}}
-    selector:
-      annotations: null
-      labels:
-        matchLabels:
-          toolchain.dev.openshift.com/space: ${SPACE_NAME}
-- apiVersion: quota.openshift.io/v1
-  kind: ClusterResourceQuota
-  metadata:
     name: for-${SPACE_NAME}-jobs
   spec:
     quota:
@@ -56,19 +13,6 @@ objects:
         count/daemonsets.apps: "30"
         count/cronjobs.batch: "30"
         count/statefulsets.apps: "30"
-    selector:
-      annotations: null
-      labels:
-        matchLabels:
-          toolchain.dev.openshift.com/space: ${SPACE_NAME}
-- apiVersion: quota.openshift.io/v1
-  kind: ClusterResourceQuota
-  metadata:
-    name: for-${SPACE_NAME}-services
-  spec:
-    quota:
-      hard:
-        count/services: ${{SERVICE_QUOTA}}
     selector:
       annotations: null
       labels:
@@ -126,16 +70,6 @@ parameters:
   # No Idling
   value: "0"
 # Quota
-- name: REPLICASET_QUOTA
-  value: "30"
-- name: DEPLOYMENT_QUOTA
-  value: "30"
-- name: POD_QUOTA
-  value: "600"
-- name: ROUTE_QUOTA
-  value: "30"
-- name: SERVICE_QUOTA
-  value: "30"
 - name: CONFIGMAP_QUOTA
   value: "100"
 - name: SECRET_QUOTA
