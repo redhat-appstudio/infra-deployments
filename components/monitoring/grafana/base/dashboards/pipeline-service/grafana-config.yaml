@@ -4592,8 +4592,8 @@ data:
     }
 kind: ConfigMap
 metadata:
-  name: grafana-dashboard-pipeline-service-49k4mt28kg
-  namespace: o11y
+  name: grafana-dashboard-pipeline-service
+  namespace: appstudio-grafana
 ---
 apiVersion: grafana.integreatly.org/v1beta1
 kind: GrafanaDashboard
@@ -4603,7 +4603,7 @@ metadata:
   labels:
     app: appstudio-grafana
   name: grafana-dashboard-pipeline-service
-  namespace: o11y
+  namespace: appstudio-grafana
 spec:
   configMapRef:
     key: pipeline-service-dashboard.json
