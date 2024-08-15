@@ -6,8 +6,37 @@ metadata:
   name: host-config
   namespace: multi-platform-controller
 data:
-
-  dynamic-platforms: linux/arm64,linux/amd64,linux-mxlarge/amd64,linux-mxlarge/arm64,linux-m2xlarge/amd64,linux-m2xlarge/arm64,linux-m4xlarge/amd64,linux-m4xlarge/arm64,linux-m8xlarge/amd64,linux-m8xlarge/arm64,linux-cxlarge/amd64,linux-cxlarge/arm64,linux-c2xlarge/amd64,linux-c2xlarge/arm64,linux-c4xlarge/amd64,linux-c4xlarge/arm64,linux-c8xlarge/amd64,linux-c8xlarge/arm64,linux-root/arm64,linux-root/amd64,linux-fast/amd64,linux-extra-fast/amd64
+  local-platforms: "\
+    linux/x86_64,\
+    local,\
+    localhost,\
+    "
+  dynamic-platforms: "\
+    linux/arm64,\
+    linux/amd64,\
+    linux-mlarge/arm64,\
+    linux-mlarge/amd64,\
+    linux-mxlarge/amd64,\
+    linux-mxlarge/arm64,\
+    linux-m2xlarge/amd64,\
+    linux-m2xlarge/arm64,\
+    linux-m4xlarge/amd64,\
+    linux-m4xlarge/arm64,\
+    linux-m8xlarge/amd64,\
+    linux-m8xlarge/arm64,\
+    linux-cxlarge/amd64,\
+    linux-cxlarge/arm64,\
+    linux-c2xlarge/amd64,\
+    linux-c2xlarge/arm64,\
+    linux-c4xlarge/amd64,\
+    linux-c4xlarge/arm64,\
+    linux-c8xlarge/amd64,\
+    linux-c8xlarge/arm64,\
+    linux-root/arm64,\
+    linux-root/amd64,\
+    linux-fast/amd64,\
+    linux-extra-fast/amd64\
+    "
   instance-tag: rhtap-prod
 
   # cpu:memory (1:4)
@@ -21,6 +50,17 @@ data:
   dynamic.linux-arm64.security-group-id: sg-0fbf35ced0d59fd4a
   dynamic.linux-arm64.max-instances: "10"
   dynamic.linux-arm64.subnet-id: subnet-0c39ff75f819abfc5
+
+  dynamic.linux-mlarge-arm64.type: aws
+  dynamic.linux-mlarge-arm64.region: us-east-1
+  dynamic.linux-mlarge-arm64.ami: ami-03d6a5256a46c9feb
+  dynamic.linux-mlarge-arm64.instance-type: m6g.large
+  dynamic.linux-mlarge-arm64.key-name: konflux-prod-ext-mab01
+  dynamic.linux-mlarge-arm64.aws-secret: aws-account
+  dynamic.linux-mlarge-arm64.ssh-secret: aws-ssh-key
+  dynamic.linux-mlarge-arm64.security-group-id: sg-0fbf35ced0d59fd4a
+  dynamic.linux-mlarge-arm64.max-instances: "10"
+  dynamic.linux-mlarge-arm64.subnet-id: subnet-0c39ff75f819abfc5
 
   dynamic.linux-mxlarge-arm64.type: aws
   dynamic.linux-mxlarge-arm64.region: us-east-1
@@ -76,6 +116,17 @@ data:
   dynamic.linux-amd64.security-group-id: sg-0fbf35ced0d59fd4a
   dynamic.linux-amd64.max-instances: "10"
   dynamic.linux-amd64.subnet-id: subnet-0c39ff75f819abfc5
+
+  dynamic.linux-mlarge-amd64.type: aws
+  dynamic.linux-mlarge-amd64.region: us-east-1
+  dynamic.linux-mlarge-amd64.ami: ami-026ebd4cfe2c043b2
+  dynamic.linux-mlarge-amd64.instance-type: m6a.large
+  dynamic.linux-mlarge-amd64.key-name: konflux-prod-ext-mab01
+  dynamic.linux-mlarge-amd64.aws-secret: aws-account
+  dynamic.linux-mlarge-amd64.ssh-secret: aws-ssh-key
+  dynamic.linux-mlarge-amd64.security-group-id: sg-0fbf35ced0d59fd4a
+  dynamic.linux-mlarge-amd64.max-instances: "10"
+  dynamic.linux-mlarge-amd64.subnet-id: subnet-0c39ff75f819abfc5
 
   dynamic.linux-mxlarge-amd64.type: aws
   dynamic.linux-mxlarge-amd64.region: us-east-1
