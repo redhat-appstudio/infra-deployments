@@ -27,21 +27,7 @@ objects:
     displayName: Development
     type: Non-POC
 
-# Quotas and default limits for not-terminating containers (regular long-running containers)
-# and terminating (short-lived containers like build) containers
-- apiVersion: v1
-  kind: ResourceQuota
-  metadata:
-    name: compute-deploy
-    namespace: ${SPACE_NAME}-tenant
-  spec:
-    scopes:
-    - NotTerminating
-    hard:
-      limits.cpu: "20"
-      limits.memory: ${MEMORY_LIMIT}
-      requests.cpu: 1750m
-      requests.memory: ${MEMORY_REQUEST}
+# Quotas and default limits for terminating (short-lived containers like build) containers
 - apiVersion: v1
   kind: ResourceQuota
   metadata:
