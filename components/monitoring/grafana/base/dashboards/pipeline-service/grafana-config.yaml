@@ -152,7 +152,7 @@ data:
             {
               "editorMode": "code",
               "exemplar": true,
-              "expr": "sum(increase(pipeline_service_schedule_overhead_percentage_sum{status='succeded'}[30m])) / sum(increase(pipeline_service_schedule_overhead_percentage_count{status='succeded'}[30m]))",
+              "expr": "sum(increase(pipeline_service_schedule_overhead_percentage_sum{status='succeded'}[2m])) / sum(increase(pipeline_service_schedule_overhead_percentage_count{status='succeded'}[2m]))",
               "format": "table",
               "hide": false,
               "instant": false,
@@ -220,7 +220,7 @@ data:
           "targets": [
             {
               "editorMode": "code",
-              "expr": "sum(increase(pipeline_service_execution_overhead_percentage_sum{status='succeded'}[30m])) / sum(increase(pipeline_service_execution_overhead_percentage_count{status='succeded'}[30m]))",
+              "expr": "sum(increase(pipeline_service_execution_overhead_percentage_sum{status='succeded'}[2m])) / sum(increase(pipeline_service_execution_overhead_percentage_count{status='succeded'}[2m]))",
               "legendFormat": "__auto",
               "range": true,
               "refId": "A"
@@ -230,7 +230,7 @@ data:
           "type": "stat"
         },
         {
-          "description": "The number of times the pipelines controller has restarted",
+          "description": "The number of times any of the tekton controllers have restarted",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -284,7 +284,7 @@ data:
           "targets": [
             {
               "editorMode": "code",
-              "expr": "sum(increase(kube_pod_container_status_restarts_total{namespace=\"openshift-pipelines\", pod=~\"tekton-pipelines-controller-.*\"}[30m]))",
+              "expr": "sum(increase(kube_pod_container_status_restarts_total{namespace=\"openshift-pipelines\", pod=~\"tekton-.*\"}[$__range]))",
               "legendFormat": "__auto",
               "range": true,
               "refId": "A"
@@ -348,7 +348,7 @@ data:
           "targets": [
             {
               "editorMode": "code",
-              "expr": "sum(increase(pipelinerun_kickoff_not_attempted_count[30m]))",
+              "expr": "sum(increase(pipelinerun_kickoff_not_attempted_count[2m]))",
               "legendFormat": "__auto",
               "range": true,
               "refId": "A"
@@ -412,13 +412,75 @@ data:
           "targets": [
             {
               "editorMode": "code",
-              "expr": "sum(increase(taskrun_pod_create_not_attempted_or_pending_count[30m]))",
+              "expr": "sum(increase(taskrun_pod_create_not_attempted_or_pending_count[2m])) - sum(increase(tekton_pipelines_controller_running_taskruns_throttled_by_quota[2m])) - sum(increase(tekton_pipelines_controller_running_taskruns_throttled_by_node[2m]))",
               "legendFormat": "__auto",
               "range": true,
               "refId": "A"
             }
           ],
           "title": "TaskRun Controller kickoff after Kubernetes scheduling checks pass",
+          "type": "stat"
+        },
+        {
+          "description": "The number of validated ResolutionRequests not yet processed by the Resolver Controller.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "noValue": "No data",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 30
+                  }
+                ]
+              },
+              "unit": "percent"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 9,
+            "w": 4,
+            "x": 0,
+            "y": 2
+          },
+          "id": 483,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "showPercentChange": false,
+            "textMode": "auto",
+            "wideLayout": true
+          },
+          "pluginVersion": "10.4.3",
+          "targets": [
+            {
+              "editorMode": "code",
+              "expr": "sum(increase(pending_resolutionrequest_count[$__range]))",
+              "legendFormat": "__auto",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Deadlocked ResolutionRequests",
           "type": "stat"
         },
         {
@@ -4127,7 +4189,7 @@ data:
                 {
                   "editorMode": "code",
                   "exemplar": true,
-                  "expr": "histogram_quantile(0.99, sum(rate(watcher_reconcile_latency_bucket{job=\"tekton-chains\"}[30m])) by (le) ) / 1000",
+                  "expr": "histogram_quantile(0.99, sum(rate(watcher_reconcile_latency_bucket{job=\"tekton-chains\"}[2m])) by (le) ) / 1000",
                   "interval": "",
                   "intervalFactor": 4,
                   "legendFormat": "Latency",
