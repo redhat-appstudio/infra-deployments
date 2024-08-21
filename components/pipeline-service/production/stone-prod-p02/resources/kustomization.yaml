@@ -31,3 +31,12 @@ patches:
     target:
       kind: TektonConfig
       name: config
+  - target:
+      kind: ExternalSecret
+      name: tekton-chains-public-key
+    patch: |
+      $patch: delete
+      apiVersion: external-secrets.io/v1beta1
+      kind: ExternalSecret
+      metadata:
+        name: tekton-chains-public-key
