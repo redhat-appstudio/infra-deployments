@@ -1949,14 +1949,6 @@ metadata:
     argocd.argoproj.io/sync-wave: "0"
   name: config
 spec:
-  config:
-    nodeSelector:
-      appstudio.redhat.com/workload: tenants
-    tolerations:
-      - key: appstudio.redhat.com/workload
-        operator: "Equal"
-        value: "tenants"
-        effect: "NoSchedule"
   chain:
     artifacts.oci.storage: oci
     artifacts.pipelinerun.enable-deep-inspection: true
