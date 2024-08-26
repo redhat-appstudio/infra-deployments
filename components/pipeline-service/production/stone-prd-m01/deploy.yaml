@@ -1103,6 +1103,8 @@ data:
     S3_MULTI_PART_SIZE=5242880
     GCS_BUCKET_NAME=
     STORAGE_EMULATOR_HOST=
+    PROFILING=true
+    PROFILING_PORT=6060
 kind: ConfigMap
 metadata:
   annotations:
@@ -1231,6 +1233,7 @@ data:
     metrics.taskrun.duration-type: "histogram"
     metrics.pipelinerun.level: "pipeline"
     metrics.pipelinerun.duration-type: "histogram"
+  profiling.enable: "true"
 kind: ConfigMap
 metadata:
   annotations:

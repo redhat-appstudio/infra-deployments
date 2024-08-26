@@ -727,6 +727,8 @@ data:
     S3_MULTI_PART_SIZE=5242880
     GCS_BUCKET_NAME=
     STORAGE_EMULATOR_HOST=
+    PROFILING=true
+    PROFILING_PORT=6060
 kind: ConfigMap
 metadata:
   annotations:
@@ -818,6 +820,7 @@ metadata:
 ---
 apiVersion: v1
 data:
+  profiling.enable: "true"
   _example: |
     ################################
     #                              #
