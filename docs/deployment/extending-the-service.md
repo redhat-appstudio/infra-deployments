@@ -58,8 +58,6 @@ These are the steps to add your own component:
                                 📄 kustomization.yaml
             ```
 
-            See `components/spi` for an example of this
-
     - See `components/gitops/staging` for more complex structure, where overlays are further structured for cluster specific configurations.
 
 3. Create an Argo CD `ApplicationSet` resource in `argo-cd-apps/base/directory/team-name/(team-name).yaml` or `argo-cd-apps/base/team-name/(team-name).yaml` depending on your application.
@@ -138,7 +136,7 @@ Access to namespaces is managed by [components/authentication](components/authen
 ## For Members and Maintainers
 
 ### How to add yourself as a reviewer/approver
-There is an OWNERS file present in each component folder [like this](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/spi/OWNERS), people mentioned in the file have the respective access to approve/review PR's.
+There is an OWNERS file present in each component folder [like this](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/integration/OWNERS), people mentioned in the file have the respective access to approve/review PR's.
 
 To add yourself change the OWNERS file present in your component folder and Raise a pull request, if you want to be a Approver for the entire repo please change the OWNERS file present in the root level of this repository
 

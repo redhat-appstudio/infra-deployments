@@ -5,7 +5,6 @@ resources:
   - ../../base/host
   - ../../base/host/optional/infra-deployments/dev-sso
   - ../../base/member
-  - ../../base/member/optional/infra-deployments/spi-vault
   - ../../base/all-clusters
   - ../../base/ca-bundle
   - ../../base/repository-validator
@@ -43,16 +42,6 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: has
-  - path: development-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: spi
-  - path: development-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: remote-secret-controller
   - path: development-overlay-patch.yaml
     target:
       kind: ApplicationSet
