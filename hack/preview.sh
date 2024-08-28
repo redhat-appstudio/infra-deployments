@@ -156,23 +156,6 @@ if [ -n "$DEPLOY_ONLY" ]; then
   done
 fi
 
-# patch the SPI configuration with the Vault host configuration to provided VAULT_HOST variable or to current cluster
-# and the base URL set to the SPI_BASE_URL variable or the URL of the  route to the SPI OAuth service in the current cluster
-# This script also sets up the Vault client to accept insecure TLS connections so that the custom vault host doesn't have
-# to serve requests using a trusted TLS certificate.
-$ROOT/hack/util-patch-spi-config.sh
-# configure the secrets and providers in SPI
-TMP_FILE=$(mktemp)
-yq e ".serviceProviders[0].type=\"GitHub\"" $ROOT/components/spi/base/config.yaml | \
-    yq e ".serviceProviders[0].clientId=\"${SPI_GITHUB_CLIENT_ID:-app-client-id}\"" - | \
-    yq e ".serviceProviders[0].clientSecret=\"${SPI_GITHUB_CLIENT_SECRET:-app-secret}\"" - | \
-    yq e ".serviceProviders[1].type=\"Quay\"" - | \
-    yq e ".serviceProviders[1].clientId=\"${SPI_QUAY_CLIENT_ID:-app-client-id}\"" - | \
-    yq e ".serviceProviders[1].clientSecret=\"${SPI_QUAY_CLIENT_SECRET:-app-secret}\"" - > $TMP_FILE
-oc create namespace spi-system --dry-run=client -o yaml | oc apply -f -
-oc create -n spi-system secret generic shared-configuration-file --from-file=config.yaml=$TMP_FILE --dry-run=client -o yaml | oc apply -f -
-echo "SPI configured"
-rm $TMP_FILE
 
 $ROOT/hack/util-set-github-org $MY_GITHUB_ORG
 
@@ -206,17 +189,6 @@ sed -i.bak "s/rekor-server.enterprise-contract-service.svc/$rekor_server/" $ROOT
 [ -n "${MINTMAKER_IMAGE_TAG}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/konflux-ci/mintmaker\")) |=.newTag=\"${MINTMAKER_IMAGE_TAG}\"" $ROOT/components/mintmaker/development/kustomization.yaml
 [[ -n "${MINTMAKER_PR_OWNER}" && "${MINTMAKER_PR_SHA}" ]] && yq -i e "(.resources[] | select(. ==\"*github.com/konflux-ci/mintmaker*\")) |= \"https://github.com/${MINTMAKER_PR_OWNER}/mintmaker/config/default?ref=${MINTMAKER_PR_SHA}\"" $ROOT/components/mintmaker/development/kustomization.yaml
 
-[ -n "${SPI_OPERATOR_IMAGE_REPO}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/redhat-appstudio/service-provider-integration-operator\")) |=.newName=\"${SPI_OPERATOR_IMAGE_REPO}\"" $ROOT/components/spi/overlays/development/kustomization.yaml
-[ -n "${SPI_OPERATOR_IMAGE_TAG}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/redhat-appstudio/service-provider-integration-operator\")) |=.newTag=\"${SPI_OPERATOR_IMAGE_TAG}\"" $ROOT/components/spi/overlays/development/kustomization.yaml
-[[ -n "${SPI_OPERATOR_PR_OWNER}" && "${SPI_OPERATOR_PR_SHA}" ]] && yq -i e "(.resources[] | select(. ==\"*github.com/konflux-ci/service-provider-integration-operator*\")) |= \"https://github.com/${SPI_OPERATOR_PR_OWNER}/service-provider-integration-operator/config/overlays/openshift_vault?ref=${SPI_OPERATOR_PR_SHA}\"" $ROOT/components/spi/overlays/development/kustomization.yaml
-
-[ -n "${SPI_OAUTH_IMAGE_REPO}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/redhat-appstudio/service-provider-integration-oauth\")) |=.newName=\"${SPI_OAUTH_IMAGE_REPO}\"" $ROOT/components/spi/overlays/development/kustomization.yaml
-[ -n "${SPI_OAUTH_IMAGE_TAG}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/redhat-appstudio/service-provider-integration-oauth\")) |=.newTag=\"${SPI_OAUTH_IMAGE_TAG}\"" $ROOT/components/spi/overlays/development/kustomization.yaml
-
-[ -n "${REMOTE_SECRET_IMAGE_REPO}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/redhat-appstudio/remote-secret-controller\")) |=.newName=\"${REMOTE_SECRET_IMAGE_REPO}\"" $ROOT/components/remote-secret-controller/overlays/development/kustomization.yaml
-[ -n "${REMOTE_SECRET_IMAGE_TAG}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/redhat-appstudio/remote-secret-controller\")) |=.newTag=\"${REMOTE_SECRET_IMAGE_TAG}\"" $ROOT/components/remote-secret-controller/overlays/development/kustomization.yaml
-[[ -n "${REMOTE_SECRET_PR_OWNER}" && "${REMOTE_SECRET_PR_SHA}" ]] && yq -i e "(.resources[] | select(. ==\"*github.com/konflux-ci/remote-secret*\")) |= \"https://github.com/${REMOTE_SECRET_PR_OWNER}/remote-secret/config/overlays/openshift_vault?ref=${REMOTE_SECRET_PR_SHA}\"" $ROOT/components/remote-secret-controller/overlays/development/kustomization.yaml
-
 [ -n "${IMAGE_CONTROLLER_IMAGE_REPO}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/konflux-ci/image-controller\")) |=.newName=\"${IMAGE_CONTROLLER_IMAGE_REPO}\"" $ROOT/components/image-controller/development/kustomization.yaml
 [ -n "${IMAGE_CONTROLLER_IMAGE_TAG}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/konflux-ci/image-controller\")) |=.newTag=\"${IMAGE_CONTROLLER_IMAGE_TAG}\"" $ROOT/components/image-controller/development/kustomization.yaml
 [[ -n "${IMAGE_CONTROLLER_PR_OWNER}" && "${IMAGE_CONTROLLER_PR_SHA}" ]] && yq -i e "(.resources[] | select(. ==\"*github.com/konflux-ci/image-controller*\")) |= \"https://github.com/${IMAGE_CONTROLLER_PR_OWNER}/image-controller/config/default?ref=${IMAGE_CONTROLLER_PR_SHA}\"" $ROOT/components/image-controller/development/kustomization.yaml
@@ -240,15 +212,6 @@ while [ "$(oc get applications.argoproj.io all-application-sets -n openshift-git
   echo Waiting for sync of all-application-sets argoCD app
   sleep 5
 done
-
-# Init Vault
-$ROOT/hack/spi/vault-init.sh
-
-# Init SPI
-$ROOT/hack/spi/spi-init.sh
-
-# Init Remote Secret
-$ROOT/hack/spi/remote-secret-init.sh
 
 APPS=$(oc get apps -n openshift-gitops -o name)
 # trigger refresh of apps
