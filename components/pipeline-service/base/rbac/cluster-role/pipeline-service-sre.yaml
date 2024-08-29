@@ -79,6 +79,16 @@ rules:
       - get
       - list
       - watch
+  # this rule allows SREs to view the webhook configurations for openshift-pipelines and openshift-operators; tried
+  # to do a Role/RoleBinding but could not solve the race condition with the creation of the openshift-pipelines namespace
+  - apiGroups:
+      - admissionregistration.k8s.io
+    resources:
+      - "*"
+    verbs:
+      - list
+      - get
+      - watch
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
