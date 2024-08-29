@@ -305,6 +305,26 @@ rules:
       - delete
       - get
       - list
+  - apiGroups:
+      - hypershift.openshift.io
+    resources:
+      - awsendpointservices
+      - certificatesigningrequestapprovals
+      - hostedclusters
+      - hostedcontrolplanes
+      - nodepools
+    verbs:
+      - '*'
+  - apiGroups:
+      - clustertemplate.openshift.io
+    resources:
+      - clustertemplates
+      - clustertemplateinstances
+      - clustertemplatequotas
+      - clustertemplatesetups
+      - configs
+    verbs:
+      - '*'
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
