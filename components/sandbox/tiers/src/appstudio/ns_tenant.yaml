@@ -121,18 +121,6 @@ objects:
     hard:
       count/enterprisecontractpolicies.appstudio.redhat.com: "512"
 - apiVersion: v1
-  kind: ResourceQuota
-  metadata:
-    name: appstudio-crds-spi
-    namespace: ${SPACE_NAME}-tenant
-  spec:
-    hard:
-      count/spiaccesschecks.appstudio.redhat.com: "512"
-      count/spiaccesstokenbindings.appstudio.redhat.com: "512"
-      count/spiaccesstokendataupdates.appstudio.redhat.com: "512"
-      count/spiaccesstokens.appstudio.redhat.com: "512"
-      count/spifilecontentrequests.appstudio.redhat.com: "512"
-- apiVersion: v1
   kind: LimitRange
   metadata:
     name: resource-limits
