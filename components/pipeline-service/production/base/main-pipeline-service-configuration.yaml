@@ -1515,6 +1515,14 @@ spec:
               }
         config-defaults:
           data:
+            default-pod-template: |
+              nodeSelector:
+                konflux-ci.dev/workload: konflux-tenants
+              tolerations:
+                - key: konflux-ci.dev/workload
+                  operator: "Equal"
+                  value: "konflux-tenants"
+                  effect: "NoSchedule"
             default-timeout-minutes: "120"    
       deployments:
         tekton-operator-proxy-webhook:
