@@ -29,3 +29,10 @@ kind: ApplicationSet
 metadata:
   name: quality-dashboard
 $patch: delete
+---
+# Cloudability's Metrics agent is excluded from production
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: cloudability-metrics-agent
+$patch: delete
