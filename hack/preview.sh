@@ -141,6 +141,29 @@ if [ "$EC_DISABLE_DOWNLOAD_SERVICE" = "true" ]; then
   yq eval 'del(.resources[] | select(. == "download-service.yaml"))' -i  $ROOT/components/enterprise-contract/kustomization.yaml
 fi
 
+# After changes introduced in https://github.com/redhat-appstudio/infra-deployments/pull/4415/files the nodes need to be labeled
+nodes=$(kubectl get nodes -o name)
+node_count=$(echo "$nodes" | wc -l)
+
+for node in $nodes; do
+    echo "labeling $node..."
+    if kubectl label $node konflux-ci.dev/workload=konflux-tenants --overwrite; then
+        echo "successfully labeled $node"
+    else
+        echo "failed to label $node"
+    fi
+done
+
+echo "verifying labels..."
+labeled_count=$(kubectl get nodes --show-labels | grep -c "konflux-ci.dev/workload=konflux-tenants")
+
+if [ "$node_count" -eq "$labeled_count" ]; then
+    echo "all nodes labeled successfully."
+else
+    echo "label verification failed. Labeled $labeled_count out of $node_count nodes."
+    exit 1
+fi
+
 # delete argoCD applications which are not in DEPLOY_ONLY env var if it's set
 if [ -n "$DEPLOY_ONLY" ]; then
   APPLICATIONS=$(\
