@@ -137,10 +137,6 @@ if $EAAS; then
     $ROOT/argo-cd-apps/base/local-cluster-secret/all-in-one/kustomization.yaml
 fi
 
-if [ "$EC_DISABLE_DOWNLOAD_SERVICE" = "true" ]; then
-  yq eval 'del(.resources[] | select(. == "download-service.yaml"))' -i  $ROOT/components/enterprise-contract/kustomization.yaml
-fi
-
 # After changes introduced in https://github.com/redhat-appstudio/infra-deployments/pull/4415/files the nodes need to be labeled
 nodes=$(kubectl get nodes -o name)
 node_count=$(echo "$nodes" | wc -l)
