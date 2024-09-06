@@ -60,7 +60,7 @@ stringData:
   config.env: |-
     export MINIO_ROOT_USER="$USER"
     export MINIO_ROOT_PASSWORD="$PASS"
-    export MINIO_STORAGE_CLASS_STANDARD="EC:2"
+    export MINIO_STORAGE_CLASS_STANDARD="EC:1"
     export MINIO_BROWSER="on"
 EOF
 }
