@@ -13,6 +13,12 @@ images:
 namespace: notification-controller
 
 patches:
+  - path: external-secret-path.yaml
+    target:
+      name: aws-sns-secret
+      kind: ExternalSecret
+      group: external-secrets.io
+      version: v1beta1      
   - path: topic_region_add.yaml
     target:
       name: notification-controller-controller-manager
