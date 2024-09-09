@@ -279,12 +279,13 @@ rules:
   - apiGroups:
       - tekton.dev
     resources:
+      - pipelines
       - pipelineruns
+      - stepactions
+      - tasks
+      - taskruns
     verbs:
-      - get
-      - list
-      - patch
-      - watch
+      - '*'
   - apiGroups:
     - user.openshift.io
     resources:
