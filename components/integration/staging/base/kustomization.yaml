@@ -15,8 +15,8 @@ configMapGenerator:
 - name: integration-config
   literals:
     - CONSOLE_NAME="Konflux Staging"
-    - CONSOLE_URL="https://console.dev.redhat.com/preview/application-pipeline/ns/{{ .Namespace }}/pipelinerun/{{ .PipelineRunName }}"
-    - CONSOLE_URL_TASKLOG="https://console.dev.redhat.com/preview/application-pipeline/ns/{{ .Namespace }}/pipelinerun/{{ .PipelineRunName }}/logs/{{ .TaskName }}"
+    - CONSOLE_URL="https://console.dev.redhat.com/application-pipeline/ns/{{ .Namespace }}/pipelinerun/{{ .PipelineRunName }}"
+    - CONSOLE_URL_TASKLOG="https://console.dev.redhat.com/application-pipeline/ns/{{ .Namespace }}/pipelinerun/{{ .PipelineRunName }}/logs/{{ .TaskName }}"
 - name: pipelinerun-options
   literals:
     - PIPELINE_TIMEOUT="6h"
