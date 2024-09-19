@@ -1562,6 +1562,18 @@ spec:
                       requests:
                         cpu: 200m
                         memory: 200Mi
+        tekton-pipelines-controller:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: tekton-pipelines-controller
+                    resources:
+                      requests:
+                        memory: 1Gi
+                        cpu: 100m
+                      limits:
+                        memory: 2Gi
       disabled: false
       horizontalPodAutoscalers:
         tekton-operator-proxy-webhook:
