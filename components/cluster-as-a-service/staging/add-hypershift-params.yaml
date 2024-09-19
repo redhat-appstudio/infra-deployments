@@ -1,0 +1,18 @@
+---
+- op: add
+  path: /spec/template/spec/source/helm/parameters/-
+  value:
+    name: baseDomain
+    value: stage.konfluxeaas.com
+
+- op: add
+  path: /spec/template/spec/source/helm/parameters/-
+  value:
+    name: hypershiftImageTag
+    value: "4.16"
+
+- op: add
+  path: /spec/template/spec/source/helm/parameters/-
+  value:
+    name: hypershiftRoleArn
+    value: arn:aws:iam::767397671005:role/eaas-hypershift-cli-role
