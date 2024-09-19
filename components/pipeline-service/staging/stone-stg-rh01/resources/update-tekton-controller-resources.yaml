@@ -1,0 +1,20 @@
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  pipeline:
+    options:
+      deployments:
+        tekton-pipelines-controller:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: tekton-pipelines-controller
+                    resources:
+                      requests:
+                        memory: 6Gi
+                        cpu: 500m
+                      limits:
+                        memory: 8Gi
