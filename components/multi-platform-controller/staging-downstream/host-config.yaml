@@ -304,12 +304,11 @@ data:
   dynamic.linux-ppc64le.memory: "8"
   dynamic.linux-ppc64le.max-instances: "2"
   dynamic.linux-ppc64le.user-data: |-
-    <<EOF
     #cloud-config
     runcmd:
     - ip add route 10.0.0.0/8 via 10.130.72.1
     - ip add route 0.0.0.0/0 via 10.130.73.115
-    EOF
+
   # host.ppc1.address: "10.130.72.222"
   # host.ppc1.platform: "linux/ppc64le"
   # host.ppc1.user: "root"
