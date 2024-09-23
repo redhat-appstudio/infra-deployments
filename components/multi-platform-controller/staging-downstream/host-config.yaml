@@ -304,30 +304,12 @@ data:
   dynamic.linux-ppc64le.memory: "8"
   dynamic.linux-ppc64le.max-instances: "2"
   dynamic.linux-ppc64le.user-data: |-
-    Content-Type: multipart/mixed; boundary="//"
-    MIME-Version: 1.0
-
-    --//
-    Content-Type: text/cloud-config; charset="us-ascii"
-    MIME-Version: 1.0
-    Content-Transfer-Encoding: 7bit
-    Content-Disposition: attachment; filename="cloud-config.txt"
-
+    <<EOF
     #cloud-config
-    cloud_final_modules:
-      - [scripts-user, always]
-
-    --//
-    Content-Type: text/x-shellscript; charset="us-ascii"
-    MIME-Version: 1.0
-    Content-Transfer-Encoding: 7bit
-    Content-Disposition: attachment; filename="userdata.txt"
-
     runcmd:
     - ip add route 10.0.0.0/8 via 10.130.72.1
     - ip add route 0.0.0.0/0 via 10.130.73.115
-
-    --//--
+    EOF
   # host.ppc1.address: "10.130.72.222"
   # host.ppc1.platform: "linux/ppc64le"
   # host.ppc1.user: "root"
