@@ -9,20 +9,20 @@ main() {
 }
 
 create_namespace() {
-    if kubectl get namespace tekton-results &>/dev/null; then
+    if kubectl get namespace openshift-pipelines &>/dev/null; then
         echo "tekton-results namespace already exists, skipping creation"
         return
     fi
-    kubectl create namespace tekton-results -o yaml --dry-run=client | kubectl apply -f-
+    kubectl create namespace openshift-pipelines -o yaml --dry-run=client | kubectl apply -f-
 }
 
 create_db_secret() {
     echo "Creating DB secret" >&2
-    if kubectl get secret -n tekton-results tekton-results-database &>/dev/null; then
+    if kubectl get secret -n openshift-pipelines tekton-results-database &>/dev/null; then
         echo "DB secret already exists, skipping creation"
         return
     fi
-    kubectl create secret generic -n tekton-results tekton-results-database \
+    kubectl create secret generic -n openshift-pipelines tekton-results-database \
       --from-literal=db.user=tekton \
       --from-literal=db.password="$(openssl rand -base64 20)" \
       --from-literal=db.host="postgres-postgresql.tekton-results.svc.cluster.local" \
@@ -31,13 +31,13 @@ create_db_secret() {
 
 create_s3_secret() {
     echo "Creating S3 secret" >&2
-    if kubectl get secret -n tekton-results tekton-results-s3 &>/dev/null; then
+    if kubectl get secret -n openshift-pipelines tekton-results-s3 &>/dev/null; then
         echo "S3 secret already exists, skipping creation"
         return
     fi
     USER=minio
     PASS="$(openssl rand -base64 20)"
-    kubectl create secret generic -n tekton-results tekton-results-s3 \
+    kubectl create secret generic -n openshift-pipelines tekton-results-s3 \
       --from-literal=aws_access_key_id="$USER" \
       --from-literal=aws_secret_access_key="$PASS" \
       --from-literal=aws_region='not-applicable' \
@@ -45,7 +45,7 @@ create_s3_secret() {
       --from-literal=endpoint='https://minio.tekton-results.svc.cluster.local'
 
     echo "Creating MinIO config" >&2
-    if kubectl get secret -n tekton-results minio-storage-configuration &>/dev/null; then
+    if kubectl get secret -n openshift-pipelines minio-storage-configuration &>/dev/null; then
         echo "MinIO config already exists, skipping creation"
         return
     fi
@@ -67,7 +67,7 @@ EOF
 
 create_db_cert_secret_and_configmap() {
     echo "Creating Postgres TLS certs" >&2
-    if kubectl get secret -n tekton-results postgresql-tls &>/dev/null; then
+    if kubectl get secret -n openshift-pipelines postgresql-tls &>/dev/null; then
         echo "Postgres DB cert secret already exists, skipping creation"
         return
     fi
@@ -99,11 +99,11 @@ create_db_cert_secret_and_configmap() {
         -out ".tmp/tekton-results/tls.crt" \
         > /dev/null
     cat ".tmp/tekton-results/ca.crt" > ".tmp/tekton-results/tekton-results-db-ca.pem"
-    kubectl create secret generic -n tekton-results postgresql-tls \
+    kubectl create secret generic -n openshift-pipelines postgresql-tls \
         --from-file=.tmp/tekton-results/ca.crt \
         --from-file=.tmp/tekton-results/tls.crt \
         --from-file=.tmp/tekton-results/tls.key
-    kubectl create configmap -n tekton-results rds-root-crt \
+    kubectl create configmap -n openshift-pipelines  rds-root-crt \
         --from-file=.tmp/tekton-results/tekton-results-db-ca.pem
 }
 
