@@ -1,0 +1,15 @@
+[Unit]
+Description=Custom Service for NVMe Storage
+DefaultDependencies=no
+Before=kubelet-dependencies.target
+After=sysinit.target 
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+StandardOutput=tty
+StandardError=tty
+ExecStart=/usr/local/bin/configuration.sh
+
+[Install]
+RequiredBy=local-fs.target
