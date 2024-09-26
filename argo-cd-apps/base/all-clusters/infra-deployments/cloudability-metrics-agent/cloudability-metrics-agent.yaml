@@ -1,0 +1,59 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: cloudability-metrics-agent
+  labels:
+    noSourceTransform: "true"
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              values:
+                sourceRoot: components/cloudability-metrics-agent
+                environment: staging
+                clusterDir: ""
+          - list:
+              elements:
+                # restrict to stage-p01 cluster for PoC
+                - nameNormalized: stone-stage-p01
+                  values.clusterDir: stone-stage-p01
+  template:
+    metadata:
+      name: cloudability-metrics-agent-{{nameNormalized}}
+    spec:
+      project: default
+      sources:
+        - chart: metrics-agent
+          repoURL: https://cloudability.github.io/metrics-agent
+          targetRevision: 2.11.29
+          helm:
+            # (cf. https://argo-cd.readthedocs.io/en/stable/user-guide/helm/#helm-value-precedence)
+            # Order of precedence is parameters > values > valueFiles 
+            valuesFiles:
+            - $values/{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}/cloudability-metrics-agent-helm-values.yaml
+            values: |-
+              openshift: true
+              secretName: cloudability-api-key
+              clusterName: {{values.clusterDir}}
+        - repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+          targetRevision: main
+          ref: values
+      destination:
+        namespace: cloudability
+        server: '{{server}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+        retry:
+          limit: 50
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 3m
