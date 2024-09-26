@@ -1,5 +1,13 @@
 config:
   exporters:
+    sapm:
+      endpoint: "https://ingest.us1.signalfx.com/v2/trace"
+      access_token: ${env:SIGNALFX_ACCESS_TOKEN}
+    signalfx:
+      endpoint: "https://api.signalfx.com/v2/traces"
+      realm: "us1"
+      api_url: "https://api.us1.signalfx.com"
+      access_token: ${env:SIGNALFX_ACCESS_TOKEN} 
     otlphttp:
       endpoint: https://honeycomb-refinery.apps.ext.spoke.preprod.us-east-1.aws.paas.redhat.com:443
       headers:
@@ -78,6 +86,11 @@ extraEnvs:
     valueFrom:
       secretKeyRef:
         name: "honeycomb-api-key"
+        key: konflux-tracing-stage
+  - name: SIGNALFX_API_TOKEN
+    valueFrom:
+      secretKeyRef:
+        name: "signalfx-api-key"
         key: konflux-tracing-stage
 image:
   repository: quay.io/konflux-ci/opentelemetry-collector-k8s
