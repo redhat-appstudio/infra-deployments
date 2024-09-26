@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: nvme-storage-config
+resources:
+  - namespace.yaml
+  - serviceaccount.yaml
+  - clusterrolebinding.yaml
+  - daemonset.yaml
+configMapGenerator:
+- name: nvme-storage-configurator
+  files:
+  - install.sh
+  - mount.sh
+  - nvme-storage.service

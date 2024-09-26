@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: nvme-storage-configurator
+  labels:
+    app: nvme-storage-configurator
+spec:
+  selector:
+    matchLabels:
+      app: nvme-storage-configurator
+  template:
+    metadata:
+      labels:
+        app: nvme-storage-configurator
+    spec:
+      nodeSelector:
+        konflux-ci.dev/storage: "nvme"
+      tolerations:
+        - key: konflux-ci.dev/storage
+          operator: "Equal"
+          value: "nvme"
+          effect: "NoSchedule"
+      hostPID: true
+      serviceAccount: nvme-storage-configurator
+      initContainers:
+        - name: install
+          image: "quay.io/openshift/origin-network-tools"
+          command: ['/bin/bash', '-c', '/bin/bash -x /scripts/install.sh']
+          env:
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: spec.nodeName
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - mountPath: /scripts
+              name: script-config
+            - mountPath: /host-etc-systemd-dir
+              name: etc-systemd-dir
+            - mountPath: /host-usr-local-bin
+              name: usr-local-bin
+            - mountPath: /host-dev-dir
+              name: dev-dir
+      containers:
+        - name: pause
+          image: registry.redhat.io/rhel8/pause:8.10
+      volumes:
+        - name: etc-systemd-dir
+          hostPath:
+            path: /etc/systemd/system
+        - name: usr-local-bin
+          hostPath:
+            path: /usr/local/bin
+        - name: dev-dir
+          hostPath:
+            path: /dev
+        - name: script-config
+          configMap:
+            name: nvme-storage-configurator
