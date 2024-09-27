@@ -1,7 +1,7 @@
 apiVersion: external-secrets.io/v1beta1
 kind: ExternalSecret
 metadata:
-  name: honeycomb-api-key
+  name: signalfx-api-key
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
     argocd.argoproj.io/sync-wave: "-1"
@@ -16,4 +16,4 @@ spec:
   target:
     creationPolicy: Owner
     deletionPolicy: Delete
-    name: honeycomb-api-key
+    name: signalfx-api-key

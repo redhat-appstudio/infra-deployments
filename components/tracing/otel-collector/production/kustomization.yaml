@@ -3,9 +3,9 @@ kind: Kustomization
 resources:
   - ../base
 patches:
-  - path: honeycomb-api-key-secret-path.yaml
+  - path: signalfx-api-key-secret-path.yaml
     target:
-      name: honeycomb-api-key
+      name: signalfx-api-key
       kind: ExternalSecret
       group: external-secrets.io
       version: v1beta1
