@@ -1646,10 +1646,10 @@ spec:
         resources:
           limits:
             cpu: 250m
-            memory: 4Gi
+            memory: 8Gi
           requests:
             cpu: 250m
-            memory: 4Gi
+            memory: 8Gi
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -2063,12 +2063,12 @@ spec:
                       cpu: 100m
                       memory: 1Gi
                 topologySpreadConstraints:
-                  - maxSkew: 1
-                    topologyKey: topology.kubernetes.io/zone
-                    whenUnsatisfiable: DoNotSchedule
-                    labelSelector:
-                      matchLabels:
-                        app: tekton-pipelines-controller
+                - labelSelector:
+                    matchLabels:
+                      app: tekton-pipelines-controller
+                  maxSkew: 1
+                  topologyKey: topology.kubernetes.io/zone
+                  whenUnsatisfiable: DoNotSchedule
         tekton-pipelines-remote-resolvers:
           spec:
             replicas: 2
