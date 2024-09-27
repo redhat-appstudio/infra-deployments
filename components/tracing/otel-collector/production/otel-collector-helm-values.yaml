@@ -1,15 +1,24 @@
 config:
   exporters:
-    otlphttp:
-      endpoint: https://honeycomb-refinery.apps.ext.spoke.prod.us-east-1.aws.paas.redhat.com:443
-      headers:
-        "x-honeycomb-team": ${HONEYCOMB_API_TOKEN}
+    sapm:
+      endpoint: "https://ingest.us1.signalfx.com/v2/trace"
+      access_token: ${env:SIGNALFX_ACCESS_TOKEN}
+    signalfx:
+      endpoint: "https://api.signalfx.com/v2/traces"
+      realm: "us1"
+      api_url: "https://api.us1.signalfx.com"
+      access_token: ${env:SIGNALFX_ACCESS_TOKEN} 
   extensions:
     # The health_check extension is mandatory for this chart.
     # Without the health_check extension the collector will fail the readiness and liveliness probes.
     # The health_check extension can be modified, but should never be removed.
     health_check: {}
   processors:
+    attributes/prod:
+      actions:
+        - key: deployment.environment
+          value: prod
+          action: insert
     batch: {}
     # If set to null, will be overridden with values based on k8s resource limits
     memory_limiter:
@@ -43,11 +52,14 @@ config:
       traces:
         exporters:
           - debug
-          - otlphttp
+          - logging
+          - sapm
+          - signalfx
         processors:
           - memory_limiter
           - attributes/collector-info
           - batch
+          - attributes/stage
         receivers:
           - otlp
       metrics: null
@@ -74,13 +86,18 @@ ports:
   zipkin:
     enabled: false
 extraEnvs:
-  - name: HONEYCOMB_API_TOKEN
+  - name: SIGNALFX_API_TOKEN
     valueFrom:
       secretKeyRef:
-        name: "honeycomb-api-key"
+        name: "signalfx-api-key"
         key: konflux-tracing-prod
 image:
   repository: quay.io/konflux-ci/opentelemetry-collector-k8s
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "0.106.1"
+  tag: "0.110.0"
+# OpenTelemetry Collector executable
+command:
+  # The operator prepends '/' to the command name...no idea why.
+  name: usr/local/bin/otel-collector-sp
+  extraArgs: []

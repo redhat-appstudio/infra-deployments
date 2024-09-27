@@ -79,5 +79,10 @@ image:
   repository: quay.io/konflux-ci/opentelemetry-collector-k8s
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "0.106.1"
+  tag: "0.110.0"
+# OpenTelemetry Collector executable
+command:
+  # The operator prepends '/' to the command name...no idea why.
+  name: usr/local/bin/otel-collector-sp
+  extraArgs: []
 
