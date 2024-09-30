@@ -1,0 +1,53 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgresql
+  annotations:
+    ignore-check.kube-linter.io/no-read-only-root-fs: "Postgres requires to write on root fs, ignoring this one as this is only used in development environment"
+  labels:
+    app: postgresql
+spec:
+  selector:
+    matchLabels:
+      app: postgresql
+  template:
+    metadata:
+      labels:
+        app: postgresql
+    spec:
+      containers:
+        - name: postgresql
+          image: bitnami/postgresql:16.4.0
+          ports:
+            - containerPort: 5432
+          resources:
+            requests:
+              cpu: 50m
+              memory: 100Mi
+            limits:
+              cpu: 100m
+              memory: 100Mi
+          env:
+            - name: POSTGRESQL_DATABASE
+              value: kubearchive
+            - name: POSTGRESQL_USERNAME
+              value: kubearchive
+            - name: POSTGRESQL_PASSWORD
+              value: password  # notsecret
+          securityContext:
+            readOnlyRootFilesystem: false
+            runAsNonRoot: true
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgresql
+  labels:
+    app: postgresql
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5432
+  selector:
+    app: postgresql

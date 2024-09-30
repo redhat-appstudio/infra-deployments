@@ -29,3 +29,10 @@ kind: ApplicationSet
 metadata:
   name: quality-dashboard
 $patch: delete
+---
+# There is not RDS database provisioned yet for internal staging, starting with external staging only
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: kubearchive
+$patch: delete

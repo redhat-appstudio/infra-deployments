@@ -1,0 +1,20 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- ../base
+- postgresql.yaml
+
+namespace: kubearchive
+
+secretGenerator:
+- behavior: merge
+  literals:
+  - POSTGRES_DB=kubearchive
+  - POSTGRES_USER=kubearchive
+  - POSTGRES_URL=postgresql.kubearchive.svc.cluster.local
+  - POSTGRES_PASSWORD=password  # notsecret
+  name: kubearchive-database-credentials
+  type: Opaque
+
+commonAnnotations:
+  argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true

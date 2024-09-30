@@ -1,0 +1,120 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- https://github.com/kubearchive/kubearchive/releases/download/v0.1.0/kubearchive.yaml?timeout=90
+- rbac.yaml
+namespace: kubearchive
+
+# These patches add an annotation so an OpenShift service
+# creates the TLS secrets instead of Cert Manager
+patches:
+- patch: |-
+    apiVersion: v1
+    kind: Service
+    metadata:
+      name: kubearchive-api-server
+      annotations:
+        service.beta.openshift.io/serving-cert-secret-name: kubearchive-api-server-tls
+
+- patch: |-
+    apiVersion: v1
+    kind: Service
+    metadata:
+      name: kubearchive-operator-webhooks
+      annotations:
+        service.beta.openshift.io/serving-cert-secret-name: kubearchive-operator-tls
+
+- patch: |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: kubearchive-api-server
+    spec:
+      template:
+        spec:
+          containers:
+            - name: kubearchive-api-server
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 50Mi
+                limits:
+                  cpu: 100m
+                  memory: 50Mi
+              securityContext:
+                readOnlyRootFilesystem: true
+                runAsNonRoot: true
+
+- patch: |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: kubearchive-operator
+    spec:
+      template:
+        spec:
+          containers:
+            - name: manager
+              securityContext:
+                readOnlyRootFilesystem: true
+                runAsNonRoot: true
+              ports:
+                - containerPort: 8081
+            - name: kube-rbac-proxy
+              securityContext:
+                readOnlyRootFilesystem: true
+                runAsNonRoot: true
+
+- patch: |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: kubearchive-sink
+    spec:
+      template:
+        spec:
+          containers:
+            - name: kubearchive-sink
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 50Mi
+                limits:
+                  cpu: 100m
+                  memory: 50Mi
+              securityContext:
+                readOnlyRootFilesystem: true
+                runAsNonRoot: true
+
+# Remove Certificates and Issuer
+- patch: |-
+    $patch: delete
+    apiVersion: cert-manager.io/v1
+    kind: Certificate
+    metadata:
+      name: "kubearchive-api-server-certificate"
+- patch: |-
+    $patch: delete
+    apiVersion: cert-manager.io/v1
+    kind: Certificate
+    metadata:
+      name: "kubearchive-ca"
+- patch: |-
+    $patch: delete
+    apiVersion: cert-manager.io/v1
+    kind: Issuer
+    metadata:
+      name: "kubearchive-ca"
+- patch: |-
+    $patch: delete
+    apiVersion: cert-manager.io/v1
+    kind: Issuer
+    metadata:
+      name: "kubearchive"
+- patch: |-
+    $patch: delete
+    apiVersion: cert-manager.io/v1
+    kind: Certificate
+    metadata:
+      name: "kubearchive-operator-certificate"
