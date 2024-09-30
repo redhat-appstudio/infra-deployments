@@ -467,7 +467,7 @@ data:
   # AWS GPU Nodes
   dynamic.linux-g6xlarge-amd64.type: aws
   dynamic.linux-g6xlarge-amd64.region: us-east-1
-  dynamic.linux-g6xlarge-amd64.ami: ami-026ebd4cfe2c043b2
+  dynamic.linux-g6xlarge-amd64.ami: ami-0ad6c6b0ac6c36199
   dynamic.linux-g6xlarge-amd64.instance-type: g6.xlarge
   dynamic.linux-g6xlarge-amd64.key-name: konflux-prod-int-mab01
   dynamic.linux-g6xlarge-amd64.aws-secret: aws-account
@@ -475,3 +475,72 @@ data:
   dynamic.linux-g6xlarge-amd64.security-group-id: sg-0903aedd465be979e
   dynamic.linux-g6xlarge-amd64.subnet-id: subnet-0aa719a6c5b602b16
   dynamic.linux-g6xlarge-amd64.max-instances: "10"
+  dynamic.linux-g6xlarge-amd64.user-data: |-
+    Content-Type: multipart/mixed; boundary="//"
+    MIME-Version: 1.0
+
+    --//
+    Content-Type: text/cloud-config; charset="us-ascii"
+    MIME-Version: 1.0
+    Content-Transfer-Encoding: 7bit
+    Content-Disposition: attachment; filename="cloud-config.txt"
+
+    #cloud-config
+    cloud_final_modules:
+      - [scripts-user, always]
+
+    --//
+    Content-Type: text/x-shellscript; charset="us-ascii"
+    MIME-Version: 1.0
+    Content-Transfer-Encoding: 7bit
+    Content-Disposition: attachment; filename="userdata.txt"
+
+    #!/bin/bash -ex
+
+    if lsblk -no FSTYPE /dev/nvme1n1 | grep -qE '\S'; then
+      echo "File system exists on the disk."
+    else
+      echo "No file system found on the disk /dev/nvme1n1"
+      mkfs -t xfs /dev/nvme1n1
+    fi
+
+    mount /dev/nvme1n1 /home
+
+    if [ -d "/home/var-lib-containers" ]; then
+      echo "Directory '/home/var-lib-containers' exist"
+    else
+      echo "Directory '/home/var-lib-containers' doesn't exist"
+      mkdir -p /home/var-lib-containers /var/lib/containers
+    fi
+
+    mount --bind /home/var-lib-containers /var/lib/containers
+
+    if [ -d "/home/var-tmp" ]; then
+      echo "Directory '/home/var-tmp' exist"
+    else
+      echo "Directory '/home/var-tmp' doesn't exist"
+      mkdir -p /home/var-tmp /var/tmp
+    fi
+
+    mount --bind /home/var-tmp /var/tmp
+    chmod a+rw /var/tmp
+
+    if [ -d "/home/ec2-user" ]; then
+      echo "ec2-user home exists"
+    else
+      echo "ec2-user home doesn't exist"
+      mkdir -p /home/ec2-user/.ssh
+      chown -R ec2-user /home/ec2-user
+    fi
+
+    sed -n 's,.*\(ssh-.*\s\),\1,p' /root/.ssh/authorized_keys > /home/ec2-user/.ssh/authorized_keys
+    chown ec2-user /home/ec2-user/.ssh/authorized_keys
+    chmod 600 /home/ec2-user/.ssh/authorized_keys
+    chmod 700 /home/ec2-user/.ssh
+    restorecon -r /home/ec2-user
+
+    mkdir -p /etc/cdi
+    chmod a+rwx /etc/cdi
+    su - ec2-user
+    nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml
+    --//--
