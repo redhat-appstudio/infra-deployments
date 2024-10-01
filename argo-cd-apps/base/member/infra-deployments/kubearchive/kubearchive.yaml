@@ -26,7 +26,9 @@ spec:
         repoURL: https://github.com/redhat-appstudio/infra-deployments.git
         targetRevision: main
       destination:
-        namespace: kubearchive
+        # This is the default namespace if resources or kustomziation.yaml do
+        # not specifcy namespace
+        namespace: product-kubearchive
         server: '{{server}}'
       syncPolicy:
         automated:
