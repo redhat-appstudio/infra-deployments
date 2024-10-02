@@ -1,0 +1,32 @@
+entryPoints:
+  web:
+    address: ":8000"
+  metrics:
+    address: ":8001"
+providers:
+  file:
+    directory: /etc/traefik/dynamic/
+    watch: true
+# Configure Logger
+log:
+  level: INFO
+  format: json
+# Print acess logs
+accessLog:
+  format: json
+# enable Prometheus metrics
+metrics:
+  prometheus:
+    entryPoint: metrics
+# enable Jaeger tracing
+# tracing:
+#   jaeger: {}
+experimental:
+  plugins:
+    jwt:
+      moduleName: github.com/traefik-plugins/traefik-jwt-plugin
+      version: v0.7.1
+authSources:
+  jwtSource:
+    jwt:
+      jwksUrl: https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/certs
