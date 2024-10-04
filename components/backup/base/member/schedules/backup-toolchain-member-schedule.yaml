@@ -7,9 +7,8 @@ metadata:
 spec:
   schedule: 30 1,13 * * * # every day 1:30, 13:30 UTC
   template:
-    includedResources:
-      - spacebindingrequests.toolchain.dev.openshift.com
-      - spacerequests.toolchain.dev.openshift.com
+    includedNamespaces:
+      - toolchain-member-operator
     storageLocation: velero-aws-1
     ttl: 720h0m0s
   useOwnerReferencesInBackup: true

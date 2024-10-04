@@ -1452,7 +1452,7 @@ metadata:
 spec:
   chain:
     artifacts.oci.storage: oci
-    artifacts.pipelinerun.enable-deep-inspection: true
+    artifacts.pipelinerun.enable-deep-inspection: "true"
     artifacts.pipelinerun.format: in-toto
     artifacts.pipelinerun.storage: oci
     artifacts.taskrun.format: in-toto
@@ -1578,6 +1578,13 @@ spec:
                         cpu: "1"
                       limits:
                         memory: 8Gi
+                topologySpreadConstraints:
+                  - maxSkew: 1
+                    topologyKey: topology.kubernetes.io/zone
+                    whenUnsatisfiable: DoNotSchedule
+                    labelSelector:
+                      matchLabels:
+                        app: tekton-pipelines-controller
       disabled: false
       horizontalPodAutoscalers:
         tekton-operator-proxy-webhook:
@@ -1615,11 +1622,11 @@ spec:
               type: Resource
             minReplicas: 6
     performance:
-      buckets: 4
+      buckets: 8
       disable-ha: false
       kube-api-burst: 50
       kube-api-qps: 50
-      replicas: 2
+      replicas: 4
       threads-per-controller: 32
   platforms:
     openshift:
@@ -1685,7 +1692,7 @@ metadata:
   namespace: openshift-marketplace
 spec:
   displayName: custom-operators
-  image: quay.io/openshift-pipeline/openshift-pipelines-pipelines-operator-bundle-container-index@sha256:99d1e1ba1c24d950db7147e26041193304247ed92e88788023b58eb787282a9a
+  image: quay.io/openshift-pipeline/openshift-pipelines-pipelines-operator-bundle-container-index@sha256:e4d37f9107e3f772bf63871a71c63dc9c84d6de484c077b98f7b79935a975e64
   sourceType: grpc
   updateStrategy:
     registryPoll:
