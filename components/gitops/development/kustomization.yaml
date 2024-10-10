@@ -2,10 +2,10 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-- https://github.com/redhat-appstudio/managed-gitops/manifests/overlays/appstudio-staging-cluster?ref=87e1f9acc67bf033d2159951ba6489f0836586ef
+- https://github.com/redhat-appstudio/managed-gitops/manifests/overlays/appstudio-staging-cluster?ref=18bafa73bba45c6a80a7f2abcd8e4bc3c1f7e91a
 - ../openshift-gitops/overlays/production-and-dev
 
 images:
   - name: \${COMMON_IMAGE}
     newName: quay.io/redhat-appstudio/gitops-service
-    newTag: 87e1f9acc67bf033d2159951ba6489f0836586ef
+    newTag: 18bafa73bba45c6a80a7f2abcd8e4bc3c1f7e91a
