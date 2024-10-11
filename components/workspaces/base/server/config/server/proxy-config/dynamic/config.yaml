@@ -25,6 +25,9 @@ http:
     jwt-authorizer:
       plugin:
         jwt:
+          payloadFields:
+          - sub
+          - exp
           required: true
           keys: []
           jwtHeaders:
