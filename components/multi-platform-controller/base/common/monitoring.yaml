@@ -36,19 +36,13 @@ subjects:
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: multi-platform-controller-metrics-monitor
+  name: multi-platform-controller
 spec:
   endpoints:
   - path: /metrics
     interval: 15s
-    port: https
-    scheme: https
-    bearerTokenSecret:
-      name: "metrics-reader"
-      key: token
-    tlsConfig:
-      insecureSkipVerify: true
+    port: http-metrics
+    scheme: http
   selector:
     matchLabels:
-      control-plane: controller-manager
-
+      app: multi-platform-controller
