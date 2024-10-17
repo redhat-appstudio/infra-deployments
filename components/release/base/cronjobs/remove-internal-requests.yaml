@@ -1,0 +1,80 @@
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cleanup-timed-out-pipelineruns-internal-requests
+  namespace: release-service
+spec:
+  schedule: "10 03 * * *"
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          serviceAccountName: release-service-controller-manager
+          volumes:
+            - name: temp-directory
+              emptyDir: {}
+          containers:
+            - name: ir-cleanup
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  set -o pipefail
+                  PATH="/bin:/usr/bin:/usr/local/bin"
+                  MAX_PROCS=5
+                  INTERNAL_REQUESTS_FILE="/var/tmp/internal-requests-to-be-deleted"
+                  KUBECTL_OUTPUT=$(mktemp -p /var/tmp)
+                  YD=$(date -d 'yesterday' +%s)
+                  kubectl get internalrequests --all-namespaces \
+                  --sort-by=.status.completionTime \
+                  --template '{{range .items}}{{.metadata.name}}{{"\t"}}{{.metadata.namespace}}{{"\t"}}{{.status.completionTime}}{{"\n"}}{{end}}' > $KUBECTL_OUTPUT
+                  awk -v yesterday=${YD} '{
+                       # parsing the completionTime and converting it to epoch
+                       # so we can compute the precise IRs that should be deleted
+                       gsub("[:\\-TZ]", " ", $3)
+                       t=mktime($3)
+                       completionTime=strftime("%s", t)
+                       #
+                       # completionTime should be smaller than yesterday seconds so it can be deleted
+                       if(yesterday > completionTime) {
+                         args="%s:%s\n"
+                         printf(args, $1, $2)
+                       } 
+                    }' $KUBECTL_OUTPUT > $INTERNAL_REQUESTS_FILE
+
+                  # The deleteAndLog will run the CR deletion and save the operation in a structured way that        
+                  # can be read easily by kubectl or journalctl                                                           
+                  function deleteAndLog() {
+                    ir=${1%:*}
+                    namespace=${1#*:}
+                    kubectl delete internalrequest $ir -n $namespace |while read logLine; do
+                      echo "INFO: namespace=${namespace} log=${logLine}"
+                    done                                                                                                  
+                  }                                                                                                       
+                  export -f deleteAndLog
+                  xargs -a ${INTERNAL_REQUESTS_FILE} -i -P ${MAX_PROCS} bash -c 'deleteAndLog "{}"'
+              imagePullPolicy: IfNotPresent
+              image: quay.io/konflux-ci/release-service-utils:9089cafbf36bb889b4b73d8c2965613810f13736
+              volumeMounts:
+                - mountPath: /var/tmp
+                  name: temp-directory
+              resources:
+                limits:
+                  cpu: 200m
+                  memory: 300Mi
+                requests:
+                  cpu: 100m
+                  memory: 200Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                  - ALL
+                readOnlyRootFilesystem: true
+                runAsNonRoot: true
+                seccompProfile:
+                  type: RuntimeDefault
