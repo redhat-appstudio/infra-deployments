@@ -10,14 +10,8 @@ resources:
 - host-config.yaml
 - external-secrets.yaml
 
-patches:
-  - target:
-      kind: Deployment
-      name: multi-platform-controller
-    patch: |-
-      - op: replace
-        path: "/spec/replicas"
-        value: 3
+patchesStrategicMerge:
+  - replicas_patch.yaml
 
 images:
 - name: multi-platform-controller
