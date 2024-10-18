@@ -62,35 +62,3 @@ spec:
             requests:
               memory: "45Gi"
               cpu: "10"
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: c5d-4xlarge
-  namespace: proactive-scaler
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      run: c5d-4xlarge
-  template:
-    metadata:
-      labels:
-        run: c5d-4xlarge
-    spec:
-      nodeSelector:
-        konflux-ci.dev/storage: nvme
-        node.kubernetes.io/instance-type: c5d.4xlarge
-      tolerations:
-        - key: konflux-ci.dev/storage
-          operator: "Equal"
-          value: "nvme"
-          effect: "NoSchedule"
-      priorityClassName: pause-pods
-      containers:
-        - name: reserve-resources
-          image: registry.k8s.io/pause
-          resources:
-            requests:
-              memory: "22Gi"
-              cpu: "10"
