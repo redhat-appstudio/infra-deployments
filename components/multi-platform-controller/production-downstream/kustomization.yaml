@@ -10,6 +10,9 @@ resources:
 - host-config.yaml
 - external-secrets.yaml
 
+patchesStrategicMerge:
+  - replicas_patch.yaml
+
 images:
 - name: multi-platform-controller
   newName: quay.io/konflux-ci/multi-platform-controller
