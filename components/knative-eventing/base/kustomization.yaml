@@ -1,0 +1,35 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - https://github.com/knative/eventing/releases/download/knative-v1.15.3/eventing-core.yaml?timeout=90s
+
+patches:
+# kube-lint fixes
+- patch: |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: eventing-controller
+      namespace: knative-eventing
+    spec:
+      template:
+        spec:
+          containers:
+            - name: eventing-controller
+              resources:
+                requests:
+                  cpu: 35m
+                  memory: 100Mi
+                limits:
+                  cpu: 100m
+                  memory: 200Mi
+# This was causing issues with kube-linter and I didn't want
+# to increase its replicas to 2, so I deleted it instead
+- patch: |-
+    $patch: delete
+    apiVersion: policy/v1
+    kind: PodDisruptionBudget
+    metadata:
+      name: eventing-webhook
+      namespace: knative-eventing
