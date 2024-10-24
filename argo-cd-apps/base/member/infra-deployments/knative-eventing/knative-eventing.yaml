@@ -28,12 +28,40 @@ spec:
       destination:
         namespace: knative-eventing
         server: '{{server}}'
+      ignoreDifferences:
+        # ignore aggregated roles changes
+        - kind: ClusterRole
+          group: rbac.authorization.k8s.io
+          name: addressable-resolver
+          jsonPointers:
+            - /rules
+        - kind: ClusterRole
+          group: rbac.authorization.k8s.io
+          name: channelable-manipulator
+          jsonPointers:
+            - /rules
+        - kind: ClusterRole
+          group: rbac.authorization.k8s.io
+          name: crossnamespace-subscriber
+          jsonPointers:
+            - /rules
+        - kind: ClusterRole
+          group: rbac.authorization.k8s.io
+          name: podspecable-binding
+          jsonPointers:
+            - /rules
+        - kind: ClusterRole
+          group: rbac.authorization.k8s.io
+          name: source-observer
+          jsonPointers:
+            - /rules
       syncPolicy:
         automated:
           prune: true
           selfHeal: true
         syncOptions:
           - CreateNamespace=true
+          - RespectIgnoreDifferences=true
         retry:
           limit: 50
           backoff:
