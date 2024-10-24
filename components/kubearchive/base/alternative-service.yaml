@@ -1,0 +1,13 @@
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: product-kubearchive-sink
+  namespace: kubearchive
+spec:
+  selector:
+    app: kubearchive-sink
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
