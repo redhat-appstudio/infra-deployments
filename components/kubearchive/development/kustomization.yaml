@@ -7,11 +7,14 @@ resources:
 secretGenerator:
 - behavior: merge
   literals:
-  - POSTGRES_DB=kubearchive
-  - POSTGRES_USER=kubearchive
-  - POSTGRES_URL=postgresql.kubearchive.svc.cluster.local
-  - POSTGRES_PASSWORD=password  # notsecret
+  - DATABASE_KIND=postgresql
+  - DATABASE_PORT=5432
+  - DATABASE_DB=kubearchive
+  - DATABASE_USER=kubearchive
+  - DATABASE_URL=postgresql.product-kubearchive.svc.cluster.local
+  - DATABASE_PASSWORD=password  # notsecret
   name: kubearchive-database-credentials
+  namespace: kubearchive
   type: Opaque
 
 commonAnnotations:

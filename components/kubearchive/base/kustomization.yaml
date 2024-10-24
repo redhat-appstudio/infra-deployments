@@ -2,12 +2,20 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-- https://github.com/kubearchive/kubearchive/releases/download/v0.1.0/kubearchive.yaml?timeout=90
+- https://github.com/kubearchive/kubearchive/releases/download/v0.3.0/kubearchive.yaml?timeout=90
 - rbac.yaml
+# This alternative service is needed because the operator creates the
+# ApiServerSource pointing to <namespace>-sink, and here namespace is
+# product-kubearchive, so product-kubearchive-sink. However the service
+# is created as kubearchive-sink and the ApiServerSource does not find it.
+# The symptom is the following event:
+# Failed to update status for "product-kubearchive-a13e": ApiServerSource.sources.knative.dev
+#   "product-kubearchive-a13e" is invalid: namespaces: Invalid value: "null": namespaces in body
+#    must be of type array: "null"
+- alternative-service.yaml
 
 # ROSA does not support namespaces starting with `kube`
 namespace: product-kubearchive
-
 
 patches:
 # These patches changes some resources that point directly to
@@ -17,6 +25,7 @@ patches:
     kind: RoleBinding
     metadata:
       name: kubearchive-operator-leader-election
+      namespace: kubearchive
     subjects:
     - kind: ServiceAccount
       name: kubearchive-operator
@@ -78,6 +87,7 @@ patches:
     kind: Service
     metadata:
       name: kubearchive-api-server
+      namespace: kubearchive
       annotations:
         service.beta.openshift.io/serving-cert-secret-name: kubearchive-api-server-tls
 - patch: |-
@@ -85,15 +95,30 @@ patches:
     kind: Service
     metadata:
       name: kubearchive-operator-webhooks
+      namespace: kubearchive
       annotations:
         service.beta.openshift.io/serving-cert-secret-name: kubearchive-operator-tls
-
+- patch: |-
+    apiVersion: admissionregistration.k8s.io/v1
+    kind: MutatingWebhookConfiguration
+    metadata:
+      name: kubearchive-mutating-webhook-configuration
+      annotations:
+        service.beta.openshift.io/inject-cabundle: "true"
+- patch: |-
+    apiVersion: admissionregistration.k8s.io/v1
+    kind: ValidatingWebhookConfiguration
+    metadata:
+      name: kubearchive-validating-webhook-configuration
+      annotations:
+        service.beta.openshift.io/inject-cabundle: "true"
 # These patches solve Kube Linter problems
 - patch: |-
     apiVersion: apps/v1
     kind: Deployment
     metadata:
       name: kubearchive-api-server
+      namespace: kubearchive
     spec:
       template:
         spec:
@@ -114,6 +139,7 @@ patches:
     kind: Deployment
     metadata:
       name: kubearchive-operator
+      namespace: kubearchive
     spec:
       template:
         spec:
@@ -133,6 +159,7 @@ patches:
     kind: Deployment
     metadata:
       name: kubearchive-sink
+      namespace: kubearchive
     spec:
       template:
         spec:
@@ -156,27 +183,32 @@ patches:
     kind: Certificate
     metadata:
       name: "kubearchive-api-server-certificate"
+      namespace: kubearchive
 - patch: |-
     $patch: delete
     apiVersion: cert-manager.io/v1
     kind: Certificate
     metadata:
       name: "kubearchive-ca"
+      namespace: kubearchive
 - patch: |-
     $patch: delete
     apiVersion: cert-manager.io/v1
     kind: Issuer
     metadata:
       name: "kubearchive-ca"
+      namespace: kubearchive
 - patch: |-
     $patch: delete
     apiVersion: cert-manager.io/v1
     kind: Issuer
     metadata:
       name: "kubearchive"
+      namespace: kubearchive
 - patch: |-
     $patch: delete
     apiVersion: cert-manager.io/v1
     kind: Certificate
     metadata:
       name: "kubearchive-operator-certificate"
+      namespace: kubearchive
