@@ -3,3 +3,11 @@ kind: Kustomization
 resources:
 - ../base
 - ../../base/logging-operator-prerequisite
+
+patches:
+  - path: configure-logforwarder-compression-patch.yaml
+    target:
+      group: logging.openshift.io
+      version: v1
+      kind: ClusterLogForwarder
+      name: instance
