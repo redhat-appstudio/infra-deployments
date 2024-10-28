@@ -1055,7 +1055,7 @@ spec:
                   - name: METRICS_DOMAIN
                     value: tekton.dev/results
                   - name: TEKTON_RESULTS_API_SERVICE
-                    value: tekton-results-api-service.tekton-pipelines.svc.cluster.local:8080
+                    value: tekton-results-api-service.openshift-pipelines.svc.cluster.local:8080
                   - name: AUTH_MODE
                     value: token
                 ports:
@@ -1110,11 +1110,11 @@ spec:
                   runAsNonRoot: true
                   seccompProfile:
                     type: RuntimeDefault
-            serviceAccountName: tekton-results-watcher
-            volumes:
-              - name: tls
-                secret:
-                  secretName: tekton-results-tls
+              serviceAccountName: tekton-results-watcher
+              volumes:
+                - name: tls
+                  secret:
+                    secretName: tekton-results-tls
       tekton-results-api:
         spec:
           template:

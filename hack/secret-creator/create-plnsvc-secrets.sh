@@ -10,10 +10,17 @@ main() {
 
 create_namespace() {
     if kubectl get namespace openshift-pipelines &>/dev/null; then
-        echo "tekton-results namespace already exists, skipping creation"
+        echo "openshift-pipelines namespace already exists, skipping creation"
         return
     fi
     kubectl create namespace openshift-pipelines -o yaml --dry-run=client | kubectl apply -f-
+
+    # temporary needed until we complete the switch to installing Results through the OSP operator
+    if kubectl get namespace tekton-results &>/dev/null; then
+        echo "tekton-results namespace already exists, skipping creation"
+        return
+    fi
+    kubectl create namespace tekton-results -o yaml --dry-run=client | kubectl apply -f-
 }
 
 create_db_secret() {
@@ -25,7 +32,7 @@ create_db_secret() {
     kubectl create secret generic -n openshift-pipelines tekton-results-database \
       --from-literal=db.user=tekton \
       --from-literal=db.password="$(openssl rand -base64 20)" \
-      --from-literal=db.host="postgres-postgresql.tekton-results.svc.cluster.local" \
+      --from-literal=db.host="postgres-postgresql.openshift-pipelines.svc.cluster.local" \
       --from-literal=db.name="tekton_results"
 }
 
@@ -42,7 +49,7 @@ create_s3_secret() {
       --from-literal=aws_secret_access_key="$PASS" \
       --from-literal=aws_region='not-applicable' \
       --from-literal=bucket=tekton-results \
-      --from-literal=endpoint='https://minio.tekton-results.svc.cluster.local'
+      --from-literal=endpoint='https://minio.openshift-pipelines.svc.cluster.local'
 
     echo "Creating MinIO config" >&2
     if kubectl get secret -n openshift-pipelines minio-storage-configuration &>/dev/null; then
@@ -54,7 +61,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: minio-storage-configuration
-  namespace: tekton-results
+  namespace: openshift-pipelines
 type: Opaque
 stringData:
   config.env: |-
@@ -86,13 +93,13 @@ create_db_cert_secret_and_configmap() {
         > /dev/null
     openssl req -new -nodes -text \
         -subj "/CN=postgres-postgresql.tekton-results.svc.cluster.local" \
-        -addext "subjectAltName=DNS:postgres-postgresql.tekton-results.svc.cluster.local" \
+        -addext "subjectAltName=DNS:postgres-postgresql.openshift-pipelines.svc.cluster.local" \
         -out ".tmp/tekton-results/tls.csr" \
         -keyout ".tmp/tekton-results/tls.key" \
         > /dev/null
     chmod og-rwx ".tmp/tekton-results/tls.key"
     openssl x509 -req -text -days 9999 -CAcreateserial \
-        -extfile <(printf "subjectAltName=DNS:postgres-postgresql.tekton-results.svc.cluster.local") \
+        -extfile <(printf "subjectAltName=DNS:postgres-postgresql.openshift-pipelines.svc.cluster.local") \
         -in ".tmp/tekton-results/tls.csr" \
         -CA ".tmp/tekton-results/ca.crt" \
         -CAkey ".tmp/tekton-results/ca.key" \
