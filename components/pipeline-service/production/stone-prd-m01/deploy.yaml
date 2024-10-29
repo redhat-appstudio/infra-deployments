@@ -2071,10 +2071,10 @@ spec:
                 - name: controller
                   resources:
                     limits:
-                      memory: 4Gi
+                      memory: 8Gi
                     requests:
                       cpu: 500m
-                      memory: 4Gi
+                      memory: 8Gi
         tekton-pipelines-webhook:
           spec:
             template:
@@ -2151,6 +2151,7 @@ spec:
             namespace }}/pipelinerun/{{ pr }}
           custom-console-url-pr-tasklog: https://console.redhat.com/application-pipeline/ns/{{
             namespace }}/pipelinerun/{{ pr }}/logs/{{ task }}
+          remember-ok-to-test: "false"
   profile: all
   pruner:
     disabled: false
