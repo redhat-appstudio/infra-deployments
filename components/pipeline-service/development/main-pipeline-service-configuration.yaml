@@ -1152,33 +1152,23 @@ spec:
                 - name: DB_USER
                   valueFrom:
                     secretKeyRef:
-                      key: db.user
-                      name: tekton-results-database
+                      key: POSTGRES_USER
+                      name: tekton-results-postgres
                 - name: DB_PASSWORD
                   valueFrom:
                     secretKeyRef:
-                      key: db.password
-                      name: tekton-results-database
-                - name: POSTGRES_USER
-                  valueFrom:
-                    secretKeyRef:
-                      key: db.user
-                      name: tekton-results-database
-                - name: POSTGRES_PASSWORD
-                  valueFrom:
-                    secretKeyRef:
-                      key: db.password
-                      name: tekton-results-database
+                      key: POSTGRES_PASSWORD
+                      name: tekton-results-postgres
                 - name: DB_HOST
                   valueFrom:
                     secretKeyRef:
-                      key: db.host
-                      name: tekton-results-database
+                      key: POSTGRES_HOST
+                      name: tekton-results-postgres
                 - name: DB_NAME
                   valueFrom:
                     secretKeyRef:
-                      key: db.name
-                      name: tekton-results-database
+                      key: POSTGRES_DB
+                      name: tekton-results-postgres
                 livenessProbe:
                   httpGet:
                     path: /healthz

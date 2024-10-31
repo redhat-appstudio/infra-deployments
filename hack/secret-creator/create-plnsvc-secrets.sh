@@ -25,15 +25,15 @@ create_namespace() {
 
 create_db_secret() {
     echo "Creating DB secret" >&2
-    if kubectl get secret -n openshift-pipelines tekton-results-database &>/dev/null; then
+    if kubectl get secret -n openshift-pipelines tekton-results-postgres &>/dev/null; then
         echo "DB secret already exists, skipping creation"
         return
     fi
-    kubectl create secret generic -n openshift-pipelines tekton-results-database \
-      --from-literal=db.user=tekton \
-      --from-literal=db.password="$(openssl rand -base64 20)" \
-      --from-literal=db.host="postgres-postgresql.openshift-pipelines.svc.cluster.local" \
-      --from-literal=db.name="tekton_results"
+    kubectl create secret generic -n openshift-pipelines tekton-results-postgres \
+      --from-literal=POSTGRES_USER=tekton \
+      --from-literal=POSTGRES_PASSWORD="$(openssl rand -base64 20)" \
+      --from-literal=POSTGRES_HOST="tekton-results-postgres-service.openshift-pipelines.svc.cluster.local" \
+      --from-literal=POSTGRES_DB="tekton_results"
 }
 
 create_s3_secret() {
