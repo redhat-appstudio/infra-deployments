@@ -33,7 +33,7 @@ create_db_secret() {
       --from-literal=POSTGRES_USER=tekton \
       --from-literal=POSTGRES_PASSWORD="$(openssl rand -base64 20)" \
       --from-literal=POSTGRES_HOST="tekton-results-postgres-service.openshift-pipelines.svc.cluster.local" \
-      --from-literal=POSTGRES_DB="tekton_results"
+      --from-literal=POSTGRES_DB="tekton-results"
 }
 
 create_s3_secret() {
