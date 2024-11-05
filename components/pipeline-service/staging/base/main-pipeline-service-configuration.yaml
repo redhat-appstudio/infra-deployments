@@ -1533,7 +1533,7 @@ spec:
             default-timeout-minutes: "120"
         config-leader-election-resolvers:
           data:
-            buckets: "4"
+            buckets: "8"
       deployments:
         tekton-operator-proxy-webhook:
           spec:
@@ -1551,7 +1551,7 @@ spec:
                         memory: 100Mi
         tekton-pipelines-remote-resolvers:
           spec:
-            replicas: 2
+            replicas: 4
         tekton-pipelines-webhook:
           spec:
             template:
