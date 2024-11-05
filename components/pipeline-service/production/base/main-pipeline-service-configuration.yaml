@@ -1524,6 +1524,9 @@ spec:
                   value: "konflux-tenants"
                   effect: "NoSchedule"
             default-timeout-minutes: "120"    
+        config-leader-election-resolvers:
+          data:
+            buckets: "4"
       deployments:
         tekton-operator-proxy-webhook:
           spec:
@@ -1541,7 +1544,7 @@ spec:
                       memory: 100Mi
         tekton-pipelines-remote-resolvers:
           spec:
-            replicas: 1
+            replicas: 2
             template:
               spec:
                 containers:
