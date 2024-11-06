@@ -23,7 +23,9 @@ if ! grep -q "$DEVICE $MOUNT_POINT" /etc/fstab; then
     echo "$DEVICE $MOUNT_POINT $FSTYPE defaults 0 0" >> /etc/fstab
 fi
 
-mount ${MOUNT_POINT}
+if ! mountpoint -q "${MOUNT_POINT}"; then
+    mount ${MOUNT_POINT}
+fi
 
 mkdir -p ${MOUNT_POINT}/var-lib-kubelet-pods
 mount --bind ${MOUNT_POINT}/var-lib-kubelet-pods ${TARGET_DIR}/kubelet/pods

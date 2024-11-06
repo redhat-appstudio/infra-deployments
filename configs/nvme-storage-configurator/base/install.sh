@@ -3,7 +3,7 @@
 # Enable debugging
 set -eux
 
-if [ -f /host-etc-systemd-dir/nvme-init-done ]; then
+if [ -f /host-etc-systemd-dir/nvme-init-done-2 ]; then
     echo 'NVMe init already done'
     oc adm uncordon $NODE_NAME
     exit 0
