@@ -2,8 +2,9 @@
 
 # Enable debugging
 set -eux
+readonly lock_file="nvme-init-done-2"
 
-if [ -f /host-etc-systemd-dir/nvme-init-done-2 ]; then
+if [ -f /host-etc-systemd-dir/${lock_file} ]; then
     echo 'NVMe init already done'
     oc adm uncordon $NODE_NAME
     exit 0
@@ -20,5 +21,5 @@ oc adm drain $NODE_NAME --delete-emptydir-data --ignore-daemonsets --grace-perio
 
 nsenter -t 1 -m -u -i -n -p -- systemctl daemon-reload
 nsenter -t 1 -m -u -i -n -p -- systemctl enable nvme-storage.service
-touch /host-etc-systemd-dir/nvme-init-done
+touch /host-etc-systemd-dir/${lock_file}
 nsenter -t 1 -m -u -i -n -p -- systemctl reboot
