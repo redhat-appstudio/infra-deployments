@@ -1009,6 +1009,26 @@ spec:
   prometheus_port: 9090
   prometheus_histogram: true
   options:
+    statefulSets:
+      tekton-results-postgres:
+        spec:
+          template:
+            spec:
+              containers:
+                - name: postgres
+                  volumeMounts:
+                    - mountPath: /opt/app-root/src/certs/
+                      name: db-tls-ca
+                      readOnly: true
+              volumes:
+                - name: db-tls-ca
+                  secret:
+                    items:
+                      - key: tls.crt
+                        path: tls.crt
+                      - key: tls.key
+                        path: tls.key
+                    secretName: rds-root-crt
     deployments:
       tekton-results-watcher:
         spec:
