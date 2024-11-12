@@ -37,3 +37,21 @@ patches:
     target:
       kind: TektonConfig
       name: config
+  - path: osp-nightly-version.yaml
+    target:
+      name: custom-operators
+      group: operators.coreos.com
+      version: v1alpha1
+      kind: CatalogSource
+  - path: osp-nightly-channel.yaml
+    target:
+      name: openshift-pipelines-operator
+      group: operators.coreos.com
+      version: v1alpha1
+      kind: Subscription
+  - path: osp-perf-resolvers.yaml
+    target:
+      name: config
+      group: operator.tekton.dev
+      version: v1alpha1
+      kind: TektonConfig
