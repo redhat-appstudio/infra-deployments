@@ -75,11 +75,11 @@ spec:
       - name: auth.username
         value: tekton
       - name: auth.existingSecret
-        value: tekton-results-database
+        value: tekton-results-postgres
       - name: auth.secretKeys.userPasswordKey
-        value: db.password
+        value: POSTGRES_PASSWORD
       - name: auth.secretKeys.adminPasswordKey
-        value: db.password
+        value: POSTGRES_PASSWORD
       - name: primary.resources.requests
         value: "null"
       - name: primary.podSecurityContext.fsGroup

@@ -32,8 +32,8 @@ create_db_secret() {
     kubectl create secret generic -n openshift-pipelines tekton-results-postgres \
       --from-literal=POSTGRES_USER=tekton \
       --from-literal=POSTGRES_PASSWORD="$(openssl rand -base64 20)" \
-      --from-literal=POSTGRES_HOST="tekton-results-postgres-service.openshift-pipelines.svc.cluster.local" \
-      --from-literal=POSTGRES_DB="tekton-results"
+      --from-literal=POSTGRES_HOST="postgres-postgresql.openshift-pipelines.svc.cluster.local" \
+      --from-literal=POSTGRES_DB="tekton_results"
 }
 
 create_s3_secret() {
@@ -92,7 +92,7 @@ create_db_cert_secret_and_configmap() {
         -out ".tmp/tekton-results/ca.crt" \
         > /dev/null
     openssl req -new -nodes -text \
-        -subj "/CN=postgres-postgresql.tekton-results.svc.cluster.local" \
+        -subj "/CN=postgres-postgresql.openshift-pipelines.svc.cluster.local" \
         -addext "subjectAltName=DNS:postgres-postgresql.openshift-pipelines.svc.cluster.local" \
         -out ".tmp/tekton-results/tls.csr" \
         -keyout ".tmp/tekton-results/tls.key" \

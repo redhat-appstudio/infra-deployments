@@ -997,9 +997,10 @@ spec:
   logs_api: true
   log_level: debug
   db_port: 5432
-  db_host: tekton-results-postgres-service.openshift-pipelines.svc.cluster.local
+  db_host: postgres-postgresql.openshift-pipelines.svc.cluster.local
   db_sslmode: verify-full
   db_sslrootcert: /etc/tls/db/tekton-results-db-ca.pem
+  is_external_db: true
   logs_path: /logs
   logs_type: File
   logs_buffer_size: 5242880
@@ -1009,26 +1010,6 @@ spec:
   prometheus_port: 9090
   prometheus_histogram: true
   options:
-    statefulSets:
-      tekton-results-postgres:
-        spec:
-          template:
-            spec:
-              containers:
-                - name: postgres
-                  volumeMounts:
-                    - mountPath: /opt/app-root/src/certs/
-                      name: db-tls-ca
-                      readOnly: true
-              volumes:
-                - name: db-tls-ca
-                  secret:
-                    items:
-                      - key: tls.crt
-                        path: tls.crt
-                      - key: tls.key
-                        path: tls.key
-                    secretName: rds-root-crt
     deployments:
       tekton-results-watcher:
         spec:
