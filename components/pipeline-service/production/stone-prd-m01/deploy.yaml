@@ -2071,7 +2071,9 @@ spec:
             template:
               spec:
                 containers:
-                - name: controller
+                - args:
+                  - --threads-per-controller=32
+                  name: controller
                   resources:
                     limits:
                       memory: 8Gi
