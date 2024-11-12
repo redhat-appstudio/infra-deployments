@@ -1,0 +1,13 @@
+- op: replace
+  path: /spec/pipeline/options/deployments/tekton-pipelines-remote-resolvers/spec/template/spec/containers
+  value:
+    - name: controller
+      args:
+        - "--threads-per-controller=32"
+      resources:
+        limits:
+          memory: 8Gi
+        requests:
+          cpu: "500m"
+          memory: 8Gi
+
