@@ -35,6 +35,8 @@ spec:
               value: kubearchive
             - name: POSTGRESQL_PASSWORD
               value: password  # notsecret
+            - name: POSTGRESQL_REPLICATION_USE_PASSFILE # https://github.com/bitnami/containers/issues/74788
+              value: no
           securityContext:
             readOnlyRootFilesystem: false
             runAsNonRoot: true
