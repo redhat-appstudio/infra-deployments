@@ -11,3 +11,11 @@ patches:
       group: argoproj.io
       kind: ApplicationSet
       name: hypershift-aws-cluster
+  - patch: |
+      - op: replace
+        path: /spec/channel
+        value: stable-2.7
+    target:
+      group: operators.coreos.com
+      kind: Subscription
+      name: multicluster-engine
