@@ -14,11 +14,11 @@ spec:
         app: nvme-storage-configurator
     spec:
       nodeSelector:
-        konflux-ci.dev/storage: "nvme"
+        konflux-ci.dev/workload: "konflux-tenants"
       tolerations:
-        - key: konflux-ci.dev/storage
+        - key: konflux-ci.dev/workload
           operator: "Equal"
-          value: "nvme"
+          value: "konflux-tenants"
           effect: "NoSchedule"
       hostPID: true
       serviceAccount: nvme-storage-configurator
