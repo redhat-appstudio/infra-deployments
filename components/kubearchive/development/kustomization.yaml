@@ -1,21 +1,22 @@
+---
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-- ../base
-- postgresql.yaml
+  - ../base
+  - postgresql.yaml
 
 secretGenerator:
-- behavior: merge
-  literals:
-  - DATABASE_KIND=postgresql
-  - DATABASE_PORT=5432
-  - DATABASE_DB=kubearchive
-  - DATABASE_USER=kubearchive
-  - DATABASE_URL=postgresql.product-kubearchive.svc.cluster.local
-  - DATABASE_PASSWORD=password  # notsecret
-  name: kubearchive-database-credentials
-  namespace: kubearchive
-  type: Opaque
+  - behavior: merge
+    literals:
+      - DATABASE_KIND=postgresql
+      - DATABASE_PORT=5432
+      - DATABASE_DB=kubearchive
+      - DATABASE_USER=kubearchive
+      - DATABASE_URL=postgresql.product-kubearchive.svc.cluster.local
+      - DATABASE_PASSWORD=password  # notsecret
+    name: kubearchive-database-credentials
+    namespace: kubearchive
+    type: Opaque
 
 commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
