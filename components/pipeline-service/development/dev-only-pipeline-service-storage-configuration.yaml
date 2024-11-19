@@ -131,6 +131,10 @@ metadata:
   name: storage
   namespace: openshift-pipelines
 spec:
+  buckets:
+  - name: "tekton-results"
+    region: "not-applicable"
+    objectLock: true
   certConfig: {}
   configuration:
     name: minio-storage-configuration
