@@ -10,6 +10,10 @@ patches:
       group: external-secrets.io
       version: v1beta1
       kind: ExternalSecret
+  - path: cronjob-patch.yaml
+    target:
+      name: create-dependencyupdatecheck
+      kind: CronJob
 
 components:
   - ../../components/rh-certs
