@@ -4,7 +4,9 @@ kind: Deployment
 metadata:
   name: postgresql
   annotations:
-    ignore-check.kube-linter.io/no-read-only-root-fs: "Postgres requires to write on root fs, ignoring this one as this is only used in development environment"
+    ignore-check.kube-linter.io/no-read-only-root-fs: >
+      "Postgres requires to write on root fs,
+       ignoring this one as this is only used in development environment"
   labels:
     app: postgresql
 spec:
