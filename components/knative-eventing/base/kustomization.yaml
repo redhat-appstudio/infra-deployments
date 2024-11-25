@@ -2,7 +2,7 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - https://github.com/knative/eventing/releases/download/knative-v1.15.3/eventing-core.yaml?timeout=90s
+  - https://github.com/knative/eventing/releases/download/knative-v1.15.3/eventing.yaml?timeout=90s
 
 patches:
 # kube-lint fixes
@@ -19,11 +19,101 @@ patches:
             - name: eventing-controller
               resources:
                 requests:
-                  cpu: 35m
+                  cpu: 100m
                   memory: 100Mi
                 limits:
-                  cpu: 100m
+                  cpu: 150m
                   memory: 200Mi
+
+- patch: |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: imc-controller
+      namespace: knative-eventing
+    spec:
+      template:
+        spec:
+          containers:
+            - name: controller
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 100Mi
+                limits:
+                  cpu: 150m
+                  memory: 200Mi
+
+- patch: |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: imc-dispatcher
+      namespace: knative-eventing
+    spec:
+      template:
+        spec:
+          containers:
+            - name: dispatcher
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 100Mi
+                limits:
+                  cpu: 150m
+                  memory: 200Mi
+
+# Requests are cpu 100m and memory 100Mi by default
+- patch: |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: mt-broker-controller
+      namespace: knative-eventing
+    spec:
+      template:
+        spec:
+          containers:
+            - name: mt-broker-controller
+              resources:
+                limits:
+                  cpu: 150m
+                  memory: 200Mi
+
+# Requests are cpu 100m and memory 100Mi by default
+- patch: |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: mt-broker-filter
+      namespace: knative-eventing
+    spec:
+      template:
+        spec:
+          containers:
+            - name: filter
+              resources:
+                limits:
+                  cpu: 150m
+                  memory: 200Mi
+
+# Requests are cpu 100m and memory 100Mi by default
+- patch: |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+     name: mt-broker-ingress
+     namespace: knative-eventing
+    spec:
+      template:
+        spec:
+          containers:
+            - name: ingress
+              resources:
+                limits:
+                  cpu: 150m
+                  memory: 200Mi
+
 # This was causing issues with kube-linter and I didn't want
 # to increase its replicas to 2, so I deleted it instead
 - patch: |-
