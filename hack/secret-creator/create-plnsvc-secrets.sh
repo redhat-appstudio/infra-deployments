@@ -22,7 +22,7 @@ main() {
 
 create_namespace() {
     if kubectl get namespace $1 &>/dev/null; then
-        echo "tekton-results namespace already exists, skipping creation"
+        echo "$1 namespace already exists, skipping creation"
         return
     fi
     kubectl create namespace $1 -o yaml --dry-run=client | kubectl apply -f-
