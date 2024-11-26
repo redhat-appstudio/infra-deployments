@@ -2,18 +2,30 @@
 
 main() {
     echo "Setting secrets for pipeline-service"
-    create_namespace
+    create_namespace tekton-results
+    create_namespace tekton-logging
     create_db_secret
-    create_s3_secret
+    create_s3_secret tekton-results tekton-results-s3
+    create_s3_secret tekton-logging s3-conf
     create_db_cert_secret_and_configmap
+    if ! [ -x "$(command -v mc)" ]; then
+        curl https://dl.min.io/client/mc/release/linux-amd64/mc \
+          --create-dirs \
+        -o $HOME/minio-binaries/mc && chmod +x $HOME/minio-binaries/mc
+        export PATH=$PATH:$HOME/minio-binaries/
+
+    fi
+
+    mc alias set myPlayMinio https://play.min.io:9000  Q3AM3UQ867SPQQA43P2F zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG
+    mc mb myPlayMinio/tekton-logs || true
 }
 
 create_namespace() {
-    if kubectl get namespace tekton-results &>/dev/null; then
-        echo "tekton-results namespace already exists, skipping creation"
+    if kubectl get namespace $1 &>/dev/null; then
+        echo "$1 namespace already exists, skipping creation"
         return
     fi
-    kubectl create namespace tekton-results -o yaml --dry-run=client | kubectl apply -f-
+    kubectl create namespace $1 -o yaml --dry-run=client | kubectl apply -f-
 }
 
 create_db_secret() {
@@ -31,38 +43,16 @@ create_db_secret() {
 
 create_s3_secret() {
     echo "Creating S3 secret" >&2
-    if kubectl get secret -n tekton-results tekton-results-s3 &>/dev/null; then
+    if kubectl get secret -n $1 $2 &>/dev/null; then
         echo "S3 secret already exists, skipping creation"
         return
     fi
-    USER=minio
-    PASS="$(openssl rand -base64 20)"
-    kubectl create secret generic -n tekton-results tekton-results-s3 \
-      --from-literal=aws_access_key_id="$USER" \
-      --from-literal=aws_secret_access_key="$PASS" \
-      --from-literal=aws_region='not-applicable' \
-      --from-literal=bucket=tekton-results \
-      --from-literal=endpoint='https://minio.tekton-results.svc.cluster.local'
-
-    echo "Creating MinIO config" >&2
-    if kubectl get secret -n tekton-results minio-storage-configuration &>/dev/null; then
-        echo "MinIO config already exists, skipping creation"
-        return
-    fi
-    cat <<EOF | kubectl apply -f -
-apiVersion: v1
-kind: Secret
-metadata:
-  name: minio-storage-configuration
-  namespace: tekton-results
-type: Opaque
-stringData:
-  config.env: |-
-    export MINIO_ROOT_USER="$USER"
-    export MINIO_ROOT_PASSWORD="$PASS"
-    export MINIO_STORAGE_CLASS_STANDARD="EC:1"
-    export MINIO_BROWSER="on"
-EOF
+    kubectl create secret generic -n $1 $2 \
+      --from-literal=aws_access_key_id="Q3AM3UQ867SPQQA43P2F" \
+      --from-literal=aws_secret_access_key="zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG" \
+      --from-literal=aws_region='us-east-1' \
+      --from-literal=bucket=tekton-logs \
+      --from-literal=endpoint='https://play.min.io:9000'
 }
 
 create_db_cert_secret_and_configmap() {
