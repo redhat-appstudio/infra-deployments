@@ -1946,27 +1946,27 @@ spec:
           - name: AWS_ACCESS_KEY_ID
             valueFrom:
               secretKeyRef:
-                name: s3-conf
+                name: tekton-results-s3
                 key: aws_access_key_id
           - name: AWS_SECRET_ACCESS_KEY
             valueFrom:
               secretKeyRef:
-                name: s3-conf
+                name: tekton-results-s3
                 key: aws_secret_access_key
           - name: AWS_DEFAULT_REGION
             valueFrom:
               secretKeyRef:
-                name: s3-conf
+                name: tekton-results-s3
                 key: aws_region
           - name: BUCKET
             valueFrom:
               secretKeyRef:
-                name: s3-conf
+                name: tekton-results-s3
                 key: bucket
           - name: ENDPOINT
             valueFrom:
               secretKeyRef:
-                name: s3-conf
+                name: tekton-results-s3
                 key: endpoint
         tolerations:
           - effect: NoSchedule
