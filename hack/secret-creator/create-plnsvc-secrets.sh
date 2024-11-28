@@ -6,7 +6,7 @@ main() {
     create_namespace tekton-logging
     create_db_secret
     create_s3_secret tekton-results tekton-results-s3
-    create_s3_secret tekton-logging s3-conf
+    create_s3_secret tekton-logging tekton-results-s3
     create_db_cert_secret_and_configmap
     if ! [ -x "$(command -v mc)" ]; then
         curl https://dl.min.io/client/mc/release/linux-amd64/mc \
