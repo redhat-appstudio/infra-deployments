@@ -1096,17 +1096,17 @@ spec:
           value: blob
         - name: S3_HOSTNAME_IMMUTABLE
           value: "true"
-        - name: S3_ACCESS_KEY_ID
+        - name: AWS_ACCESS_KEY_ID
           valueFrom:
             secretKeyRef:
               key: aws_access_key_id
               name: tekton-results-s3
-        - name: S3_SECRET_ACCESS_KEY
+        - name: AWS_SECRET_ACCESS_KEY
           valueFrom:
             secretKeyRef:
               key: aws_secret_access_key
               name: tekton-results-s3
-        - name: S3_REGION
+        - name: AWS_REGION
           valueFrom:
             secretKeyRef:
               key: aws_region
@@ -1116,7 +1116,7 @@ spec:
             secretKeyRef:
               key: bucket
               name: tekton-results-s3
-        - name: S3_ENDPOINT
+        - name: AWS_ENDPOINT_URL
           valueFrom:
             secretKeyRef:
               key: endpoint
