@@ -67,9 +67,9 @@ objects:
     namespace: ${SPACE_NAME}-tenant
   spec:
     hard:
-      count/applications.appstudio.redhat.com: "512"
+      count/applications.appstudio.redhat.com: "${COUNT_APPLICATION}"
       count/componentdetectionqueries.appstudio.redhat.com: "512"
-      count/components.appstudio.redhat.com: "512"
+      count/components.appstudio.redhat.com: "${COUNT_COMPONENT}"
 - apiVersion: v1
   kind: ResourceQuota
   metadata:
@@ -262,3 +262,7 @@ parameters:
   value: "90"
 - name: REQUEST_STORAGE
   value: "200Gi"
+- name: COUNT_APPLICATION
+  value: "512"
+- name: COUNT_COMPONENT
+  value: "512"
