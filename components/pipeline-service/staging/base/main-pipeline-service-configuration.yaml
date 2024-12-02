@@ -1827,8 +1827,9 @@ spec:
                 key: endpoint
         tolerations:
           - effect: NoSchedule
-            key: node-role.kubernetes.io/master
-            operator: Exists
+            key: konflux-ci.dev/workload
+            operator: Equal
+            value: konflux-tenants
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
