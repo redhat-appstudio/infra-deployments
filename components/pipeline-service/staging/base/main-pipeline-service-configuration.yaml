@@ -1522,9 +1522,6 @@ spec:
                       requests:
                         cpu: 100m
                         memory: 100Mi
-        tekton-pipelines-remote-resolvers:
-          spec:
-            replicas: 4
         tekton-pipelines-webhook:
           spec:
             template:
@@ -1538,6 +1535,7 @@ spec:
                       requests:
                         cpu: 400m
                         memory: 1Gi
+      statefusets:
         tekton-pipelines-controller:
           spec:
             template:
@@ -1594,12 +1592,13 @@ spec:
                 type: Resource
             minReplicas: 6
     performance:
-      buckets: 8
+      buckets: 4
       disable-ha: false
       kube-api-burst: 50
       kube-api-qps: 50
       replicas: 4
       threads-per-controller: 32
+      statefulset-ordinals: true
   platforms:
     openshift:
       pipelinesAsCode:
