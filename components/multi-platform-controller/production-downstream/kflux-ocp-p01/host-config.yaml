@@ -14,6 +14,7 @@ data:
   dynamic-platforms: "\
     linux/arm64,\
     linux/amd64,\
+    linux-d160/arm64,\
     linux-mlarge/amd64,\
     linux-mlarge/arm64,\
     linux-mxlarge/amd64,\
@@ -63,7 +64,20 @@ data:
   dynamic.linux-arm64.max-instances: "100"
   dynamic.linux-arm64.subnet-id: subnet-0864e71d16676bf7f
   dynamic.linux-arm64.allocation-timeout: "1200"
-  dynamic.linux-arm64.disk: "160"
+
+   # same as default but with 160GB disk instead of default 40GB
+  dynamic.linux-d160-arm64.type: aws
+  dynamic.linux-d160-arm64.region: us-east-1
+  dynamic.linux-d160-arm64.ami: ami-03d6a5256a46c9feb
+  dynamic.linux-d160-arm64.instance-type: m6g.large
+  dynamic.linux-d160-arm64.key-name: kflux-ocp-p01-key-pair
+  dynamic.linux-d160-arm64.aws-secret: aws-account
+  dynamic.linux-d160-arm64.ssh-secret: aws-ssh-key
+  dynamic.linux-d160-arm64.security-group-id: sg-0a1f3fdbbf7198922
+  dynamic.linux-d160-arm64.max-instances: "100"
+  dynamic.linux-d160-arm64.subnet-id: subnet-0864e71d16676bf7f
+  dynamic.linux-d160-arm64.allocation-timeout: "1200"
+  dynamic.linux-d160-arm64.disk: "160"
 
   dynamic.linux-mlarge-arm64.type: aws
   dynamic.linux-mlarge-arm64.region: us-east-1
@@ -76,7 +90,6 @@ data:
   dynamic.linux-mlarge-arm64.max-instances: "100"
   dynamic.linux-mlarge-arm64.subnet-id: subnet-0864e71d16676bf7f
   dynamic.linux-mlarge-arm64.allocation-timeout: "1200"
-  dynamic.linux-mlarge-arm64.disk: "160"
 
   dynamic.linux-mxlarge-arm64.type: aws
   dynamic.linux-mxlarge-arm64.region: us-east-1
@@ -89,7 +102,6 @@ data:
   dynamic.linux-mxlarge-arm64.max-instances: "100"
   dynamic.linux-mxlarge-arm64.subnet-id: subnet-0864e71d16676bf7f
   dynamic.linux-mxlarge-arm64.allocation-timeout: "1200"
-  dynamic.linux-mxlarge-arm64.disk: "160"
 
   dynamic.linux-m2xlarge-arm64.type: aws
   dynamic.linux-m2xlarge-arm64.region: us-east-1
@@ -102,7 +114,6 @@ data:
   dynamic.linux-m2xlarge-arm64.max-instances: "100"
   dynamic.linux-m2xlarge-arm64.subnet-id: subnet-0864e71d16676bf7f
   dynamic.linux-m2xlarge-arm64.allocation-timeout: "1200"
-  dynamic.linux-m2xlarge-arm64.disk: "160"
 
   dynamic.linux-m4xlarge-arm64.type: aws
   dynamic.linux-m4xlarge-arm64.region: us-east-1
@@ -115,7 +126,6 @@ data:
   dynamic.linux-m4xlarge-arm64.max-instances: "100"
   dynamic.linux-m4xlarge-arm64.subnet-id: subnet-0864e71d16676bf7f
   dynamic.linux-m4xlarge-arm64.allocation-timeout: "1200"
-  dynamic.linux-m4xlarge-arm64.disk: "160"
 
   dynamic.linux-m8xlarge-arm64.type: aws
   dynamic.linux-m8xlarge-arm64.region: us-east-1
@@ -128,7 +138,6 @@ data:
   dynamic.linux-m8xlarge-arm64.max-instances: "100"
   dynamic.linux-m8xlarge-arm64.subnet-id: subnet-0864e71d16676bf7f
   dynamic.linux-m8xlarge-arm64.allocation-timeout: "1200"
-  dynamic.linux-m8xlarge-arm64.disk: "160"
 
   dynamic.linux-amd64.type: aws
   dynamic.linux-amd64.region: us-east-1
