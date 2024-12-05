@@ -1616,6 +1616,9 @@ spec:
         - -check_owner=false
         - -completed_run_grace_period
         - 10m
+        - -kube-api-qps=50
+        - -kube-api-burst=50
+        - -threadiness=32
         env:
         - name: SYSTEM_NAMESPACE
           valueFrom:
@@ -1714,8 +1717,8 @@ spec:
                 cpu: 200m
                 memory: 200Mi
               requests:
-                cpu: 10m
-                memory: 10Mi
+                cpu: 200m
+                memory: 200Mi
             securityContext:
               allowPrivilegeEscalation: false
               capabilities:
@@ -1848,6 +1851,7 @@ spec:
         aws_secret_access_key: '{{ .aws_secret_access_key }}'
         bucket: '{{ .bucket }}'
         endpoint: https://{{ .endpoint }}
+        s3_url: s3://{{ .bucket }}
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
@@ -1999,6 +2003,9 @@ spec:
                   value: "konflux-tenants"
                   effect: "NoSchedule"
             default-timeout-minutes: "120"
+        config-leader-election-resolvers:
+          data:
+            buckets: "8"
         config-logging:
           data:
             loglevel.controller: info
@@ -2051,10 +2058,10 @@ spec:
                 - name: tekton-pipelines-controller
                   resources:
                     limits:
-                      memory: 8Gi
+                      memory: 12Gi
                     requests:
                       cpu: "1"
-                      memory: 6Gi
+                      memory: 12Gi
                 topologySpreadConstraints:
                 - labelSelector:
                     matchLabels:
@@ -2064,17 +2071,17 @@ spec:
                   whenUnsatisfiable: DoNotSchedule
         tekton-pipelines-remote-resolvers:
           spec:
-            replicas: 1
+            replicas: 4
             template:
               spec:
                 containers:
                 - name: controller
                   resources:
                     limits:
-                      memory: 4Gi
+                      memory: 8Gi
                     requests:
                       cpu: 500m
-                      memory: 4Gi
+                      memory: 8Gi
         tekton-pipelines-webhook:
           spec:
             template:
@@ -2086,8 +2093,8 @@ spec:
                       cpu: "1"
                       memory: 1Gi
                     requests:
-                      cpu: 200m
-                      memory: 200Mi
+                      cpu: 400m
+                      memory: 1Gi
       disabled: false
       horizontalPodAutoscalers:
         tekton-operator-proxy-webhook:
@@ -2203,7 +2210,7 @@ metadata:
   namespace: openshift-marketplace
 spec:
   displayName: custom-operators
-  image: quay.io/openshift-pipeline/openshift-pipelines-pipelines-operator-bundle-container-index@sha256:e4d37f9107e3f772bf63871a71c63dc9c84d6de484c077b98f7b79935a975e64
+  image: quay.io/openshift-pipeline/openshift-pipelines-pipelines-operator-bundle-container-index@sha256:d34f2de74b26b384643b04e5b391dc3216289f7e351ca36e8b46e4d8b03e47ce
   sourceType: grpc
   updateStrategy:
     registryPoll:
@@ -2218,7 +2225,7 @@ metadata:
   name: openshift-pipelines-operator
   namespace: openshift-operators
 spec:
-  channel: latest
+  channel: pipelines-5.0
   name: openshift-pipelines-operator-rh
   source: custom-operators
   sourceNamespace: openshift-marketplace
