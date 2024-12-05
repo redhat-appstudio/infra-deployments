@@ -1660,6 +1660,9 @@ spec:
         - -completed_run_grace_period
         - 10m
         - -logs_api=true
+        - -kube-api-qps=50
+        - -kube-api-burst=50
+        - -threadiness=32
         env:
         - name: SYSTEM_NAMESPACE
           valueFrom:
