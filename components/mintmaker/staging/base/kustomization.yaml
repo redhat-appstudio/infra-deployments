@@ -12,9 +12,15 @@ images:
 - name: quay.io/konflux-ci/mintmaker
   newName: quay.io/konflux-ci/mintmaker
   newTag: f924e8ab7371ef85feb7bbd31114dcae6698ca3b
+- name: quay.io/konflux-ci/mintmaker-renovate-image
+  newName: quay.io/konflux-ci/mintmaker-renovate-image
+  newTag: 49b3342ad7216b6a44191794471fae2b46c726c9
 
 commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 
 patches:
   - path: manager_patches.yaml
+
+configurations:
+- kustomizeconfig.yaml

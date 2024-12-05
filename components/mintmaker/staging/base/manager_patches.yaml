@@ -5,6 +5,15 @@ metadata:
   namespace: system
 spec:
   template:
+    metadata:
+      annotations:
+        # We store the renovate image reference in this annotation to leverage Kustomize's
+        # built-in "images" transformer. Kustomize's "images" feature works natively with
+        # image references (e.g., container images in spec.containers[].image), but it does
+        # not support updating env variables directly, unless we write a new transformer
+        # plugin. By storing the image reference here, we can dynamically update it with
+        # Kustomize, and the container can access it using 'env[].valueFrom.fieldRef'.
+        mintmaker-renovate-image: quay.io/konflux-ci/mintmaker-renovate-image:latest
     spec:
       containers:
       - name: manager
@@ -17,4 +26,6 @@ spec:
             memory: 256Mi
         env:
         - name: RENOVATE_IMAGE
-          value: "quay.io/konflux-ci/mintmaker-renovate-image:latest"
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.annotations['mintmaker-renovate-image']
