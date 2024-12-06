@@ -10,17 +10,22 @@ spec:
         generators:
           - clusters:
               values:
-                environment: ""
+                sourceRoot: configs/ingresscontroller
+                environment: staging
                 clusterDir: ""
           - list:
-              elements: []
+              elements:
+                - nameNormalized: stone-prd-host1
+                  values.clusterDir: stone-prd-host1
+                - nameNormalized: stone-stg-host
+                  values.clusterDir: stone-stg-host
   template:
     metadata:
       name: ingresscontroller-{{nameNormalized}}
     spec:
       project: default
       source:
-        path: configs/ingresscontroller
+        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
         repoURL: https://github.com/redhat-appstudio/infra-deployments.git
         targetRevision: main
       destination:
