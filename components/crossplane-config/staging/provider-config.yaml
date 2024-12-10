@@ -1,0 +1,13 @@
+---
+apiVersion: kubernetes.crossplane.io/v1alpha1
+kind: ProviderConfig
+metadata:
+  name: eaas-stage-kubernetes-provider-config
+  api-server: https://api.kflux-stg-es01.21tc.p1.openshiftapps.com:6443
+spec:
+  credentials:
+    source: Secret
+    secretRef:
+      namespace: crossplane-config
+      name: eaas-stage-kubeconfig
+      key: kubeconfig
