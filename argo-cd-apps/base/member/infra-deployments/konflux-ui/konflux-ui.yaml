@@ -12,12 +12,16 @@ spec:
               values:
                 sourceRoot: components/konflux-ui
                 environment: staging
-                # This app must have cluster specific configurations
-                clusterDir: does-not-exist
+                # This app must have cluster specific configurations.
+                # empty-base is an overlay that just has the namespace resource.
+                # This allows to gradually deploy the new UI to all the clusters.
+                clusterDir: empty-base
           - list:
               elements:
                 - nameNormalized: stone-stg-rh01
                   values.clusterDir: stone-stg-rh01
+                - nameNormalized: kflux-prd-rh02
+                  values.clusterDir: kflux-prd-rh02
   template:
     metadata:
       name: konflux-ui-{{nameNormalized}}
