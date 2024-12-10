@@ -1,0 +1,45 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: konflux-rbac
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              values:
+                sourceRoot: components/konflux-rbac
+                environment: staging
+                # empty-base is an overlay without resources.
+                # This allows to gradually deploy this app to all the clusters.
+                clusterDir: empty-base
+          - list:
+              elements:
+                - nameNormalized: kflux-prd-rh02
+                  values.clusterDir: kflux-prd-rh02
+  template:
+    metadata:
+      name: konflux-rbac-{{nameNormalized}}
+    spec:
+      project: default
+      source:
+        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+        targetRevision: main
+      destination:
+        namespace: konflux-rbac
+        server: '{{server}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: false
+        syncOptions:
+          - CreateNamespace=true
+        retry:
+          limit: -1
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 3m
