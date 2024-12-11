@@ -98,7 +98,7 @@ objects:
   spec:
     hard:
       count/integrationtestscenarios.appstudio.redhat.com: "512"
-      count/snapshots.appstudio.redhat.com: "1024"
+      count/snapshots.appstudio.redhat.com: "${COUNT_SNAPSHOT}"
       count/snapshotenvironmentbindings.appstudio.redhat.com: "512"
 - apiVersion: v1
   kind: ResourceQuota
@@ -266,3 +266,5 @@ parameters:
   value: "512"
 - name: COUNT_COMPONENT
   value: "512"
+- name: COUNT_SNAPSHOT
+  value: "1024"
