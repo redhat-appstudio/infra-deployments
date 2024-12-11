@@ -1,0 +1,37 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: namespace-claim-cleaner
+  namespace: namespace-claim-cleaner
+spec:
+  schedule: "0 4 * * *" # every day at 4AM UTC
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: namespace-claim-cleaner
+              image: bitnami/kubectl:latest
+              command:
+                - /bin/bash
+                - /scripts/namespace-claim-cleaner.sh
+              volumeMounts:
+                - name: script-volume
+                  mountPath: /scripts
+                  readOnly: true
+              volumes:
+                - name: script-volume
+                  configMap:
+                    name: namespace-claim-configmap
+              resources:
+                requests:
+                  cpu: 250m
+                  memory: 125Mi
+                limits:
+                  cpu: 250m
+                  memory: 125Mi
+              securityContext:
+                readOnlyRootFilesystem: true
+                runAsNonRoot: true
+          restartPolicy: Never
+          serviceAccountName: namespace-claim-cleaner

@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: namespace-claim-configmap
+  namespace: namespace-claim-cleaner
+data:
+  namespace-claim-cleaner.sh: |
+    #!/bin/bash
+
+    # Get namespaces with label namespaces.eaas.konflux-ci-dev
+    LABEL="namespaces.eaas.konflux-ci-dev"
+    CURRENT_TIME=$(date +%s)
+    kubectl get namespaces -l $LABEL -o json | jq -c '.items[]' | while read -r namespace; do
+      NAMESPACE_NAME=$(echo $namespace | jq -r '.metadata.name')
+      kubectl get namespaceclaim -n $NAMESPACE_NAME -o json | jq -c '.items[]' | while read -r claim; do
+        CREATION_TIMESTAMP=$(echo $claim | jq -r '.metadata.creationTimestamp')
+        CREATION_TIME=$(date -d "$CREATION_TIMESTAMP" +%s)
+        AGE=$((CURRENT_TIME - CREATION_TIME))
+
+        if [ $AGE -gt 14400 ]; then
+          NAME=$(echo $claim | jq -r '.metadata.name')
+          echo "Deleting NamespaceClaim: $NAME"
+          kubectl delete namespaceClaim $NAME -n $NAMESPACE_NAME
+        fi
+      done
+    done
