@@ -1,5 +1,5 @@
 ---
-apiVersion: logging.openshift.io/v1
+apiVersion: observability.openshift.io/v1
 kind: ClusterLogForwarder
 metadata:
   annotations:
@@ -7,28 +7,41 @@ metadata:
     argocd.argoproj.io/sync-wave: "1"
   name: instance
 spec:
+  collector:
+    resources:
+      limits: {}
+      requests: {}
+    nodeSelector: {}
+    tolerations: {}
   outputs:
     - name: splunk-receiver-application
-      secret:
-        name: log-forwarder-splunk-rhtap-application-secret
       type: splunk
-      url: https://http-inputs-rhcorporate.splunkcloud.com
+      splunk:
+        url: https://http-inputs-rhcorporate.splunkcloud.com
+        authentication:
+          token: log-forwarder-splunk-rhtap-application-secret
     - name: splunk-receiver-audit
-      secret:
-        name: log-forwarder-splunk-rhtap-audit-secret
       type: splunk
-      url: https://http-inputs-rhcorporate.splunkcloud.com
+      splunk:
+        url: https://http-inputs-rhcorporate.splunkcloud.com
+        authentication:
+          token: log-forwarder-splunk-rhtap-audit-secret
+  filters:
+    - name: parse-json
+      type: parse
   pipelines:
     - name: fluentd-forward-logs-to-splunk-rhtap-app-index
       inputRefs:
         - application
       outputRefs:
         - splunk-receiver-application
-      parse: json
+      filterRefs:
+        - parse-json
     - name: fluentd-forward-logs-to-splunk-rhtap-audit-index
       inputRefs:
         - infrastructure
         - audit
       outputRefs:
         - splunk-receiver-audit
-      parse: json
+      filterRefs:
+        - parse-json
