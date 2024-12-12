@@ -2070,6 +2070,10 @@ metadata:
   namespace: openshift-operators
 spec:
   channel: pipelines-5.0
+  config:
+    env:
+    - name: AUTOINSTALL_COMPONENTS
+      value: "false"
   name: openshift-pipelines-operator-rh
   source: custom-operators
   sourceNamespace: openshift-marketplace
