@@ -37,7 +37,8 @@ data:
     linux-root/amd64,\
     linux-fast/amd64,\
     linux-extra-fast/amd64,\
-    linux/s390x\
+    linux/s390x,\
+    linux-large/s390x\
     "
   instance-tag: rhtap-prod
 
@@ -513,6 +514,7 @@ data:
   # host.sysz-rhtap-prod-10.secret: "ibm-production-s390x-ssh-key"
   # host.sysz-rhtap-prod-10.concurrency: "2"
 
+  ## IBM s390x with 2CPU 8GiB RAM ####
   dynamic.linux-s390x.type: ibmz
   dynamic.linux-s390x.ssh-secret: "ibm-production-s390x-ssh-key"
   dynamic.linux-s390x.secret: "public-prod-ibm-api-key"
@@ -522,9 +524,25 @@ data:
   dynamic.linux-s390x.image-id: "r014-96daa951-6026-4112-95b1-87e86e82fcf3"
   dynamic.linux-s390x.region: "us-east-2"
   dynamic.linux-s390x.url: "https://us-east.iaas.cloud.ibm.com/v1"
-  dynamic.linux-s390x.profile: "bz2-4x16"
+  dynamic.linux-s390x.profile: "bz2-2x8"
   dynamic.linux-s390x.max-instances: "30"
   dynamic.linux-s390x.private-ip: "true"
+  dynamic.linux-s390x.allocation-timeout: "1800"
+
+  ## IBM s390x with 4CPU 16GiB RAM ####
+  dynamic.linux-large-s390x.type: ibmz
+  dynamic.linux-large-s390x.ssh-secret: "ibm-production-s390x-ssh-key"
+  dynamic.linux-large-s390x.secret: "public-prod-ibm-api-key"
+  dynamic.linux-large-s390x.vpc: "us-east-default-vpc"
+  dynamic.linux-large-s390x.key: "konflux-s390x-root"
+  dynamic.linux-large-s390x.subnet: "konflux-ext-prod-1"
+  dynamic.linux-large-s390x.image-id: "r014-96daa951-6026-4112-95b1-87e86e82fcf3"
+  dynamic.linux-large-s390x.region: "us-east-2"
+  dynamic.linux-large-s390x.url: "https://us-east.iaas.cloud.ibm.com/v1"
+  dynamic.linux-large-s390x.profile: "bz2-4x16"
+  dynamic.linux-large-s390x.max-instances: "10"
+  dynamic.linux-large-s390x.private-ip: "true"
+  dynamic.linux-large-s390x.allocation-timeout: "1800"
 
 # GPU Instances
   dynamic.linux-g6xlarge-amd64.type: aws
