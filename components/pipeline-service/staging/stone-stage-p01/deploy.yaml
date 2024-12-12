@@ -1441,7 +1441,7 @@ spec:
             secretKeyRef:
               key: db.name
               name: tekton-results-database
-        image: quay.io/konflux-ci/tekton-results-api:5482f328e3de73a72c7ea5747a9b6c2d42b974be
+        image: quay.io/konflux-ci/tekton-results-api:cc0e0ecfe4cd88c9e7537e23e4a2b159e397d59a
         livenessProbe:
           httpGet:
             path: /healthz
@@ -1546,7 +1546,7 @@ spec:
             secretKeyRef:
               key: POSTGRES_PASSWORD
               name: tekton-results-postgres
-        image: quay.io/konflux-ci/tekton-results-retention-policy-agent:5482f328e3de73a72c7ea5747a9b6c2d42b974be
+        image: quay.io/konflux-ci/tekton-results-retention-policy-agent:cc0e0ecfe4cd88c9e7537e23e4a2b159e397d59a
         name: retention-policy-agent
         resources:
           limits:
@@ -1678,7 +1678,7 @@ spec:
           value: tekton-results-api-service.tekton-pipelines.svc.cluster.local:8080
         - name: AUTH_MODE
           value: token
-        image: quay.io/konflux-ci/tekton-results-watcher:5482f328e3de73a72c7ea5747a9b6c2d42b974be
+        image: quay.io/konflux-ci/tekton-results-watcher:cc0e0ecfe4cd88c9e7537e23e4a2b159e397d59a
         name: watcher
         ports:
         - containerPort: 9090
