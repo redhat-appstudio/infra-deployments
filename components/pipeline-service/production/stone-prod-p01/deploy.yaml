@@ -1525,6 +1525,7 @@ spec:
         - -check_owner=false
         - -completed_run_grace_period
         - 10m
+        - -threadiness=32
         env:
         - name: SYSTEM_NAMESPACE
           valueFrom:
@@ -2072,6 +2073,10 @@ metadata:
   namespace: openshift-operators
 spec:
   channel: pipelines-5.0
+  config:
+    env:
+    - name: AUTOINSTALL_COMPONENTS
+      value: "false"
   name: openshift-pipelines-operator-rh
   source: custom-operators
   sourceNamespace: openshift-marketplace
