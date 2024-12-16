@@ -12,6 +12,9 @@ images:
   - name: quay.io/konflux-ci/mintmaker
     newName: quay.io/konflux-ci/mintmaker
     newTag: 1f9c660c0bfba39d3d3c38eecc6bf26a68d0af4e
+  - name: quay.io/konflux-ci/mintmaker-renovate-image
+    newName: quay.io/konflux-ci/mintmaker-renovate-image
+    newTag: 53c922ff91dc32efa5be8a94523b43a13de68023
 
 commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
@@ -23,4 +26,7 @@ patches:
       kind: ExternalSecret
       group: external-secrets.io
       version: v1beta1
-  - path: manager_patches.yaml
+  - path: manager_patch.yaml
+
+configurations:
+- kustomizeconfig.yaml
