@@ -19,13 +19,17 @@ spec:
       splunk:
         url: https://http-inputs-rhcorporate.splunkcloud.com
         authentication:
-          token: log-forwarder-splunk-rhtap-application-secret
+          token:
+              secretName: log-forwarder-splunk-rhtap-application-secret
+              key: hecToken
     - name: splunk-receiver-audit
       type: splunk
       splunk:
         url: https://http-inputs-rhcorporate.splunkcloud.com
         authentication:
-          token: log-forwarder-splunk-rhtap-audit-secret
+          token:
+              secretName: log-forwarder-splunk-rhtap-audit-secret
+              key: hecToken
   filters:
     - name: parse-json
       type: parse
