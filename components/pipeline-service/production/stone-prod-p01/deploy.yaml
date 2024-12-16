@@ -1929,12 +1929,12 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
     argocd.argoproj.io/sync-wave: "-1"
-  name: s3-conf
+  name: tekton-results-s3
   namespace: tekton-logging
 spec:
   dataFrom:
   - extract:
-      key: integrations-output/terraform-resources/appsres07ue1/stonesoup-infra-stage/redhat-stg-plnsvc-s3
+      key: integrations-output/terraform-resources/appsrep09ue1/stone-prod-p01/stone-prod-p01-plnsvc-s3
   refreshInterval: 1h
   secretStoreRef:
     kind: ClusterSecretStore
@@ -1950,6 +1950,7 @@ spec:
         aws_secret_access_key: '{{ .aws_secret_access_key }}'
         bucket: '{{ .bucket }}'
         endpoint: https://{{ .endpoint }}
+        s3_url: s3://{{ .bucket }}
 ---
 apiVersion: external-secrets.io/v1beta1
 kind: ExternalSecret

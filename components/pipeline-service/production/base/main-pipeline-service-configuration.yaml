@@ -771,6 +771,8 @@ data:
   runAt: 5 5 * * 0
 kind: ConfigMap
 metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
   labels:
     app.kubernetes.io/name: tekton-results-retention-policy
     app.kubernetes.io/part-of: tekton-results
@@ -1691,34 +1693,6 @@ spec:
     env:
       - name: AUTOINSTALL_COMPONENTS
         value: "false"
----
-apiVersion: external-secrets.io/v1beta1
-kind: ExternalSecret
-metadata:
-  annotations:
-    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-    argocd.argoproj.io/sync-wave: "-1"
-  name: s3-conf
-  namespace: tekton-logging
-spec:
-  dataFrom:
-  - extract:
-      key: integrations-output/terraform-resources/appsres07ue1/stonesoup-infra-stage/redhat-stg-plnsvc-s3
-  refreshInterval: 1h
-  secretStoreRef:
-    kind: ClusterSecretStore
-    name: appsre-vault
-  target:
-    creationPolicy: Owner
-    deletionPolicy: Delete
-    name: tekton-results-s3
-    template:
-      data:
-        aws_access_key_id: '{{ .aws_access_key_id }}'
-        aws_region: '{{ .aws_region }}'
-        aws_secret_access_key: '{{ .aws_secret_access_key }}'
-        bucket: '{{ .bucket }}'
-        endpoint: https://{{ .endpoint }}
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
