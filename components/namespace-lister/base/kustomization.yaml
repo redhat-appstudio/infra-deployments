@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- deployment.yaml
+- namespace.yaml
+- rbac.yaml
+- proxy.yaml
+- route.yaml
+- service.yaml
+namespace: namespace-lister
+configMapGenerator:
+- files:
+  - nginx.conf=nginx.conf
+  name: nginx
+images:
+- name: namespace-lister
+  newName: quay.io/konflux-ci/namespace-lister
+  newTag: fd195c941b3151c165ddf376ce5f44d57db3f071
