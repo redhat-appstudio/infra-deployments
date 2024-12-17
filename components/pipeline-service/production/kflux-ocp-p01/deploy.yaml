@@ -23,6 +23,16 @@ metadata:
     argocd.argoproj.io/sync-wave: "-1"
   labels:
     argocd.argoproj.io/managed-by: openshift-gitops
+  name: tekton-logging
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "-1"
+  labels:
+    argocd.argoproj.io/managed-by: openshift-gitops
   name: tekton-results
 ---
 apiVersion: v1
@@ -479,6 +489,18 @@ rules:
   - pods/log
   verbs:
   - get
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - get
+  - list
+  - create
+  - update
+  - delete
+  - patch
+  - watch
 - apiGroups:
   - tekton.dev
   resources:
@@ -963,7 +985,7 @@ data:
     LOGS_API=false
     LOGS_TYPE=File
     LOGS_BUFFER_SIZE=5242880
-    LOGS_PATH=/logs
+    LOGS_PATH=//logs
     S3_BUCKET_NAME=
     S3_ENDPOINT=
     S3_HOSTNAME_IMMUTABLE=false
@@ -975,6 +997,18 @@ data:
     STORAGE_EMULATOR_HOST=
     PROFILING=true
     PROFILING_PORT=6060
+    CONVERTER_ENABLE=false
+    CONVERTER_DB_LIMIT=50
+    LOGGING_PLUGIN_PROXY_PATH=/api/logs/v1/application
+    LOGGING_PLUGIN_TOKEN_PATH=/var/run/secrets/kubernetes.io/serviceaccount/token
+    LOGGING_PLUGIN_NAMESPACE_KEY=kubernetes_namespace_name
+    LOGGING_PLUGIN_STATIC_LABELS='log_type=application'
+    LOGGING_PLUGIN_CA_CERT=
+    LOGGING_PLUGIN_QUERY_LIMIT=1700
+    LOGGING_PLUGIN_TLS_VERIFICATION_DISABLE=
+    LOGGING_PLUGIN_FORWARDER_DELAY_DURATION=10
+    LOGGING_PLUGIN_API_URL=s3://tekton-logs
+    LOGGING_PLUGIN_QUERY_PARAMS='v1alpha2LogType=true&use_path_style=true'
 kind: ConfigMap
 metadata:
   annotations:
@@ -1113,6 +1147,21 @@ metadata:
     app.kubernetes.io/part-of: tekton-results
     app.kubernetes.io/version: devel
   name: tekton-results-config-observability
+  namespace: tekton-results
+---
+apiVersion: v1
+data:
+  maxRetention: "30"
+  runAt: 5 5 * * 0
+kind: ConfigMap
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app.kubernetes.io/name: tekton-results-retention-policy
+    app.kubernetes.io/part-of: tekton-results
+    app.kubernetes.io/version: devel
+  name: tekton-results-config-results-retention-policy
   namespace: tekton-results
 ---
 apiVersion: v1
@@ -1336,20 +1385,20 @@ spec:
         - name: LOGS_API
           value: "true"
         - name: LOGS_TYPE
-          value: S3
+          value: blob
         - name: S3_HOSTNAME_IMMUTABLE
           value: "true"
-        - name: S3_ACCESS_KEY_ID
+        - name: AWS_ACCESS_KEY_ID
           valueFrom:
             secretKeyRef:
               key: aws_access_key_id
               name: tekton-results-s3
-        - name: S3_SECRET_ACCESS_KEY
+        - name: AWS_SECRET_ACCESS_KEY
           valueFrom:
             secretKeyRef:
               key: aws_secret_access_key
               name: tekton-results-s3
-        - name: S3_REGION
+        - name: AWS_REGION
           valueFrom:
             secretKeyRef:
               key: aws_region
@@ -1359,10 +1408,15 @@ spec:
             secretKeyRef:
               key: bucket
               name: tekton-results-s3
-        - name: S3_ENDPOINT
+        - name: AWS_ENDPOINT_URL
           valueFrom:
             secretKeyRef:
               key: endpoint
+              name: tekton-results-s3
+        - name: LOGGING_PLUGIN_API_URL
+          valueFrom:
+            secretKeyRef:
+              key: s3_url
               name: tekton-results-s3
         - name: DB_USER
           valueFrom:
@@ -1384,7 +1438,7 @@ spec:
             secretKeyRef:
               key: db.name
               name: tekton-results-database
-        image: quay.io/redhat-appstudio/tekton-results-api:ed360eccc021ad5eedf8ea9c0732912ef602b15a
+        image: quay.io/konflux-ci/tekton-results-api:cc0e0ecfe4cd88c9e7537e23e4a2b159e397d59a
         livenessProbe:
           httpGet:
             path: /healthz
@@ -1439,6 +1493,83 @@ spec:
       - configMap:
           name: rds-root-crt
         name: db-tls-ca
+      - configMap:
+          name: tekton-results-api-config
+        name: config
+      - name: tls
+        secret:
+          secretName: tekton-results-tls
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app.kubernetes.io/name: tekton-results-retention-policy-agent
+    app.kubernetes.io/part-of: tekton-results
+    app.kubernetes.io/version: devel
+  name: tekton-results-retention-policy-agent
+  namespace: tekton-results
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: tekton-results-retention-policy-agent
+  template:
+    metadata:
+      annotations:
+        argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+      labels:
+        app.kubernetes.io/name: tekton-results-retention-policy-agent
+        app.kubernetes.io/version: devel
+    spec:
+      containers:
+      - env:
+        - name: SYSTEM_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: CONFIG_LOGGING_NAME
+          value: tekton-results-config-logging
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              key: POSTGRES_USER
+              name: tekton-results-postgres
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: POSTGRES_PASSWORD
+              name: tekton-results-postgres
+        image: quay.io/konflux-ci/tekton-results-retention-policy-agent:cc0e0ecfe4cd88c9e7537e23e4a2b159e397d59a
+        name: retention-policy-agent
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+          requests:
+            cpu: 5m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+        volumeMounts:
+        - mountPath: /etc/tekton/results
+          name: config
+          readOnly: true
+        - mountPath: /etc/tls
+          name: tls
+          readOnly: true
+      serviceAccountName: tekton-results-watcher
+      volumes:
       - configMap:
           name: tekton-results-api-config
         name: config
@@ -1526,6 +1657,7 @@ spec:
         - -completed_run_grace_period
         - 10m
         - -threadiness=32
+        - -logs_api=true
         env:
         - name: SYSTEM_NAMESPACE
           valueFrom:
@@ -1543,7 +1675,7 @@ spec:
           value: tekton-results-api-service.tekton-pipelines.svc.cluster.local:8080
         - name: AUTH_MODE
           value: token
-        image: quay.io/redhat-appstudio/tekton-results-watcher:bae7851ff584423503af324200f52cd28ca99116
+        image: quay.io/konflux-ci/tekton-results-watcher:cc0e0ecfe4cd88c9e7537e23e4a2b159e397d59a
         name: watcher
         ports:
         - containerPort: 9090
@@ -1575,6 +1707,150 @@ spec:
       - name: tls
         secret:
           secretName: tekton-results-tls
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  name: vectors-tekton-logs-collector
+  namespace: openshift-gitops
+spec:
+  destination:
+    namespace: tekton-logging
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    helm:
+      valueFiles:
+      - values.yaml
+      values: |-
+        role: Agent
+        customConfig:
+          data_dir: /vector-data-dir
+          api:
+            enabled: true
+            address: 127.0.0.1:8686
+            playground: false
+          sources:
+            kubernetes_logs:
+              type: kubernetes_logs
+              rotate_wait_secs: 5
+              glob_minimum_cooldown_ms: 15000
+              auto_partial_merge: true
+              extra_label_selector: "app.kubernetes.io/managed-by in (tekton-pipelines,pipelinesascode.tekton.dev)"
+            internal_metrics:
+              type: internal_metrics
+          transforms:
+            remap_app_logs:
+              type: remap
+              inputs: [kubernetes_logs]
+              source: |-
+                .log_type = "application"
+                .kubernetes_namespace_name = .kubernetes.pod_namespace
+                    if exists(.kubernetes.pod_labels."tekton.dev/taskRunUID") {
+                      .taskRunUID = del(.kubernetes.pod_labels."tekton.dev/taskRunUID")
+                    } else {
+                      .taskRunUID = "none"
+                      }
+                    if exists(.kubernetes.pod_labels."tekton.dev/pipelineRunUID") {
+                      .pipelineRunUID = del(.kubernetes.pod_labels."tekton.dev/pipelineRunUID")
+                    .result = .pipelineRunUID
+                    } else {
+                       .result = .taskRunUID
+                    }
+                    if exists(.kubernetes.pod_labels."tekton.dev/task") {
+                      .task = del(.kubernetes.pod_labels."tekton.dev/task")
+                    } else {
+                      .task = "none"
+                    }
+                    if exists(.kubernetes.pod_namespace) {
+                      .namespace = del(.kubernetes.pod_namespace)
+                    } else {
+                      .namespace = "unlabeled"
+                    }
+                    .pod = .kubernetes.pod_name
+                    .container = .kubernetes.container_name
+          sinks:
+            aws_s3:
+              type: "aws_s3"
+              bucket: ${BUCKET}
+              buffer:
+                type: "disk"
+                max_size: 1073741824
+              inputs: ["remap_app_logs"]
+              compression: "none"
+              endpoint: ${ENDPOINT}
+              encoding:
+                codec: "text"
+              key_prefix: "/logs/{{ `{{ .namespace }}` }}/{{`{{ .result }}`}}/{{`{{ .taskRunUID }}`}}/{{`{{ .container }}`}}"
+              filename_time_format: ""
+              filename_append_uuid: false
+        env:
+          - name: AWS_ACCESS_KEY_ID
+            valueFrom:
+              secretKeyRef:
+                name: tekton-results-s3
+                key: aws_access_key_id
+          - name: AWS_SECRET_ACCESS_KEY
+            valueFrom:
+              secretKeyRef:
+                name: tekton-results-s3
+                key: aws_secret_access_key
+          - name: AWS_DEFAULT_REGION
+            valueFrom:
+              secretKeyRef:
+                name: tekton-results-s3
+                key: aws_region
+          - name: BUCKET
+            valueFrom:
+              secretKeyRef:
+                name: tekton-results-s3
+                key: bucket
+          - name: ENDPOINT
+            valueFrom:
+              secretKeyRef:
+                name: tekton-results-s3
+                key: endpoint
+        tolerations:
+          - effect: NoSchedule
+            key: konflux-ci.dev/workload
+            operator: Equal
+            value: konflux-tenants
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - CHOWN
+            - DAC_OVERRIDE
+            - FOWNER
+            - FSETID
+            - KILL
+            - NET_BIND_SERVICE
+            - SETGID
+            - SETPCAP
+            - SETUID
+          readOnlyRootFilesystem: true
+          seLinuxOptions:
+            type: spc_t
+          seccompProfile:
+            type: RuntimeDefault
+    path: charts/vector
+    repoURL: https://github.com/vectordotdev/helm-charts
+    targetRevision: 08506fdc01c7cc3fcf2dd83102add7b44980ee23
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    retry:
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m
+      limit: -1
+    syncOptions:
+    - CreateNamespace=false
+    - Validate=false
 ---
 apiVersion: external-secrets.io/v1beta1
 kind: ExternalSecret
@@ -1646,6 +1922,35 @@ spec:
       metadata:
         annotations:
           argocd.argoproj.io/sync-options: Prune=false
+---
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "-1"
+  name: tekton-results-s3
+  namespace: tekton-logging
+spec:
+  dataFrom:
+  - extract:
+      key: integrations-output/terraform-resources/appsrep09ue1/kflux-ocp-p01/kflux-ocp-p01-plnsvc-s3
+  refreshInterval: 1h
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: appsre-vault
+  target:
+    creationPolicy: Owner
+    deletionPolicy: Delete
+    name: tekton-results-s3
+    template:
+      data:
+        aws_access_key_id: '{{ .aws_access_key_id }}'
+        aws_region: '{{ .aws_region }}'
+        aws_secret_access_key: '{{ .aws_secret_access_key }}'
+        bucket: '{{ .bucket }}'
+        endpoint: https://{{ .endpoint }}
+        s3_url: s3://{{ .bucket }}
 ---
 apiVersion: external-secrets.io/v1beta1
 kind: ExternalSecret
@@ -2103,6 +2408,57 @@ spec:
     name: tekton-results-api-service
     weight: 100
   wildcardPolicy: None
+---
+allowHostDirVolumePlugin: true
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: false
+allowHostPorts: false
+allowPrivilegeEscalation: false
+allowPrivilegedContainer: false
+allowedCapabilities: null
+apiVersion: security.openshift.io/v1
+defaultAddCapabilities: null
+defaultAllowPrivilegeEscalation: false
+forbiddenSysctls:
+- '*'
+fsGroup:
+  type: RunAsAny
+groups: []
+kind: SecurityContextConstraints
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  name: logging-scc
+  namespace: tekton-logging
+priority: null
+readOnlyRootFilesystem: true
+requiredDropCapabilities:
+- CHOWN
+- DAC_OVERRIDE
+- FSETID
+- FOWNER
+- SETGID
+- SETUID
+- SETPCAP
+- NET_BIND_SERVICE
+- KILL
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: RunAsAny
+seccompProfiles:
+- runtime/default
+supplementalGroups:
+  type: RunAsAny
+users:
+- system:serviceaccount:tekton-logging:vectors-tekton-logs-collector
+volumes:
+- configMap
+- emptyDir
+- hostPath
+- projected
+- secret
 ---
 allowHostDirVolumePlugin: false
 allowHostIPC: false
