@@ -1,0 +1,24 @@
+{
+    "environment": "production",
+    "integrations": {
+        "github": {
+            "application_url": "https://github.com/apps/konflux-internal"
+        },
+        "sbom_server": {
+            "url": "https://atlas.devshift.net/sbom/content/<PLACEHOLDER>"
+        },
+        "image_controller": {
+            "enabled": true,
+            "notifications": [
+                {
+                    "title": "SBOM-event-to-Bombino",
+                    "event": "repo_push",
+                    "method": "webhook",
+                    "config": {
+                        "url": "https://bombino.api.redhat.com/v1/sbom/quay/push"
+                    }
+                }
+            ]
+        }
+    }
+}
