@@ -1,0 +1,51 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: mintmaker-prod-overlay-update
+  namespace: tekton-ci
+  annotations:
+    pipelinesascode.tekton.dev/on-cel-expression: |
+      event == "push" && target_branch == "main" && "components/mintmaker/staging/base/kustomization.yaml".pathChanged()
+    pipelinesascode.tekton.dev/max-keep-runs: "5"
+    pipelinesascode.tekton.dev/task: "[.tekton/tasks/promote-component.yaml]"
+spec:
+  pipelineSpec:
+    tasks:
+      - name: promote-component-from-stage-to-prod
+        params:
+          - name: BRANCH_NAME
+            value: stage-to-prod-mintmaker
+          - name: COMPONENT_NAME
+            value: mintmaker
+          - name: SCRIPT
+            value: |
+              # Extract SHAs from staging
+              DEFAULT_CONFIG_SHA=$(awk -F= '/default\?ref=/{print $2}' staging/base/kustomization.yaml)
+              RENOVATE_CONFIG_SHA=$(awk -F= '/renovate\?ref=/{print $2}' staging/base/kustomization.yaml)
+              CONTROLLER_IMAGE_SHA=$(awk '/newName: quay\.io\/konflux-ci\/mintmaker$/{p=NR+1} NR<=p{if($1=="newTag:") print $2}' staging/base/kustomization.yaml)
+              RENOVATE_IMAGE_SHA=$(awk '/newName: quay\.io\/konflux-ci\/mintmaker-renovate-image$/{p=NR+1} NR<=p{if($1=="newTag:") print $2}' staging/base/kustomization.yaml)
+
+              # Update SHAs in production
+              if [ -n "$DEFAULT_CONFIG_SHA" ]; then
+                echo "Updating prod default config SHA to $DEFAULT_CONFIG_SHA"
+                sed -i "/default?ref/s/ref=.*$/ref=$DEFAULT_CONFIG_SHA/" production/base/kustomization.yaml
+              fi
+
+              if [ -n "$RENOVATE_CONFIG_SHA" ]; then
+                echo "Updating prod renovate config SHA to $RENOVATE_CONFIG_SHA"
+                sed -i "/renovate?ref/s/ref=.*$/ref=$RENOVATE_CONFIG_SHA/" production/base/kustomization.yaml
+              fi
+
+              if [ -n "$CONTROLLER_IMAGE_SHA" ]; then
+                echo "Updating prod controller image SHA to $CONTROLLER_IMAGE_SHA"
+                sed -i "/newName: quay\.io\/konflux-ci\/mintmaker$/,/newTag:/s/newTag:.*/newTag: $CONTROLLER_IMAGE_SHA/" production/base/kustomization.yaml
+              fi
+
+              if [ -n "$RENOVATE_IMAGE_SHA" ]; then
+                echo "Updating prod renovate image SHA to $RENOVATE_IMAGE_SHA"
+                sed -i "/newName: quay\.io\/konflux-ci\/mintmaker-renovate-image$/,/newTag:/s/newTag:.*/newTag: $RENOVATE_IMAGE_SHA/" production/base/kustomization.yaml
+              fi
+
+              echo "Updated production kustomization.yaml with staging SHAs"
+        taskRef:
+          name: promote-component
