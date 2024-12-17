@@ -1,0 +1,24 @@
+{
+    "environment": "staging",
+    "integrations": {
+        "github": {
+            "application_url": "https://github.com/apps/konflux-staging"
+        },
+        "sbom_server": {
+            "url": "https://atlas.stage.devshift.net/sbom/content/<PLACEHOLDER>"
+        },
+        "image_controller": {
+            "enabled": true,
+            "notifications": [
+                {
+                    "title": "SBOM-event-to-Bombino",
+                    "event": "repo_push",
+                    "method": "webhook",
+                    "config": {
+                        "url": "https://bombino.preprod.api.redhat.com/v1/sbom/quay/push"
+                    }
+                }
+            ]
+        }
+    }
+}
