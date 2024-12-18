@@ -20,7 +20,9 @@ data:
     linux-mxlarge/amd64,\
     linux-mxlarge/arm64,\
     linux-m2xlarge/amd64,\
+    linux-d160-m2xlarge/amd64,\
     linux-m2xlarge/arm64,\
+    linux-d160-m2xlarge/arm64,\
     linux-m4xlarge/amd64,\
     linux-m4xlarge/arm64,\
     linux-m8xlarge/amd64,\
@@ -115,6 +117,20 @@ data:
   dynamic.linux-m2xlarge-arm64.subnet-id: subnet-0864e71d16676bf7f
   dynamic.linux-m2xlarge-arm64.allocation-timeout: "1200"
 
+  # same as linux-m2xlarge-arm64 but with 160GB disk instead of default 40GB
+  dynamic.linux-d160-m2xlarge-arm64.type: aws
+  dynamic.linux-d160-m2xlarge-arm64.region: us-east-1
+  dynamic.linux-d160-m2xlarge-arm64.ami: ami-03d6a5256a46c9feb
+  dynamic.linux-d160-m2xlarge-arm64.instance-type: m6g.2xlarge
+  dynamic.linux-d160-m2xlarge-arm64.key-name: kflux-ocp-p01-key-pair
+  dynamic.linux-d160-m2xlarge-arm64.aws-secret: aws-account
+  dynamic.linux-d160-m2xlarge-arm64.ssh-secret: aws-ssh-key
+  dynamic.linux-d160-m2xlarge-arm64.security-group-id: sg-0a1f3fdbbf7198922
+  dynamic.linux-d160-m2xlarge-arm64.max-instances: "100"
+  dynamic.linux-d160-m2xlarge-arm64.subnet-id: subnet-0864e71d16676bf7f
+  dynamic.linux-d160-m2xlarge-arm64.allocation-timeout: "1200"
+  dynamic.linux-d160-m2xlarge-arm64.disk: "160"
+
   dynamic.linux-m4xlarge-arm64.type: aws
   dynamic.linux-m4xlarge-arm64.region: us-east-1
   dynamic.linux-m4xlarge-arm64.ami: ami-03d6a5256a46c9feb
@@ -186,6 +202,20 @@ data:
   dynamic.linux-m2xlarge-amd64.max-instances: "100"
   dynamic.linux-m2xlarge-amd64.subnet-id: subnet-0864e71d16676bf7f
   dynamic.linux-m2xlarge-amd64.allocation-timeout: "1200"
+
+  # same as linux-m2xlarge-amd64 but with 160GB disk instead of default 40GB
+  dynamic.linux-d160-m2xlarge-amd64.type: aws
+  dynamic.linux-d160-m2xlarge-amd64.region: us-east-1
+  dynamic.linux-d160-m2xlarge-amd64.ami: ami-026ebd4cfe2c043b2
+  dynamic.linux-d160-m2xlarge-amd64.instance-type: m6a.2xlarge
+  dynamic.linux-d160-m2xlarge-amd64.key-name: kflux-ocp-p01-key-pair
+  dynamic.linux-d160-m2xlarge-amd64.aws-secret: aws-account
+  dynamic.linux-d160-m2xlarge-amd64.ssh-secret: aws-ssh-key
+  dynamic.linux-d160-m2xlarge-amd64.security-group-id: sg-0a1f3fdbbf7198922
+  dynamic.linux-d160-m2xlarge-amd64.max-instances: "100"
+  dynamic.linux-d160-m2xlarge-amd64.subnet-id: subnet-0864e71d16676bf7f
+  dynamic.linux-d160-m2xlarge-amd64.allocation-timeout: "1200"
+  dynamic.linux-d160-m2xlarge-amd64.disk: "160"
 
   dynamic.linux-m4xlarge-amd64.type: aws
   dynamic.linux-m4xlarge-amd64.region: us-east-1
