@@ -22,6 +22,11 @@ jobs:
         with:
           version: 5.1.1
 
+      - name: Check helm installed
+        run: |
+          echo "Checking if helm is installed and in PATH"
+          which helm
+
       - name: Run kustomize build
         run: |
           find argo-cd-apps components -name 'kustomization.yaml' \
