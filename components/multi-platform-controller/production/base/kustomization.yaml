@@ -4,14 +4,12 @@ kind: Kustomization
 namespace: multi-platform-controller
 
 resources:
-- ../base/common
-- host-config.yaml
-- external-secrets.yaml
+- ../../base/common
 - https://github.com/konflux-ci/multi-platform-controller/deploy/operator?ref=143b83fa5a2b2fe6a8abe02cc669c05b5c3f4f15
 - https://github.com/konflux-ci/multi-platform-controller/deploy/otp?ref=143b83fa5a2b2fe6a8abe02cc669c05b5c3f4f15
 
 components:
-  - ../k-components/manager-resources
+  - ../../k-components/manager-resources
 
 images:
 - name: multi-platform-controller
