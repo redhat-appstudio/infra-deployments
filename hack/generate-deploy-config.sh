@@ -42,7 +42,7 @@ function main() {
   for DIR in $(find "$COMPONENT" -name resources); do
     TARGET=$(dirname "$DIR")/deploy.yaml
     echo "$DIR: $TARGET"
-    kustomize build "$DIR" >"$TARGET"
+    kustomize build --enable-helm "$DIR" >"$TARGET"
   done
 }
 
