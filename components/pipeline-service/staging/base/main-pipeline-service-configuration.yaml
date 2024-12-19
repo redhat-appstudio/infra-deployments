@@ -1682,16 +1682,6 @@ spec:
       - name: AUTOINSTALL_COMPONENTS
         value: "false"
 ---
-apiVersion: v1
-kind: Namespace
-metadata:
-  annotations:
-    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-    argocd.argoproj.io/sync-wave: "-1"
-  labels:
-    argocd.argoproj.io/managed-by: openshift-gitops
-  name: tekton-logging
----
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
