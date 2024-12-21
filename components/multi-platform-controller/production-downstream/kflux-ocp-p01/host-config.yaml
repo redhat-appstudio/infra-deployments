@@ -29,6 +29,7 @@ data:
     linux-m8xlarge/arm64,\
     linux-cxlarge/amd64,\
     linux-cxlarge/arm64,\
+    linux-d160-cxlarge/arm64,\
     linux-c2xlarge/amd64,\
     linux-c2xlarge/arm64,\
     linux-c4xlarge/amd64,\
@@ -253,6 +254,20 @@ data:
   dynamic.linux-cxlarge-arm64.max-instances: "100"
   dynamic.linux-cxlarge-arm64.subnet-id: subnet-0864e71d16676bf7f
   dynamic.linux-cxlarge-arm64.allocation-timeout: "1200"
+
+  # same as linux-cxlarge-arm64 but with 160GB disk instead of default 40GB
+  dynamic.linux-d160-cxlarge-arm64.type: aws
+  dynamic.linux-d160-cxlarge-arm64.region: us-east-1
+  dynamic.linux-d160-cxlarge-arm64.ami: ami-03d6a5256a46c9feb
+  dynamic.linux-d160-cxlarge-arm64.instance-type: c6g.xlarge
+  dynamic.linux-d160-cxlarge-arm64.key-name: kflux-ocp-p01-key-pair
+  dynamic.linux-d160-cxlarge-arm64.aws-secret: aws-account
+  dynamic.linux-d160-cxlarge-arm64.ssh-secret: aws-ssh-key
+  dynamic.linux-d160-cxlarge-arm64.security-group-id: sg-0a1f3fdbbf7198922
+  dynamic.linux-d160-cxlarge-arm64.max-instances: "100"
+  dynamic.linux-d160-cxlarge-arm64.subnet-id: subnet-0864e71d16676bf7f
+  dynamic.linux-d160-cxlarge-arm64.allocation-timeout: "1200"
+  dynamic.linux-d160-cxlarge-arm64.disk: "160"
 
   dynamic.linux-c2xlarge-arm64.type: aws
   dynamic.linux-c2xlarge-arm64.region: us-east-1
