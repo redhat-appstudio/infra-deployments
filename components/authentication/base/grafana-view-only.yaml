@@ -3,24 +3,21 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: grafana-view-only
 rules:
-- apiGroups:
-  - grafana.integreatly.org/v1beta1
-  resources:
-  - grafanas
-  verbs:
-  - get
-  - list
-  - watch
+- apiGroups: [""]
+  resources: ["namespaces"]
+  resourceNames: ["appstudio-grafana"]
+  verbs: ["get"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
+kind: RoleBinding
 metadata:
   name: grafana-view-only
-roleRef:
+  namespace: appstudio-grafana
+subjects:
+- kind: Group
+  name: konflux-grafana-viewers
   apiGroup: rbac.authorization.k8s.io
+roleRef:
   kind: ClusterRole
   name: grafana-view-only
-subjects:
-  - apiGroup: rbac.authorization.k8s.io
-    kind: Group
-    name: konflux-grafana-viewers
+  apiGroup: rbac.authorization.k8s.io
