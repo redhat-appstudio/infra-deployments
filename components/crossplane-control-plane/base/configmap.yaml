@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: namespace-claim-cleaner-configmap
+  namespace: crossplane-system
+data:
+  namespace-claim-cleaner.sh: |
+    #!/bin/bash
+    set -eo pipefail
+
+    namespaces=$(kubectl get namespaces.eaas.konflux-ci.dev --all-namespaces -o json | jq -c '.items[] | "\(.metadata.name) \(.metadata.namespace) \(.metadata.creationTimestamp)"' | sed 's/"//g' | xargs)
+    
+    if [[ -z "$namespaces" ]]; then
+      echo "No namespaces found"
+      exit 0
+    fi
+
+    while read -r name namespace creationTime; do
+      CREATION_TIME=$(date -d "$creationTime" +%s)
+      CURRENT_TIME=$(date +%s)
+      AGE=$((CURRENT_TIME - CREATION_TIME))
+      if [ $AGE -gt 14400 ]; then
+        kubectl delete namespaces.eaas.konflux-ci.dev $name -n $namespace
+      fi
+    done <<< "$namespaces"

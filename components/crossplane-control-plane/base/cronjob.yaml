@@ -1,0 +1,37 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: namespace-claim-cleaner
+  namespace: crossplane-system
+spec:
+  schedule: "0 4 * * *" # every day at 4AM UTC
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: namespace-claim-cleaner
+              image: quay.io/konflux-ci/appstudio-utils:e9578e46aefbe58bf77de1f154fbb846fcbdacec@sha256:2094a997c17bc168264209deb43504adcda4b97b64602041e4886f086856301d
+              command:
+                - /bin/bash
+                - /scripts/namespace-claim-cleaner.sh
+              volumeMounts:
+                - name: script-volume
+                  mountPath: /scripts
+                  readOnly: true
+              resources:
+                requests:
+                  cpu: 250m
+                  memory: 125Mi
+                limits:
+                  cpu: 250m
+                  memory: 125Mi
+              securityContext:
+                readOnlyRootFilesystem: true
+                runAsNonRoot: true
+          volumes:
+            - name: script-volume
+              configMap:
+                name: namespace-claim-cleaner-configmap
+          restartPolicy: Never
+          serviceAccountName: namespace-claim-cleaner

@@ -30,14 +30,6 @@ kind: ServiceAccount
 metadata:
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-  name: pac-secret-manager
-  namespace: openshift-pipelines
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  annotations:
-    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
     argocd.argoproj.io/sync-wave: "0"
   name: pipeline-service-exporter
   namespace: openshift-pipelines
@@ -80,6 +72,33 @@ metadata:
     app.kubernetes.io/version: devel
   name: tekton-results-watcher
   namespace: tekton-results
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  name: pipeline-service-sre-manage-vector-pods
+  namespace: tekton-logging
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+  - delete
+- apiGroups:
+  - apps
+  resources:
+  - daemonsets
+  verbs:
+  - get
+  - list
+  - watch
+  - delete
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -165,37 +184,6 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
     argocd.argoproj.io/sync-wave: "0"
-  name: openshift-gitops-cronjobs-admin
-rules:
-- apiGroups:
-  - ""
-  resourceNames:
-  - pac-secret-manager
-  resources:
-  - serviceaccounts
-  verbs:
-  - get
-  - list
-  - patch
-  - create
-  - delete
-- apiGroups:
-  - batch
-  resources:
-  - cronjobs
-  verbs:
-  - get
-  - list
-  - patch
-  - create
-  - delete
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  annotations:
-    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-    argocd.argoproj.io/sync-wave: "0"
   name: openshift-gitops-jobs-admin
 rules:
 - apiGroups:
@@ -207,27 +195,6 @@ rules:
   - list
   - patch
   - create
-  - delete
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  annotations:
-    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-  name: pac-secret-manager
-rules:
-- apiGroups:
-  - ""
-  resources:
-  - namespaces
-  verbs:
-  - list
-- apiGroups:
-  - ""
-  resources:
-  - secrets
-  verbs:
-  - list
   - delete
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -540,6 +507,18 @@ rules:
   verbs:
   - get
 - apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - get
+  - list
+  - create
+  - update
+  - delete
+  - patch
+  - watch
+- apiGroups:
   - tekton.dev
   resources:
   - pipelines
@@ -630,6 +609,25 @@ subjects:
 - apiGroup: rbac.authorization.k8s.io
   kind: Group
   name: konflux-pipeline-service
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  name: pipeline-service-sre-manage-vector-pods
+  namespace: tekton-logging
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: pipeline-service-sre-manage-vector-pods
+subjects:
+- apiGroup: rbac.authorization.k8s.io
+  kind: Group
+  name: konflux-pipeline-service
+- apiGroup: rbac.authorization.k8s.io
+  kind: Group
+  name: konflux-sre
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -727,22 +725,6 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
     argocd.argoproj.io/sync-wave: "0"
-  name: openshift-gitops-cronjobs-admin
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: openshift-gitops-cronjobs-admin
-subjects:
-- kind: ServiceAccount
-  name: openshift-gitops-argocd-application-controller
-  namespace: openshift-gitops
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  annotations:
-    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-    argocd.argoproj.io/sync-wave: "0"
   name: openshift-gitops-jobs-admin
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -752,21 +734,6 @@ subjects:
 - kind: ServiceAccount
   name: openshift-gitops-argocd-application-controller
   namespace: openshift-gitops
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  annotations:
-    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-  name: pac-secret-manager
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: pac-secret-manager
-subjects:
-- kind: ServiceAccount
-  name: pac-secret-manager
-  namespace: openshift-pipelines
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -1054,7 +1021,7 @@ data:
     LOGS_API=false
     LOGS_TYPE=File
     LOGS_BUFFER_SIZE=5242880
-    LOGS_PATH=/logs
+    LOGS_PATH=//logs
     S3_BUCKET_NAME=
     S3_ENDPOINT=
     S3_HOSTNAME_IMMUTABLE=false
@@ -1066,6 +1033,18 @@ data:
     STORAGE_EMULATOR_HOST=
     PROFILING=true
     PROFILING_PORT=6060
+    CONVERTER_ENABLE=false
+    CONVERTER_DB_LIMIT=50
+    LOGGING_PLUGIN_PROXY_PATH=/api/logs/v1/application
+    LOGGING_PLUGIN_TOKEN_PATH=/var/run/secrets/kubernetes.io/serviceaccount/token
+    LOGGING_PLUGIN_NAMESPACE_KEY=kubernetes_namespace_name
+    LOGGING_PLUGIN_STATIC_LABELS='log_type=application'
+    LOGGING_PLUGIN_CA_CERT=
+    LOGGING_PLUGIN_QUERY_LIMIT=1700
+    LOGGING_PLUGIN_TLS_VERIFICATION_DISABLE=
+    LOGGING_PLUGIN_FORWARDER_DELAY_DURATION=10
+    LOGGING_PLUGIN_API_URL=s3://tekton-logs
+    LOGGING_PLUGIN_QUERY_PARAMS='v1alpha2LogType=true&use_path_style=true'
 kind: ConfigMap
 metadata:
   annotations:
@@ -1204,6 +1183,21 @@ metadata:
     app.kubernetes.io/part-of: tekton-results
     app.kubernetes.io/version: devel
   name: tekton-results-config-observability
+  namespace: tekton-results
+---
+apiVersion: v1
+data:
+  maxRetention: "30"
+  runAt: 5 5 * * 0
+kind: ConfigMap
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app.kubernetes.io/name: tekton-results-retention-policy
+    app.kubernetes.io/part-of: tekton-results
+    app.kubernetes.io/version: devel
+  name: tekton-results-config-results-retention-policy
   namespace: tekton-results
 ---
 apiVersion: v1
@@ -1427,20 +1421,20 @@ spec:
         - name: LOGS_API
           value: "true"
         - name: LOGS_TYPE
-          value: S3
+          value: blob
         - name: S3_HOSTNAME_IMMUTABLE
           value: "true"
-        - name: S3_ACCESS_KEY_ID
+        - name: AWS_ACCESS_KEY_ID
           valueFrom:
             secretKeyRef:
               key: aws_access_key_id
               name: tekton-results-s3
-        - name: S3_SECRET_ACCESS_KEY
+        - name: AWS_SECRET_ACCESS_KEY
           valueFrom:
             secretKeyRef:
               key: aws_secret_access_key
               name: tekton-results-s3
-        - name: S3_REGION
+        - name: AWS_REGION
           valueFrom:
             secretKeyRef:
               key: aws_region
@@ -1450,10 +1444,15 @@ spec:
             secretKeyRef:
               key: bucket
               name: tekton-results-s3
-        - name: S3_ENDPOINT
+        - name: AWS_ENDPOINT_URL
           valueFrom:
             secretKeyRef:
               key: endpoint
+              name: tekton-results-s3
+        - name: LOGGING_PLUGIN_API_URL
+          valueFrom:
+            secretKeyRef:
+              key: s3_url
               name: tekton-results-s3
         - name: DB_USER
           valueFrom:
@@ -1475,7 +1474,7 @@ spec:
             secretKeyRef:
               key: db.name
               name: tekton-results-database
-        image: quay.io/redhat-appstudio/tekton-results-api:ed360eccc021ad5eedf8ea9c0732912ef602b15a
+        image: quay.io/konflux-ci/tekton-results-api:cc0e0ecfe4cd88c9e7537e23e4a2b159e397d59a
         livenessProbe:
           httpGet:
             path: /healthz
@@ -1530,6 +1529,83 @@ spec:
       - configMap:
           name: rds-root-crt
         name: db-tls-ca
+      - configMap:
+          name: tekton-results-api-config
+        name: config
+      - name: tls
+        secret:
+          secretName: tekton-results-tls
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app.kubernetes.io/name: tekton-results-retention-policy-agent
+    app.kubernetes.io/part-of: tekton-results
+    app.kubernetes.io/version: devel
+  name: tekton-results-retention-policy-agent
+  namespace: tekton-results
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: tekton-results-retention-policy-agent
+  template:
+    metadata:
+      annotations:
+        argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+      labels:
+        app.kubernetes.io/name: tekton-results-retention-policy-agent
+        app.kubernetes.io/version: devel
+    spec:
+      containers:
+      - env:
+        - name: SYSTEM_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: CONFIG_LOGGING_NAME
+          value: tekton-results-config-logging
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              key: POSTGRES_USER
+              name: tekton-results-postgres
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: POSTGRES_PASSWORD
+              name: tekton-results-postgres
+        image: quay.io/konflux-ci/tekton-results-retention-policy-agent:cc0e0ecfe4cd88c9e7537e23e4a2b159e397d59a
+        name: retention-policy-agent
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+          requests:
+            cpu: 5m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+        volumeMounts:
+        - mountPath: /etc/tekton/results
+          name: config
+          readOnly: true
+        - mountPath: /etc/tls
+          name: tls
+          readOnly: true
+      serviceAccountName: tekton-results-watcher
+      volumes:
       - configMap:
           name: tekton-results-api-config
         name: config
@@ -1616,6 +1692,8 @@ spec:
         - -check_owner=false
         - -completed_run_grace_period
         - 10m
+        - -threadiness=32
+        - -logs_api=true
         env:
         - name: SYSTEM_NAMESPACE
           valueFrom:
@@ -1633,7 +1711,7 @@ spec:
           value: tekton-results-api-service.tekton-pipelines.svc.cluster.local:8080
         - name: AUTH_MODE
           value: token
-        image: quay.io/redhat-appstudio/tekton-results-watcher:bae7851ff584423503af324200f52cd28ca99116
+        image: quay.io/konflux-ci/tekton-results-watcher:cc0e0ecfe4cd88c9e7537e23e4a2b159e397d59a
         name: watcher
         ports:
         - containerPort: 9090
@@ -1665,69 +1743,6 @@ spec:
       - name: tls
         secret:
           secretName: tekton-results-tls
----
-apiVersion: batch/v1
-kind: CronJob
-metadata:
-  annotations:
-    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-  name: pac-secret-reaper
-  namespace: openshift-pipelines
-spec:
-  concurrencyPolicy: Forbid
-  jobTemplate:
-    metadata:
-      annotations:
-        argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-    spec:
-      template:
-        metadata:
-          annotations:
-            argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-        spec:
-          containers:
-          - command:
-            - /bin/bash
-            - -c
-            - |
-              # Delete "pac-gitauth-*" secrets older than a day
-              set -o errexit
-              set -o nounset
-              set -o pipefail
-              for namespace in $(kubectl get namespaces -o name | cut -d/ -f2 | grep -E "\\-tenant$|^tekton-ci$|^konflux-ci$"); do
-                echo "$namespace: Cleaning pac-gitauth secrets"
-                kubectl get secrets --namespace $namespace -o json | \
-                  jq -r '.items[] |
-                    select(.metadata.name |
-                    startswith("pac-gitauth-")) |
-                    select(.metadata.creationTimestamp | fromdateiso8601 < (now - 86400)) |
-                    "secret/" + .metadata.name
-                  ' | \
-                  xargs --max-args 1 --no-run-if-empty kubectl delete -n $namespace
-              done
-              echo "Done"
-            image: registry.redhat.io/openshift4/ose-tools-rhel8@sha256:1054e906ee0183531b401d3c0b0d777cecb25ef95b1c9c48387c6cd7b0e57b9d
-            imagePullPolicy: Always
-            name: delete-pac-secrets
-            resources:
-              limits:
-                cpu: 200m
-                memory: 200Mi
-              requests:
-                cpu: 200m
-                memory: 200Mi
-            securityContext:
-              allowPrivilegeEscalation: false
-              capabilities:
-                drop:
-                - ALL
-              readOnlyRootFilesystem: true
-              runAsNonRoot: true
-              seccompProfile:
-                type: RuntimeDefault
-          restartPolicy: Never
-          serviceAccountName: pac-secret-manager
-  schedule: '*/10 * * * *'
 ---
 apiVersion: external-secrets.io/v1beta1
 kind: ExternalSecret
@@ -1806,6 +1821,35 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
     argocd.argoproj.io/sync-wave: "-1"
+  name: tekton-results-s3
+  namespace: tekton-logging
+spec:
+  dataFrom:
+  - extract:
+      key: integrations-output/terraform-resources/appsrep09ue1/stone-prod-p01/stone-prod-p01-plnsvc-s3
+  refreshInterval: 1h
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: appsre-vault
+  target:
+    creationPolicy: Owner
+    deletionPolicy: Delete
+    name: tekton-results-s3
+    template:
+      data:
+        aws_access_key_id: '{{ .aws_access_key_id }}'
+        aws_region: '{{ .aws_region }}'
+        aws_secret_access_key: '{{ .aws_secret_access_key }}'
+        bucket: '{{ .bucket }}'
+        endpoint: https://{{ .endpoint }}
+        s3_url: s3://{{ .bucket }}
+---
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "-1"
   name: tekton-results-database
   namespace: tekton-results
 spec:
@@ -1848,6 +1892,7 @@ spec:
         aws_secret_access_key: '{{ .aws_secret_access_key }}'
         bucket: '{{ .bucket }}'
         endpoint: https://{{ .endpoint }}
+        s3_url: s3://{{ .bucket }}
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
@@ -1985,7 +2030,6 @@ spec:
     enable-git-resolver: true
     enable-hub-resolver: true
     enable-step-actions: true
-    enable-tekton-oci-bundles: true
     options:
       configMaps:
         config-defaults:
@@ -2209,7 +2253,7 @@ metadata:
   namespace: openshift-marketplace
 spec:
   displayName: custom-operators
-  image: quay.io/openshift-pipeline/openshift-pipelines-pipelines-operator-bundle-container-index@sha256:d34f2de74b26b384643b04e5b391dc3216289f7e351ca36e8b46e4d8b03e47ce
+  image: quay.io/openshift-pipeline/openshift-pipelines-pipelines-operator-bundle-container-index@sha256:41e3a30346050886e0cf7a17d65140415f028f8c8d511915387ec68a1dab7f75
   sourceType: grpc
   updateStrategy:
     registryPoll:
@@ -2225,6 +2269,10 @@ metadata:
   namespace: openshift-operators
 spec:
   channel: pipelines-5.0
+  config:
+    env:
+    - name: AUTOINSTALL_COMPONENTS
+      value: "false"
   name: openshift-pipelines-operator-rh
   source: custom-operators
   sourceNamespace: openshift-marketplace
