@@ -138,6 +138,16 @@ spec:
         - '{__name__="container_cpu_usage_seconds_total", namespace="release-service"}'
         - '{__name__="container_memory_usage_bytes", namespace="release-service"}'
         - '{__name__="kube_pod_container_resource_limits", namespace="release-service"}'
+        - '{__name__="etcd_disk_wal_fsync_duration_seconds_bucket"}'
+        - '{__name__="etcd_disk_backend_commit_duration_seconds_bucket"}'
+        - '{__name__="etcd_server_proposals_failed_total"}'
+        - '{__name__="etcd_network_peer_round_trip_time_seconds_bucket"}'
+        - '{__name__="kube_job_spec_completions"}'
+        - '{__name__="kube_job_status_succeeded"}'
+        - '{__name__="kube_job_status_failed"}'
+        - '{__name__="node_cpu_seconds_total", mode="idle"}'
+        - '{__name__="node_memory_MemTotal_bytes"}'
+        - '{__name__="node_memory_MemAvailable_bytes"}'
 
     relabelings:
     # override the target's address by the prometheus-k8s service name.
