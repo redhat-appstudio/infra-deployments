@@ -1101,6 +1101,9 @@ spec:
           initialDelaySeconds: 5
           periodSeconds: 10
         volumeMounts:
+        - mountPath: /etc/ssl/certs/s3-cert.crt
+          name: ca-s3
+          subPath: s3-cert.crt
         - mountPath: /etc/tls/db
           name: db-tls-ca
           readOnly: true
@@ -1137,8 +1140,70 @@ spec:
           runAsNonRoot: true
           seccompProfile:
             type: RuntimeDefault
+      initContainers:
+      - args:
+        - -c
+        - |
+          mc --config-dir /tmp config host add minio "$S3_ENDPOINT" "$S3_ACCESS_KEY_ID" "$S3_SECRET_ACCESS_KEY" &&
+          if [ -z "$(mc --config-dir /tmp ls minio | grep "$S3_BUCKET_NAME")" ]; then
+            mc --config-dir /tmp mb --with-lock --region "$S3_REGION" minio/"$S3_BUCKET_NAME" &&
+            echo "Minio bucket $S3_BUCKET_NAME successfully created."
+          fi
+        command:
+        - /bin/bash
+        env:
+        - name: S3_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              key: aws_access_key_id
+              name: tekton-results-s3
+        - name: S3_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              key: aws_secret_access_key
+              name: tekton-results-s3
+        - name: S3_REGION
+          valueFrom:
+            secretKeyRef:
+              key: aws_region
+              name: tekton-results-s3
+        - name: S3_BUCKET_NAME
+          valueFrom:
+            secretKeyRef:
+              key: bucket
+              name: tekton-results-s3
+        - name: S3_ENDPOINT
+          valueFrom:
+            secretKeyRef:
+              key: endpoint
+              name: tekton-results-s3
+        image: quay.io/minio/mc:RELEASE.2023-01-28T20-29-38Z
+        imagePullPolicy: Always
+        name: mc
+        resources:
+          limits:
+            cpu: 100m
+            memory: 128Mi
+          requests:
+            cpu: 5m
+            memory: 32Mi
+        securityContext:
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+        volumeMounts:
+        - mountPath: /etc/ssl/certs/s3-cert.crt
+          name: ca-s3
+          subPath: s3-cert.crt
+        - mountPath: /tmp
+          name: tmp-mc-volume
       serviceAccountName: tekton-results-api
       volumes:
+      - name: ca-s3
+        secret:
+          items:
+          - key: public.crt
+            path: s3-cert.crt
+          secretName: storage-tls
       - emptyDir: {}
         name: tmp-mc-volume
       - configMap:
