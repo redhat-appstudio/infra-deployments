@@ -9,14 +9,12 @@ spec:
   selector:
     matchLabels:
       apps: namespace-lister
-  replicas: 1
+  replicas: 3
   template:
     metadata:
       labels:
         apps: namespace-lister
     spec:
-      # securityContext:
-      #   runAsNonRoot: true
       serviceAccountName: namespace-lister
       containers:
       - image: namespace-lister:foo
