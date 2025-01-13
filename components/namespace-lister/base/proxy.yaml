@@ -5,6 +5,8 @@ metadata:
     app: namespace-lister-proxy
   name: proxy
   namespace: namespace-lister
+  annotations:
+    ignore-check.kube-linter.io/no-anti-affinity: "Using topologySpreadConstraints"
 spec:
   minReadySeconds: 60
   progressDeadlineSeconds: 600
@@ -24,6 +26,13 @@ spec:
       labels:
         app: namespace-lister-proxy
     spec:
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            app: namespace-lister-proxy
       containers:
       - command:
         - nginx

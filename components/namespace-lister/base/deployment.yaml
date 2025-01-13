@@ -5,6 +5,8 @@ metadata:
   namespace: namespace-lister
   labels:
     apps: namespace-lister
+  annotations:
+    ignore-check.kube-linter.io/no-anti-affinity: "Using topologySpreadConstraints"
 spec:
   selector:
     matchLabels:
@@ -16,6 +18,13 @@ spec:
         apps: namespace-lister
     spec:
       serviceAccountName: namespace-lister
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            apps: namespace-lister
       containers:
       - image: namespace-lister:foo
         name: namespace-lister
@@ -23,8 +32,6 @@ spec:
         env:
         - name: LOG_LEVEL
           value: "0"
-        # - name: AUTH_USERNAME_HEADER
-        #   value: "X-User"
         resources:
           limits:
             cpu: 500m
