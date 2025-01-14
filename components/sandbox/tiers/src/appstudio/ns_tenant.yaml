@@ -37,7 +37,6 @@ objects:
     scopes:
     - Terminating
     hard:
-      limits.cpu: ${CPU_BUILD_LIMIT}
       limits.memory: ${MEMORY_BUILD_LIMIT}
       requests.cpu: ${CPU_BUILD_REQUEST}
       requests.memory: ${MEMORY_BUILD_REQUEST}
@@ -129,7 +128,6 @@ objects:
     limits:
     - type: "Container"
       default:
-        cpu: 2000m
         memory: 2Gi
       defaultRequest:
         cpu: 100m
@@ -250,8 +248,6 @@ parameters:
   value: "32Gi"
 - name: MEMORY_REQUEST
   value: "32Gi"
-- name: CPU_BUILD_LIMIT
-  value: "120"
 - name: CPU_BUILD_REQUEST
   value: "60"
 - name: MEMORY_BUILD_LIMIT
