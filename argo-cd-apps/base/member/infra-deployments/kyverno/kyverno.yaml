@@ -28,7 +28,7 @@ spec:
           targetRevision: 3.3.4
           helm:
             valueFiles:
-              - $values/{{values.sourceRoot}}/{{values.environment}}/values.yaml
+              - "{{values.sourceRoot}}/{{values.environment}}/values.yaml"
       destination:
         namespace: konflux-kyverno
         server: '{{server}}'
