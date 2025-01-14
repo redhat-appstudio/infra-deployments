@@ -1,0 +1,47 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: kyverno
+  labels:
+    noSourceTransform: "true"
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              values:
+                sourceRoot: components/kyverno
+                environment: staging
+                clusterDir: ""
+          - list:
+              elements: []
+  template:
+    metadata:
+      name: kyverno-{{nameNormalized}}
+    spec:
+      project: default
+      sources:
+        - chart: kyverno
+          repoURL: https://kyverno.github.io/kyverno/
+          targetRevision: 3.3.4
+          helm:
+            valueFiles:
+              - $values/{{values.sourceRoot}}/{{values.environment}}/values.yaml
+      destination:
+        namespace: konflux-kyverno
+        server: '{{server}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - Replace=true # Recommended by upstream
+        retry:
+          limit: 50
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 3m
