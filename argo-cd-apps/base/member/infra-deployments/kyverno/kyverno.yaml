@@ -27,8 +27,15 @@ spec:
           repoURL: https://kyverno.github.io/kyverno/
           targetRevision: 3.3.4
           helm:
-            valueFiles:
-              - "{{values.sourceRoot}}/{{values.environment}}/values.yaml"
+            values: |
+              admissionController:
+                replicas: 3
+              backgroundController:
+                replicas: 3
+              cleanupController:
+                replicas: 3
+              reportsController:
+                replicas: 3
       destination:
         namespace: konflux-kyverno
         server: '{{server}}'
