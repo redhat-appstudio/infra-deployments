@@ -2,18 +2,8 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-- https://github.com/kubearchive/kubearchive/releases/download/v0.4.0/kubearchive.yaml?timeout=90
+- https://github.com/kubearchive/kubearchive/releases/download/v0.6.0/kubearchive.yaml?timeout=90
 - rbac.yaml
-# This alternative service is needed because the operator creates the
-# ApiServerSource pointing to <namespace>-sink, and here namespace is
-# product-kubearchive, so product-kubearchive-sink. However the service
-# is created as kubearchive-sink and the ApiServerSource does not find it.
-# The symptom is the following event:
-# Failed to update status for "product-kubearchive-a13e": ApiServerSource.sources.knative.dev
-#   "product-kubearchive-a13e" is invalid: namespaces: Invalid value: "null": namespaces in body
-#    must be of type array: "null"
-# This can be removed when this work is merged https://github.com/kubearchive/kubearchive/issues/589
-- alternative-service.yaml
 
 # ROSA does not support namespaces starting with `kube`
 namespace: product-kubearchive
