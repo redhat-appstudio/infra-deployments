@@ -2,13 +2,13 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-- https://github.com/konflux-ci/notification-service/config/default?ref=bb2b47c8946db878eb73015aee796ef1f6eedcec
+- https://github.com/konflux-ci/notification-service/config/default?ref=074907fc9ce72ad1d9dd489b9026b697745e7175
 - ../base/external-secrets
 
 images:
   - name: quay.io/konflux-ci/notification-service
     newName: quay.io/konflux-ci/notification-service
-    newTag: bb2b47c8946db878eb73015aee796ef1f6eedcec
+    newTag: 074907fc9ce72ad1d9dd489b9026b697745e7175
 
 namespace: notification-controller
 
