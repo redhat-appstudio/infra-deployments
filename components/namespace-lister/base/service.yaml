@@ -3,6 +3,8 @@ kind: Service
 metadata:
   name: namespace-lister
   namespace: namespace-lister
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: namespace-lister-tls
 spec:
   selector:
     apps: namespace-lister
