@@ -64,6 +64,7 @@ patches:
                   memory: 200Mi
 
 # Requests are cpu 100m and memory 100Mi by default
+# This is QoS Guaranteed (150m, 200Mi) because it was OOMKilled on Burstable (100m, 100Mi)
 - patch: |-
     apiVersion: apps/v1
     kind: Deployment
@@ -76,6 +77,9 @@ patches:
           containers:
             - name: mt-broker-controller
               resources:
+                requests:
+                  cpu: 150m
+                  memory: 200Mi
                 limits:
                   cpu: 150m
                   memory: 200Mi
