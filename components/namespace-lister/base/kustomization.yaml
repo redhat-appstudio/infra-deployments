@@ -4,16 +4,7 @@ resources:
 - deployment.yaml
 - namespace.yaml
 - rbac.yaml
-- proxy.yaml
-- route.yaml
-- service.yaml
 namespace: namespace-lister
-configMapGenerator:
-- files:
-  - nginx.conf=nginx.conf
-  name: proxy-konflux
-  options:
-    disableNameSuffixHash: true
 images:
 - name: namespace-lister
   newName: quay.io/konflux-ci/namespace-lister
