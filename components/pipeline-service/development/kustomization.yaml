@@ -8,7 +8,7 @@ commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 
 resources:
-  - github.com/minio/operator?ref=v5.0.15
+  - github.com/minio/operator?ref=v5.0.15  # when updating the tag, update also the patches below
   - main-pipeline-service-configuration.yaml
   - dev-only-pipeline-service-storage-configuration.yaml
   - ../base/rbac
@@ -39,6 +39,9 @@ patches:
         path: /spec/template/spec/containers/0/securityContext/runAsUser
       - op: remove
         path: /spec/template/spec/containers/0/securityContext/runAsGroup
+      - op: replace
+        path: /spec/template/spec/containers/0/image
+        value: "quay.io/minio/operator:v5.0.15"
   - target:
       kind: Deployment
       name: console
@@ -60,3 +63,6 @@ patches:
       - op: add
         path: /spec/template/spec/containers/0/securityContext/readOnlyRootFilesystem
         value: true
+      - op: replace
+        path: /spec/template/spec/containers/0/image
+        value: "quay.io/minio/operator:v5.0.15"
