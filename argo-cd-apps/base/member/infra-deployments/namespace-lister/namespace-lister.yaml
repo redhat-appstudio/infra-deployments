@@ -10,15 +10,21 @@ spec:
         generators:
           - clusters:
               values:
+                # This app must have cluster specific configurations, so we
+                # need to provide a config for clusters we do not wish to deploy
+                # to.  The `empty-base` clusterDir is an overlay that deploys no
+                # resources to non-matching clusters.
+                clusterDir: empty-base
                 sourceRoot: components/namespace-lister
                 environment: staging
-                clusterDir: ""
           - list:
               elements:
                 - nameNormalized: stone-stg-rh01
                   values.clusterDir: stone-stg-rh01
                 - nameNormalized: stone-stg-p01
                   values.clusterDir: stone-stg-p01
+                - nameNormalized: kflux-prd-rh02
+                  values.clusterDir: kflux-prd-rh02
   template:
     metadata:
       name: namespace-lister-{{nameNormalized}}
