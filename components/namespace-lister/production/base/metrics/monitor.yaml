@@ -1,0 +1,26 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: namespace-lister-metrics
+  labels:
+    apps: namespace-lister
+spec:
+  endpoints:
+    - interval: 15s
+      scheme: https
+      path: /metrics
+      port: metrics
+      authorization:
+        credentials:
+          key: token
+          name: metrics-reader
+      tlsConfig:
+        ca:
+          secret:
+            key: service-ca.crt
+            name: metrics-reader
+            optional: false
+        serverName: namespace-lister.namespace-lister.svc
+  selector:
+    matchLabels:
+      apps: namespace-lister
