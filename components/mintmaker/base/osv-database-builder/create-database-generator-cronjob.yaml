@@ -1,0 +1,38 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: create-database-generator
+  namespace: mintmaker
+spec:
+  schedule: "0 */4 * * *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: database-generator
+              image: quay.io/konflux-ci/mintmaker:next
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/sh
+                - -c
+                - /osv-generator -destination-dir /mnt/database -docker-filename docker.nedb -rpm-filename rpm.nedb -days 1
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 500Mi
+                limits:
+                  cpu: 100m
+                  memory: 500Mi
+              volumeMounts:
+                - name: osv-db
+                  mountPath: /mnt/database
+              securityContext:
+                runAsNonRoot: true
+                readOnlyRootFilesystem: true
+          volumes:
+            - name: osv-db
+              persistentVolumeClaim:
+                claimName: osv-offline-db
