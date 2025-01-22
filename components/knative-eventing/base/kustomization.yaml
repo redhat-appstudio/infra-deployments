@@ -71,6 +71,10 @@ patches:
     metadata:
       name: mt-broker-controller
       namespace: knative-eventing
+      annotations:
+        ignore-check.kube-linter.io/unset-memory-requirements: >
+          "Startup traverses all the cluster. Its a known problem, being solved on upstream.
+          See https://github.com/knative/eventing/pull/8418"
     spec:
       template:
         spec:
@@ -82,7 +86,6 @@ patches:
                   memory: 400Mi
                 limits:
                   cpu: 150m
-                  memory: 400Mi
 
 # Requests are cpu 100m and memory 100Mi by default
 - patch: |-
