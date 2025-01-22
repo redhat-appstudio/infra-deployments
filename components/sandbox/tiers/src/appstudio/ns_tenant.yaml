@@ -47,9 +47,9 @@ objects:
     namespace: ${SPACE_NAME}-tenant
   spec:
     hard:
-      limits.ephemeral-storage: 50Gi
+      limits.ephemeral-storage: ${LIMIT_EPHEMERAL_STORAGE}
       requests.storage: ${REQUEST_STORAGE}
-      requests.ephemeral-storage: 50Gi
+      requests.ephemeral-storage: ${REQUEST_EPHEMERAL_STORAGE}
       count/persistentvolumeclaims: "${COUNT_PVC}"
 - apiVersion: v1
   kind: ResourceQuota
@@ -258,6 +258,10 @@ parameters:
   value: "90"
 - name: REQUEST_STORAGE
   value: "200Gi"
+- name: REQUEST_EPHEMERAL_STORAGE
+  value: "50Gi"
+- name: LIMIT_EPHEMERAL_STORAGE
+  value: "50Gi"
 - name: COUNT_APPLICATION
   value: "512"
 - name: COUNT_COMPONENT
