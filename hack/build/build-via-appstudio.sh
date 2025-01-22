@@ -29,8 +29,6 @@ function create-component {
 create-secret
 
 if [ -z "$COMPONENT" ]; then
-  create-component https://github.com/devfile-samples/devfile-sample-java-springboot-basic docker/Dockerfile
-  create-component https://github.com/devfile-samples/devfile-sample-code-with-quarkus src/main/docker/Dockerfile.jvm.staged
   create-component https://github.com/devfile-samples/devfile-sample-python-basic docker/Dockerfile
 else
   create-component $COMPONENT $PATH_TO_DOCKERFILE

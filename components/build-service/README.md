@@ -9,7 +9,6 @@ The StoneSoup Build System is composed of the following components:
 - [Tekton Results](https://github.com/tektoncd/results)
 - [Pipelines as Code](https://pipelinesascode.com/)
 - [App Studio Build Service](https://github.com/konflux-ci/build-service/)
-- [HACBS JVM Build Service](https://github.com/redhat-appstudio/jvm-build-service)
 - [PVC Cleaner](https://github.com/redhat-appstudio/pvc-cleaner/)
 
 This repository installs all the components and includes a set of example scripts that simplify usage and provide examples of a working system. There are no additional components needed to use the build system API, however some utilities and scripts are provided to demonstrate functionality.
@@ -30,7 +29,7 @@ To validate execution via RHTAP you can run `./hack/build/build-via-appstudio.sh
 To build specific repository, pass its URL and path to repository's Dockerfile as arguments as shown below:
 
 ```
-./hack/build/build-via-appstudio.sh https://github.com/devfile-samples/devfile-sample-java-springboot-basic docker/Dockerfile
+./hack/build/build-via-appstudio.sh https://github.com/devfile-samples/devfile-sample-python-basic docker/Dockerfile
 ```
 
 To enable PipelineAsCode integration you need to set `PIPELINESASCODE` env variable to `1` and also have to have set GitHub credentials in your `./hack/preview.env`.
