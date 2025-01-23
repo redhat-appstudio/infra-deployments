@@ -28,6 +28,8 @@ spec:
       containers:
       - image: namespace-lister:foo
         name: namespace-lister
+        args:
+        - "-enable-tls=false"
         env:
         - name: LOG_LEVEL
           value: "0"
