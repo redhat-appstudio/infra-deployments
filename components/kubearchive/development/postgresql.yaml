@@ -18,9 +18,17 @@ spec:
       labels:
         app: postgresql
     spec:
+      volumes:
+        - name: ssl
+          secret:
+            secretName: postgresql-tls
+            defaultMode: 384
       containers:
         - name: postgresql
           image: quay.io/kubearchive/postgresql:16.4.0
+          volumeMounts:
+            - name: ssl
+              mountPath: /mount/ssl-postgres/
           ports:
             - containerPort: 5432
           resources:
@@ -39,6 +47,12 @@ spec:
               value: password  # notsecret
             - name: POSTGRESQL_REPLICATION_USE_PASSFILE # https://github.com/bitnami/containers/issues/74788
               value: no
+            - name: POSTGRESQL_ENABLE_TLS
+              value: yes
+            - name: POSTGRESQL_TLS_CERT_FILE
+              value: /mount/ssl-postgres/tls.crt
+            - name: POSTGRESQL_TLS_KEY_FILE
+              value: /mount/ssl-postgres/tls.key
           securityContext:
             readOnlyRootFilesystem: false
             runAsNonRoot: true
@@ -49,6 +63,8 @@ metadata:
   name: postgresql
   labels:
     app: postgresql
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: postgresql-tls
 spec:
   type: ClusterIP
   ports:
