@@ -3,15 +3,15 @@ kind: Kustomization
 resources:
 - ../../base
 - ../../base/external-secrets
-- https://github.com/konflux-ci/mintmaker/config/default?ref=062080578747badc43ab7b74db501f9e429901f8
-- https://github.com/konflux-ci/mintmaker/config/renovate?ref=062080578747badc43ab7b74db501f9e429901f8
+- https://github.com/konflux-ci/mintmaker/config/default?ref=483319c06f597a3b2ed7f84d8a6f763e7db90a17
+- https://github.com/konflux-ci/mintmaker/config/renovate?ref=483319c06f597a3b2ed7f84d8a6f763e7db90a17
 
 namespace: mintmaker
 
 images:
 - name: quay.io/konflux-ci/mintmaker
-  newName: quay.io/redhat-user-workloads/konflux-mintmaker-tenant/mintmaker-refactoring-pipelinerun
-  newTag: 31f4b5da85d8231c764bdc42f8603a631265f255
+  newName: quay.io/konflux-ci/mintmaker
+  newTag: 483319c06f597a3b2ed7f84d8a6f763e7db90a17
 - name: quay.io/konflux-ci/mintmaker-renovate-image
   newName: quay.io/konflux-ci/mintmaker-renovate-image
   newTag: 083371d43e1eebd093592ac7d87762f8bae9197b
