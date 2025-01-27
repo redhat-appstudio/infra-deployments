@@ -8,8 +8,8 @@ data:
     #!/bin/bash
     set -eo pipefail
 
-    namespaces=$(kubectl get namespaces.eaas.konflux-ci.dev --all-namespaces -o json | jq -c '.items[] | "\(.metadata.name) \(.metadata.namespace) \(.metadata.creationTimestamp)"' | sed 's/"//g' | xargs)
-    
+    namespaces=$(kubectl get namespaces.eaas.konflux-ci.dev --all-namespaces -o jsonpath='{range .items[*]}{.metadata.name} {.metadata.namespace} {.metadata.creationTimestamp}{"\n"}{end}')
+
     if [[ -z "$namespaces" ]]; then
       echo "No namespaces found"
       exit 0
