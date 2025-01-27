@@ -6,11 +6,12 @@ resources:
 - rbac.yaml
 - service.yaml
 - network_policy.yaml
+- metrics/
 namespace: namespace-lister
 images:
 - name: namespace-lister
   newName: quay.io/konflux-ci/namespace-lister
-  newTag: b6e08165bb3f5d49cf9ee79db2b6fc02aa120860c66ba4ec4a6f6d97e887102d
+  newTag: 147617983adf98ca13689d5de6dd45448ce4098b
 patches:
 - path: ./patches/with-header-auth-email.yaml
   target:
