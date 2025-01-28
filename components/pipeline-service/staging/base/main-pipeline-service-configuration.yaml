@@ -1535,10 +1535,10 @@ spec:
                   - name: tekton-pipelines-controller
                     resources:
                       requests:
-                        memory: 12Gi
+                        memory: 6Gi
                         cpu: "1"
                       limits:
-                        memory: 12Gi
+                        memory: 6Gi
                 topologySpreadConstraints:
                   - maxSkew: 1
                     topologyKey: topology.kubernetes.io/zone
@@ -1546,6 +1546,19 @@ spec:
                     labelSelector:
                       matchLabels:
                         app: tekton-pipelines-controller
+        tekton-pipelines-remote-resolvers:
+          spec:
+            replicas: 4
+            template:
+              spec:
+                containers:
+                  - name: controller
+                    resources:
+                      limits:
+                        memory: 4Gi
+                      requests:
+                        cpu: "500m"
+                        memory: 4Gi
       disabled: false
       horizontalPodAutoscalers:
         tekton-operator-proxy-webhook:
