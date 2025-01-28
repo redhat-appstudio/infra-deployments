@@ -11,3 +11,11 @@ images:
     newTag: c49d620f5ec5ddb90ae996fc7d5e05bf1474c985
 
 namespace: release-service
+
+patches:
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: controller-manager
+    path: sealights-token-patch.yaml
