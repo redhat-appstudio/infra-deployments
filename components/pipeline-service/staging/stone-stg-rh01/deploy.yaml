@@ -2168,10 +2168,10 @@ spec:
                 - name: tekton-pipelines-controller
                   resources:
                     limits:
-                      memory: 12Gi
+                      memory: 6Gi
                     requests:
                       cpu: "1"
-                      memory: 12Gi
+                      memory: 6Gi
                 topologySpreadConstraints:
                 - labelSelector:
                     matchLabels:
@@ -2179,6 +2179,19 @@ spec:
                   maxSkew: 1
                   topologyKey: topology.kubernetes.io/zone
                   whenUnsatisfiable: DoNotSchedule
+        tekton-pipelines-remote-resolvers:
+          spec:
+            replicas: 4
+            template:
+              spec:
+                containers:
+                - name: controller
+                  resources:
+                    limits:
+                      memory: 4Gi
+                    requests:
+                      cpu: 500m
+                      memory: 4Gi
     performance:
       buckets: 4
       disable-ha: false
