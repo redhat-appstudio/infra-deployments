@@ -27,17 +27,11 @@ spec:
           repoURL: https://kyverno.github.io/kyverno/
           targetRevision: 3.3.4
           helm:
-            values: |
-              admissionController:
-                replicas: 3
-              backgroundController:
-                replicas: 3
-              cleanupController:
-                replicas: 3
-              reportsController:
-                replicas: 3
-              policyReportsCleanup:
-                securityContext: null
+            valueFiles:
+            - $values/{{values.sourceRoot}}/{{values.environment}}/kyverno-values.yaml
+        - repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+          targetRevision: main
+          ref: values
       destination:
         namespace: konflux-kyverno
         server: '{{server}}'
