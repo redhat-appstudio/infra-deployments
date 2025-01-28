@@ -20,3 +20,10 @@ spec:
     ports:
     - protocol: TCP
       port: 8080
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: openshift-monitoring
+    ports:
+    - protocol: TCP
+      port: 8080
