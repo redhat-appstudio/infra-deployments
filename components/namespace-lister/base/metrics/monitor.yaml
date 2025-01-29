@@ -14,6 +14,13 @@ spec:
         credentials:
           key: token
           name: metrics-reader
+      tlsConfig:
+        ca:
+          secret:
+            key: tls.crt
+            name: namespace-lister-tls
+            optional: false
+        serverName: namespace-lister.namespace-lister.svc
   selector:
     matchLabels:
       apps: namespace-lister
