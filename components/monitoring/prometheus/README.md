@@ -52,8 +52,8 @@ flowchart BT
 We use the
 [Openshift-provided](https://docs.openshift.com/container-platform/4.12/monitoring/monitoring-overview.html)
 Prometheus deployments, Platform and user-workload-monitoring (UWM), alongside a
-Prometheus instance deployed by the RHOBS
-[Observability Operator](https://github.com/rhobs/observability-operator).
+Prometheus instance deployed by the
+[Cluster Observability Operator](https://docs.openshift.com/container-platform/4.15/observability/cluster_observability_operator/cluster-observability-operator-overview.html).
 
 ### Platform Prometheus
 Mainly scrapes generic metrics produced by built-in exporters such as cAdvisor and
@@ -108,7 +108,7 @@ remote-writes selected labels for those metrics to RHOBS, which in turn, makes t
 metrics accessible to AppSRE Grafana.
 
 This Prometheus instance is deployed using a MonitoringStack custom resource provided
-by the Observability Operator. This operator is installed by default in Production and Staging clusters.
+by the Cluster Observability Operator. This operator is installed by default in Production and Staging clusters via a [Subscription](base/observability-operator/observability-operator.yaml).
 In Development clusters, it's not installed by default to prevent conflicts with other deployments. 
 It can be installed and configured in development by using the `--obo/-o` flags.
 For example:
