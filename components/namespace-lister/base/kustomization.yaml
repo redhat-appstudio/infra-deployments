@@ -11,9 +11,15 @@ namespace: namespace-lister
 images:
 - name: namespace-lister
   newName: quay.io/konflux-ci/namespace-lister
-  newTag: 147617983adf98ca13689d5de6dd45448ce4098b
+  newTag: e42c2f4c72c7f932c6bda10370a74a03df448f42
 patches:
-- path: ./patches/with-header-auth-email.yaml
+- path: ./patches/with_cachenamespacelabelselector.yaml
+  target:
+    group: apps
+    kind: Deployment
+    name: namespace-lister
+    namespace: namespace-lister
+- path: ./patches/with_header_auth_email.yaml
   target:
     group: apps
     kind: Deployment
