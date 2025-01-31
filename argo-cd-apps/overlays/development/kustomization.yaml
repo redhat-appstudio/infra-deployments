@@ -184,3 +184,14 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: vector-tekton-logs-collector
+  - path: development-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: kyverno
+  - path: set-kyverno-values.yaml
+    target:
+      group: argoproj.io
+      version: v1alpha1
+      kind: ApplicationSet
+      name: kyverno

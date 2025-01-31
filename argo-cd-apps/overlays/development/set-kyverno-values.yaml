@@ -1,0 +1,34 @@
+---
+- op: remove
+  path: /spec/template/spec/sources/1
+- op: remove
+  path: /spec/template/spec/sources/0/helm/valueFiles
+- op: replace
+  path: /spec/template/spec/sources/0/helm/values
+  value: |
+    fullnameOverride: konflux-kyverno
+    namespaceOverride: konflux-kyverno
+    admissionController:
+      replicas: 1
+      initContainer:
+        securityContext: null
+      container:
+        securityContext: null
+    backgroundController:
+      replicas: 1
+      securityContext: null
+    cleanupController:
+      enabled: false
+      securityContext: null
+    reportsController:
+      enabled: false
+      securityContext: null
+    policyReportsCleanup:
+      securityContext: null
+    webhooksCleanup:
+      securityContext: null
+    test:
+      securityContext: null
+    crds:
+      migration:
+        securityContext: null
