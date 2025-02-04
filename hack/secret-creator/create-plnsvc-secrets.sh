@@ -83,7 +83,7 @@ create_db_cert_secret_and_configmap() {
     openssl x509 -req -days 9999 -text -extensions v3_ca \
         -signkey ".tmp/tekton-results/ca.key" \
         -in ".tmp/tekton-results/ca.csr" \
-        -extfile "/etc/ssl/openssl.cnf" \
+        -extfile "/opt/homebrew/etc/openssl@3/openssl.cnf" \
         -out ".tmp/tekton-results/ca.crt" \
         > /dev/null
     openssl req -new -nodes -text \
