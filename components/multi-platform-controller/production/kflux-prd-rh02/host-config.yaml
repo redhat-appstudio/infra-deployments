@@ -38,7 +38,8 @@ data:
     linux-fast/amd64,\
     linux-extra-fast/amd64,\
     linux/s390x,\
-    linux-large/s390x\
+    linux-large/s390x,\
+    linux/ppc64le\
     "
   instance-tag: rhtap-prod
 
@@ -422,50 +423,50 @@ data:
   dynamic.linux-large-s390x.private-ip: "true"
 
 # PPC64LE nodes for multi rh02
-  # dynamic.linux-ppc64le.type: ibmp
-  # dynamic.linux-ppc64le.ssh-secret: "ibm-production-ppc64le-ssh-key"
-  # dynamic.linux-ppc64le.secret: "ibm-api-key"
-  # dynamic.linux-ppc64le.key: "prod-konflux-infra-external"
-  # dynamic.linux-ppc64le.image: "kflux-ppc-base-04-feb-2025"
-  # dynamic.linux-ppc64le.crn: "crn:v1:bluemix:public:power-iaas:dal12:a/8cfd5baa22024ab9822f1e9d4659a5e5:e08f6cb5-9d8c-4931-87c2-16580c2ffe0a::"
-  # dynamic.linux-ppc64le.url: "https://us-south.power-iaas.cloud.ibm.com"
-  # dynamic.linux-ppc64le.network: "54fc8e49-fcb0-4842-9802-405865f0597d"
-  # dynamic.linux-ppc64le.system: "e980"
-  # dynamic.linux-ppc64le.cores: "2"
-  # dynamic.linux-ppc64le.memory: "8"
-  # dynamic.linux-ppc64le.max-instances: "30"
-  # dynamic.linux-ppc64le.allocation-timeout: "1800"
+  dynamic.linux-ppc64le.type: ibmp
+  dynamic.linux-ppc64le.ssh-secret: "ibm-production-ppc64le-ssh-key"
+  dynamic.linux-ppc64le.secret: "ibm-api-key"
+  dynamic.linux-ppc64le.key: "prod-konflux-infra-external"
+  dynamic.linux-ppc64le.image: "kflux-ppc-base-04-feb-2025"
+  dynamic.linux-ppc64le.crn: "crn:v1:bluemix:public:power-iaas:dal12:a/8cfd5baa22024ab9822f1e9d4659a5e5:e08f6cb5-9d8c-4931-87c2-16580c2ffe0a::"
+  dynamic.linux-ppc64le.url: "https://us-south.power-iaas.cloud.ibm.com"
+  dynamic.linux-ppc64le.network: "54fc8e49-fcb0-4842-9802-405865f0597d"
+  dynamic.linux-ppc64le.system: "e980"
+  dynamic.linux-ppc64le.cores: "2"
+  dynamic.linux-ppc64le.memory: "8"
+  dynamic.linux-ppc64le.max-instances: "30"
+  dynamic.linux-ppc64le.allocation-timeout: "1800"
 
 # Power instances static VM
-  host.power-rhtap-prod-1.address: "169.47.123.234"
-  host.power-rhtap-prod-1.platform: "linux/ppc64le"
-  host.power-rhtap-prod-1.user: "root"
-  host.power-rhtap-prod-1.secret: "ibm-production-ppc64le-ssh-key"
-  host.power-rhtap-prod-1.concurrency: "2"
+  # host.power-rhtap-prod-1.address: "169.47.123.234"
+  # host.power-rhtap-prod-1.platform: "linux/ppc64le"
+  # host.power-rhtap-prod-1.user: "root"
+  # host.power-rhtap-prod-1.secret: "ibm-production-ppc64le-ssh-key"
+  # host.power-rhtap-prod-1.concurrency: "2"
 
-  # host.power-rhtap-prod-2.address: "169.47.123.236"
-  # host.power-rhtap-prod-2.platform: "linux/ppc64le"
-  # host.power-rhtap-prod-2.user: "root"
-  # host.power-rhtap-prod-2.secret: "ibm-production-ppc64le-ssh-key"
-  # host.power-rhtap-prod-2.concurrency: "2"
+  # # host.power-rhtap-prod-2.address: "169.47.123.236"
+  # # host.power-rhtap-prod-2.platform: "linux/ppc64le"
+  # # host.power-rhtap-prod-2.user: "root"
+  # # host.power-rhtap-prod-2.secret: "ibm-production-ppc64le-ssh-key"
+  # # host.power-rhtap-prod-2.concurrency: "2"
 
-  host.power-rhtap-prod-3.address: "169.47.123.238"
-  host.power-rhtap-prod-3.platform: "linux/ppc64le"
-  host.power-rhtap-prod-3.user: "root"
-  host.power-rhtap-prod-3.secret: "ibm-production-ppc64le-ssh-key"
-  host.power-rhtap-prod-3.concurrency: "2"
+  # host.power-rhtap-prod-3.address: "169.47.123.238"
+  # host.power-rhtap-prod-3.platform: "linux/ppc64le"
+  # host.power-rhtap-prod-3.user: "root"
+  # host.power-rhtap-prod-3.secret: "ibm-production-ppc64le-ssh-key"
+  # host.power-rhtap-prod-3.concurrency: "2"
 
-  host.power-rhtap-prod-4.address: "150.239.181.173"
-  host.power-rhtap-prod-4.platform: "linux/ppc64le"
-  host.power-rhtap-prod-4.user: "root"
-  host.power-rhtap-prod-4.secret: "ibm-production-ppc64le-ssh-key"
-  host.power-rhtap-prod-4.concurrency: "2"
+  # host.power-rhtap-prod-4.address: "150.239.181.173"
+  # host.power-rhtap-prod-4.platform: "linux/ppc64le"
+  # host.power-rhtap-prod-4.user: "root"
+  # host.power-rhtap-prod-4.secret: "ibm-production-ppc64le-ssh-key"
+  # host.power-rhtap-prod-4.concurrency: "2"
 
-  host.power-rhtap-prod-5.address: "150.239.181.172"
-  host.power-rhtap-prod-5.platform: "linux/ppc64le"
-  host.power-rhtap-prod-5.user: "root"
-  host.power-rhtap-prod-5.secret: "ibm-production-ppc64le-ssh-key"
-  host.power-rhtap-prod-5.concurrency: "2"
+  # host.power-rhtap-prod-5.address: "150.239.181.172"
+  # host.power-rhtap-prod-5.platform: "linux/ppc64le"
+  # host.power-rhtap-prod-5.user: "root"
+  # host.power-rhtap-prod-5.secret: "ibm-production-ppc64le-ssh-key"
+  # host.power-rhtap-prod-5.concurrency: "2"
 
 # GPU Instances
   dynamic.linux-g6xlarge-amd64.type: aws
