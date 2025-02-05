@@ -1,0 +1,35 @@
+---
+- op: replace
+  path: /spec/template/spec/containers/2/args
+  value:
+    - --provider
+    - oidc
+    - --provider-display-name
+    - "Dex"
+    - --client-id
+    - oauth2-proxy
+    - --http-address
+    - "127.0.0.1:6000"
+  # We use relative redirect URI and the reverse-proxy flag to support 
+  # setting the host using the X-Forwarded-Host header. This is needed
+  # when running a UI instance locally that should connect to a remote
+  # cluster.
+    - --redirect-url
+    - /oauth2/callback
+    - --reverse-proxy
+    - "true"
+    - --oidc-issuer-url
+    - https://konflux-ui.apps.stone-stage-p01.hpmt.p1.openshiftapps.com/idp
+    - "true"
+    - --cookie-name
+    - __Host-konflux-ci-cookie
+    - --email-domain
+    - "*"
+    - --insecure-oidc-allow-unverified-email
+    - "true"
+    - --set-xauthrequest
+    - "true"
+    - --whitelist-domain
+    - localhost:9443
+    - --whitelist-domain
+    - konflux-ui.apps.stone-stage-p01.hpmt.p1.openshiftapps.com
