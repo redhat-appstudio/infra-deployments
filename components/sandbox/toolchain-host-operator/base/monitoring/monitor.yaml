@@ -3,7 +3,7 @@ kind: ServiceMonitor
 metadata:
   name: host-operator-metrics
   labels:
-    apps: host-operator
+    control-plane: controller-manager
 spec:
   endpoints:
     - interval: 15s
@@ -18,4 +18,4 @@ spec:
         insecureSkipVerify: true
   selector:
     matchLabels:
-      apps: host-operator
+      control-plane: controller-manager
