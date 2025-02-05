@@ -1,16 +1,16 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: metrics-reader
-  namespace: toolchain-host-operator
+  name: registration-service-metrics-reader
+  namespace: system
 ---
 apiVersion: v1
 kind: Secret
 metadata:
-  name: metrics-reader
-  namespace: toolchain-host-operator
+  name: registration-service-metrics-reader
+  namespace: system
   annotations:
-    kubernetes.io/service-account.name: metrics-reader
+    kubernetes.io/service-account.name: registration-service-metrics-reader
 type: kubernetes.io/service-account-token
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -33,14 +33,14 @@ roleRef:
   name: registration-service-metrics-reader
 subjects:
 - kind: ServiceAccount
-  name: metrics-reader
-  namespace: toolchain-host-operator
+  name: registration-service-metrics-reader
+  namespace: system
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: sandbox-registration-service-proxy
-  namespace: toolchain-host-operator
+  namespace: system
 spec:
   endpoints:
     - interval: 15s
@@ -48,7 +48,7 @@ spec:
       path: /metrics
       port: proxy-metrics
       bearerTokenSecret:
-        name: "metrics-reader"
+        name: "registration-service-metrics-reader"
         key: token
   selector:
     matchLabels:
