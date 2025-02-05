@@ -1,0 +1,21 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: host-operator-metrics
+  labels:
+    apps: host-operator
+spec:
+  endpoints:
+    - interval: 15s
+      scheme: https
+      path: /metrics
+      port: http
+      authorization:
+        credentials:
+          key: token
+          name: host-operator-metrics-reader
+      tlsConfig:
+        insecureSkipVerify: true
+  selector:
+    matchLabels:
+      apps: host-operator
