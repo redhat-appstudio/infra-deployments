@@ -47,9 +47,10 @@ spec:
       scheme: http
       path: /metrics
       port: proxy-metrics
-      bearerTokenSecret:
-        name: "registration-service-metrics-reader"
-        key: token
+      authorization:
+        credentials:
+          key: token
+          name: "registration-service-metrics-reader"
   selector:
     matchLabels:
       run: proxy-metrics
