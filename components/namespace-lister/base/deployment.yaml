@@ -30,6 +30,8 @@ spec:
         - -enable-tls
         - -cert-path=/var/tls/tls.crt
         - -key-path=/var/tls/tls.key
+        - -enable-metrics
+        - -metrics-address=:9100
         image: namespace-lister:foo
         name: namespace-lister
         env:
@@ -47,6 +49,8 @@ spec:
         ports:
         - containerPort: 8080
           name: http
+        - containerPort: 9100
+          name: metrics
         securityContext:
           allowPrivilegeEscalation: false
           readOnlyRootFilesystem: true
