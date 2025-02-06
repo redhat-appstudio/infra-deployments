@@ -9,7 +9,7 @@ spec:
     - interval: 15s
       scheme: https
       path: /metrics
-      port: http
+      port: metrics
       authorization:
         credentials:
           key: token
@@ -18,9 +18,9 @@ spec:
         ca:
           secret:
             key: tls.crt
-            name: namespace-lister-tls
+            name: namespace-lister-metrics-tls
             optional: false
-        serverName: namespace-lister.namespace-lister.svc
+        serverName: namespace-lister-metrics.namespace-lister.svc
   selector:
     matchLabels:
-      apps: namespace-lister
+      apps: namespace-lister-metrics
