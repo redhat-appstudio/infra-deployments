@@ -19,31 +19,34 @@ spec:
             value: mintmaker
           - name: SCRIPT
             value: |
+              STAGING_KUSTOMIZATION="components/mintmaker/staging/base/kustomization.yaml"
+              PRODUCTION_KUSTOMIZATION="components/mintmaker/production/base/kustomization.yaml"
+
               # Extract SHAs from staging
-              DEFAULT_CONFIG_SHA=$(awk -F= '/default\?ref=/{print $2}' staging/base/kustomization.yaml)
-              RENOVATE_CONFIG_SHA=$(awk -F= '/renovate\?ref=/{print $2}' staging/base/kustomization.yaml)
-              CONTROLLER_IMAGE_SHA=$(awk '/newName: quay\.io\/konflux-ci\/mintmaker$/{p=NR+1} NR<=p{if($1=="newTag:") print $2}' staging/base/kustomization.yaml)
-              RENOVATE_IMAGE_SHA=$(awk '/newName: quay\.io\/konflux-ci\/mintmaker-renovate-image$/{p=NR+1} NR<=p{if($1=="newTag:") print $2}' staging/base/kustomization.yaml)
+              DEFAULT_CONFIG_SHA=$(awk -F= '/default\?ref=/{print $2}' $STAGING_KUSTOMIZATION)
+              RENOVATE_CONFIG_SHA=$(awk -F= '/renovate\?ref=/{print $2}' $STAGING_KUSTOMIZATION)
+              CONTROLLER_IMAGE_SHA=$(awk '/newName: quay\.io\/konflux-ci\/mintmaker$/{p=NR+1} NR<=p{if($1=="newTag:") print $2}' $STAGING_KUSTOMIZATION)
+              RENOVATE_IMAGE_SHA=$(awk '/newName: quay\.io\/konflux-ci\/mintmaker-renovate-image$/{p=NR+1} NR<=p{if($1=="newTag:") print $2}' $STAGING_KUSTOMIZATION)
 
               # Update SHAs in production
               if [ -n "$DEFAULT_CONFIG_SHA" ]; then
                 echo "Updating prod default config SHA to $DEFAULT_CONFIG_SHA"
-                sed -i "/default?ref/s/ref=.*$/ref=$DEFAULT_CONFIG_SHA/" production/base/kustomization.yaml
+                sed -i "/default?ref/s/ref=.*$/ref=$DEFAULT_CONFIG_SHA/" $PRODUCTION_KUSTOMIZATION
               fi
 
               if [ -n "$RENOVATE_CONFIG_SHA" ]; then
                 echo "Updating prod renovate config SHA to $RENOVATE_CONFIG_SHA"
-                sed -i "/renovate?ref/s/ref=.*$/ref=$RENOVATE_CONFIG_SHA/" production/base/kustomization.yaml
+                sed -i "/renovate?ref/s/ref=.*$/ref=$RENOVATE_CONFIG_SHA/" $PRODUCTION_KUSTOMIZATION
               fi
 
               if [ -n "$CONTROLLER_IMAGE_SHA" ]; then
                 echo "Updating prod controller image SHA to $CONTROLLER_IMAGE_SHA"
-                sed -i "/newName: quay\.io\/konflux-ci\/mintmaker$/,/newTag:/s/newTag:.*/newTag: $CONTROLLER_IMAGE_SHA/" production/base/kustomization.yaml
+                sed -i "/newName: quay\.io\/konflux-ci\/mintmaker$/,/newTag:/s/newTag:.*/newTag: $CONTROLLER_IMAGE_SHA/" $PRODUCTION_KUSTOMIZATION
               fi
 
               if [ -n "$RENOVATE_IMAGE_SHA" ]; then
                 echo "Updating prod renovate image SHA to $RENOVATE_IMAGE_SHA"
-                sed -i "/newName: quay\.io\/konflux-ci\/mintmaker-renovate-image$/,/newTag:/s/newTag:.*/newTag: $RENOVATE_IMAGE_SHA/" production/base/kustomization.yaml
+                sed -i "/newName: quay\.io\/konflux-ci\/mintmaker-renovate-image$/,/newTag:/s/newTag:.*/newTag: $RENOVATE_IMAGE_SHA/" $PRODUCTION_KUSTOMIZATION
               fi
 
               echo "Updated production kustomization.yaml with staging SHAs"
