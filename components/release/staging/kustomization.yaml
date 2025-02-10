@@ -6,6 +6,14 @@ resources:
   - external-secrets/release-monitor-secret.yaml
   - https://github.com/konflux-ci/release-service/config/default?ref=6edf44528b6f2918b7625080d2cf888c6a040376
 
+patches:
+  - path: kubearchive-config-patch.yaml
+    target:
+      name: kubearchive
+      group: kubearchive.kubearchive.org
+      version: v1alpha1
+      kind: KubeArchiveConfig
+
 components:
   - ../k-components/manager-resources-patch
 
