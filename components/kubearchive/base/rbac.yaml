@@ -2,7 +2,7 @@
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: kubearchive-maintainers
+  name: kubearchive-component-maintainers
   namespace: kubearchive
 subjects:
   - kind: Group
@@ -12,3 +12,16 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: component-maintainer
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: kubearchive-maintainers
+subjects:
+  - kind: Group
+    apiGroup: rbac.authorization.k8s.io
+    name: konflux-kubearchive  # rover group
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kubearchive-maintainer
