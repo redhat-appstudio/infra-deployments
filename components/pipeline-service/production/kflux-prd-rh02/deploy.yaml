@@ -2121,40 +2121,6 @@ spec:
                     requests:
                       cpu: 100m
                       memory: 100Mi
-        tekton-pipelines-controller:
-          spec:
-            template:
-              spec:
-                containers:
-                - name: tekton-pipelines-controller
-                  resources:
-                    limits:
-                      memory: 12Gi
-                    requests:
-                      cpu: "1"
-                      memory: 12Gi
-                topologySpreadConstraints:
-                - labelSelector:
-                    matchLabels:
-                      app: tekton-pipelines-controller
-                  maxSkew: 1
-                  topologyKey: topology.kubernetes.io/zone
-                  whenUnsatisfiable: DoNotSchedule
-        tekton-pipelines-remote-resolvers:
-          spec:
-            replicas: 4
-            template:
-              spec:
-                containers:
-                - args:
-                  - --threads-per-controller=32
-                  name: controller
-                  resources:
-                    limits:
-                      memory: 8Gi
-                    requests:
-                      cpu: 500m
-                      memory: 8Gi
         tekton-pipelines-webhook:
           spec:
             template:
@@ -2204,12 +2170,46 @@ spec:
                   type: Utilization
               type: Resource
             minReplicas: 6
+      statefulSets:
+        tekton-pipelines-controller:
+          spec:
+            template:
+              spec:
+                containers:
+                - name: tekton-pipelines-controller
+                  resources:
+                    limits:
+                      memory: 12Gi
+                    requests:
+                      cpu: "1"
+                      memory: 12Gi
+                topologySpreadConstraints:
+                - labelSelector:
+                    matchLabels:
+                      app: tekton-pipelines-controller
+                  maxSkew: 1
+                  topologyKey: topology.kubernetes.io/zone
+                  whenUnsatisfiable: DoNotSchedule
+        tekton-pipelines-remote-resolvers:
+          spec:
+            replicas: 4
+            template:
+              spec:
+                containers:
+                - name: controller
+                  resources:
+                    limits:
+                      memory: 8Gi
+                    requests:
+                      cpu: 500m
+                      memory: 8Gi
     performance:
       buckets: 8
       disable-ha: false
       kube-api-burst: 50
       kube-api-qps: 50
       replicas: 4
+      statefulset-ordinals: true
       threads-per-controller: 32
   platforms:
     openshift:
