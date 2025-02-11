@@ -1,0 +1,21 @@
+name: Run Kyverno tests
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  kyverno-test:
+    name: Run Kyverno tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Kyverno CLI
+        uses: kyverno/action-install-cli@v0.2.0
+        with:
+          release: 'v1.13.4'
+
+      - name: Run Kyverno Tests
+        run: |
+          kyverno test ./
