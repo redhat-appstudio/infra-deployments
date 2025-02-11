@@ -17,10 +17,10 @@ spec:
       tlsConfig:
         ca:
           secret:
-            key: tls.crt
-            name: namespace-lister-tls
+            key: service-ca.crt
+            name: metrics-reader
             optional: false
-        serverName: namespace-lister-metrics.namespace-lister.svc
+        serverName: namespace-lister.namespace-lister.svc
   selector:
     matchLabels:
       apps: namespace-lister-metrics
