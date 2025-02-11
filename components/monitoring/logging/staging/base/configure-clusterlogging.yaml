@@ -1,0 +1,19 @@
+apiVersion: observability.openshift.io/v1
+kind: ClusterLogging
+metadata:
+  name:  cluster-logging
+spec:
+  managementState: "Managed"
+  collection:
+    type: "vector"
+    tolerations:
+      - key: konflux-ci.dev/workload
+        operator: Exists
+        effect: NoSchedule
+    resources:
+      limits:
+        memory: 2Gi
+        cpu: 1
+      requests:
+        cpu: 500m
+        memory: 1Gi
