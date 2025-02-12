@@ -3,24 +3,90 @@ namespaceOverride: konflux-kyverno
 admissionController:
   replicas: 3
   initContainer:
-    securityContext: null
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+      capabilities:
+        drop:
+        - "ALL"
   container:
-    securityContext: null
+    resources:
+      limits:
+        cpu: 500m
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+      capabilities:
+        drop:
+        - "ALL"
 backgroundController:
   replicas: 3
-  securityContext: null
+  resources:
+    limits:
+      cpu: 500m
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    capabilities:
+      drop:
+      - "ALL"
 cleanupController:
   replicas: 3
-  securityContext: null
+  resources:
+    limits:
+      cpu: 500m
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    capabilities:
+      drop:
+      - "ALL"
 reportsController:
   replicas: 3
-  securityContext: null
+  resources:
+    limits:
+      cpu: 500m
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    capabilities:
+      drop:
+      - "ALL"
 policyReportsCleanup:
-  securityContext: null
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    capabilities:
+      drop:
+      - "ALL"
 webhooksCleanup:
-  securityContext: null
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    capabilities:
+      drop:
+      - "ALL"
 test:
-  securityContext: null
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    capabilities:
+      drop:
+      - "ALL"
 crds:
   migration:
-    securityContext: null
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+      capabilities:
+        drop:
+        - "ALL"
