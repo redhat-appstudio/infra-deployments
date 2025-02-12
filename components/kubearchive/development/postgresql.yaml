@@ -25,7 +25,9 @@ spec:
             defaultMode: 384
       containers:
         - name: postgresql
-          image: quay.io/kubearchive/postgresql:16.4.0
+          # Before changing the image push it to quay repo to avoid reaching the pull rate limit of dockerhub
+          # The original image is docker.io/bitnami/postgresql
+          image: quay.io/kubearchive/postgresql:16.6.0
           volumeMounts:
             - name: ssl
               mountPath: /mount/ssl-postgres/
@@ -46,7 +48,7 @@ spec:
             - name: POSTGRESQL_PASSWORD
               value: password  # notsecret
             - name: POSTGRESQL_REPLICATION_USE_PASSFILE # https://github.com/bitnami/containers/issues/74788
-              value: no
+              value: "no"
             - name: POSTGRESQL_ENABLE_TLS
               value: yes
             - name: POSTGRESQL_TLS_CERT_FILE
