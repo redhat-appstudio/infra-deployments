@@ -22,16 +22,10 @@ spec:
       name: kyverno-{{nameNormalized}}
     spec:
       project: default
-      sources:
-        - chart: kyverno
-          repoURL: https://kyverno.github.io/kyverno/
-          targetRevision: 3.3.4
-          helm:
-            valueFiles:
-            - $values/{{values.sourceRoot}}/{{values.environment}}/kyverno-values.yaml
-        - repoURL: https://github.com/redhat-appstudio/infra-deployments.git
-          targetRevision: main
-          ref: values
+      source:
+        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+        targetRevision: main
       destination:
         namespace: konflux-kyverno
         server: '{{server}}'
