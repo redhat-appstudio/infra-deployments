@@ -3,7 +3,6 @@ kind: Kustomization
 resources:
 - ../../base
 - ../../base/external-secrets
-- configure-clusterlogging.yaml
 patches:
   - target:
       group: external-secrets.io
@@ -29,3 +28,4 @@ patches:
       version: v1
       kind: ClusterLogForwarder
       name: instance
+  - path: patches/configure-clusterlogging-collector.yaml
