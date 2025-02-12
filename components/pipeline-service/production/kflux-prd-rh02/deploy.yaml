@@ -1407,7 +1407,7 @@ metadata:
   name: tekton-results-api
   namespace: tekton-results
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: tekton-results-api
@@ -1420,23 +1420,6 @@ spec:
         app.kubernetes.io/name: tekton-results-api
         app.kubernetes.io/version: devel
     spec:
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: kubernetes.io/os
-                operator: NotIn
-                values:
-                - windows
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-          - podAffinityTerm:
-              labelSelector:
-                matchLabels:
-                  app.kubernetes.io/name: tekton-results-api
-              topologyKey: kubernetes.io/hostname
-            weight: 100
       containers:
       - args:
         - --secure-listen-address=0.0.0.0:9443
