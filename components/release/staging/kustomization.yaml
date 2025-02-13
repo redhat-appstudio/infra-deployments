@@ -4,7 +4,8 @@ resources:
   - ../base
   - ../base/monitor/staging
   - external-secrets/release-monitor-secret.yaml
-  - https://github.com/konflux-ci/release-service/config/default?ref=5954f10a8c86134fca5f70fc1d9898254ee1f082
+  - https://github.com/konflux-ci/release-service/config/default?ref=c3989c7a79c4d0b2a76930526cab370daef43aee
+  - release_service_config.yaml
 
 patches:
   - path: kubearchive-config-patch.yaml
@@ -20,6 +21,6 @@ components:
 images:
   - name: quay.io/konflux-ci/release-service
     newName: quay.io/konflux-ci/release-service
-    newTag: 5954f10a8c86134fca5f70fc1d9898254ee1f082
+    newTag: c3989c7a79c4d0b2a76930526cab370daef43aee
 
 namespace: release-service
