@@ -3,14 +3,8 @@ kind: Kustomization
 
 namespace: konflux-kyverno
 
-commonAnnotations:
-  argocd.argoproj.io/sync-wave: "-1"
-
 generators:
   - kyverno-helm-generator.yaml
-
-resources:
-  - kyverno-pre.yaml
 
 replacements:
   # enforce serviceAccountName is used instead of serviceAccount in Jobs
