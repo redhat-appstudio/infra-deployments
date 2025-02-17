@@ -22,12 +22,7 @@ spec:
   generators:
     - {}
   template:
-    metadata:
-      # Workaround for https://github.com/argoproj/argo-cd/issues/17181
-      finalizers:
-        - resources-finalizer.argocd.argoproj.io
-        - post-delete-finalizer.argocd.argoproj.io
-        - post-delete-finalizer.argocd.argoproj.io/cleanup
+    metadata: {}
     spec:
       destination:
         namespace: clusters
