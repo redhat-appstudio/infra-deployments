@@ -846,7 +846,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
     argocd.argoproj.io/sync-wave: "0"
-    service.beta.openshift.io/serving-cert-secret-name: tekton-results-tls
+    service.beta.openshift.io/serving-cert-secret-name: tekton-results-for-watcher-tls
   labels:
     app.kubernetes.io/name: tekton-results-api-for-watcher
     app.kubernetes.io/part-of: tekton-results
@@ -1153,7 +1153,7 @@ spec:
         name: config
       - name: tls
         secret:
-          secretName: tekton-results-tls
+          secretName: tekton-results-for-watcher-tls
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -1548,7 +1548,7 @@ spec:
       volumes:
         - name: tls
           secret:
-            secretName: tekton-results-tls
+            secretName: tekton-results-for-watcher-tls
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
