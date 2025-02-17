@@ -1410,7 +1410,7 @@ metadata:
   name: tekton-results-api
   namespace: tekton-results
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: tekton-results-api
@@ -1600,7 +1600,7 @@ metadata:
   name: tekton-results-api-for-watcher
   namespace: tekton-results
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: tekton-results-api-for-watcher
@@ -1927,7 +1927,7 @@ spec:
             type: RuntimeDefault
       - args:
         - -api_addr
-        - tekton-results-api-service.tekton-results.svc.cluster.local:8080
+        - tekton-results-api-service-for-watcher.tekton-results.svc.cluster.local:8080
         - -auth_mode
         - token
         - -check_owner=false
@@ -1949,7 +1949,7 @@ spec:
         - name: METRICS_DOMAIN
           value: tekton.dev/results
         - name: TEKTON_RESULTS_API_SERVICE
-          value: tekton-results-api-service.tekton-results.svc.cluster.local:8080
+          value: tekton-results-api-service-for-watcher.tekton-results.svc.cluster.local:8080
         - name: AUTH_MODE
           value: token
         image: quay.io/konflux-ci/tekton-results-watcher:275a6ededaf328d55923e2462ec6d27ccd6b9ab8
