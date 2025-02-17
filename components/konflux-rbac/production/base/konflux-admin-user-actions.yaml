@@ -157,3 +157,32 @@ rules:
     resources:
       - cronjobs
       - jobs
+  - verbs:
+      - get
+      - list
+      - create
+      - update
+      - patch
+      - delete
+    apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - roles
+      - rolebindings
+  - verbs:
+      - get
+      - list
+      - create
+      - update
+      - patch
+      - delete
+    apiGroups:
+      - ""
+    resources:
+      - serviceaccounts
+  - verbs:
+      - create
+    apiGroups:
+      - ""
+    resources:
+      - serviceaccounts/token
