@@ -658,7 +658,7 @@ data:
     # is N, the N replicas will compete for the M buckets. The owner of a
     # bucket will take care of the reconciling for the keys partitioned into
     # that bucket.
-    buckets: "1"
+    buckets: "4"
 kind: ConfigMap
 metadata:
   annotations:
@@ -1432,7 +1432,7 @@ metadata:
   name: tekton-results-watcher
   namespace: tekton-results
 spec:
-  replicas: 1
+  replicas: 4
   selector:
     matchLabels:
       app.kubernetes.io/name: tekton-results-watcher
