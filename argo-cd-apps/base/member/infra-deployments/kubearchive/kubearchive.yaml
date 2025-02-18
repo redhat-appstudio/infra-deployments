@@ -30,13 +30,3 @@ spec:
         # not specifcy namespace
         namespace: product-kubearchive
         server: '{{server}}'
-      syncPolicy:
-        automated:
-          prune: true
-          selfHeal: true
-        syncOptions:
-          - CreateNamespace=true
-        retry:
-          limit: 50
-          backoff:
-            duration: 15s
