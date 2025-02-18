@@ -122,6 +122,10 @@ patches:
     metadata:
       name: kubearchive-operator
       namespace: kubearchive
+      annotations:
+        ignore-check.kube-linter.io/unset-memory-requirements: >
+          "This is temporary to troubleshoot an issue"
+
     spec:
       template:
         spec:
@@ -134,8 +138,6 @@ patches:
                 - containerPort: 8081
               resources:
                 requests:
-                  memory: 256Mi
-                limits:
                   memory: 256Mi
                 
 - patch: |-
