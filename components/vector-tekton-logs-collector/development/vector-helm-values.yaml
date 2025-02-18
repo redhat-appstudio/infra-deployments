@@ -3,10 +3,10 @@ role: Agent
 resources:
   requests:
     cpu: 512m
-    memory: 1024Mi
+    memory: 3072Mi
   limits:
     cpu: 2000m
-    memory: 2048Mi
+    memory: 3072Mi
 customConfig:
   data_dir: /vector-data-dir
   api:
@@ -17,7 +17,9 @@ customConfig:
     kubernetes_logs:
       type: kubernetes_logs
       rotate_wait_secs: 5
-      glob_minimum_cooldown_ms: 15000
+      glob_minimum_cooldown_ms: 500
+      max_read_bytes: 3145728
+      max_line_bytes: 3145728
       auto_partial_merge: true
       extra_label_selector: "app.kubernetes.io/managed-by in (tekton-pipelines,pipelinesascode.tekton.dev)"
     internal_metrics:
@@ -56,9 +58,14 @@ customConfig:
     aws_s3:
       type: "aws_s3"
       bucket: ${BUCKET}
+      acknowledgements:
+        enabled: true
       buffer:
-        type: "disk"
-        max_size: 1073741824
+        type: "memory"
+        max_events: 10000
+        when_full: "block"
+      batch:
+        max_events: 100000
       inputs: ["remap_app_logs"]
       compression: "none"
       endpoint: ${ENDPOINT}

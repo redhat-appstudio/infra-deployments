@@ -1,0 +1,13 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: pod-logs-reader-rolebinding
+  namespace: konflux-ci
+subjects:
+- kind: ServiceAccount
+  name: appstudio-pipeline
+  namespace: konflux-ci
+roleRef:
+  kind: Role
+  name: pod-logs-reader
+  apiGroup: rbac.authorization.k8s.io

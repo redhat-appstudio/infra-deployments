@@ -2,18 +2,10 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-- https://github.com/kubearchive/kubearchive/releases/download/v0.4.0/kubearchive.yaml?timeout=90
+- https://gist.githubusercontent.com/ggallen/0aa25baf754578550425e5c17122f776/raw/d33b5051478d4755e0c6712e23acb2916032cf83/kubearchive.yaml?timeout=90
 - rbac.yaml
-# This alternative service is needed because the operator creates the
-# ApiServerSource pointing to <namespace>-sink, and here namespace is
-# product-kubearchive, so product-kubearchive-sink. However the service
-# is created as kubearchive-sink and the ApiServerSource does not find it.
-# The symptom is the following event:
-# Failed to update status for "product-kubearchive-a13e": ApiServerSource.sources.knative.dev
-#   "product-kubearchive-a13e" is invalid: namespaces: Invalid value: "null": namespaces in body
-#    must be of type array: "null"
-# This can be removed when this work is merged https://github.com/kubearchive/kubearchive/issues/589
-- alternative-service.yaml
+- kubearchive-config.yaml
+- kubearchive-maintainer.yaml
 
 # ROSA does not support namespaces starting with `kube`
 namespace: product-kubearchive
@@ -45,15 +37,6 @@ patches:
     kind: ClusterRoleBinding
     metadata:
       name: kubearchive-operator
-    subjects:
-    - kind: ServiceAccount
-      name: kubearchive-operator
-      namespace: product-kubearchive
-- patch: |-
-    apiVersion: rbac.authorization.k8s.io/v1
-    kind: ClusterRoleBinding
-    metadata:
-      name: kubearchive-operator-proxy
     subjects:
     - kind: ServiceAccount
       name: kubearchive-operator
@@ -120,6 +103,11 @@ patches:
     metadata:
       name: kubearchive-api-server
       namespace: kubearchive
+      annotations:
+        ignore-check.kube-linter.io/readiness-port: >
+          "The port is working properly, just not exposed. Will be fixed in newer versions"
+        ignore-check.kube-linter.io/liveness-port: >
+          "The port is working properly, just not exposed. Will be fixed in newer versions"
     spec:
       template:
         spec:
@@ -134,6 +122,10 @@ patches:
     metadata:
       name: kubearchive-operator
       namespace: kubearchive
+      annotations:
+        ignore-check.kube-linter.io/unset-memory-requirements: >
+          "This is temporary to troubleshoot an issue"
+
     spec:
       template:
         spec:
@@ -144,10 +136,10 @@ patches:
                 runAsNonRoot: true
               ports:
                 - containerPort: 8081
-            - name: kube-rbac-proxy
-              securityContext:
-                readOnlyRootFilesystem: true
-                runAsNonRoot: true
+              resources:
+                requests:
+                  memory: 256Mi
+                
 - patch: |-
     apiVersion: apps/v1
     kind: Deployment

@@ -120,18 +120,6 @@ objects:
     - patch
     - delete
   - apiGroups:
-    - jvmbuildservice.io
-    resources:
-    - jbsconfigs
-    - artifactbuilds
-    verbs:
-    - get
-    - list
-    - watch
-    - create
-    - update
-    - patch
-  - apiGroups:
     - ''
     resources:
     - configmaps
@@ -154,6 +142,18 @@ objects:
     - projects
     - projectdevelopmentstreams
     - projectdevelopmentstreamtemplates
+    verbs:
+    - get
+    - list
+    - watch
+    - create
+    - update
+    - patch
+  - apiGroups:
+    - batch
+    resources:
+    - cronjobs
+    - jobs
     verbs:
     - get
     - list

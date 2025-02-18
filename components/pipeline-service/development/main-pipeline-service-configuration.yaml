@@ -657,6 +657,7 @@ data:
     LOGGING_PLUGIN_PROXY_PATH=/api/logs/v1/application
     LOGGING_PLUGIN_TOKEN_PATH=/var/run/secrets/kubernetes.io/serviceaccount/token
     LOGGING_PLUGIN_NAMESPACE_KEY=kubernetes_namespace_name
+    LOGGING_PLUGIN_CONTAINER_KEY=kubernetes.container_name
     LOGGING_PLUGIN_STATIC_LABELS='log_type=application'
     LOGGING_PLUGIN_CA_CERT=
     LOGGING_PLUGIN_QUERY_LIMIT=1700
@@ -892,6 +893,36 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
     argocd.argoproj.io/sync-wave: "0"
+    service.beta.openshift.io/serving-cert-secret-name: tekton-results-for-watcher-tls
+  labels:
+    app.kubernetes.io/name: tekton-results-api-for-watcher
+    app.kubernetes.io/part-of: tekton-results
+    app.kubernetes.io/version: devel
+  name: tekton-results-api-service-for-watcher
+  namespace: tekton-results
+spec:
+  ports:
+  - name: server
+    port: 8080
+    protocol: TCP
+    targetPort: 8080
+  - name: metrics
+    port: 9443
+    protocol: TCP
+    targetPort: metrics
+  - name: profiling
+    port: 6060
+    protocol: TCP
+    targetPort: 6060
+  selector:
+    app.kubernetes.io/name: tekton-results-api-for-watcher
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "0"
     service.beta.openshift.io/serving-cert-secret-name: tekton-results-tls
   labels:
     app.kubernetes.io/name: tekton-results-api
@@ -988,25 +1019,42 @@ metadata:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
     argocd.argoproj.io/sync-wave: "0"
   labels:
-    app.kubernetes.io/name: tekton-results-api
+    app.kubernetes.io/name: tekton-results-api-for-watcher
     app.kubernetes.io/part-of: tekton-results
     app.kubernetes.io/version: devel
-  name: tekton-results-api
+  name: tekton-results-api-for-watcher
   namespace: tekton-results
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: tekton-results-api
+      app.kubernetes.io/name: tekton-results-api-for-watcher
   template:
     metadata:
       annotations:
         argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
       labels:
-        app.kubernetes.io/name: tekton-results-api
+        app.kubernetes.io/name: tekton-results-api-for-watcher
         app.kubernetes.io/version: devel
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/os
+                    operator: NotIn
+                    values:
+                      - windows
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: tekton-results-api-for-watcher
+                topologyKey: kubernetes.io/hostname
+              weight: 100
       containers:
       - env:
         - name: LOGS_API
@@ -1060,7 +1108,7 @@ spec:
             secretKeyRef:
               key: db.name
               name: tekton-results-database
-        image: quay.io/konflux-ci/tekton-results-api:cc0e0ecfe4cd88c9e7537e23e4a2b159e397d59a
+        image: quay.io/konflux-ci/tekton-results-api:275a6ededaf328d55923e2462ec6d27ccd6b9ab8
         livenessProbe:
           httpGet:
             path: /healthz
@@ -1101,6 +1149,9 @@ spec:
           initialDelaySeconds: 5
           periodSeconds: 10
         volumeMounts:
+        - mountPath: /etc/ssl/certs/s3-cert.crt
+          name: ca-s3
+          subPath: s3-cert.crt
         - mountPath: /etc/tls/db
           name: db-tls-ca
           readOnly: true
@@ -1139,6 +1190,264 @@ spec:
             type: RuntimeDefault
       serviceAccountName: tekton-results-api
       volumes:
+      - name: ca-s3
+        secret:
+          items:
+          - key: public.crt
+            path: s3-cert.crt
+          secretName: storage-tls
+      - emptyDir: {}
+        name: tmp-mc-volume
+      - configMap:
+          name: rds-root-crt
+        name: db-tls-ca
+      - configMap:
+          name: tekton-results-api-config
+        name: config
+      - name: tls
+        secret:
+          secretName: tekton-results-for-watcher-tls
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/name: tekton-results-api
+    app.kubernetes.io/part-of: tekton-results
+    app.kubernetes.io/version: devel
+  name: tekton-results-api
+  namespace: tekton-results
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: tekton-results-api
+  template:
+    metadata:
+      annotations:
+        argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+      labels:
+        app.kubernetes.io/name: tekton-results-api
+        app.kubernetes.io/version: devel
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/os
+                    operator: NotIn
+                    values:
+                      - windows
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: tekton-results-api
+                topologyKey: kubernetes.io/hostname
+              weight: 100
+      containers:
+      - env:
+        - name: LOGS_API
+          value: "true"
+        - name: LOGS_TYPE
+          value: blob
+        - name: S3_HOSTNAME_IMMUTABLE
+          value: "true"
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              key: aws_access_key_id
+              name: tekton-results-s3
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              key: aws_secret_access_key
+              name: tekton-results-s3
+        - name: AWS_REGION
+          valueFrom:
+            secretKeyRef:
+              key: aws_region
+              name: tekton-results-s3
+        - name: S3_BUCKET_NAME
+          valueFrom:
+            secretKeyRef:
+              key: bucket
+              name: tekton-results-s3
+        - name: AWS_ENDPOINT_URL
+          valueFrom:
+            secretKeyRef:
+              key: endpoint
+              name: tekton-results-s3
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              key: db.user
+              name: tekton-results-database
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: db.password
+              name: tekton-results-database
+        - name: DB_HOST
+          valueFrom:
+            secretKeyRef:
+              key: db.host
+              name: tekton-results-database
+        - name: DB_NAME
+          valueFrom:
+            secretKeyRef:
+              key: db.name
+              name: tekton-results-database
+        image: quay.io/konflux-ci/tekton-results-api:275a6ededaf328d55923e2462ec6d27ccd6b9ab8
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+            scheme: HTTPS
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        name: api
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+            scheme: HTTPS
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: 100m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 512Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+        startupProbe:
+          failureThreshold: 10
+          httpGet:
+            path: /healthz
+            port: 8080
+            scheme: HTTPS
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        volumeMounts:
+        - mountPath: /etc/ssl/certs/s3-cert.crt
+          name: ca-s3
+          subPath: s3-cert.crt
+        - mountPath: /etc/tls/db
+          name: db-tls-ca
+          readOnly: true
+        - mountPath: /etc/tekton/results
+          name: config
+          readOnly: true
+        - mountPath: /etc/tls
+          name: tls
+          readOnly: true
+      - args:
+        - --secure-listen-address=0.0.0.0:9443
+        - --upstream=http://127.0.0.1:9090/
+        - --logtostderr=true
+        - --v=6
+        image: registry.redhat.io/openshift4/ose-kube-rbac-proxy:v4.12
+        name: kube-rbac-proxy
+        ports:
+        - containerPort: 9443
+          name: metrics
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+          requests:
+            cpu: 5m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+      initContainers:
+      - args:
+        - -c
+        - |
+          mc --config-dir /tmp config host add minio "$S3_ENDPOINT" "$S3_ACCESS_KEY_ID" "$S3_SECRET_ACCESS_KEY" &&
+          if [ -z "$(mc --config-dir /tmp ls minio | grep "$S3_BUCKET_NAME")" ]; then
+            mc --config-dir /tmp mb --with-lock --region "$S3_REGION" minio/"$S3_BUCKET_NAME" &&
+            echo "Minio bucket $S3_BUCKET_NAME successfully created."
+          fi
+        command:
+        - /bin/bash
+        env:
+        - name: S3_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              key: aws_access_key_id
+              name: tekton-results-s3
+        - name: S3_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              key: aws_secret_access_key
+              name: tekton-results-s3
+        - name: S3_REGION
+          valueFrom:
+            secretKeyRef:
+              key: aws_region
+              name: tekton-results-s3
+        - name: S3_BUCKET_NAME
+          valueFrom:
+            secretKeyRef:
+              key: bucket
+              name: tekton-results-s3
+        - name: S3_ENDPOINT
+          valueFrom:
+            secretKeyRef:
+              key: endpoint
+              name: tekton-results-s3
+        image: quay.io/minio/mc:RELEASE.2023-01-28T20-29-38Z
+        imagePullPolicy: Always
+        name: mc
+        resources:
+          limits:
+            cpu: 100m
+            memory: 128Mi
+          requests:
+            cpu: 5m
+            memory: 32Mi
+        securityContext:
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+        volumeMounts:
+        - mountPath: /etc/ssl/certs/s3-cert.crt
+          name: ca-s3
+          subPath: s3-cert.crt
+        - mountPath: /tmp
+          name: tmp-mc-volume
+      serviceAccountName: tekton-results-api
+      volumes:
+      - name: ca-s3
+        secret:
+          items:
+          - key: public.crt
+            path: s3-cert.crt
+          secretName: storage-tls
       - emptyDir: {}
         name: tmp-mc-volume
       - configMap:
@@ -1191,7 +1500,7 @@ spec:
             secretKeyRef:
               key: POSTGRES_PASSWORD
               name: tekton-results-postgres
-        image: quay.io/konflux-ci/tekton-results-retention-policy-agent:cc0e0ecfe4cd88c9e7537e23e4a2b159e397d59a
+        image: quay.io/konflux-ci/tekton-results-retention-policy-agent:275a6ededaf328d55923e2462ec6d27ccd6b9ab8
         name: retention-policy-agent
         resources:
           limits:
@@ -1271,7 +1580,7 @@ spec:
       containers:
         - args:
             - -api_addr
-            - tekton-results-api-service.tekton-results.svc.cluster.local:8080
+            - tekton-results-api-service-for-watcher.tekton-results.svc.cluster.local:8080
             - -auth_mode
             - token
             - -check_owner=false
@@ -1294,10 +1603,10 @@ spec:
             - name: METRICS_DOMAIN
               value: tekton.dev/results
             - name: TEKTON_RESULTS_API_SERVICE
-              value: tekton-results-api-service.tekton-pipelines.svc.cluster.local:8080
+              value: tekton-results-api-service-for-watcher.tekton-results.svc.cluster.local:8080
             - name: AUTH_MODE
               value: token
-          image: quay.io/konflux-ci/tekton-results-watcher:cc0e0ecfe4cd88c9e7537e23e4a2b159e397d59a
+          image: quay.io/konflux-ci/tekton-results-watcher:275a6ededaf328d55923e2462ec6d27ccd6b9ab8
           name: watcher
           ports:
             - containerPort: 9090
@@ -1355,7 +1664,7 @@ spec:
       volumes:
         - name: tls
           secret:
-            secretName: tekton-results-tls
+            secretName: tekton-results-for-watcher-tls
 ---
 apiVersion: batch/v1
 kind: Job
@@ -1501,7 +1810,7 @@ spec:
   jobLabel: app.kubernetes.io/name
   selector:
     matchLabels:
-      app.kubernetes.io/name: tekton-results-api
+      app.kubernetes.io/name: tekton-results-api-for-watcher
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
@@ -1639,6 +1948,41 @@ spec:
                       requests:
                         cpu: 200m
                         memory: 200Mi
+      statefulSets:
+        tekton-pipelines-controller:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: tekton-pipelines-controller
+                    resources:
+                      limits:
+                        memory: 2Gi
+                        cpu: "1"
+                      requests:
+                        cpu: 500m
+                        memory: 1Gi
+                topologySpreadConstraints:
+                  - maxSkew: 1
+                    topologyKey: topology.kubernetes.io/zone
+                    whenUnsatisfiable: DoNotSchedule
+                    labelSelector:
+                      matchLabels:
+                        app: tekton-pipelines-controller
+        tekton-pipelines-remote-resolvers:
+          spec:
+            replicas: 2
+            template:
+              spec:
+                containers:
+                  - name: controller
+                    resources:
+                      limits:
+                        memory: 1Gi
+                        cpu: 500m
+                      requests:
+                        cpu: 200m
+                        memory: 500Mi
       disabled: false
       horizontalPodAutoscalers:
         tekton-operator-proxy-webhook:
@@ -1743,7 +2087,7 @@ metadata:
   namespace: openshift-marketplace
 spec:
   displayName: custom-operators
-  image: quay.io/openshift-pipeline/openshift-pipelines-pipelines-operator-bundle-container-index@sha256:41e3a30346050886e0cf7a17d65140415f028f8c8d511915387ec68a1dab7f75
+  image: quay.io/openshift-pipeline/openshift-pipelines-pipelines-operator-bundle-container-index@sha256:63f934e04d88cc1fa2af49efc07b406eb88e04a622be25762a931168deeefb79
   sourceType: grpc
   updateStrategy:
     registryPoll:
