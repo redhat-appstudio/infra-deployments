@@ -8,3 +8,19 @@ images:
 - name: quay.io/redhat-appstudio/o11y
   newName: quay.io/redhat-appstudio/o11y
   newTag: cb6029d033be34beff3d8ae7f1dc75899d1f3be7
+
+patches:
+  - target:
+      kind: Subscription
+      name: grafana-operator
+    patch: | 
+      - op: add
+        path: /spec/config
+        value:
+          resources: 
+            limits:
+              cpu: "200m"
+              memory: "750Mi"
+            requests:
+              cpu: "100m"
+              memory: "250Mi"
