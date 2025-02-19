@@ -1277,6 +1277,8 @@ metadata:
     argocd.argoproj.io/sync-wave: "0"
     service.beta.openshift.io/serving-cert-secret-name: tekton-results-tls
   labels:
+    app: tekton-results-api
+    app.kubernetes.io/component: api
     app.kubernetes.io/name: tekton-results-api
     app.kubernetes.io/part-of: tekton-results
     app.kubernetes.io/version: devel
@@ -1307,6 +1309,8 @@ metadata:
     argocd.argoproj.io/sync-wave: "0"
     service.beta.openshift.io/serving-cert-secret-name: tekton-results-for-watcher-tls
   labels:
+    app: tekton-results-api
+    app.kubernetes.io/component: api
     app.kubernetes.io/name: tekton-results-api-for-watcher
     app.kubernetes.io/part-of: tekton-results
     app.kubernetes.io/version: devel
@@ -1336,6 +1340,8 @@ metadata:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
     argocd.argoproj.io/sync-wave: "2"
   labels:
+    app: tekton-results-watcher
+    app.kubernetes.io/component: watcher
     app.kubernetes.io/name: tekton-results-watcher
     app.kubernetes.io/part-of: tekton-results
     app.kubernetes.io/version: devel
@@ -2201,10 +2207,11 @@ spec:
     scheme: https
     tlsConfig:
       insecureSkipVerify: true
-  jobLabel: app.kubernetes.io/name
+  jobLabel: app
   selector:
     matchLabels:
-      app.kubernetes.io/name: tekton-results-api
+      app.kubernetes.io/component: api
+      app.kubernetes.io/part-of: tekton-results
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
