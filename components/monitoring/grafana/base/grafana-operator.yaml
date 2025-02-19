@@ -15,6 +15,14 @@ spec:
   name: grafana-operator
   source: community-operators
   sourceNamespace: openshift-marketplace
+  config:
+    resources: 
+      limits:
+        cpu: "200m"
+        memory: "750Mi"
+      requests:
+        cpu: "100m"
+        memory: "250Mi"
 ---
 apiVersion: operators.coreos.com/v1
 kind: OperatorGroup
