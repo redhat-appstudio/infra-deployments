@@ -1,0 +1,27 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- deployment.yaml
+- namespace.yaml
+- rbac.yaml
+- service.yaml
+- network_policy.yaml
+- metrics/
+namespace: namespace-lister
+images:
+- name: namespace-lister
+  newName: quay.io/konflux-ci/namespace-lister
+  newTag: 1181ecb4ba10d6fbe5ea7bb94393b04cb2a932f8
+patches:
+- path: ./patches/with_cachenamespacelabelselector.yaml
+  target:
+    group: apps
+    kind: Deployment
+    name: namespace-lister
+    namespace: namespace-lister
+- path: ./patches/with_header_auth_user.yaml
+  target:
+    group: apps
+    kind: Deployment
+    name: namespace-lister
+    namespace: namespace-lister
