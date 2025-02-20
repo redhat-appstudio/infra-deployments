@@ -50,7 +50,7 @@ spec:
           validation_reason|strategy|succeeded|target|name|method|code|sp|le|\
           unexpected_status|failure|hostname|label_app_kubernetes_io_managed_by|status|\
           pipeline|pipelinename|pipelinerun|schedule|check|grpc_service|grpc_code|\
-          lease|lease_holder|deployment"
+          lease|lease_holder|deployment|platform"
 ---
 # Grant permission to Federate In-Cluster Prometheus
 apiVersion: rbac.authorization.k8s.io/v1
@@ -148,6 +148,7 @@ spec:
         - '{__name__="node_cpu_seconds_total", mode="idle"}'
         - '{__name__="node_memory_MemTotal_bytes"}'
         - '{__name__="node_memory_MemAvailable_bytes"}'
+        - '{__name__="platform:hypershift_hostedclusters:max"}'
 
     relabelings:
     # override the target's address by the prometheus-k8s service name.
