@@ -1,0 +1,92 @@
+fullnameOverride: konflux-kyverno
+namespaceOverride: konflux-kyverno
+admissionController:
+  replicas: 3
+  initContainer:
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+      capabilities:
+        drop:
+        - "ALL"
+  container:
+    resources:
+      limits:
+        cpu: 500m
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+      capabilities:
+        drop:
+        - "ALL"
+backgroundController:
+  replicas: 3
+  resources:
+    limits:
+      cpu: 500m
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    capabilities:
+      drop:
+      - "ALL"
+cleanupController:
+  replicas: 3
+  resources:
+    limits:
+      cpu: 500m
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    capabilities:
+      drop:
+      - "ALL"
+reportsController:
+  replicas: 3
+  resources:
+    limits:
+      cpu: 500m
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    capabilities:
+      drop:
+      - "ALL"
+policyReportsCleanup:
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    capabilities:
+      drop:
+      - "ALL"
+webhooksCleanup:
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    capabilities:
+      drop:
+      - "ALL"
+test:
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    capabilities:
+      drop:
+      - "ALL"
+crds:
+  migration:
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+      capabilities:
+        drop:
+        - "ALL"

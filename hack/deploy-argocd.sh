@@ -11,6 +11,9 @@ main() {
     grant_admin_role_to_all_authenticated_users
     mark_pending_pvc_as_healty
     set_kustomize_build_options
+    set_ignoreaggregatedroles
+    set_trackingmethod_annotation
+    restart_gitops_server
     print_url
 }
 
@@ -103,6 +106,30 @@ spec:
 set_kustomize_build_options() {
     echo "Setting kustomize build options"
     kubectl patch argocd/openshift-gitops -n openshift-gitops -p '{"spec":{"kustomizeBuildOptions":"--enable-helm"}}' --type=merge
+}
+
+set_ignoreaggregatedroles() {
+    echo "Setting ignore Aggregated Roles"
+    kubectl patch argocd/openshift-gitops -n openshift-gitops -p '
+spec:
+  extraConfig:
+    resource.compareoptions: |
+      # disables status field diffing in specified resource types
+      ignoreAggregatedRoles: true
+' --type=merge
+}
+
+set_trackingmethod_annotation() {
+    echo "Setting ArgoCD tracking method to annotation"
+    kubectl patch argocd/openshift-gitops -n openshift-gitops -p '
+spec:
+  resourceTrackingMethod: annotation
+' --type=merge
+}
+
+restart_gitops_server() {
+    echo "Restarting GitOps server"
+    kubectl rollout restart -n openshift-gitops deployments openshift-gitops-server
 }
 
 print_url() {
