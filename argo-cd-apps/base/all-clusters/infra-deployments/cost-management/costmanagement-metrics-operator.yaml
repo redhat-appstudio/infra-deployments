@@ -12,9 +12,17 @@ spec:
               values:
                 sourceRoot: components/cost-management
                 environment: staging
-                clusterDir: ""
+                clusterDir: base
           - list:
-              elements: []
+              elements:
+                - nameNormalized: kflux-stg-es01
+                  values.clusterDir: kflux-stg-es01
+                - nameNormalized: stone-stg-host
+                  values.clusterDir: stone-stg-host
+                - nameNormalized: stone-stage-p01
+                  values.clusterDir: stone-stage-p01
+                - nameNormalized: stone-stg-rh01
+                  values.clusterDir: stone-stg-rh01
   template:
     metadata:
       name: cost-management-{{nameNormalized}}
