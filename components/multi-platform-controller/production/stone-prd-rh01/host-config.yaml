@@ -24,6 +24,7 @@ data:
     linux-m4xlarge/arm64,\
     linux-m8xlarge/amd64,\
     linux-m8xlarge/arm64,\
+    linux-c6gd2xlarge/arm64,\
     linux-cxlarge/amd64,\
     linux-cxlarge/arm64,\
     linux-c2xlarge/amd64,\
@@ -123,6 +124,82 @@ data:
   dynamic.linux-m8xlarge-arm64.security-group-id: sg-0fbf35ced0d59fd4a
   dynamic.linux-m8xlarge-arm64.max-instances: "20"
   dynamic.linux-m8xlarge-arm64.subnet-id: subnet-0c39ff75f819abfc5
+
+  dynamic.linux-c6gd2xlarge-arm64.type: aws
+  dynamic.linux-c6gd2xlarge-arm64.region: us-east-1
+  dynamic.linux-c6gd2xlarge-arm64.ami: ami-03d6a5256a46c9feb
+  dynamic.linux-c6gd2xlarge-arm64.instance-type: c6gd.2xlarge
+  dynamic.linux-c6gd2xlarge-arm64.instance-tag: prod-arm64-c6gd2xlarge
+  dynamic.linux-c6gd2xlarge-arm64.key-name: konflux-prod-ext-mab01
+  dynamic.linux-c6gd2xlarge-arm64.aws-secret: aws-account
+  dynamic.linux-c6gd2xlarge-arm64.ssh-secret: aws-ssh-key
+  dynamic.linux-c6gd2xlarge-arm64.security-group-id: sg-0fbf35ced0d59fd4a
+  dynamic.linux-c6gd2xlarge-arm64.max-instances: "20"
+  dynamic.linux-c6gd2xlarge-arm64.subnet-id: subnet-0c39ff75f819abfc5
+  dynamic.linux-c6gd2xlarge-arm64.user-data: |-
+    Content-Type: multipart/mixed; boundary="//"
+    MIME-Version: 1.0
+
+    --//
+    Content-Type: text/cloud-config; charset="us-ascii"
+    MIME-Version: 1.0
+    Content-Transfer-Encoding: 7bit
+    Content-Disposition: attachment; filename="cloud-config.txt"
+
+    #cloud-config
+    cloud_final_modules:
+      - [scripts-user, always]
+
+    --//
+    Content-Type: text/x-shellscript; charset="us-ascii"
+    MIME-Version: 1.0
+    Content-Transfer-Encoding: 7bit
+    Content-Disposition: attachment; filename="userdata.txt"
+
+    #!/bin/bash -ex
+
+    if lsblk -no FSTYPE /dev/nvme1n1 | grep -qE '\S'; then
+     echo "File system exists on the disk."
+    else
+     echo "No file system found on the disk /dev/nvme1n1"
+     mkfs -t xfs /dev/nvme1n1
+    fi
+
+    mount /dev/nvme1n1 /home
+
+    if [ -d "/home/var-lib-containers" ]; then
+     echo "Directory '/home/var-lib-containers' exist"
+    else
+     echo "Directory '/home/var-lib-containers' doesn't exist"
+     mkdir -p /home/var-lib-containers /var/lib/containers
+    fi
+
+    mount --bind /home/var-lib-containers /var/lib/containers
+
+    if [ -d "/home/var-tmp" ]; then
+     echo "Directory '/home/var-tmp' exist"
+    else
+     echo "Directory '/home/var-tmp' doesn't exist"
+     mkdir -p /home/var-tmp /var/tmp
+    fi
+    
+    mount --bind /home/var-tmp /var/tmp
+    
+    if [ -d "/home/ec2-user" ]; then
+    echo "ec2-user home exists"
+    else
+    echo "ec2-user home doesn't exist"
+    mkdir -p /home/ec2-user/.ssh
+    chown -R ec2-user /home/ec2-user
+    fi
+
+    sed -n 's,.*\(ssh-.*\s\),\1,p' /root/.ssh/authorized_keys > /home/ec2-user/.ssh/authorized_keys
+    chown ec2-user /home/ec2-user/.ssh/authorized_keys
+    chmod 600 /home/ec2-user/.ssh/authorized_keys
+    chmod 700 /home/ec2-user/.ssh
+    restorecon -r /home/ec2-user
+
+    --//--
 
   dynamic.linux-amd64.type: aws
   dynamic.linux-amd64.region: us-east-1
