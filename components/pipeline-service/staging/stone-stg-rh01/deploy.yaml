@@ -1035,6 +1035,7 @@ data:
     K8S_BURST=100
     PROFILING=true
     PROFILING_PORT=6060
+    FEATURE_GATES='PartialResponse=true'
     CONVERTER_ENABLE=false
     CONVERTER_DB_LIMIT=50
     LOGGING_PLUGIN_PROXY_PATH=/api/logs/v1/application
@@ -1531,7 +1532,7 @@ spec:
             secretKeyRef:
               key: db.name
               name: tekton-results-database
-        image: quay.io/konflux-ci/tekton-results-api:275a6ededaf328d55923e2462ec6d27ccd6b9ab8
+        image: quay.io/konflux-ci/tekton-results-api:92d20975aaf3a87e1a9a41f39b38d99e0a84e724
         livenessProbe:
           httpGet:
             path: /healthz
@@ -1721,7 +1722,7 @@ spec:
             secretKeyRef:
               key: db.name
               name: tekton-results-database
-        image: quay.io/konflux-ci/tekton-results-api:275a6ededaf328d55923e2462ec6d27ccd6b9ab8
+        image: quay.io/konflux-ci/tekton-results-api:92d20975aaf3a87e1a9a41f39b38d99e0a84e724
         livenessProbe:
           httpGet:
             path: /healthz
@@ -1826,7 +1827,7 @@ spec:
             secretKeyRef:
               key: POSTGRES_PASSWORD
               name: tekton-results-postgres
-        image: quay.io/konflux-ci/tekton-results-retention-policy-agent:275a6ededaf328d55923e2462ec6d27ccd6b9ab8
+        image: quay.io/konflux-ci/tekton-results-retention-policy-agent:92d20975aaf3a87e1a9a41f39b38d99e0a84e724
         name: retention-policy-agent
         resources:
           limits:
@@ -1958,7 +1959,7 @@ spec:
           value: tekton-results-api-service-for-watcher.tekton-results.svc.cluster.local:8080
         - name: AUTH_MODE
           value: token
-        image: quay.io/konflux-ci/tekton-results-watcher:275a6ededaf328d55923e2462ec6d27ccd6b9ab8
+        image: quay.io/konflux-ci/tekton-results-watcher:92d20975aaf3a87e1a9a41f39b38d99e0a84e724
         name: watcher
         ports:
         - containerPort: 9090
