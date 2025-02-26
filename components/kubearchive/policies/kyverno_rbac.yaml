@@ -2,7 +2,9 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: read-kubearchiveconfig
+  name: kyverno-read-kubearchiveconfig
+  labels:
+    rbac.kyverno.io/aggregate-to-admission-controller: "true"
 rules:
 - apiGroups:
   - kubearchive.kubearchive.org
@@ -13,22 +15,11 @@ rules:
   - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: kyverno-admission-controller:read-kubearchiveconfig
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: read-kubearchiveconfig
-subjects:
-- kind: ServiceAccount
-  name: kyverno-admission-controller
-  namespace: konflux-kyverno
----
-apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: manage-kubearchiveconfig
+  name: kyverno-manage-kubearchiveconfig
+  labels:
+    rbac.kyverno.io/aggregate-to-background-controller: "true"
 rules:
 - apiGroups:
   - kubearchive.kubearchive.org
@@ -40,16 +31,3 @@ rules:
   - list
   - delete
   - update
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: kyverno-background-controller:manage-kubearchiveconfig
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: manage-kubearchiveconfig
-subjects:
-- kind: ServiceAccount
-  name: kyverno-background-controller
-  namespace: konflux-kyverno
