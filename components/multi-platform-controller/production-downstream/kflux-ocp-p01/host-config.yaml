@@ -47,10 +47,10 @@ data:
     linux/s390x,\
     linux-large/s390x,\
     linux-largecpu/s390x,\
-    linux-d320-largecpu/s390x,\
+    linux-d250-largecpu/s390x,\
     linux/ppc64le,\
     linux-largecpu/ppc64le,\
-    linux-d320-largecpu/ppc64le,\
+    linux-d250-largecpu/ppc64le,\
     linux-d200/ppc64le,\
     linux-large/ppc64le,\
     linux-d200-large/ppc64le\
@@ -666,22 +666,22 @@ data:
   dynamic.linux-largecpu-s390x.allocation-timeout: "1800"
   dynamic.linux-largecpu-s390x.instance-tag: prod-s390x-largecpu
 
-  # Same as linux-largecpu-s390x, but with 320 GB storage
-  dynamic.linux-d320-largecpu-s390x.type: ibmz
-  dynamic.linux-d320-largecpu-s390x.ssh-secret: "internal-prod-ibm-ssh-key"
-  dynamic.linux-d320-largecpu-s390x.secret: "internal-prod-ibm-api-key"
-  dynamic.linux-d320-largecpu-s390x.vpc: "konflux-internal-ocp-art-vpc"
-  dynamic.linux-d320-largecpu-s390x.key: "internal-prod-key"
-  dynamic.linux-d320-largecpu-s390x.subnet: "konflux-internal-ocp-art-vpc-subnet"
-  dynamic.linux-d320-largecpu-s390x.image-id: "r006-7af05e6b-b1cd-4467-8a37-770ce2094e8d"
-  dynamic.linux-d320-largecpu-s390x.region: "us-south-2"
-  dynamic.linux-d320-largecpu-s390x.url: "https://us-south.iaas.cloud.ibm.com/v1"
-  dynamic.linux-d320-largecpu-s390x.profile: "cz2-8x16"
-  dynamic.linux-d320-largecpu-s390x.max-instances: "5"
-  dynamic.linux-d320-largecpu-s390x.private-ip: "true"
-  dynamic.linux-d320-largecpu-s390x.allocation-timeout: "1800"
-  dynamic.linux-d320-largecpu-s390x.instance-tag: prod-s390x-d320-largecpu
-  dynamic.linux-d320-largecpu-s390x.disk: "320"
+  # Same as linux-largecpu-s390x, but with 250 GB disk
+  dynamic.linux-d250-largecpu-s390x.type: ibmz
+  dynamic.linux-d250-largecpu-s390x.ssh-secret: "internal-prod-ibm-ssh-key"
+  dynamic.linux-d250-largecpu-s390x.secret: "internal-prod-ibm-api-key"
+  dynamic.linux-d250-largecpu-s390x.vpc: "konflux-internal-ocp-art-vpc"
+  dynamic.linux-d250-largecpu-s390x.key: "internal-prod-key"
+  dynamic.linux-d250-largecpu-s390x.subnet: "konflux-internal-ocp-art-vpc-subnet"
+  dynamic.linux-d250-largecpu-s390x.image-id: "r006-7af05e6b-b1cd-4467-8a37-770ce2094e8d"
+  dynamic.linux-d250-largecpu-s390x.region: "us-south-2"
+  dynamic.linux-d250-largecpu-s390x.url: "https://us-south.iaas.cloud.ibm.com/v1"
+  dynamic.linux-d250-largecpu-s390x.profile: "cz2-8x16"
+  dynamic.linux-d250-largecpu-s390x.max-instances: "5"
+  dynamic.linux-d250-largecpu-s390x.private-ip: "true"
+  dynamic.linux-d250-largecpu-s390x.allocation-timeout: "1800"
+  dynamic.linux-d250-largecpu-s390x.instance-tag: prod-s390x-d250-largecpu
+  dynamic.linux-d250-largecpu-s390x.disk: "250"
 
   #PPC64LE dynamic nodes
   dynamic.linux-ppc64le.type: ibmp
@@ -748,22 +748,22 @@ data:
   dynamic.linux-largecpu-ppc64le.allocation-timeout: "1800"
   dynamic.linux-largecpu-ppc64le.instance-tag: prod-ppc64le-largecpu
 
-  #PPC64LE CPU dynamic nodes
-  dynamic.linux-d320-largecpu-ppc64le.type: ibmp
-  dynamic.linux-d320-largecpu-ppc64le.ssh-secret: "internal-prod-ibm-ssh-key"
-  dynamic.linux-d320-largecpu-ppc64le.secret: "internal-prod-ibm-api-key"
-  dynamic.linux-d320-largecpu-ppc64le.key: "prod-konflux-infra"
-  dynamic.linux-d320-largecpu-ppc64le.image: "ppc64le-rhel-94-base-27nov2024"
-  dynamic.linux-d320-largecpu-ppc64le.crn: "crn:v1:bluemix:public:power-iaas:dal12:a/eebc7153d0c844f9915fb6f3b9850a3b:d6faf373-c0b6-4ba9-b0bc-4f7e0a74f9d5::"
-  dynamic.linux-d320-largecpu-ppc64le.url: "https://us-south.power-iaas.cloud.ibm.com"
-  dynamic.linux-d320-largecpu-ppc64le.network: "4d164943-b043-4c6e-bba5-d233abf66c6a"
-  dynamic.linux-d320-largecpu-ppc64le.system: "e980"
-  dynamic.linux-d320-largecpu-ppc64le.cores: "8"
-  dynamic.linux-d320-largecpu-ppc64le.memory: "16"
-  dynamic.linux-d320-largecpu-ppc64le.max-instances: "5"
-  dynamic.linux-d320-largecpu-ppc64le.allocation-timeout: "1800"
-  dynamic.linux-d320-largecpu-ppc64le.instance-tag: prod-ppc64le-d320-largecpu
-  dynamic.linux-d320-largecpu-ppc64le.disk: "320"
+  # Same as linux-largecpu-ppc64le but with 250 GB disk
+  dynamic.linux-d250-largecpu-ppc64le.type: ibmp
+  dynamic.linux-d250-largecpu-ppc64le.ssh-secret: "internal-prod-ibm-ssh-key"
+  dynamic.linux-d250-largecpu-ppc64le.secret: "internal-prod-ibm-api-key"
+  dynamic.linux-d250-largecpu-ppc64le.key: "prod-konflux-infra"
+  dynamic.linux-d250-largecpu-ppc64le.image: "ppc64le-rhel-94-base-27nov2024"
+  dynamic.linux-d250-largecpu-ppc64le.crn: "crn:v1:bluemix:public:power-iaas:dal12:a/eebc7153d0c844f9915fb6f3b9850a3b:d6faf373-c0b6-4ba9-b0bc-4f7e0a74f9d5::"
+  dynamic.linux-d250-largecpu-ppc64le.url: "https://us-south.power-iaas.cloud.ibm.com"
+  dynamic.linux-d250-largecpu-ppc64le.network: "4d164943-b043-4c6e-bba5-d233abf66c6a"
+  dynamic.linux-d250-largecpu-ppc64le.system: "e980"
+  dynamic.linux-d250-largecpu-ppc64le.cores: "8"
+  dynamic.linux-d250-largecpu-ppc64le.memory: "16"
+  dynamic.linux-d250-largecpu-ppc64le.max-instances: "5"
+  dynamic.linux-d250-largecpu-ppc64le.allocation-timeout: "1800"
+  dynamic.linux-d250-largecpu-ppc64le.instance-tag: prod-ppc64le-d250-largecpu
+  dynamic.linux-d250-largecpu-ppc64le.disk: "250"
 
   # Same as linux-large-ppc64le but with 200GB disk instead of default 100GB
   dynamic.linux-d200-large-ppc64le.type: ibmp
