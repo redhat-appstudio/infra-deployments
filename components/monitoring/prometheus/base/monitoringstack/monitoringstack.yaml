@@ -23,7 +23,9 @@ spec:
   resources: # ensure that you provide sufficient amount of resources
     requests:
       cpu: 500m
-      memory: 1Gi
+      memory: 16Gi
+    limits:
+      memory: 16Gi
   prometheusConfig:
     externalLabels: {} # added by overlays
     replicas: 2  # ensures that at least one prometheus is running during upgrade
