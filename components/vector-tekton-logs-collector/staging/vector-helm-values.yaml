@@ -18,7 +18,6 @@ customConfig:
       type: kubernetes_logs
       rotate_wait_secs: 5
       glob_minimum_cooldown_ms: 500
-      max_read_bytes: 3145728
       max_line_bytes: 3145728
       auto_partial_merge: true
       extra_label_selector: "app.kubernetes.io/managed-by in (tekton-pipelines,pipelinesascode.tekton.dev)"
@@ -65,7 +64,8 @@ customConfig:
         max_events: 10000
         when_full: "block"
       batch:
-        max_events: 100000
+        max_bytes: 524288000  # documentation is wrong about this (https://github.com/vectordotdev/vector/issues/10020), 524288000 is actually around 10MB
+        timeout_secs: 300  # default
       inputs: ["remap_app_logs"]
       compression: "none"
       endpoint: ${ENDPOINT}
