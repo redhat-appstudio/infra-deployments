@@ -1,0 +1,24 @@
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: etcd-maintenance
+  namespace: etcd-maintenance
+spec:
+  schedule: "*/5 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: etcd-maintenance
+          restartPolicy: OnFailure
+          containers:
+            - name: etcd-maintenance
+              image: registry.redhat.io/openshift4/ose-cli
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  etcd_pod=$(oc get pod -l app=etcd -oname -n openshift-etcd | awk -F"/" 'NR==1{ print $2 }')
+                  oc -n openshift-etcd debug pod/${etcd_pod} --image=quay.io/konflux-ci/etcd-defrag:dc8f64b3e0268d3d85132be0c66495d718362157 --one-container=true -- /bin/sh -c "chmod +x /opt/defrag.sh && /opt/defrag.sh"
