@@ -3,10 +3,10 @@ role: Agent
 resources:
   requests:
     cpu: 512m
-    memory: 3072Mi
+    memory: 4096Mi
   limits:
     cpu: 2000m
-    memory: 3072Mi
+    memory: 4096Mi
 customConfig:
   data_dir: /vector-data-dir
   api:
@@ -21,8 +21,6 @@ customConfig:
       max_line_bytes: 3145728
       auto_partial_merge: true
       extra_label_selector: "app.kubernetes.io/managed-by in (tekton-pipelines,pipelinesascode.tekton.dev)"
-    internal_metrics:
-      type: internal_metrics
   transforms:
     remap_app_logs:
       type: remap
@@ -57,14 +55,12 @@ customConfig:
     aws_s3:
       type: "aws_s3"
       bucket: ${BUCKET}
-      acknowledgements:
-        enabled: true
       buffer:
         type: "memory"
         max_events: 10000
         when_full: "block"
       batch:
-        max_bytes: 524288000  # documentation is wrong about this (https://github.com/vectordotdev/vector/issues/10020), 524288000 is actually around 10MB
+        max_bytes: 314572800  # documentation is wrong about this (https://github.com/vectordotdev/vector/issues/10020), 314572800 is actually ~4MB
         timeout_secs: 300  # default
       inputs: ["remap_app_logs"]
       compression: "none"
