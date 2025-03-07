@@ -113,10 +113,6 @@
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "d56348f1-77d7-4896-a34f-495c93f4d0be"
-          },
           "disableTextWrap": false,
           "editorMode": "builder",
           "expr": "histogram_quantile(0.95, sum by(le, code) (rate(namespace_lister_api_latency_bucket[5m])))",
@@ -132,10 +128,6 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "d56348f1-77d7-4896-a34f-495c93f4d0be"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -211,10 +203,6 @@
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "d56348f1-77d7-4896-a34f-495c93f4d0be"
-          },
           "disableTextWrap": false,
           "editorMode": "builder",
           "expr": "sum by(code) (rate(namespace_lister_api_latency_sum[5m])) / sum by(code) (rate(namespace_lister_api_latency_count[5m]))",
@@ -243,10 +231,6 @@
       "type": "row"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "d56348f1-77d7-4896-a34f-495c93f4d0be"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -294,10 +278,6 @@
       "pluginVersion": "10.4.3",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "d56348f1-77d7-4896-a34f-495c93f4d0be"
-          },
           "editorMode": "code",
           "expr": "sum(namespace_lister_accesscache_subject_namespace_pairs)/sum(namespace_lister_accesscache_subjects)",
           "instant": false,
@@ -310,10 +290,6 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "d56348f1-77d7-4896-a34f-495c93f4d0be"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -361,10 +337,6 @@
       "pluginVersion": "10.4.3",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "d56348f1-77d7-4896-a34f-495c93f4d0be"
-          },
           "editorMode": "code",
           "expr": "sum(namespace_lister_accesscache_subjects) by (pod)",
           "instant": false,
@@ -377,10 +349,6 @@
       "type": "gauge"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "d56348f1-77d7-4896-a34f-495c93f4d0be"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -428,10 +396,6 @@
       "pluginVersion": "10.4.3",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "d56348f1-77d7-4896-a34f-495c93f4d0be"
-          },
           "editorMode": "code",
           "expr": "sum(namespace_lister_accesscache_subject_namespace_pairs) by (pod)",
           "instant": false,
@@ -444,10 +408,6 @@
       "type": "gauge"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "d56348f1-77d7-4896-a34f-495c93f4d0be"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -500,10 +460,6 @@
       "pluginVersion": "10.4.3",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "d56348f1-77d7-4896-a34f-495c93f4d0be"
-          },
           "editorMode": "code",
           "expr": "sum(namespace_lister_accesscache_synch_op_total{status=\"failed\"}) by (pod)",
           "instant": false,
@@ -516,10 +472,6 @@
       "type": "gauge"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "d56348f1-77d7-4896-a34f-495c93f4d0be"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -595,10 +547,6 @@
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "d56348f1-77d7-4896-a34f-495c93f4d0be"
-          },
           "editorMode": "code",
           "expr": "sum(rate(namespace_lister_accesscache_synch_op_total{status=\"completed\"}[$__rate_interval])) by (pod)",
           "instant": false,
@@ -611,10 +559,6 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "d56348f1-77d7-4896-a34f-495c93f4d0be"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -715,10 +659,6 @@
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "d56348f1-77d7-4896-a34f-495c93f4d0be"
-          },
           "editorMode": "code",
           "expr": "sum(rate(namespace_lister_accesscache_synch_op_total{status=\"failed\"}[$__rate_interval])) by (pod)",
           "instant": false,
@@ -731,10 +671,6 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "d56348f1-77d7-4896-a34f-495c93f4d0be"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -810,10 +746,6 @@
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "d56348f1-77d7-4896-a34f-495c93f4d0be"
-          },
           "editorMode": "code",
           "expr": "sum(rate(namespace_lister_accesscache_time_requests_total[$__rate_interval])) by(pod)",
           "hide": false,
@@ -827,10 +759,6 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "d56348f1-77d7-4896-a34f-495c93f4d0be"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -906,10 +834,6 @@
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "d56348f1-77d7-4896-a34f-495c93f4d0be"
-          },
           "editorMode": "code",
           "expr": "sum(rate(namespace_lister_accesscache_resource_requests_total[$__rate_interval])) by(pod)",
           "hide": false,
@@ -923,10 +847,6 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "d56348f1-77d7-4896-a34f-495c93f4d0be"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1002,10 +922,6 @@
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "d56348f1-77d7-4896-a34f-495c93f4d0be"
-          },
           "editorMode": "code",
           "expr": "sum(namespace_lister_accesscache_subject_namespace_pairs) by (pod)",
           "instant": false,
@@ -1018,10 +934,6 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "d56348f1-77d7-4896-a34f-495c93f4d0be"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1097,10 +1009,6 @@
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "d56348f1-77d7-4896-a34f-495c93f4d0be"
-          },
           "editorMode": "code",
           "expr": "sum(namespace_lister_accesscache_subjects) by (pod)",
           "instant": false,
