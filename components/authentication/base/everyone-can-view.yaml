@@ -141,6 +141,16 @@ rules:
   - get
   - list
   - watch
+  # On EaaS clusters, where Cluster as a service operator is installed, this
+  # permission is needed to list the nodes
+- apiGroups:
+  - certificates.k8s.io
+  resources:
+  - certificatesigningrequests
+  verbs:
+  - get
+  - watch
+  - list
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
