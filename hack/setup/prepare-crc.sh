@@ -72,6 +72,10 @@ fi
 eval $("$CRCBINARY" oc-env)
 kubectl config use-context crc-admin
 
+# Label CRC node with `topology.kubernetes.io/zone` so some topologySpreadConstraints
+# do not complain about the label not existing (for example pipeline-service)
+kubectl label nodes crc topology.kubernetes.io/zone=crc
+
 #Reduce cpu resource request for each AppStudio Application
 #TODO: Check when to run the reduce gitops cpu requests
 #TODO: $ROOT_DIR/../../hack/reduce-gitops-cpu-requests.sh
