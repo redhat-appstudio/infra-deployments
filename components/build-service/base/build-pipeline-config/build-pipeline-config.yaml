@@ -8,20 +8,20 @@ data:
     default-pipeline-name: docker-build-oci-ta
     pipelines:
     - name: fbc-builder
-      bundle: quay.io/konflux-ci/tekton-catalog/pipeline-fbc-builder:fa782cc5bed89c72a49ef6c76a2d637bce348eec
+      bundle: quay.io/konflux-ci/tekton-catalog/pipeline-fbc-builder:d1190ebb35824f61c2a0d544e079c5ce127c5186
       additional-params:
       - build-platforms
     - name: docker-build
-      bundle: quay.io/konflux-ci/tekton-catalog/pipeline-docker-build:fa782cc5bed89c72a49ef6c76a2d637bce348eec
+      bundle: quay.io/konflux-ci/tekton-catalog/pipeline-docker-build:d1190ebb35824f61c2a0d544e079c5ce127c5186
     - name: docker-build-oci-ta
-      bundle: quay.io/konflux-ci/tekton-catalog/pipeline-docker-build-oci-ta:fa782cc5bed89c72a49ef6c76a2d637bce348eec
+      bundle: quay.io/konflux-ci/tekton-catalog/pipeline-docker-build-oci-ta:d1190ebb35824f61c2a0d544e079c5ce127c5186
     - name: docker-build-multi-platform-oci-ta
-      bundle: quay.io/konflux-ci/tekton-catalog/pipeline-docker-build-multi-platform-oci-ta:fa782cc5bed89c72a49ef6c76a2d637bce348eec
+      bundle: quay.io/konflux-ci/tekton-catalog/pipeline-docker-build-multi-platform-oci-ta:d1190ebb35824f61c2a0d544e079c5ce127c5186
       additional-params:
       - build-platforms
     - name: maven-zip-build
-      bundle: quay.io/konflux-ci/tekton-catalog/pipeline-maven-zip-build:fa782cc5bed89c72a49ef6c76a2d637bce348eec
+      bundle: quay.io/konflux-ci/tekton-catalog/pipeline-maven-zip-build:d1190ebb35824f61c2a0d544e079c5ce127c5186
     - name: maven-zip-build-oci-ta
-      bundle: quay.io/konflux-ci/tekton-catalog/pipeline-maven-zip-build-oci-ta:fa782cc5bed89c72a49ef6c76a2d637bce348eec
+      bundle: quay.io/konflux-ci/tekton-catalog/pipeline-maven-zip-build-oci-ta:d1190ebb35824f61c2a0d544e079c5ce127c5186
     - name: tekton-bundle-builder
-      bundle: quay.io/konflux-ci/tekton-catalog/pipeline-tekton-bundle-builder:fa782cc5bed89c72a49ef6c76a2d637bce348eec
+      bundle: quay.io/konflux-ci/tekton-catalog/pipeline-tekton-bundle-builder:d1190ebb35824f61c2a0d544e079c5ce127c5186
