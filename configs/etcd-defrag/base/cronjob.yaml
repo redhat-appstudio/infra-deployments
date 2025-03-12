@@ -6,6 +6,7 @@ metadata:
   namespace: etcd-maintenance
 spec:
   schedule: "*/5 * * * *"
+  successfulJobsHistoryLimit: 50
   jobTemplate:
     spec:
       template:
@@ -21,4 +22,4 @@ spec:
                 - -c
                 - |
                   etcd_pod=$(oc get pod -l app=etcd -oname -n openshift-etcd | awk -F"/" 'NR==1{ print $2 }')
-                  oc -n openshift-etcd debug pod/${etcd_pod} fragmentationThreshold=30 --image=quay.io/konflux-ci/etcd-defrag:5cd77468927ab368aecfceaaf045b0e64fb10cfa --one-container=true -- /bin/sh -c "chmod +x /opt/defrag.sh && /opt/defrag.sh"
+                  oc -n openshift-etcd debug pod/${etcd_pod} fragmentationThreshold=15 --image=quay.io/konflux-ci/etcd-defrag:5cd77468927ab368aecfceaaf045b0e64fb10cfa --one-container=true -- /bin/sh -c "chmod +x /opt/defrag.sh && /opt/defrag.sh"
