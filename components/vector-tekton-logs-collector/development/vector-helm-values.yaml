@@ -66,7 +66,7 @@ customConfig:
         max_events: 10000
         when_full: "block"
       batch:
-        max_bytes: 314572800  # documentation is wrong about this (https://github.com/vectordotdev/vector/issues/10020), 314572800 is actually ~4MB
+        max_bytes: 10485760
         timeout_secs: 300  # default
       inputs: ["remap_app_logs"]
       compression: "none"
