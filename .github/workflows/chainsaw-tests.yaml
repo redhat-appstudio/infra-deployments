@@ -41,10 +41,7 @@ jobs:
     - name: Run chainsaw
       shell: bash
       run: |
-        # Run chainsaw tests for namespace-lister
-        # without parallelism, as they are sharing some
-        # cluster-scoped resources
-        chainsaw test components/namespace-lister/ \
-          --parallel 1 \
-          --config .chainsaw.yaml \
-          --no-color=false
+        find -name .chainsaw-test -type d -print0 | \
+          xargs -0 chainsaw test \
+            --config .chainsaw.yaml \
+            --no-color=false
