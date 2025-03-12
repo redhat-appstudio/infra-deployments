@@ -2,8 +2,10 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-- https://github.com/kubearchive/kubearchive/releases/download/v0.9.0/kubearchive.yaml?timeout=90
+- https://gist.githubusercontent.com/ggallen/0aa25baf754578550425e5c17122f776/raw/d33b5051478d4755e0c6712e23acb2916032cf83/kubearchive.yaml?timeout=90
 - rbac.yaml
+- kubearchive-config.yaml
+- kubearchive-maintainer.yaml
 
 # ROSA does not support namespaces starting with `kube`
 namespace: product-kubearchive
@@ -120,6 +122,10 @@ patches:
     metadata:
       name: kubearchive-operator
       namespace: kubearchive
+      annotations:
+        ignore-check.kube-linter.io/unset-memory-requirements: >
+          "This is temporary to troubleshoot an issue"
+
     spec:
       template:
         spec:
@@ -130,6 +136,10 @@ patches:
                 runAsNonRoot: true
               ports:
                 - containerPort: 8081
+              resources:
+                requests:
+                  memory: 256Mi
+                
 - patch: |-
     apiVersion: apps/v1
     kind: Deployment

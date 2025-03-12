@@ -3,10 +3,10 @@ role: Agent
 resources:
   requests:
     cpu: 512m
-    memory: 3072Mi
+    memory: 4096Mi
   limits:
     cpu: 2000m
-    memory: 3072Mi
+    memory: 4096Mi
 customConfig:
   data_dir: /vector-data-dir
   api:
@@ -18,54 +18,56 @@ customConfig:
       type: kubernetes_logs
       rotate_wait_secs: 5
       glob_minimum_cooldown_ms: 500
-      max_read_bytes: 3145728
       max_line_bytes: 3145728
       auto_partial_merge: true
       extra_label_selector: "app.kubernetes.io/managed-by in (tekton-pipelines,pipelinesascode.tekton.dev)"
-    internal_metrics:
-      type: internal_metrics
   transforms:
+    reduce_events:
+      type: reduce
+      inputs:
+        - kubernetes_logs
+      group_by:
+        - file
+      flush_period_ms: 2000
+      end_every_period_ms: 2000
+      merge_strategies:
+        message: concat_newline
     remap_app_logs:
       type: remap
-      inputs: [kubernetes_logs]
+      inputs:
+        - reduce_events
       source: |-
-        .log_type = "application"
-        .kubernetes_namespace_name = .kubernetes.pod_namespace
-            if exists(.kubernetes.pod_labels."tekton.dev/taskRunUID") {
-              .taskRunUID = del(.kubernetes.pod_labels."tekton.dev/taskRunUID")
-            } else {
-              .taskRunUID = "none"
-              }
-            if exists(.kubernetes.pod_labels."tekton.dev/pipelineRunUID") {
-              .pipelineRunUID = del(.kubernetes.pod_labels."tekton.dev/pipelineRunUID")
-            .result = .pipelineRunUID
-            } else {
-               .result = .taskRunUID
-            }
-            if exists(.kubernetes.pod_labels."tekton.dev/task") {
-              .task = del(.kubernetes.pod_labels."tekton.dev/task")
-            } else {
-              .task = "none"
-            }
-            if exists(.kubernetes.pod_namespace) {
-              .namespace = del(.kubernetes.pod_namespace)
-            } else {
-              .namespace = "unlabeled"
-            }
-            .pod = .kubernetes.pod_name
-            .container = .kubernetes.container_name
+        .tmp = del(.)
+        if exists(.tmp.kubernetes.pod_labels."tekton.dev/taskRunUID") {
+          .taskRunUID = del(.tmp.kubernetes.pod_labels."tekton.dev/taskRunUID")
+        } else {
+          .taskRunUID = "none"
+        }
+        if exists(.tmp.kubernetes.pod_labels."tekton.dev/pipelineRunUID") {
+          .pipelineRunUID = del(.tmp.kubernetes.pod_labels."tekton.dev/pipelineRunUID")
+          .result = .pipelineRunUID
+        } else {
+          .result = .taskRunUID
+        }
+        if exists(.tmp.kubernetes.pod_namespace) {
+          .namespace = del(.tmp.kubernetes.pod_namespace)
+        } else {
+          .namespace = "unlabeled"
+        }
+        .container = del(.tmp.kubernetes.container_name)
+        .message = del(.tmp.message)
+        del(.tmp)
   sinks:
     aws_s3:
       type: "aws_s3"
       bucket: ${BUCKET}
-      acknowledgements:
-        enabled: true
       buffer:
         type: "memory"
         max_events: 10000
         when_full: "block"
       batch:
-        max_events: 100000
+        max_bytes: 10485760
+        timeout_secs: 300  # default
       inputs: ["remap_app_logs"]
       compression: "none"
       endpoint: ${ENDPOINT}

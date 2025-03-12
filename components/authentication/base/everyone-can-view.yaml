@@ -111,6 +111,47 @@ rules:
   - list
   - watch
 ---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: view-compute
+rules:
+- apiGroups:
+  - ''
+  resources:
+  - nodes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - 'machine.openshift.io'
+  resources:
+  - machines
+  - machinesets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - 'autoscaling.openshift.io'
+  resources:
+  - machineautoscalers
+  verbs:
+  - get
+  - list
+  - watch
+  # On EaaS clusters, where Cluster as a service operator is installed, this
+  # permission is needed to list the nodes
+- apiGroups:
+  - certificates.k8s.io
+  resources:
+  - certificatesigningrequests
+  verbs:
+  - get
+  - watch
+  - list
+---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
@@ -150,3 +191,13 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: cluster-monitoring-view
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: everyone-view-compute
+subjects: [] # added by patch to avoid duplicating the groups
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view-compute

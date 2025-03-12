@@ -1,0 +1,48 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- ../base
+- ./configure-oauth-proxy-secret.yaml
+
+configMapGenerator:
+- files:
+  - dex-config.yaml
+  name: dex
+- name: proxy-init-config
+  literals:
+    - IMPERSONATE=true
+    - TEKTON_RESULTS_URL=https://tekton-results-api-service.tekton-results.svc.cluster.local:8080
+
+patches:
+- path: add-service-certs-patch.yaml
+  target:
+    kind: Service
+    name: proxy
+    version: v1
+- path: oauth2-proxy-args-patch.yaml
+  target:
+    group: apps
+    kind: Deployment
+    name: proxy
+    version: v1
+- path: remove-run-as-user-proxy-patch.yaml
+  target:
+    group: apps
+    kind: Deployment
+    name: proxy
+    version: v1
+- path: set-replicas-patch.yaml
+  target:
+    group: apps
+    kind: Deployment
+    version: v1
+- path: set-redirect-uri.yaml
+  target:
+    kind: ServiceAccount
+    name: dex-client
+- path: set-hostname.yaml
+  target:
+    kind: Route
+    version: v1
+
+namespace: konflux-ui

@@ -1,0 +1,19 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: image-controller-image-pruner-cronjob
+  namespace: image-controller-system
+spec:
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: image-pruner
+            resources:
+              limits:
+                cpu: 500m
+                memory: 2Gi
+              requests:
+                cpu: 150m
+                memory: 1Gi

@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- ../base
+patches:
+  - path: kubearchive-config-patch.yaml
+    target:
+      name: kubearchive
+      group: kubearchive.kubearchive.org
+      version: v1alpha1
+      kind: KubeArchiveConfig
+components:
+  - ../../rh-certs
+

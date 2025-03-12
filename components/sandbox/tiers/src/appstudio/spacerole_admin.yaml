@@ -229,6 +229,19 @@ objects:
     - serviceaccounts/token
     verbs:
     - create
+  - apiGroups:
+    - batch
+    resources:
+    - cronjobs
+    - jobs
+    verbs:
+    - get
+    - list
+    - watch
+    - create
+    - update
+    - patch
+    - delete
 # RoleBinding that grants limited CRUD permissions to the User
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding

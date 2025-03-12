@@ -32,7 +32,7 @@ spec:
             app: proxy
       initContainers:
       - name: copy-static-content
-        image: quay.io/konflux-ci/konflux-ui@sha256:4d638ff6ed4874de0406b200e671ebac72b3f03c4d46b92f02bf62809c1cbed3
+        image: quay.io/konflux-ci/konflux-ui:68500b32e57278bf33ac18d4ef631ef243abb579
         command:
           - cp
           - -R
@@ -52,21 +52,34 @@ spec:
           requests:
             cpu: 10m
             memory: 64Mi
-      - name: add-sva-token-to-nginx-config
+      - name: generate-nginx-configs
         image: registry.access.redhat.com/ubi9/ubi@sha256:66233eebd72bb5baa25190d4f55e1dc3fff3a9b77186c1f91a0abdb274452072
+        envFrom:
+          - configMapRef:
+              name: proxy-init-config
         command:
           - sh
           - -c
           - |
             set -e
+
+            auth_conf=/mnt/nginx-generated-config/auth.conf
             
-            token=$(cat /mnt/api-token/token)
-            # for websocket connections padding should be removed from a base64 encoded token
-            token64=$(base64 -w 0 /mnt/api-token/token | sed -E  s,=+$,,g)
+            if [[ "$IMPERSONATE" == "true" ]]; then
+              token=$(cat /mnt/api-token/token)
+              echo 'auth_request_set $user  $upstream_http_x_auth_request_email;' > "$auth_conf"
+              echo 'proxy_set_header Impersonate-User $user;' >> "$auth_conf"
+              echo "proxy_set_header Authorization \"Bearer $token\";" >> "$auth_conf"
+            else
+              echo "# impersonation was disabled by config" > "$auth_conf"
+            fi
 
-            echo "proxy_set_header Authorization \"Bearer $token\";" > /mnt/nginx-generated-config/bearer.conf
+            chmod 640 "$auth_conf"
 
-            echo "proxy_set_header Sec-WebSocket-Protocol \"base64url.bearer.authorization.k8s.io.${token64}, base64.binary.k8s.io\";" > /mnt/nginx-generated-config/websocket.conf
+            echo \
+              "proxy_pass ${TEKTON_RESULTS_URL:?tekton results url must be provided};" \
+              > /mnt/nginx-generated-config/tekton-results.conf
+
         volumeMounts:
         - name: nginx-generated-config
           mountPath: /mnt/nginx-generated-config
@@ -84,10 +97,10 @@ spec:
             cpu: 10m
             memory: 64Mi
       containers:
-      - image: openresty/openresty:1.25.3.1-0-jammy
-        name: nginx-120
+      - image: registry.access.redhat.com/ubi9/nginx-124@sha256:b924363ff07ee0f8fd4f680497da774ac0721722a119665998ff5b2111098ad1
+        name: nginx
         command: 
-          - "/usr/local/openresty/bin/openresty"
+          - nginx
           - "-g"
           - "daemon off;"
           - -c
@@ -141,15 +154,13 @@ spec:
             mountPath: /mnt
           - name: nginx-generated-config
             mountPath: /mnt/nginx-generated-config
-          - name: openresty
-            mountPath: /var/run/openresty
           - name: static-content
             mountPath: /opt/app-root/src/static-content
         securityContext:
           readOnlyRootFilesystem: true
           runAsNonRoot: true
           runAsUser: 1001
-      - image: quay.io/konflux-ci/workspace-manager@sha256:6b7bfcf197cbff2ae9b1d84abd73636ce5733921524fb550438d8a8143a536b5
+      - image: quay.io/konflux-ci/workspace-manager@sha256:48df30520a766101473e80e7a4abbf59ce06097a5f5919e15075afaa86bd1a2d
         name: workspace-manager
         ports:
           - containerPort: 5000
@@ -180,7 +191,7 @@ spec:
               name: oauth2-proxy-cookie-secret
               key: cookie-secret
         args:
-          - to be replaced by a patch
+          - tba
         ports:
           - containerPort: 6000
             name: web
@@ -218,11 +229,8 @@ spec:
         - name: api-token
           secret:
             secretName: proxy
-        - name: openresty
-          emptyDir: {}
         - name: static-content
           emptyDir: {}
-
 ---
 apiVersion: v1
 kind: Service

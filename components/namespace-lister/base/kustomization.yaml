@@ -5,13 +5,14 @@ resources:
 - namespace.yaml
 - rbac.yaml
 - service.yaml
-- network_policy.yaml
+- network_policy_allow_from_konfluxui.yaml
+- network_policy_allow_to_apiserver.yaml
 - metrics/
 namespace: namespace-lister
 images:
 - name: namespace-lister
   newName: quay.io/konflux-ci/namespace-lister
-  newTag: 3a25aa9a18c3f9ddff8cfaf4119d1d8e45ebd5fb
+  newTag: d7e98fa32be5796726c7b87b0759e693fd413b8e
 patches:
 - path: ./patches/with_cachenamespacelabelselector.yaml
   target:
