@@ -42,13 +42,6 @@ spec:
               value: cluster-provisioner
             - name: nodePoolReplicas
               value: "3"
-            # Over provision the workload with a pause container so there are always resources
-            # available when the hub cluster needs to scale up. The autoscaler will evict this low
-            # priority pod and schedule it on newly provisioned nodes. This will allow higher
-            # priority control plane pods to immediately consume the freed up resources on
-            # existing nodes.
-            - name: pausePod.enabled
-              value: "true"
             - name: pausePod.priorityClass
               value: pause-pod-priority
       syncPolicy:
