@@ -2,12 +2,13 @@
 apiVersion: chainsaw.kyverno.io/v1alpha1
 kind: Test
 metadata:
-  name: mutate-namespace-konflux
+  name: mutate-new-namespace-konflux
 spec:
   description: |
     tests that the label is added to a new namespace
     that has the `konflux.ci/type=user` label
   concurrent: false
+  namespace: 'mutate-new-namespace'
   steps:
   - name: given-kyverno-has-permission-on-namespaces
     try:
@@ -34,12 +35,13 @@ spec:
 apiVersion: chainsaw.kyverno.io/v1alpha1
 kind: Test
 metadata:
-  name: mutate-namespace-toolchain
+  name: mutate-new-namespace-toolchain
 spec:
   description: |
     tests that the label is added to a new namespace
     that has the `toolchain.dev.openshift.com/type=tenant` label
   concurrent: false
+  namespace: "mutate-new-namespace"
   steps:
   - name: given-kyverno-has-permission-on-namespaces
     try:
@@ -66,13 +68,14 @@ spec:
 apiVersion: chainsaw.kyverno.io/v1alpha1
 kind: Test
 metadata:
-  name: mutate-namespace-konflux-toolchain
+  name: mutate-new-namespace-konflux-toolchain
 spec:
   description: |
     tests that the label is added to a new namespace
     that has bot the `konflux.ci/type=user` and 
     the `toolchain.dev.openshift.com/type=tenant` label
   concurrent: false
+  namespace: "mutate-new-namespace"
   steps:
   - name: given-kyverno-has-permission-on-namespaces
     try:
@@ -99,13 +102,14 @@ spec:
 apiVersion: chainsaw.kyverno.io/v1alpha1
 kind: Test
 metadata:
-  name: mutate-namespace-unlabeled
+  name: mutate-new-namespace-unlabeled
 spec:
   description: |
     tests that the label is NOT added to a new namespace
     that has neither the `konflux.ci/type=user` nor 
     the `toolchain.dev.openshift.com/type=tenant` label
   concurrent: false
+  namespace: "mutate-new-namespace"
   steps:
   - name: given-kyverno-has-permission-on-namespaces
     try:
@@ -132,12 +136,13 @@ spec:
 apiVersion: chainsaw.kyverno.io/v1alpha1
 kind: Test
 metadata:
-  name: mutate-namespace-existing-konflux
+  name: mutate-existing-namespace-konflux
 spec:
   description: |
     tests that the label is added to an existing namespace
     that has the `konflux.ci/type=user` label
   concurrent: false
+  namespace: mutate-existing-namespace
   steps:
   - name: given-kyverno-has-permission-on-namespaces
     try:
@@ -164,12 +169,13 @@ spec:
 apiVersion: chainsaw.kyverno.io/v1alpha1
 kind: Test
 metadata:
-  name: mutate-namespace-existing-toolchain
+  name: mutate-existing-namespace-toolchain
 spec:
   description: |
     tests that the label is added to an existing namespace
     that has the `toolchain.dev.openshift.com/type=tenant` label
   concurrent: false
+  namespace: mutate-existing-namespace
   steps:
   - name: given-kyverno-has-permission-on-namespaces
     try:
@@ -196,13 +202,14 @@ spec:
 apiVersion: chainsaw.kyverno.io/v1alpha1
 kind: Test
 metadata:
-  name: mutate-namespace-existing-konflux-toolchain
+  name: mutate-existing-namespace-konflux-toolchain
 spec:
   description: |
     tests that the label is added to an existing namespace
     that has bot the `konflux.ci/type=user` and 
     the `toolchain.dev.openshift.com/type=tenant` label
   concurrent: false
+  namespace: mutate-existing-namespace
   steps:
   - name: given-kyverno-has-permission-on-namespaces
     try:
@@ -229,13 +236,14 @@ spec:
 apiVersion: chainsaw.kyverno.io/v1alpha1
 kind: Test
 metadata:
-  name: mutate-namespace-existing-unlabeled
+  name: mutate-existing-namespace-unlabeled
 spec:
   description: |
     tests that the label is NOT added to an existing namespace
     that has neither the `konflux.ci/type=user` nor 
     the `toolchain.dev.openshift.com/type=tenant` label
   concurrent: false
+  namespace: mutate-existing-namespace
   steps:
   - name: given-kyverno-has-permission-on-namespaces
     try:
