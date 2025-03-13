@@ -102,10 +102,13 @@ env:
       secretKeyRef:
         name: tekton-results-s3
         key: endpoint
+nodeSelector:
+  konflux-ci.dev/workload: konflux-tenants
 tolerations:
   - effect: NoSchedule
     key: konflux-ci.dev/workload
-    operator: Exists
+    operator: Equal
+    value: konflux-tenants
 securityContext:
   allowPrivilegeEscalation: false
   capabilities:
