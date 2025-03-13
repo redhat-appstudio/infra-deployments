@@ -1,0 +1,47 @@
+name: Run Chainsaw tests
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  chainsaw-test:
+    name: Run Chainsaw tests
+    runs-on: ubuntu-latest
+    steps:
+    - name: Create k8s Kind Cluster
+      uses: helm/kind-action@v1
+    
+    - name: Install Cosign
+      uses: sigstore/cosign-installer@dc72c7d5c4d10cd6bcb8cf6e3fd625a9e5e537da # v3.7.0
+
+    - name: Install Chainsaw
+      uses: kyverno/action-install-chainsaw@f2b47b97dc889c12702113753d713f01ec268de5 # v0.2.12
+      with:
+        verify: true
+
+    - uses: actions/checkout@v4
+
+    - name: Install Dependencies
+      shell: bash
+      run: |
+        kustomize build components/kyverno/chainsaw | \
+          kubectl apply -f - --server-side
+
+    - name: Wait for kyverno ready
+      shell: bash
+      run: |
+        set -e
+        kubectl rollout status \
+          --namespace kyverno \
+          deployment \
+          --selector '!job-name' \
+          --timeout=300s
+
+    - name: Run chainsaw
+      shell: bash
+      run: |
+        find -name .chainsaw-test -type d -print0 | \
+          xargs -0 chainsaw test \
+            --config .chainsaw.yaml \
+            --no-color=false
