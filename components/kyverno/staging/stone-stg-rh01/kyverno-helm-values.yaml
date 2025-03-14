@@ -24,8 +24,12 @@ admissionController:
 backgroundController:
   replicas: 3
   resources:
+    request:
+      cpu: 200m
+      memory: 256Mi
     limits:
       cpu: 500m
+      memory: 512Mi
   securityContext:
     allowPrivilegeEscalation: false
     readOnlyRootFilesystem: true
