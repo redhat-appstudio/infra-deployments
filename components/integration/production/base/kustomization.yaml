@@ -17,6 +17,10 @@ configMapGenerator:
     - CONSOLE_NAME="Red Hat Konflux"
     - CONSOLE_URL="https://console.redhat.com/application-pipeline/ns/{{ .Namespace }}/pipelinerun/{{ .PipelineRunName }}"
     - CONSOLE_URL_TASKLOG="https://console.redhat.com/application-pipeline/ns/{{ .Namespace }}/pipelinerun/{{ .PipelineRunName }}/logs/{{ .TaskName }}"
+    - INTEGRATION_NS="integration-service"
+    - PAC_SECRET="pipelines-as-code-secret"
+    - GITHUBAPPLICATION_ID="github-application-id"
+    - GITHUBPRIVATE_KEY="github-private-key"
 - name: pipelinerun-options
   literals:
     - PIPELINE_TIMEOUT="6h"

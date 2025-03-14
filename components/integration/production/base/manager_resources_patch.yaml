@@ -52,3 +52,27 @@ spec:
               name: pipelinerun-options
               key: FINALLY_TIMEOUT
               optional: true
+        - name: INTEGRATION_NS
+          valueFrom:
+            configMapKeyRef:
+              name: integration-config
+              key: INTEGRATION_NS
+              optional: true
+        - name: PAC_SECRET
+          valueFrom:
+            configMapKeyRef:
+              name: integration-config
+              key: PAC_SECRET
+              optional: true
+        - name: GITHUBAPPLICATION_ID
+          valueFrom:
+            configMapKeyRef:
+              name: integration-config
+              key: GITHUBAPPLICATION_ID
+              optional: true
+        - name: GITHUBPRIVATE_KEY
+          valueFrom:
+            configMapKeyRef:
+              name: integration-config
+              key: GITHUBPRIVATE_KEY
+              optional: true
