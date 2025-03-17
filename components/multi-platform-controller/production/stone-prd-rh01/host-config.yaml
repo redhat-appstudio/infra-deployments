@@ -21,7 +21,9 @@ data:
     linux-m2xlarge/amd64,\
     linux-m2xlarge/arm64,\
     linux-m4xlarge/amd64,\
+    linux-d160-m4xlarge/amd64,\
     linux-m4xlarge/arm64,\
+    linux-d160-m4xlarge/arm64,\
     linux-m8xlarge/amd64,\
     linux-m8xlarge/arm64,\
     linux-c6gd2xlarge/arm64,\
@@ -39,8 +41,10 @@ data:
     linux-fast/amd64,\
     linux-extra-fast/amd64,\
     linux/s390x,\
+    linux-d200-large/s390x,\
     linux-large/s390x,\
     linux/ppc64le,\
+    linux-d200-large/ppc64le,\
     linux-large/ppc64le\
     "
   instance-tag: rhtap-prod
@@ -203,6 +207,21 @@ data:
 
     --//--
 
+  # same as m4xlarge-arm64 but with 160G disk
+  dynamic.linux-d160-m4xlarge-arm64.type: aws
+  dynamic.linux-d160-m4xlarge-arm64.region: us-east-1
+  dynamic.linux-d160-m4xlarge-arm64.ami: ami-03d6a5256a46c9feb
+  dynamic.linux-d160-m4xlarge-arm64.instance-type: m6g.4xlarge
+  dynamic.linux-d160-m4xlarge-arm64.instance-tag: prod-arm64-d160-m4xlarge
+  dynamic.linux-d160-m4xlarge-arm64.key-name: konflux-prod-ext-mab01
+  dynamic.linux-d160-m4xlarge-arm64.aws-secret: aws-account
+  dynamic.linux-d160-m4xlarge-arm64.ssh-secret: aws-ssh-key
+  dynamic.linux-d160-m4xlarge-arm64.security-group-id: sg-0fbf35ced0d59fd4a
+  dynamic.linux-d160-m4xlarge-arm64.max-instances: "20"
+  dynamic.linux-d160-m4xlarge-arm64.subnet-id: subnet-0c39ff75f819abfc5
+  dynamic.linux-d160-m4xlarge-arm64.allocation-timeout: "1200"
+  dynamic.linux-d160-m4xlarge-arm64.disk: "160"
+
   dynamic.linux-amd64.type: aws
   dynamic.linux-amd64.region: us-east-1
   dynamic.linux-amd64.ami: ami-026ebd4cfe2c043b2
@@ -262,6 +281,21 @@ data:
   dynamic.linux-m4xlarge-amd64.security-group-id: sg-0fbf35ced0d59fd4a
   dynamic.linux-m4xlarge-amd64.max-instances: "10"
   dynamic.linux-m4xlarge-amd64.subnet-id: subnet-0c39ff75f819abfc5
+
+  # same as m4xlarge-amd64 bug 160G disk
+  dynamic.linux-d160-m4xlarge-amd64.type: aws
+  dynamic.linux-d160-m4xlarge-amd64.region: us-east-1
+  dynamic.linux-d160-m4xlarge-amd64.ami: ami-026ebd4cfe2c043b2
+  dynamic.linux-d160-m4xlarge-amd64.instance-type: m6a.4xlarge
+  dynamic.linux-d160-m4xlarge-amd64.instance-tag: prod-amd64-d160-m4xlarge
+  dynamic.linux-d160-m4xlarge-amd64.key-name: konflux-prod-ext-mab01
+  dynamic.linux-d160-m4xlarge-amd64.aws-secret: aws-account
+  dynamic.linux-d160-m4xlarge-amd64.ssh-secret: aws-ssh-key
+  dynamic.linux-d160-m4xlarge-amd64.security-group-id: sg-0fbf35ced0d59fd4a
+  dynamic.linux-d160-m4xlarge-amd64.max-instances: "10"
+  dynamic.linux-d160-m4xlarge-amd64.subnet-id: subnet-0c39ff75f819abfc5
+  dynamic.linux-d160-m4xlarge-amd64.allocation-timeout: "1200"
+  dynamic.linux-d160-m4xlarge-amd64.disk: "160"
 
   dynamic.linux-m8xlarge-amd64.type: aws
   dynamic.linux-m8xlarge-amd64.region: us-east-1
@@ -528,6 +562,23 @@ data:
   dynamic.linux-large-s390x.allocation-timeout: "1800"
   dynamic.linux-large-s390x.instance-tag: prod-s390x-large
 
+  # Same as linux-s390x-large but with 200GB disk instead of default 100GB
+  dynamic.linux-d200-large-s390x.type: ibmz
+  dynamic.linux-d200-large-s390x.ssh-secret: "ibm-production-s390x-ssh-key"
+  dynamic.linux-d200-large-s390x.secret: "public-prod-ibm-api-key"
+  dynamic.linux-d200-large-s390x.vpc: "us-east-default-vpc"
+  dynamic.linux-d200-large-s390x.key: "konflux-s390x-root"
+  dynamic.linux-d200-large-s390x.subnet: "konflux-ext-prod-1"
+  dynamic.linux-d200-large-s390x.image-id: "r014-96daa951-6026-4112-95b1-87e86e82fcf3"
+  dynamic.linux-d200-large-s390x.region: "us-east-2"
+  dynamic.linux-d200-large-s390x.url: "https://us-east.iaas.cloud.ibm.com/v1"
+  dynamic.linux-d200-large-s390x.profile: "bz2-4x16"
+  dynamic.linux-d200-large-s390x.max-instances: "10"
+  dynamic.linux-d200-large-s390x.private-ip: "true"
+  dynamic.linux-d200-large-s390x.allocation-timeout: "1800"
+  dynamic.linux-d200-large-s390x.disk: "200"
+  dynamic.linux-d200-large-s390x.instance-tag: prod-d200-s390x-large
+
 # PPC64LE nodes 2CPU 8GB RAM
   dynamic.linux-ppc64le.type: ibmp
   dynamic.linux-ppc64le.ssh-secret: "ibm-production-ppc64le-ssh-key"
@@ -559,6 +610,23 @@ data:
   dynamic.linux-large-ppc64le.max-instances: "10"
   dynamic.linux-large-ppc64le.allocation-timeout: "1800"
   dynamic.linux-large-ppc64le.instance-tag: prod-ppc64le-large
+
+  # Same as linux-ppc64le-large but with 200GB disk instead of default 100GB
+  dynamic.linux-d200-large-ppc64le.type: ibmp
+  dynamic.linux-d200-large-ppc64le.ssh-secret: ibm-production-ppc64le-ssh-key"
+  dynamic.linux-d200-large-ppc64le.secret: "public-prod-ibm-api-key"
+  dynamic.linux-d200-large-ppc64le.key: "konflux-ppc-root"
+  dynamic.linux-d200-large-ppc64le.image: "ppc-toronto-19-Feb-2025"
+  dynamic.linux-d200-large-ppc64le.crn: "crn:v1:bluemix:public:power-iaas:tor01:a/582c7fe0cc914bc88483c9a30a047020:73e2ce08-0d1b-4e7e-8c49-6fa7f1a29ecd::"
+  dynamic.linux-d200-large-ppc64le.url: "https://ca-tor.power-iaas.cloud.ibm.com"
+  dynamic.linux-d200-large-ppc64le.network: "ace4359c-fd9c-4527-a1dc-830cd55d8e2e"
+  dynamic.linux-d200-large-ppc64le.system: "e980"
+  dynamic.linux-d200-large-ppc64le.cores: "4"
+  dynamic.linux-d200-large-ppc64le.memory: "16"
+  dynamic.linux-d200-large-ppc64le.max-instances: "10"
+  dynamic.linux-d200-large-ppc64le.allocation-timeout: "1800"
+  dynamic.linux-d200-large-ppc64le.disk: "200"
+  dynamic.linux-d200-large-ppc64le.instance-tag: prod-d200-ppc64le-large
 
 # GPU Instances
   dynamic.linux-g6xlarge-amd64.type: aws
