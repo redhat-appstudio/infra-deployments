@@ -4,15 +4,9 @@ kind: ClusterRole
 metadata:
   name: monitor-release-pipeline-role
 rules:
-  - apiGroups:
-      - tekton.dev
-      - ""
-    resources:
-      - pipelineruns
-      - pipelines
-      - pods
-      - pods/logs
-    verbs:
-      - get
-      - list
-      - watch
+  - apiGroups: [""]
+    resources: ["pods", "pods/log"]
+    verbs: ["get", "watch", "list"]
+  - apiGroups: ["tekton.dev"]
+    resources: ["pods", "pods/log"]
+    verbs: ["get", "watch", "list"]
