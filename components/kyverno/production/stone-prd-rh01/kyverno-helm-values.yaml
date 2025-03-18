@@ -62,6 +62,8 @@ reportsController:
       drop:
       - "ALL"
 policyReportsCleanup:
+  image:
+    registry: mirror.gcr.io
   securityContext:
     allowPrivilegeEscalation: false
     readOnlyRootFilesystem: true
@@ -72,6 +74,8 @@ policyReportsCleanup:
       drop:
       - "ALL"
 webhooksCleanup:
+  image:
+    registry: mirror.gcr.io
   securityContext:
     allowPrivilegeEscalation: false
     readOnlyRootFilesystem: true
