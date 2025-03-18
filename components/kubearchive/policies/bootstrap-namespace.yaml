@@ -11,20 +11,14 @@ spec:
           kinds:
           - Namespace
           selector:
-            matchExpressions:
-            - key: toolchain.dev.openshift.com/type
-              operator: In
-              values:
-              - tenant
+            matchLabels:
+              toolchain.dev.openshift.com/type: tenant
       - resources:
           kinds:
           - Namespace
           selector:
-            matchExpressions:
-            - key: konflux.ci/type
-              operator: In
-              values:
-              - user
+            matchLabels:
+              konflux.ci/type: user
     generate:
       generateExisting: true
       apiVersion: kubearchive.kubearchive.org/v1alpha1
