@@ -7,7 +7,18 @@ metadata:
 spec:
   resources:
     - selector:
-        apiVersion: appstudio.redhat.com/v1alpha1 
+        apiVersion: appstudio.redhat.com/v1alpha1
         kind: Snapshot
       archiveOnDelete: 'true'
-
+    - selector:
+        apiVersion: tekton.dev/v1
+        kind: PipelineRun
+      archiveOnDelete: 'true'
+    - selector:
+        apiVersion: tekton.dev/v1
+        kind: TaskRun
+      archiveOnDelete: 'true'
+    - selector:
+        apiVersion: v1
+        kind: Pod
+      archiveOnDelete: has(metadata.labels) && "tekton.dev/taskRunUID" in metadata.labels
