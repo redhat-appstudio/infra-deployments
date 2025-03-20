@@ -11,9 +11,12 @@ admissionController:
         drop:
         - "ALL"
   container:
-    resources:
-      limits:
-        cpu: 500m
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 500m
+      memory: 1Gi
     securityContext:
       allowPrivilegeEscalation: false
       readOnlyRootFilesystem: true
