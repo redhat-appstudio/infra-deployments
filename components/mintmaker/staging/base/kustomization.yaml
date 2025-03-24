@@ -3,24 +3,40 @@ kind: Kustomization
 resources:
 - ../../base
 - ../../base/external-secrets
-- https://github.com/konflux-ci/mintmaker/config/default?ref=79764e27fd5a5b255a168f6f2f15dfdca8aa9517
-- https://github.com/konflux-ci/mintmaker/config/renovate?ref=79764e27fd5a5b255a168f6f2f15dfdca8aa9517
+- https://github.com/konflux-ci/mintmaker/config/default?ref=9d07d02a790f30b32e2e0e60ee2d03d3051e2c24
+- https://github.com/konflux-ci/mintmaker/config/renovate?ref=9d07d02a790f30b32e2e0e60ee2d03d3051e2c24
 
 namespace: mintmaker
 
 images:
 - name: quay.io/konflux-ci/mintmaker
   newName: quay.io/konflux-ci/mintmaker
-  newTag: 79764e27fd5a5b255a168f6f2f15dfdca8aa9517
+  newTag: 9d07d02a790f30b32e2e0e60ee2d03d3051e2c24
 - name: quay.io/konflux-ci/mintmaker-renovate-image
   newName: quay.io/konflux-ci/mintmaker-renovate-image
-  newTag: 1f82acdb08a5f4a56543addd45846735acc801cc
+  newTag: dbe6b698cd8fbe12ab40a6e96119fe557c568a6a
 
 commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 
 patches:
   - path: manager_patch.yaml
+  - target:
+      version: v1
+      kind: CronJob
+      name: create-dependencyupdatecheck
+    patch: |-
+      - op: add
+        path: /spec/jobTemplate/spec/template/spec/containers/0/securityContext/runAsUser
+        value: 1001120000
+  - target:
+      version: v1
+      kind: CronJob
+      name: delete-dependencyupdatechecks
+    patch: |-
+      - op: add
+        path: /spec/jobTemplate/spec/template/spec/containers/0/securityContext/runAsUser
+        value: 1001120000
 
 configurations:
 - kustomizeconfig.yaml
