@@ -276,6 +276,10 @@ metadata:
   name: konflux-proxy
 rules:
 - apiGroups: [""]
+  resources: ["groups"]
+  verbs: ["impersonate"]
+  resourceNames: ["system:authenticated"]
+- apiGroups: [""]
   resources: ["users"]
   verbs: ["impersonate"]
 - apiGroups: ["authorization.k8s.io"]
