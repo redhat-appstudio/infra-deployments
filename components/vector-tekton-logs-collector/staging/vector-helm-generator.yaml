@@ -4,6 +4,10 @@ metadata:
   name: vector
 name: vector
 repo: https://helm.vector.dev
+# We mirror the image from Docker to Quay. To update the version, mirror the respective
+# image. You can use skopeo e.g
+# `skopeo copy docker://timberio/vector:0.45.0-distroless-libc docker://quay.io/openshift-pipeline/vector:0.45.0-distroless-libc`
+# The tag obviously will differ.
 version: 0.41.0
 releaseName: vector-tekton-logs-collector
 namespace: tekton-logging
