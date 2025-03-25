@@ -21,22 +21,6 @@ commonAnnotations:
 
 patches:
   - path: manager_patch.yaml
-  - target:
-      version: v1
-      kind: CronJob
-      name: create-dependencyupdatecheck
-    patch: |-
-      - op: add
-        path: /spec/jobTemplate/spec/template/spec/containers/0/securityContext/runAsUser
-        value: 1001120000
-  - target:
-      version: v1
-      kind: CronJob
-      name: delete-dependencyupdatechecks
-    patch: |-
-      - op: add
-        path: /spec/jobTemplate/spec/template/spec/containers/0/securityContext/runAsUser
-        value: 1001120000
 
 configurations:
 - kustomizeconfig.yaml
