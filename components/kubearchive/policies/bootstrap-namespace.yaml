@@ -19,6 +19,12 @@ spec:
           selector:
             matchLabels:
               konflux.ci/type: user
+      - resources:
+          kinds:
+          - Namespace
+          selector:
+            matchLabels:
+              konflux-ci.dev/type: tenant
     generate:
       generateExisting: true
       apiVersion: kubearchive.kubearchive.org/v1alpha1
