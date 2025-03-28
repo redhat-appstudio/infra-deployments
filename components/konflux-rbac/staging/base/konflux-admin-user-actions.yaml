@@ -37,6 +37,14 @@ rules:
       - get
       - list
       - watch
+    apiGroups:
+      - tekton.dev
+    resources:
+      - taskruns
+  - verbs:
+      - get
+      - list
+      - watch
       - create
       - update
       - patch
@@ -45,7 +53,6 @@ rules:
       - tekton.dev
     resources:
       - pipelineruns
-      - taskruns      
   - verbs:
       - get
       - list
@@ -75,10 +82,6 @@ rules:
       - get
       - list
       - watch
-      - create
-      - update
-      - patch
-      - delete
     apiGroups:
       - jvmbuildservice.io
     resources:
