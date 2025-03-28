@@ -1,0 +1,65 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: label-namespace-with-creator
+spec:
+  background: false
+  rules:
+    - name: add-created-by-label
+      match:
+        resources:
+          kinds:
+            - Namespace
+          operations:
+            - CREATE
+      preconditions:
+        any:
+        - key: "{{ konfluxConfig.data.sre_group_name }}"
+          operator: AllNotIn
+          value: "{{ request.userInfo.groups }}"
+        - key: "{{ request.object.metadata.annotations.username || '' }}"
+          operator: NotEquals
+          value: ""
+        all:
+        - key: "system:serviceaccounts"
+          operator: AllNotIn
+          value: "{{ request.userInfo.groups }}"
+      context:
+      - name: konfluxConfig 
+        configMap:
+          name: konflux-config
+          namespace: kyverno
+      - name: isGroupMember
+        variable:
+          value: "{{ contains(request.userInfo.groups, konfluxConfig.data.sre_group_name) }}"
+      - name: userName
+        variable:
+          value: "{{ (isGroupMember &&
+          (request.object.metadata.annotations.username || request.userInfo.username)) ||
+          request.userInfo.username }}"
+      - name: userNameHash
+        variable:
+          value: "{{ sha256(userName) }}"
+      - name: userNameHash1
+        variable:
+          value: "{{ truncate(userNameHash, `32`) }}"
+      - name: userNameHash2
+        variable:
+          value: "{{ trim_prefix(userNameHash, userNameHash1) }}"
+      mutate:
+        patchesJson6902: |
+          - op: add
+            path: "/metadata/labels/username-hash-1"
+            value: "{{ userNameHash1 }}"
+          - op: add
+            path: "/metadata/labels/username-hash-2"
+            value: "{{ userNameHash2 }}"
+          - op: add
+            path: "/metadata/annotations/username"
+            value: "{{ userName }}"
+          - op: add
+            path: "/metadata/annotations/username_hash"
+            value: "{{ userNameHash }}"
+          - op: add
+            path: "/metadata/annotations/created-by"
+            value: "{{ request.userInfo.username }}"
