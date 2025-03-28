@@ -41,7 +41,12 @@ data:
     linux/s390x,\
     linux-large/s390x,\
     linux/ppc64le,\
-    linux-large/ppc64le\
+    linux-large/ppc64le,\
+    linux-xlarge/ppc64le,\
+    linux-2xlarge/ppc64le,\
+    linux-d200-large/ppc64le,\
+    linux-d200-xlarge/ppc64le,\
+    linux-d200-2xlarge/ppc64le\
     "
   instance-tag: rhtap-prod
 
@@ -526,7 +531,7 @@ data:
   dynamic.linux-large-s390x.private-ip: "true"
   dynamic.linux-large-s390x.instance-tag: prod-s390x-large
 
-# PPC64LE nodes for multi rh02
+  # PPC64LE 2vCPU / 8GB RAM / 100GB disk
   dynamic.linux-ppc64le.type: ibmp
   dynamic.linux-ppc64le.ssh-secret: "ibm-production-ppc64le-ssh-key"
   dynamic.linux-ppc64le.secret: "ibm-api-key"
@@ -536,13 +541,13 @@ data:
   dynamic.linux-ppc64le.url: "https://us-south.power-iaas.cloud.ibm.com"
   dynamic.linux-ppc64le.network: "54fc8e49-fcb0-4842-9802-405865f0597d"
   dynamic.linux-ppc64le.system: "e980"
-  dynamic.linux-ppc64le.cores: "2"
+  dynamic.linux-ppc64le.cores: "0.25"
   dynamic.linux-ppc64le.memory: "8"
   dynamic.linux-ppc64le.max-instances: "30"
   dynamic.linux-ppc64le.allocation-timeout: "1800"
   dynamic.linux-ppc64le.instance-tag: prod-ppc64le
 
-# PPC64LE large nodes
+  # PPC64LE 4vCPU / 16GB RAM / 100GB disk
   dynamic.linux-large-ppc64le.type: ibmp
   dynamic.linux-large-ppc64le.ssh-secret: "ibm-production-ppc64le-ssh-key"
   dynamic.linux-large-ppc64le.secret: "ibm-api-key"
@@ -552,11 +557,112 @@ data:
   dynamic.linux-large-ppc64le.url: "https://us-south.power-iaas.cloud.ibm.com"
   dynamic.linux-large-ppc64le.network: "54fc8e49-fcb0-4842-9802-405865f0597d"
   dynamic.linux-large-ppc64le.system: "e980"
-  dynamic.linux-large-ppc64le.cores: "4"
+  dynamic.linux-large-ppc64le.cores: "0.5"
   dynamic.linux-large-ppc64le.memory: "16"
   dynamic.linux-large-ppc64le.max-instances: "10"
   dynamic.linux-large-ppc64le.allocation-timeout: "1800"
   dynamic.linux-large-ppc64le.instance-tag: prod-ppc64le-large
+
+  # PPC64LE 8vCPU / 32GB RAM / 100GB disk
+  dynamic.linux-xlarge-ppc64le.type: ibmp
+  dynamic.linux-xlarge-ppc64le.ssh-secret: "ibm-production-ppc64le-ssh-key"
+  dynamic.linux-xlarge-ppc64le.secret: "ibm-api-key"
+  dynamic.linux-xlarge-ppc64le.key: "prod-konflux-infra-external"
+  dynamic.linux-xlarge-ppc64le.image: "kflux-ppc-base-04-feb-2025"
+  dynamic.linux-xlarge-ppc64le.crn: "crn:v1:bluemix:public:power-iaas:dal12:a/8cfd5baa22024ab9822f1e9d4659a5e5:e08f6cb5-9d8c-4931-87c2-16580c2ffe0a::"
+  dynamic.linux-xlarge-ppc64le.url: "https://us-south.power-iaas.cloud.ibm.com"
+  dynamic.linux-xlarge-ppc64le.network: "54fc8e49-fcb0-4842-9802-405865f0597d"
+  dynamic.linux-xlarge-ppc64le.system: "e980"
+  dynamic.linux-xlarge-ppc64le.cores: "1"
+  dynamic.linux-xlarge-ppc64le.memory: "32"
+  dynamic.linux-xlarge-ppc64le.max-instances: "10"
+  dynamic.linux-xlarge-ppc64le.allocation-timeout: "1800"
+  dynamic.linux-xlarge-ppc64le.instance-tag: prod-ppc64le-xlarge
+
+  # PPC64LE 16vCPU / 64GB RAM / 100GB disk
+  dynamic.linux-2xlarge-ppc64le.type: ibmp
+  dynamic.linux-2xlarge-ppc64le.ssh-secret: "ibm-production-ppc64le-ssh-key"
+  dynamic.linux-2xlarge-ppc64le.secret: "ibm-api-key"
+  dynamic.linux-2xlarge-ppc64le.key: "prod-konflux-infra-external"
+  dynamic.linux-2xlarge-ppc64le.image: "kflux-ppc-base-04-feb-2025"
+  dynamic.linux-2xlarge-ppc64le.crn: "crn:v1:bluemix:public:power-iaas:dal12:a/8cfd5baa22024ab9822f1e9d4659a5e5:e08f6cb5-9d8c-4931-87c2-16580c2ffe0a::"
+  dynamic.linux-2xlarge-ppc64le.url: "https://us-south.power-iaas.cloud.ibm.com"
+  dynamic.linux-2xlarge-ppc64le.network: "54fc8e49-fcb0-4842-9802-405865f0597d"
+  dynamic.linux-2xlarge-ppc64le.system: "e980"
+  dynamic.linux-2xlarge-ppc64le.cores: "2"
+  dynamic.linux-2xlarge-ppc64le.memory: "64"
+  dynamic.linux-2xlarge-ppc64le.max-instances: "10"
+  dynamic.linux-2xlarge-ppc64le.allocation-timeout: "1800"
+  dynamic.linux-2xlarge-ppc64le.instance-tag: prod-ppc64le-2xlarge
+
+  # PPC64LE 2vCPU / 8GB RAM / 200GB disk
+  dynamic.linux-d200-ppc64le.type: ibmp
+  dynamic.linux-d200-ppc64le.ssh-secret: "ibm-production-ppc64le-ssh-key"
+  dynamic.linux-d200-ppc64le.secret: "ibm-api-key"
+  dynamic.linux-d200-ppc64le.key: "prod-konflux-infra-external"
+  dynamic.linux-d200-ppc64le.image: "kflux-ppc-base-04-feb-2025"
+  dynamic.linux-d200-ppc64le.crn: "crn:v1:bluemix:public:power-iaas:dal12:a/8cfd5baa22024ab9822f1e9d4659a5e5:e08f6cb5-9d8c-4931-87c2-16580c2ffe0a::"
+  dynamic.linux-d200-ppc64le.url: "https://us-south.power-iaas.cloud.ibm.com"
+  dynamic.linux-d200-ppc64le.network: "54fc8e49-fcb0-4842-9802-405865f0597d"
+  dynamic.linux-d200-ppc64le.system: "e980"
+  dynamic.linux-d200-ppc64le.cores: "0.25"
+  dynamic.linux-d200-ppc64le.memory: "8"
+  dynamic.linux-d200-ppc64le.max-instances: "10"
+  dynamic.linux-d200-ppc64le.allocation-timeout: "1800"
+  dynamic.linux-d200-ppc64le.disk: "200"
+  dynamic.linux-d200-ppc64le.instance-tag: prod-d200-ppc64le
+
+  # PPC64LE 4vCPU / 16GB RAM / 200GB disk
+  dynamic.linux-d200-large-ppc64le.type: ibmp
+  dynamic.linux-d200-large-ppc64le.ssh-secret: "ibm-production-ppc64le-ssh-key"
+  dynamic.linux-d200-large-ppc64le.secret: "ibm-api-key"
+  dynamic.linux-d200-large-ppc64le.key: "prod-konflux-infra-external"
+  dynamic.linux-d200-large-ppc64le.image: "kflux-ppc-base-04-feb-2025"
+  dynamic.linux-d200-large-ppc64le.crn: "crn:v1:bluemix:public:power-iaas:dal12:a/8cfd5baa22024ab9822f1e9d4659a5e5:e08f6cb5-9d8c-4931-87c2-16580c2ffe0a::"
+  dynamic.linux-d200-large-ppc64le.url: "https://us-south.power-iaas.cloud.ibm.com"
+  dynamic.linux-d200-large-ppc64le.network: "54fc8e49-fcb0-4842-9802-405865f0597d"
+  dynamic.linux-d200-large-ppc64le.system: "e980"
+  dynamic.linux-d200-large-ppc64le.cores: "0.5"
+  dynamic.linux-d200-large-ppc64le.memory: "16"
+  dynamic.linux-d200-large-ppc64le.max-instances: "10"
+  dynamic.linux-d200-large-ppc64le.allocation-timeout: "1800"
+  dynamic.linux-d200-large-ppc64le.disk: "200"
+  dynamic.linux-d200-large-ppc64le.instance-tag: prod-d200-ppc64le-large
+
+  # PPC64LE 8vCPU / 32GB RAM / 200GB disk
+  dynamic.linux-d200-xlarge-ppc64le.type: ibmp
+  dynamic.linux-d200-xlarge-ppc64le.ssh-secret: "ibm-production-ppc64le-ssh-key"
+  dynamic.linux-d200-xlarge-ppc64le.secret: "ibm-api-key"
+  dynamic.linux-d200-xlarge-ppc64le.key: "prod-konflux-infra-external"
+  dynamic.linux-d200-xlarge-ppc64le.image: "kflux-ppc-base-04-feb-2025"
+  dynamic.linux-d200-xlarge-ppc64le.crn: "crn:v1:bluemix:public:power-iaas:dal12:a/8cfd5baa22024ab9822f1e9d4659a5e5:e08f6cb5-9d8c-4931-87c2-16580c2ffe0a::"
+  dynamic.linux-d200-xlarge-ppc64le.url: "https://us-south.power-iaas.cloud.ibm.com"
+  dynamic.linux-d200-xlarge-ppc64le.network: "54fc8e49-fcb0-4842-9802-405865f0597d"
+  dynamic.linux-d200-xlarge-ppc64le.system: "e980"
+  dynamic.linux-d200-xlarge-ppc64le.cores: "1"
+  dynamic.linux-d200-xlarge-ppc64le.memory: "32"
+  dynamic.linux-d200-xlarge-ppc64le.max-instances: "10"
+  dynamic.linux-d200-xlarge-ppc64le.allocation-timeout: "1800"
+  dynamic.linux-d200-xlarge-ppc64le.disk: "200"
+  dynamic.linux-d200-xlarge-ppc64le.instance-tag: prod-d200-ppc64le-xlarge
+
+  # PPC64LE 16vCPU / 64GB RAM / 200GB disk
+  dynamic.linux-d200-2xlarge-ppc64le.type: ibmp
+  dynamic.linux-d200-2xlarge-ppc64le.ssh-secret: "ibm-production-ppc64le-ssh-key"
+  dynamic.linux-d200-2xlarge-ppc64le.secret: "ibm-api-key"
+  dynamic.linux-d200-2xlarge-ppc64le.key: "prod-konflux-infra-external"
+  dynamic.linux-d200-2xlarge-ppc64le.image: "kflux-ppc-base-04-feb-2025"
+  dynamic.linux-d200-2xlarge-ppc64le.crn: "crn:v1:bluemix:public:power-iaas:dal12:a/8cfd5baa22024ab9822f1e9d4659a5e5:e08f6cb5-9d8c-4931-87c2-16580c2ffe0a::"
+  dynamic.linux-d200-2xlarge-ppc64le.url: "https://us-south.power-iaas.cloud.ibm.com"
+  dynamic.linux-d200-2xlarge-ppc64le.network: "54fc8e49-fcb0-4842-9802-405865f0597d"
+  dynamic.linux-d200-2xlarge-ppc64le.system: "e980"
+  dynamic.linux-d200-2xlarge-ppc64le.cores: "2"
+  dynamic.linux-d200-2xlarge-ppc64le.memory: "64"
+  dynamic.linux-d200-2xlarge-ppc64le.max-instances: "10"
+  dynamic.linux-d200-2xlarge-ppc64le.allocation-timeout: "1800"
+  dynamic.linux-d200-2xlarge-ppc64le.disk: "200"
+  dynamic.linux-d200-2xlarge-ppc64le.instance-tag: prod-d200-ppc64le-2xlarge
+
 
 # GPU Instances
   dynamic.linux-g6xlarge-amd64.type: aws
