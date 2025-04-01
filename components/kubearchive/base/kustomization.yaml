@@ -158,6 +158,13 @@ patches:
               securityContext:
                 readOnlyRootFilesystem: true
                 runAsNonRoot: true
+              resources:
+                limits:
+                  cpu: 200m
+                  memory: 500Mi
+                requests:
+                  cpu: 200m
+                  memory: 450Mi
 
 # These patches remove Certificates and Issuer from Cert-Manager
 - patch: |-
