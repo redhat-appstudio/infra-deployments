@@ -36,12 +36,8 @@ data:
     linux-g6xlarge/amd64,\
     linux/s390x,\
     linux-large/s390x,\
-    linux-xlarge/s390x,\
-    linux-2xlarge/s390x,\
     linux-d200/s390x,\
     linux-d200-large/s390x,\
-    linux-d200-xlarge/s390x,\
-    linux-d200-2xlarge/s390x,\
     linux-root/arm64,\
     linux-root/amd64,\
     linux/ppc64le,\
@@ -451,36 +447,6 @@ data:
   dynamic.linux-large-s390x.allocation-timeout: "1800"
   dynamic.linux-large-s390x.instance-tag: stage-s390x-large
 
-  dynamic.linux-xlarge-s390x.type: ibmz
-  dynamic.linux-xlarge-s390x.ssh-secret: "internal-stage-ibm-ssh-key"
-  dynamic.linux-xlarge-s390x.secret: "internal-stage-ibm-api-key"
-  dynamic.linux-xlarge-s390x.vpc: "konflux-internal-prod-us-east-1"
-  dynamic.linux-xlarge-s390x.key: "internal-stage-key"
-  dynamic.linux-xlarge-s390x.subnet: "internal-b"
-  dynamic.linux-xlarge-s390x.image-id: "r014-23be9e67-4ab2-4dc9-9a51-d56efb06943d"
-  dynamic.linux-xlarge-s390x.region: "us-east-1"
-  dynamic.linux-xlarge-s390x.url: "https://us-east.iaas.cloud.ibm.com/v1"
-  dynamic.linux-xlarge-s390x.profile: "bz2-8x32"
-  dynamic.linux-xlarge-s390x.max-instances: "10"
-  dynamic.linux-xlarge-s390x.private-ip: "true"
-  dynamic.linux-xlarge-s390x.allocation-timeout: "1800"
-  dynamic.linux-xlarge-s390x.instance-tag: stage-s390x-xlarge
-
-  dynamic.linux-2xlarge-s390x.type: ibmz
-  dynamic.linux-2xlarge-s390x.ssh-secret: "internal-stage-ibm-ssh-key"
-  dynamic.linux-2xlarge-s390x.secret: "internal-stage-ibm-api-key"
-  dynamic.linux-2xlarge-s390x.vpc: "konflux-internal-prod-us-east-1"
-  dynamic.linux-2xlarge-s390x.key: "internal-stage-key"
-  dynamic.linux-2xlarge-s390x.subnet: "internal-b"
-  dynamic.linux-2xlarge-s390x.image-id: "r014-23be9e67-4ab2-4dc9-9a51-d56efb06943d"
-  dynamic.linux-2xlarge-s390x.region: "us-east-1"
-  dynamic.linux-2xlarge-s390x.url: "https://us-east.iaas.cloud.ibm.com/v1"
-  dynamic.linux-2xlarge-s390x.profile: "bz2-16x64"
-  dynamic.linux-2xlarge-s390x.max-instances: "10"
-  dynamic.linux-2xlarge-s390x.private-ip: "true"
-  dynamic.linux-2xlarge-s390x.allocation-timeout: "1800"
-  dynamic.linux-2xlarge-s390x.instance-tag: stage-s390x-2xlarge
-
   dynamic.linux-d200-s390x.type: ibmz
   dynamic.linux-d200-s390x.ssh-secret: "internal-stage-ibm-ssh-key"
   dynamic.linux-d200-s390x.secret: "internal-stage-ibm-api-key"
@@ -512,38 +478,6 @@ data:
   dynamic.linux-d200-large-s390x.allocation-timeout: "1800"
   dynamic.linux-d200-large-s390x.disk: "200"
   dynamic.linux-d200-large-s390x.instance-tag: stage-d200-s390x-large
-
-  dynamic.linux-d200-xlarge-s390x.type: ibmz
-  dynamic.linux-d200-xlarge-s390x.ssh-secret: "internal-stage-ibm-ssh-key"
-  dynamic.linux-d200-xlarge-s390x.secret: "internal-stage-ibm-api-key"
-  dynamic.linux-d200-xlarge-s390x.vpc: "konflux-internal-prod-us-east-1"
-  dynamic.linux-d200-xlarge-s390x.key: "internal-stage-key"
-  dynamic.linux-d200-xlarge-s390x.subnet: "internal-b"
-  dynamic.linux-d200-xlarge-s390x.image-id: "r014-23be9e67-4ab2-4dc9-9a51-d56efb06943d"
-  dynamic.linux-d200-xlarge-s390x.region: "us-east-1"
-  dynamic.linux-d200-xlarge-s390x.url: "https://us-east.iaas.cloud.ibm.com/v1"
-  dynamic.linux-d200-xlarge-s390x.profile: "bz2-8x32"
-  dynamic.linux-d200-xlarge-s390x.max-instances: "10"
-  dynamic.linux-d200-xlarge-s390x.private-ip: "true"
-  dynamic.linux-d200-xlarge-s390x.allocation-timeout: "1800"
-  dynamic.linux-d200-xlarge-s390x.disk: "200"
-  dynamic.linux-d200-xlarge-s390x.instance-tag: stage-d200-s390x-xlarge
-
-  dynamic.linux-d200-2xlarge-s390x.type: ibmz
-  dynamic.linux-d200-2xlarge-s390x.ssh-secret: "internal-stage-ibm-ssh-key"
-  dynamic.linux-d200-2xlarge-s390x.secret: "internal-stage-ibm-api-key"
-  dynamic.linux-d200-2xlarge-s390x.vpc: "konflux-internal-prod-us-east-1"
-  dynamic.linux-d200-2xlarge-s390x.key: "internal-stage-key"
-  dynamic.linux-d200-2xlarge-s390x.subnet: "internal-b"
-  dynamic.linux-d200-2xlarge-s390x.image-id: "r014-23be9e67-4ab2-4dc9-9a51-d56efb06943d"
-  dynamic.linux-d200-2xlarge-s390x.region: "us-east-1"
-  dynamic.linux-d200-2xlarge-s390x.url: "https://us-east.iaas.cloud.ibm.com/v1"
-  dynamic.linux-d200-2xlarge-s390x.profile: "bz2-16x64"
-  dynamic.linux-d200-2xlarge-s390x.max-instances: "10"
-  dynamic.linux-d200-2xlarge-s390x.private-ip: "true"
-  dynamic.linux-d200-2xlarge-s390x.allocation-timeout: "1800"
-  dynamic.linux-d200-2xlarge-s390x.disk: "200"
-  dynamic.linux-d200-2xlarge-s390x.instance-tag: stage-d200-s390x-2xlarge
 
   dynamic.linux-ppc64le.type: ibmp
   dynamic.linux-ppc64le.ssh-secret: "internal-stage-ibm-ssh-key"
