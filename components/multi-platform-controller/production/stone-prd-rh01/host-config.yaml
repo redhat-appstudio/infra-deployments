@@ -41,8 +41,9 @@ data:
     linux-fast/amd64,\
     linux-extra-fast/amd64,\
     linux/s390x,\
-    linux-d200-large/s390x,\
     linux-large/s390x,\
+    linux-d200/s390x,\
+    linux-d200-large/s390x,\
     linux/ppc64le,\
     linux-large/ppc64le,\
     linux-xlarge/ppc64le,\
@@ -534,7 +535,7 @@ data:
 
     --//--
 
-  ## IBM s390x with 2CPU 8GiB RAM ####
+  # S390X 2vCPU / 8GB RAM / 100GB disk
   dynamic.linux-s390x.type: ibmz
   dynamic.linux-s390x.ssh-secret: "ibm-production-s390x-ssh-key"
   dynamic.linux-s390x.secret: "public-prod-ibm-api-key"
@@ -550,7 +551,7 @@ data:
   dynamic.linux-s390x.allocation-timeout: "1800"
   dynamic.linux-s390x.instance-tag: prod-s390x
 
-  ## IBM s390x with 4CPU 16GiB RAM ####
+  # S390X 4vCPU / 16GB RAM / 100GB disk
   dynamic.linux-large-s390x.type: ibmz
   dynamic.linux-large-s390x.ssh-secret: "ibm-production-s390x-ssh-key"
   dynamic.linux-large-s390x.secret: "public-prod-ibm-api-key"
@@ -566,7 +567,24 @@ data:
   dynamic.linux-large-s390x.allocation-timeout: "1800"
   dynamic.linux-large-s390x.instance-tag: prod-s390x-large
 
-  # Same as linux-s390x-large but with 200GB disk instead of default 100GB
+  # S390X 2vCPU / 8GB RAM / 200GB disk
+  dynamic.linux-d200-s390x.type: ibmz
+  dynamic.linux-d200-s390x.ssh-secret: "ibm-production-s390x-ssh-key"
+  dynamic.linux-d200-s390x.secret: "public-prod-ibm-api-key"
+  dynamic.linux-d200-s390x.vpc: "us-east-default-vpc"
+  dynamic.linux-d200-s390x.key: "konflux-s390x-root"
+  dynamic.linux-d200-s390x.subnet: "konflux-ext-prod-1"
+  dynamic.linux-d200-s390x.image-id: "r014-96daa951-6026-4112-95b1-87e86e82fcf3"
+  dynamic.linux-d200-s390x.region: "us-east-2"
+  dynamic.linux-d200-s390x.url: "https://us-east.iaas.cloud.ibm.com/v1"
+  dynamic.linux-d200-s390x.profile: "bz2-2x8"
+  dynamic.linux-d200-s390x.max-instances: "30"
+  dynamic.linux-d200-s390x.private-ip: "true"
+  dynamic.linux-d200-s390x.allocation-timeout: "1800"
+  dynamic.linux-d200-s390x.disk: "200"
+  dynamic.linux-d200-s390x.instance-tag: prod-d200-s390x
+
+  # S390X 4vCPU / 16GB RAM / 200GB disk
   dynamic.linux-d200-large-s390x.type: ibmz
   dynamic.linux-d200-large-s390x.ssh-secret: "ibm-production-s390x-ssh-key"
   dynamic.linux-d200-large-s390x.secret: "public-prod-ibm-api-key"
