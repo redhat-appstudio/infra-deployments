@@ -42,135 +42,15 @@ spec:
 apiVersion: chainsaw.kyverno.io/v1alpha1
 kind: Test
 metadata:
-  name: mutate-new-namespace-konflux
+  name: mutate-new-namespace-unlabeled
 spec:
   description: |
-    tests that the KubeArchiveConfig is created in a namespace
-    labelled with `konflux.ci/type=user`
+    tests that the KubeArchiveConfig is NOT created in an unlabeled namespace
   concurrent: false
   namespace: 'generate-new-namespace'
   bindings:
   - name: suffix
-    value: konflux
-  steps:
-  - name: given-kubearchiveconfig-crd-exists
-    try:
-    - apply:
-        file: resources/kubearchive-crd.yaml
-  - name: given-kyverno-has-permission-on-resources
-    try:
-    - apply:
-        file: ../kyverno_rbac.yaml
-  - name: given-cluster-policy-is-ready
-    try:
-    - apply:
-        file: ../bootstrap-namespace.yaml
-    - assert:
-        file: chainsaw-assert-clusterpolicy.yaml
-  - name: when-konfluxci-labeled-namespace-is-created
-    try:
-    - apply:
-        file: resources/actual-namespace-konflux.yaml
-        template: true
-  - name: then-kubearchiveconfig-is-created
-    try:
-    - assert:
-        file: resources/expected-kubearchiveconfig.yaml
-        template: true
----
-# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
-apiVersion: chainsaw.kyverno.io/v1alpha1
-kind: Test
-metadata:
-  name: mutate-new-namespace-toolchain
-spec:
-  description: |
-    tests that the KubeArchiveConfig is created in a namespace
-    labelled with `toolchain.dev.openshift.com/type=tenant`
-  concurrent: false
-  namespace: 'generate-new-namespace'
-  bindings:
-  - name: suffix
-    value: toolchain
-  steps:
-  - name: given-kubearchiveconfig-crd-exists
-    try:
-    - apply:
-        file: resources/kubearchive-crd.yaml
-  - name: given-kyverno-has-permission-on-resources
-    try:
-    - apply:
-        file: ../kyverno_rbac.yaml
-  - name: given-cluster-policy-is-ready
-    try:
-    - apply:
-        file: ../bootstrap-namespace.yaml
-    - assert:
-        file: chainsaw-assert-clusterpolicy.yaml
-  - name: when-toolchain-labeled-namespace-is-created
-    try:
-    - apply:
-        file: resources/actual-namespace-toolchain.yaml
-        template: true
-  - name: then-kubearchiveconfig-is-created
-    try:
-    - assert:
-        file: resources/expected-kubearchiveconfig.yaml
-        template: true
----
-# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
-apiVersion: chainsaw.kyverno.io/v1alpha1
-kind: Test
-metadata:
-  name: mutate-new-namespace-konflux-toolchain
-spec:
-  description: |
-    tests that the KubeArchiveConfig is created in a namespace labelled 
-    with `konflux.ci/type=user` or `toolchain.dev.openshift.com/type=tenant`
-  concurrent: false
-  namespace: 'generate-new-namespace'
-  bindings:
-  - name: suffix
-    value: konflux-toolchain
-  steps:
-  - name: given-kubearchiveconfig-crd-exists
-    try:
-    - apply:
-        file: resources/kubearchive-crd.yaml
-  - name: given-kyverno-has-permission-on-resources
-    try:
-    - apply:
-        file: ../kyverno_rbac.yaml
-  - name: given-cluster-policy-is-ready
-    try:
-    - apply:
-        file: ../bootstrap-namespace.yaml
-    - assert:
-        file: chainsaw-assert-clusterpolicy.yaml
-  - name: when-konfluxci-toolchain-labeled-namespace-is-created
-    try:
-    - apply:
-        file: resources/actual-namespace-konflux-toolchain.yaml
-        template: true
-  - name: then-kubearchiveconfig-is-created
-    try:
-    - assert:
-        file: resources/expected-kubearchiveconfig.yaml
-        template: true
----
-# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
-apiVersion: chainsaw.kyverno.io/v1alpha1
-kind: Test
-metadata:
-  name: mutate-new-namespace-unlabelled
-spec:
-  description: |
-    tests that the KubeArchiveConfig is NOT created in an unlabelled namespace
-  concurrent: false
-  namespace: 'generate-new-namespace'
-  bindings:
-  - name: suffix
-    value: unlabelled
+    value: unlabeled
   steps:
   - name: given-kubearchiveconfig-crd-exists
     try:
@@ -189,51 +69,11 @@ spec:
   - name: when-unlabeled-namespace-is-created
     try:
     - apply:
-        file: resources/actual-namespace-konflux-toolchain.yaml
+        file: resources/actual-namespace-unlabeled.yaml
         template: true
   - name: then-kubearchiveconfig-is-created
     try:
     - error:
-        file: resources/expected-kubearchiveconfig.yaml
-        template: true
----
-# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
-apiVersion: chainsaw.kyverno.io/v1alpha1
-kind: Test
-metadata:
-  name: mutate-existing-namespace-konflux
-spec:
-  description: |
-    tests that the KubeArchiveConfig is created in an already existing
-    namespace labelled with `konflux.ci/type=user`
-  concurrent: false
-  namespace: 'generate-existing-namespace'
-  bindings:
-  - name: suffix
-    value: konflux
-  steps:
-  - name: given-kubearchiveconfig-crd-exists
-    try:
-    - apply:
-        file: resources/kubearchive-crd.yaml
-  - name: given-kyverno-has-permission-on-resources
-    try:
-    - apply:
-        file: ../kyverno_rbac.yaml
-  - name: given-konfluxci-labeled-namespace-is-created
-    try:
-    - apply:
-        file: resources/actual-namespace-konflux.yaml
-        template: true
-  - name: when-cluster-policy-is-ready
-    try:
-    - apply:
-        file: ../bootstrap-namespace.yaml
-    - assert:
-        file: chainsaw-assert-clusterpolicy.yaml
-  - name: then-kubearchiveconfig-is-created
-    try:
-    - assert:
         file: resources/expected-kubearchiveconfig.yaml
         template: true
 ---
@@ -281,96 +121,16 @@ spec:
 apiVersion: chainsaw.kyverno.io/v1alpha1
 kind: Test
 metadata:
-  name: mutate-existing-namespace-toolchain
-spec:
-  description: |
-    tests that the KubeArchiveConfig is created in an already existing
-    namespace labelled with `toolchain.dev.openshift.com/type=tenant`
-  concurrent: false
-  namespace: 'generate-existing-namespace'
-  bindings:
-  - name: suffix
-    value: toolchain
-  steps:
-  - name: given-kubearchiveconfig-crd-exists
-    try:
-    - apply:
-        file: resources/kubearchive-crd.yaml
-  - name: given-kyverno-has-permission-on-resources
-    try:
-    - apply:
-        file: ../kyverno_rbac.yaml
-  - name: given-toolchain-labeled-namespace-is-created
-    try:
-    - apply:
-        file: resources/actual-namespace-toolchain.yaml
-        template: true
-  - name: when-cluster-policy-is-ready
-    try:
-    - apply:
-        file: ../bootstrap-namespace.yaml
-    - assert:
-        file: chainsaw-assert-clusterpolicy.yaml
-  - name: then-kubearchiveconfig-is-created
-    try:
-    - assert:
-        file: resources/expected-kubearchiveconfig.yaml
-        template: true
----
-# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
-apiVersion: chainsaw.kyverno.io/v1alpha1
-kind: Test
-metadata:
-  name: mutate-existing-namespace-konflux-toolchain
-spec:
-  description: |
-    tests that the KubeArchiveConfig is created in an already existing
-    namespace labelled with `konflux.ci/type=user` or `toolchain.dev.openshift.com/type=tenant`
-  concurrent: false
-  namespace: 'generate-existing-namespace'
-  bindings:
-  - name: suffix
-    value: konflux-toolchain
-  steps:
-  - name: given-kubearchiveconfig-crd-exists
-    try:
-    - apply:
-        file: resources/kubearchive-crd.yaml
-  - name: given-kyverno-has-permission-on-resources
-    try:
-    - apply:
-        file: ../kyverno_rbac.yaml
-  - name: given-konfluxci-toolchain-labeled-namespace-is-created
-    try:
-    - apply:
-        file: resources/actual-namespace-konflux-toolchain.yaml
-        template: true
-  - name: when-cluster-policy-is-ready
-    try:
-    - apply:
-        file: ../bootstrap-namespace.yaml
-    - assert:
-        file: chainsaw-assert-clusterpolicy.yaml
-  - name: then-kubearchiveconfig-is-created
-    try:
-    - assert:
-        file: resources/expected-kubearchiveconfig.yaml
-        template: true
----
-# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
-apiVersion: chainsaw.kyverno.io/v1alpha1
-kind: Test
-metadata:
-  name: mutate-existing-namespace-unlabelled
+  name: mutate-existing-namespace-unlabeled
 spec:
   description: |
     tests that the KubeArchiveConfig is NOT created in an 
-    existing unlabelled namespace
+    existing unlabeled namespace
   concurrent: false
   namespace: 'generate-existing-namespace'
   bindings:
   - name: suffix
-    value: unlabelled
+    value: unlabeled
   steps:
   - name: given-kubearchiveconfig-crd-exists
     try:
@@ -383,7 +143,7 @@ spec:
   - name: given-unlabeled-namespace-is-created
     try:
     - apply:
-        file: resources/actual-namespace-konflux-toolchain.yaml
+        file: resources/actual-namespace-unlabeled.yaml
         template: true
   - name: when-cluster-policy-is-ready
     try:
@@ -401,17 +161,17 @@ spec:
 apiVersion: chainsaw.kyverno.io/v1alpha1
 kind: Test
 metadata:
-  name: mutate-existing-namespace-konflux-toolchain-existing-kubearchiveconfig
+  name: mutate-existing-namespace-konfluxcidev-existing-kubearchiveconfig
 spec:
   description: |
     tests that the KubeArchiveConfig is not updated in an already existing
-    namespace labelled with `konflux.ci/type=user` or `toolchain.dev.openshift.com/type=tenant`
-    where the KubeArchiveConfig already exists
+    namespace labelled with `konflux-ci.dev/type=tenant` where the 
+    KubeArchiveConfig already exists
   concurrent: false
   namespace: 'generate-existing-namespace'
   bindings:
   - name: suffix
-    value: konflux-toolchain
+    value: konfluxcidev-existing-kubearchive
   steps:
   - name: given-kubearchiveconfig-crd-exists
     try:
@@ -421,10 +181,10 @@ spec:
     try:
     - apply:
         file: ../kyverno_rbac.yaml
-  - name: given-konfluxci-toolchain-labeled-namespace-is-created
+  - name: given-konfluxcidev-labeled-namespace-is-created
     try:
     - apply:
-        file: resources/actual-namespace-konflux-toolchain.yaml
+        file: resources/actual-namespace-konfluxcidev.yaml
         template: true
   - name: given-kubearchiveconfig-is-created
     try:
