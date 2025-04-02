@@ -45,6 +45,7 @@ data:
     linux-d200/s390x,\
     linux-d200-large/s390x,\
     linux/ppc64le,\
+    linux-test/ppc64le,\
     linux-large/ppc64le,\
     linux-xlarge/ppc64le,\
     linux-2xlarge/ppc64le,\
@@ -815,3 +816,19 @@ data:
     su - ec2-user
     nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml
     --//--
+
+  # PPC64LE 2vCPU / 8GB RAM / 100GB disk
+  dynamic.linux-test-ppc64le.type: ibmp
+  dynamic.linux-test-ppc64le.ssh-secret: "ibm-production-ppc64le-ssh-key"
+  dynamic.linux-test-ppc64le.secret: "public-prod-ibm-api-key"
+  dynamic.linux-test-ppc64le.key: "konflux-ppc-root"
+  dynamic.linux-test-ppc64le.image: "prod-rh01-ppc-base-april-2025"
+  dynamic.linux-test-ppc64le.crn: "crn:v1:bluemix:public:power-iaas:dal12:a/582c7fe0cc914bc88483c9a30a047020:d00d8cff-3757-4cac-bb8d-78ae113e6e66::"
+  dynamic.linux-test-ppc64le.url: "https://us-south.power-iaas.cloud.ibm.com"
+  dynamic.linux-test-ppc64le.network: "c2879e40-f781-45ef-93e6-bba7a7f79d14"
+  dynamic.linux-test-ppc64le.system: "e980"
+  dynamic.linux-test-ppc64le.cores: "0.25"
+  dynamic.linux-test-ppc64le.memory: "8"
+  dynamic.linux-test-ppc64le.max-instances: "30"
+  dynamic.linux-test-ppc64le.allocation-timeout: "1800"
+  dynamic.linux-test-ppc64le.instance-tag: prod-test-ppc64le
