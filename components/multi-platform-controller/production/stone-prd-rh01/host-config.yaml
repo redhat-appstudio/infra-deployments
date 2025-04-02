@@ -45,6 +45,7 @@ data:
     linux-d200/s390x,\
     linux-d200-large/s390x,\
     linux/ppc64le,\
+    linux-test/ppc64le,\
     linux-large/ppc64le,\
     linux-xlarge/ppc64le,\
     linux-2xlarge/ppc64le,\
@@ -541,9 +542,9 @@ data:
   dynamic.linux-s390x.secret: "public-prod-ibm-api-key"
   dynamic.linux-s390x.vpc: "us-east-default-vpc"
   dynamic.linux-s390x.key: "konflux-s390x-root"
-  dynamic.linux-s390x.subnet: "konflux-ext-prod-1"
+  dynamic.linux-s390x.subnet: "konflux-ext-prod-wdc3"
   dynamic.linux-s390x.image-id: "r014-96daa951-6026-4112-95b1-87e86e82fcf3"
-  dynamic.linux-s390x.region: "us-east-2"
+  dynamic.linux-s390x.region: "us-east-3"
   dynamic.linux-s390x.url: "https://us-east.iaas.cloud.ibm.com/v1"
   dynamic.linux-s390x.profile: "bz2-2x8"
   dynamic.linux-s390x.max-instances: "30"
@@ -557,9 +558,9 @@ data:
   dynamic.linux-large-s390x.secret: "public-prod-ibm-api-key"
   dynamic.linux-large-s390x.vpc: "us-east-default-vpc"
   dynamic.linux-large-s390x.key: "konflux-s390x-root"
-  dynamic.linux-large-s390x.subnet: "konflux-ext-prod-1"
+  dynamic.linux-large-s390x.subnet: "konflux-ext-prod-wdc3"
   dynamic.linux-large-s390x.image-id: "r014-96daa951-6026-4112-95b1-87e86e82fcf3"
-  dynamic.linux-large-s390x.region: "us-east-2"
+  dynamic.linux-large-s390x.region: "us-east-3"
   dynamic.linux-large-s390x.url: "https://us-east.iaas.cloud.ibm.com/v1"
   dynamic.linux-large-s390x.profile: "bz2-4x16"
   dynamic.linux-large-s390x.max-instances: "10"
@@ -573,9 +574,9 @@ data:
   dynamic.linux-d200-s390x.secret: "public-prod-ibm-api-key"
   dynamic.linux-d200-s390x.vpc: "us-east-default-vpc"
   dynamic.linux-d200-s390x.key: "konflux-s390x-root"
-  dynamic.linux-d200-s390x.subnet: "konflux-ext-prod-1"
+  dynamic.linux-d200-s390x.subnet: "konflux-ext-prod-wdc3"
   dynamic.linux-d200-s390x.image-id: "r014-96daa951-6026-4112-95b1-87e86e82fcf3"
-  dynamic.linux-d200-s390x.region: "us-east-2"
+  dynamic.linux-d200-s390x.region: "us-east-3"
   dynamic.linux-d200-s390x.url: "https://us-east.iaas.cloud.ibm.com/v1"
   dynamic.linux-d200-s390x.profile: "bz2-2x8"
   dynamic.linux-d200-s390x.max-instances: "30"
@@ -590,9 +591,9 @@ data:
   dynamic.linux-d200-large-s390x.secret: "public-prod-ibm-api-key"
   dynamic.linux-d200-large-s390x.vpc: "us-east-default-vpc"
   dynamic.linux-d200-large-s390x.key: "konflux-s390x-root"
-  dynamic.linux-d200-large-s390x.subnet: "konflux-ext-prod-1"
+  dynamic.linux-d200-large-s390x.subnet: "konflux-ext-prod-wdc3"
   dynamic.linux-d200-large-s390x.image-id: "r014-96daa951-6026-4112-95b1-87e86e82fcf3"
-  dynamic.linux-d200-large-s390x.region: "us-east-2"
+  dynamic.linux-d200-large-s390x.region: "us-east-3"
   dynamic.linux-d200-large-s390x.url: "https://us-east.iaas.cloud.ibm.com/v1"
   dynamic.linux-d200-large-s390x.profile: "bz2-4x16"
   dynamic.linux-d200-large-s390x.max-instances: "10"
@@ -815,3 +816,19 @@ data:
     su - ec2-user
     nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml
     --//--
+
+  # PPC64LE 2vCPU / 8GB RAM / 100GB disk
+  dynamic.linux-test-ppc64le.type: ibmp
+  dynamic.linux-test-ppc64le.ssh-secret: "ibm-production-ppc64le-ssh-key"
+  dynamic.linux-test-ppc64le.secret: "public-prod-ibm-api-key"
+  dynamic.linux-test-ppc64le.key: "konflux-ppc-root"
+  dynamic.linux-test-ppc64le.image: "prod-rh01-ppc-base-april-2025"
+  dynamic.linux-test-ppc64le.crn: "crn:v1:bluemix:public:power-iaas:dal12:a/582c7fe0cc914bc88483c9a30a047020:d00d8cff-3757-4cac-bb8d-78ae113e6e66::"
+  dynamic.linux-test-ppc64le.url: "https://us-south.power-iaas.cloud.ibm.com"
+  dynamic.linux-test-ppc64le.network: "c2879e40-f781-45ef-93e6-bba7a7f79d14"
+  dynamic.linux-test-ppc64le.system: "e980"
+  dynamic.linux-test-ppc64le.cores: "0.25"
+  dynamic.linux-test-ppc64le.memory: "8"
+  dynamic.linux-test-ppc64le.max-instances: "30"
+  dynamic.linux-test-ppc64le.allocation-timeout: "1800"
+  dynamic.linux-test-ppc64le.instance-tag: prod-test-ppc64le
