@@ -6,9 +6,17 @@ resources:
 - rbac.yaml
 - kubearchive-config.yaml
 - kubearchive-maintainer.yaml
+- monitoring-otel-collector.yaml
+- monitoring-servicemonitor.yaml
 
 # ROSA does not support namespaces starting with `kube`
 namespace: product-kubearchive
+
+configMapGenerator:
+  - name: otel-collector-conf
+    namespace: product-kubearchive
+    files:
+      - otel-collector-config.yaml
 
 patches:
 # These patches changes some resources that point directly to
@@ -113,6 +121,11 @@ patches:
         spec:
           containers:
             - name: kubearchive-api-server
+              env:
+              - name: KUBEARCHIVE_OTEL_MODE
+                value: enabled
+              - name: OTEL_EXPORTER_OTLP_ENDPOINT
+                value: http://otel-collector:4318
               securityContext:
                 readOnlyRootFilesystem: true
                 runAsNonRoot: true
@@ -131,6 +144,11 @@ patches:
         spec:
           containers:
             - name: manager
+              env:
+              - name: KUBEARCHIVE_OTEL_MODE
+                value: enabled
+              - name: OTEL_EXPORTER_OTLP_ENDPOINT
+                value: http://otel-collector:4318
               securityContext:
                 readOnlyRootFilesystem: true
                 runAsNonRoot: true
@@ -155,6 +173,11 @@ patches:
         spec:
           containers:
             - name: kubearchive-sink
+              env:
+              - name: KUBEARCHIVE_OTEL_MODE
+                value: enabled
+              - name: OTEL_EXPORTER_OTLP_ENDPOINT
+                value: http://otel-collector:4318
               securityContext:
                 readOnlyRootFilesystem: true
                 runAsNonRoot: true
