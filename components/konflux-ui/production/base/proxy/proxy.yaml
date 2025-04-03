@@ -69,6 +69,7 @@ spec:
               token=$(cat /mnt/api-token/token)
               echo 'auth_request_set $user  $upstream_http_x_auth_request_email;' > "$auth_conf"
               echo 'proxy_set_header Impersonate-User $user;' >> "$auth_conf"
+              echo 'proxy_set_header Impersonate-Group system:authenticated;' >> "$auth_conf"
               echo "proxy_set_header Authorization \"Bearer $token\";" >> "$auth_conf"
             else
               echo "# impersonation was disabled by config" > "$auth_conf"
@@ -160,7 +161,7 @@ spec:
           readOnlyRootFilesystem: true
           runAsNonRoot: true
           runAsUser: 1001
-      - image: quay.io/konflux-ci/workspace-manager@sha256:6b7bfcf197cbff2ae9b1d84abd73636ce5733921524fb550438d8a8143a536b5
+      - image: quay.io/konflux-ci/workspace-manager@sha256:48df30520a766101473e80e7a4abbf59ce06097a5f5919e15075afaa86bd1a2d
         name: workspace-manager
         ports:
           - containerPort: 5000
@@ -274,6 +275,10 @@ kind: ClusterRole
 metadata:
   name: konflux-proxy
 rules:
+- apiGroups: [""]
+  resources: ["groups"]
+  verbs: ["impersonate"]
+  resourceNames: ["system:authenticated"]
 - apiGroups: [""]
   resources: ["users"]
   verbs: ["impersonate"]

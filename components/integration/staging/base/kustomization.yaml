@@ -3,13 +3,13 @@ kind: Kustomization
 resources:
 - ../../base
 - ../../base/external-secrets
-- https://github.com/konflux-ci/integration-service/config/default?ref=6489a86f038b2cc2444fe5f3a519d68f11ea645d
-- https://github.com/konflux-ci/integration-service/config/snapshotgc?ref=6489a86f038b2cc2444fe5f3a519d68f11ea645d
+- https://github.com/konflux-ci/integration-service/config/default?ref=32dfb31d1f3ea0db2f4916c1fbf45fc5821c12c4
+- https://github.com/konflux-ci/integration-service/config/snapshotgc?ref=32dfb31d1f3ea0db2f4916c1fbf45fc5821c12c4
 
 images:
 - name: quay.io/konflux-ci/integration-service
   newName: quay.io/konflux-ci/integration-service
-  newTag: 6489a86f038b2cc2444fe5f3a519d68f11ea645d
+  newTag: 32dfb31d1f3ea0db2f4916c1fbf45fc5821c12c4
 
 configMapGenerator:
 - name: integration-config
@@ -17,6 +17,10 @@ configMapGenerator:
     - CONSOLE_NAME="Konflux Staging"
     - CONSOLE_URL="https://console.dev.redhat.com/application-pipeline/ns/{{ .Namespace }}/pipelinerun/{{ .PipelineRunName }}"
     - CONSOLE_URL_TASKLOG="https://console.dev.redhat.com/application-pipeline/ns/{{ .Namespace }}/pipelinerun/{{ .PipelineRunName }}/logs/{{ .TaskName }}"
+    - INTEGRATION_NS="integration-service"
+    - PAC_SECRET="pipelines-as-code-secret"
+    - GITHUBAPPLICATION_ID="github-application-id"
+    - GITHUBPRIVATE_KEY="github-private-key"
 - name: pipelinerun-options
   literals:
     - PIPELINE_TIMEOUT="6h"

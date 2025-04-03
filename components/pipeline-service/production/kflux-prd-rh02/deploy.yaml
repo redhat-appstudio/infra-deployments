@@ -1064,6 +1064,7 @@ data:
     STORAGE_EMULATOR_HOST=
     PROFILING=true
     PROFILING_PORT=6060
+    FEATURE_GATES='PartialResponse=true'
     CONVERTER_ENABLE=false
     CONVERTER_DB_LIMIT=50
     LOGGING_PLUGIN_PROXY_PATH=/api/logs/v1/application
@@ -1308,6 +1309,8 @@ metadata:
     argocd.argoproj.io/sync-wave: "0"
     service.beta.openshift.io/serving-cert-secret-name: tekton-results-tls
   labels:
+    app: tekton-results-api
+    app.kubernetes.io/component: api
     app.kubernetes.io/name: tekton-results-api
     app.kubernetes.io/part-of: tekton-results
     app.kubernetes.io/version: devel
@@ -1338,6 +1341,8 @@ metadata:
     argocd.argoproj.io/sync-wave: "0"
     service.beta.openshift.io/serving-cert-secret-name: tekton-results-for-watcher-tls
   labels:
+    app: tekton-results-api
+    app.kubernetes.io/component: api
     app.kubernetes.io/name: tekton-results-api-for-watcher
     app.kubernetes.io/part-of: tekton-results
     app.kubernetes.io/version: devel
@@ -1367,6 +1372,8 @@ metadata:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
     argocd.argoproj.io/sync-wave: "2"
   labels:
+    app: tekton-results-watcher
+    app.kubernetes.io/component: watcher
     app.kubernetes.io/name: tekton-results-watcher
     app.kubernetes.io/part-of: tekton-results
     app.kubernetes.io/version: devel
@@ -1552,7 +1559,7 @@ spec:
             secretKeyRef:
               key: db.name
               name: tekton-results-database
-        image: quay.io/konflux-ci/tekton-results-api:275a6ededaf328d55923e2462ec6d27ccd6b9ab8
+        image: quay.io/konflux-ci/tekton-results-api:92d20975aaf3a87e1a9a41f39b38d99e0a84e724
         livenessProbe:
           httpGet:
             path: /healthz
@@ -1742,7 +1749,7 @@ spec:
             secretKeyRef:
               key: db.name
               name: tekton-results-database
-        image: quay.io/konflux-ci/tekton-results-api:275a6ededaf328d55923e2462ec6d27ccd6b9ab8
+        image: quay.io/konflux-ci/tekton-results-api:92d20975aaf3a87e1a9a41f39b38d99e0a84e724
         livenessProbe:
           httpGet:
             path: /healthz
@@ -1847,7 +1854,7 @@ spec:
             secretKeyRef:
               key: POSTGRES_PASSWORD
               name: tekton-results-postgres
-        image: quay.io/konflux-ci/tekton-results-retention-policy-agent:275a6ededaf328d55923e2462ec6d27ccd6b9ab8
+        image: quay.io/konflux-ci/tekton-results-retention-policy-agent:92d20975aaf3a87e1a9a41f39b38d99e0a84e724
         name: retention-policy-agent
         resources:
           limits:
@@ -1979,7 +1986,7 @@ spec:
           value: tekton-results-api-service-for-watcher.tekton-results.svc.cluster.local:8080
         - name: AUTH_MODE
           value: token
-        image: quay.io/konflux-ci/tekton-results-watcher:275a6ededaf328d55923e2462ec6d27ccd6b9ab8
+        image: quay.io/konflux-ci/tekton-results-watcher:92d20975aaf3a87e1a9a41f39b38d99e0a84e724
         name: watcher
         ports:
         - containerPort: 9090
@@ -2232,10 +2239,11 @@ spec:
     scheme: https
     tlsConfig:
       insecureSkipVerify: true
-  jobLabel: app.kubernetes.io/name
+  jobLabel: app
   selector:
     matchLabels:
-      app.kubernetes.io/name: tekton-results-api
+      app.kubernetes.io/component: api
+      app.kubernetes.io/part-of: tekton-results
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
@@ -2466,7 +2474,7 @@ spec:
           custom-console-url: https://konflux-ui.apps.kflux-prd-rh02.0fk9.p1.openshiftapps.com
           custom-console-url-pr-details: https://konflux-ui.apps.kflux-prd-rh02.0fk9.p1.openshiftapps.com/ns/{{
             namespace }}/pipelinerun/{{ pr }}
-          custom-console-url-pr-tasklog: https://konflux-ui.apps.kflux-prd-rh02.0fk9.p1.openshiftapps.com/application-pipeline/ns/{{
+          custom-console-url-pr-tasklog: https://konflux-ui.apps.kflux-prd-rh02.0fk9.p1.openshiftapps.com/ns/{{
             namespace }}/pipelinerun/{{ pr }}/logs/{{ task }}
   profile: all
   pruner:
@@ -2475,6 +2483,8 @@ spec:
     resources:
     - pipelinerun
     schedule: '*/10 * * * *'
+  result:
+    disabled: true
   targetNamespace: openshift-pipelines
   trigger:
     options:
@@ -2520,7 +2530,7 @@ metadata:
   namespace: openshift-marketplace
 spec:
   displayName: custom-operators
-  image: quay.io/openshift-pipeline/openshift-pipelines-pipelines-operator-bundle-container-index@sha256:63f934e04d88cc1fa2af49efc07b406eb88e04a622be25762a931168deeefb79
+  image: quay.io/openshift-pipeline/pipelines-index-4.15@sha256:64a745bfa289594f0eeb9c6af7646a0b9ab6072da0f2ec909441aa14ae82acf9
   sourceType: grpc
   updateStrategy:
     registryPoll:

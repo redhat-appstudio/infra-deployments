@@ -80,12 +80,6 @@ $patch: delete
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: workspaces
-$patch: delete
----
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
   name: notification-controller
 $patch: delete
 ---
@@ -122,11 +116,17 @@ $patch: delete
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: kyverno
+  name: namespace-lister
 $patch: delete
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: namespace-lister
+  name: cost-management
+$patch: delete
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: etcd-defrag
 $patch: delete

@@ -37,20 +37,6 @@ metadata:
   name: kubearchive
 $patch: delete
 ---
-# Workspaces CRD on member not yet ready to go to production
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
-  name: workspaces-member
-$patch: delete
----
-# Workspaces is deprecated from production use cases
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
-  name: workspaces
-$patch: delete
----
 # KubeArchive not yet ready to go to production
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
@@ -61,23 +47,5 @@ $patch: delete
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: konflux-ui
-$patch: delete
----
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
   name: nvme-storage-configurator
-$patch: delete
----
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
-  name: namespace-lister
-$patch: delete
----
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
-  name: kyverno
 $patch: delete

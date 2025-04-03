@@ -2,13 +2,21 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-- https://gist.githubusercontent.com/ggallen/0aa25baf754578550425e5c17122f776/raw/d33b5051478d4755e0c6712e23acb2916032cf83/kubearchive.yaml?timeout=90
+- https://github.com/kubearchive/kubearchive/releases/download/v0.12.1/kubearchive.yaml?timeout=90
 - rbac.yaml
 - kubearchive-config.yaml
 - kubearchive-maintainer.yaml
+- monitoring-otel-collector.yaml
+- monitoring-servicemonitor.yaml
 
 # ROSA does not support namespaces starting with `kube`
 namespace: product-kubearchive
+
+configMapGenerator:
+  - name: otel-collector-conf
+    namespace: product-kubearchive
+    files:
+      - otel-collector-config.yaml
 
 patches:
 # These patches changes some resources that point directly to
@@ -113,6 +121,11 @@ patches:
         spec:
           containers:
             - name: kubearchive-api-server
+              env:
+              - name: KUBEARCHIVE_OTEL_MODE
+                value: enabled
+              - name: OTEL_EXPORTER_OTLP_ENDPOINT
+                value: http://otel-collector:4318
               securityContext:
                 readOnlyRootFilesystem: true
                 runAsNonRoot: true
@@ -131,13 +144,22 @@ patches:
         spec:
           containers:
             - name: manager
+              env:
+              - name: KUBEARCHIVE_OTEL_MODE
+                value: enabled
+              - name: OTEL_EXPORTER_OTLP_ENDPOINT
+                value: http://otel-collector:4318
               securityContext:
                 readOnlyRootFilesystem: true
                 runAsNonRoot: true
               ports:
                 - containerPort: 8081
               resources:
+                $patch: replace
+                limits:
+                  cpu: 500m
                 requests:
+                  cpu: 10m
                   memory: 256Mi
                 
 - patch: |-
@@ -151,9 +173,21 @@ patches:
         spec:
           containers:
             - name: kubearchive-sink
+              env:
+              - name: KUBEARCHIVE_OTEL_MODE
+                value: enabled
+              - name: OTEL_EXPORTER_OTLP_ENDPOINT
+                value: http://otel-collector:4318
               securityContext:
                 readOnlyRootFilesystem: true
                 runAsNonRoot: true
+              resources:
+                limits:
+                  cpu: 200m
+                  memory: 1Gi
+                requests:
+                  cpu: 200m
+                  memory: 900Mi
 
 # These patches remove Certificates and Issuer from Cert-Manager
 - patch: |-

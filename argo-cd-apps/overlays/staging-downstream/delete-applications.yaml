@@ -37,30 +37,11 @@ metadata:
   name: kubearchive
 $patch: delete
 ---
-# Workspaces CRD is already installed in single cluster setup
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
-  name: workspaces-member
-$patch: delete
----
 # KubeArchive is not yet installed here
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
   name: knative-eventing
-$patch: delete
----
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
-  name: konflux-ui
-$patch: delete
----
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
-  name: namespace-lister
 $patch: delete
 ---
 apiVersion: argoproj.io/v1alpha1

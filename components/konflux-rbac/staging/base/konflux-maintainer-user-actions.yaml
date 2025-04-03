@@ -28,6 +28,7 @@ rules:
       - tekton.dev
     resources:
       - pipelineruns
+      - taskruns
   - verbs:
       - get
       - list
@@ -86,9 +87,6 @@ rules:
       - get
       - list
       - watch
-      - create
-      - update
-      - patch
     apiGroups:
       - jvmbuildservice.io
     resources:
@@ -102,6 +100,8 @@ rules:
       - ''
     resources:
       - configmaps
+      - pods
+      - pods/log
   - verbs:
       - get
       - list
