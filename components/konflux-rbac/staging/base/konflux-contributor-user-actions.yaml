@@ -32,6 +32,7 @@ rules:
       - tekton.dev
     resources:
       - pipelineruns
+      - taskruns
   - verbs:
       - get
       - list
@@ -91,6 +92,8 @@ rules:
       - ''
     resources:
       - configmaps
+      - pods
+      - pods/log
   - verbs:
       - get
       - list
