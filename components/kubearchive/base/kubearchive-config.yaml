@@ -13,16 +13,16 @@ spec:
     - selector:
         apiVersion: appstudio.redhat.com/v1alpha1
         kind: Release
-      archiveOnDelete: 'true'
+      archiveWhen: has(status.completionTime)
     - selector:
         apiVersion: tekton.dev/v1
         kind: PipelineRun
-      archiveOnDelete: 'true'
+      archiveWhen: has(status.completionTime)
     - selector:
         apiVersion: tekton.dev/v1
         kind: TaskRun
-      archiveOnDelete: 'true'
+      archiveOnDelete: has(status.completionTime)
     - selector:
         apiVersion: v1
         kind: Pod
-      archiveOnDelete: has(metadata.labels) && "tekton.dev/taskRunUID" in metadata.labels
+      archiveOnDelete: has(metadata.labels) && "tekton.dev/taskRunUID" in metadata.labels && status.phase == 'Succeeded'
