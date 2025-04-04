@@ -4,8 +4,17 @@ metadata:
   name: all-access-appstudio-monitoring
   namespace: appstudio-monitoring
 rules:
+# Grant full access to all base API resources
 - apiGroups: [""]
   resources: ["*"]
+  verbs: ["*"]
+# Grant full access to all API resources provided by Observability Operator
+- apiGroups: ["monitoring.rhobs"]
+  resources: ["*"]
+  verbs: ["*"]
+# Grant full access to some Operator resources for quick fixes
+- apiGroups: ["operators.coreos.com"]
+  resources: ["clusterserviceversions", "subscriptions"]
   verbs: ["*"]
 ---
 
