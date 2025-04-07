@@ -1,0 +1,24 @@
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: label-namespaces-tenant
+spec:
+  rules:
+    - name: label-tenant-namespaces
+      match:
+        resources:
+          kinds:
+            - Namespace
+          selector:
+            matchLabels:
+              konflux-ci.dev/type: tenant
+      mutate:
+        patchStrategicMerge:
+          metadata:
+            labels:
+              product: "openshift" # Needs to be configured in the GitOps
+              env: "production"
+              team: "konflux-fin-ops" # Needs to be configured in the GitOps
+              cost-center: "konflux-team" # Needs to be configured in the GitOps
+              insights_cost_management_optimizations: "true"
