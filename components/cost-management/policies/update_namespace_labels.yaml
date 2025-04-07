@@ -2,23 +2,20 @@
 apiVersion: kyverno.io/v1
 kind: ClusterPolicy
 metadata:
-  name: label-namespaces-tenant
+  name: propagate-cost-center-from-namespace
 spec:
   rules:
-    - name: label-tenant-namespaces
+    - name: propagate-cost-center-from-namespace
       match:
         resources:
           kinds:
-            - Namespace
+            - "*"
           selector:
             matchLabels:
               konflux-ci.dev/type: tenant
       mutate:
-        patchStrategicMerge:
+        overlay:
           metadata:
             labels:
-              product: "openshift" # Needs to be configured in the GitOps
-              env: "production"
-              team: "konflux-fin-ops" # Needs to be configured in the GitOps
-              cost-center: "konflux-team" # Needs to be configured in the GitOps
+              cost-center: "{{ request.namespace | lookup('Namespace', request.namespace).metadata.labels.cost-center }}"
               insights_cost_management_optimizations: "true"

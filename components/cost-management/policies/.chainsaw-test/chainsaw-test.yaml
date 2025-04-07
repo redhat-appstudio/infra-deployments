@@ -11,12 +11,12 @@ spec:
   results:
     - kind: Namespace
       name: demo-tenant # demo
-      policy: label-namespaces-tenant
-      rule: label-tenant-namespaces
+      policy: propagate-cost-center-from-namespace
+      rule: propagate-cost-center-from-namespace
       result: pass
       patchedResource: resources/expected-namespace-matching.yaml
     - kind: Namespace
       name: random-ns
-      policy: label-namespaces-tenant
-      rule: label-tenant-namespaces
+      policy: propagate-cost-center-from-namespace
+      rule: propagate-cost-center-from-namespace
       result: skip
