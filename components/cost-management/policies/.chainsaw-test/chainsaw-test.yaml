@@ -1,0 +1,22 @@
+apiVersion: test.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: label-namespaces-tenant
+spec:
+  policies:
+    - policy.yaml
+  resources:
+    - resources/namespace-matching.yaml
+    - resources/namespace-nonmatching.yaml
+  results:
+    - kind: Namespace
+      name: demo-tenant # demo
+      policy: label-namespaces-tenant
+      rule: label-tenant-namespaces
+      result: pass
+      patchedResource: resources/expected-namespace-matching.yaml
+    - kind: Namespace
+      name: random-ns
+      policy: label-namespaces-tenant
+      rule: label-tenant-namespaces
+      result: skip

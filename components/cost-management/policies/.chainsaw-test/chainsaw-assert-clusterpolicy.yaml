@@ -1,0 +1,8 @@
+apiVersion: test.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: assert-policy
+spec:
+  assertions:
+    - policy: label-namespaces-tenant
+      exists: true
