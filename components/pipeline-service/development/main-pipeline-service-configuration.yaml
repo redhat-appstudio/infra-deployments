@@ -666,6 +666,7 @@ data:
     LOGGING_PLUGIN_FORWARDER_DELAY_DURATION=10
     LOGGING_PLUGIN_API_URL=s3://tekton-logs
     LOGGING_PLUGIN_QUERY_PARAMS='v1alpha2LogType=true&use_path_style=true'
+    LOGGING_PLUGIN_MULTIPART_REGEX='-\d{10}.log$'
 kind: ConfigMap
 metadata:
   annotations:
@@ -1115,7 +1116,7 @@ spec:
             secretKeyRef:
               key: db.name
               name: tekton-results-database
-        image: quay.io/konflux-ci/tekton-results-api:92d20975aaf3a87e1a9a41f39b38d99e0a84e724
+        image: quay.io/konflux-ci/tekton-results-api:425fcd0988b50965139238038e0d3bd3cb4f8bbc
         livenessProbe:
           httpGet:
             path: /healthz
@@ -1311,7 +1312,7 @@ spec:
             secretKeyRef:
               key: db.name
               name: tekton-results-database
-        image: quay.io/konflux-ci/tekton-results-api:92d20975aaf3a87e1a9a41f39b38d99e0a84e724
+        image: quay.io/konflux-ci/tekton-results-api:425fcd0988b50965139238038e0d3bd3cb4f8bbc
         livenessProbe:
           httpGet:
             path: /healthz
@@ -1507,7 +1508,7 @@ spec:
             secretKeyRef:
               key: POSTGRES_PASSWORD
               name: tekton-results-postgres
-        image: quay.io/konflux-ci/tekton-results-retention-policy-agent:92d20975aaf3a87e1a9a41f39b38d99e0a84e724
+        image: quay.io/konflux-ci/tekton-results-retention-policy-agent:425fcd0988b50965139238038e0d3bd3cb4f8bbc
         name: retention-policy-agent
         resources:
           limits:
@@ -1613,7 +1614,7 @@ spec:
               value: tekton-results-api-service-for-watcher.tekton-results.svc.cluster.local:8080
             - name: AUTH_MODE
               value: token
-          image: quay.io/konflux-ci/tekton-results-watcher:92d20975aaf3a87e1a9a41f39b38d99e0a84e724
+          image: quay.io/konflux-ci/tekton-results-watcher:425fcd0988b50965139238038e0d3bd3cb4f8bbc
           name: watcher
           ports:
             - containerPort: 9090
