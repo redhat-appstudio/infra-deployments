@@ -1,0 +1,16 @@
+apiVersion: cli.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: bootstrap-existing-namespaces
+policies:
+- ../bootstrap-tenant-namespace-clusterpolicy.yaml
+resources:
+- ./resources/labeled-namespace-konflux.yaml
+results:
+- policy: bootstrap-tenant-namespace
+  generatedResource: ./resources/expected-rolebinding-appstudio-runner.yaml
+  kind: Namespace
+  resources:
+  - labeled-namespace-konflux
+  result: pass
+  rule: create-appstudio-runner-rolebinding
