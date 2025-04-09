@@ -8,8 +8,11 @@ metadata:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: appstudio-pipeline
+  name: appstudio-pipelines-runner
 subjects:
 - kind: ServiceAccount
   namespace: (join('-', [$namespace, $suffix]))
   name: appstudio-pipeline
+- kind: ServiceAccount
+  namespace: (join('-', [$namespace, $suffix]))
+  name: third-party-serviceaccount
