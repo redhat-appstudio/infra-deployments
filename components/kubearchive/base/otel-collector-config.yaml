@@ -1,5 +1,3 @@
-# Copyright KubeArchive Authors
-# SPDX-License-Identifier: Apache-2.0
 ---
 receivers:
   otlp:
@@ -13,6 +11,9 @@ processors:
 exporters:
   prometheus:
     endpoint: '0.0.0.0:9090'
+    send_timestamps: true
+    add_metric_suffixes: false
+  debug:
 
 service:
   pipelines:
@@ -20,3 +21,7 @@ service:
       receivers: [otlp]
       processors: [batch]
       exporters: [prometheus]
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug]
