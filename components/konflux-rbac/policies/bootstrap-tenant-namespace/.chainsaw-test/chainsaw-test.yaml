@@ -73,9 +73,12 @@ spec:
         template: true
   - name: pipelinesa-then-rolebinding-is-created
     try:
-    - error:
+    - delete:
         file: resources/expected-rolebinding.yaml
         template: true
+        expect:
+        - check:
+            ($error != null): true
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
 apiVersion: chainsaw.kyverno.io/v1alpha1
@@ -113,9 +116,12 @@ spec:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: pipelinesa-then-rolebinding-is-created
     try:
-    - assert:
+    - delete:
         file: resources/expected-rolebinding.yaml
         template: true
+        expect:
+        - check:
+            ($error != null): true
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
 apiVersion: chainsaw.kyverno.io/v1alpha1
@@ -153,9 +159,12 @@ spec:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: pipelinesa-then-rolebinding-is-created
     try:
-    - error:
+    - delete:
         file: resources/expected-rolebinding.yaml
         template: true
+        expect:
+        - check:
+            ($error != null): true
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
 apiVersion: chainsaw.kyverno.io/v1alpha1
