@@ -12,8 +12,12 @@ admissionController:
         - "ALL"
   container:
     resources:
+      requests:
+        cpu: 500m
+        memory: 2Gi
       limits:
         cpu: 500m
+        memory: 2Gi
     securityContext:
       allowPrivilegeEscalation: false
       readOnlyRootFilesystem: true
@@ -26,10 +30,10 @@ backgroundController:
   resources:
     requests:
       cpu: 500m
-      memory: 1Gi
+      memory: 2Gi
     limits:
       cpu: 500m
-      memory: 1Gi
+      memory: 2Gi
   securityContext:
     allowPrivilegeEscalation: false
     readOnlyRootFilesystem: true
