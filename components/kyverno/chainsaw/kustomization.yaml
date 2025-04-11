@@ -1,4 +1,17 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+namespace: konflux-kyverno
 resources:
 - https://github.com/kyverno/kyverno/raw/main/config/install-latest-testing.yaml
+
+patches:
+- target:
+    kind: Deployment
+    name: kyverno-admission-controller
+  patch: |-
+    - op: add
+      path: /spec/template/spec/containers/0/args/-
+      value: --reportsServiceAccountName=system:serviceaccount:konflux-kyverno:kyverno-reports-controller
+    - op: add
+      path: /spec/template/spec/containers/0/args/-
+      value: --backgroundServiceAccountName=system:serviceaccount:konflux-kyverno:kyverno-background-controller
