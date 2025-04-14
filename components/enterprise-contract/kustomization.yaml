@@ -1,7 +1,7 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - https://github.com/enterprise-contract/enterprise-contract-controller/config/crd?ref=03f30f4aa55112ee86e939e3da674bce258f79e6
+  - https://github.com/enterprise-contract/enterprise-contract-controller/config/crd?ref=b50f318324856bf3dcf89f1ff95a77ea8d4eba2d
   - ecp.yaml
   - role.yaml
   - rolebinding.yaml
@@ -11,7 +11,8 @@ configMapGenerator:
   - name: ec-defaults
     namespace: enterprise-contract-service
     literals:
-      - verify_ec_task_bundle=quay.io/enterprise-contract/ec-task-bundle:8a9dfb65886c719d851eb6425dde360438fa12b9@sha256:45fa5add837fc264c1967186a2eeab2aab0428ed27111737d9500404aadf2ef0
+      - verify_ec_task_bundle=quay.io/enterprise-contract/ec-task-bundle:bbe1d88d5ce9073c44f635627a868f82d53067ae@sha256:9a021f01ddaf211b5b5384ad4bf5d5c84a821cd3b5732f1d1ffbfdbc0189c632
       - verify_ec_task_git_url=https://github.com/enterprise-contract/ec-cli.git
-      - verify_ec_task_git_revision=8a9dfb65886c719d851eb6425dde360438fa12b9
+      - verify_ec_task_git_revision=bbe1d88d5ce9073c44f635627a868f82d53067ae
       - verify_ec_task_git_pathInRepo=tasks/verify-enterprise-contract/0.1/verify-enterprise-contract.yaml
+      - verify_conforma_task_ta_git_pathInRepo=tasks/verify-conforma-konflux-ta/0.1/verify-conforma-konflux-ta.yaml
