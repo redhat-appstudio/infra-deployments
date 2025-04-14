@@ -19,8 +19,8 @@ spec:
         include:
           - '@slsa3'
       data:
-        - oci::quay.io/konflux-ci/tekton-catalog/data-acceptable-bundles:latest
         - github.com/release-engineering/rhtap-ec-policy//data
+        - oci::quay.io/konflux-ci/tekton-catalog/data-acceptable-bundles:latest
       name: Default
       policy:
         - oci::quay.io/enterprise-contract/ec-release-policy:konflux
@@ -42,8 +42,8 @@ spec:
         include:
           - '@redhat'
       data:
-        - oci::quay.io/konflux-ci/tekton-catalog/data-acceptable-bundles:latest
         - github.com/release-engineering/rhtap-ec-policy//data
+        - oci::quay.io/konflux-ci/tekton-catalog/data-acceptable-bundles:latest
       name: Default
       policy:
         - oci::quay.io/enterprise-contract/ec-release-policy:konflux
@@ -63,8 +63,9 @@ spec:
         include:
           - '@redhat_rpms'
       data:
-        - oci::quay.io/konflux-ci/tekton-catalog/data-acceptable-bundles:latest
         - github.com/release-engineering/rhtap-ec-policy//data
+        - oci::quay.io/konflux-ci/tekton-catalog/data-acceptable-bundles:latest
+        - oci::quay.io/enterprise-contract/rpmbuild-data-acceptable-bundles:latest
       name: Default
       policy:
         - oci::quay.io/enterprise-contract/ec-release-policy:konflux
@@ -84,8 +85,8 @@ spec:
         include:
           - '@redhat'
       data:
-        - oci::quay.io/konflux-ci/tekton-catalog/data-acceptable-bundles:latest
         - github.com/release-engineering/rhtap-ec-policy//data
+        - oci::quay.io/konflux-ci/tekton-catalog/data-acceptable-bundles:latest
       name: Default
       policy:
         - oci::quay.io/enterprise-contract/ec-release-policy:konflux
@@ -106,8 +107,8 @@ spec:
           - '@minimal'
           - '@slsa3'
       data:
-        - oci::quay.io/konflux-ci/tekton-catalog/data-acceptable-bundles:latest
         - github.com/release-engineering/rhtap-ec-policy//data
+        - oci::quay.io/konflux-ci/tekton-catalog/data-acceptable-bundles:latest
       name: Default
       policy:
         - oci::quay.io/enterprise-contract/ec-release-policy:konflux
@@ -129,4 +130,4 @@ spec:
         - github.com/release-engineering/rhtap-ec-policy//data
       name: Default
       policy:
-        - oci::quay.io/enterprise-contract/ec-task-policy:git-82ab6d5@sha256:35e8b7ca39391f314529be6c4e325accd3e63c1fbbee1e6e76288813cb45d630
+        - oci::quay.io/enterprise-contract/ec-task-policy:git-2b9b061@sha256:9da69bec5b8c23df2b194c9a480f0965515d0f1f96f72fa0ebc138baf64ffd1a
