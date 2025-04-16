@@ -25,8 +25,7 @@ spec:
               containerPort: 3333
               protocol: TCP
           livenessProbe:
-            httpGet:
-              path: /
+            tcpSocket:
               port: 3333
           initialDelaySeconds: 30
           periodSeconds: 5
