@@ -10,4 +10,7 @@ kustomize build components/kyverno/chainsaw | \
   kubectl apply -f - --server-side
 
 ## wait for kyverno to rollout
-kubectl rollout status --namespace kyverno deployment --selector '!job-name' --timeout=300s
+kubectl rollout status deployment \
+  --namespace konflux-kyverno \
+  --selector '!job-name' \
+  --timeout=300s
