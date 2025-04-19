@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-pvc
+  namespace: mintmaker
+spec:
+  accessModes:
+    - ReadWriteOnce
+  mountOptions:
+    - dir_mode=0777
+    - file_mode=0777
+  resources:
+    requests:
+      storage: 5Gi
