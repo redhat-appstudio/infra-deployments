@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis-config
+  namespace: mintmaker
+data:
+  redis.conf: |
+    bind 0.0.0.0
+    protected-mode no
+    port 6379
+    maxmemory 800mb
+    maxmemory-policy allkeys-lru
+    dir /var/lib/redis/data
+
+    appendonly yes
+    aof-use-rdb-preamble yes
+    appendfsync everysec
+
+    save 900 1
+    save 300 10
+    save 60 10000
+
+    logfile ""
+    loglevel notice
+
