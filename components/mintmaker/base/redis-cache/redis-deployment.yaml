@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: mintmaker
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      serviceAccountName: mintmaker-controller-manager
+      securityContext:
+        fsGroup: 1001
+      containers:
+        - name: redis
+          image: registry.redhat.io/rhel9/redis-7:9.5
+          ports:
+            - containerPort: 6379
+          command: ["container-entrypoint"]
+          args: ["run-redis"]
+          resources:
+            requests:
+              memory: "800Mi"
+              cpu: "0.75"
+            limits:
+              memory: "1Gi"
+              cpu: "1"
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: redis-data
+              mountPath: /var/lib/redis/data
+            - name: redis-config
+              mountPath: /etc/redis/redis.conf
+              subPath: redis.conf
+      volumes:
+        - name: redis-data
+          persistentVolumeClaim:
+            claimName: redis-pvc
+        - name: redis-config
+          configMap:
+            name: redis-config
