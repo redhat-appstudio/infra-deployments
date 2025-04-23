@@ -1,0 +1,14 @@
+- name: Get latest commit SHA from GitHub API for {{ slug }} to be stored as {{ varname }}
+  tags: [always]
+  uri:
+    url: "https://api.github.com/repos/{{ slug }}/commits/main"
+    method: GET
+    return_content: yes
+    headers:
+      Accept: "application/vnd.github.v3+json"
+  register: github_commit
+  when: "vars[varname] is undefined or vars[varname] == ''"
+
+- set_fact: { "{{ varname }}": "{{ github_commit.json.sha }}" }
+  tags: [always]
+  when: "vars[varname] is undefined or vars[varname] == ''"
