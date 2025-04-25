@@ -13,9 +13,21 @@ spec:
               values:
                 sourceRoot: components/knative-eventing
                 environment: staging
-                clusterDir: ""
+                clusterDir: base
           - list:
-              elements: []
+              elements:
+                - nameNormalized: kflux-ocp-p01
+                  values.clusterDir: kflux-ocp-p01
+                - nameNormalized: stone-stage-p01
+                  values.clusterDir: stone-stage-p01
+                - nameNormalized: stone-prod-p01
+                  values.clusterDir: stone-prod-p01
+                - nameNormalized: stone-prod-p02
+                  values.clusterDir: stone-prod-p02
+                - nameNormalized: kflux-prd-rh02
+                  values.clusterDir: kflux-prd-rh02
+                - nameNormalized: kflux-prd-rh03
+                  values.clusterDir: kflux-prd-rh03
   template:
     metadata:
       name: knative-eventing-{{nameNormalized}}
