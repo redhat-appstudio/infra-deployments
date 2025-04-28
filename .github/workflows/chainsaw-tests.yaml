@@ -37,7 +37,7 @@ jobs:
     - name: Install Dependencies
       shell: bash
       run: |
-        kustomize build components/kyverno/chainsaw | \
+        kustomize build --enable-helm components/kyverno/chainsaw | \
           kubectl apply -f - --server-side
 
     - name: Install Cosign

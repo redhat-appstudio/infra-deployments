@@ -6,7 +6,7 @@ set -e
 kind create cluster --name infra-deployments-chainsaw
 
 ## Install kyverno
-kustomize build components/kyverno/chainsaw | \
+kustomize build --enable-helm components/kyverno/chainsaw | \
   kubectl apply -f - --server-side
 
 ## wait for kyverno to rollout
