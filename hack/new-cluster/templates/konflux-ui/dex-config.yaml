@@ -1,4 +1,4 @@
-issuer: https://konflux-ui.apps.{{ longname }}.p1.openshiftapps.com/idp
+issuer: https://konflux-ui.apps.{{ longname }}.openshiftapps.com/idp
 storage:
   type: kubernetes
   config:
@@ -12,7 +12,7 @@ oauth2:
 staticClients:
 - id: oauth2-proxy
   redirectURIs:
-  - https://konflux-ui.apps.{{ longname }}.p1.openshiftapps.com/oauth2/callback
+  - https://konflux-ui.apps.{{ longname }}.openshiftapps.com/oauth2/callback
   name: 'oauth2-proxy'
   secretEnv: 'OAUTH2_CLIENT_SECRET'
 
@@ -25,8 +25,8 @@ connectors:
     name: OpenShift
     config:
       # OpenShift API
-      issuer: https://api.{{ longname }}.p1.openshiftapps.com:6443
+      issuer: https://api.{{ longname }}.openshiftapps.com:6443
       # Credentials can be string literals or pulled from the environment.
       clientID: system:serviceaccount:konflux-ui:dex-client
       clientSecret: $OPENSHIFT_OAUTH_CLIENT_SECRET
-      redirectURI: https://konflux-ui.apps.{{ longname }}.p1.openshiftapps.com/idp/callback
+      redirectURI: https://konflux-ui.apps.{{ longname }}.openshiftapps.com/idp/callback

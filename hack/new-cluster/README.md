@@ -17,7 +17,7 @@ This automation creates yaml files in the infra-deployments repo locally.
 
 3. You have variables that correctly describe the new cluster,
 
-* `longname` - Example: `kflux-prd-rh09.abe9`
+* `longname` - Example: `kflux-prd-rh09.abe9.p1`
 * `shortname` - Example: `kflux-prd-rh09`
 * `cutename` - Example: `rh09`
 * `env` - One of `production` or `staging`.
@@ -50,13 +50,13 @@ If you do not want to run all steps, but only a subset **you can use tags** to r
 If you don't want to specify the variables at prompts, you can **specify variables when invoking the CLI**, like this:
 
 ```
-❯ ansible-playbook hack/new-cluster/playbook.yaml -e 'cutename=rh09 shortname=kflux-prd-rh09 longname=kflux-prd-rh09.abe9 env=production network=public'
+❯ ansible-playbook hack/new-cluster/playbook.yaml -e 'cutename=rh09 shortname=kflux-prd-rh09 longname=kflux-prd-rh09.abe9.p1 env=production network=public'
 ```
 
 If you are **nervous about drift** between the current application manifests and those produced by this automation, you can inspect the different by running this automation and requesting it to produce the config **for an existing cluster**, and then investigate what changes it may have made by looking at `git diff`, like this.
 
 ```
-❯ ansible-playbook hack/new-cluster/playbook.yaml --skip-tags vault,chains,github -e 'cutename=rh03 shortname=kflux-prd-rh03 longname=kflux-prd-rh03.nnv1 env=production network=public'
+❯ ansible-playbook hack/new-cluster/playbook.yaml --skip-tags vault,chains,github -e 'cutename=rh03 shortname=kflux-prd-rh03 longname=kflux-prd-rh03.nnv1.p1 env=production network=public'
 ❯ git diff
 ```
 
