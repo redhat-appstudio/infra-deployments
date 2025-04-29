@@ -31,7 +31,8 @@ spec:
                   YD=$(date -d 'yesterday' +%s)
                   kubectl get internalrequests --all-namespaces \
                   --sort-by=.status.completionTime \
-                  --template '{{range .items}}{{.metadata.name}}{{"\t"}}{{.metadata.namespace}}{{"\t"}}{{.status.completionTime}}{{"\n"}}{{end}}' > $KUBECTL_OUTPUT
+                  --template '{{range .items}}{{.metadata.name}}{{"\t"}}{{.metadata.namespace}}{{"\t"}}{{.status.completionTime}}{{"\n"}}{{end}}' \
+                    | grep -E "[0-9]{4}((-?)[0-9]{2})+T.*Z$" > $KUBECTL_OUTPUT
                   awk -v yesterday=${YD} '{
                        # parsing the completionTime and converting it to epoch
                        # so we can compute the precise IRs that should be deleted
