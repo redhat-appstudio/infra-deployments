@@ -2,7 +2,8 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
 - ../base
-- ./configure-oauth-proxy-secret.yaml
+# Remove this comment to rotate dex and proxy secrets
+# - ./configure-oauth-proxy-secret.yaml
 
 configMapGenerator:
 - files:
@@ -12,6 +13,7 @@ configMapGenerator:
   literals:
     - IMPERSONATE=true
     - TEKTON_RESULTS_URL=https://tekton-results-api-service.tekton-results.svc.cluster.local:8080
+    - KUBEARCHIVE_URL=https://kubearchive-api-server.product-kubearchive.svc.cluster.local:8081
 
 patches:
 - path: add-service-certs-patch.yaml

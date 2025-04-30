@@ -1049,6 +1049,7 @@ data:
     LOGGING_PLUGIN_FORWARDER_DELAY_DURATION=10
     LOGGING_PLUGIN_API_URL=s3://tekton-logs
     LOGGING_PLUGIN_QUERY_PARAMS='v1alpha2LogType=true&use_path_style=true'
+    LOGGING_PLUGIN_MULTIPART_REGEX='-\d{10}.log$'
 kind: ConfigMap
 metadata:
   annotations:
@@ -1532,7 +1533,7 @@ spec:
             secretKeyRef:
               key: db.name
               name: tekton-results-database
-        image: quay.io/konflux-ci/tekton-results-api:92d20975aaf3a87e1a9a41f39b38d99e0a84e724
+        image: quay.io/konflux-ci/tekton-results-api:425fcd0988b50965139238038e0d3bd3cb4f8bbc
         livenessProbe:
           httpGet:
             path: /healthz
@@ -1722,7 +1723,7 @@ spec:
             secretKeyRef:
               key: db.name
               name: tekton-results-database
-        image: quay.io/konflux-ci/tekton-results-api:92d20975aaf3a87e1a9a41f39b38d99e0a84e724
+        image: quay.io/konflux-ci/tekton-results-api:425fcd0988b50965139238038e0d3bd3cb4f8bbc
         livenessProbe:
           httpGet:
             path: /healthz
@@ -1827,7 +1828,7 @@ spec:
             secretKeyRef:
               key: POSTGRES_PASSWORD
               name: tekton-results-postgres
-        image: quay.io/konflux-ci/tekton-results-retention-policy-agent:92d20975aaf3a87e1a9a41f39b38d99e0a84e724
+        image: quay.io/konflux-ci/tekton-results-retention-policy-agent:425fcd0988b50965139238038e0d3bd3cb4f8bbc
         name: retention-policy-agent
         resources:
           limits:
@@ -1959,7 +1960,7 @@ spec:
           value: tekton-results-api-service-for-watcher.tekton-results.svc.cluster.local:8080
         - name: AUTH_MODE
           value: token
-        image: quay.io/konflux-ci/tekton-results-watcher:92d20975aaf3a87e1a9a41f39b38d99e0a84e724
+        image: quay.io/konflux-ci/tekton-results-watcher:425fcd0988b50965139238038e0d3bd3cb4f8bbc
         name: watcher
         ports:
         - containerPort: 9090
@@ -2103,7 +2104,7 @@ metadata:
 spec:
   dataFrom:
   - extract:
-      key: integrations-output/terraform-resources/appsres09ue1/stone-stage-p01/stone-stage-p01-plnsvc-rds
+      key: integrations-output/external-resources/appsres09ue1/stone-stage-p01/stone-stage-p01-plnsvc-rds
   refreshInterval: 1h
   secretStoreRef:
     kind: ClusterSecretStore
@@ -2449,10 +2450,10 @@ spec:
         settings:
           application-name: Konflux Staging Internal
           custom-console-name: Konflux Staging Internal
-          custom-console-url: https://konflux.apps.stone-stage-p01.hpmt.p1.openshiftapps.com/application-pipeline
-          custom-console-url-pr-details: https://konflux.apps.stone-stage-p01.hpmt.p1.openshiftapps.com/application-pipeline/ns/{{
+          custom-console-url: https://konflux-ui.apps.stone-stage-p01.hpmt.p1.openshiftapps.com
+          custom-console-url-pr-details: https://konflux-ui.apps.stone-stage-p01.hpmt.p1.openshiftapps.com/ns/{{
             namespace }}/pipelinerun/{{ pr }}
-          custom-console-url-pr-tasklog: https://konflux.apps.stone-stage-p01.hpmt.p1.openshiftapps.com/application-pipeline/ns/{{
+          custom-console-url-pr-tasklog: https://konflux-ui.apps.stone-stage-p01.hpmt.p1.openshiftapps.com/ns/{{
             namespace }}/pipelinerun/{{ pr }}/logs/{{ task }}
           remember-ok-to-test: "false"
   profile: all
@@ -2554,6 +2555,48 @@ spec:
     name: tekton-results-api-service
     weight: 100
   wildcardPolicy: None
+---
+allowHostDirVolumePlugin: false
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: false
+allowHostPorts: false
+allowPrivilegeEscalation: false
+allowPrivilegedContainer: false
+allowedCapabilities:
+- SETFCAP
+apiVersion: security.openshift.io/v1
+defaultAddCapabilities: null
+fsGroup:
+  type: MustRunAs
+groups:
+- system:cluster-admins
+kind: SecurityContextConstraints
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "0"
+  name: appstudio-pipelines-nested-containerization-scc
+priority: 10
+readOnlyRootFilesystem: false
+requiredDropCapabilities:
+- MKNOD
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  seLinuxOptions:
+    type: container_runtime_t
+  type: MustRunAs
+supplementalGroups:
+  type: RunAsAny
+users: []
+volumes:
+- configMap
+- downwardAPI
+- emptyDir
+- persistentVolumeClaim
+- projected
+- secret
 ---
 allowHostDirVolumePlugin: false
 allowHostIPC: false

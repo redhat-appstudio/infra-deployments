@@ -3,20 +3,20 @@ kind: Kustomization
 resources:
 - ../../base
 - ../../base/external-secrets
-- https://github.com/konflux-ci/integration-service/config/default?ref=24c0861684dbb3bc55c535efa33461da48a528ee
-- https://github.com/konflux-ci/integration-service/config/snapshotgc?ref=24c0861684dbb3bc55c535efa33461da48a528ee
+- https://github.com/konflux-ci/integration-service/config/default?ref=074930564c62749686bf59cb8a24b13403470206
+- https://github.com/konflux-ci/integration-service/config/snapshotgc?ref=074930564c62749686bf59cb8a24b13403470206
 
 images:
 - name: quay.io/konflux-ci/integration-service
   newName: quay.io/konflux-ci/integration-service
-  newTag: 24c0861684dbb3bc55c535efa33461da48a528ee
+  newTag: 074930564c62749686bf59cb8a24b13403470206
 
 configMapGenerator:
 - name: integration-config
   literals:
     - CONSOLE_NAME="Red Hat Konflux"
-    - CONSOLE_URL="https://console.redhat.com/application-pipeline/ns/{{ .Namespace }}/pipelinerun/{{ .PipelineRunName }}"
-    - CONSOLE_URL_TASKLOG="https://console.redhat.com/application-pipeline/ns/{{ .Namespace }}/pipelinerun/{{ .PipelineRunName }}/logs/{{ .TaskName }}"
+    - CONSOLE_URL="https://konflux-ui.apps.stone-prd-rh01.pg1f.p1.openshiftapps.com/ns/{{ .Namespace }}/pipelinerun/{{ .PipelineRunName }}"
+    - CONSOLE_URL_TASKLOG="https://konflux-ui.apps.stone-prd-rh01.pg1f.p1.openshiftapps.com/ns/{{ .Namespace }}/pipelinerun/{{ .PipelineRunName }}/logs/{{ .TaskName }}"
     - INTEGRATION_NS="integration-service"
     - PAC_SECRET="pipelines-as-code-secret"
     - GITHUBAPPLICATION_ID="github-application-id"
