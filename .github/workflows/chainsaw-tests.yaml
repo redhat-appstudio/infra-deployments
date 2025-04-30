@@ -32,6 +32,14 @@ jobs:
     - name: Create k8s Kind Cluster
       uses: helm/kind-action@v1
 
+    - uses: actions/checkout@v4
+    
+    - name: Install Dependencies
+      shell: bash
+      run: |
+        kustomize build --enable-helm components/kyverno/chainsaw | \
+          kubectl apply -f - --server-side
+
     - name: Install Cosign
       uses: sigstore/cosign-installer@dc72c7d5c4d10cd6bcb8cf6e3fd625a9e5e537da  # v3.7.0
 
@@ -40,21 +48,12 @@ jobs:
       with:
         verify: true
 
-    - uses: actions/checkout@v4
-
-    - name: Install Dependencies
-      shell: bash
-      run: |
-        kustomize build components/kyverno/chainsaw | \
-          kubectl apply -f - --server-side
-
     - name: Wait for kyverno ready
       shell: bash
       run: |
         set -e
-        kubectl rollout status \
-          --namespace kyverno \
-          deployment \
+        kubectl rollout status deployment \
+          --namespace konflux-kyverno \
           --selector '!job-name' \
           --timeout=300s
 
