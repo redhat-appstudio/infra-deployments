@@ -2450,10 +2450,10 @@ spec:
         settings:
           application-name: Konflux Staging Internal
           custom-console-name: Konflux Staging Internal
-          custom-console-url: https://konflux.apps.stone-stage-p01.hpmt.p1.openshiftapps.com/application-pipeline
-          custom-console-url-pr-details: https://konflux.apps.stone-stage-p01.hpmt.p1.openshiftapps.com/application-pipeline/ns/{{
+          custom-console-url: https://konflux-ui.apps.stone-stage-p01.hpmt.p1.openshiftapps.com
+          custom-console-url-pr-details: https://konflux-ui.apps.stone-stage-p01.hpmt.p1.openshiftapps.com/ns/{{
             namespace }}/pipelinerun/{{ pr }}
-          custom-console-url-pr-tasklog: https://konflux.apps.stone-stage-p01.hpmt.p1.openshiftapps.com/application-pipeline/ns/{{
+          custom-console-url-pr-tasklog: https://konflux-ui.apps.stone-stage-p01.hpmt.p1.openshiftapps.com/ns/{{
             namespace }}/pipelinerun/{{ pr }}/logs/{{ task }}
           remember-ok-to-test: "false"
   profile: all
@@ -2576,7 +2576,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
     argocd.argoproj.io/sync-wave: "0"
-  name: appstudio-pipelines-scc
+  name: appstudio-pipelines-nested-containerization-scc
 priority: 10
 readOnlyRootFilesystem: false
 requiredDropCapabilities:
@@ -2584,6 +2584,8 @@ requiredDropCapabilities:
 runAsUser:
   type: RunAsAny
 seLinuxContext:
+  seLinuxOptions:
+    type: container_runtime_t
   type: MustRunAs
 supplementalGroups:
   type: RunAsAny
@@ -2616,7 +2618,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
     argocd.argoproj.io/sync-wave: "0"
-  name: appstudio-pipelines-nested-containerization-scc
+  name: appstudio-pipelines-scc
 priority: 10
 readOnlyRootFilesystem: false
 requiredDropCapabilities:
@@ -2625,8 +2627,6 @@ runAsUser:
   type: RunAsAny
 seLinuxContext:
   type: MustRunAs
-  seLinuxOptions:
-    type: container_runtime_t
 supplementalGroups:
   type: RunAsAny
 users: []
