@@ -1,0 +1,12 @@
+- name: Get image manifest
+  tags: [always]
+  uri:
+    url: "https://{{ registry }}/v2/{{ repo }}/manifests/{{ tag }}"
+    method: GET
+    headers:
+      Accept: "application/vnd.oci.image.manifest.v1+json"
+    status_code: 200
+  register: manifest_response
+
+- set_fact: { "{{ varname }}": "{{ manifest_response.docker_content_digest }}"}
+  tags: [always]
