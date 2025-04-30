@@ -1,0 +1,13 @@
+- name: Perform Vault OIDC login
+  tags: [vault]
+  ansible.builtin.command: >
+    vault login -format=json -method=oidc
+  register: vault_login
+  environment:
+    VAULT_ADDR: "{{ vault_addr }}"
+  changed_when: false
+
+- name: Extract Vault token from login response
+  tags: [vault]
+  ansible.builtin.set_fact:
+    vault_token: "{{ vault_login.stdout | from_json | dict2items | selectattr('key', 'equalto', 'auth') | map(attribute='value.client_token') | first }}"

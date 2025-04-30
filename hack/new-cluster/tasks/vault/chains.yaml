@@ -1,0 +1,64 @@
+- name: Check if the chains signing secret is already present
+  tags: [chains]
+  command: >
+    vault kv metadata get stonesoup/{{ env }}/platform/ansible/generated/{{ shortname }}/chains-signing-secret
+  register: check_result
+  environment:
+    VAULT_ADDR: "{{ vault_addr }}"
+    VAULT_TOKEN: "{{ vault_token }}"
+  changed_when: false
+  failed_when: "check_result.rc not in [0, 2]"
+
+- name: Generate a random password
+  tags: [chains]
+  when: "check_result.rc == 2"
+  command: openssl rand -base64 30
+  register: password
+
+- name: Make sure no cosign files are present
+  tags: [chains]
+  file:
+    path: "{{ item }}"
+    state: absent
+  when: "check_result.rc == 2"
+  loop: [cosign.key, cosign.pub]
+
+- name: Generate cosign keypair
+  tags: [chains]
+  when: "check_result.rc == 2"
+  command: cosign generate-key-pair
+  environment:
+    COSIGN_PASSWORD: "{{ password.stdout }}"
+  register: cosign_output
+
+- name: Insert that into vault
+  tags: [chains]
+  when: "check_result.rc == 2"
+  command: >
+    vault kv put stonesoup/{{ env }}/platform/ansible/generated/{{ shortname }}/chains-signing-secret
+      cosign.password={{ password.stdout }}
+      cosign.key=@cosign.key
+      cosign.pub=@cosign.pub
+  register: put_result
+  environment:
+    VAULT_ADDR: "{{ vault_addr }}"
+    VAULT_TOKEN: "{{ vault_token }}"
+
+- name: Verify that its in place
+  tags: [chains]
+  command: >
+    vault kv metadata get stonesoup/{{ env }}/platform/ansible/generated/{{ shortname }}/chains-signing-secret
+  register: double_check_result
+  environment:
+    VAULT_ADDR: "{{ vault_addr }}"
+    VAULT_TOKEN: "{{ vault_token }}"
+  when: "check_result.rc == 2"
+  changed_when: false
+
+- name: Make sure no cosign files are present
+  tags: [chains]
+  file:
+    path: "{{ item }}"
+    state: absent
+  when: "check_result.rc == 2"
+  loop: [cosign.key, cosign.pub]
