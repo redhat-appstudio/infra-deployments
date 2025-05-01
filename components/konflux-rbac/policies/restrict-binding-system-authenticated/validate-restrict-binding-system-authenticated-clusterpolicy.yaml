@@ -18,14 +18,18 @@ spec:
       any:
       - resources:
           kinds:
-            - RoleBinding
+          - RoleBinding
     context:
     - name: konfluxtype
       apiCall:
         urlPath: "/api/v1/namespaces/{{ request.object.metadata.namespace }}"
-        jmesPath: 'metadata.labels."konflux-ci.dev/type"'
+        jmesPath: 'metadata.labels."konflux-ci.dev/type" || ""'
     preconditions:
-      - key: "{{ request.object.subjects.name }}"
+      all:
+      - key: "{{ konfluxtype }}"
+        operator: Equals
+        value: tenant
+      - key: "{{ request.object.subjects[].name }}"
         operator: AnyIn
         value: "system:authenticated"
       - key: "{{ request.object.roleRef.kind }}"
@@ -37,9 +41,4 @@ spec:
     validate:
       failureAction: Enforce
       message: "Only ClusterRole konflux-viewer-user-actions can be bound to system:authenticated."
-      deny:
-        conditions:
-          all:
-          - key: "{{ konfluxtype || '' }}"
-            operator: Equals
-            value: "tenant"
+      deny: {}

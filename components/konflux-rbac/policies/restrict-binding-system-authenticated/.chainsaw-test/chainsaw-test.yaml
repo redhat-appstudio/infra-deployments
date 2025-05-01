@@ -63,6 +63,9 @@ spec:
     try:
     - apply:
         file: ./resources/valid-systemauthenticated-rolebinding.yaml
+        expect:
+        - check:
+            ($error != null): false
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
 apiVersion: chainsaw.kyverno.io/v1alpha1
@@ -90,3 +93,6 @@ spec:
     try:
     - apply:
         file: ./resources/valid-systemauthenticated-rolebinding.yaml
+        expect:
+        - check:
+            ($error != null): false
