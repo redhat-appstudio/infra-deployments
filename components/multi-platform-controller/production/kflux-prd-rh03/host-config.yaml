@@ -503,71 +503,11 @@ data:
 
     --//--
 
-  # S390X 2vCPU / 8GB RAM / 100GB disk
-  dynamic.linux-s390x.type: ibmz
-  dynamic.linux-s390x.ssh-secret: "ibm-s390x-ssh-key"
-  dynamic.linux-s390x.secret: "ibm-api-key"
-  dynamic.linux-s390x.vpc: "konflux-prod-multi-rh03"
-  dynamic.linux-s390x.key: "konflux-s390x-root"
-  dynamic.linux-s390x.subnet: "sn-20241213-02"
-  dynamic.linux-s390x.image-id: "r006-20e160c3-58d7-4b3b-827f-9d7994b68095"
-  dynamic.linux-s390x.region: "us-south-2"
-  dynamic.linux-s390x.url: "https://us-south.iaas.cloud.ibm.com/v1"
-  dynamic.linux-s390x.profile: "bz2-2x8"
-  dynamic.linux-s390x.max-instances: "30"
-  dynamic.linux-s390x.private-ip: "true"
-  dynamic.linux-s390x.allocation-timeout: "1800"
-  dynamic.linux-s390x.instance-tag: prod-s390x
-
-  # S390X 4vCPU / 16GB RAM / 100GB disk
-  dynamic.linux-large-s390x.type: ibmz
-  dynamic.linux-large-s390x.ssh-secret: "ibm-s390x-ssh-key"
-  dynamic.linux-large-s390x.secret: "ibm-api-key"
-  dynamic.linux-large-s390x.vpc: "konflux-prod-multi-rh03"
-  dynamic.linux-large-s390x.key: "konflux-s390x-root"
-  dynamic.linux-large-s390x.subnet: "sn-20241213-02"
-  dynamic.linux-large-s390x.image-id: "r006-20e160c3-58d7-4b3b-827f-9d7994b68095"
-  dynamic.linux-large-s390x.region: "us-south-2"
-  dynamic.linux-large-s390x.url: "https://us-south.iaas.cloud.ibm.com/v1"
-  dynamic.linux-large-s390x.profile: "bz2-4x16"
-  dynamic.linux-large-s390x.max-instances: "10"
-  dynamic.linux-large-s390x.private-ip: "true"
-  dynamic.linux-large-s390x.allocation-timeout: "1800"
-  dynamic.linux-large-s390x.instance-tag: prod-s390x-large
-
-  # S390X 2vCPU / 8GB RAM / 200GB disk
-  dynamic.linux-d200-s390x.type: ibmz
-  dynamic.linux-d200-s390x.ssh-secret: "ibm-s390x-ssh-key"
-  dynamic.linux-d200-s390x.secret: "ibm-api-key"
-  dynamic.linux-d200-s390x.vpc: "konflux-prod-multi-rh03"
-  dynamic.linux-d200-s390x.key: "konflux-s390x-root"
-  dynamic.linux-d200-s390x.subnet: "sn-20241213-02"
-  dynamic.linux-d200-s390x.image-id: "r006-20e160c3-58d7-4b3b-827f-9d7994b68095"
-  dynamic.linux-d200-s390x.region: "us-south-2"
-  dynamic.linux-d200-s390x.url: "https://us-south.iaas.cloud.ibm.com/v1"
-  dynamic.linux-d200-s390x.profile: "bz2-2x8"
-  dynamic.linux-d200-s390x.max-instances: "30"
-  dynamic.linux-d200-s390x.private-ip: "true"
-  dynamic.linux-d200-s390x.allocation-timeout: "1800"
-  dynamic.linux-d200-s390x.disk: "200"
-  dynamic.linux-d200-s390x.instance-tag: prod-d200-s390x
-
-  # S390X 4vCPU / 16GB RAM / 200GB disk
-  dynamic.linux-d200-large-s390x.type: ibmz
-  dynamic.linux-d200-large-s390x.ssh-secret: "ibm-s390x-ssh-key"
-  dynamic.linux-d200-large-s390x.secret: "ibm-api-key"
-  dynamic.linux-d200-large-s390x.vpc: "konflux-prod-multi-rh03"
-  dynamic.linux-d200-large-s390x.key: "konflux-s390x-root"
-  dynamic.linux-d200-large-s390x.subnet: "sn-20241213-02"
-  dynamic.linux-d200-large-s390x.image-id: "r006-20e160c3-58d7-4b3b-827f-9d7994b68095"
-  dynamic.linux-d200-large-s390x.region: "us-south-2"
-  dynamic.linux-d200-large-s390x.url: "https://us-south.iaas.cloud.ibm.com/v1"
-  dynamic.linux-d200-large-s390x.profile: "bz2-4x16"
-  dynamic.linux-d200-large-s390x.max-instances: "10"
-  dynamic.linux-d200-large-s390x.private-ip: "true"
-  dynamic.linux-d200-large-s390x.allocation-timeout: "1800"
-  dynamic.linux-d200-large-s390x.disk: "200"
-  dynamic.linux-d200-large-s390x.instance-tag: prod-d200-s390x-large
+  host.s390x-static-1.address: "10.249.65.4"
+  host.s390x-static-1.platform: "linux/s390x"
+  host.s390x-static-1.user: "root"
+  host.s390x-static-1.secret: "ibm-s390x-static-ssh-key"
+  host.s390x-static-1.concurrency: "4"
 
   # PPC64LE 2vCPU / 8GB RAM / 100GB disk
   dynamic.linux-ppc64le.type: ibmp
