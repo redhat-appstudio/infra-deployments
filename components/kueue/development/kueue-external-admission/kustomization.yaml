@@ -14,5 +14,13 @@ namespace: kueue-external-admission
 commonAnnotations:
   argocd.argoproj.io/sync-wave: "10"
 
-
-# TODO: Create the admission check resource
+patches:
+  - target:
+      group: ""
+      version: v1
+      kind: ConfigMap
+      name: config
+    patch: |-
+      - op: replace
+        path: /data/shouldAdmit
+        value: "true"
