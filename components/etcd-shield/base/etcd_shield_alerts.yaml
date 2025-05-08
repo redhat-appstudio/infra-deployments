@@ -18,17 +18,11 @@ spec:
         description: Etcd is nearing capacity limits, so etcd-shield is denying admission
     - record: etcd_shield_trigger
       expr: |
-        (((max(etcd_mvcc_db_total_size_in_bytes) >= bool (etcd_shield_db_size * etcd_shield_upper_threshold)) == 1) or
-            (((max(etcd_mvcc_db_total_size_in_bytes) >= bool (etcd_shield_db_size * etcd_shield_lower_threshold)) == 1) and
-            ((count without (alertname, alertstate, severity)
-                (ALERTS{
-                  alertname="EtcdShieldDenyAdmission",
-                  alertstate="firing",
-                  severity="critical"
-                }) == bool 1) != 0)))
-    - record: etcd_shield_db_size
-      expr: vector(8589934592)  # 2 ** 33 bytes, or 8GiB
-    - record: etcd_shield_upper_threshold
-      expr: vector(0.95)
-    - record: etcd_shield_lower_threshold
-      expr: vector(0.80)
+        (((etcd_mvcc_db_total_size_in_bytes >= bool (etcd_server_quota_backend_bytes * 0.95)) == 1) or
+            ((((etcd_mvcc_db_total_size_in_bytes) >= bool (etcd_server_quota_backend_bytes * 0.8)) == 1) and
+                (count without (alertname, alertstate, severity)
+                      (ALERTS{
+                        alertname="EtcdShieldDenyAdmission",
+                        alertstate="firing",
+                        severity="critical"
+                      }) == bool 1)))
