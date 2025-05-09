@@ -19,16 +19,11 @@ spec:
       - resources:
           kinds:
           - RoleBinding
-    context:
-    - name: konfluxtype
-      apiCall:
-        urlPath: "/api/v1/namespaces/{{ request.object.metadata.namespace }}"
-        jmesPath: 'metadata.labels."konflux-ci.dev/type" || ""'
+          namespaceSelector:
+            matchLabels:
+              konflux-ci.dev/type: tenant
     preconditions:
       all:
-      - key: "{{ konfluxtype }}"
-        operator: Equals
-        value: tenant
       - key: "{{ request.object.subjects[].name }}"
         operator: AnyIn
         value: "system:authenticated"
