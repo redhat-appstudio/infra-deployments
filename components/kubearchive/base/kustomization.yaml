@@ -2,7 +2,7 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-- https://github.com/kubearchive/kubearchive/releases/download/v0.12.1/kubearchive.yaml?timeout=90
+- https://github.com/kubearchive/kubearchive/releases/download/v1.0.0/kubearchive.yaml?timeout=90
 - rbac.yaml
 - kubearchive-config.yaml
 - kubearchive-maintainer.yaml
@@ -104,7 +104,17 @@ patches:
       name: kubearchive-validating-webhook-configuration
       annotations:
         service.beta.openshift.io/inject-cabundle: "true"
+
 # These patches solve Kube Linter problems
+# We don't need this CronJob as it is suspended, we can enable it later
+- patch: |-
+    $patch: delete
+    apiVersion: batch/v1
+    kind: CronJob
+    metadata:
+      name: cluster-vacuum
+      namespace: kubearchive
+
 - patch: |-
     apiVersion: apps/v1
     kind: Deployment
