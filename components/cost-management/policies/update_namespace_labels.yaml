@@ -1,0 +1,21 @@
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: propagate-cost-center-from-namespace
+spec:
+  rules:
+    - name: propagate-cost-center-from-namespace
+      match:
+        resources:
+          kinds:
+            - "*"
+          selector:
+            matchLabels:
+              konflux-ci.dev/type: tenant
+      mutate:
+        overlay:
+          metadata:
+            labels:
+              cost-center: "{{ request.namespace | lookup('Namespace', request.namespace).metadata.labels.cost-center }}"
+              insights_cost_management_optimizations: "true"
