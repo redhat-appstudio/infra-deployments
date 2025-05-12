@@ -76,6 +76,13 @@ spec:
             
             oc whoami
             oc login --server=https://kubernetes.default.svc --token="$token" --certificate-authority="$ca_cert"
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "200m"
+            memory: "256Mi"
         volumeMounts:
         - name: workdir
           mountPath: /workdir
