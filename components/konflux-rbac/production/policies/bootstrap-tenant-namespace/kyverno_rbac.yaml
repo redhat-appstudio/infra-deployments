@@ -13,13 +13,6 @@ rules:
   verbs:
   - list
   - get
-- apiGroups:
-  - networking.k8s.io
-  resources:
-  - rolebindings
-  verbs:
-  - get
-  - list
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -30,16 +23,6 @@ metadata:
 rules:
 - apiGroups:
   - rbac.authorization.k8s.io
-  resources:
-  - rolebindings
-  verbs:
-  - create
-  - get
-  - list
-  - delete
-  - update
-- apiGroups:
-  - networking.k8s.io
   resources:
   - rolebindings
   verbs:
