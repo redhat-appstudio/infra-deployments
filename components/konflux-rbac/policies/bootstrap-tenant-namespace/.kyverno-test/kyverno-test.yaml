@@ -7,10 +7,52 @@ policies:
 resources:
 - ./resources/labeled-namespace-konflux.yaml
 results:
-- policy: generate-tenant-resources-admission
+- policy: bootstrap-tenant-namespace
   generatedResource: ./resources/expected-rolebinding-appstudio-runner.yaml
   kind: Namespace
   resources:
   - labeled-namespace-konflux
   result: pass
   rule: create-appstudio-runner-rolebinding
+- policy: bootstrap-tenant-namespace
+  generatedResource: ./resources/expected-networkpolicy_allow-from-console-namespaces.yml
+  kind: Namespace
+  resources:
+  - labeled-namespace-konflux
+  result: pass
+  rule: create-allow-from-console-namespaces-networkpolicy
+- policy: bootstrap-tenant-namespace
+  generatedResource: ./resources/expected-networkpolicy_allow-same-namespace.yml
+  kind: Namespace
+  resources:
+  - labeled-namespace-konflux
+  result: pass
+  rule: create-allow-same-namespace-networkpolicy
+- policy: bootstrap-tenant-namespace
+  generatedResource: ./resources/expected-networkpolicy_allow-from-olm-namespaces.yml
+  kind: Namespace
+  resources:
+  - labeled-namespace-konflux
+  result: pass
+  rule: create-allow-from-olm-namespaces-networkpolicy
+- policy: bootstrap-tenant-namespace
+  generatedResource: ./resources/expected-networkpolicy_allow-from-openshift-monitoring.yml
+  kind: Namespace
+  resources:
+  - labeled-namespace-konflux
+  result: pass
+  rule: create-allow-from-openshift-monitoring-networkpolicy
+- policy: bootstrap-tenant-namespace
+  generatedResource: ./resources/expected-networkpolicy_allow-from-openshift-ingress.yml
+  kind: Namespace
+  resources:
+  - labeled-namespace-konflux
+  result: pass
+  rule: create-allow-from-openshift-ingress-networkpolicy
+- policy: bootstrap-tenant-namespace
+  generatedResource: ./resources/expected-configmap_trusted-ca.yml
+  kind: Namespace
+  resources:
+  - labeled-namespace-konflux
+  result: pass
+  rule: create-trusted-ca-configmap
