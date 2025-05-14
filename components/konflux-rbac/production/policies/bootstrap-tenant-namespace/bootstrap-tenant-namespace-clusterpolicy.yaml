@@ -2,7 +2,7 @@
 apiVersion: kyverno.io/v1
 kind: ClusterPolicy
 metadata:
-  name: generate-tenant-resources-admission
+  name: bootstrap-tenant-namespace
 spec:
   rules:
   - name: create-appstudio-runner-rolebinding
@@ -34,3 +34,151 @@ spec:
           kind: ServiceAccount
           namespace: '{{request.object.metadata.name}}'
           name: appstudio-pipeline
+  - name: create-allow-from-console-namespaces-networkpolicy
+    match:
+      any:
+      - resources:
+          kinds:
+          - Namespace
+          selector:
+            matchLabels:
+              konflux-ci.dev/type: tenant
+    generate:
+      generateExisting: true
+      synchronize: false
+      apiVersion: networking.k8s.io/v1
+      kind: NetworkPolicy
+      name: allow-from-console-namespaces
+      namespace: '{{request.object.metadata.name}}'
+      data:
+        spec:
+          ingress:
+          - from:
+            - namespaceSelector:
+                matchLabels:
+                  network.openshift.io/policy-group: console
+          podSelector: {}
+          policyTypes:
+          - Ingress
+  - name: create-allow-from-olm-namespaces-networkpolicy
+    match:
+      any:
+      - resources:
+          kinds:
+          - Namespace
+          selector:
+            matchLabels:
+              konflux-ci.dev/type: tenant
+    generate:
+      generateExisting: true
+      synchronize: false
+      apiVersion: networking.k8s.io/v1
+      kind: NetworkPolicy
+      name: allow-from-olm-namespaces
+      namespace: '{{request.object.metadata.name}}'
+      data:
+        spec:
+          ingress:
+          - from:
+            - namespaceSelector:
+                matchLabels:
+                  openshift.io/scc: anyuid
+          podSelector: {}
+          policyTypes:
+          - Ingress
+  - name: create-allow-from-openshift-monitoring-networkpolicy
+    match:
+      any:
+      - resources:
+          kinds:
+          - Namespace
+          selector:
+            matchLabels:
+              konflux-ci.dev/type: tenant
+    generate:
+      generateExisting: true
+      synchronize: false
+      apiVersion: networking.k8s.io/v1
+      kind: NetworkPolicy
+      namespace: '{{request.object.metadata.name}}'
+      name: allow-from-openshift-monitoring
+      data:
+        spec:
+          ingress:
+          - from:
+            - namespaceSelector:
+                matchLabels:
+                  network.openshift.io/policy-group: monitoring
+          podSelector: {}
+          policyTypes:
+          - Ingress
+  - name: create-allow-same-namespace-networkpolicy
+    match:
+      any:
+      - resources:
+          kinds:
+          - Namespace
+          selector:
+            matchLabels:
+              konflux-ci.dev/type: tenant
+    generate:
+      generateExisting: true
+      synchronize: false
+      apiVersion: networking.k8s.io/v1
+      kind: NetworkPolicy
+      namespace: '{{request.object.metadata.name}}'
+      name: allow-same-namespace
+      data:
+        spec:
+          ingress:
+          - from:
+            - podSelector: {}
+          podSelector: {}
+  - name: create-allow-from-openshift-ingress-networkpolicy
+    match:
+      any:
+      - resources:
+          kinds:
+          - Namespace
+          selector:
+            matchLabels:
+              konflux-ci.dev/type: tenant
+    generate:
+      generateExisting: true
+      synchronize: false
+      apiVersion: networking.k8s.io/v1
+      kind: NetworkPolicy
+      namespace: '{{request.object.metadata.name}}'
+      name: allow-from-openshift-ingress
+      data:
+         spec:
+          ingress:
+          - from:
+            - namespaceSelector:
+                matchLabels:
+                  network.openshift.io/policy-group: ingress
+          podSelector: {}
+          policyTypes:
+          - Ingress
+  - name: create-trusted-ca-configmap
+    match:
+      any:
+      - resources:
+          kinds:
+          - Namespace
+          selector:
+            matchLabels:
+              konflux-ci.dev/type: tenant
+    generate:
+      generateExisting: true
+      synchronize: false
+      apiVersion: v1
+      kind: ConfigMap
+      namespace: '{{request.object.metadata.name}}'
+      name: trusted-ca
+      data:
+        metadata:
+          name: trusted-ca
+          labels:
+            config.openshift.io/inject-trusted-cabundle: "true"
+        data: {}
