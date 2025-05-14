@@ -5,37 +5,42 @@ metadata:
   name: konfluxci-bootstrap-ns-mutate-new-namespace-konfluxcidev
 spec:
   description: |
-    tests that the RoleBinding is created in a namespace
+    tests that the resources are created in a namespace
     labeled with `konflux-ci.dev/type=tenant`
   concurrent: false
-  namespace: 'pipelinesa-generate-new-namespace'
+  namespace: 'generate-new-namespace'
   bindings:
   - name: suffix
     value: labeled 
   steps:
-  - name: pipelinesa-given-appstudio-pipeline-clusterrole-exists
+  - name: given-appstudio-pipeline-clusterrole-exists
     try:
     - apply:
         file: ./resources/actual-appstudio-pipeline-clusterrole.yaml
-  - name: pipelinesa-given-kyverno-has-permission-on-resources
+  - name: given-kyverno-has-permission-on-resources
     try:
     - apply:
         file: ../kyverno_rbac.yaml
-  - name: pipelinesa-given-cluster-policy-is-ready
+  - name: given-cluster-policy-is-ready
     try:
     - apply:
         file: ../bootstrap-tenant-namespace-clusterpolicy.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
-  - name: pipelinesa-when-konfluxcidev-labeled-namespace-is-created
+  - name: when-konfluxcidev-labeled-namespace-is-created
     try:
     - apply:
         file: resources/actual-namespace-konfluxcidev.yaml
         template: true
-  - name: pipelinesa-then-rolebinding-is-created
+  - name: then-rolebinding-is-created
     try:
     - assert:
         file: resources/expected-rolebinding.yaml
+        template: true
+  - name: then-resources-are-created
+    try:
+    - assert:
+        file: resources/expected-resources.yaml
         template: true
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
@@ -45,34 +50,34 @@ metadata:
   name: konfluxci-bootstrap-ns-mutate-updated-namespace-konfluxcidev
 spec:
   description: |
-    tests that the RoleBinding is created in an unlabeled namespace
+    tests that the resources are created in an unlabeled namespace
     when it is updated to have the label `konflux-ci.dev/type=tenant`
   concurrent: false
-  namespace: 'pipelinesa-generate-new-namespace'
+  namespace: 'generate-new-namespace'
   bindings:
   - name: suffix
     value: updated-labeled
   steps:
-  - name: pipelinesa-given-appstudio-pipeline-clusterrole-exists
+  - name: given-appstudio-pipeline-clusterrole-exists
     try:
     - apply:
         file: ./resources/actual-appstudio-pipeline-clusterrole.yaml
-  - name: pipelinesa-given-kyverno-has-permission-on-resources
+  - name: given-kyverno-has-permission-on-resources
     try:
     - apply:
         file: ../kyverno_rbac.yaml
-  - name: pipelinesa-given-cluster-policy-is-ready
+  - name: given-cluster-policy-is-ready
     try:
     - apply:
         file: ../bootstrap-tenant-namespace-clusterpolicy.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
-  - name: pipelinesa-given-unlabeled-namespace-exists
+  - name: given-unlabeled-namespace-exists
     try:
     - apply:
         file: resources/actual-namespace-unlabeled.yaml
         template: true
-  - name: pipelinesa-given-rolebinding-does-not-exist
+  - name: given-rolebinding-does-not-exist
     try:
     - delete:
         file: resources/expected-rolebinding.yaml
@@ -80,15 +85,20 @@ spec:
         expect:
         - check:
             ($error != null): true
-  - name: pipelinesa-when-konfluxcidev-label-is-added
+  - name: when-konfluxcidev-label-is-added
     try:
     - apply:
         file: resources/actual-namespace-konfluxcidev.yaml
         template: true
-  - name: pipelinesa-then-rolebinding-is-created
+  - name: then-rolebinding-is-created
     try:
     - assert:
         file: resources/expected-rolebinding.yaml
+        template: true
+  - name: then-resources-are-created
+    try:
+    - assert:
+        file: resources/expected-resources.yaml
         template: true
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
@@ -98,36 +108,44 @@ metadata:
   name: konfluxci-bootstrap-ns-mutate-new-namespace-unlabeled
 spec:
   description: |
-    tests that the RoleBinding is NOT created in an unlabeled namespace
+    tests that the resources are NOT created in an unlabeled namespace
   concurrent: false
-  namespace: 'pipelinesa-generate-new-namespace'
+  namespace: 'generate-new-namespace'
   bindings:
   - name: suffix
     value: unlabeled
   steps:
-  - name: pipelinesa-given-appstudio-pipeline-clusterrole-exists
+  - name: given-appstudio-pipeline-clusterrole-exists
     try:
     - apply:
         file: ./resources/actual-appstudio-pipeline-clusterrole.yaml
-  - name: pipelinesa-given-kyverno-has-permission-on-resources
+  - name: given-kyverno-has-permission-on-resources
     try:
     - apply:
         file: ../kyverno_rbac.yaml
-  - name: pipelinesa-given-cluster-policy-is-ready
+  - name: given-cluster-policy-is-ready
     try:
     - apply:
         file: ../bootstrap-tenant-namespace-clusterpolicy.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
-  - name: pipelinesa-when-unlabeled-namespace-is-created
+  - name: when-unlabeled-namespace-is-created
     try:
     - apply:
         file: resources/actual-namespace-unlabeled.yaml
         template: true
-  - name: pipelinesa-then-rolebinding-is-created
+  - name: then-rolebinding-is-not-created
     try:
     - delete:
         file: resources/expected-rolebinding.yaml
+        template: true
+        expect:
+        - check:
+            ($error != null): true
+  - name: then-resources-are-not-created
+    try:
+    - delete:
+        file: resources/expected-resources.yaml
         template: true
         expect:
         - check:
@@ -137,37 +155,43 @@ spec:
 apiVersion: chainsaw.kyverno.io/v1alpha1
 kind: Test
 metadata:
-  name: konfluxci-bootstrap-ns-mutate-existing-namespace-konfluxcidev
+  name: konfluxci-bootstrap-ns-mutate-existing-namespace
 spec:
   description: |
     tests that the RoleBinding is NOT created in an already existing
-    namespace labeled with `konflux-ci.dev/type=tenant`
+    namespace labeled with `konflux-ci.dev/type=tenant`, whereas
+    other resources are.
   concurrent: false
-  namespace: 'pipelinesa-generate-existing-namespace'
+  namespace: 'generate-existing-namespace'
   bindings:
   - name: suffix
     value: labeled
   steps:
-  - name: pipelinesa-given-appstudio-pipeline-clusterrole-exists
-    try:
-    - apply:
-        file: ./resources/actual-appstudio-pipeline-clusterrole.yaml
-  - name: pipelinesa-given-kyverno-has-permission-on-resources
-    try:
-    - apply:
-        file: ../kyverno_rbac.yaml
-  - name: pipelinesa-given-konfluxci-labeled-namespace-is-created
+  - name: given-konfluxci-labeled-namespace-is-created
     try:
     - apply:
         file: resources/actual-namespace-konfluxcidev.yaml
         template: true
-  - name: pipelinesa-when-cluster-policy-is-ready
+  - name: given-kyverno-has-permission-on-resources
+    try:
+    - apply:
+        file: ../kyverno_rbac.yaml
+  - name: given-appstudio-pipeline-clusterrole-exists
+    try:
+    - apply:
+        file: ./resources/actual-appstudio-pipeline-clusterrole.yaml
+  - name: when-cluster-policy-is-ready
     try:
     - apply:
         file: ../bootstrap-tenant-namespace-clusterpolicy.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
-  - name: pipelinesa-then-rolebinding-is-not-created
+  - name: then-resources-are-created
+    try:
+    - assert:
+        file: resources/expected-resources.yaml
+        template: true
+  - name: then-rolebinding-is-not-created
     try:
     - delete:
         file: resources/expected-rolebinding.yaml
@@ -186,34 +210,42 @@ spec:
     tests that the RoleBinding is NOT created in an 
     existing unlabeled namespace
   concurrent: false
-  namespace: 'pipelinesa-generate-existing-namespace'
+  namespace: 'generate-existing-namespace'
   bindings:
   - name: suffix
     value: unlabeled
   steps:
-  - name: pipelinesa-given-appstudio-pipeline-clusterrole-exists
+  - name: given-appstudio-pipeline-clusterrole-exists
     try:
     - apply:
         file: ./resources/actual-appstudio-pipeline-clusterrole.yaml
-  - name: pipelinesa-given-kyverno-has-permission-on-resources
+  - name: given-kyverno-has-permission-on-resources
     try:
     - apply:
         file: ../kyverno_rbac.yaml
-  - name: pipelinesa-given-unlabeled-namespace-is-created
+  - name: given-unlabeled-namespace-is-created
     try:
     - apply:
         file: resources/actual-namespace-unlabeled.yaml
         template: true
-  - name: pipelinesa-when-cluster-policy-is-ready
+  - name: when-cluster-policy-is-ready
     try:
     - apply:
         file: ../bootstrap-tenant-namespace-clusterpolicy.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
-  - name: pipelinesa-then-rolebinding-is-created
+  - name: then-rolebinding-is-not-created
     try:
     - delete:
         file: resources/expected-rolebinding.yaml
+        template: true
+        expect:
+        - check:
+            ($error != null): true
+  - name: then-resources-are-not-created
+    try:
+    - delete:
+        file: resources/expected-resources.yaml
         template: true
         expect:
         - check:
@@ -223,44 +255,54 @@ spec:
 apiVersion: chainsaw.kyverno.io/v1alpha1
 kind: Test
 metadata:
-  name: konfluxci-bootstrap-ns-mutate-existing-namespace-konfluxcidev-existing-rolebinding
+  name: konfluxci-bootstrap-ns-mutate-existing-namespace-konfluxcidev-existing-resources
 spec:
   description: |
-    tests that the RoleBinding is not updated in an already existing
+    tests that resources are not updated in an already existing
     namespace labeled with `konflux-ci.dev/type=tenant` where the 
     RoleBinding already exists
   concurrent: false
-  namespace: 'pipelinesa-generate-existing-namespace'
+  namespace: 'generate-update-existing-namespace'
   bindings:
   - name: suffix
     value: labeled
   steps:
-  - name: pipelinesa-given-appstudio-pipeline-clusterrole-exists
-    try:
-    - apply:
-        file: ./resources/actual-appstudio-pipeline-clusterrole.yaml
-  - name: pipelinesa-given-kyverno-has-permission-on-resources
-    try:
-    - apply:
-        file: ../kyverno_rbac.yaml
-  - name: pipelinesa-given-konfluxcidev-labeled-namespace-is-created
+  - name: given-konfluxcidev-labeled-namespace-is-created
     try:
     - apply:
         file: resources/actual-namespace-konfluxcidev.yaml
         template: true
-  - name: pipelinesa-given-rolebinding-is-created
+  - name: given-rolebinding-is-created
     try:
     - apply:
         file: resources/actual-existing-rolebinding.yaml
         template: true
-  - name: pipelinesa-when-cluster-policy-is-ready
+  - name: then-resources-are-not-changed
+    try:
+    - apply:
+        file: resources/actual-existing-resources.yaml
+        template: true
+  - name: given-appstudio-pipeline-clusterrole-exists
+    try:
+    - apply:
+        file: ./resources/actual-appstudio-pipeline-clusterrole.yaml
+  - name: given-kyverno-has-permission-on-resources
+    try:
+    - apply:
+        file: ../kyverno_rbac.yaml
+  - name: when-cluster-policy-is-ready
     try:
     - apply:
         file: ../bootstrap-tenant-namespace-clusterpolicy.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
-  - name: pipelinesa-then-rolebinding-is-not-changed
+  - name: then-rolebinding-is-not-changed
     try:
     - assert:
         file: resources/actual-existing-rolebinding.yaml
+        template: true
+  - name: then-resources-are-not-changed
+    try:
+    - assert:
+        file: resources/actual-existing-resources.yaml
         template: true

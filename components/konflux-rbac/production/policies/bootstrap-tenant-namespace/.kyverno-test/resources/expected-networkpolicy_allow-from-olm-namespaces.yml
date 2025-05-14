@@ -1,0 +1,15 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-from-olm-namespaces
+  namespace: labeled-namespace-konflux
+spec:
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              openshift.io/scc: anyuid
+  podSelector: {}
+  policyTypes:
+    - Ingress
