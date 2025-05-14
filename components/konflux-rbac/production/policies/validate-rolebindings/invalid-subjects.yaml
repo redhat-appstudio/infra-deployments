@@ -1,0 +1,25 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: restrict-binding-system-groups
+spec:
+  background: false
+  rules:
+  - name: deny-restricted-groups
+    match:
+      any:
+      - resources:
+          kinds:
+          - RoleBinding
+          namespaceSelector:
+            matchLabels:
+              konflux-ci.dev/type: tenant
+    preconditions:
+      all:
+      - key: "{{ request.object.subjects[].name }}"
+        operator: AnyIn
+        value: '["system:anonymous", "system:unauthenticated", "system:masters"]'
+    validate:
+      failureAction: Enforce
+      message: "RoleBindings to restricted system groups is not allowed in tenant namespaces."
+      deny: {}
