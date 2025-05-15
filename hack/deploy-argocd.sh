@@ -7,6 +7,7 @@ main() {
     create_subscription
     wait_for_route
     update_repo_server_requests_and_timeout
+    update_application_controller_resources
     switch_route_to_reencrypt
     grant_admin_role_to_all_authenticated_users
     mark_pending_pvc_as_healty
@@ -57,6 +58,17 @@ spec:
       requests:
         cpu: 100m
         memory: 100Mi
+' --type=merge
+}
+
+update_application_controller_resources() {
+    kubectl patch argocd/openshift-gitops -n openshift-gitops -p '
+spec:
+  controller:
+    resources:
+      limits:
+        cpu: 4
+        memory: 4Gi
 ' --type=merge
 }
 
