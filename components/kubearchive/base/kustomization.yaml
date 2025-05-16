@@ -2,7 +2,7 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-- https://github.com/kubearchive/kubearchive/releases/download/v1.0.0/kubearchive.yaml?timeout=90
+- https://github.com/kubearchive/kubearchive/releases/download/v1.0.1/kubearchive.yaml?timeout=90
 - rbac.yaml
 - kubearchive-config.yaml
 - kubearchive-maintainer.yaml
@@ -19,59 +19,6 @@ configMapGenerator:
       - otel-collector-config.yaml
 
 patches:
-# These patches changes some resources that point directly to
-# the 'kubearchive' namespace in their function.
-- patch: |-
-    apiVersion: rbac.authorization.k8s.io/v1
-    kind: RoleBinding
-    metadata:
-      name: kubearchive-operator-leader-election
-      namespace: kubearchive
-    subjects:
-    - kind: ServiceAccount
-      name: kubearchive-operator
-      namespace: product-kubearchive
-- patch: |-
-    apiVersion: rbac.authorization.k8s.io/v1
-    kind: ClusterRoleBinding
-    metadata:
-      name: kubearchive-api-server
-    subjects:
-    - kind: ServiceAccount
-      name: kubearchive-api-server
-      namespace: product-kubearchive
-- patch: |-
-    apiVersion: rbac.authorization.k8s.io/v1
-    kind: ClusterRoleBinding
-    metadata:
-      name: kubearchive-operator
-    subjects:
-    - kind: ServiceAccount
-      name: kubearchive-operator
-      namespace: product-kubearchive
-- patch: |-
-    apiVersion: admissionregistration.k8s.io/v1
-    kind: MutatingWebhookConfiguration
-    metadata:
-      name: kubearchive-mutating-webhook-configuration
-    webhooks:
-    - name: mkubearchiveconfig.kb.io
-      clientConfig:
-        service:
-          name: kubearchive-operator-webhooks
-          namespace: product-kubearchive
-- patch: |-
-    apiVersion: admissionregistration.k8s.io/v1
-    kind: ValidatingWebhookConfiguration
-    metadata:
-      name: kubearchive-validating-webhook-configuration
-    webhooks:
-    - name: vkubearchiveconfig.kb.io
-      clientConfig:
-        service:
-          name: kubearchive-operator-webhooks
-          namespace: product-kubearchive
-
 # These patches add an annotation so an OpenShift service
 # creates the TLS secrets instead of Cert Manager
 - patch: |-
