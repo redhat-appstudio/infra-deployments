@@ -1,0 +1,14 @@
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: manage-periodic-jobs
+rules:
+  - apiGroups:
+      - "appstudio.redhat.com"
+    resources:
+      - "snapshots"
+      - "components"
+    verbs:
+      - "get"
+      - "list"
+      - "watch"
