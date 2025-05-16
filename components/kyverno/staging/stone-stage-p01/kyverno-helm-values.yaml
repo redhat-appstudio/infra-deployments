@@ -25,6 +25,9 @@ admissionController:
       capabilities:
         drop:
         - "ALL"
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
 backgroundController:
   replicas: 3
   resources:
@@ -41,6 +44,9 @@ backgroundController:
     capabilities:
       drop:
       - "ALL"
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
 cleanupController:
   replicas: 3
   resources:
