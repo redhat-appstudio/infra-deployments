@@ -3,18 +3,18 @@ kind: Kustomization
 resources:
 - ../../base
 - ../../base/external-secrets
-- https://github.com/konflux-ci/mintmaker/config/default?ref=537b432d89aa25a3b9ebbccff601d8058454fada
-- https://github.com/konflux-ci/mintmaker/config/renovate?ref=537b432d89aa25a3b9ebbccff601d8058454fada
+- https://github.com/konflux-ci/mintmaker/config/default?ref=6492a3bedcc21f60be8aa6c9a18c9b46b472e57b
+- https://github.com/konflux-ci/mintmaker/config/renovate?ref=6492a3bedcc21f60be8aa6c9a18c9b46b472e57b
 
 namespace: mintmaker
 
 images:
 - name: quay.io/konflux-ci/mintmaker
   newName: quay.io/konflux-ci/mintmaker
-  newTag: 537b432d89aa25a3b9ebbccff601d8058454fada
+  newTag: 6492a3bedcc21f60be8aa6c9a18c9b46b472e57b
 - name: quay.io/konflux-ci/mintmaker-renovate-image
   newName: quay.io/konflux-ci/mintmaker-renovate-image
-  newTag: 9c7b69cbaf869c6204cd1420c9bb790b3cf38e08
+  newTag: d86322c957440bc5169521667c1eb631451cef20
 
 commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
