@@ -2334,6 +2334,84 @@ spec:
                 }
               }
       deployments:
+        pipelines-as-code-controller:
+          spec:
+            template:
+              spec:
+                containers:
+                - name: pac-controller
+                  resources:
+                    limits:
+                      cpu: 200m
+                      memory: 300Mi
+                    requests:
+                      cpu: 500m
+                      memory: 500Mi
+        pipelines-as-code-watcher:
+          spec:
+            template:
+              spec:
+                containers:
+                - name: pac-watcher
+                  resources:
+                    limits:
+                      cpu: 500m
+                      memory: 3Gi
+                    requests:
+                      cpu: "1"
+                      memory: 4.5Gi
+        pipelines-as-code-webhook:
+          spec:
+            template:
+              spec:
+                containers:
+                - name: pac-webhook
+                  resources:
+                    limits:
+                      cpu: 200m
+                      memory: 250Mi
+                    requests:
+                      cpu: 500m
+                      memory: 400Mi
+        pipelines-console-plugin:
+          spec:
+            template:
+              spec:
+                containers:
+                - name: pipelines-console-plugin
+                  resources:
+                    limits:
+                      cpu: 50m
+                      memory: 25Mi
+                    requests:
+                      cpu: 100m
+                      memory: 35Mi
+        tekton-chains-controller:
+          spec:
+            template:
+              spec:
+                containers:
+                - name: tekton-chains-controller
+                  resources:
+                    limits:
+                      cpu: 450m
+                      memory: 4Gi
+                    requests:
+                      cpu: 1500m
+                      memory: 7Gi
+        tekton-events-controller:
+          spec:
+            template:
+              spec:
+                containers:
+                - name: tekton-events-controller
+                  resources:
+                    limits:
+                      cpu: 100m
+                      memory: 100Mi
+                    requests:
+                      cpu: 300m
+                      memory: 200Mi
         tekton-operator-proxy-webhook:
           spec:
             replicas: 2
@@ -2373,6 +2451,58 @@ spec:
                     requests:
                       cpu: 400m
                       memory: 1Gi
+        tekton-triggers-controller:
+          spec:
+            template:
+              spec:
+                containers:
+                - name: tekton-triggers-controller
+                  resources:
+                    limits:
+                      cpu: 150m
+                      memory: 150Mi
+                    requests:
+                      cpu: 400m
+                      memory: 250Mi
+        tekton-triggers-core-interceptors:
+          spec:
+            template:
+              spec:
+                containers:
+                - name: tekton-triggers-core-interceptors
+                  resources:
+                    limits:
+                      cpu: 500m
+                      memory: 1Gi
+                    requests:
+                      cpu: "1"
+                      memory: 2Gi
+        tekton-triggers-webhook:
+          spec:
+            template:
+              spec:
+                containers:
+                - name: webhook
+                  resources:
+                    limits:
+                      cpu: 100m
+                      memory: 60Mi
+                    requests:
+                      cpu: 250m
+                      memory: 100Mi
+        tkn-cli-serve:
+          spec:
+            template:
+              spec:
+                containers:
+                - name: tkn-cli-serve
+                  resources:
+                    limits:
+                      cpu: 100m
+                      memory: 70Mi
+                    requests:
+                      cpu: 250m
+                      memory: 100Mi
       disabled: false
       horizontalPodAutoscalers:
         tekton-operator-proxy-webhook:
