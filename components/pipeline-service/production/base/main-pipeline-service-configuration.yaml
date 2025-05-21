@@ -1859,7 +1859,11 @@ spec:
                 replicas: 2
   profile: all
   pruner:
-    disabled: true
+    disabled: false
+    keep-since: 60
+    resources:
+      - pipelinerun
+    schedule: '*/10 * * * *'
   result:
     disabled: true
   targetNamespace: openshift-pipelines
