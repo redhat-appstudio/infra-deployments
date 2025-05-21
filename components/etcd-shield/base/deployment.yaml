@@ -4,20 +4,29 @@ metadata:
   name: etcd-shield
   labels:
     app: etcd-shield
+  annotations:
+    ignore-check.kube-linter.io/no-anti-affinity: "using topologySpreadConstraints"
 spec:
   selector:
     matchLabels:
       app: etcd-shield
-  replicas: 1
+  replicas: 3
   template:
     metadata:
       labels:
         app: etcd-shield
     spec:
       serviceAccountName: etcd-shield
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            app: etcd-shield
       containers:
       - args:
-        - -leader-elect
+        - -leader-elect=false
         - -health-probe-bind-address=:8081
         - -config=/etc/etcd-shield/config.yaml
         - -port=8443
