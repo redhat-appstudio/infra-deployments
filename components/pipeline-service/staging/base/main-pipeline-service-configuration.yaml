@@ -1784,11 +1784,11 @@ spec:
                   - name: pac-controller
                     resources:
                       limits:
-                        cpu: 200m
-                        memory: 300Mi
+                        cpu: 400m
+                        memory: 250Mi
                       requests:
-                        cpu: 500m
-                        memory: 500Mi
+                        cpu: 400m
+                        memory: 250Mi
         pipelines-as-code-watcher:
           spec:
             template:
@@ -1798,10 +1798,10 @@ spec:
                     resources:
                       limits:
                         cpu: 500m
-                        memory: 3Gi
+                        memory: 1Gi
                       requests:
-                        cpu: "1"
-                        memory: 4.5Gi
+                        cpu: 500m
+                        memory: 1Gi
         pipelines-as-code-webhook:
           spec:
             template:
@@ -1810,11 +1810,11 @@ spec:
                   - name: pac-webhook
                     resources:
                       limits:
-                        cpu: 200m
+                        cpu: 400m
                         memory: 250Mi
                       requests:
-                        cpu: 500m
-                        memory: 400Mi
+                        cpu: 400m
+                        memory: 250Mi
         pipelines-console-plugin:
           spec:
             template:
@@ -1823,11 +1823,11 @@ spec:
                   - name: pipelines-console-plugin
                     resources:
                       limits:
-                        cpu: 50m
-                        memory: 25Mi
+                        cpu: 200m
+                        memory: 100Mi
                       requests:
-                        cpu: 100m
-                        memory: 35Mi
+                        cpu: 200m
+                        memory: 100Mi
         tekton-chains-controller:
           spec:
             template:
@@ -1836,11 +1836,11 @@ spec:
                   - name: tekton-chains-controller
                     resources:
                       limits:
-                        cpu: 450m
-                        memory: 4Gi
+                        cpu: 500m
+                        memory: 1.5Gi
                       requests:
-                        cpu: "1500m"
-                        memory: 7Gi
+                        cpu: 500m
+                        memory: 1.5Gi
         tekton-events-controller:
           spec:
             template:
@@ -1849,11 +1849,11 @@ spec:
                   - name: tekton-events-controller
                     resources:
                       limits:
-                        cpu: 100m
+                        cpu: 200m
                         memory: 100Mi
                       requests:
-                        cpu: 300m
-                        memory: 200Mi
+                        cpu: 200m
+                        memory: 100Mi
         tekton-triggers-controller:
           spec:
             template:
@@ -1862,8 +1862,8 @@ spec:
                   - name: tekton-triggers-controller
                     resources:
                       limits:
-                        cpu: 150m
-                        memory: 150Mi
+                        cpu: 400m
+                        memory: 250Mi
                       requests:
                         cpu: 400m
                         memory: 250Mi
@@ -1875,8 +1875,8 @@ spec:
                   - name: webhook
                     resources:
                       limits:
-                        cpu: 100m
-                        memory: 60Mi
+                        cpu: 250m
+                        memory: 100Mi
                       requests:
                         cpu: 250m
                         memory: 100Mi
@@ -1891,8 +1891,8 @@ spec:
                         cpu: 500m
                         memory: 1Gi
                       requests:
-                        cpu: "1"
-                        memory: 2Gi
+                        cpu: 500m
+                        memory: 1Gi
         tkn-cli-serve:
           spec:
             template:
@@ -1901,8 +1901,8 @@ spec:
                   - name: tkn-cli-serve
                     resources:
                       limits:
-                        cpu: 100m
-                        memory: 70Mi
+                        cpu: 250m
+                        memory: 100Mi
                       requests:
                         cpu: 250m
                         memory: 100Mi
