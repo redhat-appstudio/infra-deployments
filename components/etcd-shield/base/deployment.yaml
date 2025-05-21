@@ -17,7 +17,7 @@ spec:
       serviceAccountName: etcd-shield
       containers:
       - args:
-        - -leader-elect
+        - -leader-elect=false
         - -health-probe-bind-address=:8081
         - -config=/etc/etcd-shield/config.yaml
         - -port=8443
