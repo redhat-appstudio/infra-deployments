@@ -1,0 +1,20 @@
+# Copyright KubeArchive Authors
+# SPDX-License-Identifier: Apache-2.0
+mode: standalone
+
+persistence:
+  enabled: false
+
+rootUser: minioadmin
+rootPassword: minioadmin
+
+provisioning:
+  enabled: true
+  buckets:
+    - name: loki
+    - name: loki-ruler
+    - name: loki-admin
+
+resources:
+  requests:
+    memory: 512Mi
