@@ -1,0 +1,54 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kubearchive-logging
+---
+allowHostDirVolumePlugin: true
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: false
+allowHostPorts: false
+allowPrivilegeEscalation: false
+allowPrivilegedContainer: false
+allowedCapabilities: null
+apiVersion: security.openshift.io/v1
+defaultAddCapabilities: null
+defaultAllowPrivilegeEscalation: false
+forbiddenSysctls:
+- '*'
+fsGroup:
+  type: RunAsAny
+groups: []
+kind: SecurityContextConstraints
+metadata:
+  name: logging-scc
+  namespace: kubearchive-logging
+priority: null
+readOnlyRootFilesystem: true
+requiredDropCapabilities:
+- CHOWN
+- DAC_OVERRIDE
+- FSETID
+- FOWNER
+- SETGID
+- SETUID
+- SETPCAP
+- NET_BIND_SERVICE
+- KILL
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: RunAsAny
+seccompProfiles:
+- runtime/default
+supplementalGroups:
+  type: RunAsAny
+users:
+- system:serviceaccount:kubearchive-logging:vector-kubearchive-logs-collector
+volumes:
+- configMap
+- emptyDir
+- hostPath
+- projected
+- secret
