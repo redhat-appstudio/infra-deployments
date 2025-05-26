@@ -1,0 +1,150 @@
+---
+role: Agent
+resources:
+  requests:
+    cpu: 512m
+    memory: 4096Mi
+  limits:
+    cpu: 2000m
+    memory: 4096Mi
+customConfig:
+  data_dir: /vector-data-dir
+  api:
+    enabled: true
+    address: 127.0.0.1:8686
+    playground: false
+  sources:
+    k8s_logs:
+      type: kubernetes_logs
+      rotate_wait_secs: 5
+      glob_minimum_cooldown_ms: 500
+      max_line_bytes: 3145728
+      auto_partial_merge: true
+  transforms:
+    reduce_events:
+      type: reduce
+      inputs:
+        - k8s_logs
+      group_by:
+        - file
+      flush_period_ms: 2000
+      end_every_period_ms: 2000
+      merge_strategies:
+        message: concat_newline
+    remap_app_logs:
+      type: remap
+      inputs:
+        - reduce_events
+      source: |-
+        .tmp = del(.)
+        # Handling Tekton-specific labels
+        if exists(.tmp.kubernetes.pod_labels."tekton.dev/taskRunUID") {
+          .taskRunUID = del(.tmp.kubernetes.pod_labels."tekton.dev/taskRunUID")
+        } else {
+          .taskRunUID = "none"
+        }
+        if exists(.tmp.kubernetes.pod_labels."tekton.dev/pipelineRunUID") {
+          .pipelineRunUID = del(.tmp.kubernetes.pod_labels."tekton.dev/pipelineRunUID")
+          .result = .pipelineRunUID
+        } else {
+          .result = .taskRunUID
+        }
+        # --- Start: Cronjob Specific Handling ---
+        # Check for cronjob related labels. Common labels include `job-name` and `controller-uid`
+        # from the job created by the cronjob, and potentially `cronjob-name` if explicitly set.
+        if exists(.tmp.kubernetes.pod_labels."job-name") {
+          .job_name = del(.tmp.kubernetes.pod_labels."job-name")
+          .log_type = "cronjob" # Tag logs from cronjobs
+          if exists(.tmp.kubernetes.pod_labels."cronjob-name") {
+            .cronjob_name = del(.tmp.kubernetes.pod_labels."cronjob-name")
+          } else {
+            # Attempt to infer cronjob name from job-name (common pattern: <cronjob-name>-<hash>)
+            if .job_name =~ r"^(.*)-\d{8,10}$" { # Basic pattern for job names from cronjobs (e.g., mycronjob-12345678)
+              .cronjob_name = capture(.job_name, r"^(.*)-\d{8,10}$")[0]
+            } else {
+              .cronjob_name = "unknown_cronjob"
+            }
+          }
+          if exists(.tmp.kubernetes.pod_labels."controller-uid") {
+              .job_uid = del(.tmp.kubernetes.pod_labels."controller-uid")
+          }
+        } else {
+          .log_type = "application" # Default for other application logs
+        }
+        # --- End: Cronjob Specific Handling ---
+        # Handling general Kubernetes labels
+        if exists(.tmp.kubernetes.pod_labels) {
+          .pod_labels = .tmp.kubernetes.pod_labels
+        } else {
+          .pod_labels = "no_labels"
+        }
+        if exists(.tmp.kubernetes.pod_namespace) {
+          .namespace = del(.tmp.kubernetes.pod_namespace)
+        } else {
+          .namespace = "unlabeled"
+        }
+        # General Kubernetes container name
+        if exists(.tmp.kubernetes.container_name) {
+          .container = del(.tmp.kubernetes.container_name)
+        } else {
+          .container = "unknown_container"
+        }
+        # General message field handling
+        if exists(.tmp.message) {
+          .message = del(.tmp.message)
+        } else {
+          .message = "no_message"
+        }
+        # Clean up temporary fields
+        del(.tmp)
+  sinks:
+    loki:
+      type: loki
+      inputs: ["remap_app_logs"]
+      endpoint: "http://loki.kubearchive-logging.svc.cluster.local:3100" 
+      labels:
+          namespace: .kubernetes.namespace_name
+          pod: .kubernetes.pod_name
+          container: .kubernetes.container_name
+      batch:
+        max_bytes: 10485760
+        timeout_secs: 300 
+      compression: "none"
+      encoding:
+        codec: "text"
+      key_prefix: "/logs/{{ `{{ .namespace }}` }}/{{`{{ .result }}`}}/{{`{{ .taskRunUID }}`}}/{{`{{ .container }}`}}"
+      filename_time_format: "-%s"
+      filename_append_uuid: false
+      buffer:
+        type: "memory"
+        max_events: 10000
+        when_full: "block"
+
+nodeSelector:
+  konflux-ci.dev/workload: konflux-tenants
+tolerations:
+  - effect: NoSchedule
+    key: konflux-ci.dev/workload
+    operator: Equal
+    value: konflux-tenants
+image:
+  repository: quay.io/kubearchive/vector
+  tag: 0.46.1-distroless-libc
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+    - CHOWN
+    - DAC_OVERRIDE
+    - FOWNER
+    - FSETID
+    - KILL
+    - NET_BIND_SERVICE
+    - SETGID
+    - SETPCAP
+    - SETUID
+  readOnlyRootFilesystem: true
+  seLinuxOptions:
+    type: spc_t
+  seccompProfile:
+    type: RuntimeDefault
