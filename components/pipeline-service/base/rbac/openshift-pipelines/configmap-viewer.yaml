@@ -1,0 +1,33 @@
+---
+# Grant access to authenticated users to be able to view
+# openshift-pipelines configMaps. The user case involves
+# service accounts running automated tests being able to
+# discover the custom URL for the Konflux UI
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: configmap-viewer
+  namespace: openshift-pipelines
+rules:
+  - verbs:
+      - get
+      - watch
+      - list
+    apiGroups:
+      - ''
+    resources:
+      - configmaps
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: configmap-viewer
+  namespace: openshift-pipelines
+subjects:
+  - kind: Group
+    apiGroup: rbac.authorization.k8s.io
+    name: 'system:authenticated'
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: configmap-viewer
