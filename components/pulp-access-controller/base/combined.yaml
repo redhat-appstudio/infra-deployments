@@ -1,0 +1,107 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: pulpaccessrequests.konflux.io
+spec:
+  group: konflux.io
+  scope: Namespaced
+  names:
+    plural: pulpaccessrequests
+    singular: pulpaccessrequest
+    kind: PulpAccessRequest
+    shortNames:
+      - par
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              required: ["cert", "key"]
+              properties:
+                cert:
+                  type: string
+                key:
+                  type: string
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: pulp-access-operator
+  namespace: operators
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: pulpaccess-operator-role
+rules:
+  - apiGroups: ["konflux.io"]
+    resources: ["pulpaccessrequests"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["apiextensions.k8s.io"]
+    resources: ["customresourcedefinitions"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["secrets", "events", "pods"]
+    verbs: ["create", "update", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: pulpaccess-user-role
+rules:
+  - apiGroups: ["konflux.io"]
+    resources: ["pulpaccessrequests"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: pulpaccess-operator-binding
+subjects:
+  - kind: ServiceAccount
+    name: pulp-access-operator
+    namespace: operators
+roleRef:
+  kind: ClusterRole
+  name: pulpaccess-operator-role
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: pulpaccess-authenticated-users-binding
+subjects:
+  - kind: Group
+    name: system:authenticated
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: pulpaccess-user-role
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pulp-access-operator
+  namespace: operators
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pulp-access-operator
+  template:
+    metadata:
+      labels:
+        app: pulp-access-operator
+    spec:
+      serviceAccountName: pulp-access-operator
+      containers:
+        - name: operator
+          image: quay.io/ytrahnov/test-controller
+          imagePullPolicy: Always
