@@ -16,10 +16,10 @@ admissionController:
     resources:
       requests:
         cpu: 500m
-        memory: 2Gi
+        memory: 4Gi
       limits:
         cpu: 500m
-        memory: 2Gi
+        memory: 4Gi
     securityContext:
       allowPrivilegeEscalation: false
       readOnlyRootFilesystem: true
@@ -32,10 +32,10 @@ backgroundController:
   resources:
     requests:
       cpu: 500m
-      memory: 2Gi
+      memory: 4Gi
     limits:
       cpu: 500m
-      memory: 2Gi
+      memory: 4Gi
   securityContext:
     allowPrivilegeEscalation: false
     readOnlyRootFilesystem: true
@@ -58,8 +58,12 @@ cleanupController:
 reportsController:
   replicas: 3
   resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
     limits:
-      cpu: 500m
+      cpu: 200m
+      memory: 256Mi
   securityContext:
     allowPrivilegeEscalation: false
     readOnlyRootFilesystem: true
