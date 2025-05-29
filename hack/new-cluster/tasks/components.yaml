@@ -1,10 +1,3 @@
-- name: "Create the components/{{ component }}/{{ env }}/{{ shortname }}/ directory if it does not exist"
-  tags: [components]
-  file:
-    path: "{{ dst }}/components/{{ component }}/{{ env }}/{{ shortname }}/"
-    state: directory
-    mode: '0755'
-
 - name: Set subdir default value
   tags: [components]
   set_fact:
@@ -15,6 +8,13 @@
   set_fact:
     subdir: "{{ env }}-downstream"
   when: network == 'private' and component == 'multi-platform-controller'
+
+- name: "Create the components/{{ component }}/{{ subdir }}/{{ shortname }}/ directory if it does not exist"
+  tags: [components]
+  file:
+    path: "{{ dst }}/components/{{ component }}/{{ subdir }}/{{ shortname }}"
+    state: directory
+    mode: '0755'
 
 - name: "Create any subdirectories if we need them"
   tags: [components]
