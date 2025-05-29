@@ -16,15 +16,24 @@ kind: ClusterQueue
 metadata:
   name: cluster-pipeline-queue
 spec:
-  namespaceSelector: {}
-  queueingStrategy: BestEffortFIFO
-  admissionChecks:
+    admissionChecks:
     - static-admission
-  resourceGroups:
-  - coveredResources:
-    - "tekton.dev/pipelineruns"
-    flavors:
-    - name: "default-flavor"
-      resources:
-      - name: "tekton.dev/pipelineruns"
-        nominalQuota: 500
+    flavorFungibility:
+      whenCanBorrow: Borrow
+      whenCanPreempt: TryNextFlavor
+    namespaceSelector: {}
+    preemption:
+      borrowWithinCohort:
+        policy: Never
+      reclaimWithinCohort: Never
+      withinClusterQueue: Never
+    queueingStrategy: BestEffortFIFO
+    stopPolicy: None
+    resourceGroups:
+    - coveredResources:
+      - tekton.dev/pipelineruns
+      flavors:
+      - name: default-flavor
+        resources:
+        - name: tekton.dev/pipelineruns
+          nominalQuota: "500"
