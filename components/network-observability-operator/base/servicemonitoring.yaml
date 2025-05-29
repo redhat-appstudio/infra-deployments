@@ -1,0 +1,19 @@
+apiVersion: monitoring.rhobs/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app: flowlogs-pipeline
+    version: v1.6.2-community
+  name: flowlogs-pipeline-monitor-dynatrace
+  namespace: netobserv
+spec:
+  endpoints:
+  - interval: 15s
+    port: prometheus
+    scheme: http
+  namespaceSelector:
+    matchNames:
+    - netobserv
+  selector:
+    matchLabels:
+      app: flowlogs-pipeline
