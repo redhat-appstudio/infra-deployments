@@ -145,3 +145,14 @@ rules:
       - rbac.authorization.k8s.io
     resources:
       - rolebindings
+  - verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+    apiGroups:
+      - pulp.konflux-ci.dev
+    resources:
+      - pulpaccessrequests
