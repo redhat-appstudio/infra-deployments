@@ -38,28 +38,8 @@ backgroundController:
       - "ALL"
 cleanupController:
   enabled: false
-  resources:
-    limits:
-      cpu: 500m
-  securityContext:
-    allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: true
-    runAsNonRoot: true
-    capabilities:
-      drop:
-      - "ALL"
 reportsController:
   enabled: false
-  resources:
-    limits:
-      cpu: 500m
-  securityContext:
-    allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: true
-    runAsNonRoot: true
-    capabilities:
-      drop:
-      - "ALL"
 policyReportsCleanup:
   securityContext:
     allowPrivilegeEscalation: false
@@ -72,15 +52,6 @@ policyReportsCleanup:
       - "ALL"
 webhooksCleanup:
   enabled: false
-  securityContext:
-    allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: true
-    runAsNonRoot: true
-    runAsGroup: null
-    runAsUser: null
-    capabilities:
-      drop:
-      - "ALL"
 test:
   securityContext:
     allowPrivilegeEscalation: false
