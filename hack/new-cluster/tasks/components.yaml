@@ -34,3 +34,12 @@
   with_filetree:
   - "templates/{{ component }}/"
   when: "item['state'] == 'file'"
+
+- name: "Create private-network-only files from template for components/{{ component }}/{{ subdir }}/{{ shortname }}"
+  tags: [components]
+  template:
+    src: "{{ item['src'] }}"
+    dest: "{{ dst }}/components/{{ component }}/{{ subdir }}/{{ shortname }}/{{item['path'] }}"
+  with_filetree:
+  - "templates/private/{{ component }}/"
+  when: "network == 'private' and item['state'] == 'file'"
