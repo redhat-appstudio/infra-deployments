@@ -5,9 +5,8 @@ metadata:
 spec:
   concurrent: false
   description: |
-    tests that the label is applied to pods in a namespace
-    that matches the label selector
-    in a tenant namespace
+    tests that the labels are correctly set on pods in tenant namespace
+    that have the `cost-center` label
   steps:
     - name: Create namespaces for testing
       try:
@@ -56,9 +55,7 @@ metadata:
 spec:
   concurrent: false
   description: |
-    tests that the label is not applied to pods in a namespace
-    that does not match the label selector
-    in a tenant namespace
+    tests that the label is not applied to pods in a non-tenant namespace
   steps:
     - name: Create namespaces for testing
       try:
