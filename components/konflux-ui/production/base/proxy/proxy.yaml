@@ -80,6 +80,10 @@ spec:
             echo \
               "proxy_pass ${TEKTON_RESULTS_URL:?tekton results url must be provided};" \
               > /mnt/nginx-generated-config/tekton-results.conf
+            
+            echo \
+              "proxy_pass ${KUBEARCHIVE_URL:?kubearchive url must be provided};" \
+              > /mnt/nginx-generated-config/kubearchive.conf
 
         volumeMounts:
         - name: nginx-generated-config
