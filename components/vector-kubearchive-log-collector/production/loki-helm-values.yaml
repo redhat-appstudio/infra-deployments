@@ -1,0 +1,77 @@
+---
+loki:
+  auth_enabled: false
+  storage:
+    type: s3
+    bucketNames:
+      chunks: loki
+      ruler: loki-ruler
+      admin: loki-admin
+    s3:
+      endpoint: minio.kubearchive-logging.svc.cluster.local:9000
+      region: us-east-1
+      accessKeyId: admin
+      s3ForcePathStyle: true
+      insecure: true
+
+  schemaConfig:
+    configs:
+      - from: 2024-01-01
+        store: tsdb
+        object_store: s3
+        schema: v13
+        index:
+          prefix: index_
+          period: 24h
+
+  commonConfig:
+    replication_factor: 1
+
+  compactor:
+    retention_enabled: true
+    delete_request_store: s3
+  ruler:
+    storage:
+      type: local
+      local:
+        directory: /tmp/rules
+
+deploymentMode: SingleBinary
+
+singleBinary:
+  replicas: 1
+  persistence:
+    enabled: false
+  extraVolumeMounts:
+    - name: loki-storage
+      mountPath: /var/loki
+  extraVolumes:
+    - name: loki-storage
+      emptyDir: {}
+
+# Zero out replica counts of other deployment modes
+backend:
+  replicas: 0
+read:
+  replicas: 0
+write:
+  replicas: 0
+
+ingester:
+  replicas: 0
+querier:
+  replicas: 0
+queryFrontend:
+  replicas: 0
+queryScheduler:
+  replicas: 0
+distributor:
+  replicas: 0
+compactor:
+  replicas: 0
+indexGateway:
+  replicas: 0
+bloomCompactor:
+  replicas: 0
+bloomGateway:
+  replicas: 0
