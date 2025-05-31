@@ -34,6 +34,11 @@
     dst: "{{ lookup('env', 'PWD') }}"
     github_organization: "redhat-appstudio"
     github_application: "red-hat-konflux-{{ shortname }}"
+
+    smee_webhook_server_slug: "{{ (env == 'staging') | ternary('stone-stg-host.qc0p.p1', 'stone-prd-host1.wdlc.p1') }}"
+    smee_webhook_server: "https://smee-smee.apps.{{ smee_webhook_server_slug }}.openshiftapps.com"
+    smee_webhook_url: "{{ smee_webhook_server }}/redhathook{{cutename}}"
+
     required_vars:
       - shortname
       - longname
@@ -45,10 +50,15 @@
     allowed_networks:
       - public
       - private
+
     templated_components:
+      - authentication
       - backup
       - build-service
+      - cost-management
+      - etcd-shield
       - integration
+      - knative-eventing
       - konflux-info
       - konflux-rbac
       - konflux-ui
@@ -59,6 +69,7 @@
       - multi-platform-controller
       - namespace-lister
       - pipeline-service
+      - smee-client
 
     argo_cd_app_files:
       - "{{ dst }}/argo-cd-apps/base/all-clusters/infra-deployments/monitoring-workload-logging/monitoring-workload-logging.yaml"
