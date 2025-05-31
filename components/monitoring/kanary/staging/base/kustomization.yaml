@@ -1,0 +1,9 @@
+resources:
+  - ../../base
+patches:
+  - path: kanary-db-credentials-secret-path.yaml
+    target:
+      name: kanary-db-credentials
+      kind: ExternalSecret
+      group: external-secrets.io
+      version: v1beta1
