@@ -52,7 +52,7 @@ spec:
           validation_reason|strategy|succeeded|target|name|method|code|sp|le|\
           unexpected_status|failure|hostname|label_app_kubernetes_io_managed_by|status|\
           pipeline|pipelinename|pipelinerun|schedule|check|grpc_service|grpc_code|\
-          grpc_method|lease|lease_holder|deployment|platform|mode|cpu|role"
+          grpc_method|lease|lease_holder|deployment|platform|mode|cpu|role|node|kind|verb|request_kind"
 ---
 # Grant permission to Federate In-Cluster Prometheus
 apiVersion: rbac.authorization.k8s.io/v1
@@ -169,6 +169,10 @@ spec:
         - '{__name__="kube_node_role"}'
         - '{__name__="etcd_shield_trigger"}'
         - '{__name__="apiserver_admission_webhook_rejection_count", name="vpipelineruns.konflux-ci.dev"}'
+        - '{__name__="apiserver_watch_events_total"}'
+        - '{__name__="apiserver_storage_objects"}'
+        - '{__name__="apiserver_request_total"}'
+        - '{__name__="apiserver_current_inflight_requests"}'
 
     relabelings:
     # override the target's address by the prometheus-k8s service name.
