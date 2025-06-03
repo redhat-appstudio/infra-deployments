@@ -21,10 +21,12 @@ spec:
     try:
     - apply:
         file: ../kyverno_rbac.yaml
-  - name: given-cluster-policy-is-ready
+  - name: given-cluster-policies-are-ready
     try:
     - apply:
-        file: ../bootstrap-tenant-namespace-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-networkpolicies-clusterpolicy.yaml
+    - apply:
+        file: ../bootstrap-tenant-namespace-rbcm-clusterpolicy.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: when-konfluxcidev-labeled-namespace-is-created
@@ -66,10 +68,12 @@ spec:
     try:
     - apply:
         file: ../kyverno_rbac.yaml
-  - name: given-cluster-policy-is-ready
+  - name: given-cluster-policies-are-ready
     try:
     - apply:
-        file: ../bootstrap-tenant-namespace-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-networkpolicies-clusterpolicy.yaml
+    - apply:
+        file: ../bootstrap-tenant-namespace-rbcm-clusterpolicy.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: given-unlabeled-namespace-exists
@@ -123,10 +127,12 @@ spec:
     try:
     - apply:
         file: ../kyverno_rbac.yaml
-  - name: given-cluster-policy-is-ready
+  - name: given-cluster-policies-are-ready
     try:
     - apply:
-        file: ../bootstrap-tenant-namespace-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-networkpolicies-clusterpolicy.yaml
+    - apply:
+        file: ../bootstrap-tenant-namespace-rbcm-clusterpolicy.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: when-unlabeled-namespace-is-created
@@ -180,10 +186,12 @@ spec:
     try:
     - apply:
         file: ./resources/actual-appstudio-pipeline-clusterrole.yaml
-  - name: when-cluster-policy-is-ready
+  - name: when-cluster-policies-are-ready
     try:
     - apply:
-        file: ../bootstrap-tenant-namespace-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-networkpolicies-clusterpolicy.yaml
+    - apply:
+        file: ../bootstrap-tenant-namespace-rbcm-clusterpolicy.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: then-resources-are-created
@@ -228,10 +236,12 @@ spec:
     - apply:
         file: resources/actual-namespace-unlabeled.yaml
         template: true
-  - name: when-cluster-policy-is-ready
+  - name: when-cluster-policies-are-ready
     try:
     - apply:
-        file: ../bootstrap-tenant-namespace-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-networkpolicies-clusterpolicy.yaml
+    - apply:
+        file: ../bootstrap-tenant-namespace-rbcm-clusterpolicy.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: then-rolebinding-is-not-created
@@ -290,10 +300,12 @@ spec:
     try:
     - apply:
         file: ../kyverno_rbac.yaml
-  - name: when-cluster-policy-is-ready
+  - name: when-cluster-policies-are-ready
     try:
     - apply:
-        file: ../bootstrap-tenant-namespace-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-networkpolicies-clusterpolicy.yaml
+    - apply:
+        file: ../bootstrap-tenant-namespace-rbcm-clusterpolicy.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: then-rolebinding-is-not-changed
