@@ -3,6 +3,7 @@ fullnameOverride: konflux-kyverno
 namespaceOverride: konflux-kyverno
 config:
   updateRequestThreshold: 2000
+  preserve: false
 admissionController:
   replicas: 1
   initContainer:
@@ -61,6 +62,7 @@ reportsController:
       drop:
       - "ALL"
 policyReportsCleanup:
+  enabled: false
   securityContext:
     allowPrivilegeEscalation: false
     readOnlyRootFilesystem: true
