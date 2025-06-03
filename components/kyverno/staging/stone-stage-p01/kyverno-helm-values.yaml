@@ -1,5 +1,7 @@
 fullnameOverride: konflux-kyverno
 namespaceOverride: konflux-kyverno
+config:
+  preserve: false
 admissionController:
   replicas: 3
   initContainer:
@@ -66,6 +68,7 @@ reportsController:
       drop:
       - "ALL"
 policyReportsCleanup:
+  enabled: false
   image:
     registry: mirror.gcr.io
   securityContext:
