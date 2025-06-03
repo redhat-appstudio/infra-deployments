@@ -1,7 +1,18 @@
+---
 apiVersion: kyverno.io/v1
 kind: ClusterPolicy
 metadata:
-  name: bootstrap-tenant-namespace
+  name: bootstrap-tenant-namespace-networkpolicies
+status:
+  conditions:
+  - reason: Succeeded
+    status: "True"
+    type: Ready
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: bootstrap-tenant-namespace-rbcm
 status:
   conditions:
   - reason: Succeeded
