@@ -5,7 +5,6 @@ metadata:
   name: openshift-kueue-operator
   labels:
     openshift.io/cluster-monitoring: "true"
-spec: {}
 
 ---
 apiVersion: v1
@@ -80,8 +79,8 @@ spec:
             oc login --server=https://kubernetes.default.svc --token="$token" --certificate-authority="$ca_cert"
         resources:
           requests:
-            cpu: "100m"
-            memory: "128Mi"
+            cpu: "200m"
+            memory: "256Mi"
           limits:
             cpu: "200m"
             memory: "256Mi"
