@@ -126,6 +126,7 @@ spec:
         - '{__name__="kube_pod_container_status_restarts_total", namespace=~"openshift-pipelines|release-service"}'
         - '{__name__="kube_pod_container_status_waiting_reason", namespace!~".*-tenant|openshift-.*|kube-.*"}'
         - '{__name__="kube_pod_status_phase", namespace!~".*-tenant|openshift-.*|kube-.*"}'
+        - '{__name__="kube_pod_container_resource_limits", namespace="release-service"}'
         - '{__name__="kube_pod_container_status_terminated_reason", namespace="release-service"}'
         - '{__name__="kube_pod_container_status_last_terminated_reason", namespace="release-service"}'
         - '{__name__="kube_pod_container_status_ready", namespace="release-service"}'
@@ -134,18 +135,76 @@ spec:
         - '{__name__="kube_statefulset_status_replicas_ready", namespace="gitops-service-argocd"}'
         - '{__name__="kube_statefulset_replicas", namespace="gitops-service-argocd"}'
         - '{__name__="openshift_route_status", namespace="gitops-service-argocd"}'
+
         - '{__name__="kube_deployment_status_replicas_ready", namespace="gitops-service-argocd"}'
-        - '{__name__="kube_deployment_spec_replicas", namespace=~"gitops-service-argocd|smee.*"}'
-        - '{__name__="kube_deployment_spec_replicas", namespace="project-controller"}'
-        - '{__name__="kube_deployment_status_replicas_available", namespace=~"smee.*"}'
+        - '{__name__="kube_deployment_spec_replicas", namespace=~"gitops-service-argocd"}'
+
+        # Namespace (expression):  "build-service"
+        - '{__name__="kube_deployment_status_replicas_ready", namespace="build-service"}'
+        - '{__name__="kube_deployment_status_replicas_available", namespace="build-service"}'
+        - '{__name__="kube_deployment_spec_replicas", namespace="build-service"}'
+
+        # Namespace (expression):  "integration-service"
+        - '{__name__="kube_deployment_status_replicas_ready", namespace="integration-service"}'
+        - '{__name__="kube_deployment_status_replicas_available", namespace="integration-service"}'
+        - '{__name__="kube_deployment_spec_replicas", namespace="integration-service"}'
+
+        # Namespace (expression):  "konflux-ui"
+        - '{__name__="kube_deployment_status_replicas_ready", namespace="konflux-ui"}'
+        - '{__name__="kube_deployment_status_replicas_available", namespace="konflux-ui"}'
+        - '{__name__="kube_deployment_spec_replicas", namespace="konflux-ui"}'
+
+        # Namespace (expression):  "mintmaker"
+        - '{__name__="kube_deployment_status_replicas_ready", namespace="mintmaker"}'
+        - '{__name__="kube_deployment_status_replicas_available", namespace="mintmaker"}'
+        - '{__name__="kube_deployment_spec_replicas", namespace="mintmaker"}'
+
+        # Namespace (expression):  ~".*monitoring.*"
+        - '{__name__="kube_deployment_status_replicas_ready", namespace=~".*monitoring.*"}'
+        - '{__name__="kube_deployment_status_replicas_available", namespace=~".*monitoring.*"}'
+        - '{__name__="kube_deployment_spec_replicas", namespace=~".*monitoring.*"}'
+
+        # Namespace (expression):  "multi-platform-controller"
+        - '{__name__="kube_deployment_status_replicas_ready", namespace="multi-platform-controller"}'
+        - '{__name__="kube_deployment_status_replicas_available", namespace="multi-platform-controller"}'
+        - '{__name__="kube_deployment_spec_replicas", namespace="multi-platform-controller"}'
+
+        # Namespace (expression):  "namespace-lister"
+        - '{__name__="kube_deployment_status_replicas_ready", namespace="namespace-lister"}'
+        - '{__name__="kube_deployment_status_replicas_available", namespace="namespace-lister"}'
+        - '{__name__="kube_deployment_spec_replicas", namespace="namespace-lister"}'
+
+        # Namespace (expression):  "openshift-pipelines"
+        - '{__name__="kube_deployment_status_replicas_ready", namespace="openshift-pipelines"}'
+        - '{__name__="kube_deployment_status_replicas_available", namespace="openshift-pipelines"}'
+        - '{__name__="kube_deployment_spec_replicas", namespace="openshift-pipelines"}'
+
+        # Namespace (expression):  "product-kubearchive"
+        - '{__name__="kube_deployment_status_replicas_ready", namespace="product-kubearchive"}'
+        - '{__name__="kube_deployment_status_replicas_available", namespace="product-kubearchive"}'
+        - '{__name__="kube_deployment_spec_replicas", namespace="product-kubearchive"}'
+
+        # Namespace (expression):  "project-controller"
+        - '{__name__="kube_deployment_status_replicas_ready", namespace="project-controller"}'
         - '{__name__="kube_deployment_status_replicas_available", namespace="project-controller"}'
+        - '{__name__="kube_deployment_spec_replicas", namespace="project-controller"}'
+
+        # Namespace (expression):  "release-service"
+        - '{__name__="kube_deployment_status_replicas_ready", namespace="release-service"}'
+        - '{__name__="kube_deployment_status_replicas_available", namespace="release-service"}'
+        - '{__name__="kube_deployment_spec_replicas", namespace="release-service"}'
+
+        # Namespace (expression):  ~"smee.*"
+        - '{__name__="kube_deployment_status_replicas_ready", namespace=~"smee.*"}'
+        - '{__name__="kube_deployment_status_replicas_available", namespace=~"smee.*"}'
+        - '{__name__="kube_deployment_spec_replicas", namespace=~"smee.*"}'
+
         - '{__name__="argocd_app_reconcile_bucket", namespace="gitops-service-argocd"}'
         - '{__name__="argocd_app_info", namespace="gitops-service-argocd"}'
         - '{__name__="container_cpu_usage_seconds_total", namespace="release-service"}'
         - '{__name__="container_cpu_usage_seconds_total", namespace="openshift-etcd"}'
         - '{__name__="container_memory_usage_bytes", namespace="release-service"}'
         - '{__name__="container_memory_usage_bytes", namespace="openshift-etcd"}'
-        - '{__name__="kube_pod_container_resource_limits", namespace="release-service"}'
         - '{__name__="etcd_disk_wal_fsync_duration_seconds_bucket"}'
         - '{__name__="etcd_disk_backend_commit_duration_seconds_bucket"}'
         - '{__name__="etcd_server_proposals_failed_total"}'
