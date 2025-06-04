@@ -56,21 +56,6 @@ cleanupController:
       - "ALL"
 reportsController:
   enabled: false
-  replicas: 3
-  resources:
-    requests:
-      cpu: 200m
-      memory: 256Mi
-    limits:
-      cpu: 200m
-      memory: 256Mi
-  securityContext:
-    allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: true
-    runAsNonRoot: true
-    capabilities:
-      drop:
-      - "ALL"
 policyReportsCleanup:
   image:
     registry: mirror.gcr.io
