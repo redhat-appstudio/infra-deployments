@@ -32,8 +32,17 @@ spec:
     resourceGroups:
     - coveredResources:
       - tekton.dev/pipelineruns
+      - cpu
+      - memory
       flavors:
       - name: default-flavor
         resources:
         - name: tekton.dev/pipelineruns
           nominalQuota: "500"
+        # When a Workload doesn't have cpu or memory requests, if there is a limit range
+        # in the namespace, Kueue will assign the requests from it to the Workload.
+        # We don't care about the cpu/memory for PipelineRuns, thus setting a high value for both.
+        - name: "cpu"
+          nominalQuota: 1k
+        - name: "memory"
+          nominalQuota: 500Ti
