@@ -1,0 +1,43 @@
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: bootstrap-tenant-namespace-pulp-access
+  annotations:
+    policies.kyverno.io/title: Bootstrap Tenant Namespace Pulp Access
+    policies.kyverno.io/category: Bootstrap
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/subject: RoleBinding, RBAC
+    policies.kyverno.io/description: >-
+      Creates a RoleBinding for pulp access in tenant namespaces
+spec:
+  rules:
+  - name: create-pulp-access-rolebinding
+    match:
+      any:
+      - resources:
+          kinds:
+          - Namespace
+          selector:
+            matchLabels:
+              konflux-ci.dev/type: tenant
+          operations:
+            - CREATE
+            - UPDATE
+    generate:
+      generateExisting: false
+      synchronize: false
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: RoleBinding
+      name: appstudio-pulp-access-rolebinding
+      namespace: '{{request.object.metadata.name}}'
+      data:
+        roleRef:
+          apiGroup: rbac.authorization.k8s.io
+          kind: ClusterRole
+          name: konflux-pulp-access-actions
+        subjects:
+        - apiGroup: ""
+          kind: ServiceAccount
+          namespace: '{{request.object.metadata.name}}'
+          name: appstudio-pipeline
