@@ -3,6 +3,7 @@ fullnameOverride: konflux-kyverno
 namespaceOverride: konflux-kyverno
 config:
   updateRequestThreshold: 2000
+  preserve: false
 admissionController:
   replicas: 1
   initContainer:
@@ -38,29 +39,10 @@ backgroundController:
       - "ALL"
 cleanupController:
   enabled: false
-  resources:
-    limits:
-      cpu: 500m
-  securityContext:
-    allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: true
-    runAsNonRoot: true
-    capabilities:
-      drop:
-      - "ALL"
 reportsController:
   enabled: false
-  resources:
-    limits:
-      cpu: 500m
-  securityContext:
-    allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: true
-    runAsNonRoot: true
-    capabilities:
-      drop:
-      - "ALL"
 policyReportsCleanup:
+  enabled: false
   securityContext:
     allowPrivilegeEscalation: false
     readOnlyRootFilesystem: true
@@ -71,16 +53,7 @@ policyReportsCleanup:
       drop:
       - "ALL"
 webhooksCleanup:
-  enable: false
-  securityContext:
-    allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: true
-    runAsNonRoot: true
-    runAsGroup: null
-    runAsUser: null
-    capabilities:
-      drop:
-      - "ALL"
+  enabled: false
 test:
   securityContext:
     allowPrivilegeEscalation: false

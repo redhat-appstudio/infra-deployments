@@ -14,42 +14,6 @@ replacements:
       group: batch
       version: v1
       kind: Job
-      name: konflux-kyverno-scale-to-zero
-      namespace: konflux-kyverno
-      fieldPath: spec.template.spec.serviceAccount
-    targets:
-      - select:
-          group: batch
-          version: v1
-          kind: Job
-          namespace: konflux-kyverno
-          name: konflux-kyverno-scale-to-zero
-        fieldPaths:
-          - spec.template.spec.serviceAccountName
-        options:
-          create: true
-  - source:
-      group: batch
-      version: v1
-      kind: Job
-      name: konflux-kyverno-clean-reports
-      namespace: konflux-kyverno
-      fieldPath: spec.template.spec.serviceAccount
-    targets:
-      - select:
-          group: batch
-          version: v1
-          kind: Job
-          namespace: konflux-kyverno
-          name: konflux-kyverno-clean-reports
-        fieldPaths:
-          - spec.template.spec.serviceAccountName
-        options:
-          create: true
-  - source:
-      group: batch
-      version: v1
-      kind: Job
       name: konflux-kyverno-migrate-resources
       namespace: konflux-kyverno
       fieldPath: spec.template.spec.serviceAccount
@@ -64,24 +28,6 @@ replacements:
           - spec.template.spec.serviceAccountName
         options:
           create: true
-  - source:
-      group: batch
-      version: v1
-      kind: Job
-      name: konflux-kyverno-remove-configmap
-      namespace: konflux-kyverno
-      fieldPath: spec.template.spec.serviceAccount
-    targets:
-      - select:
-          group: batch
-          version: v1
-          kind: Job
-          namespace: konflux-kyverno
-          name: konflux-kyverno-remove-configmap
-        fieldPaths:
-          - spec.template.spec.serviceAccountName
-        options:
-          create: true
 
 # set resources to jobs
 patches:
@@ -90,22 +36,4 @@ patches:
       group: batch
       version: v1
       kind: Job
-      name: konflux-kyverno-scale-to-zero
-  - path: job_resources.yaml
-    target:
-      group: batch
-      version: v1
-      kind: Job
-      name: konflux-kyverno-clean-reports
-  - path: job_resources.yaml
-    target:
-      group: batch
-      version: v1
-      kind: Job
       name: konflux-kyverno-migrate-resources
-  - path: job_resources.yaml
-    target:
-      group: batch
-      version: v1
-      kind: Job
-      name: konflux-kyverno-remove-configmap
