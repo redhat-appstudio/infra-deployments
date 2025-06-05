@@ -5,124 +5,43 @@ metadata:
   name: openshift-kueue-operator
   labels:
     openshift.io/cluster-monitoring: "true"
-
+  annotations:
+    argocd.argoproj.io/sync-wave: "-4"
 ---
-apiVersion: v1
-kind: ServiceAccount
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
 metadata:
-  name: kueue-installer
-
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: operator-installer
-rules:
-- apiGroups: ["operators.coreos.com"]
-  resources: ["catalogsources", "operatorgroups", installplans]
-  verbs: ["create", "get", "list" , "update", "delete"]
-
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: kube-installer-admin
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: admin
-subjects:
-- kind: ServiceAccount
-  name: kueue-installer
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "-3"
+  name: redhat-operators-1-18
   namespace: openshift-kueue-operator
-
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: kube-installer-operator-installer
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: operator-installer
-subjects:
-- kind: ServiceAccount
-  name: kueue-installer
-  namespace: openshift-kueue-operator
-
----
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: run-kueue-bundle
 spec:
-  parallelism: 1
-  completions: 1
-  backoffLimit: 3
-  template:
-    spec:
-      initContainers:
-      - name: generate-kubeconfig
-        image: quay.io/openshift/origin-cli@sha256:9362b03e3e23f8dfaed93c13ca1e7c680fc80a8a6f73209ba3c52bbfec319f7e
-        command:
-          - /bin/sh
-          - -c
-          - |
-            set -e
-            export KUBECONFIG=/workdir/kubeconfig
-            
-            sa_path=/var/run/secrets/kubernetes.io/serviceaccount
-            token="$(cat ${sa_path}/token)"
-            ca_cert="${sa_path}/ca.crt"
-            
-            oc whoami
-            oc login --server=https://kubernetes.default.svc --token="$token" --certificate-authority="$ca_cert"
-        resources:
-          requests:
-            cpu: "200m"
-            memory: "256Mi"
-          limits:
-            cpu: "200m"
-            memory: "256Mi"
-        volumeMounts:
-        - name: workdir
-          mountPath: /workdir
-        securityContext:
-          readOnlyRootFilesystem: true
-          runAsNonRoot: true
-
-      containers:
-      - name: operator-sdk
-        image: quay.io/operator-framework/operator-sdk@sha256:46ecc4e434e0001e6aa13c5dacba6c838d5ab68ab44e1fd4ebeb2278984ab71f
-        command:
-          - operator-sdk
-          - run
-          - bundle
-          - --namespace
-          - openshift-kueue-operator
-          - quay.io/kevin-oss/kueue-bundle:apr22-133
-          - --kubeconfig
-          - /workdir/kubeconfig
-        workingDir: /workdir
-        volumeMounts:
-        - name: workdir
-          mountPath: /workdir
-        - name: tmp
-          mountPath: /tmp
-        resources:
-          requests:
-            cpu: "100m"
-            memory: "128Mi"
-          limits:
-            cpu: "200m"
-            memory: "256Mi"
-        securityContext:
-          readOnlyRootFilesystem: true
-          runAsNonRoot: true
-      volumes:
-      - name: workdir
-        emptyDir: {}
-      - name: tmp
-        emptyDir: {}
-      restartPolicy: Never
-      serviceAccountName: kueue-installer
+  displayName: redhat-operators-1-18
+  image: registry.redhat.io/redhat/redhat-operator-index:v4.18
+  sourceType: grpc
+  updateStrategy:
+    registryPoll:
+      interval: 30m
+---
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  name: openshift-kueue-operatorgroup
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+spec: {}
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: openshift-kueue-operator
+  namespace: openshift-kueue-operator
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  channel: stable-v0.1
+  installPlanApproval: Automatic
+  name: kueue-operator
+  source: redhat-operators-1-18
+  sourceNamespace: openshift-kueue-operator
