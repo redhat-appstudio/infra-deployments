@@ -1414,7 +1414,7 @@ spec:
       - args:
         - -pprof-address
         - "6060"
-        image: quay.io/konflux-ci/pipeline-service-exporter:d6d4f669a0818ddf72117207d45a3e664ad7c4cd
+        image: quay.io/konflux-ci/pipeline-service-exporter:9d2439c8a77d2ce0527cc5aea3fc6561b7671b48
         name: pipeline-metrics-exporter
         ports:
         - containerPort: 9117
@@ -1560,7 +1560,7 @@ spec:
             secretKeyRef:
               key: db.name
               name: tekton-results-database
-        image: quay.io/konflux-ci/tekton-results-api:0aa7ce4900d905dfac265bd8542e99bda451d4c7
+        image: quay.io/konflux-ci/tekton-results-api:0a751a1ecaf7ab73f2a756a806d8a18c50c16547
         livenessProbe:
           httpGet:
             path: /healthz
@@ -1750,7 +1750,7 @@ spec:
             secretKeyRef:
               key: db.name
               name: tekton-results-database
-        image: quay.io/konflux-ci/tekton-results-api:0aa7ce4900d905dfac265bd8542e99bda451d4c7
+        image: quay.io/konflux-ci/tekton-results-api:0a751a1ecaf7ab73f2a756a806d8a18c50c16547
         livenessProbe:
           httpGet:
             path: /healthz
@@ -1855,7 +1855,7 @@ spec:
             secretKeyRef:
               key: POSTGRES_PASSWORD
               name: tekton-results-postgres
-        image: quay.io/konflux-ci/tekton-results-retention-policy-agent:0aa7ce4900d905dfac265bd8542e99bda451d4c7
+        image: quay.io/konflux-ci/tekton-results-retention-policy-agent:0a751a1ecaf7ab73f2a756a806d8a18c50c16547
         name: retention-policy-agent
         resources:
           limits:
@@ -1987,7 +1987,9 @@ spec:
           value: tekton-results-api-service-for-watcher.tekton-results.svc.cluster.local:8080
         - name: AUTH_MODE
           value: token
-        image: quay.io/konflux-ci/tekton-results-watcher:0aa7ce4900d905dfac265bd8542e99bda451d4c7
+        - name: KUBERNETES_MIN_VERSION
+          value: v1.28.0
+        image: quay.io/konflux-ci/tekton-results-watcher:0a751a1ecaf7ab73f2a756a806d8a18c50c16547
         name: watcher
         ports:
         - containerPort: 9090
@@ -2473,8 +2475,11 @@ spec:
           application-name: Konflux kflux-rhel-p01
           custom-console-name: Konflux kflux-rhel-p01
           custom-console-url: https://konflux-ui.apps.kflux-rhel-p01.fc38.p1.openshiftapps.com
-          custom-console-url-pr-details: https://konflux-ui.apps.kflux-rhel-p01.fc38.p1.openshiftapps.com/ns/{{ namespace }}/pipelinerun/{{ pr }}
-          custom-console-url-pr-tasklog: https://konflux-ui.apps.kflux-rhel-p01.fc38.p1.openshiftapps.com/ns/{{ namespace }}/pipelinerun/{{ pr }}/logs/{{ task }}
+          custom-console-url-pr-details: https://konflux-ui.apps.kflux-rhel-p01.fc38.p1.openshiftapps.com/ns/{{
+            namespace }}/pipelinerun/{{ pr }}
+          custom-console-url-pr-tasklog: https://konflux-ui.apps.kflux-rhel-p01.fc38.p1.openshiftapps.com/ns/{{
+            namespace }}/pipelinerun/{{ pr }}/logs/{{ task }}
+          remember-ok-to-test: "false"
   profile: all
   pruner:
     disabled: false
