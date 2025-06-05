@@ -186,7 +186,7 @@ if [[ "$OCP_MINOR" -lt 16 ]]; then
   echo '---' >> $ROOT/argo-cd-apps/overlays/development/delete-applications.yaml
   yq e -n ".apiVersion=\"argoproj.io/v1alpha1\"
             | .kind=\"ApplicationSet\"
-            | .metadata.name = \kueue\"
+            | .metadata.name = \"kueue\"
             | .\$patch = \"delete\"" >> $ROOT/argo-cd-apps/overlays/development/delete-applications.yaml
 fi
 
