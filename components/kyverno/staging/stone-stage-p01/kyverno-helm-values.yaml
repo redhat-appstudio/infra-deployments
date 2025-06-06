@@ -18,7 +18,6 @@ admissionController:
         cpu: 500m
         memory: 1Gi
       limits:
-        cpu: 500m
         memory: 1Gi
     securityContext:
       allowPrivilegeEscalation: false
@@ -34,7 +33,6 @@ backgroundController:
       cpu: 500m
       memory: 1Gi
     limits:
-      cpu: 500m
       memory: 1Gi
   securityContext:
     allowPrivilegeEscalation: false
@@ -45,9 +43,6 @@ backgroundController:
       - "ALL"
 cleanupController:
   replicas: 3
-  resources:
-    limits:
-      cpu: 500m
   securityContext:
     allowPrivilegeEscalation: false
     readOnlyRootFilesystem: true
@@ -59,17 +54,6 @@ reportsController:
   enabled: false
 policyReportsCleanup:
   enabled: false
-  image:
-    registry: mirror.gcr.io
-  securityContext:
-    allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: true
-    runAsNonRoot: true
-    runAsGroup: null
-    runAsUser: null
-    capabilities:
-      drop:
-      - "ALL"
 webhooksCleanup:
   enabled: false
 test:
