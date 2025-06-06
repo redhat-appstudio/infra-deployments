@@ -49,38 +49,11 @@ cleanupController:
       drop:
       - "ALL"
 reportsController:
-  replicas: 3
-  securityContext:
-    allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: true
-    runAsNonRoot: true
-    capabilities:
-      drop:
-      - "ALL"
+  enabled: false
 policyReportsCleanup:
-  image:
-    registry: mirror.gcr.io
-  securityContext:
-    allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: true
-    runAsNonRoot: true
-    runAsGroup: null
-    runAsUser: null
-    capabilities:
-      drop:
-      - "ALL"
+  enabled: false
 webhooksCleanup:
-  image:
-    registry: mirror.gcr.io
-  securityContext:
-    allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: true
-    runAsNonRoot: true
-    runAsGroup: null
-    runAsUser: null
-    capabilities:
-      drop:
-      - "ALL"
+  enabled: false
 test:
   securityContext:
     allowPrivilegeEscalation: false
