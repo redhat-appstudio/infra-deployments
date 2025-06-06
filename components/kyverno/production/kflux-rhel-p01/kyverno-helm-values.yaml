@@ -16,7 +16,6 @@ admissionController:
         cpu: 500m
         memory: 2Gi
       limits:
-        cpu: 500m
         memory: 2Gi
     securityContext:
       allowPrivilegeEscalation: false
@@ -32,7 +31,6 @@ backgroundController:
       cpu: 500m
       memory: 2Gi
     limits:
-      cpu: 500m
       memory: 2Gi
   securityContext:
     allowPrivilegeEscalation: false
@@ -43,9 +41,6 @@ backgroundController:
       - "ALL"
 cleanupController:
   replicas: 3
-  resources:
-    limits:
-      cpu: 500m
   securityContext:
     allowPrivilegeEscalation: false
     readOnlyRootFilesystem: true
@@ -55,9 +50,6 @@ cleanupController:
       - "ALL"
 reportsController:
   replicas: 3
-  resources:
-    limits:
-      cpu: 500m
   securityContext:
     allowPrivilegeEscalation: false
     readOnlyRootFilesystem: true
