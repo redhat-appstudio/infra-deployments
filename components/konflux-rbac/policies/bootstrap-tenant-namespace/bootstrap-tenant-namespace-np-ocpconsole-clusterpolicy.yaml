@@ -14,14 +14,6 @@ spec:
           selector:
             matchLabels:
               konflux-ci.dev/type: tenant
-    exclude:
-      any:
-      - resources:
-          kinds:
-            - Namespace
-          selector:
-            matchLabels:
-              toolchain.dev.openshift.com/type: tenant
     generate:
       generateExisting: true
       synchronize: false
