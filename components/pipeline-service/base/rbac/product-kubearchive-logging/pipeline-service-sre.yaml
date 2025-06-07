@@ -1,0 +1,45 @@
+---
+# Grant access to the tekton-logging namespace
+# This binding is needed to allow the pipelines team to manage the pods
+# which happen to stuck during an upgrade.
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: pipeline-service-sre-manage-vector-pods
+  namespace: product-kubearchive-logging
+rules:
+  - apiGroups:
+      - ""
+    verbs:
+      - get
+      - list
+      - watch
+      - delete
+    resources:
+      - pods
+  - apiGroups:
+      - "apps"
+    verbs:
+      - get
+      - list
+      - watch
+      - delete
+    resources:
+      - daemonsets
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: pipeline-service-sre-manage-vector-pods
+  namespace: product-kubearchive-logging
+subjects:
+  - kind: Group
+    apiGroup: rbac.authorization.k8s.io
+    name: konflux-pipeline-service
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: konflux-sre
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: pipeline-service-sre-manage-vector-pods
