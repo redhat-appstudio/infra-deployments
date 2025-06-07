@@ -71,6 +71,8 @@ customConfig:
       inputs: ["remap_app_logs"]
       compression: "none"
       endpoint: ${ENDPOINT}
+      tls:
+        verify_certificate: false
       encoding:
         codec: "text"
       key_prefix: "/logs/{{ `{{ .namespace }}` }}/{{`{{ .result }}`}}/{{`{{ .taskRunUID }}`}}/{{`{{ .container }}`}}"
