@@ -1,0 +1,59 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: kueue
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              values:
+                sourceRoot: components/kueue
+                environment: staging
+                # This app must have cluster specific configurations.
+                # empty-base is an overlay that just has the namespace resource.
+                # This allows to gradually deploy to all the clusters.
+                clusterDir: empty-base
+          - list:
+              elements:
+                - nameNormalized: stone-stg-rh01
+                  values.clusterDir: stone-stg-rh01
+                - nameNormalized: stone-stage-p01
+                  values.clusterDir: stone-stage-p01
+                - nameNormalized: stone-prd-rh01
+                  values.clusterDir: stone-prd-rh01
+                - nameNormalized: kflux-prd-rh02
+                  values.clusterDir: kflux-prd-rh02
+                - nameNormalized: stone-prod-p01
+                  values.clusterDir: stone-prod-p01
+                - nameNormalized: stone-prod-p02
+                  values.clusterDir: stone-prod-p02
+                - nameNormalized: kflux-ocp-p01
+                  values.clusterDir: kflux-ocp-p01
+                - nameNormalized: kflux-prd-rh03
+                  values.clusterDir: kflux-prd-rh03
+  template:
+    metadata:
+      name: kueue-{{nameNormalized}}
+    spec:
+      project: default
+      source:
+        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+        targetRevision: main
+      destination:
+        server: '{{server}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: false
+        syncOptions:
+          - CreateNamespace=false
+        retry:
+          limit: -1
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 3m
