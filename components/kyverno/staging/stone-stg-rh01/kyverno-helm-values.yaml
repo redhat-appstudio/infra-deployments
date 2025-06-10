@@ -32,6 +32,8 @@ backgroundController:
   replicas: 3
   extraArgs:
     leaderElectionRetryPeriod: 5s
+    clientRateLimitBurst: 2000
+    clientRateLimitQPS: 2000
   resources:
     requests:
       cpu: 500m

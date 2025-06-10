@@ -28,6 +28,9 @@ admissionController:
         - "ALL"
 backgroundController:
   replicas: 3
+  extraArgs:
+    clientRateLimitBurst: 2000
+    clientRateLimitQPS: 2000
   resources:
     requests:
       cpu: 4000m
