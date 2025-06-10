@@ -4,6 +4,8 @@ config:
   preserve: false
 admissionController:
   replicas: 3
+  extraArgs:
+    leaderElectionRetryPeriod: 5s
   initContainer:
     securityContext:
       allowPrivilegeEscalation: false
@@ -28,6 +30,8 @@ admissionController:
         - "ALL"
 backgroundController:
   replicas: 3
+  extraArgs:
+    leaderElectionRetryPeriod: 5s
   resources:
     requests:
       cpu: 500m
@@ -43,6 +47,8 @@ backgroundController:
       - "ALL"
 cleanupController:
   replicas: 3
+  extraArgs:
+    leaderElectionRetryPeriod: 5s
   securityContext:
     allowPrivilegeEscalation: false
     readOnlyRootFilesystem: true
