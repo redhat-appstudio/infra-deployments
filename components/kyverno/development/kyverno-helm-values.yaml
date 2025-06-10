@@ -6,6 +6,8 @@ config:
   preserve: false
 admissionController:
   replicas: 1
+  extraArgs:
+    leaderElectionRetryPeriod: 5s
   initContainer:
     securityContext:
       allowPrivilegeEscalation: false
@@ -24,6 +26,8 @@ admissionController:
         - "ALL"
 backgroundController:
   replicas: 1
+  extraArgs:
+    leaderElectionRetryPeriod: 5s
   securityContext:
     allowPrivilegeEscalation: false
     readOnlyRootFilesystem: true
