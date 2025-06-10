@@ -1,3 +1,4 @@
+---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -27,7 +28,7 @@ subjects:
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: tekton-kueue
+  name: tekton-kueue-controller
 spec:
   endpoints:
   - path: /metrics
@@ -38,7 +39,50 @@ spec:
       name: "metrics-reader"
       key: token
     tlsConfig:
-      insecureSkipVerify: true
+      insecureSkipVerify: false
+      ca:
+        secret:
+          name: controller-manager-metrics-server-cert
+          key: ca.crt
+      cert:
+        secret:
+          name: controller-manager-metrics-server-cert
+          key: tls.crt
+      keySecret:
+        name: controller-manager-metrics-server-cert
+        key: tls.key
   selector:
     matchLabels:
       control-plane: controller-manager
+      app.kubernetes.io/name: tekton-kueue
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: tekton-kueue-webhook
+spec:
+  endpoints:
+  - path: /metrics
+    interval: 15s
+    port: https
+    scheme: https
+    bearerTokenSecret:
+      name: "metrics-reader"
+      key: token
+    tlsConfig:
+      insecureSkipVerify: false
+      ca:
+        secret:
+          name: webhook-metrics-server-cert
+          key: ca.crt
+      cert:
+        secret:
+          name: webhook-metrics-server-cert
+          key: tls.crt
+      keySecret:
+        name: webhook-metrics-server-cert
+        key: tls.key
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+      app.kubernetes.io/name: tekton-kueue-webhook
