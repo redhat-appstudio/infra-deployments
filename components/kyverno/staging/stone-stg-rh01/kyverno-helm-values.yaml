@@ -4,8 +4,6 @@ config:
   preserve: false
 admissionController:
   replicas: 3
-  extraArgs:
-    leaderElectionRetryPeriod: 5s
   initContainer:
     securityContext:
       allowPrivilegeEscalation: false
@@ -15,6 +13,8 @@ admissionController:
         drop:
         - "ALL"
   container:
+    extraArgs:
+      leaderElectionRetryPeriod: 5s
     resources:
       requests:
         cpu: 500m
