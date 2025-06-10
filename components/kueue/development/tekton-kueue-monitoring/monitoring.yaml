@@ -1,0 +1,78 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: metrics-reader
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: metrics-reader
+  annotations:
+    kubernetes.io/service-account.name: metrics-reader
+type: kubernetes.io/service-account-token
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus-tekton-kueue-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: tekton-kueue-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: metrics-reader
+  namespace: tekton-kueue
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: tekton-kueue-controller
+  annotations:
+    argocd.argoproj.io/sync-wave: "11"
+spec:
+  endpoints:
+  - path: /metrics
+    interval: 15s
+    port: https
+    scheme: https
+    bearerTokenSecret:
+      name: "metrics-reader"
+      key: token
+    tlsConfig:
+      serverName: tekton-kueue-controller-manager-metrics-service.tekton-kueue.svc.cluster.local
+      insecureSkipVerify: false
+      ca:
+        secret:
+          name: controller-manager-metrics-server-cert
+          key: ca.crt
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: tekton-kueue
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: tekton-kueue-webhook
+  annotations:
+    argocd.argoproj.io/sync-wave: "11"
+spec:
+  endpoints:
+  - path: /metrics
+    interval: 15s
+    port: metrics-server
+    scheme: https
+    bearerTokenSecret:
+      name: "metrics-reader"
+      key: token
+    tlsConfig:
+      serverName: tekton-kueue-webhook-service.tekton-kueue.svc.cluster.local
+      insecureSkipVerify: false
+      ca:
+        secret:
+          name: webhook-metrics-server-cert
+          key: ca.crt
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: tekton-kueue-webhook
