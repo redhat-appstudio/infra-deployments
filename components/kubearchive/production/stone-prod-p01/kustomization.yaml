@@ -2,26 +2,11 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
+  - ../../base
   - ../base
-  - postgresql.yaml
   - https://github.com/kubearchive/kubearchive/releases/download/v1.0.1/kubearchive.yaml?timeout=90
 
 namespace: product-kubearchive
-secretGenerator:
-  - behavior: merge
-    literals:
-      - DATABASE_KIND=postgresql
-      - DATABASE_PORT=5432
-      - DATABASE_DB=kubearchive
-      - DATABASE_USER=kubearchive
-      - DATABASE_URL=postgresql.product-kubearchive.svc.cluster.local
-      - DATABASE_PASSWORD=password # notsecret
-    name: kubearchive-database-credentials
-    namespace: kubearchive
-    type: Opaque
-
-commonAnnotations:
-  argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 
 patches:
   - patch: |-
@@ -37,6 +22,15 @@ patches:
                 env:
                   - name: KUBEARCHIVE_VERSION
                     value: v1.0.1
+  - patch: |-
+      apiVersion: external-secrets.io/v1beta1
+      kind: ExternalSecret
+      metadata:
+        name: database-secret
+      spec:
+        dataFrom:
+          - extract:
+              key: integrations-output/external-resources/appsrep09ue1/stone-prod-p01/stone-prod-p01-kube-archive-rds
   # These patches add an annotation so an OpenShift service
   # creates the TLS secrets instead of Cert Manager
   - patch: |-
