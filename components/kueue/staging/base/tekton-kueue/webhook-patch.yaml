@@ -23,3 +23,15 @@
       labelSelector:
         matchLabels:
           app.kubernetes.io/name: tekton-kueue-webhook
+
+- op: add
+  path: /spec/template/spec/containers/0/resources/requests
+  value:
+    cpu: 200m
+    memory: 256Gi
+
+- op: add
+  path: /spec/template/spec/containers/0/resources/limits
+  value:
+    cpu: 200m
+    memory: 256Gi
