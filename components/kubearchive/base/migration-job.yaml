@@ -3,6 +3,8 @@ kind: Job
 metadata:
   name: kubearchive-schema-migration
   annotations:
+    # Needed if just the command is changed, otherwise the job needs to be deleted manually
+    argocd.argoproj.io/sync-options: Replace=true
     ignore-check.kube-linter.io/no-read-only-root-fs: >
       "This job needs to clone a repository to do its job, so it needs write access to the FS."
 spec:
@@ -15,9 +17,10 @@ spec:
           image: quay.io/fedora/python-311:20240911
           command: ["/bin/sh", "-c"]
           args:
-            - git clone https://github.com/kubearchive/kubearchive --depth=1 --branch=${KUBEARCHIVE_VERSION} /tmp/kubearchive;
+            - set -o errexit;
+              git clone https://github.com/kubearchive/kubearchive --depth=1 --branch=${KUBEARCHIVE_VERSION} /tmp/kubearchive;
               cd /tmp/kubearchive;
-              curl -L https://github.com/golang-migrate/migrate/releases/download/${MIGRATE_VERSION}/migrate.linux-amd64.tar.gz | tar xvz migrate;
+              curl --silent -L https://github.com/golang-migrate/migrate/releases/download/${MIGRATE_VERSION}/migrate.linux-amd64.tar.gz | tar xvz migrate;
               ./migrate -verbose -path integrations/database/postgresql/migrations/ -database postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_URL}:${DATABASE_PORT}/${DATABASE_DB} up
           resources:
             limits:
