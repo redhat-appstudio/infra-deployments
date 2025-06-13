@@ -1,0 +1,107 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: disallow-tenant-groups
+spec:
+  description: |
+    Asserts that rolebindings to restricted groups are denied in tenant namespaces
+  concurrent: false
+  namespace: 'deny-tenant-groups'
+  steps:
+  - name: "Given namespace has tenant label"
+    try:
+    - apply:
+        file: ./resources/tenant-namespace.yaml
+  - name: "Given cluster policy is ready"
+    try:
+    - apply:
+        file: ../invalid-subjects.yaml
+    - assert:
+        file: ./chainsaw-assert-clusterpolicy.yaml
+  - name: "When invalid rolebinding is applied, assert an error"
+    try:
+    - apply:
+        bindings:
+        - name: group
+          value: "system:anonymous"
+        file: ./resources/rolebinding.yaml
+        template: true
+        expect:
+        - match:
+            kind: RoleBinding
+          check:
+            ($error != null): true
+    - apply:
+        bindings:
+        - name: group
+          value: "system:masters"
+        file: ./resources/rolebinding.yaml
+        template: true
+        expect:
+        - match:
+            kind: RoleBinding
+          check:
+            ($error != null): true
+    - apply:
+        bindings:
+        - name: group
+          value: "system:unauthenticated"
+        file: ./resources/rolebinding.yaml
+        template: true
+        expect:
+        - match:
+            kind: RoleBinding
+          check:
+            ($error != null): true
+---
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: allow-system-groups-in-non-tenant-namespaces
+spec:
+  description: |
+    Asserts that rolebindings restricted groups are allowed in non-tenant namespaces
+  concurrent: false
+  namespace: 'allow-system-groups'
+  steps:
+  - name: "Given cluster policy is ready"
+    try:
+    - apply:
+        file: ../invalid-subjects.yaml
+    - assert:
+        file: ./chainsaw-assert-clusterpolicy.yaml
+  - name: "When valid rolebinding is applied, assert no error"
+    try:
+    - apply:
+        bindings:
+        - name: group
+          value: "system:anonymous"
+        file: ./resources/rolebinding.yaml
+        template: true
+        expect:
+        - match:
+            kind: RoleBinding
+          check:
+            ($error != null): false
+    - apply:
+        bindings:
+        - name: group
+          value: "system:masters"
+        file: ./resources/rolebinding.yaml
+        template: true
+        expect:
+        - match:
+            kind: RoleBinding
+          check:
+            ($error != null): false
+    - apply:
+        bindings:
+        - name: group
+          value: "system:unauthenticated"
+        file: ./resources/rolebinding.yaml
+        template: true
+        expect:
+        - match:
+            kind: RoleBinding
+          check:
+            ($error != null): false
