@@ -1,0 +1,27 @@
+name: Forbid ClusterPolicies outside Policies component
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'components/**'
+      - '!components/policies/**'
+
+jobs:
+  forbid-clusterpolicies:
+    name: Forbid ClusterPolicies outside Policies component
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Kustomize
+        uses: multani/action-setup-kustomize@v1
+        with:
+          version: 5.6.0
+
+      - name: Run forbid-clusterpolicies script
+        run: |
+          find argo-cd-apps components -name 'kustomization.yaml' \
+            ! -path 'components/policies/*' \
+            | \
+            xargs -I {} -n1 -P8  bash -c './hack/forbid-clusterpolicies.sh $(dirname "{}")'
