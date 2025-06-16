@@ -1,0 +1,368 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: konfluxci-bootstrap-ns-mutate-new-namespace-konfluxcidev
+spec:
+  description: |
+    tests that the resources are created in a namespace
+    labeled with `konflux-ci.dev/type=tenant`
+  concurrent: false
+  namespace: 'generate-new-namespace'
+  bindings:
+  - name: suffix
+    value: labeled 
+  steps:
+  - name: given-appstudio-pipeline-clusterrole-exists
+    try:
+    - apply:
+        file: ./resources/actual-appstudio-pipeline-clusterrole.yaml
+  - name: given-kyverno-has-permission-on-resources
+    try:
+    - apply:
+        file: ../kyverno_rbac.yaml
+  - name: given-cluster-policies-are-ready
+    try:
+    - apply:
+        file: ../bootstrap-tenant-namespace-np-ocpconsole-clusterpolicy.yaml
+    - apply:
+        file: ../bootstrap-tenant-namespace-np-ocpingress-clusterpolicy.yaml
+    - apply:
+        file: ../bootstrap-tenant-namespace-np-ocpmonitoring-clusterpolicy.yaml
+    - apply:
+        file: ../bootstrap-tenant-namespace-np-olm-clusterpolicy.yaml
+    - apply:
+        file: ../bootstrap-tenant-namespace-np-samenamespace-clusterpolicy.yaml
+    - apply:
+        file: ../bootstrap-tenant-namespace-rbcm-clusterpolicy.yaml
+    - assert:
+        file: chainsaw-assert-clusterpolicy.yaml
+  - name: when-konfluxcidev-labeled-namespace-is-created
+    try:
+    - apply:
+        file: resources/actual-namespace-konfluxcidev.yaml
+        template: true
+  - name: then-rolebinding-is-created
+    try:
+    - assert:
+        file: resources/expected-rolebinding.yaml
+        template: true
+  - name: then-resources-are-created
+    try:
+    - assert:
+        file: resources/expected-resources.yaml
+        template: true
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: konfluxci-bootstrap-ns-mutate-updated-namespace-konfluxcidev
+spec:
+  description: |
+    tests that the resources are created in an unlabeled namespace
+    when it is updated to have the label `konflux-ci.dev/type=tenant`
+  concurrent: false
+  namespace: 'generate-new-namespace'
+  bindings:
+  - name: suffix
+    value: updated-labeled
+  steps:
+  - name: given-appstudio-pipeline-clusterrole-exists
+    try:
+    - apply:
+        file: ./resources/actual-appstudio-pipeline-clusterrole.yaml
+  - name: given-kyverno-has-permission-on-resources
+    try:
+    - apply:
+        file: ../kyverno_rbac.yaml
+  - name: given-cluster-policies-are-ready
+    try:
+    - apply:
+        file: ../bootstrap-tenant-namespace-np-ocpconsole-clusterpolicy.yaml
+    - apply:
+        file: ../bootstrap-tenant-namespace-np-ocpingress-clusterpolicy.yaml
+    - apply:
+        file: ../bootstrap-tenant-namespace-np-ocpmonitoring-clusterpolicy.yaml
+    - apply:
+        file: ../bootstrap-tenant-namespace-np-olm-clusterpolicy.yaml
+    - apply:
+        file: ../bootstrap-tenant-namespace-np-samenamespace-clusterpolicy.yaml
+    - apply:
+        file: ../bootstrap-tenant-namespace-rbcm-clusterpolicy.yaml
+    - assert:
+        file: chainsaw-assert-clusterpolicy.yaml
+  - name: given-unlabeled-namespace-exists
+    try:
+    - apply:
+        file: resources/actual-namespace-unlabeled.yaml
+        template: true
+  - name: given-rolebinding-does-not-exist
+    try:
+    - delete:
+        file: resources/expected-rolebinding.yaml
+        template: true
+        expect:
+        - check:
+            ($error != null): true
+  - name: when-konfluxcidev-label-is-added
+    try:
+    - apply:
+        file: resources/actual-namespace-konfluxcidev.yaml
+        template: true
+  - name: then-rolebinding-is-created
+    try:
+    - assert:
+        file: resources/expected-rolebinding.yaml
+        template: true
+  - name: then-resources-are-created
+    try:
+    - assert:
+        file: resources/expected-resources.yaml
+        template: true
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: konfluxci-bootstrap-ns-mutate-new-namespace-unlabeled
+spec:
+  description: |
+    tests that the resources are NOT created in an unlabeled namespace
+  concurrent: false
+  namespace: 'generate-new-namespace'
+  bindings:
+  - name: suffix
+    value: unlabeled
+  steps:
+  - name: given-appstudio-pipeline-clusterrole-exists
+    try:
+    - apply:
+        file: ./resources/actual-appstudio-pipeline-clusterrole.yaml
+  - name: given-kyverno-has-permission-on-resources
+    try:
+    - apply:
+        file: ../kyverno_rbac.yaml
+  - name: given-cluster-policies-are-ready
+    try:
+    - apply:
+        file: ../bootstrap-tenant-namespace-np-ocpconsole-clusterpolicy.yaml
+    - apply:
+        file: ../bootstrap-tenant-namespace-np-ocpingress-clusterpolicy.yaml
+    - apply:
+        file: ../bootstrap-tenant-namespace-np-ocpmonitoring-clusterpolicy.yaml
+    - apply:
+        file: ../bootstrap-tenant-namespace-np-olm-clusterpolicy.yaml
+    - apply:
+        file: ../bootstrap-tenant-namespace-np-samenamespace-clusterpolicy.yaml
+    - apply:
+        file: ../bootstrap-tenant-namespace-rbcm-clusterpolicy.yaml
+    - assert:
+        file: chainsaw-assert-clusterpolicy.yaml
+  - name: when-unlabeled-namespace-is-created
+    try:
+    - apply:
+        file: resources/actual-namespace-unlabeled.yaml
+        template: true
+  - name: then-rolebinding-is-not-created
+    try:
+    - delete:
+        file: resources/expected-rolebinding.yaml
+        template: true
+        expect:
+        - check:
+            ($error != null): true
+  - name: then-resources-are-not-created
+    try:
+    - delete:
+        file: resources/expected-resources.yaml
+        template: true
+        expect:
+        - check:
+            ($error != null): true
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: konfluxci-bootstrap-ns-mutate-existing-namespace
+spec:
+  description: |
+    tests that the RoleBinding is NOT created in an already existing
+    namespace labeled with `konflux-ci.dev/type=tenant`, whereas
+    other resources are.
+  concurrent: false
+  namespace: 'generate-existing-namespace'
+  bindings:
+  - name: suffix
+    value: labeled
+  steps:
+  - name: given-konfluxci-labeled-namespace-is-created
+    try:
+    - apply:
+        file: resources/actual-namespace-konfluxcidev.yaml
+        template: true
+  - name: given-kyverno-has-permission-on-resources
+    try:
+    - apply:
+        file: ../kyverno_rbac.yaml
+  - name: given-appstudio-pipeline-clusterrole-exists
+    try:
+    - apply:
+        file: ./resources/actual-appstudio-pipeline-clusterrole.yaml
+  - name: when-cluster-policies-are-ready
+    try:
+    - apply:
+        file: ../bootstrap-tenant-namespace-np-ocpconsole-clusterpolicy.yaml
+    - apply:
+        file: ../bootstrap-tenant-namespace-np-ocpingress-clusterpolicy.yaml
+    - apply:
+        file: ../bootstrap-tenant-namespace-np-ocpmonitoring-clusterpolicy.yaml
+    - apply:
+        file: ../bootstrap-tenant-namespace-np-olm-clusterpolicy.yaml
+    - apply:
+        file: ../bootstrap-tenant-namespace-np-samenamespace-clusterpolicy.yaml
+    - apply:
+        file: ../bootstrap-tenant-namespace-rbcm-clusterpolicy.yaml
+    - assert:
+        file: chainsaw-assert-clusterpolicy.yaml
+  - name: then-resources-are-created
+    try:
+    - assert:
+        file: resources/expected-resources.yaml
+        template: true
+  - name: then-rolebinding-is-not-created
+    try:
+    - delete:
+        file: resources/expected-rolebinding.yaml
+        template: true
+        expect:
+        - check:
+            ($error != null): true
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: konfluxci-bootstrap-ns-mutate-existing-namespace-unlabeled
+spec:
+  description: |
+    tests that the RoleBinding is NOT created in an 
+    existing unlabeled namespace
+  concurrent: false
+  namespace: 'generate-existing-namespace'
+  bindings:
+  - name: suffix
+    value: unlabeled
+  steps:
+  - name: given-appstudio-pipeline-clusterrole-exists
+    try:
+    - apply:
+        file: ./resources/actual-appstudio-pipeline-clusterrole.yaml
+  - name: given-kyverno-has-permission-on-resources
+    try:
+    - apply:
+        file: ../kyverno_rbac.yaml
+  - name: given-unlabeled-namespace-is-created
+    try:
+    - apply:
+        file: resources/actual-namespace-unlabeled.yaml
+        template: true
+  - name: when-cluster-policies-are-ready
+    try:
+    - apply:
+        file: ../bootstrap-tenant-namespace-np-ocpconsole-clusterpolicy.yaml
+    - apply:
+        file: ../bootstrap-tenant-namespace-np-ocpingress-clusterpolicy.yaml
+    - apply:
+        file: ../bootstrap-tenant-namespace-np-ocpmonitoring-clusterpolicy.yaml
+    - apply:
+        file: ../bootstrap-tenant-namespace-np-olm-clusterpolicy.yaml
+    - apply:
+        file: ../bootstrap-tenant-namespace-np-samenamespace-clusterpolicy.yaml
+    - apply:
+        file: ../bootstrap-tenant-namespace-rbcm-clusterpolicy.yaml
+    - assert:
+        file: chainsaw-assert-clusterpolicy.yaml
+  - name: then-rolebinding-is-not-created
+    try:
+    - delete:
+        file: resources/expected-rolebinding.yaml
+        template: true
+        expect:
+        - check:
+            ($error != null): true
+  - name: then-resources-are-not-created
+    try:
+    - delete:
+        file: resources/expected-resources.yaml
+        template: true
+        expect:
+        - check:
+            ($error != null): true
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: konfluxci-bootstrap-ns-mutate-existing-namespace-konfluxcidev-existing-resources
+spec:
+  description: |
+    tests that resources are not updated in an already existing
+    namespace labeled with `konflux-ci.dev/type=tenant` where the 
+    RoleBinding already exists
+  concurrent: false
+  namespace: 'generate-update-existing-namespace'
+  bindings:
+  - name: suffix
+    value: labeled
+  steps:
+  - name: given-konfluxcidev-labeled-namespace-is-created
+    try:
+    - apply:
+        file: resources/actual-namespace-konfluxcidev.yaml
+        template: true
+  - name: given-rolebinding-is-created
+    try:
+    - apply:
+        file: resources/actual-existing-rolebinding.yaml
+        template: true
+  - name: then-resources-are-not-changed
+    try:
+    - apply:
+        file: resources/actual-existing-resources.yaml
+        template: true
+  - name: given-appstudio-pipeline-clusterrole-exists
+    try:
+    - apply:
+        file: ./resources/actual-appstudio-pipeline-clusterrole.yaml
+  - name: given-kyverno-has-permission-on-resources
+    try:
+    - apply:
+        file: ../kyverno_rbac.yaml
+  - name: when-cluster-policies-are-ready
+    try:
+    - apply:
+        file: ../bootstrap-tenant-namespace-np-ocpconsole-clusterpolicy.yaml
+    - apply:
+        file: ../bootstrap-tenant-namespace-np-ocpingress-clusterpolicy.yaml
+    - apply:
+        file: ../bootstrap-tenant-namespace-np-ocpmonitoring-clusterpolicy.yaml
+    - apply:
+        file: ../bootstrap-tenant-namespace-np-olm-clusterpolicy.yaml
+    - apply:
+        file: ../bootstrap-tenant-namespace-np-samenamespace-clusterpolicy.yaml
+    - apply:
+        file: ../bootstrap-tenant-namespace-rbcm-clusterpolicy.yaml
+    - assert:
+        file: chainsaw-assert-clusterpolicy.yaml
+  - name: then-rolebinding-is-not-changed
+    try:
+    - assert:
+        file: resources/actual-existing-rolebinding.yaml
+        template: true
+  - name: then-resources-are-not-changed
+    try:
+    - assert:
+        file: resources/actual-existing-resources.yaml
+        template: true

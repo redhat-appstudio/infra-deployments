@@ -1,0 +1,63 @@
+apiVersion: cli.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: bootstrap-existing-namespaces
+policies:
+- ../bootstrap-tenant-namespace-np-ocpconsole-clusterpolicy.yaml
+- ../bootstrap-tenant-namespace-np-ocpingress-clusterpolicy.yaml
+- ../bootstrap-tenant-namespace-np-ocpmonitoring-clusterpolicy.yaml
+- ../bootstrap-tenant-namespace-np-olm-clusterpolicy.yaml
+- ../bootstrap-tenant-namespace-np-samenamespace-clusterpolicy.yaml
+- ../bootstrap-tenant-namespace-rbcm-clusterpolicy.yaml
+resources:
+- ./resources/labeled-namespace-konflux.yaml
+results:
+- policy: bootstrap-tenant-namespace-rbcm
+  generatedResource: ./resources/expected-rolebinding-appstudio-runner.yaml
+  kind: Namespace
+  resources:
+  - labeled-namespace-konflux
+  result: pass
+  rule: create-appstudio-runner-rolebinding
+- policy: bootstrap-tenant-namespace-np-ocpconsole
+  generatedResource: ./resources/expected-networkpolicy_allow-from-console-namespaces.yml
+  kind: Namespace
+  resources:
+  - labeled-namespace-konflux
+  result: pass
+  rule: create-allow-from-console-namespaces-networkpolicy
+- policy: bootstrap-tenant-namespace-np-samenamespace
+  generatedResource: ./resources/expected-networkpolicy_allow-same-namespace.yml
+  kind: Namespace
+  resources:
+  - labeled-namespace-konflux
+  result: pass
+  rule: create-allow-same-namespace-networkpolicy
+- policy: bootstrap-tenant-namespace-np-olm
+  generatedResource: ./resources/expected-networkpolicy_allow-from-olm-namespaces.yml
+  kind: Namespace
+  resources:
+  - labeled-namespace-konflux
+  result: pass
+  rule: create-allow-from-olm-namespaces-networkpolicy
+- policy: bootstrap-tenant-namespace-np-ocpmonitoring
+  generatedResource: ./resources/expected-networkpolicy_allow-from-openshift-monitoring.yml
+  kind: Namespace
+  resources:
+  - labeled-namespace-konflux
+  result: pass
+  rule: create-allow-from-openshift-monitoring-networkpolicy
+- policy: bootstrap-tenant-namespace-np-ocpingress
+  generatedResource: ./resources/expected-networkpolicy_allow-from-openshift-ingress.yml
+  kind: Namespace
+  resources:
+  - labeled-namespace-konflux
+  result: pass
+  rule: create-allow-from-openshift-ingress-networkpolicy
+- policy: bootstrap-tenant-namespace-rbcm
+  generatedResource: ./resources/expected-configmap_trusted-ca.yml
+  kind: Namespace
+  resources:
+  - labeled-namespace-konflux
+  result: pass
+  rule: create-trusted-ca-configmap
