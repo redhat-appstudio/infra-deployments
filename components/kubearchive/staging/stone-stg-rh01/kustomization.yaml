@@ -12,6 +12,13 @@ commonAnnotations:
 
 patches:
   - patch: |-
+      $patch: delete
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: kubearchive-database-credentials
+        namespace: kubearchive
+  - patch: |-
       apiVersion: batch/v1
       kind: Job
       metadata:

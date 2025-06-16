@@ -9,6 +9,14 @@ resources:
 namespace: product-kubearchive
 
 patches:
+  # We don't need the Secret as it will be created by the ExternalSecrets Operator
+  - patch: |-
+      $patch: delete
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: kubearchive-database-credentials
+        namespace: kubearchive
   - patch: |-
       apiVersion: batch/v1
       kind: Job
