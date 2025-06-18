@@ -1,0 +1,86 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gosmee-client
+  annotations:
+    ignore-check.kube-linter.io/liveness-port: "gosmee probes sidecar port"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gosmee-client
+  template:
+    metadata:
+      labels:
+        app: gosmee-client
+    spec:
+      containers:
+        - image: "ghcr.io/chmouel/gosmee:v0.26.1"
+          imagePullPolicy: Always
+          name: gosmee
+          args:
+            - "client"
+            - TBA
+            - "http://localhost:8080"
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - "ALL"
+            seccompProfile:
+              type: RuntimeDefault
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+          resources:
+            limits:
+              cpu: 1
+              memory: 750Mi
+            requests:
+              cpu: 1
+              memory: 750Mi
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 9100
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 25 # Must be > the healthz handler's timeout
+            failureThreshold: 2
+        - name: health-check-sidecar
+          image: quay.io/konflux-ci/smee-sidecar:latest@sha256:c977ebe1fc430ddf5deb5d0433c79f24da22a7accfe45998538df32c4a6d05ed
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+            - name: healthz
+              containerPort: 9100
+          env:
+          - name: DOWNSTREAM_SERVICE_URL
+            value: "http://pipelines-as-code-controller.openshift-pipelines:8080"
+          - name: SMEE_CHANNEL_URL
+            value: "TBA"
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 9100
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 25 # Must be > the healthz handler's timeout
+            failureThreshold: 2
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - "ALL"
+            seccompProfile:
+              type: RuntimeDefault
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+          resources:
+            limits:
+              cpu: 100m
+              memory: 32Mi
+            requests:
+              cpu: 100m
+              memory: 32Mi
