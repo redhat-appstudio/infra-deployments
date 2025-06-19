@@ -6,6 +6,7 @@ spec:
   background: false
   rules:
   - name: deny-restricted-groups
+    skipBackgroundRequests: true
     match:
       any:
       - resources:
@@ -20,6 +21,7 @@ spec:
         operator: AnyIn
         value: '["system:anonymous", "system:unauthenticated", "system:masters"]'
     validate:
+      allowExistingViolations: true
       failureAction: Enforce
       message: "RoleBindings to restricted system groups is not allowed in tenant namespaces."
       deny: {}

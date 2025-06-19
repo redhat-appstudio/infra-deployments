@@ -36,6 +36,7 @@ spec:
           namespace: '{{request.object.metadata.name}}'
           name: appstudio-pipeline
   - name: create-trusted-ca-configmap
+    skipBackgroundRequests: true
     match:
       any:
       - resources:
