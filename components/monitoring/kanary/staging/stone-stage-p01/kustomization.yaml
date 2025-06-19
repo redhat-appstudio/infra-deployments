@@ -1,10 +1,18 @@
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
 resources:
   - ../base
+  - rbac
+  - external-secrets
   - https://github.com/redhat-appstudio/o11y/config/exporters/monitoring/kanary/base?ref=4dfdc1adbb50d1adf1b697cc2b1c421c7f597edd
 
 images:
   - name: quay.io/redhat-appstudio/o11y
     newName: quay.io/redhat-appstudio/o11y
     newTag: 4dfdc1adbb50d1adf1b697cc2b1c421c7f597edd
+
+patches:
+  - path: kanary-db-credentials-secret-path.yaml
+    target:
+      name: kanary-db-credentials
+      kind: ExternalSecret
+      group: external-secrets.io
+      version: v1beta1
