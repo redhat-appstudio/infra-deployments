@@ -18,16 +18,3 @@ patches:
       metadata:
         name: kubearchive-database-credentials
         namespace: kubearchive
-  - patch: |-
-      apiVersion: batch/v1
-      kind: Job
-      metadata:
-        name: kubearchive-schema-migration
-      spec:
-        template:
-          spec:
-            containers:
-              - name: migration
-                env:
-                  - name: KUBEARCHIVE_VERSION
-                    value: v1.0.1

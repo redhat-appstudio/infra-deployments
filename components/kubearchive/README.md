@@ -30,9 +30,9 @@ index aa2d0f98..982086c2 100644
    - patch: |-
 ```
 
-So you need to change the URL of the file AND the KUBEARCHIVE_VERSION in the
+So you need to change the URL of the file and the KUBEARCHIVE_VERSION in the
 migration Job.
 
 Then after the upgrade is successful, you can start upgrading production clusters.
 Make sure to review the changes inside the KubeArchive YAML pulled from GitHub. Some
-resources may change so some patches could be not useful/wrong after upgrading.
+resources may change so some patches may not be useful/wrong after upgrading.
