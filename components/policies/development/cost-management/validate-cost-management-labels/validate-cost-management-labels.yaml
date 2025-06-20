@@ -15,37 +15,40 @@ metadata:
 spec:
   validationFailureAction: Enforce
   rules:
-    - name: validate-cost-center-label
-      match:
-        any:
-          - resources:
-              kinds:
-                - Namespace
-              selector:
-                matchLabels:
-                  konflux-ci.dev/type: tenant
-      validate:
-        message: "Tenant namespaces must have the 'cost-center' label."
-        pattern:
-          metadata:
-            labels:
+  - name: validate-cost-center-label
+    skipBackgroundRequests: true
+    match:
+      any:
+      - resources:
+          kinds:
+          - Namespace
+          selector:
+            matchLabels:
+              konflux-ci.dev/type: tenant
+    validate:
+      allowExistingViolations: true
+      message: "Tenant namespaces must have the 'cost-center' label."
+      pattern:
+        metadata:
+          labels:
+            cost-center: "?*"
+  - name: validate-cost-center-label-value
+    skipBackgroundRequests: true
+    match:
+      any:
+      - resources:
+          kinds:
+          - Namespace
+          operations:
+          - CREATE
+          - UPDATE
+          selector:
+            matchLabels:
+              konflux-ci.dev/type: tenant
               cost-center: "?*"
-
-    - name: validate-cost-center-label-value
-      match:
-        any:
-          - resources:
-              kinds:
-              - Namespace
-              operations:
-              - CREATE
-              - UPDATE
-              selector:
-                matchLabels:
-                  konflux-ci.dev/type: tenant
-                  cost-center: "?*"
-      validate:
-        message: "Tenant namespaces 'cost-center' label can only contain numbers."
-        cel:
-          expressions:
-          - expression: "object.metadata.labels['cost-center'].matches('^[0-9]+$')"
+    validate:
+      allowExistingViolations: true
+      message: "Tenant namespaces 'cost-center' label can only contain numbers."
+      cel:
+        expressions:
+        - expression: "object.metadata.labels['cost-center'].matches('^[0-9]+$')"
