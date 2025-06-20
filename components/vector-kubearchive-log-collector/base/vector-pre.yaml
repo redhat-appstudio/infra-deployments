@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: kubearchive-logging
+  name: product-kubearchive-logging
 ---
 allowHostDirVolumePlugin: true
 allowHostIPC: false
@@ -23,7 +23,7 @@ groups: []
 kind: SecurityContextConstraints
 metadata:
   name: logging-scc
-  namespace: kubearchive-logging
+  namespace: product-kubearchive-logging
 priority: null
 readOnlyRootFilesystem: true
 requiredDropCapabilities:
@@ -45,7 +45,7 @@ seccompProfiles:
 supplementalGroups:
   type: RunAsAny
 users:
-- system:serviceaccount:kubearchive-logging:vector-kubearchive-logs-collector
+- system:serviceaccount:product-kubearchive-logging:vector-kubearchive-log-collector
 volumes:
 - configMap
 - emptyDir
