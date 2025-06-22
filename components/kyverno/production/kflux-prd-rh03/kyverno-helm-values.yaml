@@ -26,6 +26,11 @@ admissionController:
       capabilities:
         drop:
         - "ALL"
+  metering:
+    disabled: false
+  serviceMonitor:
+    enabled: true
+    secure: false
 backgroundController:
   replicas: 3
   resources:
@@ -41,6 +46,11 @@ backgroundController:
     capabilities:
       drop:
       - "ALL"
+  metering:
+    disabled: false
+  serviceMonitor:
+    enabled: true
+    secure: false
 cleanupController:
   replicas: 3
   securityContext:
@@ -50,6 +60,11 @@ cleanupController:
     capabilities:
       drop:
       - "ALL"
+  metering:
+    disabled: false
+  serviceMonitor:
+    enabled: true
+    secure: false
 reportsController:
   enabled: false
 policyReportsCleanup:
