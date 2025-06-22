@@ -23,8 +23,8 @@ groups: []
 kind: SecurityContextConstraints
 metadata:
   name: logging-scc
-priority: null
-readOnlyRootFilesystem: true
+priority: 10
+readOnlyRootFilesystem: false
 requiredDropCapabilities:
 - CHOWN
 - DAC_OVERRIDE
@@ -51,3 +51,30 @@ volumes:
 - hostPath
 - projected
 - secret
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: vector-scc-user
+rules:
+- apiGroups:
+  - security.openshift.io
+  resources:
+  - securitycontextconstraints
+  verbs:
+  - use
+  resourceNames:
+  - logging-scc
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: vector-scc-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: vector-scc-user
+subjects:
+- kind: ServiceAccount
+  name: vector-kubearchive-log-collector
+  namespace: product-kubearchive-logging
