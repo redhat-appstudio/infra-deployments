@@ -39,6 +39,13 @@ spec:
     metadata:
       name: kubearchive-{{nameNormalized}}
     spec:
+      ignoreDifferences:
+        # ignore CRB that gets modified by KubeArchive
+        - kind: ClusterRoleBinding
+          group: rbac.authorization.k8s.io
+          name: clusterkubearchiveconfig-read
+          jsonPointers:
+            - /subjects
       project: default
       source:
         path: "{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}"
