@@ -78,3 +78,12 @@ subjects:
 - kind: ServiceAccount
   name: vector-kubearchive-log-collector
   namespace: product-kubearchive-logging
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: loki-sa
+  namespace: product-kubearchive-logging
+  annotations:
+    # This annotation links the SA to the AWS IAM Role
+    eks.amazonaws.com/role-arn: "arn:aws:iam::663944276957:role/stone-stg-rh01-loki-bucket-role"
