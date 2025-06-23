@@ -33,6 +33,7 @@ admissionController:
     disabled: false
   serviceMonitor:
     enabled: true
+    # kyverno doesn't seem to support HTTPS on metrics
     secure: false
 backgroundController:
   replicas: 3
@@ -57,6 +58,7 @@ backgroundController:
     disabled: false
   serviceMonitor:
     enabled: true
+    # kyverno doesn't seem to support HTTPS on metrics
     secure: false
 cleanupController:
   replicas: 3
@@ -73,6 +75,7 @@ cleanupController:
     disabled: false
   serviceMonitor:
     enabled: true
+    # kyverno doesn't seem to support HTTPS on metrics
     secure: false
 reportsController:
   enabled: false
