@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-from-openshift-user-workload-monitoring
+  namespace: etcd-shield
+spec:
+  podSelector:
+    matchLabels:
+      apps: etcd-shield
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: openshift-user-workload-monitoring
+    ports:
+    - protocol: TCP
+      port: metrics
