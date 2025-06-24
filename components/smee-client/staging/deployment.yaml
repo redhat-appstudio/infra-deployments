@@ -60,6 +60,8 @@ spec:
             value: "http://pipelines-as-code-controller.openshift-pipelines:8080"
           - name: SMEE_CHANNEL_URL
             value: "TBA"
+          - name: INSECURE_SKIP_VERIFY
+            value: "true"
           livenessProbe:
             httpGet:
               path: /healthz
