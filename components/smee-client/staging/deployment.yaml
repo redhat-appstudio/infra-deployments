@@ -48,7 +48,7 @@ spec:
             timeoutSeconds: 25 # Must be > the healthz handler's timeout
             failureThreshold: 2
         - name: health-check-sidecar
-          image: quay.io/konflux-ci/smee-sidecar:latest@sha256:c977ebe1fc430ddf5deb5d0433c79f24da22a7accfe45998538df32c4a6d05ed
+          image: quay.io/konflux-ci/smee-sidecar:latest@sha256:55f4715ba7e91c7908be0c6319638399c4de8e1bfdf082d6cd7287affb3b398f
           imagePullPolicy: Always
           ports:
             - name: http
@@ -60,8 +60,6 @@ spec:
             value: "http://pipelines-as-code-controller.openshift-pipelines:8080"
           - name: SMEE_CHANNEL_URL
             value: "TBA"
-          - name: INSECURE_SKIP_VERIFY
-            value: "true"
           livenessProbe:
             httpGet:
               path: /healthz
