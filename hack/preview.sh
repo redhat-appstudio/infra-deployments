@@ -188,6 +188,9 @@ if [[ "$OCP_MINOR" -lt 16 ]]; then
             | .kind=\"ApplicationSet\"
             | .metadata.name = \"kueue\"
             | .\$patch = \"delete\"" >> $ROOT/argo-cd-apps/overlays/development/delete-applications.yaml
+  ( 
+    cd "$ROOT/components/policies/development/" && kustomize edit remove resource 'kueue/'
+  ) || exit 1
 fi
 
 $ROOT/hack/util-set-github-org $MY_GITHUB_ORG
