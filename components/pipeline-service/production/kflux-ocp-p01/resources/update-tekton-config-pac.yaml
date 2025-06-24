@@ -1,10 +1,16 @@
 ---
-- op: add
-  path: /spec/platforms/openshift/pipelinesAsCode/settings
-  value:
-    application-name: Konflux OCP
-    custom-console-name: Konflux OCP
-    custom-console-url: https://konflux-ui.apps.kflux-ocp-p01.7ayg.p1.openshiftapps.com
-    custom-console-url-pr-details: https://konflux-ui.apps.kflux-ocp-p01.7ayg.p1.openshiftapps.com/ns/{{ namespace }}/pipelinerun/{{ pr }}
-    custom-console-url-pr-tasklog: https://konflux-ui.apps.kflux-ocp-p01.7ayg.p1.openshiftapps.com/ns/{{ namespace }}/pipelinerun/{{ pr }}/logs/{{ task }}
-    secret-github-app-token-scoped: "false"
+- op: replace
+  path: /spec/platforms/openshift/pipelinesAsCode/settings/application-name
+  value: Konflux OCP
+- op: replace
+  path: /spec/platforms/openshift/pipelinesAsCode/settings/custom-console-name
+  value: Konflux OCP
+- op: replace
+  path: /spec/platforms/openshift/pipelinesAsCode/settings/custom-console-url
+  value: https://konflux-ui.apps.kflux-ocp-p01.7ayg.p1.openshiftapps.com
+- op: replace
+  path: /spec/platforms/openshift/pipelinesAsCode/settings/custom-console-url-pr-details
+  value: https://konflux-ui.apps.kflux-ocp-p01.7ayg.p1.openshiftapps.com/ns/{{ namespace }}/pipelinerun/{{ pr }}
+- op: replace
+  path: /spec/platforms/openshift/pipelinesAsCode/settings/custom-console-url-pr-tasklog
+  value: https://konflux-ui.apps.kflux-ocp-p01.7ayg.p1.openshiftapps.com/ns/{{ namespace }}/pipelinerun/{{ pr }}/logs/{{ task }}
