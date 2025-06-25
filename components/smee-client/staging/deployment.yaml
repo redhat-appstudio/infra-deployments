@@ -46,9 +46,9 @@ spec:
             initialDelaySeconds: 30
             periodSeconds: 30
             timeoutSeconds: 25 # Must be > the healthz handler's timeout
-            failureThreshold: 12 # High-enough not to fail if other container crashlooping
+            failureThreshold: 4
         - name: health-check-sidecar
-          image: quay.io/konflux-ci/smee-sidecar:latest@sha256:55f4715ba7e91c7908be0c6319638399c4de8e1bfdf082d6cd7287affb3b398f
+          image: quay.io/konflux-ci/smee-sidecar:latest@sha256:3b1c6e66ed95ce43aa2ef0671f2f8b92c4f5753d7a0087e360704a52350d71b7
           imagePullPolicy: Always
           ports:
             - name: http
@@ -62,12 +62,12 @@ spec:
             value: "TBA"
           livenessProbe:
             httpGet:
-              path: /healthz
+              path: /livez
               port: 9100
             initialDelaySeconds: 30
             periodSeconds: 30
             timeoutSeconds: 25 # Must be > the healthz handler's timeout
-            failureThreshold: 12 # High-enough not to fail if other container crashlooping
+            failureThreshold: 3
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
