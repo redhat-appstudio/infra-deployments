@@ -1937,7 +1937,7 @@ spec:
         - -check_owner=false
         - -completed_run_grace_period=5m
         - -requeue_interval=2m
-        - -store_deadline=30m
+        - -store_deadline=90m
         - -forward_buffer=1m
         - -threadiness=32
         - -logs_api=true
@@ -2455,7 +2455,7 @@ spec:
   profile: all
   pruner:
     disabled: false
-    keep-since: 60
+    keep-since: 120
     resources:
     - pipelinerun
     schedule: '*/10 * * * *'
