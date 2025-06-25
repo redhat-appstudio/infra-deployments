@@ -86,6 +86,9 @@
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/namespace-lister/namespace-lister.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/pipeline-service/pipeline-service.yaml"
 
+    argo_cd_private_network_app_files:
+      - "{{ dst }}/argo-cd-apps/base/smee-client/smee-client.yaml"
+
     expected_vault_secrets:
       - 'stonesoup/{{ env }}/platform/ansible/generated/{{ shortname }}/github-app'
       - 'stonesoup/{{ env }}/platform/ansible/generated/{{ shortname }}/chains-signing-secret'
@@ -139,6 +142,14 @@
       loop: "{{ argo_cd_app_files }}"
       loop_control:
         loop_var: filename
+
+    - name: Patch ApplicationSet files to include new cluster reference, only applicable to private network clusters
+      tags: [applicationsets]
+      include_tasks: tasks/applicationsets.yaml
+      loop: "{{ argo_cd_private_network_app_files }}"
+      loop_control:
+        loop_var: filename
+      when: network == 'private'
 
     - name: Copy cluster-specific component manifests
       tags: [components]
