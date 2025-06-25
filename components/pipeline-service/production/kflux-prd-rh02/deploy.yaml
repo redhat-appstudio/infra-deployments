@@ -144,7 +144,7 @@ kind: ClusterRole
 metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "0"
-  name: appstudio-pipelines-runner
+  name: tekton-pipelines-controller-konflux-scc
 rules:
 - apiGroups:
   - security.openshift.io
@@ -823,7 +823,7 @@ metadata:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: appstudio-pipelines-runner
+  name: tekton-pipelines-controller-konflux-scc
 subjects:
 - kind: ServiceAccount
   name: tekton-pipelines-controller
