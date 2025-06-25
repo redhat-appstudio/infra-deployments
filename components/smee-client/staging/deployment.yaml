@@ -46,7 +46,7 @@ spec:
             initialDelaySeconds: 30
             periodSeconds: 30
             timeoutSeconds: 25 # Must be > the healthz handler's timeout
-            failureThreshold: 2
+            failureThreshold: 12 # High-enough not to fail if other container crashlooping
         - name: health-check-sidecar
           image: quay.io/konflux-ci/smee-sidecar:latest@sha256:55f4715ba7e91c7908be0c6319638399c4de8e1bfdf082d6cd7287affb3b398f
           imagePullPolicy: Always
@@ -67,7 +67,7 @@ spec:
             initialDelaySeconds: 30
             periodSeconds: 30
             timeoutSeconds: 25 # Must be > the healthz handler's timeout
-            failureThreshold: 2
+            failureThreshold: 12 # High-enough not to fail if other container crashlooping
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
