@@ -3,10 +3,6 @@
     "list": [
       {
         "builtIn": 1,
-        "datasource": {
-          "type": "grafana",
-          "uid": "-- Grafana --"
-        },
         "enable": true,
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
@@ -41,10 +37,6 @@
       "type": "row"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "d56348f1-77d7-4896-a34f-495c93f4d0be"
-      },
       "description": "The latency of an admission attempt.",
       "fieldConfig": {
         "defaults": {
@@ -117,10 +109,6 @@
       "pluginVersion": "11.3.0",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "d56348f1-77d7-4896-a34f-495c93f4d0be"
-          },
           "editorMode": "code",
           "expr": "sum by (le) (rate(kueue_admission_attempt_duration_seconds_bucket[$__range]))",
           "legendFormat": "__auto",
@@ -132,9 +120,6 @@
       "type": "heatmap"
     },
     {
-      "datasource": {
-        "uid": "d56348f1-77d7-4896-a34f-495c93f4d0be"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -212,10 +197,6 @@
       "type": "row"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "d56348f1-77d7-4896-a34f-495c93f4d0be"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -301,10 +282,6 @@
       "type": "table"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "d56348f1-77d7-4896-a34f-495c93f4d0be"
-      },
       "description": "The number of pending workloads",
       "fieldConfig": {
         "defaults": {
@@ -362,10 +339,6 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "d56348f1-77d7-4896-a34f-495c93f4d0be"
-      },
       "description": "The number of admitted Workloads that are active (unsuspended and not finished)",
       "fieldConfig": {
         "defaults": {
@@ -423,10 +396,6 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "d56348f1-77d7-4896-a34f-495c93f4d0be"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -499,10 +468,6 @@
       "type": "bargauge"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "d56348f1-77d7-4896-a34f-495c93f4d0be"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -564,10 +529,6 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "d56348f1-77d7-4896-a34f-495c93f4d0be"
-      },
       "description": "kueue_admission_wait_time_seconds",
       "fieldConfig": {
         "defaults": {
@@ -641,10 +602,6 @@
       "type": "heatmap"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "d56348f1-77d7-4896-a34f-495c93f4d0be"
-      },
       "description": "The time between a workload was created or requeued until it got quota reservation",
       "fieldConfig": {
         "defaults": {
@@ -717,10 +674,6 @@
       "type": "heatmap"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "d56348f1-77d7-4896-a34f-495c93f4d0be"
-      },
       "description": "The time from when a workload got the quota reservation until admission",
       "fieldConfig": {
         "defaults": {
@@ -803,10 +756,6 @@
       "id": 4,
       "panels": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "d56348f1-77d7-4896-a34f-495c93f4d0be"
-          },
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -863,10 +812,6 @@
           "type": "stat"
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "d56348f1-77d7-4896-a34f-495c93f4d0be"
-          },
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -968,10 +913,6 @@
               "refId": "A"
             },
             {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "d56348f1-77d7-4896-a34f-495c93f4d0be"
-              },
               "editorMode": "code",
               "exemplar": false,
               "expr": "max(etcd_mvcc_db_total_size_in_use_in_bytes)",
@@ -1003,7 +944,7 @@
   },
   "timepicker": {},
   "timezone": "",
-  "title": "Queue",
+  "title": "Kueue",
   "uid": "DVlSKyOVzzzz",
   "version": 1143,
   "weekStart": ""
