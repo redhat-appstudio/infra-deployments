@@ -92,10 +92,6 @@
       "type": "row"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS-APPSTUDIO-DS}"
-      },
       "description": "The latency of an admission attempt.",
       "fieldConfig": {
         "defaults": {
@@ -173,11 +169,7 @@
           "format": "heatmap",
           "legendFormat": "{{le}}",
           "range": true,
-          "refId": "A",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS-APPSTUDIO-DS}"
-          }
+          "refId": "A"
         }
       ],
       "title": "Admission Attempt Latency",
@@ -248,10 +240,6 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS-APPSTUDIO-DS}"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -321,21 +309,13 @@
           "expr": "container_memory_working_set_bytes{namespace=~\"tekton-kueue|kueue-external-admission|openshift-kueue-operator\", image!=\"\"} / on (pod) kube_pod_resource_limit{resource='memory',namespace=~\"tekton-kueue|kueue-external-admission|openshift-kueue-operator\"} * 100",
           "legendFormat": "__auto",
           "range": true,
-          "refId": "A",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS-APPSTUDIO-DS}"
-          }
+          "refId": "A"
         }
       ],
       "title": "Pods Memory Utilization",
       "type": "bargauge"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS-APPSTUDIO-DS}"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -405,11 +385,7 @@
           "expr": "pod:container_cpu_usage:sum{namespace=~\"tekton-kueue|kueue-external-admission|openshift-kueue-operator\"} / on (pod) kube_pod_resource_limit{resource='cpu',namespace=~\"tekton-kueue|kueue-external-admission|openshift-kueue-operator\"} * 100",
           "legendFormat": "__auto",
           "range": true,
-          "refId": "A",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS-APPSTUDIO-DS}"
-          }
+          "refId": "A"
         }
       ],
       "title": "Pods CPU Utilization",
@@ -628,10 +604,6 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS-APPSTUDIO-DS}"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -699,11 +671,7 @@
           "instant": false,
           "legendFormat": "{{resource}}",
           "range": true,
-          "refId": "A",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS-APPSTUDIO-DS}"
-          }
+          "refId": "A"
         }
       ],
       "title": "Resource Reservation / Nominal Quota",
@@ -771,10 +739,6 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS-APPSTUDIO-DS}"
-      },
       "description": "kueue_admission_wait_time_seconds",
       "fieldConfig": {
         "defaults": {
@@ -842,21 +806,13 @@
           "format": "heatmap",
           "legendFormat": "{{le}}",
           "range": true,
-          "refId": "A",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS-APPSTUDIO-DS}"
-          }
+          "refId": "A"
         }
       ],
       "title": "Admission Wait Time",
       "type": "heatmap"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS-APPSTUDIO-DS}"
-      },
       "description": "The time between a workload was created or requeued until it got quota reservation",
       "fieldConfig": {
         "defaults": {
@@ -923,21 +879,13 @@
           "format": "heatmap",
           "legendFormat": "{{le}}",
           "range": true,
-          "refId": "A",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS-APPSTUDIO-DS}"
-          }
+          "refId": "A"
         }
       ],
       "title": "Quota Reserved Wait Time",
       "type": "heatmap"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS-APPSTUDIO-DS}"
-      },
       "description": "The time from when a workload got the quota reservation until admission",
       "fieldConfig": {
         "defaults": {
@@ -1004,11 +952,7 @@
           "format": "heatmap",
           "legendFormat": "{{le}}",
           "range": true,
-          "refId": "A",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS-APPSTUDIO-DS}"
-          }
+          "refId": "A"
         }
       ],
       "title": "Admission Check Wait Time",
