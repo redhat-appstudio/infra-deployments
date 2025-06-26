@@ -20,7 +20,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 8,
+  "id": 31,
   "links": [],
   "panels": [
     {
@@ -37,6 +37,9 @@
       "type": "row"
     },
     {
+      "datasource": {
+        "type": "prometheus"
+      },
       "description": "The latency of an admission attempt.",
       "fieldConfig": {
         "defaults": {
@@ -61,7 +64,7 @@
       },
       "id": 1,
       "options": {
-        "calculate": true,
+        "calculate": false,
         "calculation": {
           "xBuckets": {
             "mode": "size"
@@ -78,7 +81,7 @@
           "exponent": 0.5,
           "fill": "dark-orange",
           "mode": "scheme",
-          "reverse": true,
+          "reverse": false,
           "scale": "exponential",
           "scheme": "Oranges",
           "steps": 15
@@ -110,8 +113,9 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "sum by (le) (rate(kueue_admission_attempt_duration_seconds_bucket[$__range]))",
-          "legendFormat": "__auto",
+          "expr": "sum by (le) (increase(kueue_admission_attempt_duration_seconds_bucket[$__range]))",
+          "format": "heatmap",
+          "legendFormat": "{{le}}",
           "range": true,
           "refId": "A"
         }
@@ -145,7 +149,7 @@
       },
       "gridPos": {
         "h": 10,
-        "w": 11,
+        "w": 12,
         "x": 12,
         "y": 1
       },
@@ -184,12 +188,204 @@
       "type": "stat"
     },
     {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "dfc8894e-f8dc-4020-94d4-1645256804b7"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 0,
+          "fieldMinMax": false,
+          "mappings": [],
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "#EAB839",
+                "value": 60
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": [
+          {
+            "__systemRef": "hideSeriesFrom",
+            "matcher": {
+              "id": "byNames",
+              "options": {
+                "mode": "exclude",
+                "names": [
+                  "{__name__=\"container_memory_usage_bytes\", container=\"manager\", endpoint=\"https-metrics\", id=\"/kubepods.slice/kubepods-burstable.slice/kubepods-burstable-pod78570a7a_3357_433f_916f_2381e6bcdd58.slice/crio-ebfe1ccf6bbbc0ffc6b0dfa316e5f831dabf9c1cf1d68b70a0b39e93950bdf8c.scope\", image=\"quay.io/konflux-ci/tekton-kueue:222e9e201f7c99e30a673c3b0d8ee072c2a06c93\", instance=\"10.0.40.139:10250\", job=\"kubelet\", metrics_path=\"/metrics/cadvisor\", name=\"k8s_manager_tekton-kueue-controller-manager-547bc84598-78h68_tekton-kueue_78570a7a-3357-433f-916f-2381e6bcdd58_0\", namespace=\"tekton-kueue\", node=\"ip-10-0-40-139.us-west-2.compute.internal\", pod=\"tekton-kueue-controller-manager-547bc84598-78h68\", prometheus=\"openshift-monitoring/k8s\", service=\"kubelet\"}"
+                ],
+                "prefix": "All except:",
+                "readOnly": true
+              }
+            },
+            "properties": []
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 11
+      },
+      "id": 16,
+      "options": {
+        "displayMode": "lcd",
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "maxVizHeight": 300,
+        "minVizHeight": 16,
+        "minVizWidth": 8,
+        "namePlacement": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "sizing": "auto",
+        "valueMode": "color"
+      },
+      "pluginVersion": "11.3.0",
+      "targets": [
+        {
+          "editorMode": "code",
+          "expr": "container_memory_working_set_bytes{namespace=~\"tekton-kueue|kueue-external-admission|openshift-kueue-operator\", image!=\"\"} / on (pod) kube_pod_resource_limit{resource='memory',namespace=~\"tekton-kueue|kueue-external-admission|openshift-kueue-operator\"} * 100",
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Pods Memory Utilization",
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "dfc8894e-f8dc-4020-94d4-1645256804b7"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 1,
+          "fieldMinMax": false,
+          "mappings": [],
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "#EAB839",
+                "value": 60
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": [
+          {
+            "__systemRef": "hideSeriesFrom",
+            "matcher": {
+              "id": "byNames",
+              "options": {
+                "mode": "exclude",
+                "names": [
+                  "{__name__=\"container_memory_usage_bytes\", container=\"manager\", endpoint=\"https-metrics\", id=\"/kubepods.slice/kubepods-burstable.slice/kubepods-burstable-pod78570a7a_3357_433f_916f_2381e6bcdd58.slice/crio-ebfe1ccf6bbbc0ffc6b0dfa316e5f831dabf9c1cf1d68b70a0b39e93950bdf8c.scope\", image=\"quay.io/konflux-ci/tekton-kueue:222e9e201f7c99e30a673c3b0d8ee072c2a06c93\", instance=\"10.0.40.139:10250\", job=\"kubelet\", metrics_path=\"/metrics/cadvisor\", name=\"k8s_manager_tekton-kueue-controller-manager-547bc84598-78h68_tekton-kueue_78570a7a-3357-433f-916f-2381e6bcdd58_0\", namespace=\"tekton-kueue\", node=\"ip-10-0-40-139.us-west-2.compute.internal\", pod=\"tekton-kueue-controller-manager-547bc84598-78h68\", prometheus=\"openshift-monitoring/k8s\", service=\"kubelet\"}"
+                ],
+                "prefix": "All except:",
+                "readOnly": true
+              }
+            },
+            "properties": []
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 19
+      },
+      "id": 17,
+      "options": {
+        "displayMode": "lcd",
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "maxVizHeight": 300,
+        "minVizHeight": 16,
+        "minVizWidth": 8,
+        "namePlacement": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "sizing": "auto",
+        "valueMode": "color"
+      },
+      "pluginVersion": "11.3.0",
+      "targets": [
+        {
+          "editorMode": "code",
+          "expr": "pod:container_cpu_usage:sum{namespace=~\"tekton-kueue|kueue-external-admission|openshift-kueue-operator\"} / on (pod) kube_pod_resource_limit{resource='cpu',namespace=~\"tekton-kueue|kueue-external-admission|openshift-kueue-operator\"} * 100",
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Pods CPU Utilization",
+      "type": "bargauge"
+    },
+    {
       "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 15
+        "y": 27
       },
       "id": 6,
       "panels": [],
@@ -244,7 +440,7 @@
         "h": 6,
         "w": 3,
         "x": 0,
-        "y": 16
+        "y": 28
       },
       "id": 11,
       "options": {
@@ -305,7 +501,7 @@
         "h": 6,
         "w": 6,
         "x": 3,
-        "y": 16
+        "y": 28
       },
       "id": 9,
       "options": {
@@ -362,7 +558,7 @@
         "h": 6,
         "w": 15,
         "x": 9,
-        "y": 16
+        "y": 28
       },
       "id": 10,
       "options": {
@@ -424,7 +620,7 @@
         "h": 11,
         "w": 9,
         "x": 0,
-        "y": 22
+        "y": 34
       },
       "id": 7,
       "options": {
@@ -478,8 +674,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "yellow",
-                "value": null
+                "color": "yellow"
               },
               {
                 "color": "semi-dark-green",
@@ -495,7 +690,7 @@
         "h": 4,
         "w": 9,
         "x": 0,
-        "y": 33
+        "y": 45
       },
       "id": 8,
       "options": {
@@ -529,6 +724,10 @@
       "type": "stat"
     },
     {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "dfc8894e-f8dc-4020-94d4-1645256804b7"
+      },
       "description": "kueue_admission_wait_time_seconds",
       "fieldConfig": {
         "defaults": {
@@ -549,18 +748,18 @@
         "h": 15,
         "w": 14,
         "x": 0,
-        "y": 37
+        "y": 49
       },
       "id": 12,
       "options": {
-        "calculate": true,
+        "calculate": false,
         "cellGap": 1,
         "cellValues": {},
         "color": {
           "exponent": 0.5,
           "fill": "dark-orange",
           "mode": "scheme",
-          "reverse": true,
+          "reverse": false,
           "scale": "exponential",
           "scheme": "Oranges",
           "steps": 64
@@ -592,8 +791,9 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "sum by (le) (rate(kueue_admission_wait_time_seconds_bucket{cluster_queue=\"cluster-pipeline-queue\"}[$__range]))",
-          "legendFormat": "__auto",
+          "expr": "sum by (le) (increase(kueue_admission_wait_time_seconds_bucket{cluster_queue=\"cluster-pipeline-queue\"}[$__range]))",
+          "format": "heatmap",
+          "legendFormat": "{{le}}",
           "range": true,
           "refId": "A"
         }
@@ -602,6 +802,10 @@
       "type": "heatmap"
     },
     {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "dfc8894e-f8dc-4020-94d4-1645256804b7"
+      },
       "description": "The time between a workload was created or requeued until it got quota reservation",
       "fieldConfig": {
         "defaults": {
@@ -622,17 +826,17 @@
         "h": 13,
         "w": 14,
         "x": 0,
-        "y": 52
+        "y": 64
       },
       "id": 14,
       "options": {
-        "calculate": true,
+        "calculate": false,
         "cellGap": 1,
         "color": {
           "exponent": 0.5,
           "fill": "dark-orange",
           "mode": "scheme",
-          "reverse": true,
+          "reverse": false,
           "scale": "exponential",
           "scheme": "Oranges",
           "steps": 64
@@ -664,8 +868,9 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "sum by (le) (rate(kueue_quota_reserved_wait_time_seconds_bucket{cluster_queue=\"cluster-pipeline-queue\"}[$__range]))",
-          "legendFormat": "__auto",
+          "expr": "sum by (le) (increase(kueue_quota_reserved_wait_time_seconds_bucket{cluster_queue=\"cluster-pipeline-queue\"}[$__range]))",
+          "format": "heatmap",
+          "legendFormat": "{{le}}",
           "range": true,
           "refId": "A"
         }
@@ -674,6 +879,10 @@
       "type": "heatmap"
     },
     {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "dfc8894e-f8dc-4020-94d4-1645256804b7"
+      },
       "description": "The time from when a workload got the quota reservation until admission",
       "fieldConfig": {
         "defaults": {
@@ -694,17 +903,17 @@
         "h": 13,
         "w": 14,
         "x": 0,
-        "y": 65
+        "y": 77
       },
       "id": 13,
       "options": {
-        "calculate": true,
+        "calculate": false,
         "cellGap": 1,
         "color": {
           "exponent": 0.5,
           "fill": "dark-orange",
           "mode": "scheme",
-          "reverse": true,
+          "reverse": false,
           "scale": "exponential",
           "scheme": "Oranges",
           "steps": 64
@@ -736,8 +945,9 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "sum by (le) (rate(kueue_admission_checks_wait_time_seconds_bucket{cluster_queue=\"cluster-pipeline-queue\"}[$__range]))",
-          "legendFormat": "__auto",
+          "expr": "sum by (le) (increase(kueue_admission_checks_wait_time_seconds_bucket{cluster_queue=\"cluster-pipeline-queue\"}[$__range]))",
+          "format": "heatmap",
+          "legendFormat": "{{le}}",
           "range": true,
           "refId": "A"
         }
@@ -751,7 +961,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 78
+        "y": 90
       },
       "id": 4,
       "panels": [
@@ -766,8 +976,7 @@
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   }
                 ]
               }
@@ -855,8 +1064,7 @@
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "red",
@@ -945,7 +1153,7 @@
   "timepicker": {},
   "timezone": "",
   "title": "Kueue",
-  "uid": "DVlSKyOVzzzz",
-  "version": 1143,
+  "uid": "feq3mrtohyepsf",
+  "version": 1,
   "weekStart": ""
 }
