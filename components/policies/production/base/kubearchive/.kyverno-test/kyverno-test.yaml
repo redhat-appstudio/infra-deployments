@@ -1,0 +1,16 @@
+apiVersion: cli.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: bootstrap-existing-namespaces
+policies:
+- ../bootstrap-namespace.yaml
+resources:
+- ../resources/labeled-namespace-konflux.yaml
+results:
+- policy: init-ns-kubearchiveconfig
+  generatedResource: ../resources/expected-kubearchiveconfig-konflux.yaml
+  kind: Namespace
+  resources:
+  - labeled-namespace-konflux
+  result: pass
+  rule: init-ns-kubearchiveconfig
