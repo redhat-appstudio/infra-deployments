@@ -1,0 +1,25 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: init-ns-kubearchiveconfig
+spec:
+  rules:
+  - name: init-ns-kubearchiveconfig
+    match:
+      any:
+      - resources:
+          kinds:
+          - Namespace
+          selector:
+            matchLabels:
+              konflux-ci.dev/type: tenant
+    generate:
+      generateExisting: true
+      apiVersion: kubearchive.org/v1
+      kind: KubeArchiveConfig
+      name: kubearchive
+      namespace: '{{request.object.metadata.name}}'
+      synchronize: false
+      data:
+        spec:
+          resources: []
