@@ -3,6 +3,10 @@ name: Run Chainsaw tests
 on:
   pull_request:
     branches: [ main ]
+    paths:
+      - '.github/workflows/chainsaw-tests.yaml'
+      - 'components/kyverno/**'
+      - 'components/policies/**'
 
 jobs:
   find-chainsaw-tests:
