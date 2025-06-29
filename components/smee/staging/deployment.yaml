@@ -55,7 +55,7 @@ spec:
           name: gosmee-liveness-probe-client
           args:
             - "client"
-            - "http://localhost:3333/smeesvrmonit"
+            - "http://localhost:3333/servercheckchannel"
             - "http://localhost:8080"
           volumeMounts:
             - name: shared-health
@@ -99,7 +99,7 @@ spec:
             - name: DOWNSTREAM_SERVICE_URL
               value: "http://no.smee.svc.cluster.local:8080"
             - name: SMEE_CHANNEL_URL
-              value: "http://localhost:3333/smeesvrmonit"
+              value: "http://localhost:3333/servercheckchannel"
             - name: HEALTH_CHECK_TIMEOUT_SECONDS
               value: "20"
           livenessProbe:
