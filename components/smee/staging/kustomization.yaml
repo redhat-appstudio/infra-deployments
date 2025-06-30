@@ -6,6 +6,12 @@ resources:
 - deployment.yaml
 - route.yaml
 - service.yaml
+
+images:
+- name: quay.io/konflux-ci/smee-sidecar
+  newName: quay.io/konflux-ci/smee-sidecar
+  newTag: 5015d8c0daa445a106b3c1124d0f4e145fff7a16
+
 patches:
   - path: ip-allow-list.yaml
     target:
