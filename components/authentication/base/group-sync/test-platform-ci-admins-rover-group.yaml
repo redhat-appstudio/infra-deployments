@@ -1,0 +1,42 @@
+apiVersion: redhatcop.redhat.io/v1alpha1
+kind: GroupSync
+metadata:
+  name: test-platform-ci-rover-groups
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  providers:
+    - ldap:
+        ca:
+          key: ca.crt
+          kind: Secret
+          name: mtls-ca-validators
+          namespace: group-sync-operator
+        credentialsSecret:
+          name: konflux-ldap-sa
+          namespace: group-sync-operator
+        insecure: false
+        prune: true
+        rfc2307:
+          usersQuery:
+            baseDN: 'dc=redhat,dc=com'
+            derefAliases: never
+            scope: sub
+          groupNameAttributes:
+            - cn
+          tolerateMemberNotFoundErrors: true
+          tolerateMemberOutOfScopeErrors: true
+          groupUIDAttribute: dn
+          groupMembershipAttributes:
+            - uniqueMember
+          userNameAttributes:
+            - uid
+          groupsQuery:
+            baseDN: 'ou=adhoc,ou=managedGroups,dc=redhat,dc=com'
+            derefAliases: never
+            filter: (&(objectClass=rhatRoverGroup)(cn=test-platform-ci-admins))
+            scope: sub
+          userUIDAttribute: dn
+        url: 'ldaps://ldapfrac.corp.redhat.com'
+      name: ldap-corp
+  schedule: '*/15 * * * *'
