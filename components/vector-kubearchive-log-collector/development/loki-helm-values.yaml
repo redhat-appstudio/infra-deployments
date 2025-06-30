@@ -1,6 +1,11 @@
 ---
 loki:
-  auth_enabled: false
+  limits_config:
+    max_query_length: 0
+  auth_enabled: true
+  basic_auth:
+    enabled: true
+    existingSecret: loki-basic-auth
   storage:
     type: s3
     bucketNames:

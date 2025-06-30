@@ -37,6 +37,27 @@ customConfig:
         - reduce_events
       source: |-
         .tmp = del(.)
+        # Preserve original kubernetes fields for Loki labels
+        if exists(.tmp.kubernetes.pod_uid) {
+          .pod_id = del(.tmp.kubernetes.pod_uid)
+        } else {
+          .pod_id = "unknown_pod_id"
+        }
+        if exists(.tmp.kubernetes.pod_name) {
+          .pod_name = del(.tmp.kubernetes.pod_name)
+        } else {
+          .pod_name = "unknown_pod"
+        }
+        if exists(.tmp.kubernetes.container_name) {
+          .container = del(.tmp.kubernetes.container_name)
+        } else {
+          .container = "unknown_container"
+        }
+        if exists(.tmp.kubernetes.pod_namespace) {
+          .namespace = del(.tmp.kubernetes.pod_namespace)
+        } else {
+          .namespace = "unlabeled"
+        }
         # Handling Tekton-specific labels
         if exists(.tmp.kubernetes.pod_labels."tekton.dev/taskRunUID") {
           .taskRunUID = del(.tmp.kubernetes.pod_labels."tekton.dev/taskRunUID")
@@ -50,17 +71,16 @@ customConfig:
           .result = .taskRunUID
         }
         # --- Start: Cronjob Specific Handling ---
-        # Check for cronjob related labels. Common labels include `job-name` and `controller-uid`
-        # from the job created by the cronjob, and potentially `cronjob-name` if explicitly set.
         if exists(.tmp.kubernetes.pod_labels."job-name") {
           .job_name = del(.tmp.kubernetes.pod_labels."job-name")
-          .log_type = "cronjob" # Tag logs from cronjobs
+          .log_type = "cronjob"
           if exists(.tmp.kubernetes.pod_labels."cronjob-name") {
             .cronjob_name = del(.tmp.kubernetes.pod_labels."cronjob-name")
           } else {
-            # Attempt to infer cronjob name from job-name (common pattern: <cronjob-name>-<hash>)
-            if .job_name =~ r"^(.*)-\d{8,10}$" { # Basic pattern for job names from cronjobs (e.g., mycronjob-12345678)
-              .cronjob_name = capture(.job_name, r"^(.*)-\d{8,10}$")[0]
+            # Using corrected regex pattern without \d
+            .job_name = to_string(.job_name) ?? "default"
+            if match(.job_name, r'^(.*)-[0-9]{8,10}$') {
+              .cronjob_name = replace(.job_name, r'-[0-9]{8,10}$', "")
             } else {
               .cronjob_name = "unknown_cronjob"
             }
@@ -69,7 +89,7 @@ customConfig:
               .job_uid = del(.tmp.kubernetes.pod_labels."controller-uid")
           }
         } else {
-          .log_type = "application" # Default for other application logs
+          .log_type = "application"
         }
         # --- End: Cronjob Specific Handling ---
         # Handling general Kubernetes labels
@@ -78,22 +98,16 @@ customConfig:
         } else {
           .pod_labels = "no_labels"
         }
-        if exists(.tmp.kubernetes.pod_namespace) {
-          .namespace = del(.tmp.kubernetes.pod_namespace)
-        } else {
-          .namespace = "unlabeled"
-        }
-        # General Kubernetes container name
-        if exists(.tmp.kubernetes.container_name) {
-          .container = del(.tmp.kubernetes.container_name)
-        } else {
-          .container = "unknown_container"
-        }
         # General message field handling
         if exists(.tmp.message) {
-          .message = del(.tmp.message)
+          .message = to_string(del(.tmp.message)) ?? "no_message"
         } else {
           .message = "no_message"
+        }
+        # Basic data sanitization to prevent 400 errors
+        # Truncate very long messages
+        if length(.message) > 32768 {
+          .message = slice!(.message, 0, 32768) + "...[TRUNCATED]"
         }
         # Clean up temporary fields
         del(.tmp)
@@ -101,17 +115,31 @@ customConfig:
     loki:
       type: loki
       inputs: ["remap_app_logs"]
-      endpoint: "http://loki.product-kubearchive-logging.svc.cluster.local:3100" 
-      labels:
-          namespace: .kubernetes.namespace_name
-          pod: .kubernetes.pod_name
-          container: .kubernetes.container_name
+      endpoint: "http://loki.product-kubearchive-logging.svc.cluster.local:3100"
+      encoding:
+        codec: "json"
+      auth:
+        strategy: "basic"
+        user: "${LOKI_USERNAME}"
+        password: "${LOKI_PASSWORD}"
+      tenant_id: "kubearchive"
+      request:
+        headers:
+          X-Scope-OrgID: kubearchive
+      # labels:
+      #     namespace: .kubernetes.namespace_name
+      #     pod: .kubernetes.pod_name
+      #     container: .kubernetes.container_name
       batch:
         max_bytes: 10485760
         timeout_secs: 300 
       compression: "none"
-      encoding:
-        codec: "text"
+      labels:
+        job: "vector"
+        pod_id: "{{`{{ pod_id }}`}}"
+        container: "{{`{{ container }}`}}"
+        namespace: "{{`{{ namespace }}`}}"
+        pod: "{{`{{ pod_name }}`}}"
       key_prefix: "/logs/{{ `{{ .namespace }}` }}/{{`{{ .result }}`}}/{{`{{ .taskRunUID }}`}}/{{`{{ .container }}`}}"
       filename_time_format: "-%s"
       filename_append_uuid: false
@@ -119,7 +147,19 @@ customConfig:
         type: "memory"
         max_events: 10000
         when_full: "block"
-
+env:
+  - name: LOKI_USERNAME
+    valueFrom:
+      secretKeyRef:
+        name: loki-basic-auth
+        key: USERNAME
+  - name: LOKI_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: loki-basic-auth
+        key: PASSWORD
+  - name: VECTOR_LOG
+    value: "info"
 nodeSelector:
   konflux-ci.dev/workload: konflux-tenants
 tolerations:
