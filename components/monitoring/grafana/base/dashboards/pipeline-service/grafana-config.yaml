@@ -4033,7 +4033,7 @@ data:
               "targets": [
                 {
                   "exemplar": true,
-                  "expr": "sum(rate(watcher_workqueue_queue_latency_seconds_count{job=\"tekton-results-watcher\"}[10m]))",
+                  "expr": "sum(rate(watcher_workqueue_queue_latency_seconds_sum{job=\"tekton-results-watcher\"}[10m]))/sum(rate(watcher_workqueue_queue_latency_seconds_count{job=\"tekton-results-watcher\"}[10m]))",
                   "hide": false,
                   "interval": "",
                   "intervalFactor": 4,
@@ -4042,7 +4042,7 @@ data:
                 },
                 {
                   "exemplar": true,
-                  "expr": "sum(rate(watcher_reconcile_latency_count{job=\"tekton-results-watcher\"}[10m]))",
+                  "expr": "sum(rate(watcher_reconcile_latency_sum{job=\"tekton-results-watcher\"}[10m]))/sum(rate(watcher_reconcile_latency_count{job=\"tekton-results-watcher\"}[10m]))/1000",
                   "hide": false,
                   "interval": "",
                   "intervalFactor": 4,
