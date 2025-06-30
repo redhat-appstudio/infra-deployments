@@ -25,7 +25,7 @@ trap error_handler ERR
 
 # build manifests and filter ClusterPolicies for provided folder
 manifests=$(kustomize build --enable-helm "${folder}" | yq -o=j)
-policies=$(echo "${manifests}"| jq 'select(.kind=="ClusterPolicy")' | jq -s '.')
+policies=$(echo "${manifests}" | jq 'select(.kind=="ClusterPolicy")' | jq -s '.')
 
 # calculate the number of policies in the given folder
 num_policies=$(echo "${policies}" | jq 'length')
