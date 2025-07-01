@@ -1,16 +1,9 @@
----
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-- ../base
+  - ../../base
 
 images:
 - name: quay.io/konflux-ci/smee-sidecar
   newName: quay.io/konflux-ci/smee-sidecar
-  newTag: 5015d8c0daa445a106b3c1124d0f4e145fff7a16
-
-patches:
-  - path: ip-allow-list.yaml
-    target:
-      name: smee
-      kind: Route
+  newTag: 5015d8c0daa445a106b3c1124d0f4e145fff7a16 
