@@ -280,14 +280,6 @@ rules:
 - apiGroups: ["authorization.k8s.io"]
   resources: ["localsubjectaccessreviews"]
   verbs: ["create"]
-- apiGroups:  # TEMPORARY SOLUTION TO UNBLOCK KONFLUX-166 WHILE KAR-510 IS NOT SOLVED
-    - "appstudio.redhat.com"
-  resources:
-    - "snapshots"
-    - "releases"
-  verbs:
-    - "list"
-    - "get"
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
