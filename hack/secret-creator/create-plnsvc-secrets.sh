@@ -118,7 +118,7 @@ create_kubearchive_loki_secret() {
     LOKI_PWD="$(openssl rand -base64 20)"
     MINIO_USER=minio
     MINIO_PWD="$(openssl rand -base64 20)"
-    if kubectl -n ${NAMESPACE} get secret minio > /dev/null 2>&1 then
+    if kubectl -n ${NAMESPACE} get secret minio > /dev/null 2>&1; then
       MINIO_PWD=`kubectl -n ${NAMESPACE} get secret minio -o jsonpath='{.data.root-password}' | base64 --decode`
     fi
 
@@ -132,20 +132,6 @@ create_kubearchive_loki_secret() {
     else
       echo "Secret 'loki-basic-auth' already exists."
     fi
-    cat <<EOF | kubectl apply -f -
-apiVersion: v1
-kind: Secret
-metadata:
-  name: minio-storage-configuration
-  namespace: ${NAMESPACE}
-type: Opaque
-stringData:
-  config.env: |-
-    export MINIO_ROOT_USER="$USER"
-    export MINIO_ROOT_PASSWORD="$PASS"
-    export MINIO_STORAGE_CLASS_STANDARD="EC:1"
-    export MINIO_BROWSER="on"
-EOF
 
 }
 
