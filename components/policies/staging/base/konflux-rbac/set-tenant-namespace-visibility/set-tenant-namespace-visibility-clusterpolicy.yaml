@@ -1,0 +1,39 @@
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: set-tenant-namespace-visibility
+  annotations:
+    policies.kyverno.io/description: |
+      Sets the 'konflux-ci.dev/visibility' label on tenant namespaces to 'public'
+      if a RoleBinding for 'system:authenticated' exists, and 'private' if it does not.
+spec:
+  background: false
+  rules:
+  - name: set-visibility
+    match:
+      all:
+      - resources:
+          kinds:
+          - RoleBinding
+          operations:
+            - CREATE
+            - UPDATE
+            - DELETE
+          namespaceSelector:
+            matchLabels:
+              konflux-ci.dev/type: tenant
+    preconditions:
+      any:
+        - key: "{{ request.object.subjects[?kind=='Group' && name=='system:authenticated'] | length(@) }}"
+          operator: GreaterThanOrEquals
+          value: 1
+    mutate:
+      targets:
+      - apiVersion: v1
+        kind: Namespace
+        name: "{{ request.object.metadata.namespace }}"
+      patchStrategicMerge:
+        metadata:
+          labels:
+            konflux-ci.dev/visibility: "{{ request.operation == 'DELETE' | @ && 'private' || 'public' }}"
