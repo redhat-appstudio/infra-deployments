@@ -3,7 +3,7 @@ kind: ServiceMonitor
 metadata:
   name: etcd-shield-metrics
   labels:
-    apps: etcd-shield
+    app: etcd-shield
 spec:
   endpoints:
     - interval: 15s
@@ -23,4 +23,4 @@ spec:
         serverName: etcd-shield.etcd-shield.svc
   selector:
     matchLabels:
-      apps: etcd-shield
+      app: etcd-shield
