@@ -1,7 +1,10 @@
+# Copyright KubeArchive Authors
+# SPDX-License-Identifier: Apache-2.0
 ---
 loki:
   limits_config:
     max_query_length: 0
+  # Enable authentication for basic auth support
   auth_enabled: true
   basic_auth:
     enabled: true
@@ -13,7 +16,7 @@ loki:
       ruler: loki-ruler
       admin: loki-admin
     s3:
-      endpoint: minio.product-kubearchive-logging.svc.cluster.local:9000
+      endpoint: minio.grafana-loki.svc.cluster.local:9000
       region: us-east-1
       accessKeyId: admin
       s3ForcePathStyle: true

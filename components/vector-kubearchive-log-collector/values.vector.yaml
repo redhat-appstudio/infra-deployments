@@ -1,0 +1,155 @@
+# Copyright KubeArchive Authors
+# SPDX-License-Identifier: Apache-2.0
+---
+role: Agent
+env:
+  - name: LOKI_USERNAME
+    valueFrom:
+      secretKeyRef:
+        name: loki-basic-auth
+        key: USERNAME
+  - name: LOKI_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: loki-basic-auth
+        key: PASSWORD
+  - name: VECTOR_LOG
+    value: "info"
+customConfig:
+  data_dir: /vector-data-dir
+  api:
+    enabled: true
+    address: 127.0.0.1:8686
+    playground: false
+  sources:
+    k8s_logs:
+      type: kubernetes_logs
+      rotate_wait_secs: 5
+      glob_minimum_cooldown_ms: 500
+      max_line_bytes: 3145728
+      auto_partial_merge: true
+  transforms:
+    reduce_events:
+      type: reduce
+      inputs:
+        - k8s_logs
+      group_by:
+        - file
+      flush_period_ms: 2000
+      end_every_period_ms: 2000
+      merge_strategies:
+        message: concat_newline
+    remap_app_logs:
+      type: remap
+      inputs:
+        - reduce_events
+      source: |-
+        .tmp = del(.)
+        # Preserve original kubernetes fields for Loki labels
+        if exists(.tmp.kubernetes.pod_uid) {
+          .pod_id = del(.tmp.kubernetes.pod_uid)
+        } else {
+          .pod_id = "unknown_pod_id"
+        }
+        if exists(.tmp.kubernetes.pod_name) {
+          .pod_name = del(.tmp.kubernetes.pod_name)
+        } else {
+          .pod_name = "unknown_pod"
+        }
+        if exists(.tmp.kubernetes.container_name) {
+          .container = del(.tmp.kubernetes.container_name)
+        } else {
+          .container = "unknown_container"
+        }
+        if exists(.tmp.kubernetes.pod_namespace) {
+          .namespace = del(.tmp.kubernetes.pod_namespace)
+        } else {
+          .namespace = "unlabeled"
+        }
+        # Handling Tekton-specific labels
+        if exists(.tmp.kubernetes.pod_labels."tekton.dev/taskRunUID") {
+          .taskRunUID = del(.tmp.kubernetes.pod_labels."tekton.dev/taskRunUID")
+        } else {
+          .taskRunUID = "none"
+        }
+        if exists(.tmp.kubernetes.pod_labels."tekton.dev/pipelineRunUID") {
+          .pipelineRunUID = del(.tmp.kubernetes.pod_labels."tekton.dev/pipelineRunUID")
+          .result = .pipelineRunUID
+        } else {
+          .result = .taskRunUID
+        }
+        # --- Start: Cronjob Specific Handling ---
+        if exists(.tmp.kubernetes.pod_labels."job-name") {
+          .job_name = del(.tmp.kubernetes.pod_labels."job-name")
+          .log_type = "cronjob"
+          if exists(.tmp.kubernetes.pod_labels."cronjob-name") {
+            .cronjob_name = del(.tmp.kubernetes.pod_labels."cronjob-name")
+          } else {
+            # Using corrected regex pattern without \d
+            .job_name = to_string(.job_name) ?? "default"
+            if match(.job_name, r'^(.*)-[0-9]{8,10}$') {
+              .cronjob_name = replace(.job_name, r'-[0-9]{8,10}$', "")
+            } else {
+              .cronjob_name = "unknown_cronjob"
+            }
+          }
+          if exists(.tmp.kubernetes.pod_labels."controller-uid") {
+              .job_uid = del(.tmp.kubernetes.pod_labels."controller-uid")
+          }
+        } else {
+          .log_type = "application"
+        }
+        # --- End: Cronjob Specific Handling ---
+        # Handling general Kubernetes labels
+        if exists(.tmp.kubernetes.pod_labels) {
+          .pod_labels = .tmp.kubernetes.pod_labels
+        } else {
+          .pod_labels = "no_labels"
+        }
+        # General message field handling
+        if exists(.tmp.message) {
+          .message = to_string(del(.tmp.message)) ?? "no_message"
+        } else {
+          .message = "no_message"
+        }
+        # Basic data sanitization to prevent 400 errors
+        # Truncate very long messages
+        if length(.message) > 32768 {
+          .message = slice!(.message, 0, 32768) + "...[TRUNCATED]"
+        }
+        # Clean up temporary fields
+        del(.tmp)
+  sinks:
+    loki:
+      type: loki
+      inputs: ["remap_app_logs"]
+      endpoint: http://loki.grafana-loki.svc.cluster.local:3100
+      encoding:
+        codec: "json"
+      auth:
+        strategy: "basic"
+        user: "${LOKI_USERNAME}"
+        password: "${LOKI_PASSWORD}"
+      tenant_id: "kubearchive"
+      request:
+        headers:
+          X-Scope-OrgID: kubearchive
+        retry_attempts: 3
+        retry_initial_backoff_secs: 1
+        retry_max_duration_secs: 10
+        timeout_secs: 30
+      batch:
+        max_events: 100
+        timeout_secs: 5
+        max_bytes: 1048576  # 1MB
+      labels:
+        job: "vector"
+        pod_id: "{{`{{ pod_id }}`}}"
+        container: "{{`{{ container }}`}}"
+        namespace: "{{`{{ namespace }}`}}"
+        pod: "{{`{{ pod_name }}`}}"
+image:
+  repository: quay.io/kubearchive/vector
+  tag: 0.46.1-distroless-libc
+  pullPolicy: IfNotPresent
+  base: "debian"
