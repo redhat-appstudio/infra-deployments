@@ -1937,7 +1937,7 @@ spec:
         - -check_owner=false
         - -completed_run_grace_period=5m
         - -requeue_interval=2m
-        - -store_deadline=90m
+        - -store_deadline=240m
         - -forward_buffer=1m
         - -threadiness=32
         - -logs_api=true
@@ -2455,10 +2455,10 @@ spec:
   profile: all
   pruner:
     disabled: false
-    keep-since: 120
+    keep-since: 240
     resources:
     - pipelinerun
-    schedule: '*/10 * * * *'
+    schedule: '*/30 * * * *'
   result:
     disabled: true
   targetNamespace: openshift-pipelines
