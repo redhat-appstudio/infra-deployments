@@ -200,6 +200,21 @@ spec:
         - '{__name__="kube_deployment_status_replicas_available", namespace=~"smee.*"}'
         - '{__name__="kube_deployment_spec_replicas", namespace=~"smee.*"}'
 
+        # Namespace (expression):  "openshift-apiserver"
+        - '{__name__="kube_deployment_status_replicas_ready", namespace="openshift-apiserver"}'
+        - '{__name__="kube_deployment_status_replicas_available", namespace="openshift-apiserver"}'
+        - '{__name__="kube_deployment_spec_replicas", namespace="openshift-apiserver"}'
+
+        # Namespace (expression):  "openshift-oauth-apiserver"
+        - '{__name__="kube_deployment_status_replicas_ready", namespace="openshift-oauth-apiserver"}'
+        - '{__name__="kube_deployment_status_replicas_available", namespace="openshift-oauth-apiserver"}'
+        - '{__name__="kube_deployment_spec_replicas", namespace="openshift-oauth-apiserver"}'
+
+        # Namespace (expression):  "openshift-kube-apiserver"
+        - '{__name__="kube_deployment_status_replicas_ready", namespace="openshift-kube-apiserver"}'
+        - '{__name__="kube_deployment_status_replicas_available", namespace="openshift-kube-apiserver"}'
+        - '{__name__="kube_deployment_spec_replicas", namespace="openshift-kube-apiserver"}'
+
         - '{__name__="argocd_app_reconcile_bucket", namespace="gitops-service-argocd"}'
         - '{__name__="argocd_app_info", namespace="gitops-service-argocd"}'
         - '{__name__="container_cpu_usage_seconds_total", namespace="release-service"}'
