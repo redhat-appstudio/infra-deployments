@@ -35,3 +35,15 @@
   value:
     cpu: 500m
     memory: 1Gi
+
+- op: add
+  path: /spec/template/spec/containers/0/args/-
+  value: "--leader-elect-lease-duration=137s"
+
+- op: add
+  path: /spec/template/spec/containers/0/args/-
+  value: "--leader-elect-renew-deadline=107s"
+
+- op: add
+  path: /spec/template/spec/containers/0/args/-
+  value: "--leader-elect-retry-period=26s"
