@@ -1,13 +1,13 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-- https://github.com/konflux-ci/kueue-external-admission/config/default?ref=b88442ea3598ef84d24728ddbb5e39ae159ba781
+- https://github.com/konflux-ci/kueue-external-admission/config/default?ref=aa92aa7f658e34577a23b072204de2af5768b3cc
 - monitoring.yaml
 
 images:
 - name: example.com/alert-manager-kueue-admission
   newName: quay.io/konflux-ci/kueue-external-admission
-  newTag: b88442ea3598ef84d24728ddbb5e39ae159ba781
+  newTag: aa92aa7f658e34577a23b072204de2af5768b3cc
 
 namespace: kueue-external-admission
 
