@@ -708,6 +708,7 @@ data:
     # bucket will take care of the reconciling for the keys partitioned into
     # that bucket.
     buckets: "1"
+  buckets: "2"
 kind: ConfigMap
 metadata:
   annotations:
@@ -974,6 +975,7 @@ spec:
     targetPort: watchermetrics
   - name: profiling
     port: 8008
+  clusterIP: None
   selector:
     app.kubernetes.io/name: tekton-results-watcher
 ---
@@ -1543,7 +1545,7 @@ spec:
           secretName: tekton-results-tls
 ---
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
@@ -1555,10 +1557,11 @@ metadata:
   name: tekton-results-watcher
   namespace: tekton-results
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app.kubernetes.io/name: tekton-results-watcher
+  serviceName: tekton-results-watcher
   template:
     metadata:
       annotations:
@@ -1617,6 +1620,13 @@ spec:
               value: token
             - name: KUBERNETES_MIN_VERSION
               value: "v1.28.0"
+            - name: STATEFUL_SERVICE_NAME
+              value: tekton-results-watcher
+            - name: STATEFUL_CONTROLLER_ORGINAL
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
           image: quay.io/konflux-ci/tekton-results-watcher:0a751a1ecaf7ab73f2a756a806d8a18c50c16547
           name: watcher
           ports:
