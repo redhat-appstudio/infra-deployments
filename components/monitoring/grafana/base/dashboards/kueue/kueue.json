@@ -1,59 +1,4 @@
 {
-  "__inputs": [
-    {
-      "name": "DS_PROMETHEUS-APPSTUDIO-DS",
-      "label": "prometheus-appstudio-ds",
-      "description": "",
-      "type": "datasource",
-      "pluginId": "prometheus",
-      "pluginName": "Prometheus"
-    }
-  ],
-  "__elements": {},
-  "__requires": [
-    {
-      "type": "panel",
-      "id": "bargauge",
-      "name": "Bar gauge",
-      "version": ""
-    },
-    {
-      "type": "grafana",
-      "id": "grafana",
-      "name": "Grafana",
-      "version": "11.3.0"
-    },
-    {
-      "type": "panel",
-      "id": "heatmap",
-      "name": "Heatmap",
-      "version": ""
-    },
-    {
-      "type": "datasource",
-      "id": "prometheus",
-      "name": "Prometheus",
-      "version": "1.0.0"
-    },
-    {
-      "type": "panel",
-      "id": "stat",
-      "name": "Stat",
-      "version": ""
-    },
-    {
-      "type": "panel",
-      "id": "table",
-      "name": "Table",
-      "version": ""
-    },
-    {
-      "type": "panel",
-      "id": "timeseries",
-      "name": "Time series",
-      "version": ""
-    }
-  ],
   "annotations": {
     "list": [
       {
@@ -75,7 +20,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": null,
+  "id": 28,
   "links": [],
   "panels": [
     {
@@ -306,7 +251,7 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "container_memory_working_set_bytes{namespace=~\"tekton-kueue|kueue-external-admission|openshift-kueue-operator\", image!=\"\"} / on (pod) kube_pod_resource_limit{resource='memory',namespace=~\"tekton-kueue|kueue-external-admission|openshift-kueue-operator\"} * 100",
+          "expr": "(\n    container_memory_working_set_bytes{namespace=~\"tekton-kueue|kueue-external-admission|openshift-kueue-operator\", image!=\"\"} \n    * on(container, pod)\n    group_left\n    kube_pod_container_status_ready{namespace=~\"tekton-kueue|kueue-external-admission|openshift-kueue-operator\"}\n)\n    / on (pod) kube_pod_resource_limit{resource='memory',namespace=~\"tekton-kueue|kueue-external-admission|openshift-kueue-operator\"} * 100",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
@@ -314,6 +259,73 @@
       ],
       "title": "Pods Memory Utilization",
       "type": "bargauge"
+    },
+    {
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "dark-red",
+                "value": 2
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 24,
+        "w": 11,
+        "x": 0,
+        "y": 15
+      },
+      "id": 18,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "text": {},
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.3.0",
+      "targets": [
+        {
+          "editorMode": "code",
+          "expr": "increase(kube_pod_container_status_restarts_total{namespace=~\"tekton-kueue|kueue-external-admission|openshift-kueue-operator\"}[1h])\n* on(container, pod)\nkube_pod_container_status_ready{namespace=~\"tekton-kueue|kueue-external-admission|openshift-kueue-operator\"}",
+          "legendFormat": "{{pod}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Container Restarts In the Last Hour",
+      "type": "stat"
     },
     {
       "fieldConfig": {
@@ -382,8 +394,8 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "pod:container_cpu_usage:sum{namespace=~\"tekton-kueue|kueue-external-admission|openshift-kueue-operator\"} / on (pod) kube_pod_resource_limit{resource='cpu',namespace=~\"tekton-kueue|kueue-external-admission|openshift-kueue-operator\"} * 100",
-          "legendFormat": "__auto",
+          "expr": "(\n    pod:container_cpu_usage:sum{namespace=~\"tekton-kueue|kueue-external-admission|openshift-kueue-operator\"}\n    * on(pod)\n    kube_pod_container_status_ready{namespace=~\"tekton-kueue|kueue-external-admission|openshift-kueue-operator\"}\n) / on (pod) group_right kube_pod_resource_limit{resource='cpu',namespace=~\"tekton-kueue|kueue-external-admission|openshift-kueue-operator\"} * 100",
+          "legendFormat": "{{pod}}",
           "range": true,
           "refId": "A"
         }
@@ -397,7 +409,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 27
+        "y": 39
       },
       "id": 6,
       "panels": [],
@@ -452,7 +464,7 @@
         "h": 6,
         "w": 3,
         "x": 0,
-        "y": 28
+        "y": 40
       },
       "id": 11,
       "options": {
@@ -513,7 +525,7 @@
         "h": 6,
         "w": 6,
         "x": 3,
-        "y": 28
+        "y": 40
       },
       "id": 9,
       "options": {
@@ -570,7 +582,7 @@
         "h": 6,
         "w": 15,
         "x": 9,
-        "y": 28
+        "y": 40
       },
       "id": 10,
       "options": {
@@ -634,7 +646,7 @@
         "h": 11,
         "w": 9,
         "x": 0,
-        "y": 34
+        "y": 46
       },
       "id": 7,
       "options": {
@@ -705,7 +717,7 @@
         "h": 4,
         "w": 9,
         "x": 0,
-        "y": 45
+        "y": 57
       },
       "id": 8,
       "options": {
@@ -759,7 +771,7 @@
         "h": 15,
         "w": 14,
         "x": 0,
-        "y": 49
+        "y": 61
       },
       "id": 12,
       "options": {
@@ -833,7 +845,7 @@
         "h": 13,
         "w": 14,
         "x": 0,
-        "y": 64
+        "y": 76
       },
       "id": 14,
       "options": {
@@ -906,7 +918,7 @@
         "h": 13,
         "w": 14,
         "x": 0,
-        "y": 77
+        "y": 89
       },
       "id": 13,
       "options": {
@@ -964,7 +976,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 90
+        "y": 102
       },
       "id": 4,
       "panels": [],
@@ -994,7 +1006,7 @@
         "h": 7,
         "w": 7,
         "x": 0,
-        "y": 91
+        "y": 103
       },
       "id": 2,
       "options": {
@@ -1102,9 +1114,9 @@
       },
       "gridPos": {
         "h": 14,
-        "w": 13,
+        "w": 14,
         "x": 0,
-        "y": 98
+        "y": 110
       },
       "id": 15,
       "options": {
@@ -1141,6 +1153,210 @@
       ],
       "title": "Active Workloads vs Etcd Usage",
       "type": "timeseries"
+    },
+    {
+      "description": "The number of all the Pipelineruns in the cluster (in all states) vs Etcd usage",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "max(etcd_mvcc_db_total_size_in_use_in_bytes)"
+            },
+            "properties": [
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              },
+              {
+                "id": "unit",
+                "value": "decbytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "max(apiserver_storage_objects{resource=\"pipelineruns.tekton.dev\"})"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-purple",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 14,
+        "w": 14,
+        "x": 0,
+        "y": 124
+      },
+      "id": 20,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.3.0",
+      "targets": [
+        {
+          "editorMode": "code",
+          "expr": "max(apiserver_storage_objects{resource=\"pipelineruns.tekton.dev\"})",
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "max(etcd_mvcc_db_total_size_in_use_in_bytes)",
+          "hide": false,
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "title": "Number of Pipelineruns vs Etcd Usage",
+      "type": "timeseries"
+    },
+    {
+      "description": "The duration that watcher take to delete the PipelineRun since completion",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "scaleDistribution": {
+              "type": "linear"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 13,
+        "w": 14,
+        "x": 0,
+        "y": 138
+      },
+      "id": 21,
+      "options": {
+        "calculate": false,
+        "cellGap": 1,
+        "color": {
+          "exponent": 0.5,
+          "fill": "dark-orange",
+          "mode": "scheme",
+          "reverse": false,
+          "scale": "exponential",
+          "scheme": "Oranges",
+          "steps": 64
+        },
+        "exemplars": {
+          "color": "rgba(255,0,255,0.7)"
+        },
+        "filterValues": {
+          "le": 1e-9
+        },
+        "legend": {
+          "show": true
+        },
+        "rowsFrame": {
+          "layout": "auto"
+        },
+        "tooltip": {
+          "mode": "single",
+          "showColorScale": false,
+          "yHistogram": false
+        },
+        "yAxis": {
+          "axisPlacement": "left",
+          "reverse": false,
+          "unit": "s"
+        }
+      },
+      "pluginVersion": "11.3.0",
+      "targets": [
+        {
+          "editorMode": "code",
+          "expr": "sum by (le) (increase(watcher_pipelinerun_delete_duration_seconds_bucket[$__range]))",
+          "format": "heatmap",
+          "legendFormat": "{{le}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "PipelineRun Deletion Duration",
+      "type": "heatmap"
     }
   ],
   "refresh": "auto",
