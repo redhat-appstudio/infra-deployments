@@ -1,15 +1,9 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - ../base
+  - ../../base
 
 images:
 - name: quay.io/konflux-ci/smee-sidecar
   newName: quay.io/konflux-ci/smee-sidecar
-  newTag: bf64ab8c23fd0164c554a9b291cca226c75d3152
-
-patches:
-  - path: sever-url-patch.yaml
-    target:
-      name: gosmee-client
-      kind: Deployment
+  newTag: 5015d8c0daa445a106b3c1124d0f4e145fff7a16 
