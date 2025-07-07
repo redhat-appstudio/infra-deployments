@@ -133,6 +133,10 @@ create_kubearchive_loki_secret() {
       echo "Secret 'loki-basic-auth' already exists."
     fi
 
+    oc adm policy add-scc-to-user hostaccess -z default -n product-kubearchive-logging
+    oc adm policy add-scc-to-user hostaccess -z vector-kubearchive-log-collector -n product-kubearchive-logging
+    oc adm policy add-scc-to-user hostmount-anyuid -z vector-kubearchive-log-collector -n product-kubearchive-logging
+    oc adm policy add-scc-to-user privileged -z vector-kubearchive-log-collector -n product-kubearchive-logging
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
