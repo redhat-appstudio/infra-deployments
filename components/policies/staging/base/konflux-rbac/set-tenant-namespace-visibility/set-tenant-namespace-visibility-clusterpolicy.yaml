@@ -7,11 +7,12 @@ metadata:
     policies.kyverno.io/description: |
       Sets the 'konflux-ci.dev/visibility' label on tenant namespaces to 'public'
       if a RoleBinding for 'system:authenticated' with a role reference to the 
-      'konflux-viewer-user-actions' CLusterRole exists, and 'private' if it does not.
+      'konflux-viewer-user-actions' ClusterRole exists, and 'private' if it does not.
 spec:
   background: false
   rules:
   - name: set-visibility
+    skipBackgroundRequests: true
     match:
       all:
       - resources:
