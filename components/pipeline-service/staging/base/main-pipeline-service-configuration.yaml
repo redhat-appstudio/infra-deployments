@@ -1101,7 +1101,7 @@ spec:
             secretKeyRef:
               key: db.name
               name: tekton-results-database
-        image: quay.io/konflux-ci/tekton-results-api:e2b02c42c263823137ebd1440f4a7a4b6238909d
+        image: quay.io/konflux-ci/tekton-results-api:99db802a56c3d62e823e162feee9811e55ed1f5b
         livenessProbe:
           httpGet:
             path: /healthz
@@ -1291,7 +1291,7 @@ spec:
             secretKeyRef:
               key: db.name
               name: tekton-results-database
-        image: quay.io/konflux-ci/tekton-results-api:e2b02c42c263823137ebd1440f4a7a4b6238909d
+        image: quay.io/konflux-ci/tekton-results-api:99db802a56c3d62e823e162feee9811e55ed1f5b
         livenessProbe:
           httpGet:
             path: /healthz
@@ -1393,7 +1393,7 @@ spec:
             secretKeyRef:
               key: POSTGRES_PASSWORD
               name: tekton-results-postgres
-        image: quay.io/konflux-ci/tekton-results-retention-policy-agent:e2b02c42c263823137ebd1440f4a7a4b6238909d
+        image: quay.io/konflux-ci/tekton-results-retention-policy-agent:99db802a56c3d62e823e162feee9811e55ed1f5b
         name: retention-policy-agent
         resources:
           limits:
@@ -1530,7 +1530,7 @@ spec:
               value: token
             - name: KUBERNETES_MIN_VERSION
               value: "v1.28.0"
-          image: quay.io/konflux-ci/tekton-results-watcher:e2b02c42c263823137ebd1440f4a7a4b6238909d
+          image: quay.io/konflux-ci/tekton-results-watcher:99db802a56c3d62e823e162feee9811e55ed1f5b
           name: watcher
           ports:
             - containerPort: 9090
