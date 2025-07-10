@@ -18,6 +18,9 @@ spec:
   template:
     metadata:
       name: vector-kubearchive-log-collector-{{nameNormalized}}
+      annotations:
+        argocd.argoproj.io/sync-wave: "100"
+        argocd.argoproj.io/refresh: "hard"
     spec:
       project: default
       source:
