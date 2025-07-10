@@ -59,6 +59,8 @@ Prometheus instance deployed by the
 Mainly scrapes generic metrics produced by built-in exporters such as cAdvisor and
 kube-state-metrics.
 
+Retention for platform metrics gathered by this Prometheus instance cannot be changed, as they are managed by the ROSA. [See this KB article](https://access.redhat.com/solutions/4280821) for details about default retention settings of ROSA clusters. Any metrics not pushed to RHOBS will be lost when retention time or storage runs out. Any data gathering necessary for RCA must be done within the retention period, before it is erased.
+
 ### User Workload Monitoring (UWM) Prometheus
 Scrapes custom metrics provided by services deployed by the different Konflux teams, and
 collected by Service Monitors, also provided by the teams.
