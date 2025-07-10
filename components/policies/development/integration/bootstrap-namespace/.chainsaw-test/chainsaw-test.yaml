@@ -1,0 +1,190 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: mutate-new-namespace-konfluxcidev
+spec:
+  description: |
+    tests that the ServiceAccount and RoleBinding are created in a namespace
+    labelled with `konflux-ci.dev/type=tenant`
+  concurrent: false
+  namespace: 'generate-new-namespace'
+  bindings:
+  - name: suffix
+    value: konfluxcidev
+  steps:
+  - name: given-konflux-integration-runner-clusterrole-exists
+    try:
+    - apply:
+        file: resources/actual-konflux-integration-runner-clusterrole.yaml
+  - name: given-kyverno-has-permission-on-resources
+    try:
+    - apply:
+        file: ../kyverno-rbac.yaml
+  - name: given-cluster-policy-is-ready
+    try:
+    - apply:
+        file: ../bootstrap-namespace.yaml
+    - assert:
+        file: chainsaw-assert-clusterpolicy.yaml
+  - name: when-konfluxcidev-labeled-namespace-is-created
+    try:
+    - apply:
+        file: resources/actual-namespace-konfluxcidev.yaml
+        template: true
+  - name: then-serviceaccount-is-created
+    try:
+    - assert:
+        file: resources/expected-integration-serviceaccount.yaml
+        template: true
+  - name: then-rolebinding-is-created
+    try:
+    - assert:
+        file: resources/expected-integration-rolebinding.yaml
+        template: true
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: mutate-new-namespace-unlabeled
+spec:
+  description: |
+    tests that the ServiceAccount and RoleBinding are NOT created in an unlabeled namespace
+  concurrent: false
+  namespace: 'generate-new-namespace'
+  bindings:
+  - name: suffix
+    value: unlabeled
+  steps:
+  - name: given-konflux-integration-runner-clusterrole-exists
+    try:
+    - apply:
+        file: resources/actual-konflux-integration-runner-clusterrole.yaml
+  - name: given-kyverno-has-permission-on-resources
+    try:
+    - apply:
+        file: ../kyverno-rbac.yaml
+  - name: given-cluster-policy-is-ready
+    try:
+    - apply:
+        file: ../bootstrap-namespace.yaml
+    - assert:
+        file: chainsaw-assert-clusterpolicy.yaml
+  - name: when-unlabeled-namespace-is-created
+    try:
+    - apply:
+        file: resources/actual-namespace-unlabeled.yaml
+        template: true
+  - name: then-serviceaccount-is-not-created
+    try:
+    - delete:
+        file: resources/expected-integration-serviceaccount.yaml
+        template: true
+        expect:
+        - check:
+            ($error != null): true
+  - name: then-rolebinding-is-not-created
+    try:
+    - delete:
+        file: resources/expected-integration-rolebinding.yaml
+        template: true
+        expect:
+        - check:
+            ($error != null): true
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: mutate-existing-namespace-konfluxcidev
+spec:
+  description: |
+    tests that the ServiceAccount and RoleBinding are created in an already existing
+    namespace labelled with `konflux-ci.dev/type=tenant`
+  concurrent: false
+  namespace: 'generate-existing-namespace'
+  bindings:
+  - name: suffix
+    value: konflux
+  steps:
+  - name: given-konflux-integration-runner-clusterrole-exists
+    try:
+    - apply:
+        file: resources/actual-konflux-integration-runner-clusterrole.yaml
+  - name: given-kyverno-has-permission-on-resources
+    try:
+    - apply:
+        file: ../kyverno-rbac.yaml
+  - name: given-konfluxci-labeled-namespace-is-created
+    try:
+    - apply:
+        file: resources/actual-namespace-konfluxcidev.yaml
+        template: true
+  - name: when-cluster-policy-is-ready
+    try:
+    - apply:
+        file: ../bootstrap-namespace.yaml
+    - assert:
+        file: chainsaw-assert-clusterpolicy.yaml
+  - name: then-serviceaccount-is-created
+    try:
+    - assert:
+        file: resources/expected-integration-serviceaccount.yaml
+        template: true
+  - name: then-rolebinding-is-created
+    try:
+    - assert:
+        file: resources/expected-integration-rolebinding.yaml
+        template: true
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: mutate-existing-namespace-unlabeled
+spec:
+  description: |
+    tests that the ServiceAccount and RoleBinding are NOT created in an
+    existing unlabeled namespace
+  concurrent: false
+  namespace: 'generate-existing-namespace'
+  bindings:
+  - name: suffix
+    value: unlabeled
+  steps:
+  - name: given-konflux-integration-runner-clusterrole-exists
+    try:
+    - apply:
+        file: resources/actual-konflux-integration-runner-clusterrole.yaml
+  - name: given-kyverno-has-permission-on-resources
+    try:
+    - apply:
+        file: ../kyverno-rbac.yaml
+  - name: given-unlabeled-namespace-is-created
+    try:
+    - apply:
+        file: resources/actual-namespace-unlabeled.yaml
+        template: true
+  - name: when-cluster-policy-is-ready
+    try:
+    - apply:
+        file: ../bootstrap-namespace.yaml
+    - assert:
+        file: chainsaw-assert-clusterpolicy.yaml
+  - name: then-serviceaccount-is-not-created
+    try:
+    - delete:
+        file: resources/expected-integration-serviceaccount.yaml
+        template: true
+        expect:
+        - check:
+            ($error != null): true
+  - name: then-rolebinding-is-not-created
+    try:
+    - delete:
+        file: resources/expected-integration-rolebinding.yaml
+        template: true
+        expect:
+        - check:
+            ($error != null): true
