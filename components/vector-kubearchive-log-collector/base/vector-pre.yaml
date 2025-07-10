@@ -14,7 +14,7 @@ allowPrivilegedContainer: false
 allowedCapabilities: null
 apiVersion: security.openshift.io/v1
 defaultAddCapabilities: null
-defaultAllowPrivilegeEscalation: false
+defaultAllowPrivilegeEscalation: true
 forbiddenSysctls:
 - '*'
 fsGroup:
@@ -26,6 +26,10 @@ metadata:
 priority: 10
 readOnlyRootFilesystem: false
 requiredDropCapabilities:
+- CHOWN
+- DAC_OVERRIDE
+- FSETID
+- FOWNER
 - SETGID
 - SETUID
 - SETPCAP
