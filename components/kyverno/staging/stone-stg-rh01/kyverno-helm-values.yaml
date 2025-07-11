@@ -18,9 +18,10 @@ admissionController:
       leaderElectionRetryPeriod: 5s
     resources:
       requests:
-        cpu: 500m
+        cpu: 1000m
         memory: 1Gi
       limits:
+        cpu: 1000m
         memory: 1Gi
     securityContext:
       allowPrivilegeEscalation: false
@@ -43,9 +44,10 @@ backgroundController:
     clientRateLimitQPS: 2000
   resources:
     requests:
-      cpu: 500m
+      cpu: 4000m
       memory: 1Gi
     limits:
+      cpu: 4000m
       memory: 1Gi
   securityContext:
     allowPrivilegeEscalation: false
@@ -64,6 +66,13 @@ cleanupController:
   replicas: 3
   extraArgs:
     leaderElectionRetryPeriod: 5s
+  resources:
+    requests:
+      cpu: 500m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 128Mi
   securityContext:
     allowPrivilegeEscalation: false
     readOnlyRootFilesystem: true
