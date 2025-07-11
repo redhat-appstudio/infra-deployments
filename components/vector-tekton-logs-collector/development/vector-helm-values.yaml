@@ -1,12 +1,19 @@
 ---
 role: Agent
+# resources:
+#   requests:
+#     cpu: 512m
+#     memory: 4096Mi
+#   limits:
+#     cpu: 2000m
+#     memory: 4096Mi
 resources:
   requests:
-    cpu: 512m
-    memory: 4096Mi
+    memory: "256Mi"
+    cpu: "100m"
   limits:
-    cpu: 2000m
-    memory: 4096Mi
+    memory: "512Mi"
+    cpu: "250m"
 customConfig:
   data_dir: /vector-data-dir
   api:
