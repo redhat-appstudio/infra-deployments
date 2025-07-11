@@ -15,9 +15,10 @@ admissionController:
   container:
     resources:
       requests:
-        cpu: 500m
+        cpu: 1000m
         memory: 1Gi
       limits:
+        cpu: 1000m
         memory: 1Gi
     securityContext:
       allowPrivilegeEscalation: false
@@ -36,9 +37,10 @@ backgroundController:
   replicas: 3
   resources:
     requests:
-      cpu: 500m
+      cpu: 4000m
       memory: 1Gi
     limits:
+      cpu: 4000m
       memory: 1Gi
   securityContext:
     allowPrivilegeEscalation: false
@@ -55,6 +57,13 @@ backgroundController:
     secure: false
 cleanupController:
   replicas: 3
+  resources:
+    requests:
+      cpu: 500m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 128Mi
   securityContext:
     allowPrivilegeEscalation: false
     readOnlyRootFilesystem: true
