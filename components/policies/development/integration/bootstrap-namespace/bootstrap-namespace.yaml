@@ -9,6 +9,10 @@ spec:
   rules:
   - name: create-konflux-integration-runner-serviceaccount
     skipBackgroundRequests: true
+    context:
+    - name: namespaces
+      globalReference:
+        name: namespaces
     match:
       any:
       - resources:
@@ -30,6 +34,10 @@ spec:
           namespace: '{{request.object.metadata.name}}'
   - name: create-konflux-integration-runner-rolebinding
     skipBackgroundRequests: true
+    context:
+    - name: namespaces
+      globalReference:
+        name: namespaces
     match:
       any:
       - resources:
