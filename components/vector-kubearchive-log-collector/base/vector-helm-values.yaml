@@ -180,6 +180,8 @@ serviceAccount:
   create: true
   name: vector-kubearchive-log-collector
 securityContext:
+  runAsUser: 1000
+  fsGroup: 1000
   allowPrivilegeEscalation: false
   capabilities:
     drop:
