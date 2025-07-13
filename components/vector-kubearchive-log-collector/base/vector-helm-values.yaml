@@ -163,25 +163,10 @@ tolerations:
 image:
   repository: quay.io/kubearchive/vector
   tag: 0.46.1-distroless-libc
-# Add init container to create required directories
-initContainers:
-  - name: create-data-dir
-    image: busybox:latest
-    command: ['sh', '-c']
-    args:
-      - 'mkdir -p /vector-data-dir/k8s_logs && chmod 755 /vector-data-dir/k8s_logs && chown -R 1000:1000 /vector-data-dir || true'
-    volumeMounts:
-      - name: data
-        mountPath: "/vector-data-dir"
-    securityContext:
-      runAsUser: 0
-      allowPrivilegeEscalation: false
 serviceAccount:
   create: true
   name: vector-kubearchive-log-collector
 securityContext:
-  runAsUser: 1000
-  fsGroup: 1000
   allowPrivilegeEscalation: false
   capabilities:
     drop:
