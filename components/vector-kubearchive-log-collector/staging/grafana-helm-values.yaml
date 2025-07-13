@@ -1,0 +1,32 @@
+# Copyright KubeArchive Authors
+# SPDX-License-Identifier: Apache-2.0
+---
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+      - name: Loki
+        type: loki
+        access: proxy
+        url: http://loki.grafana-loki.svc.cluster.local:3100
+        basicAuth: true
+        basicAuthUser: $LOKI_USER
+        secureJsonData:
+          basicAuthPassword: $LOKI_PWD
+          httpHeaderValue1: my-tenant-id
+        jsonData:
+          httpHeaderName1: "X-Scope-OrgID"
+          httpMethod: "GET"
+        isDefault: true
+        editable: true
+sidecar:
+  datasources:
+    envValueFrom:
+      LOKI_USER:
+        secretKeyRef:
+          name: loki-basic-auth
+          key: username
+      LOKI_PWD:
+        secretKeyRef:
+          name: loki-basic-auth
+          key: password

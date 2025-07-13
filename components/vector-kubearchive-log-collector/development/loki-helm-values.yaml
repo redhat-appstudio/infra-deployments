@@ -1,24 +1,22 @@
 ---
 loki:
-  auth_enabled: false
+  limits_config:
+    max_query_length: 0
+  auth_enabled: true
+  basic_auth:
+    enabled: true
+    existingSecret: loki-basic-auth
   storage:
-    type: s3
-    bucketNames:
-      chunks: loki
-      ruler: loki-ruler
-      admin: loki-admin
-    s3:
-      endpoint: minio.kubearchive-logging.svc.cluster.local:9000
-      region: us-east-1
-      accessKeyId: admin
-      s3ForcePathStyle: true
-      insecure: true
+    type: filesystem
+    filesystem:
+      chunks_directory: /var/loki/chunks
+      rules_directory: /var/loki/rules
 
   schemaConfig:
     configs:
       - from: 2024-01-01
         store: tsdb
-        object_store: s3
+        object_store: filesystem
         schema: v13
         index:
           prefix: index_
@@ -29,7 +27,7 @@ loki:
 
   compactor:
     retention_enabled: true
-    delete_request_store: s3
+    delete_request_store: filesystem
   ruler:
     storage:
       type: local
@@ -38,16 +36,21 @@ loki:
 
 deploymentMode: SingleBinary
 
+# Use default ServiceAccount for development
+# serviceAccount:
+#   create: false  # We create it manually in loki-pre.yaml
+#   name: loki-sa
+
 singleBinary:
   replicas: 1
   persistence:
-    enabled: false
+    enabled: false  # No persistent storage for development
   extraVolumeMounts:
     - name: loki-storage
       mountPath: /var/loki
   extraVolumes:
     - name: loki-storage
-      emptyDir: {}
+      emptyDir: {}  # Use ephemeral storage
 
 # Zero out replica counts of other deployment modes
 backend:

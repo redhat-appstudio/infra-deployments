@@ -3,5 +3,8 @@ kind: Kustomization
 
 resources:
   - ../base
-  - loki-helm-generator.yaml
+  - loki-pre.yaml
 
+generators:
+  - loki-helm-generator.yaml
+  - grafana-helm-generator.yaml

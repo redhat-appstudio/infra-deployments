@@ -1,18 +1,24 @@
 ---
 loki:
-  auth_enabled: false
+  limits_config:
+    max_query_length: 0
+  auth_enabled: true
+  basic_auth:
+    enabled: true
+    existingSecret: loki-basic-auth
   storage:
     type: s3
     bucketNames:
-      chunks: loki
-      ruler: loki-ruler
-      admin: loki-admin
+      chunks: stone-stg-rh01-loki-storage
+      ruler: stone-stg-rh01-loki-storage
+      admin: stone-stg-rh01-loki-storage
     s3:
-      endpoint: minio.kubearchive-logging.svc.cluster.local:9000
       region: us-east-1
-      accessKeyId: admin
-      s3ForcePathStyle: true
-      insecure: true
+      type: "aws_s3"
+      bucketNames:
+        chunks: loki
+        ruler: loki-ruler
+        admin: loki-admin
 
   schemaConfig:
     configs:
@@ -37,6 +43,11 @@ loki:
         directory: /tmp/rules
 
 deploymentMode: SingleBinary
+
+# Configure ServiceAccount for Loki
+serviceAccount:
+  create: false  # We create it manually in loki-pre.yaml
+  name: loki-sa
 
 singleBinary:
   replicas: 1

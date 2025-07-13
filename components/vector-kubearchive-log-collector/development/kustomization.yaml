@@ -3,4 +3,9 @@ kind: Kustomization
 
 resources:
   - ../base
+  - loki-pre.yaml  # Contains basic auth secret needed for Loki
+
+generators:
   - loki-helm-generator.yaml
+  - grafana-helm-generator.yaml
+  # - minio-helm-generator.yaml  # Not needed when using filesystem storage
