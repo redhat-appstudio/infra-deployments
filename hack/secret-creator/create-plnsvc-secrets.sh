@@ -116,11 +116,6 @@ create_kubearchive_loki_secret() {
     echo "Creating Loki secret" >&2
     LOKI_USERNAME=admin
     LOKI_PWD="$(openssl rand -base64 20)"
-    MINIO_USER=minio
-    MINIO_PWD="$(openssl rand -base64 20)"
-    if kubectl -n ${NAMESPACE} get secret minio > /dev/null 2>&1; then
-      MINIO_PWD=`kubectl -n ${NAMESPACE} get secret minio -o jsonpath='{.data.root-password}' | base64 --decode`
-    fi
 
     kubectl get secret -n ${NAMESPACE} loki-basic-auth > /dev/null 2>&1
     if [ $? -ne 0 ]; then
