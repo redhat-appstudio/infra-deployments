@@ -6,6 +6,13 @@ config:
 admissionController:
   replicas: 3
   initContainer:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 100m
+        memory: 256Mi
     securityContext:
       allowPrivilegeEscalation: false
       readOnlyRootFilesystem: true
@@ -18,9 +25,10 @@ admissionController:
       leaderElectionRetryPeriod: 5s
     resources:
       requests:
-        cpu: 500m
+        cpu: 6000m
         memory: 4Gi
       limits:
+        cpu: 6000m
         memory: 4Gi
     securityContext:
       allowPrivilegeEscalation: false
@@ -41,11 +49,11 @@ backgroundController:
     clientRateLimitBurst: 2000
     clientRateLimitQPS: 2000
     leaderElectionRetryPeriod: 5s
-  resources:
     requests:
-      cpu: 4000m
+      cpu: 6000m
       memory: 4Gi
     limits:
+      cpu: 6000m
       memory: 4Gi
   securityContext:
     allowPrivilegeEscalation: false
@@ -62,6 +70,13 @@ backgroundController:
     secure: false
 cleanupController:
   replicas: 3
+  resources:
+    requests:
+      cpu: 500m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 128Mi
   extraArgs:
     leaderElectionRetryPeriod: 5s
   securityContext:
