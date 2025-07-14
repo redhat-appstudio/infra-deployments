@@ -1,0 +1,41 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ns.yaml
+  - rbac.yaml
+  - deployment.yaml
+  - service.yaml
+
+namespace: konflux-kite
+
+configMapGenerator:
+  - name: kite-config
+    namespace: konflux-kite
+    literals:
+      - KITE_PROJECT_ENV=production
+      - KITE_HOST=0.0.0.0
+      - KITE_PORT=8080
+      - KITE_DB_HOST=postgresql
+      - KITE_DB_PORT=5432
+      - KITE_DB_USER=kite
+      - KITE_DB_NAME=issuesdb
+      - KITE_DB_SSL_MODE=require
+      - KITE_LOG_LEVEL=info
+      - KITE_LOG_FORMAT=json
+      - KITE_ENABLE_CORS=true
+      - KITE_FEATURE_NAMESPACE_CHECKING=true
+      - KITE_FEATURE_WEBHOOKS=true
+      - KITE_FEATURE_METRICS=true
+      - KITE_READ_TIMEOUT=30s
+      - KITE_WRITE_TIMEOUT=30s
+      - KITE_IDLE_TIMEOUT=60s
+      - KITE_SHUTDOWN_TIMEOUT=10s
+
+secretGenerator:
+  - name: kite-database-credentials
+    namespace: konflux-kite
+    type: Opaque
+    literals:
+      - username=kite
+      - password=postgres
