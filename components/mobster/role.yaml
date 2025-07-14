@@ -1,17 +1,15 @@
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
+kind: Role
 metadata:
-  labels:
-    rbac.authorization.k8s.io/aggregate-to-view: "true"
   name: mobster-configmap-viewer-role
 rules:
 - apiGroups:
-  - ""
+    - ""
   resourceNames:
-  - mobster-defaults
+    - mobster-defaults
   resources:
-  - configmaps
+    - configmaps
   verbs:
-  - get
-  - watch
+    - get
+    - watch
