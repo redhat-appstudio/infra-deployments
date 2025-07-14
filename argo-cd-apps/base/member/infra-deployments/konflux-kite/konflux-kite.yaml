@@ -12,10 +12,13 @@ spec:
           - clusters:
               values:
                 sourceRoot: components/konflux-kite
-                environment: development
+                environment: staging
                 clusterDir: ""
           - list:
-              elements: []
+              elements:
+                # Staging clusters
+                - nameNormalized: stone-stg-rh01
+                  values.clusterDir: stone-stg-rh01
   template:
     metadata:
       name: konflux-kite-{{nameNormalized}}
