@@ -1,0 +1,157 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: konflux-kite
+  namespace: konflux-kite
+  labels:
+    app: konflux-kite
+    component: backend
+    version: "1.0.0"
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: konflux-kite
+      component: backend
+  template:
+    metadata:
+      labels:
+        app: konflux-kite
+        component: backend
+        version: "1.0.0"
+      annotations:
+        config.openshift.io/inject-trusted-cabundle: "true"
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                      - konflux-kite
+                topologyKey: kubernetes.io/hostname
+              weight: 100
+      serviceAccountName: konflux-kite
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+      - name: kite-init-container
+        image: quay.io/konflux-ci/kite-init:0.1
+        imagePullPolicy: Always
+        envFrom:
+        - configMapRef:
+            name: kite-config
+        - secretRef:
+            name: kite-database-credentials
+        env:
+          - name: KITE_DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: kite-database-credentials
+                key: password
+          - name: KITE_DB_USER
+            valueFrom:
+              secretKeyRef:
+                name: kite-database-credentials
+                key: username
+        resources:
+          requests:
+            memory: 128Mi
+            cpu: 500m
+          limits:
+            memory: 128Mi
+            cpu: 500m
+        securityContext:
+          runAsNonRoot: true
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - "ALL"
+          seccompProfile:
+            type: RuntimeDefault
+      containers:
+      - name: kite-api
+        image: quay.io/konflux-ci/kite-prod:0.1
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        envFrom:
+        - configMapRef:
+            name: kite-config
+        - secretRef:
+            name: kite-database-credentials
+        env:
+          - name: KITE_DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: kite-database-credentials
+                key: password
+          - name: KITE_DB_USER
+            valueFrom:
+              secretKeyRef:
+                name: kite-database-credentials
+                key: username
+        startupProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 30
+          successThreshold: 1
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+          successThreshold: 1
+        resources:
+          requests:
+            memory: 256Mi
+            cpu: 100m
+          limits:
+            memory: 512Mi
+            cpu: 500m
+        securityContext:
+          runAsNonRoot: true
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - "ALL"
+          seccompProfile:
+           type: RuntimeDefault
+        volumeMounts:
+        - name: tls
+          mountPath: /var/tls
+          readOnly: true
+      volumes:
+      - name: tls
+        secret:
+          secretName: konflux-kite-tls
+      terminationGracePeriodSeconds: 30
