@@ -2,11 +2,11 @@
 role: Agent
 resources:
   requests:
-    cpu: 512m
-    memory: 4096Mi
+    cpu: 200m
+    memory: 1024Mi
   limits:
-    cpu: 2000m
-    memory: 4096Mi
+    cpu: 1000m
+    memory: 2048Mi
 customConfig:
   data_dir: /vector-data-dir
   api:
@@ -206,3 +206,15 @@ extraVolumeMounts:
     readOnly: true
   - name: vectordata
     mountPath: /vector-data-dir
+
+# Fix permissions for vector data directory
+initContainers:
+  - name: fix-permissions
+    image: busybox:1.35
+    command: ['sh', '-c', 'chmod 755 /vector-data-dir && chown 0:0 /vector-data-dir']
+    securityContext:
+      runAsUser: 0
+      allowPrivilegeEscalation: false
+    volumeMounts:
+      - name: vectordata
+        mountPath: /vector-data-dir

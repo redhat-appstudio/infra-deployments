@@ -8,4 +8,14 @@ resources:
 generators:
   - loki-helm-generator.yaml
   - grafana-helm-generator.yaml
-  # - minio-helm-generator.yaml  # Not needed when using filesystem storage
+
+patches:
+   - patch: |-
+      apiVersion: external-secrets.io/v1beta1
+      kind: ExternalSecret
+      metadata:
+        name: loki-secret
+      spec:
+        dataFrom:
+          - extract:
+              key: integrations-output/external-resources/appsrep09ue1/konflux-internal-prod/stone-prod-p02-kube-archive-rds

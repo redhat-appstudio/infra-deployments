@@ -2150,6 +2150,31 @@ spec:
         endpoint: https://{{ .endpoint }}
         s3_url: s3://{{ .bucket }}
 ---
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "-1"
+  name: kubearchive-loki-secret
+  namespace: product-kubearchive-logging
+spec:
+  dataFrom:
+  - extract:
+      key: integrations-output/terraform-resources/appsres09ue1/stone-stage-p01/stone-stage-p01-plnsvc-s3
+  refreshInterval: 1h
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: appsre-vault
+  target:
+    creationPolicy: Owner
+    deletionPolicy: Delete
+    name: kubearchive-loki-secret
+    template:
+      data:
+        loki_username: '{{ .loki_username }}'
+        loki_password: '{{ .loki_password }}'
+---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
