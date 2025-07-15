@@ -144,12 +144,12 @@ env:
   - name: LOKI_USERNAME
     valueFrom:
       secretKeyRef:
-        name: loki-basic-auth
+        name: kubearchive-loki
         key: USERNAME
   - name: LOKI_PASSWORD
     valueFrom:
       secretKeyRef:
-        name: loki-basic-auth
+        name: kubearchive-loki
         key: PASSWORD
   - name: VECTOR_LOG
     value: "info"
@@ -207,9 +207,8 @@ extraVolumeMounts:
   - name: vectordata
     mountPath: /vector-data-dir
 
-# Fix permissions for vector data directory
 initContainers:
-  - name: fix-permissions
+  - name: init-vector-data-dir
     image: busybox:1.35
     command: ['sh', '-c', 'chmod 755 /vector-data-dir && chown 0:0 /vector-data-dir']
     securityContext:
