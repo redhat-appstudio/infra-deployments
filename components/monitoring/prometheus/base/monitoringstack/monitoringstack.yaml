@@ -53,7 +53,10 @@ spec:
           unexpected_status|failure|hostname|label_app_kubernetes_io_managed_by|status|\
           pipeline|pipelinename|pipelinerun|schedule|check|grpc_service|grpc_code|\
           grpc_method|lease|lease_holder|deployment|platform|mode|cpu|role|node|kind|\
-          verb|request_kind|tested_cluster|resource_type|exported_job"
+          verb|request_kind|tested_cluster|resource_type|exported_job|rule_result|\
+          rule_execution_cause|policy_name|policy_background_mode|rule_type|\
+          policy_type|policy_validation_mode|resource_request_operation|resource_kind|\
+          policy_change_type"
 ---
 # Grant permission to Federate In-Cluster Prometheus
 apiVersion: rbac.authorization.k8s.io/v1
@@ -252,6 +255,11 @@ spec:
         - '{__name__="code:apiserver_request_total:rate5m"}'
         - '{__name__="instance:apiserver_request_total:rate5m"}'
         - '{__name__="prometheus_ready"}'
+
+        # Namespace (expression):  "konflux-kyverno"
+        - '{__name__="kube_deployment_status_replicas_ready", namespace="konflux-kyverno"}'
+        - '{__name__="kube_deployment_status_replicas_available", namespace="konflux-kyverno"}'
+        - '{__name__="kube_deployment_spec_replicas", namespace="konflux-kyverno"}'
 
     relabelings:
     # override the target's address by the prometheus-k8s service name.
