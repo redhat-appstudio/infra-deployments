@@ -13,8 +13,12 @@ spec:
                 sourceRoot: components/smee
                 environment: staging
                 clusterDir: ""
-          - list:
-              elements: []
+          -  list:
+              elements:
+                - nameNormalized: stone-prd-host1
+                  values.clusterDir: stone-prd-host1
+                - nameNormalized: stone-stg-host
+                  values.clusterDir: stone-stg-host
   template:
     metadata:
       name: smee-{{nameNormalized}}
