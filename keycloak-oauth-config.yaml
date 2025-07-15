@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: keycloak-secret
+  namespace: openshift-config
+type: Opaque
+stringData:
+  # Replace this with the actual client secret from Keycloak's openshift-oauth client Credentials tab
+  clientSecret: "<REPLACE_ME>"
+---
+apiVersion: config.openshift.io/v1
+kind: OAuth
+metadata:
+  name: cluster
+spec:
+  identityProviders:
+  - name: keycloak
+    type: OpenID
+    openID:
+      clientID: openshift-oauth
+      clientSecret:
+        name: keycloak-secret
+      issuer: https://keycloak-dev-sso.apps.<REPLACE_ME>/auth/realms/redhat-external
+      claims:
+        preferredUsername:
+        - preferred_username
+        name:
+        - name
+        email:
+        - email
+        groups:
+        - groups
+    mappingMethod: claim 

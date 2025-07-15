@@ -1,0 +1,41 @@
+apiVersion: keycloak.org/v1alpha1
+kind: KeycloakClient
+metadata:
+  name: openshift-oauth
+  namespace: dev-sso
+  labels:
+    app: sso
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  client:
+    enabled: true
+    clientAuthenticatorType: client-secret
+    clientId: openshift-oauth
+    publicClient: false
+    standardFlowEnabled: true
+    implicitFlowEnabled: false
+    directAccessGrantsEnabled: false
+    # OpenShift OAuth specific redirect URIs
+    redirectUris:
+      - https://oauth-openshift.apps.<REPLACE_ME>/oauth2callback/keycloak
+    webOrigins:
+      - https://oauth-openshift.apps.<REPLACE_ME>
+    defaultClientScopes:
+      - web-origins
+      - acr
+      - profile
+      - roles
+      - email
+    optionalClientScopes:
+      - address
+      - phone
+      - offline_access
+      - microprofile-jwt
+    attributes:
+      access.token.lifespan: "3600"
+      client.session.idle.timeout: "3600"
+      client.session.max.lifespan: "36000"
+  realmSelector:
+    matchLabels:
+      realm: redhat-external 
