@@ -1,12 +1,12 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-- https://github.com/konflux-ci/tekton-kueue/config/default?ref=c3b538760d3c5ba28e30a9d3b16937fbccc30b45
+- https://github.com/konflux-ci/tekton-kueue/config/default?ref=f6480d9e6aeee3a1bb219ff0a5e5264099562a3f
 
 images:
 - name: konflux-ci/tekton-kueue
   newName: quay.io/konflux-ci/tekton-kueue
-  newTag: c3b538760d3c5ba28e30a9d3b16937fbccc30b45
+  newTag: f6480d9e6aeee3a1bb219ff0a5e5264099562a3f
 
 namespace: tekton-kueue
 # ensure that installation starts after the installation of kueue complete
