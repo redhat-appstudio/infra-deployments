@@ -1,12 +1,18 @@
 ---
-- op: add
-  path: /spec/platforms/openshift/pipelinesAsCode/settings
-  value:
-    application-name: Konflux {{ shortname }}
-    custom-console-name: Konflux {{ shortname }}
-    custom-console-url: https://konflux-ui.apps.{{ longname }}.openshiftapps.com
-    custom-console-url-pr-details: https://konflux-ui.apps.{{ longname }}.openshiftapps.com/ns/{% raw %}{{ namespace }}/pipelinerun/{{ pr }}
+- op: replace
+  path: /spec/platforms/openshift/pipelinesAsCode/settings/application-name
+  value: Konflux {{ shortname }}
+- op: replace
+  path: /spec/platforms/openshift/pipelinesAsCode/settings/custom-console-name
+  value: Konflux {{ shortname }}
+- op: replace
+  path: /spec/platforms/openshift/pipelinesAsCode/settings/custom-console-url
+  value: https://konflux-ui.apps.{{ longname }}.openshiftapps.com
+- op: replace
+  path: /spec/platforms/openshift/pipelinesAsCode/settings/custom-console-url-pr-details
+  value: https://konflux-ui.apps.{{ longname }}.openshiftapps.com/ns/{% raw %}{{ namespace }}/pipelinerun/{{ pr }}
 {% endraw %}
-    custom-console-url-pr-tasklog: https://konflux-ui.apps.{{ longname }}.openshiftapps.com/ns/{% raw %}{{ namespace }}/pipelinerun/{{ pr }}/logs/{{ task }}
+- op: replace
+  path: /spec/platforms/openshift/pipelinesAsCode/settings/custom-console-url-pr-tasklog
+  value: https://konflux-ui.apps.{{ longname }}.openshiftapps.com/ns/{% raw %}{{ namespace }}/pipelinerun/{{ pr }}/logs/{{ task }}
 {% endraw %}
-    remember-ok-to-test: "false"
