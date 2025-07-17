@@ -10,7 +10,7 @@ cel:
           p.name == 'build-platforms')[0]
         .value.map(
           p,
-          annotation("kueue.konflux-ci.dev/requests-" + replace(p, "/", "-"), "1") 
+          annotation("kueue.konflux-ci.dev/requests-" + replace(replace(p, "/", "-"), "_", "-"), "1") 
         ) : []
 
     # Set resource requests for multi platform pipelines which doesn't use the build-platforms parameter (old style)
@@ -24,7 +24,7 @@ cel:
       .filter(p, p.size() > 0)
       .map(
         p,
-        annotation("kueue.konflux-ci.dev/requests-" + replace(p[0].value, "/", "-"), "1")
+        annotation("kueue.konflux-ci.dev/requests-" + replace(replace(p[0].value, "/", "-"), "_", "-"), "1")
       ) : []
 
     # Set the pipeline priority
