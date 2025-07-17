@@ -194,8 +194,6 @@ extraVolumes:
     hostPath:
       path: /var/lib/containers
       type: DirectoryOrCreate
-  - name: vectordata
-    emptyDir: {}
 
 extraVolumeMounts:
   - name: varlog
@@ -204,16 +202,5 @@ extraVolumeMounts:
   - name: varlibdockercontainers  
     mountPath: /var/lib/containers
     readOnly: true
-  - name: vectordata
-    mountPath: /vector-data-dir
 
-initContainers:
-  - name: init-vector-data-dir
-    image: busybox:1.35
-    command: ['sh', '-c', 'chmod 755 /vector-data-dir && chown 0:0 /vector-data-dir']
-    securityContext:
-      runAsUser: 0
-      allowPrivilegeEscalation: false
-    volumeMounts:
-      - name: vectordata
-        mountPath: /vector-data-dir
+
