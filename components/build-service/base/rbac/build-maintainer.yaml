@@ -20,6 +20,15 @@ rules:
       - ''
     resources:
       - secrets
+  - verbs:
+      - get
+      - list
+      - patch
+      - update
+    apiGroups:
+      - pipelinesascode.tekton.dev
+    resources:
+      - repositories
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
