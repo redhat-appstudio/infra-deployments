@@ -181,6 +181,8 @@ securityContext:
     - SETPCAP
     - SETUID
   readOnlyRootFilesystem: true
+  seLinuxOptions:
+    type: spc_t
   seccompProfile:
     type: RuntimeDefault
 
@@ -194,6 +196,10 @@ extraVolumes:
     hostPath:
       path: /var/lib/containers
       type: DirectoryOrCreate
+  # Override default data volume to use emptyDir instead of hostPath
+  - name: data
+    emptyDir: {}
+
 
 extraVolumeMounts:
   - name: varlog
@@ -207,7 +213,7 @@ extraVolumeMounts:
 initContainers:
   - name: init-vector-data-dir
     image: busybox:1.35
-    command: ['sh', '-c', 'mkdir -p /vector-data-dir && chmod 755 /vector-data-dir && chown 0:0 /vector-data-dir']
+    command: ['sh', '-c', 'mkdir -p /vector-data-dir']
     securityContext:
       runAsUser: 0
       allowPrivilegeEscalation: false
