@@ -203,4 +203,15 @@ extraVolumeMounts:
     mountPath: /var/lib/containers
     readOnly: true
 
+# InitContainer to ensure vector data directory exists with proper permissions
+initContainers:
+  - name: init-vector-data-dir
+    image: busybox:1.35
+    command: ['sh', '-c', 'mkdir -p /vector-data-dir && chmod 755 /vector-data-dir && chown 0:0 /vector-data-dir']
+    securityContext:
+      runAsUser: 0
+      allowPrivilegeEscalation: false
+    volumeMounts:
+      - name: data
+        mountPath: /vector-data-dir
 

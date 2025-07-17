@@ -36,6 +36,13 @@ loki:
 
 deploymentMode: SingleBinary
 
+# Gateway configuration to fix DNS resolver
+gateway:
+  enabled: true
+  replicas: 1
+  nginxConfig:
+    resolver: dns-default.openshift-dns.svc.cluster.local
+
 # Use default ServiceAccount for development
 # serviceAccount:
 #   create: false  # We create it manually in loki-pre.yaml
