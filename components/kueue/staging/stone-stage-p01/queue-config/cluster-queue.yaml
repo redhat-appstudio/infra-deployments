@@ -104,6 +104,10 @@ spec:
     - linux-root-amd64
     - linux-root-arm64
     - linux-s390x
+    - linux-amd64
+    - linux-x86-64
+    - local
+    - localhost
     flavors:
     - name: platform-group-2
       resources:
@@ -125,6 +129,14 @@ spec:
         nominalQuota: '100'
       - name: linux-s390x
         nominalQuota: '2'
+      - name: linux-amd64
+        nominalQuota: '500'
+      - name: linux-x86-64
+        nominalQuota: '500'
+      - name: local
+        nominalQuota: '500'
+      - name: localhost
+        nominalQuota: '500'
 ---
 apiVersion: kueue.x-k8s.io/v1beta1
 kind: ResourceFlavor
