@@ -1,0 +1,11 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: multi-platform-controller
+  namespace: multi-platform-controller
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        image: quay.io/konflux-ci/multi-platform-controller:50d363e362af827c0c1b176cbf7fa5b5dba3e2a3
