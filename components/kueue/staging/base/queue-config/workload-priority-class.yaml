@@ -1,0 +1,57 @@
+---
+apiVersion: kueue.x-k8s.io/v1beta1
+kind: WorkloadPriorityClass
+metadata:
+  name: konflux-release
+value: 1000
+description: "Highest priority for release pipelines"
+---
+apiVersion: kueue.x-k8s.io/v1beta1
+kind: WorkloadPriorityClass
+metadata:
+  name: konflux-tenant-release
+value: 900
+description: "High priority for tenant release pipelines"
+---
+apiVersion: kueue.x-k8s.io/v1beta1
+kind: WorkloadPriorityClass
+metadata:
+  name: konflux-post-merge-test
+value: 800
+description: "Priority for post-merge tests"
+---
+apiVersion: kueue.x-k8s.io/v1beta1
+kind: WorkloadPriorityClass
+metadata:
+  name: konflux-post-merge-build
+value: 700
+description: "Priority for post-merge builds"
+---
+apiVersion: kueue.x-k8s.io/v1beta1
+kind: WorkloadPriorityClass
+metadata:
+  name: konflux-pre-merge-test
+value: 600
+description: "Priority for pre-merge tests"
+---
+apiVersion: kueue.x-k8s.io/v1beta1
+kind: WorkloadPriorityClass
+metadata:
+  name: konflux-pre-merge-build
+value: 500
+description: "Priority for pre-merge builds"
+---
+apiVersion: kueue.x-k8s.io/v1beta1
+kind: WorkloadPriorityClass
+metadata:
+  name: konflux-default
+value: 400
+description: "Default priority for konflux pipelines"
+---
+apiVersion: kueue.x-k8s.io/v1beta1
+kind: WorkloadPriorityClass
+metadata:
+  name: konflux-dependency-update
+value: 300
+description: "Lower priority for dependency updates"
+
