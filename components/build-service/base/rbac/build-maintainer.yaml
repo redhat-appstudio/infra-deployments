@@ -12,14 +12,32 @@ rules:
       - ''
     resources:
       - serviceaccounts
-    resourceNames:
-      - appstudio-pipeline # TODO: figure out how to 'gitops' this.
+      - configmaps
   - verbs:
       - list
     apiGroups:
       - ''
     resources:
       - secrets
+  - verbs:
+      - get
+      - list
+      - patch
+      - update
+    apiGroups:
+      - appstudio.redhat.com
+    resources:
+      - components
+      - imagerepositories
+  - verbs:
+      - get
+      - list
+      - patch
+      - update
+    apiGroups:
+      - pipelinesascode.tekton.dev
+    resources:
+      - repositories
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
