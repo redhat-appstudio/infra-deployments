@@ -196,10 +196,6 @@ extraVolumes:
     hostPath:
       path: /var/lib/containers
       type: DirectoryOrCreate
-  # Override default data volume to use emptyDir instead of hostPath
-  - name: vector-data-dir
-    emptyDir: {}
-
 
 extraVolumeMounts:
   - name: varlog
@@ -208,8 +204,10 @@ extraVolumeMounts:
   - name: varlibdockercontainers  
     mountPath: /var/lib/containers
     readOnly: true
-  - name: vector-data-dir
-    mountPath: /vector-data-dir
+
+# Configure Vector to use emptyDir for its default data volume instead of hostPath
+persistence:
+  enabled: false
 
 # InitContainer to ensure vector data directory exists with proper permissions
 initContainers:
@@ -220,7 +218,7 @@ initContainers:
       runAsUser: 0
       allowPrivilegeEscalation: false
     volumeMounts:
-      - name: vector-data-dir
+      - name: data
         mountPath: /vector-data-dir
 
 
