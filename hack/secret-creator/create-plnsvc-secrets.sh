@@ -117,15 +117,15 @@ create_kubearchive_loki_secret() {
     LOKI_USERNAME=admin
     LOKI_PWD="$(openssl rand -base64 20)"
 
-    kubectl get secret -n ${NAMESPACE} loki-basic-auth > /dev/null 2>&1
+    kubectl get secret -n ${NAMESPACE} kubearchive-loki > /dev/null 2>&1
     if [ $? -ne 0 ]; then
-      echo "Secret 'loki-basic-auth' not found, creating it..."
+      echo "Secret 'kubearchive-loki' not found, creating it..."
       kubectl create secret -n ${NAMESPACE} \
-        generic loki-basic-auth \
+        generic kubearchive-loki \
         --from-literal=USERNAME=${LOKI_USERNAME} \
         --from-literal=PASSWORD=${LOKI_PWD}
     else
-      echo "Secret 'loki-basic-auth' already exists."
+      echo "Secret 'kubearchive-loki' already exists."
     fi
 
     oc adm policy add-scc-to-user hostaccess -z default -n product-kubearchive-logging
