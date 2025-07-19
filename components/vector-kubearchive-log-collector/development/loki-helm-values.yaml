@@ -85,3 +85,15 @@ bloomCompactor:
   replicas: 0
 bloomGateway:
   replicas: 0
+
+# Disable memory-intensive caching for development environment  
+chunksCache:
+  replicas: 0  # Scale to 0 replicas to avoid memory issues
+
+resultsCache:
+  enabled: true
+  allocatedMemory: 256  # Keep results cache but with minimal memory
+
+# Disable test pods for cleaner development environment  
+test:
+  enabled: false
