@@ -4,9 +4,11 @@ main() {
     echo "Setting secrets for pipeline-service"
     create_namespace tekton-results
     create_namespace tekton-logging
+    create_namespace product-kubearchive-logging
     create_db_secret
     create_s3_secret tekton-results tekton-results-s3
     create_s3_secret tekton-logging tekton-results-s3
+
     create_db_cert_secret_and_configmap
 }
 
@@ -107,6 +109,29 @@ create_db_cert_secret_and_configmap() {
         --from-file=.tmp/tekton-results/tls.key
     kubectl create configmap -n tekton-results rds-root-crt \
         --from-file=.tmp/tekton-results/tekton-results-db-ca.pem
+}
+
+create_kubearchive_loki_secret() {
+    NAMESPACE=product-kubearchive-logging
+    echo "Creating Loki secret" >&2
+    LOKI_USERNAME=admin
+    LOKI_PWD="$(openssl rand -base64 20)"
+
+    kubectl get secret -n ${NAMESPACE} kubearchive-loki > /dev/null 2>&1
+    if [ $? -ne 0 ]; then
+      echo "Secret 'kubearchive-loki' not found, creating it..."
+      kubectl create secret -n ${NAMESPACE} \
+        generic kubearchive-loki \
+        --from-literal=USERNAME=${LOKI_USERNAME} \
+        --from-literal=PASSWORD=${LOKI_PWD}
+    else
+      echo "Secret 'kubearchive-loki' already exists."
+    fi
+
+    oc adm policy add-scc-to-user hostaccess -z default -n product-kubearchive-logging
+    oc adm policy add-scc-to-user hostaccess -z vector-kubearchive-log-collector -n product-kubearchive-logging
+    oc adm policy add-scc-to-user hostmount-anyuid -z vector-kubearchive-log-collector -n product-kubearchive-logging
+    oc adm policy add-scc-to-user privileged -z vector-kubearchive-log-collector -n product-kubearchive-logging
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
