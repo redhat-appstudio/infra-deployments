@@ -1,6 +1,29 @@
 # Copyright KubeArchive Authors
 # SPDX-License-Identifier: Apache-2.0
 ---
+# OpenShift-compatible security context
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+  fsGroup: 10001
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+  fsGroup: 10001
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: false
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+
 datasources:
   datasources.yaml:
     apiVersion: 1
