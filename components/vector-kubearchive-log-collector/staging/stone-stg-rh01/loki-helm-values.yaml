@@ -1,3 +1,5 @@
+# Copyright KubeArchive Authors
+# SPDX-License-Identifier: Apache-2.0
 ---
 loki:
   limits_config:
@@ -8,17 +10,13 @@ loki:
     existingSecret: kubearchive-loki
   storage:
     type: s3
+    s3:
+      region: us-east-1
+      type: "aws_s3"
     bucketNames:
       chunks: stone-stg-rh01-loki-storage
       ruler: stone-stg-rh01-loki-storage
       admin: stone-stg-rh01-loki-storage
-    s3:
-      region: us-east-1
-      type: "aws_s3"
-      bucketNames:
-        chunks: loki
-        ruler: loki-ruler
-        admin: loki-admin
 
   schemaConfig:
     configs:
@@ -38,9 +36,10 @@ loki:
     delete_request_store: s3
   ruler:
     storage:
-      type: local
-      local:
-        directory: /tmp/rules
+      type: s3
+      s3:
+        bucketNames:
+          ruler: stone-stg-rh01-loki-storage
 
 deploymentMode: SingleBinary
 
@@ -86,3 +85,15 @@ bloomCompactor:
   replicas: 0
 bloomGateway:
   replicas: 0
+
+# Disable memory-intensive caching for development environment  
+chunksCache:
+  replicas: 0  # Scale to 0 replicas to avoid memory issues
+
+resultsCache:
+  enabled: true
+  allocatedMemory: 256  # Keep results cache but with minimal memory
+
+# Disable test pods for cleaner development environment  
+test:
+  enabled: false

@@ -1,18 +1,18 @@
 # Copyright KubeArchive Authors
 # SPDX-License-Identifier: Apache-2.0
 ---
-# OpenShift-compatible security context
+# OpenShift-compatible security context using assigned UID range
 securityContext:
   runAsNonRoot: true
-  runAsUser: 10001
-  runAsGroup: 10001
-  fsGroup: 10001
+  runAsUser: 1000770000
+  runAsGroup: 1000770000
+  fsGroup: 1000770000
 
 podSecurityContext:
   runAsNonRoot: true
-  runAsUser: 10001
-  runAsGroup: 10001
-  fsGroup: 10001
+  runAsUser: 1000770000
+  runAsGroup: 1000770000
+  fsGroup: 1000770000
 
 containerSecurityContext:
   allowPrivilegeEscalation: false
@@ -21,8 +21,8 @@ containerSecurityContext:
       - ALL
   readOnlyRootFilesystem: false
   runAsNonRoot: true
-  runAsUser: 10001
-  runAsGroup: 10001
+  runAsUser: 1000770000
+  runAsGroup: 1000770000
 
 datasources:
   datasources.yaml:
@@ -47,9 +47,9 @@ sidecar:
     envValueFrom:
       LOKI_USER:
         secretKeyRef:
-          name: loki-basic-auth
+          name: kubearchive-loki
           key: username
       LOKI_PWD:
         secretKeyRef:
-          name: loki-basic-auth
+          name: kubearchive-loki
           key: password
