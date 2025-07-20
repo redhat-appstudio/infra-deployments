@@ -217,7 +217,7 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
+        "h": 16,
         "w": 12,
         "x": 12,
         "y": 11
@@ -229,12 +229,12 @@
           "calcs": [],
           "displayMode": "list",
           "placement": "bottom",
-          "showLegend": true
+          "showLegend": false
         },
         "maxVizHeight": 300,
         "minVizHeight": 16,
         "minVizWidth": 8,
-        "namePlacement": "auto",
+        "namePlacement": "top",
         "orientation": "horizontal",
         "reduceOptions": {
           "calcs": [
@@ -245,6 +245,9 @@
         },
         "showUnfilled": true,
         "sizing": "auto",
+        "text": {
+          "titleSize": 18
+        },
         "valueMode": "color"
       },
       "pluginVersion": "11.3.0",
@@ -360,10 +363,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
+        "h": 15,
         "w": 12,
         "x": 12,
-        "y": 19
+        "y": 27
       },
       "id": 17,
       "options": {
@@ -372,12 +375,12 @@
           "calcs": [],
           "displayMode": "list",
           "placement": "bottom",
-          "showLegend": true
+          "showLegend": false
         },
         "maxVizHeight": 300,
         "minVizHeight": 16,
         "minVizWidth": 8,
-        "namePlacement": "auto",
+        "namePlacement": "top",
         "orientation": "horizontal",
         "reduceOptions": {
           "calcs": [
@@ -388,13 +391,16 @@
         },
         "showUnfilled": true,
         "sizing": "auto",
+        "text": {
+          "titleSize": 18
+        },
         "valueMode": "color"
       },
       "pluginVersion": "11.3.0",
       "targets": [
         {
           "editorMode": "code",
-          "expr": "(\n    pod:container_cpu_usage:sum{namespace=~\"tekton-kueue|kueue-external-admission|openshift-kueue-operator\"}\n    * on(pod)\n    kube_pod_container_status_ready{namespace=~\"tekton-kueue|kueue-external-admission|openshift-kueue-operator\"}\n) / on (pod) group_right kube_pod_resource_limit{resource='cpu',namespace=~\"tekton-kueue|kueue-external-admission|openshift-kueue-operator\"} * 100",
+          "expr": "(\n    pod:container_cpu_usage:sum{namespace=~\"tekton-kueue|kueue-external-admission|openshift-kueue-operator\"}\n    * on(pod)\n    kube_pod_container_status_ready{namespace=~\"tekton-kueue|kueue-external-admission|openshift-kueue-operator\"}\n) / on (pod) group_right max by (pod) (kube_pod_resource_limit{resource='cpu',namespace=~\"tekton-kueue|kueue-external-admission|openshift-kueue-operator\"}) * 100",
           "legendFormat": "{{pod}}",
           "range": true,
           "refId": "A"
@@ -404,12 +410,77 @@
       "type": "bargauge"
     },
     {
+      "description": "Monitor the overall health and usage of CEL expressions in tekton-kueue webhook",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 11,
+        "x": 0,
+        "y": 39
+      },
+      "id": 22,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.3.0",
+      "targets": [
+        {
+          "editorMode": "code",
+          "expr": "increase(tekton_kueue_cel_evaluations_total{result=\"failure\"}[$__interval])",
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Tekton Kueue CEL evaluations filiaures",
+      "type": "stat"
+    },
+    {
       "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 39
+        "y": 42
       },
       "id": 6,
       "panels": [],
@@ -464,7 +535,7 @@
         "h": 6,
         "w": 3,
         "x": 0,
-        "y": 40
+        "y": 43
       },
       "id": 11,
       "options": {
@@ -523,9 +594,9 @@
       },
       "gridPos": {
         "h": 6,
-        "w": 6,
+        "w": 8,
         "x": 3,
-        "y": 40
+        "y": 43
       },
       "id": 9,
       "options": {
@@ -580,9 +651,9 @@
       },
       "gridPos": {
         "h": 6,
-        "w": 15,
-        "x": 9,
-        "y": 40
+        "w": 12,
+        "x": 12,
+        "y": 43
       },
       "id": 10,
       "options": {
@@ -616,6 +687,134 @@
       "type": "stat"
     },
     {
+      "description": "The total number of admitted workloads in the selected range",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 11,
+        "x": 0,
+        "y": 49
+      },
+      "id": 23,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.3.0",
+      "targets": [
+        {
+          "editorMode": "code",
+          "expr": "max(increase(kueue_admitted_workloads_total[$__range]))",
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Admitted Workloads Increase",
+      "type": "stat"
+    },
+    {
+      "description": "99% of the workloads waited in the queue less time from the shown value",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 300
+              },
+              {
+                "color": "orange",
+                "value": 600
+              },
+              {
+                "color": "red",
+                "value": 900
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 12,
+        "y": 49
+      },
+      "id": 24,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.3.0",
+      "targets": [
+        {
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.99, sum(increase(kueue_admission_wait_time_seconds_bucket{cluster_queue=\"cluster-pipeline-queue\"}[$__range])) by (le))",
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Admission Wait Time 99th Percentile ",
+      "type": "stat"
+    },
+    {
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -643,10 +842,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 11,
-        "w": 9,
+        "h": 43,
+        "w": 11,
         "x": 0,
-        "y": 46
+        "y": 55
       },
       "id": 7,
       "options": {
@@ -660,8 +859,8 @@
         "maxVizHeight": 300,
         "minVizHeight": 16,
         "minVizWidth": 8,
-        "namePlacement": "auto",
-        "orientation": "auto",
+        "namePlacement": "top",
+        "orientation": "horizontal",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -671,6 +870,9 @@
         },
         "showUnfilled": true,
         "sizing": "auto",
+        "text": {
+          "titleSize": 16
+        },
         "valueMode": "color"
       },
       "pluginVersion": "11.3.0",
@@ -714,10 +916,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 4,
-        "w": 9,
-        "x": 0,
-        "y": 57
+        "h": 35,
+        "w": 12,
+        "x": 12,
+        "y": 55
       },
       "id": 8,
       "options": {
@@ -771,7 +973,7 @@
         "h": 15,
         "w": 14,
         "x": 0,
-        "y": 61
+        "y": 98
       },
       "id": 12,
       "options": {
@@ -845,7 +1047,7 @@
         "h": 13,
         "w": 14,
         "x": 0,
-        "y": 76
+        "y": 113
       },
       "id": 14,
       "options": {
@@ -918,7 +1120,7 @@
         "h": 13,
         "w": 14,
         "x": 0,
-        "y": 89
+        "y": 126
       },
       "id": 13,
       "options": {
@@ -976,7 +1178,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 102
+        "y": 139
       },
       "id": 4,
       "panels": [],
@@ -1006,7 +1208,7 @@
         "h": 7,
         "w": 7,
         "x": 0,
-        "y": 103
+        "y": 140
       },
       "id": 2,
       "options": {
@@ -1116,7 +1318,7 @@
         "h": 14,
         "w": 14,
         "x": 0,
-        "y": 110
+        "y": 147
       },
       "id": 15,
       "options": {
@@ -1247,7 +1449,7 @@
         "h": 14,
         "w": 14,
         "x": 0,
-        "y": 124
+        "y": 161
       },
       "id": 20,
       "options": {
@@ -1286,6 +1488,63 @@
       "type": "timeseries"
     },
     {
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 14,
+        "x": 0,
+        "y": 175
+      },
+      "id": 26,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.3.0",
+      "targets": [
+        {
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.99, sum by (le) (increase(watcher_pipelinerun_delete_duration_seconds_bucket[$__range])))",
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Pipeline Deletion Duration 99th Percentile",
+      "type": "stat"
+    },
+    {
       "description": "The duration that watcher take to delete the PipelineRun since completion",
       "fieldConfig": {
         "defaults": {
@@ -1306,7 +1565,7 @@
         "h": 13,
         "w": 14,
         "x": 0,
-        "y": 138
+        "y": 181
       },
       "id": 21,
       "options": {
@@ -1359,6 +1618,7 @@
       "type": "heatmap"
     }
   ],
+  "preload": false,
   "refresh": "auto",
   "schemaVersion": 40,
   "tags": [],
