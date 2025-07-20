@@ -264,6 +264,141 @@
       "type": "bargauge"
     },
     {
+      "description": "99th Percentile of the latency of an admission attempt.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 5
+              },
+              {
+                "color": "orange",
+                "value": 15
+              },
+              {
+                "color": "red",
+                "value": 25
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 11,
+        "x": 0,
+        "y": 15
+      },
+      "id": 27,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.3.0",
+      "targets": [
+        {
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.99, sum(increase(kueue_admission_attempt_duration_seconds_bucket[$__range])) by (le))",
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Admission Latency 99th Percentile",
+      "type": "stat"
+    },
+    {
+      "description": "Monitor the overall health and usage of CEL expressions in tekton-kueue webhook",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 11,
+        "x": 0,
+        "y": 19
+      },
+      "id": 22,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.3.0",
+      "targets": [
+        {
+          "editorMode": "code",
+          "expr": "increase(tekton_kueue_cel_evaluations_total{result=\"failure\"}[$__interval])",
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Tekton Kueue CEL evaluations filiaures",
+      "type": "stat"
+    },
+    {
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -293,10 +428,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 24,
+        "h": 26,
         "w": 11,
         "x": 0,
-        "y": 15
+        "y": 23
       },
       "id": 18,
       "options": {
@@ -410,77 +545,12 @@
       "type": "bargauge"
     },
     {
-      "description": "Monitor the overall health and usage of CEL expressions in tekton-kueue webhook",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "red",
-                "value": 1
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 3,
-        "w": 11,
-        "x": 0,
-        "y": 39
-      },
-      "id": 22,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "percentChangeColorMode": "standard",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
-      },
-      "pluginVersion": "11.3.0",
-      "targets": [
-        {
-          "editorMode": "code",
-          "expr": "increase(tekton_kueue_cel_evaluations_total{result=\"failure\"}[$__interval])",
-          "legendFormat": "__auto",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "Tekton Kueue CEL evaluations filiaures",
-      "type": "stat"
-    },
-    {
       "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 42
+        "y": 49
       },
       "id": 6,
       "panels": [],
@@ -535,7 +605,7 @@
         "h": 6,
         "w": 3,
         "x": 0,
-        "y": 43
+        "y": 50
       },
       "id": 11,
       "options": {
@@ -596,7 +666,7 @@
         "h": 6,
         "w": 8,
         "x": 3,
-        "y": 43
+        "y": 50
       },
       "id": 9,
       "options": {
@@ -653,7 +723,7 @@
         "h": 6,
         "w": 12,
         "x": 12,
-        "y": 43
+        "y": 50
       },
       "id": 10,
       "options": {
@@ -711,7 +781,7 @@
         "h": 6,
         "w": 11,
         "x": 0,
-        "y": 49
+        "y": 56
       },
       "id": 23,
       "options": {
@@ -781,7 +851,7 @@
         "h": 6,
         "w": 12,
         "x": 12,
-        "y": 49
+        "y": 56
       },
       "id": 24,
       "options": {
@@ -845,7 +915,7 @@
         "h": 43,
         "w": 11,
         "x": 0,
-        "y": 55
+        "y": 62
       },
       "id": 7,
       "options": {
@@ -919,7 +989,7 @@
         "h": 35,
         "w": 12,
         "x": 12,
-        "y": 55
+        "y": 62
       },
       "id": 8,
       "options": {
@@ -973,7 +1043,7 @@
         "h": 15,
         "w": 14,
         "x": 0,
-        "y": 98
+        "y": 105
       },
       "id": 12,
       "options": {
@@ -1047,7 +1117,7 @@
         "h": 13,
         "w": 14,
         "x": 0,
-        "y": 113
+        "y": 120
       },
       "id": 14,
       "options": {
@@ -1120,7 +1190,7 @@
         "h": 13,
         "w": 14,
         "x": 0,
-        "y": 126
+        "y": 133
       },
       "id": 13,
       "options": {
@@ -1178,7 +1248,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 139
+        "y": 146
       },
       "id": 4,
       "panels": [],
@@ -1208,7 +1278,7 @@
         "h": 7,
         "w": 7,
         "x": 0,
-        "y": 140
+        "y": 147
       },
       "id": 2,
       "options": {
@@ -1318,7 +1388,7 @@
         "h": 14,
         "w": 14,
         "x": 0,
-        "y": 147
+        "y": 154
       },
       "id": 15,
       "options": {
@@ -1449,7 +1519,7 @@
         "h": 14,
         "w": 14,
         "x": 0,
-        "y": 161
+        "y": 168
       },
       "id": 20,
       "options": {
@@ -1511,7 +1581,7 @@
         "h": 6,
         "w": 14,
         "x": 0,
-        "y": 175
+        "y": 182
       },
       "id": 26,
       "options": {
@@ -1565,7 +1635,7 @@
         "h": 13,
         "w": 14,
         "x": 0,
-        "y": 181
+        "y": 188
       },
       "id": 21,
       "options": {
@@ -1626,13 +1696,13 @@
     "list": []
   },
   "time": {
-    "from": "now-5m",
+    "from": "now-6h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "Kueue",
   "uid": "ceq3r2cpy01z4a",
-  "version": 1,
+  "version": 2,
   "weekStart": ""
 }
