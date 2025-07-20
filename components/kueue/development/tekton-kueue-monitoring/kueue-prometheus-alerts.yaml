@@ -1,0 +1,219 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: kueue-alerts
+spec:
+  groups:
+  - name: kueue.health
+    interval: 30s
+    rules:
+    - alert: KueueHighAdmissionLatency
+      expr: histogram_quantile(0.99, sum(increase(kueue_admission_attempt_duration_seconds_bucket[5m])) by (le)) > 30
+      for: 2m
+      labels:
+        severity: warning
+        component: kueue
+      annotations:
+        summary: "Kueue admission latency is high"
+        description: "99th percentile of Kueue admission attempt duration is {{ $value }}s, which is above the threshold of 30s"
+        runbook_url: https://gitlab.cee.redhat.com/konflux/docs/sop/-/blob/main/infra/queue.md?ref_type=heads
+        alert_team_handle: <!subteam^S05Q1P4Q2TG>
+        team: konflux-infra
+
+    - alert: KueueReplicasNotAvailable
+      expr: |
+        (
+          kube_deployment_status_replicas_available{namespace=~"openshift-kueue-operator|tekton-kueue|kueue-external-admission"}
+        )
+        /
+        clamp_min(
+          kube_deployment_spec_replicas{namespace=~"openshift-kueue-operator|tekton-kueue|kueue-external-admission"},
+          1
+        ) * 100 < 100
+      for: 5m
+      labels:
+        severity: critical
+        component: kueue
+      annotations:
+        summary: "Kueue deployment {{ $labels.deployment }} has unavailable replicas"
+        description: "Deployment {{ $labels.deployment }} has {{ $value }}% available replicas, which is less than 100%"
+        runbook_url: https://gitlab.cee.redhat.com/konflux/docs/sop/-/blob/main/infra/queue.md?ref_type=heads
+        alert_team_handle: <!subteam^S05Q1P4Q2TG>
+        team: konflux-infra
+
+    - alert: KueueHighMemoryUtilization
+      expr: |
+        (
+            container_memory_working_set_bytes{namespace=~"tekton-kueue|kueue-external-admission|openshift-kueue-operator", image!=""} 
+            * on(container, pod)
+            group_left
+            kube_pod_container_status_ready{namespace=~"tekton-kueue|kueue-external-admission|openshift-kueue-operator"}
+        )
+            / on (pod) kube_pod_resource_limit{resource='memory',namespace=~"tekton-kueue|kueue-external-admission|openshift-kueue-operator"} * 100 > 70
+      for: 5m
+      labels:
+        severity: warning
+        component: kueue
+      annotations:
+        summary: "Kueue pod {{ $labels.pod }} has high memory utilization"
+        description: "Pod {{ $labels.pod }} memory utilization is {{ $value }}%, which is above 70%"
+        runbook_url: https://gitlab.cee.redhat.com/konflux/docs/sop/-/blob/main/infra/queue.md?ref_type=heads
+        alert_team_handle: <!subteam^S05Q1P4Q2TG>
+        team: konflux-infra
+  
+    - alert: KueueHighCPUUtilization
+      expr: |
+        (
+            pod:container_cpu_usage:sum{namespace=~"tekton-kueue|kueue-external-admission|openshift-kueue-operator"}
+            * on(pod)
+            kube_pod_container_status_ready{namespace=~"tekton-kueue|kueue-external-admission|openshift-kueue-operator"}
+        ) / on (pod) group_right max by (pod) (kube_pod_resource_limit{resource='cpu',namespace=~"tekton-kueue|kueue-external-admission|openshift-kueue-operator"}) * 100 > 85
+      for: 5m
+      labels:
+        severity: warning
+        component: kueue
+      annotations:
+        summary: "Kueue pod {{ $labels.pod }} has high CPU utilization"
+        description: "Pod {{ $labels.pod }} CPU utilization is {{ $value }}%, which is above 85%"
+        runbook_url: https://gitlab.cee.redhat.com/konflux/docs/sop/-/blob/main/infra/queue.md?ref_type=heads
+        alert_team_handle: <!subteam^S05Q1P4Q2TG>
+        team: konflux-infra
+
+    - alert: KueueCELEvaluationFailures
+      expr: increase(tekton_kueue_cel_evaluations_total{result="failure"}[5m]) > 0
+      for: 1m
+      labels:
+        severity: warning
+        component: tekton-kueue
+      annotations:
+        summary: "Tekton Kueue CEL evaluation failures detected"
+        description: "{{ $value }} CEL evaluation failures occurred in the last 5 minutes"
+        runbook_url: https://gitlab.cee.redhat.com/konflux/docs/sop/-/blob/main/infra/queue.md?ref_type=heads
+        alert_team_handle: <!subteam^S05Q1P4Q2TG>
+        team: konflux-infra
+
+    - alert: KueueHighContainerRestarts
+      expr: |
+        increase(kube_pod_container_status_restarts_total{namespace=~"tekton-kueue|kueue-external-admission|openshift-kueue-operator"}[1h])
+        * on(container, pod)
+        kube_pod_container_status_ready{namespace=~"tekton-kueue|kueue-external-admission|openshift-kueue-operator"} >= 3
+      for: 0m
+      labels:
+        severity: warning
+        component: kueue
+      annotations:
+        summary: "Kueue pod {{ $labels.pod }} has high restart count"
+        description: "Pod {{ $labels.pod }} has restarted {{ $value }} times in the last hour"
+        runbook_url: https://gitlab.cee.redhat.com/konflux/docs/sop/-/blob/main/infra/queue.md?ref_type=heads
+        alert_team_handle: <!subteam^S05Q1P4Q2TG>
+        team: konflux-infra
+
+  - name: kueue.queue
+    interval: 30s
+    rules:
+    - alert: KueueClusterQueueNotActive
+      expr: max by (status) (kueue_cluster_queue_status{cluster_queue="cluster-pipeline-queue", status="active"}) != 1
+      for: 2m
+      labels:
+        severity: critical
+        component: kueue
+      annotations:
+        summary: "Kueue cluster queue is not active"
+        description: "Cluster queue 'cluster-pipeline-queue' is not in active state"
+        runbook_url: https://gitlab.cee.redhat.com/konflux/docs/sop/-/blob/main/infra/queue.md?ref_type=heads
+        alert_team_handle: <!subteam^S05Q1P4Q2TG>
+        team: konflux-infra
+
+    - alert: KueueHighPendingWorkloads
+      expr: max by (status) (kueue_pending_workloads{cluster_queue="cluster-pipeline-queue"}) > 300
+      for: 5m
+      labels:
+        severity: warning
+        component: kueue
+      annotations:
+        summary: "High number of pending workloads in Kueue"
+        description: "{{ $value }} workloads are pending in cluster queue 'cluster-pipeline-queue'"
+        runbook_url: https://gitlab.cee.redhat.com/konflux/docs/sop/-/blob/main/infra/queue.md?ref_type=heads
+        alert_team_handle: <!subteam^S05Q1P4Q2TG>
+        team: konflux-infra
+
+    - alert: KueueHighAdmissionWaitTime
+      expr: histogram_quantile(0.99, sum(increase(kueue_admission_wait_time_seconds_bucket{cluster_queue="cluster-pipeline-queue"}[10m])) by (le)) > 900
+      for: 5m
+      labels:
+        severity: warning
+        component: kueue
+      annotations:
+        summary: "High admission wait time in Kueue"
+        description: "99th percentile admission wait time is {{ $value }}s, which is above 15 minutes"
+        runbook_url: https://gitlab.cee.redhat.com/konflux/docs/sop/-/blob/main/infra/queue.md?ref_type=heads
+        alert_team_handle: <!subteam^S05Q1P4Q2TG>
+        team: konflux-infra
+
+    - alert: KueueHighResourceReservation
+      expr: max by (resource) (kueue_cluster_queue_resource_reservation{cluster_queue="cluster-pipeline-queue"} / kueue_cluster_queue_nominal_quota{cluster_queue="cluster-pipeline-queue"} * 100) > 90
+      for: 5m
+      labels:
+        severity: warning
+        component: kueue
+      annotations:
+        summary: "High resource reservation in Kueue cluster queue"
+        description: "Resource {{ $labels.resource }} reservation is {{ $value }}% of nominal quota, which is above 90%"  
+        runbook_url: https://gitlab.cee.redhat.com/konflux/docs/sop/-/blob/main/infra/queue.md?ref_type=heads
+        alert_team_handle: <!subteam^S05Q1P4Q2TG>
+        team: konflux-infra
+
+    - alert: KueueLowResourceUsage
+      expr: max by (resource) (kueue_cluster_queue_resource_usage{cluster_queue="cluster-pipeline-queue"} / kueue_cluster_queue_resource_reservation{cluster_queue="cluster-pipeline-queue"} * 100) < 50
+      for: 10m
+      labels:
+        severity: info
+        component: kueue
+      annotations:
+        summary: "Low resource usage efficiency in Kueue"
+        description: "Resource {{ $labels.resource }} usage is only {{ $value }}% of reservation, indicating potential overprovisioning"
+        runbook_url: https://gitlab.cee.redhat.com/konflux/docs/sop/-/blob/main/infra/queue.md?ref_type=heads
+        alert_team_handle: <!subteam^S05Q1P4Q2TG>
+        team: konflux-infra
+
+    - alert: KueueHighPipelineDeletionDuration
+      expr: histogram_quantile(0.99, sum by (le) (increase(watcher_pipelinerun_delete_duration_seconds_bucket[10m]))) > 300
+      for: 5m
+      labels:
+        severity: warning
+        component: pipeline-watcher
+      annotations:
+        summary: "High PipelineRun deletion duration"
+        description: "99th percentile PipelineRun deletion duration is {{ $value }}s, which is above 5 minutes"
+        runbook_url: https://gitlab.cee.redhat.com/konflux/docs/sop/-/blob/main/infra/queue.md?ref_type=heads
+        alert_team_handle: <!subteam^S05Q1P4Q2TG>
+        team: konflux-infra
+
+  - name: kueue.deadman
+    interval: 60s
+    rules:
+    - alert: KueueMetricsDown
+      expr: up{job=~".*kueue.*"} == 0
+      for: 5m
+      labels:
+        severity: critical
+        component: kueue
+      annotations:
+        summary: "Kueue metrics endpoint is down"
+        description: "Kueue metrics endpoint {{ $labels.instance }} for job {{ $labels.job }} has been down for more than 5 minutes"
+        runbook_url: https://gitlab.cee.redhat.com/konflux/docs/sop/-/blob/main/infra/queue.md?ref_type=heads
+        alert_team_handle: <!subteam^S05Q1P4Q2TG>
+        team: konflux-infra
+
+    - alert: KueueNoRecentAdmissions
+      expr: increase(kueue_admitted_workloads_total[60m]) == 0
+      for: 60m
+      labels:
+        severity: warning
+        component: kueue
+      annotations:
+        summary: "No recent workload admissions in Kueue"
+        description: "No workloads have been admitted in the last hour, which might indicate a problem with the admission process"
+        runbook_url: https://gitlab.cee.redhat.com/konflux/docs/sop/-/blob/main/infra/queue.md?ref_type=heads
+        alert_team_handle: <!subteam^S05Q1P4Q2TG>
+        team: konflux-infra
