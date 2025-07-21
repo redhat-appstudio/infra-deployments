@@ -43,6 +43,7 @@ spec:
       - name: memory
         nominalQuota: 500Ti
   - coveredResources:
+    - linux-amd64
     - linux-arm64
     - linux-c2xlarge-amd64
     - linux-c2xlarge-arm64
@@ -58,10 +59,11 @@ spec:
     - linux-m2xlarge-amd64
     - linux-m2xlarge-arm64
     - linux-m4xlarge-amd64
-    - linux-m4xlarge-arm64
     flavors:
     - name: platform-group-1
       resources:
+      - name: linux-amd64
+        nominalQuota: '1000'
       - name: linux-arm64
         nominalQuota: '160'
       - name: linux-c2xlarge-amd64
@@ -92,9 +94,8 @@ spec:
         nominalQuota: '10'
       - name: linux-m4xlarge-amd64
         nominalQuota: '10'
-      - name: linux-m4xlarge-arm64
-        nominalQuota: '10'
   - coveredResources:
+    - linux-m4xlarge-arm64
     - linux-m8xlarge-amd64
     - linux-m8xlarge-arm64
     - linux-mlarge-amd64
@@ -105,13 +106,14 @@ spec:
     - linux-root-amd64
     - linux-root-arm64
     - linux-s390x
-    - linux-amd64
     - linux-x86-64
     - local
     - localhost
     flavors:
     - name: platform-group-2
       resources:
+      - name: linux-m4xlarge-arm64
+        nominalQuota: '10'
       - name: linux-m8xlarge-amd64
         nominalQuota: '10'
       - name: linux-m8xlarge-arm64
@@ -132,14 +134,12 @@ spec:
         nominalQuota: '10'
       - name: linux-s390x
         nominalQuota: '2'
-      - name: linux-amd64
-        nominalQuota: '500'
       - name: linux-x86-64
-        nominalQuota: '500'
+        nominalQuota: '1000'
       - name: local
-        nominalQuota: '500'
+        nominalQuota: '1000'
       - name: localhost
-        nominalQuota: '500'
+        nominalQuota: '1000'
 ---
 apiVersion: kueue.x-k8s.io/v1beta1
 kind: ResourceFlavor
