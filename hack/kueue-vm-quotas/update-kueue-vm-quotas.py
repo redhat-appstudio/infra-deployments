@@ -9,6 +9,11 @@ with appropriate resource groups and quotas, respecting Kueue's constraints:
 - Each resource group has a single flavor
 - Each flavor is unique to one resource group
 
+The script processes three types of platforms:
+1. Dynamic platforms (from dynamic.*.max-instances keys)
+2. Static platforms (from host.*.concurrency keys)
+3. Local platforms (from local-platforms key, with fixed quota of 1000)
+
 Usage:
     python3 update-kueue-vm-quotas.py host-config.yaml cluster-queue.yaml [--dry-run]
 
@@ -62,13 +67,39 @@ def extract_static_platform(key: str, value: str, data: Dict[str, Any]) -> Platf
     # Extract platform info from corresponding .platform key
     host_prefix = '.'.join(key.split('.')[:-1])  # Remove .concurrency
     platform_key = f"{host_prefix}.platform"
-    
+
     platform_value = data[platform_key]  # e.g., "linux/s390x"
     platform_name = platform_value.replace('/', '-')  # Convert to "linux-s390x"
     quota = int(value)
-    
+
     print(f"Static platform: {platform_name} -> {quota}")
     return PlatformQuota(name=platform_name, quota=quota)
+
+
+def extract_local_platforms(value: str, quota: int = 1000) -> List[PlatformQuota]:
+    """Extract platform quotas from local-platforms config entry."""
+    platforms = []
+    # Split by comma and clean up whitespace and empty strings
+    platform_names = [name.strip() for name in value.split(',') if name.strip()]
+    
+    for platform_name in platform_names:
+        # Convert platform names like "linux/amd64" to "linux-amd64"
+        normalized_name = platform_name.replace('/', '-').replace('_', '-')
+        print(f"Local platform: {normalized_name} -> {quota}")
+        platforms.append(PlatformQuota(name=normalized_name, quota=quota))
+    
+    return platforms
+
+
+def add_or_aggregate_platform(platform: PlatformQuota, platform_quotas: Dict[str, PlatformQuota]) -> None:
+    """Add platform to quotas dictionary or aggregate if it already exists."""
+    if platform.name in platform_quotas:
+        existing = platform_quotas[platform.name]
+        new_quota = existing.quota + platform.quota
+        platform_quotas[platform.name] = PlatformQuota(platform.name, new_quota)
+        print(f"Aggregated platform: {platform.name} -> {new_quota} (was {existing.quota})")
+    else:
+        platform_quotas[platform.name] = platform
 
 
 def parse_host_config(host_config_path: str) -> Dict[str, PlatformQuota]:
@@ -85,22 +116,22 @@ def parse_host_config(host_config_path: str) -> Dict[str, PlatformQuota]:
         # Process dynamic platforms
         if key.startswith('dynamic.') and key.endswith('.max-instances'):
             platform = extract_dynamic_platform(key, value)
-        
+
         # Process static platforms
         elif key.startswith('host.') and key.endswith('.concurrency'):
             platform_key = f"{'.'.join(key.split('.')[:-1])}.platform"
             if platform_key in data:
                 platform = extract_static_platform(key, value, data)
-        
+
+        # Process local platforms
+        elif key == 'local-platforms':
+            local_platforms = extract_local_platforms(value)
+            for local_platform in local_platforms:
+                add_or_aggregate_platform(local_platform, platform_quotas)
+
+        # Handle single platform
         if platform:
-            # Aggregate quotas for platforms with multiple hosts
-            if platform.name in platform_quotas:
-                existing = platform_quotas[platform.name]
-                new_quota = existing.quota + platform.quota
-                platform_quotas[platform.name] = PlatformQuota(platform.name, new_quota)
-                print(f"Aggregated platform: {platform.name} -> {new_quota} (was {existing.quota})")
-            else:
-                platform_quotas[platform.name] = platform
+            add_or_aggregate_platform(platform, platform_quotas)
     
     return platform_quotas
 
