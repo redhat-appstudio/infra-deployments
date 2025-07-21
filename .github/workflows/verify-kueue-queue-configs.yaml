@@ -1,0 +1,37 @@
+name: Verify Kueue Queue Configurations
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'components/multi-platform-controller/**'
+      - 'components/kueue/**'
+      - 'hack/kueue-vm-quotas/**'
+      - '.github/workflows/verify-kueue-queue-configs.yaml'
+
+jobs:
+  verify-queue-configs:
+    name: Verify queue configurations are up to date
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install PyYAML
+
+      - name: Verify Kueue queue configurations are up to date
+        run: |
+          ./hack/kueue-vm-quotas/generate-queue-config.sh --verify-no-change
+
+      - name: Report success
+        if: success()
+        run: |
+          echo "✅ All Kueue queue configurations are up to date with their corresponding host-config files" 
