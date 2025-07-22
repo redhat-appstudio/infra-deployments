@@ -17,7 +17,9 @@ spec:
                 matchLabels:
                   appstudio.redhat.com/konflux-ci: "true"
           - list:
-              elements: []
+              elements:
+                - nameNormalized: kflux-prd-rh03
+                  values.clusterDir: kflux-prd-rh03
   template:
     metadata:
       name: konflux-ci-{{nameNormalized}}
