@@ -24,15 +24,10 @@ spec:
       name: konflux-kite-{{nameNormalized}}
     spec:
       ignoreDifferences:
-        # Ignore generated ConfigMap and Secret names with hash suffixes
+        # Ignore generated ConfigMap with hash suffixes
         - kind: ConfigMap
           group: ""
           name: kite-config-*
-          jsonPointers:
-            - /data
-        - kind: Secret
-          group: ""
-          name: kite-database-credentials-*
           jsonPointers:
             - /data
       project: default
