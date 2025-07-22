@@ -1,34 +1,84 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
-  "properties": {
-    "enable": {
-      "type": "boolean",
-      "description": "Whether the banner is enabled or not."
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "summary": {
+        "type": "string",
+        "description": "The banner text (5–500 chars). **Supports Markdown** for formatting.",
+        "minLength": 5,
+        "maxLength": 500
+      },
+      "type": {
+        "type": "string",
+        "enum": ["info", "warning", "danger"],
+        "description": "The type of banner: 'info', 'warning', or 'danger'."
+      },
+      "startTime": {
+        "type": "string",
+        "pattern": "^([01]\\d|2[0-3]):([0-5]\\d)$",
+        "description": "Start time in HH:mm (24-hour). Required if any of year, month, dayOfWeek, or dayOfMonth is specified."
+      },
+      "endTime": {
+        "type": "string",
+        "pattern": "^([01]\\d|2[0-3]):([0-5]\\d)$",
+        "description": "End time in HH:mm (24-hour). Required if any of year, month, dayOfWeek, or dayOfMonth is specified."
+      },
+      "timeZone": {
+        "type": "string",
+        "pattern": "^[A-Za-z]+(?:/[A-Za-z_]+)+$",
+        "description": "Optional IANA time zone (e.g., 'UTC', 'Asia/Shanghai'). Defaults to UTC."
+      },
+      "year": {
+        "type": "integer",
+        "minimum": 1970,
+        "maximum": 9999,
+        "description": "Optional year (1970–9999)."
+      },
+      "month": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 12,
+        "description": "Optional month (1–12)."
+      },
+      "dayOfWeek": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 6,
+        "description": "Optional day of the week (0 = Sunday, 6 = Saturday)."
+      },
+      "dayOfMonth": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 31,
+        "description": "Optional day of the month (1–31). Required when year or month is specified."
+      }
     },
-    "type": {
-      "type": "string",
-      "enum": ["info", "warning", "danger"],
-      "description": "The type of banner to display. Can be 'info', 'warning', or 'danger'."
-    },
-    "summary": {
-      "description": "The summary text to display in the banner. Allows only alphanumeric characters, spaces, and specific punctuation marks.",
-      "type": "string",
-      "minLength": 5,
-      "maxLength": 200,
-      "pattern": "^[a-zA-Z0-9 ,.!?:;\"'()\\[\\]{}@#&*+=\\-_/]*$"
-    },
-    "startTime": {
-      "type": "string",
-      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})$",
-      "description": "The start time when the banner should be displayed, in ISO 8601 date-time format (e.g., 2023-01-01T12:00:00Z)."
-    },
-    "endTime": {
-      "type": "string",
-      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})$",
-      "description": "The end time when the banner should stop being displayed, in ISO 8601 date-time format (e.g., 2023-01-01T12:00:00Z)."
-    }
-  },
-  "required": ["enable", "summary", "type"],
-  "additionalProperties": false
+    "required": ["summary", "type"],
+    "additionalProperties": false,
+    "allOf": [
+      {
+        "if": {
+          "anyOf": [
+            { "required": ["year"] },
+            { "required": ["month"] },
+            { "required": ["dayOfWeek"] },
+            { "required": ["dayOfMonth"] }
+          ]
+        },
+        "then": {
+          "required": ["startTime", "endTime"]
+        }
+      },
+      {
+        "if": {
+          "anyOf": [{ "required": ["year"] }, { "required": ["month"] }]
+        },
+        "then": {
+          "required": ["dayOfMonth"]
+        }
+      }
+    ]
+  }
 }
