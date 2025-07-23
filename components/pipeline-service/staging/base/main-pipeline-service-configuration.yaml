@@ -1781,6 +1781,136 @@ spec:
                       requests:
                         cpu: 400m
                         memory: 1Gi
+        pipelines-as-code-controller:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: pac-controller
+                    resources:
+                      limits:
+                        cpu: 500m
+                        memory: 2.5Gi
+                      requests:
+                        cpu: 500m
+                        memory: 2.5Gi
+        pipelines-as-code-watcher:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: pac-watcher
+                    resources:
+                      limits:
+                        cpu: 250m
+                        memory: 1Gi
+                      requests:
+                        cpu: 250m
+                        memory: 1Gi
+        pipelines-as-code-webhook:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: pac-webhook
+                    resources:
+                      limits:
+                        cpu: 400m
+                        memory: 100Mi
+                      requests:
+                        cpu: 400m
+                        memory: 100Mi
+        pipelines-console-plugin:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: pipelines-console-plugin
+                    resources:
+                      limits:
+                        cpu: 200m
+                        memory: 8Mi
+                      requests:
+                        cpu: 200m
+                        memory: 8Mi
+        tekton-chains-controller:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: tekton-chains-controller
+                    resources:
+                      limits:
+                        cpu: 1500m
+                        memory: 8Gi
+                      requests:
+                        cpu: 1500m
+                        memory: 8Gi
+        tekton-events-controller:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: tekton-events-controller
+                    resources:
+                      limits:
+                        cpu: 200m
+                        memory: 64Mi
+                      requests:
+                        cpu: 200m
+                        memory: 64Mi
+        tekton-triggers-controller:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: tekton-triggers-controller
+                    resources:
+                      limits:
+                        cpu: 400m
+                        memory: 64Mi
+                      requests:
+                        cpu: 400m
+                        memory: 64Mi
+        tekton-triggers-webhook:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: webhook
+                    resources:
+                      limits:
+                        cpu: 250m
+                        memory: 50Mi
+                      requests:
+                        cpu: 250m
+                        memory: 50Mi
+        tekton-triggers-core-interceptors:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: tekton-triggers-core-interceptors
+                    resources:
+                      limits:
+                        cpu: 500m
+                        memory: 1Gi
+                      requests:
+                        cpu: 500m
+                        memory: 1Gi
+        tkn-cli-serve:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: tkn-cli-serve
+                    resources:
+                      limits:
+                        cpu: 250m
+                        memory: 64Mi
+                      requests:
+                        cpu: 250m
+                        memory: 64Mi
       statefulSets:
         tekton-pipelines-remote-resolvers:
           spec:
