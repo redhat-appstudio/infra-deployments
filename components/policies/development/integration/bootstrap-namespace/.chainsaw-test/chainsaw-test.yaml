@@ -128,9 +128,9 @@ spec:
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: then-serviceaccount-is-created
-    timeout: 180s
     try:
     - assert:
+        timeout: 180s
         file: resources/expected-integration-serviceaccount.yaml
         template: true
   - name: then-rolebinding-is-created
