@@ -11,6 +11,11 @@ via ArgoCD.
 
 ## DB Secret Paths
 
+Some databases are created using the `app-interface`, but others are created using other methods.
+Depending on the method the path to the DB is built different.
+
+### app-interface DBs
+
 The paths to the DB secrets are built from
 [App Interface Konflux Namespaces](https://gitlab.cee.redhat.com/service/app-interface/-/tree/master/data/services/stonesoup/namespaces?ref_type=heads).
 For example, the information to build the DB path for the cluster `stone-prod-p01` is defined on the file `stonesoup-prod-private-1.appsrep09ue1.yaml`.
@@ -29,3 +34,9 @@ So the path for `stone-prod-p01` is:
 ```text
 integrations-output/external-resources/appsrep09ue1/stone-prod-p01/stone-prod-p01-kube-archive-rds
 ```
+
+### Other methods
+
+If your DB is not present on `app-interface`, ask [#forum-konflux-infrastructure](https://redhat.enterprise.slack.com/archives/C04F4NE15U1).
+The only example of DB not created on `app-interface` is `kflux-prd-rh03`, take a look at its
+`kustomization.yaml` to know more about its DB secret.
