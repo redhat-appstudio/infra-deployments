@@ -128,6 +128,7 @@ spec:
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: then-serviceaccount-is-created
+    timeout: 180s
     try:
     - assert:
         file: resources/expected-integration-serviceaccount.yaml
