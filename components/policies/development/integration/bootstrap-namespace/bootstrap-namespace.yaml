@@ -19,12 +19,9 @@ spec:
           selector:
             matchLabels:
               konflux-ci.dev/type: tenant
-          operations:
-          - CREATE
-          - UPDATE
     celPreconditions:
-    - name: "oldObject had no konflux-ci.dev/type=tenant label"
-      expression: "request.operation == CREATE || ! (has(oldObject.metadata.labels) && 'konflux-ci.dev/type' in oldObject.metadata.labels && oldObject.metadata.labels['konflux-ci.dev/type] == 'tenant')"
+    - name: "on update, oldObject had no konflux-ci.dev/type=tenant label"
+      expression: "request.operation != UPDATE || ! (has(oldObject.metadata.labels) && 'konflux-ci.dev/type' in oldObject.metadata.labels && oldObject.metadata.labels['konflux-ci.dev/type] == 'tenant')"
     generate:
       generateExisting: true
       synchronize: false
@@ -42,12 +39,9 @@ spec:
           selector:
             matchLabels:
               konflux-ci.dev/type: tenant
-          operations:
-          - CREATE
-          - UPDATE
     celPreconditions:
-    - name: "oldObject had no konflux-ci.dev/type=tenant label"
-      expression: "request.operation == CREATE || ! (has(oldObject.metadata.labels) && 'konflux-ci.dev/type' in oldObject.metadata.labels && oldObject.metadata.labels['konflux-ci.dev/type] == 'tenant')"
+    - name: "on update, oldObject had no konflux-ci.dev/type=tenant label"
+      expression: "request.operation != UPDATE || ! (has(oldObject.metadata.labels) && 'konflux-ci.dev/type' in oldObject.metadata.labels && oldObject.metadata.labels['konflux-ci.dev/type] == 'tenant')"
     generate:
       generateExisting: true
       synchronize: false
