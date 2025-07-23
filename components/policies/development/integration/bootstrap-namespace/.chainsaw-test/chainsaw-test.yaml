@@ -188,3 +188,141 @@ spec:
         expect:
         - check:
             ($error != null): true
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: mutate-existing-namespace-unlabeled-to-labeled
+spec:
+  description: |
+    tests that the ServiceAccount and RoleBinding are created in an
+    existing unlabeled namespace when it is labeled
+  concurrent: false
+  namespace: 'generate-existing-namespace'
+  bindings:
+  - name: suffix
+    value: to-labeled
+  steps:
+  - name: given-konflux-integration-runner-clusterrole-exists
+    try:
+    - apply:
+        file: resources/actual-konflux-integration-runner-clusterrole.yaml
+  - name: given-kyverno-has-permission-on-resources
+    try:
+    - apply:
+        file: ../kyverno-rbac.yaml
+  - name: given-unlabeled-namespace-is-created
+    try:
+    - apply:
+        file: resources/actual-namespace-unlabeled.yaml
+        template: true
+  - name: given-cluster-policy-is-ready
+    try:
+    - apply:
+        file: ../bootstrap-namespace.yaml
+    - assert:
+        file: chainsaw-assert-clusterpolicy.yaml
+  - name: given-serviceaccount-is-not-created
+    try:
+    - delete:
+        file: resources/expected-integration-serviceaccount.yaml
+        template: true
+        expect:
+        - check:
+            ($error != null): true
+  - name: given-rolebinding-is-not-created
+    try:
+    - delete:
+        file: resources/expected-integration-rolebinding.yaml
+        template: true
+        expect:
+        - check:
+            ($error != null): true
+  - name: when-konfluxci-namespace-is-labeled-namespace
+    try:
+    - apply:
+        file: resources/actual-namespace-konfluxcidev.yaml
+        template: true
+  - name: then-serviceaccount-is-created
+    try:
+    - assert:
+        file: resources/expected-integration-serviceaccount.yaml
+        template: true
+  - name: then-rolebinding-is-created
+    try:
+    - assert:
+        file: resources/expected-integration-rolebinding.yaml
+        template: true
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: mutate-existing-namespace-unlabeled-to-unlabeled
+spec:
+  description: |
+    tests that the ServiceAccount and RoleBinding are not created in an
+    existing unlabeled namespace when it is updated but still found unlabeled
+  concurrent: false
+  namespace: 'generate-existing-namespace'
+  bindings:
+  - name: suffix
+    value: to-unlabeled
+  steps:
+  - name: given-konflux-integration-runner-clusterrole-exists
+    try:
+    - apply:
+        file: resources/actual-konflux-integration-runner-clusterrole.yaml
+  - name: given-kyverno-has-permission-on-resources
+    try:
+    - apply:
+        file: ../kyverno-rbac.yaml
+  - name: given-unlabeled-namespace-is-created
+    try:
+    - apply:
+        file: resources/actual-namespace-unlabeled.yaml
+        template: true
+  - name: given-cluster-policy-is-ready
+    try:
+    - apply:
+        file: ../bootstrap-namespace.yaml
+    - assert:
+        file: chainsaw-assert-clusterpolicy.yaml
+  - name: given-serviceaccount-is-not-created
+    try:
+    - delete:
+        file: resources/expected-integration-serviceaccount.yaml
+        template: true
+        expect:
+        - check:
+            ($error != null): true
+  - name: given-rolebinding-is-not-created
+    try:
+    - delete:
+        file: resources/expected-integration-rolebinding.yaml
+        template: true
+        expect:
+        - check:
+            ($error != null): true
+  - name: when-konfluxci-namespace-is-updated-to-unlabeled-namespace
+    try:
+    - apply:
+        file: resources/actual-namespace-unlabeled-extra.yaml
+        template: true
+  - name: then-serviceaccount-is-not-created
+    try:
+    - delete:
+        file: resources/expected-integration-serviceaccount.yaml
+        template: true
+        expect:
+        - check:
+            ($error != null): true
+  - name: then-rolebinding-is-not-created
+    try:
+    - delete:
+        file: resources/expected-integration-rolebinding.yaml
+        template: true
+        expect:
+        - check:
+            ($error != null): true
