@@ -15,10 +15,6 @@ configMapGenerator:
       - KITE_PROJECT_ENV=development
       - KITE_HOST=0.0.0.0
       - KITE_PORT=8080
-      - KITE_DB_HOST=postgresql
-      - KITE_DB_PORT=5432
-      - KITE_DB_USER=kite
-      - KITE_DB_NAME=issuesdb
       - KITE_DB_SSL_MODE=disable
       - KITE_LOG_LEVEL=debug
       - KITE_LOG_FORMAT=text
@@ -33,16 +29,6 @@ configMapGenerator:
       - KITE_IDLE_TIMEOUT=60s
       - KITE_SHUTDOWN_TIMEOUT=10s
     behavior: replace
-
-# Keep the same database credentials as base, or override if needed
-secretGenerator:
-  - name: kite-database-credentials
-    namespace: konflux-kite
-    type: Opaque
-    behavior: replace
-    literals:
-      - username=kite
-      - password=postgres
 
 patches:
   # Development-specific patches
