@@ -30,6 +30,10 @@ spec:
           name: kite-config-*
           jsonPointers:
             - /data
+        - group: route.openshift.io
+          kind: Route
+          jsonPointers:
+            - /spec/tls/destinationCACertificate
       project: default
       source:
         path: "{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}"
