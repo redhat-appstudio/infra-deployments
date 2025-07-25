@@ -2421,7 +2421,10 @@ spec:
             template:
               spec:
                 containers:
-                - name: controller
+                - env:
+                  - name: GIT_SSL_CAINFO
+                    value: /tekton-custom-certs/ca-bundle.crt
+                  name: controller
                   resources:
                     limits:
                       memory: 10Gi
@@ -2513,7 +2516,7 @@ metadata:
   namespace: openshift-marketplace
 spec:
   displayName: custom-operators
-  image: quay.io/openshift-pipeline/pipelines-index-4.15@sha256:1ad7bfa236b620db80afbc07261cb25d7024e41333bf9716e2b9d943b04c12a2
+  image: quay.io/openshift-pipeline/pipelines-index-4.15@sha256:6788ffeab369f7a773d7022358f67cd93d094003c3b6c82e3278f620e9065135
   sourceType: grpc
   updateStrategy:
     registryPoll:
@@ -2533,6 +2536,8 @@ spec:
     env:
     - name: AUTOINSTALL_COMPONENTS
       value: "false"
+    - name: IMAGE_ADDONS_TKN_CLI_SERVE
+      value: registry.redhat.io/openshift-pipelines/pipelines-serve-tkn-cli-rhel9@sha256:d055d2b35a663aef3e1aafdbed0b12957867c0670c946ebae66e9c44a768bda2
   name: openshift-pipelines-operator-rh
   source: custom-operators
   sourceNamespace: openshift-marketplace
