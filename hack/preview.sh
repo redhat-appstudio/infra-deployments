@@ -343,6 +343,8 @@ if $KEYCLOAK && $TOOLCHAIN ; then
   fi
 fi
 
+
+
 # Sometimes Tekton CRDs need a few mins to be ready
 retry=0
 while true; do
