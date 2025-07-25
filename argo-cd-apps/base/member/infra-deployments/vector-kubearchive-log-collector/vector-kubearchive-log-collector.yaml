@@ -1,0 +1,63 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: vector-kubearchive-log-collector
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              values:
+                sourceRoot: components/vector-kubearchive-log-collector
+                environment: staging
+                clusterDir: base
+          - list:
+              elements:
+                - nameNormalized: stone-stg-rh01
+                  values.clusterDir: stone-stg-rh01
+  template:
+    metadata:
+      name: vector-kubearchive-log-collector-{{nameNormalized}}
+      annotations:
+        argocd.argoproj.io/sync-wave: "100"
+        argocd.argoproj.io/refresh: "hard"
+    spec:
+      ignoreDifferences:
+        # Ignore Helm-generated dynamic content that causes drift
+        - group: apps
+          kind: Deployment
+          name: vector-kubearchive-log-collector-grafana
+          jsonPointers:
+            - /metadata/annotations/deployment.kubernetes.io~1revision
+            - /metadata/annotations/kubectl.kubernetes.io~1last-applied-configuration
+            - /metadata/generation
+            - /spec/template/metadata/annotations/checksum~1config
+            - /spec/template/metadata/annotations/checksum~1secret
+            - /spec/template/metadata/annotations/checksum~1sc-dashboard-provider-config
+        - group: ""
+          kind: Secret
+          name: vector-kubearchive-log-collector-grafana
+          jsonPointers:
+            - /metadata/annotations/kubectl.kubernetes.io~1last-applied-configuration
+      project: default
+      source:
+        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
+        repoURL: https://github.com/olegbet/infra-deployments.git
+        targetRevision: KONFLUX-8225_add_log_forwarder_for_loki
+      destination:
+        namespace: product-kubearchive-logging
+        server: '{{server}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+        retry:
+          limit: -1
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 3m

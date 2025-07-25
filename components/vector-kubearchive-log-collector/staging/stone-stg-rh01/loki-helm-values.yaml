@@ -1,3 +1,5 @@
+# Copyright KubeArchive Authors
+# SPDX-License-Identifier: Apache-2.0
 ---
 loki:
   # Explicit image configuration to fix ErrImagePull - using Docker Hub registry
@@ -8,21 +10,25 @@ loki:
   
   limits_config:
     max_query_length: 0
-  auth_enabled: false  # Keep simple for development but with basic auth
+  auth_enabled: true
   basic_auth:
     enabled: true
     existingSecret: kubearchive-loki
   storage:
-    type: filesystem
-    filesystem:
-      chunks_directory: /var/loki/chunks
-      rules_directory: /var/loki/rules
+    type: s3
+    s3:
+      region: us-east-1
+      type: "aws_s3"
+    bucketNames:
+      chunks: stone-stg-rh01-loki-storage
+      ruler: stone-stg-rh01-loki-storage
+      admin: stone-stg-rh01-loki-storage
 
   schemaConfig:
     configs:
       - from: 2024-01-01
         store: tsdb
-        object_store: filesystem
+        object_store: s3
         schema: v13
         index:
           prefix: index_
@@ -33,12 +39,13 @@ loki:
 
   compactor:
     retention_enabled: true
-    delete_request_store: filesystem
+    delete_request_store: s3
   ruler:
     storage:
-      type: local
-      local:
-        directory: /tmp/rules
+      type: s3
+      s3:
+        bucketNames:
+          ruler: stone-stg-rh01-loki-storage
 
 deploymentMode: SingleBinary
 
@@ -87,13 +94,13 @@ lokiCanary:
 singleBinary:
   replicas: 1
   persistence:
-    enabled: false  # No persistent storage for development
+    enabled: false
   extraVolumeMounts:
     - name: loki-storage
       mountPath: /var/loki
   extraVolumes:
     - name: loki-storage
-      emptyDir: {}  # Use ephemeral storage
+      emptyDir: {}
 
 # Zero out replica counts of other deployment modes
 backend:
