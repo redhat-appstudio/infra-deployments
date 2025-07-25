@@ -4,11 +4,14 @@ resources:
   - ../../base
 
 generatorOptions:
- disableNameSuffixHash: true
+  disableNameSuffixHash: true
 
 configMapGenerator:
   - name: konflux-public-info
     files:
       - info.json
+  - name: konflux-banner-configmap
+    files:
+      - banner-content.yaml
 
 namespace: konflux-info

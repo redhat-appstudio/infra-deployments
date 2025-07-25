@@ -29,24 +29,208 @@ Each cluster directory contains:
 
 ## ✅ Banner Content Validation
 
-A GitHub workflow named `banner-validate` automatically checks that each `banner-content.yaml` file conforms to the schema defined in `banner-schema.json`.  
-This workflow runs whenever either the schema or any `banner-content.yaml` file is changed.  
-The schema (`banner-schema.json`) specifies the required structure and fields for banner content, ensuring consistency and correctness across environments.
+To maintain consistency, a GitHub workflow named **`banner-validate`** automatically validates all `banner-content.yaml` files against the schema defined in [`banner-schema.json`](./banner-schema.json).
+
+**When does it run?**
+
+- On any pull request that changes:
+  - `banner-schema.json` (schema definition)
+  - Any `banner-content.yaml` file (banner configurations)
+
+**What does it check?**
+
+- Ensures the YAML structure matches the schema (e.g., required fields, allowed values, date/time format).
+- Prevents invalid or misconfigured banners from being merged.
+
+**How to fix validation errors?**
+
+- Review the error message in the PR checks.
+- Compare your changes with the [schema](./banner-schema.json) and [examples in README](#usage-scenarios--examples).
+
+## ✅ Banner Content Specification
+
+The `banner-content.yaml` file defines one or more banners displayed in the Konflux UI. Each cluster has its own `banner-content.yaml` under its directory (e.g., `staging/stone-stage-p01/banner-content.yaml`).
+
+### **Schema**
+
+The schema for banner content is defined in [`banner-schema.json`](./banner-schema.json) and validated automatically by the `banner-validate` GitHub workflow on every PR.
+
+The file must contain a **YAML list** where each item represents a banner configuration.
+
+---
+
+### **Important Behavior**
+
+- The **UI displays only the first valid active banner** from the list, based on current date, time, and optional recurrence settings.
+- If multiple banners are configured, **order matters**. Place the highest-priority banner **at the top of the list**.
+
+---
+
+### **Required and Optional Fields for Each Banner**
+
+📎 For the full schema used in CI validation, see banner-schema.json. This table is a human-friendly reference for banner authors.
+
+| Field        | Type   | Required | Description                                                               |
+| ------------ | ------ | -------- | ------------------------------------------------------------------------- |
+| `summary`    | string | ✅       | Banner text (5–500 chars). **Supports Markdown** (e.g., bold, links).     |
+| `type`       | string | ✅       | Banner type: `info`, `warning`, or `danger`.                              |
+| `startTime`  | string | ⚠️\*     | Start time in `HH:mm` (24-hour). Required if date-related fields are set. |
+| `endTime`    | string | ⚠️\*     | End time in `HH:mm` (24-hour). Required if date-related fields are set.   |
+| `timeZone`   | string | ❌       | Optional IANA timezone (e.g., `UTC`, `Asia/Shanghai`). Defaults to UTC.   |
+| `year`       | number | ❌       | Year (1970–9999) for one-time banners.                                    |
+| `month`      | number | ❌       | Month (1–12).                                                             |
+| `dayOfWeek`  | number | ❌       | Day of week (0=Sunday, 6=Saturday) for weekly recurrence.                 |
+| `dayOfMonth` | number | ❌       | Day of month (1–31). Required if `year` or `month` is specified.          |
+
+⚠️ **If any of `year`, `month`, `dayOfWeek`, or `dayOfMonth` is specified, both `startTime` and `endTime` are required.**
+
+---
+
+### **Usage Scenarios & Examples**
+
+#### ✅ **1. Multiple Banners**
+
+Example of a `banner-content.yaml` with multiple banners (first active one is shown in UI):
+
+```yaml
+- summary: "Scheduled downtime on July 25"
+  type: "warning"
+  year: 2025
+  month: 7
+  dayOfMonth: 25
+  startTime: "10:00"
+  endTime: "14:00"
+  timeZone: "UTC"
+
+- summary: "Maintenance every Sunday"
+  type: "info"
+  dayOfWeek: 0
+  startTime: "02:00"
+  endTime: "04:00"
+  timeZone: "UTC"
+```
+
+#### ✅ **2. One-Time Banner**
+
+For a single event on a specific date:
+
+```yaml
+- summary: "Scheduled downtime on July 25"
+  type: "warning"
+  year: 2025
+  month: 7
+  dayOfMonth: 25
+  startTime: "10:00"
+  endTime: "14:00"
+  timeZone: "UTC"
+```
+
+For a single event in today
+
+```yaml
+- summary: "Scheduled downtime on July 25"
+  type: "warning"
+  startTime: "10:00"
+  endTime: "14:00"
+  timeZone: "UTC"
+```
+
+#### ✅ **2. Weekly Recurring Banner**
+
+For an event that repeats every week:
+
+```yaml
+- summary: "Maintenance every Sunday"
+  type: "info"
+  dayOfWeek: 0
+  startTime: "02:00"
+  endTime: "04:00"
+  timeZone: "UTC"
+```
+
+#### ✅ **3. Monthly Recurring Banner**
+
+For an event that happens on the same day each month:
+
+```yaml
+- summary: "Patch release on 1st of every month"
+  type: "info"
+  dayOfMonth: 1
+  startTime: "01:00"
+  endTime: "03:00"
+  timeZone: "Asia/Shanghai"
+```
+
+#### ✅ **4. Always-On Banner**
+
+For an event that requires immediate notification:
+
+```yaml
+- summary: "New feature: Pipeline Insights is live!"
+  type: "info"
+```
+
+#### ✅ **5. Empty Banner**
+
+When there are no events to announce:
+
+```
+[]
+```
 
 ---
 
 ## 📝 How to submit a PR for Banner
 
-1. Modify only the files relevant to your target cluster, e.g.: `staging/stone-stage-p01/banner-content.yaml` or `production/kflux-ocp-p01/banner-content.yaml`
-2. In your PR description, include:
+1. Locate the target cluster directory:
 
-- Target cluster (e.g. kflux-ocp-p01)
-- Type of change (e.g. new banner / update info / typo fix)
-- Purpose of change (e.g. downgrade notification / release announcement)
+- For staging: `staging/<cluster-name>/banner-content.yaml`
+- For production: `production/<cluster-name>/banner-content.yaml`
 
----
+2. Edit banner-content.yaml:
 
-## 📢 Auto Alerts
+- Insert the new banner at the top of the list (highest priority).
+- Remove obsolete banners to keep the list clean.
+
+  Example:
+
+  ```yaml
+  # New banner on top
+  - summary: "New feature rollout on July 30"
+    type: "info"
+    year: 2025
+    month: 7
+    dayOfMonth: 30
+    startTime: "09:00"
+    endTime: "17:00"
+    timeZone: "UTC"
+
+  # Keep other active banners below
+  - summary: "Maintenance every Sunday"
+    type: "info"
+    dayOfWeek: 0
+    startTime: "02:00"
+    endTime: "04:00"
+    timeZone: "UTC"
+  ```
+
+3. Submit a Pull Request:
+
+- Modify only the target cluster’s banner-content.yaml.
+  In the PR description, include:
+- Target cluster (e.g., kflux-ocp-p01)
+- Type of change (e.g., new banner / update / remove obsolete)
+- Purpose of change (e.g., release announcement, downtime notice)
+
+  Example:
+
+  ```yaml
+  Target cluster: kflux-ocp-p01
+  Type: New banner
+  Purpose: Release announcement for Konflux 1.2
+  ```
+
+## 📢 Auto Alerts(WIP)
 
 We enables the infrastructure team to automatically surface specific operational issues or warnings in the Konflux UI.
 
