@@ -1,6 +1,9 @@
 ---
 fullnameOverride: konflux-kyverno
 namespaceOverride: konflux-kyverno
+config:
+  updateRequestThreshold: 2000
+  preserve: false
 admissionController:
   replicas: 1
   initContainer:
@@ -12,9 +15,8 @@ admissionController:
         drop:
         - "ALL"
   container:
-    resources:
-      limits:
-        cpu: 500m
+    extraArgs:
+      leaderElectionRetryPeriod: 26s
     securityContext:
       allowPrivilegeEscalation: false
       readOnlyRootFilesystem: true
@@ -22,11 +24,16 @@ admissionController:
       capabilities:
         drop:
         - "ALL"
+  metering:
+    disabled: false
+  serviceMonitor:
+    enabled: true
+    # kyverno doesn't seem to support HTTPS on metrics
+    secure: false
 backgroundController:
   replicas: 1
-  resources:
-    limits:
-      cpu: 500m
+  extraArgs:
+    leaderElectionRetryPeriod: 26s
   securityContext:
     allowPrivilegeEscalation: false
     readOnlyRootFilesystem: true
@@ -34,61 +41,22 @@ backgroundController:
     capabilities:
       drop:
       - "ALL"
+  metering:
+    disabled: false
+  serviceMonitor:
+    enabled: true
+    # kyverno doesn't seem to support HTTPS on metrics
+    secure: false
 cleanupController:
-  enabled: false
-  resources:
-    limits:
-      cpu: 500m
-  securityContext:
-    allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: true
-    runAsNonRoot: true
-    capabilities:
-      drop:
-      - "ALL"
+  enabled: true
+  extraArgs:
+    leaderElectionRetryPeriod: 26s
 reportsController:
   enabled: false
-  resources:
-    limits:
-      cpu: 500m
-  securityContext:
-    allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: true
-    runAsNonRoot: true
-    capabilities:
-      drop:
-      - "ALL"
 policyReportsCleanup:
-  securityContext:
-    allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: true
-    runAsNonRoot: true
-    runAsGroup: null
-    runAsUser: null
-    capabilities:
-      drop:
-      - "ALL"
+  enabled: false
 webhooksCleanup:
-  enable: false
-  securityContext:
-    allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: true
-    runAsNonRoot: true
-    runAsGroup: null
-    runAsUser: null
-    capabilities:
-      drop:
-      - "ALL"
-test:
-  securityContext:
-    allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: true
-    runAsNonRoot: true
-    runAsGroup: null
-    runAsUser: null
-    capabilities:
-      drop:
-      - "ALL"
+  enabled: false
 crds:
   migration:
     securityContext:
@@ -100,3 +68,18 @@ crds:
       capabilities:
         drop:
         - "ALL"
+features:
+  admissionReports:
+    enabled: false
+  aggregateReports:
+    enabled: false
+  policyReports:
+    enabled: false
+  validatingAdmissionPolicyReports:
+    enabled: false
+  reporting:
+    validate: false
+    mutate: false
+    mutateExisting: false
+    imageVerify: false
+    generate: false

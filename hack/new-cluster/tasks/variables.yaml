@@ -1,0 +1,45 @@
+# Validate and initialize some variables
+
+- name: Ensure required variables are defined
+  tags: [always]
+  fail:
+    msg: "Required variable {{ item }} has not been provided"
+  when: "vars[item] is undefined or vars[item] == ''"
+  loop: "{{ required_vars }}"
+- name: Make sure env is sane
+  tags: [always]
+  fail:
+    msg: "Variable env must be one of {{allowed_envs}}, not {{env}}"
+  when: "vars['env'] not in vars['allowed_envs']"
+- name: Make sure network is sane
+  tags: [always]
+  fail:
+    msg: "Variable network must be one of {{allowed_networks}}, not {{network}}"
+  when: "vars['network'] not in vars['allowed_networks']"
+- name: Setup cute variants of the environment name (for prod)
+  tags: [always]
+  set_fact:
+    cuteenv: prod
+    cutestenv: prd
+  when: "vars['env'] == 'production'"
+- name: Setup cute variants of the environment name (for staging)
+  tags: [always]
+  set_fact:
+    cuteenv: stage
+    cutestenv: stg
+  when: "vars['env'] == 'staging'"
+- name: Determine the latest github commits
+  tags: [always]
+  include_tasks: tasks/github/find-latest-commits.yaml
+  loop: "{{ github_commit_vars }}"
+  vars:
+    slug: "{{ item.slug }}"
+    varname: "{{ item.varname }}"
+- name: Determine quay.io digest
+  tags: [always]
+  include_tasks: tasks/quay/find-digest.yaml
+  vars:
+    registry: quay.io
+    repo: konflux-ci/appstudio-utils
+    tag: "{{ commit_id_build_definitions }}"
+    varname: quay_digest_build_definitions

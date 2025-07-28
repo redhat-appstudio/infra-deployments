@@ -1,0 +1,33 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- https://github.com/konflux-ci/kueue-external-admission/config/default?ref=aa92aa7f658e34577a23b072204de2af5768b3cc
+- monitoring.yaml
+
+images:
+- name: example.com/alert-manager-kueue-admission
+  newName: quay.io/konflux-ci/kueue-external-admission
+  newTag: aa92aa7f658e34577a23b072204de2af5768b3cc
+
+namespace: kueue-external-admission
+
+# ensure that installation starts after the installation of kueue complete
+commonAnnotations:
+  argocd.argoproj.io/sync-wave: "10"
+
+patches:
+  - target:
+      group: ""
+      version: v1
+      kind: ConfigMap
+      name: config
+    patch: |-
+      - op: replace
+        path: /data/shouldAdmit
+        value: "true"
+  - path: controller-patch.yaml
+    target:
+      group: apps
+      kind: Deployment
+      name: alert-mgr-kueue-admission-controller-manager
+      version: v1

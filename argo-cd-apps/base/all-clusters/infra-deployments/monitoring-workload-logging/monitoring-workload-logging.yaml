@@ -31,6 +31,10 @@ spec:
                   values.clusterDir: kflux-prd-rh02
                 - nameNormalized: kflux-prd-rh03
                   values.clusterDir: kflux-prd-rh03
+                - nameNormalized: kflux-rhel-p01
+                  values.clusterDir: kflux-rhel-p01
+                - nameNormalized: kflux-osp-p01
+                  values.clusterDir: kflux-osp-p01
   template:
     metadata:
       name: monitoring-workload-logging-{{nameNormalized}}
@@ -48,7 +52,7 @@ spec:
           prune: true
           selfHeal: true
         syncOptions:
-        - CreateNamespace=true
+          - CreateNamespace=true
         retry:
           limit: 50
           backoff:

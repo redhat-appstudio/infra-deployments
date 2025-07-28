@@ -1,0 +1,47 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: openshift-kueue-operator
+  labels:
+    openshift.io/cluster-monitoring: "true"
+  annotations:
+    argocd.argoproj.io/sync-wave: "-4"
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "-3"
+  name: redhat-operators-1-18
+  namespace: openshift-kueue-operator
+spec:
+  displayName: redhat-operators-1-18
+  image: registry.redhat.io/redhat/redhat-operator-index:v4.18
+  sourceType: grpc
+  updateStrategy:
+    registryPoll:
+      interval: 30m
+---
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  name: openshift-kueue-operatorgroup
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+spec: {}
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: openshift-kueue-operator
+  namespace: openshift-kueue-operator
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  channel: stable-v0.2
+  installPlanApproval: Automatic
+  name: kueue-operator
+  source: redhat-operators-1-18
+  sourceNamespace: openshift-kueue-operator

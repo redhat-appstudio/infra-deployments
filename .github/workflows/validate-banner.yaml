@@ -1,0 +1,38 @@
+name: Validate Banners
+
+on:
+  pull_request:
+    paths:
+      - 'components/konflux-info/**/**/banner-content.yaml'
+      - 'components/konflux-info/banner-schema.json'
+
+env:
+  BANNER_DIR: components/konflux-info
+  SCHEMA_FILE: components/konflux-info/banner-schema.json
+  TMP_DIR: .tmp/banners
+
+jobs:
+  validate-banner:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install ajv-cli and yaml converter
+        run: |
+          npm install -g ajv-cli yamljs
+
+      - name: Convert YAML to JSON
+        run: |
+          mkdir -p ${{ env.TMP_DIR }}
+          for file in ${{ env.BANNER_DIR }}/**/**/banner-content.yaml; do
+            json_file="${{ env.TMP_DIR }}/${file#${{ env.BANNER_DIR }}/}"
+            json_file="${json_file%.yaml}.json"
+            mkdir -p "$(dirname "$json_file")"
+            yaml2json "$file" > "$json_file"
+          done
+
+      - name: Validate all banners against schema
+        run: |
+          ajv validate -s ${{ env.SCHEMA_FILE }} -d "${{ env.TMP_DIR }}/**/*.json" --errors=text

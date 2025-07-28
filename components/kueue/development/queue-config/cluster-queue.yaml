@@ -1,0 +1,60 @@
+---
+apiVersion: kueue.x-k8s.io/v1beta1
+kind: ResourceFlavor
+metadata:
+  name: "default-flavor"
+---
+apiVersion: kueue.x-k8s.io/v1beta1
+kind: AdmissionCheck
+metadata:
+  name: static-admission
+spec:
+  controllerName: konflux-ci.dev/kueue-external-admission
+---
+apiVersion: kueue.x-k8s.io/v1beta1
+kind: ClusterQueue
+metadata:
+  name: cluster-pipeline-queue
+spec:
+    admissionChecks:
+    - static-admission
+    flavorFungibility:
+      whenCanBorrow: Borrow
+      whenCanPreempt: TryNextFlavor
+    namespaceSelector: {}
+    preemption:
+      borrowWithinCohort:
+        policy: Never
+      reclaimWithinCohort: Never
+      withinClusterQueue: Never
+    queueingStrategy: BestEffortFIFO
+    stopPolicy: None
+    resourceGroups:
+    - coveredResources:
+      - tekton.dev/pipelineruns
+      - cpu
+      - memory
+      - linux-arm64
+      - linux-amd64
+      - linux-s390x
+      - linux-ppc64le
+      flavors:
+      - name: default-flavor
+        resources:
+        - name: tekton.dev/pipelineruns
+          nominalQuota: "500"
+        - name: linux-arm64
+          nominalQuota: "10"
+        - name: linux-amd64
+          nominalQuota: "10"
+        - name: linux-s390x
+          nominalQuota: "10"
+        - name: linux-ppc64le
+          nominalQuota: "10"
+        # When a Workload doesn't have cpu or memory requests, if there is a limit range
+        # in the namespace, Kueue will assign the requests from it to the Workload.
+        # We don't care about the cpu/memory for PipelineRuns, thus setting a high value for both.
+        - name: "cpu"
+          nominalQuota: 1k
+        - name: "memory"
+          nominalQuota: 500Ti

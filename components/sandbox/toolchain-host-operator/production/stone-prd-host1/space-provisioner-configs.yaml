@@ -1,18 +1,3 @@
-apiVersion: toolchain.dev.openshift.com/v1alpha1
-kind: SpaceProvisionerConfig
-metadata:
-  name: member-stone-prd-m01.84db.p1.openshiftapps.com
-  namespace: toolchain-host-operator
-  annotations:
-    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-spec:
-  toolchainCluster: member-stone-prd-m01.84db.p1.openshiftapps.com
-  enabled: false
-  capacityThresholds:
-    maxNumberOfSpaces: 1000
-    maxMemoryUtilizationPercent: 90
-  placementRoles:
-  - cluster-role.toolchain.dev.openshift.com/tenant
 ---
 apiVersion: toolchain.dev.openshift.com/v1alpha1
 kind: SpaceProvisionerConfig

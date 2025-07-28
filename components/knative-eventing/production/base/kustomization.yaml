@@ -2,7 +2,7 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - https://github.com/knative/eventing/releases/download/knative-v1.15.3/eventing.yaml?timeout=90s
+  - https://github.com/knative/eventing/releases/download/knative-v1.16.7/eventing.yaml?timeout=90s
 
 patches:
 # kube-lint fixes
@@ -17,6 +17,10 @@ patches:
         spec:
           containers:
             - name: eventing-controller
+              image: quay.io/kubearchive/eventing-controller:fix
+              env:
+              - name: APISERVER_RA_IMAGE
+                value: quay.io/kubearchive/eventing-adapter:fix
               resources:
                 requests:
                   cpu: 100m
@@ -42,7 +46,7 @@ patches:
                   memory: 100Mi
                 limits:
                   cpu: 150m
-                  memory: 200Mi
+                  memory: 320Mi
 
 - patch: |-
     apiVersion: apps/v1

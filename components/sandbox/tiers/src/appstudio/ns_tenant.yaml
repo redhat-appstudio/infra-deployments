@@ -106,8 +106,8 @@ objects:
     namespace: ${SPACE_NAME}-tenant
   spec:
     hard:
-      count/releaseplanadmissions.appstudio.redhat.com: "512"
-      count/releaseplans.appstudio.redhat.com: "512"
+      count/releaseplanadmissions.appstudio.redhat.com: "${COUNT_RELEASE_PLAN_ADMISSION}"
+      count/releaseplans.appstudio.redhat.com: "${COUNT_RELEASE_PLAN}"
       count/releases.appstudio.redhat.com: "${COUNT_RELEASE}"
       count/releasestrategies.appstudio.redhat.com: "512"
       count/internalrequests.appstudio.redhat.com: "4096"
@@ -268,5 +268,9 @@ parameters:
   value: "512"
 - name: COUNT_RELEASE
   value: "1024"
+- name: COUNT_RELEASE_PLAN
+  value: "512"
+- name: COUNT_RELEASE_PLAN_ADMISSION
+  value: "512"
 - name: COUNT_SNAPSHOT
   value: "1024"

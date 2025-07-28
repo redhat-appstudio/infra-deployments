@@ -81,6 +81,18 @@ spec:
               "proxy_pass ${TEKTON_RESULTS_URL:?tekton results url must be provided};" \
               > /mnt/nginx-generated-config/tekton-results.conf
 
+            if [[ "$KUBEARCHIVE_URL" != "" ]]; then
+              echo "location /api/k8s/plugins/kubearchive/ {" > /mnt/nginx-generated-config/kubearchive.conf
+              echo "auth_request /oauth2/auth;" >> /mnt/nginx-generated-config/kubearchive.conf
+              echo "rewrite /api/k8s/plugins/kubearchive/(.+) /\$1 break;" >> /mnt/nginx-generated-config/kubearchive.conf
+              echo "proxy_read_timeout 30m;" >> /mnt/nginx-generated-config/kubearchive.conf
+              echo "proxy_pass ${KUBEARCHIVE_URL};" >> /mnt/nginx-generated-config/kubearchive.conf
+              echo "include /mnt/nginx-generated-config/auth.conf;" >> /mnt/nginx-generated-config/kubearchive.conf
+              echo "}" >> /mnt/nginx-generated-config/kubearchive.conf
+            else
+              echo "# KubeArchive disabled by config" > /mnt/nginx-generated-config/kubearchive.conf
+            fi
+
         volumeMounts:
         - name: nginx-generated-config
           mountPath: /mnt/nginx-generated-config

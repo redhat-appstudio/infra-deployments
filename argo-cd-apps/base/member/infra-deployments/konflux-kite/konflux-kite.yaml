@@ -1,0 +1,57 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: konflux-kite
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              values:
+                sourceRoot: components/konflux-kite
+                environment: staging
+                clusterDir: ""
+          - list:
+              elements:
+                # Staging clusters
+                - nameNormalized: stone-stg-rh01
+                  values.clusterDir: stone-stg-rh01
+  template:
+    metadata:
+      name: konflux-kite-{{nameNormalized}}
+    spec:
+      ignoreDifferences:
+        # Ignore generated ConfigMap with hash suffixes
+        - kind: ConfigMap
+          group: ""
+          name: kite-config-*
+          jsonPointers:
+            - /data
+        - group: route.openshift.io
+          kind: Route
+          jsonPointers:
+            - /spec/tls/destinationCACertificate
+      project: default
+      source:
+        path: "{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}"
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+        targetRevision: main
+      destination:
+        # Default namespace if resources don't specify it
+        namespace: konflux-kite
+        server: "{{server}}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - SkipDryRunOnMissingResource=true
+        retry:
+          limit: 50
+          backoff:
+            duration: 15s
+

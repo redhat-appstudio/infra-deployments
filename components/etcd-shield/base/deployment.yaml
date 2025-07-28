@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: etcd-shield
+  labels:
+    app: etcd-shield
+  annotations:
+    ignore-check.kube-linter.io/no-anti-affinity: "using topologySpreadConstraints"
+spec:
+  selector:
+    matchLabels:
+      app: etcd-shield
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        app: etcd-shield
+    spec:
+      serviceAccountName: etcd-shield
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            app: etcd-shield
+      containers:
+      - args:
+        - -leader-elect=false
+        - -health-probe-bind-address=:8081
+        - -config=/etc/etcd-shield/config.yaml
+        - -port=8443
+        - -metrics-addr=:9100
+        env:
+        - name: "NAMESPACE"
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: "STATE_MANAGER"
+          value: "in-memory"
+        image: etcd-shield:latest
+        name: etcd-shield
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          initialDelaySeconds: 1
+          httpGet:
+            path: /healthz
+            port: 8081
+            scheme: HTTP
+        readinessProbe:
+          initialDelaySeconds: 1
+          httpGet:
+            path: /readyz
+            port: 8081
+            scheme: HTTP
+        resources:
+          limits:
+            memory: 128Mi
+          requests:
+            cpu: 500m
+            memory: 128Mi
+        ports:
+        - containerPort: 8443
+          name: http
+        - containerPort: 8081
+          name: healthz
+        - containerPort: 9100
+          name: metrics
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          capabilities:
+            drop:
+            - "ALL"
+        volumeMounts:
+        - name: tls
+          mountPath: /var/tls
+          readOnly: true
+        - name: config
+          mountPath: /etc/etcd-shield/
+          readOnly: true
+      terminationGracePeriodSeconds: 60
+      volumes:
+      - name: tls
+        secret:
+          secretName: etcd-shield-tls
+      - name: config
+        configMap:
+          name: etcd-shield-config

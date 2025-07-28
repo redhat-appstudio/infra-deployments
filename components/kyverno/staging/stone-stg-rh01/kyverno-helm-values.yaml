@@ -1,8 +1,18 @@
 fullnameOverride: konflux-kyverno
 namespaceOverride: konflux-kyverno
+config:
+  preserve: false
+  updateRequestThreshold: 2000
 admissionController:
   replicas: 3
   initContainer:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 100m
+        memory: 256Mi
     securityContext:
       allowPrivilegeEscalation: false
       readOnlyRootFilesystem: true
@@ -11,12 +21,14 @@ admissionController:
         drop:
         - "ALL"
   container:
+    extraArgs:
+      leaderElectionRetryPeriod: 5s
     resources:
       requests:
-        cpu: 500m
+        cpu: 1000m
         memory: 1Gi
       limits:
-        cpu: 500m
+        cpu: 1000m
         memory: 1Gi
     securityContext:
       allowPrivilegeEscalation: false
@@ -25,15 +37,49 @@ admissionController:
       capabilities:
         drop:
         - "ALL"
+  metering:
+    disabled: false
+  serviceMonitor:
+    enabled: true
+    # kyverno doesn't seem to support HTTPS on metrics
+    secure: false
 backgroundController:
   replicas: 3
+  extraArgs:
+    leaderElectionRetryPeriod: 5s
+    clientRateLimitBurst: 2000
+    clientRateLimitQPS: 2000
+  resources:
+    requests:
+      cpu: 4000m
+      memory: 1Gi
+    limits:
+      cpu: 4000m
+      memory: 1Gi
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    capabilities:
+      drop:
+      - "ALL"
+  metering:
+    disabled: false
+  serviceMonitor:
+    enabled: true
+    # kyverno doesn't seem to support HTTPS on metrics
+    secure: false
+cleanupController:
+  replicas: 3
+  extraArgs:
+    leaderElectionRetryPeriod: 5s
   resources:
     requests:
       cpu: 500m
-      memory: 1Gi
+      memory: 128Mi
     limits:
       cpu: 500m
-      memory: 1Gi
+      memory: 128Mi
   securityContext:
     allowPrivilegeEscalation: false
     readOnlyRootFilesystem: true
@@ -41,65 +87,18 @@ backgroundController:
     capabilities:
       drop:
       - "ALL"
-cleanupController:
-  replicas: 3
-  resources:
-    limits:
-      cpu: 500m
-  securityContext:
-    allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: true
-    runAsNonRoot: true
-    capabilities:
-      drop:
-      - "ALL"
+  metering:
+    disabled: false
+  serviceMonitor:
+    enabled: true
+    # kyverno doesn't seem to support HTTPS on metrics
+    secure: false
 reportsController:
-  replicas: 3
-  resources:
-    limits:
-      cpu: 500m
-  securityContext:
-    allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: true
-    runAsNonRoot: true
-    capabilities:
-      drop:
-      - "ALL"
+  enabled: false
 policyReportsCleanup:
-  image:
-    registry: mirror.gcr.io
-  securityContext:
-    allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: true
-    runAsNonRoot: true
-    runAsGroup: null
-    runAsUser: null
-    capabilities:
-      drop:
-      - "ALL"
+  enabled: false
 webhooksCleanup:
-  enable: false
-  image:
-    registry: mirror.gcr.io
-  securityContext:
-    allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: true
-    runAsNonRoot: true
-    runAsGroup: null
-    runAsUser: null
-    capabilities:
-      drop:
-      - "ALL"
-test:
-  securityContext:
-    allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: true
-    runAsNonRoot: true
-    runAsGroup: null
-    runAsUser: null
-    capabilities:
-      drop:
-      - "ALL"
+  enabled: false
 crds:
   migration:
     securityContext:
@@ -111,3 +110,18 @@ crds:
       capabilities:
         drop:
         - "ALL"
+features:
+  admissionReports:
+    enabled: false
+  aggregateReports:
+    enabled: false
+  policyReports:
+    enabled: false
+  validatingAdmissionPolicyReports:
+    enabled: false
+  reporting:
+    validate: false
+    mutate: false
+    mutateExisting: false
+    imageVerify: false
+    generate: false

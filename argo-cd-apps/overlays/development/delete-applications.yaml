@@ -104,12 +104,6 @@ $patch: delete
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: konflux-rbac
-$patch: delete
----
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
   name: konflux-info
 $patch: delete
 ---
@@ -129,4 +123,16 @@ apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
   name: etcd-defrag
+$patch: delete
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: pulp-access-controller
+$patch: delete
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: etcd-shield
 $patch: delete

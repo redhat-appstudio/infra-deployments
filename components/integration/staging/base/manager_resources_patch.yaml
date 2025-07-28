@@ -8,6 +8,8 @@ spec:
     spec:
       containers:
       - name: manager
+        args:
+          - "--leader-elect=false"
         resources:
           limits:
             cpu: 500m

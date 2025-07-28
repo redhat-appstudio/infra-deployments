@@ -5,10 +5,11 @@ namespace: multi-platform-controller
 
 resources:
 - ../../base/common
+- ../../base/rbac
 - host-config.yaml
 - external-secrets.yaml
-- https://github.com/konflux-ci/multi-platform-controller/deploy/operator?ref=8cbcdd4a49ec9dba5d738b46b84d0c2a5d438f91
-- https://github.com/konflux-ci/multi-platform-controller/deploy/otp?ref=8cbcdd4a49ec9dba5d738b46b84d0c2a5d438f91
+- https://github.com/konflux-ci/multi-platform-controller/deploy/operator?ref=50d363e362af827c0c1b176cbf7fa5b5dba3e2a3
+- https://github.com/konflux-ci/multi-platform-controller/deploy/otp?ref=50d363e362af827c0c1b176cbf7fa5b5dba3e2a3
 
 components:
   - ../../k-components/manager-resources
@@ -16,10 +17,10 @@ components:
 images:
 - name: multi-platform-controller
   newName: quay.io/konflux-ci/multi-platform-controller
-  newTag: 8cbcdd4a49ec9dba5d738b46b84d0c2a5d438f91
+  newTag: 50d363e362af827c0c1b176cbf7fa5b5dba3e2a3
 - name: multi-platform-otp-server
   newName: quay.io/konflux-ci/multi-platform-controller-otp-service
-  newTag: 8cbcdd4a49ec9dba5d738b46b84d0c2a5d438f91
+  newTag: 50d363e362af827c0c1b176cbf7fa5b5dba3e2a3
 
 patches:
   - path: manager_resources_patch.yaml

@@ -1,0 +1,60 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: policies
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              values:
+                sourceRoot: components/policies
+                environment: staging
+                clusterDir: "empty-base"
+          - list:
+              elements:
+                - nameNormalized: stone-stg-rh01
+                  values.clusterDir: stone-stg-rh01
+                - nameNormalized: stone-stage-p01
+                  values.clusterDir: stone-stage-p01
+                - nameNormalized: stone-prd-rh01
+                  values.clusterDir: stone-prd-rh01
+                - nameNormalized: kflux-prd-rh02
+                  values.clusterDir: kflux-prd-rh02
+                - nameNormalized: stone-prod-p01
+                  values.clusterDir: stone-prod-p01
+                - nameNormalized: stone-prod-p02
+                  values.clusterDir: stone-prod-p02
+                - nameNormalized: kflux-ocp-p01
+                  values.clusterDir: kflux-ocp-p01
+                - nameNormalized: kflux-prd-rh03
+                  values.clusterDir: kflux-prd-rh03
+                - nameNormalized: kflux-rhel-p01
+                  values.clusterDir: kflux-rhel-p01
+  template:
+    metadata:
+      name: policies-{{nameNormalized}}
+    spec:
+      project: default
+      source:
+        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+        targetRevision: main
+      destination:
+        namespace: konflux-policies
+        server: '{{server}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true
+        retry:
+          limit: -1
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 3m

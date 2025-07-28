@@ -1,0 +1,11 @@
+---
+- op: add
+  path: /spec/platforms/openshift/pipelinesAsCode/settings
+  value:
+    application-name: Konflux kflux-rhel-p01
+    custom-console-name: Konflux kflux-rhel-p01
+    custom-console-url: https://konflux-ui.apps.kflux-rhel-p01.fc38.p1.openshiftapps.com
+    custom-console-url-pr-details: https://konflux-ui.apps.kflux-rhel-p01.fc38.p1.openshiftapps.com/ns/{{ namespace }}/pipelinerun/{{ pr }}
+    custom-console-url-pr-tasklog: https://konflux-ui.apps.kflux-rhel-p01.fc38.p1.openshiftapps.com/ns/{{ namespace }}/pipelinerun/{{ pr }}/logs/{{ task }}
+    remember-ok-to-test: "false"
+    secret-github-app-token-scoped: "false"

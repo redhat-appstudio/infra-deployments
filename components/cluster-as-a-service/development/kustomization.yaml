@@ -14,3 +14,10 @@ patches:
     target:
       group: argoproj.io
       kind: ArgoCD
+  - target:
+      kind: Subscription
+      name: multicluster-engine
+    patch: |-
+      - op: replace
+        path: /spec/channel
+        value: stable-2.8

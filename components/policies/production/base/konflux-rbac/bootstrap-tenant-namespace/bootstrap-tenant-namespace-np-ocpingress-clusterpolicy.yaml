@@ -1,0 +1,34 @@
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: bootstrap-tenant-namespace-np-ocpingress
+spec:
+  rules:
+  - name: create-allow-from-openshift-ingress-networkpolicy
+    skipBackgroundRequests: true
+    match:
+      any:
+      - resources:
+          kinds:
+          - Namespace
+          selector:
+            matchLabels:
+              konflux-ci.dev/type: tenant
+    generate:
+      generateExisting: true
+      synchronize: false
+      apiVersion: networking.k8s.io/v1
+      kind: NetworkPolicy
+      namespace: '{{request.object.metadata.name}}'
+      name: allow-from-openshift-ingress
+      data:
+         spec:
+          ingress:
+          - from:
+            - namespaceSelector:
+                matchLabels:
+                  network.openshift.io/policy-group: ingress
+          podSelector: {}
+          policyTypes:
+          - Ingress

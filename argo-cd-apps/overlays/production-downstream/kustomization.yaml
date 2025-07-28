@@ -8,6 +8,7 @@ resources:
   - ../../base/keycloak
   - ../../base/repository-validator
   - ../../base/cluster-secret-store-rh
+  - ../../base/monitoring-workload-kanary
 patchesStrategicMerge:
   - delete-applications.yaml
 namespace: argocd
@@ -236,3 +237,23 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: knative-eventing
+  - path: production-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: etcd-shield
+  - path: production-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: kubearchive
+  - path: production-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: policies
+  - path: production-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: monitoring-workload-kanary

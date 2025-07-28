@@ -1,0 +1,45 @@
+- name: Set subdir default value
+  tags: [components]
+  set_fact:
+    subdir: "{{ env }}"
+
+- name: Adjust subdir for special MPC case
+  tags: [components]
+  set_fact:
+    subdir: "{{ env }}-downstream"
+  when: network == 'private' and component == 'multi-platform-controller'
+
+- name: "Create the components/{{ component }}/{{ subdir }}/{{ shortname }}/ directory if it does not exist"
+  tags: [components]
+  file:
+    path: "{{ dst }}/components/{{ component }}/{{ subdir }}/{{ shortname }}"
+    state: directory
+    mode: '0755'
+
+- name: "Create any subdirectories if we need them"
+  tags: [components]
+  file:
+    path: "{{ dst }}/components/{{ component }}/{{ subdir }}/{{ shortname }}/{{ item['path'] }}"
+    state: directory
+    mode: '0755'
+  with_filetree:
+  - "templates/{{ component }}/"
+  when: "item['state'] == 'directory'"
+
+- name: "Create files from template for components/{{ component }}/{{ subdir }}/{{ shortname }}"
+  tags: [components]
+  template:
+    src: "{{ item['src'] }}"
+    dest: "{{ dst }}/components/{{ component }}/{{ subdir }}/{{ shortname }}/{{item['path'] }}"
+  with_filetree:
+  - "templates/{{ component }}/"
+  when: "item['state'] == 'file'"
+
+- name: "Create private-network-only files from template for components/{{ component }}/{{ subdir }}/{{ shortname }}"
+  tags: [components]
+  template:
+    src: "{{ item['src'] }}"
+    dest: "{{ dst }}/components/{{ component }}/{{ subdir }}/{{ shortname }}/{{item['path'] }}"
+  with_filetree:
+  - "templates/private/{{ component }}/"
+  when: "network == 'private' and item['state'] == 'file'"

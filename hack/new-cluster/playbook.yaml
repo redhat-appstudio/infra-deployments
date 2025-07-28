@@ -1,0 +1,159 @@
+---
+# This ansible playbook will prepare the application-layer for a new cluster.
+#
+# Major steps:
+# * Provision new github application and insert credentials in vault
+# * Provision new chains signing secret and insert credentials in vault
+# * Locally write out configuration overlays for a new cluster based on templates.
+#
+
+- name: Create and patch YAML files
+  hosts: localhost
+  gather_facts: no
+
+  vars_prompt:
+    - name: cutename
+      prompt: "Cute name of the cluster (like rh09)"
+      private: false
+    - name: shortname
+      prompt: "Short name of the cluster (like kflux-prd-rh09)"
+      private: false
+    - name: longname
+      prompt: "Long name of the cluster (like kflux-prd-rh09.1bz7.p1)"
+      private: false
+    - name: env
+      prompt: "What environment (one of {{allowed_envs}})"
+      private: false
+    - name: network
+      prompt: "What network (one of {{allowed_networks}})"
+      private: false
+
+  vars:
+    vault_addr: "https://vault.devshift.net"
+
+    dst: "{{ lookup('env', 'PWD') }}"
+    github_organization: "redhat-appstudio"
+    github_application: "red-hat-konflux-{{ shortname }}"
+
+    smee_webhook_server_slug: "{{ (env == 'staging') | ternary('stone-stg-host.qc0p.p1', 'stone-prd-host1.wdlc.p1') }}"
+    smee_webhook_server: "https://smee-smee.apps.{{ smee_webhook_server_slug }}.openshiftapps.com"
+    smee_webhook_url: "{{ smee_webhook_server }}/redhathook{{cutename}}"
+
+    required_vars:
+      - shortname
+      - longname
+      - env
+    controlplane_cluster: appsrep09ue1
+    allowed_envs:
+      - production
+      - staging
+    allowed_networks:
+      - public
+      - private
+
+    templated_components:
+      - authentication
+      - backup
+      - build-service
+      - cost-management
+      - etcd-shield
+      - integration
+      - knative-eventing
+      - konflux-info
+      - konflux-rbac
+      - konflux-ui
+      - kyverno
+      - mintmaker
+      - monitoring/logging
+      - monitoring/prometheus
+      - multi-platform-controller
+      - namespace-lister
+      - pipeline-service
+      - smee-client
+
+    argo_cd_app_files:
+      - "{{ dst }}/argo-cd-apps/base/all-clusters/infra-deployments/monitoring-workload-logging/monitoring-workload-logging.yaml"
+      - "{{ dst }}/argo-cd-apps/base/all-clusters/infra-deployments/monitoring-workload-prometheus/monitoring-workload-prometheus.yaml"
+      - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/build-service/build-service.yaml"
+      - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/etcd-shield/etcd-shield.yaml"
+      - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/integration/integration.yaml"
+      - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/konflux-info/konflux-info.yaml"
+      - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/konflux-rbac/konflux-rbac.yaml"
+      - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/konflux-ui/konflux-ui.yaml"
+      - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/kyverno/kyverno.yaml"
+      - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/mintmaker/mintmaker.yaml"
+      - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/multi-platform-controller/multi-platform-controller.yaml"
+      - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/namespace-lister/namespace-lister.yaml"
+      - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/pipeline-service/pipeline-service.yaml"
+
+    argo_cd_private_network_app_files:
+      - "{{ dst }}/argo-cd-apps/base/smee-client/smee-client.yaml"
+
+    expected_vault_secrets:
+      - 'stonesoup/{{ env }}/platform/ansible/generated/{{ shortname }}/github-app'
+      - 'stonesoup/{{ env }}/platform/ansible/generated/{{ shortname }}/chains-signing-secret'
+      - 'stonesoup/{{ env }}/platform/terraform/generated/{{ shortname }}/backup-bucket'
+      - 'stonesoup/{{ env }}/platform/terraform/generated/{{ shortname }}/plnsvc-database'
+      - 'stonesoup/{{ env }}/platform/terraform/generated/{{ shortname }}/tekton-bucket'
+      - 'stonesoup/{{ env }}/platform/terraform/generated/{{ shortname }}/aws-ssh-key'
+      - 'stonesoup/{{ env }}/platform/terraform/generated/{{ shortname }}/aws-account'
+      - 'stonesoup/{{ env }}/platform/terraform/generated/{{ shortname }}/ibm-api-key'
+      - 'stonesoup/{{ env }}/platform/terraform/generated/{{ shortname }}/ibm-s390x-ssh-key'
+      - 'stonesoup/{{ env }}/platform/terraform/generated/{{ shortname }}/ibm-ppc64le-ssh-key'
+
+    github_commit_vars:
+      - slug: openshift-pipelines/tektoncd-results-for-konflux
+        varname: commit_id_tektoncd_results_for_konflux
+      - slug: openshift-pipelines/pipeline-service-exporter
+        varname: commit_id_pipeline_service_exporter
+      - slug: konflux-ci/build-definitions
+        varname: commit_id_build_definitions
+      - slug: konflux-ci/multi-platform-controller
+        varname: commit_id_multi_platform_controller
+
+  pre_tasks:
+    - name: Validate and initialize variables
+      tags: [always]
+      include_tasks: tasks/variables.yaml
+
+  tasks:
+    - name: Login to vault
+      tags: [vault]
+      include_tasks: tasks/vault/login.yaml
+
+    - name: Ensure the chains signing secret exists
+      tags: [chains]
+      include_tasks: tasks/vault/chains.yaml
+
+    - name: Ensure the github application exists
+      tags: [github]
+      include_tasks: tasks/github/app.yaml
+
+    - name: Verify all other vault secrets exist as expected
+      tags: [vault]
+      include_tasks: tasks/vault/verify.yaml
+      loop: "{{ expected_vault_secrets }}"
+      loop_control:
+        loop_var: path
+
+    - name: Patch ApplicationSet files to include new cluster reference
+      tags: [applicationsets]
+      include_tasks: tasks/applicationsets.yaml
+      loop: "{{ argo_cd_app_files }}"
+      loop_control:
+        loop_var: filename
+
+    - name: Patch ApplicationSet files to include new cluster reference, only applicable to private network clusters
+      tags: [applicationsets]
+      include_tasks: tasks/applicationsets.yaml
+      loop: "{{ argo_cd_private_network_app_files }}"
+      loop_control:
+        loop_var: filename
+      when: network == 'private'
+
+    - name: Copy cluster-specific component manifests
+      tags: [components]
+      include_tasks: tasks/components.yaml
+      loop: "{{ templated_components }}"
+      loop_control:
+        loop_var: component

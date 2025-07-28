@@ -8,18 +8,30 @@ data:
     default-pipeline-name: docker-build-oci-ta
     pipelines:
     - name: fbc-builder
-      bundle: quay.io/konflux-ci/tekton-catalog/pipeline-fbc-builder:47a7a8b185500aaebc35ada051ad4f75177bf4e6
+      bundle: quay.io/konflux-ci/tekton-catalog/pipeline-fbc-builder:devel
+      description: Build and validate File Based Catalogs
+      detail: Build and validate File Based Catalogs. Tests only validate the catalogs and do not scan the produced image.
       additional-params:
       - build-platforms
     - name: docker-build
-      bundle: quay.io/konflux-ci/tekton-catalog/pipeline-docker-build:47a7a8b185500aaebc35ada051ad4f75177bf4e6
+      bundle: quay.io/konflux-ci/tekton-catalog/pipeline-docker-build:devel
+      description: Build container images using Persistent Volume Claims for the pipelines
+      detail: Build container images using Persistent Volume Claims for quickly sharing data between tasks. Pipeline customization will invalidate trust.
     - name: docker-build-oci-ta
-      bundle: quay.io/konflux-ci/tekton-catalog/pipeline-docker-build-oci-ta:47a7a8b185500aaebc35ada051ad4f75177bf4e6
+      bundle: quay.io/konflux-ci/tekton-catalog/pipeline-docker-build-oci-ta:devel
+      description: Build container images with secure data transfer for the pipelines
+      detail: Build container images with secure data transfer for the pipelines. Pipeline can be customized while maintaining trust.
     - name: docker-build-multi-platform-oci-ta
-      bundle: quay.io/konflux-ci/tekton-catalog/pipeline-docker-build-multi-platform-oci-ta:47a7a8b185500aaebc35ada051ad4f75177bf4e6
+      bundle: quay.io/konflux-ci/tekton-catalog/pipeline-docker-build-multi-platform-oci-ta:devel
+      description: Build multi-platform container images with secure data transfer for the pipelines
+      detail: Build multi-platform container images with secure data transfer for the pipelines. Pipeline can be customized while maintaining trust.
       additional-params:
       - build-platforms
     - name: maven-zip-build-oci-ta
-      bundle: quay.io/konflux-ci/tekton-catalog/pipeline-maven-zip-build-oci-ta:47a7a8b185500aaebc35ada051ad4f75177bf4e6
+      bundle: quay.io/konflux-ci/tekton-catalog/pipeline-maven-zip-build-oci-ta:devel
+      description: Build maven zip OCI artifacts
+      detail: Fetch all artifacts necessary, create a maven zip file, and push it to the container registry. Pipeline can be customized while maintaining trust
     - name: tekton-bundle-builder-oci-ta
-      bundle: quay.io/konflux-ci/tekton-catalog/pipeline-tekton-bundle-builder-oci-ta:47a7a8b185500aaebc35ada051ad4f75177bf4e6
+      bundle: quay.io/konflux-ci/tekton-catalog/pipeline-tekton-bundle-builder-oci-ta:devel
+      description: Build Tekton bundles with secure data transfer for the pipelines
+      detail: Build Tekton bundles with secure data transfer for the pipelines. Pipeline can be customized while maintaining trust.

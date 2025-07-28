@@ -30,15 +30,20 @@ metadata:
   name: quality-dashboard
 $patch: delete
 ---
-# KubeArchive not yet ready to go to production
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: kubearchive
+  name: cert-manager
 $patch: delete
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: nvme-storage-configurator
+  name: kueue
+$patch: delete
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: konflux-kite
 $patch: delete

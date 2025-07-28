@@ -1,0 +1,86 @@
+- name: Check to see if the {{ github_application }} github application exists
+  tags: [github]
+  uri:
+    url: "https://github.com/apps/{{ github_application }}"
+    method: GET
+    return_content: no
+    headers:
+      Accept: "application/vnd.github.v3+json"
+  register: exists
+  failed_when: exists.status not in [200, 404]
+
+# If the app doesn't exist in github, but a key does exist in vault - then
+# we're in a situation that doesn't make any sense. Fail hard.
+- name: "Verify that it is not already in vault. If it is, that's crazy."
+  tags: [github]
+  when: exists.status != 200
+  command: >
+    vault kv metadata get stonesoup/{{ env }}/platform/ansible/generated/{{ shortname }}/github-app
+  register: sanity_check
+  environment:
+    VAULT_ADDR: "{{ vault_addr }}"
+    VAULT_TOKEN: "{{ vault_token }}"
+  changed_when: false
+  failed_when: "sanity_check.rc != 2"
+
+# Docs https://docs.github.com/en/apps/sharing-github-apps/registering-a-github-app-from-a-manifest
+- name: Create App Manifest
+  tags: [github]
+  when: exists.status != 200
+  set_fact:
+    app_manifest:
+      name: "{{ github_application }}"
+      url: "https://konflux-ui.apps.{{ longname }}.openshiftapps.com"
+      hook_attributes:
+        url: "{{ (network == 'private') | ternary(smee_webhook_url, 'https://pipelines-as-code-controller-openshift-pipelines.apps.' + longname + '.openshiftapps.com') }}"
+        active: true
+      redirect_url: http://localhost:8089
+      description: >
+        The app facilitates the integration between Github events and the OpenShift Pipelines Pipelines As Code component running on your production environment for Red Hat Konflux.
+
+        This will facilitate the running of any Tekton PipelineRuns you have defined in the `.tekton` folder of your repository based on the GitHub events you have associated with each of those PipelineRuns.
+
+        See the Konflux onboarding documentation for more details.
+      public: true
+      default_permissions:
+        checks: write
+        contents: write
+        issues: write
+        pull_requests: write
+        organization_administration: read
+        members: read
+      default_events:
+        - check_run
+        - check_suite
+        - commit_comment
+        - issue_comment
+        - pull_request
+        - push
+
+- name: Go see your browser and click to create the app. The playbook is now awaiting a redirect from github.com.
+  tags: [github]
+  when: exists.status != 200
+  script: "github-app-flow.py {{ github_organization }} '{{ app_manifest | to_json | b64encode }}'"
+  register: details
+
+- name: Insert that into vault
+  tags: [github]
+  when: exists.status != 200
+  command: >
+    vault kv put stonesoup/{{ env }}/platform/ansible/generated/{{ shortname }}/github-app
+      github-application-id={{ details.stdout | from_json | json_query('application_id') }}
+      github-private-key='{{ details.stdout | from_json | json_query('pem') }}'
+      webhook.secret={{ details.stdout | from_json | json_query('webhook_secret') }}
+  environment:
+    VAULT_ADDR: "{{ vault_addr }}"
+    VAULT_TOKEN: "{{ vault_token }}"
+
+- name: Verify that we put it in place correctly
+  tags: [github]
+  when: exists.status != 200
+  command: >
+    vault kv metadata get stonesoup/{{ env }}/platform/ansible/generated/{{ shortname }}/github-app
+  environment:
+    VAULT_ADDR: "{{ vault_addr }}"
+    VAULT_TOKEN: "{{ vault_token }}"
+  changed_when: false

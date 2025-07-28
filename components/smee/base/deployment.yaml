@@ -15,8 +15,11 @@ spec:
       labels:
         app: gosmee
     spec:
+      volumes:
+        - name: shared-health
+          emptyDir: {}
       containers:
-        - image: "ghcr.io/chmouel/gosmee:v0.20.2"
+        - image: "ghcr.io/chmouel/gosmee:v0.26.1"
           imagePullPolicy: Always
           name: gosmee
           args: ["server", "--address", "0.0.0.0"]
@@ -24,20 +27,100 @@ spec:
             - name: "gosmee-http"
               containerPort: 3333
               protocol: TCP
+          volumeMounts:
+            - name: shared-health
+              mountPath: /shared
           livenessProbe:
-            tcpSocket:
-              port: 3333
-          initialDelaySeconds: 30
-          periodSeconds: 5
-          timeoutSeconds: 2
-          failureThreshold: 3
+            exec:
+              command:
+                - /shared/check-smee-health.sh
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 25
+            failureThreshold: 12 # High-enough not to fail if other container crashlooping
           securityContext:
             readOnlyRootFilesystem: true
             runAsNonRoot: true
           resources:
             limits:
               cpu: 1
-              memory: 32Mi
+              memory: 256Mi
             requests:
               cpu: 1
-              memory: 32Mi
+              memory: 256Mi
+        - image: "ghcr.io/chmouel/gosmee:v0.26.1"
+          imagePullPolicy: Always
+          name: gosmee-liveness-probe-client
+          args:
+            - "client"
+            - "http://localhost:3333/smeesvrmonit"
+            - "http://localhost:8080"
+          volumeMounts:
+            - name: shared-health
+              mountPath: /shared
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - "ALL"
+            seccompProfile:
+              type: RuntimeDefault
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+          resources:
+            limits:
+              cpu: 100m
+              memory: 64Mi
+            requests:
+              cpu: 100m
+              memory: 64Mi
+          livenessProbe:
+            exec:
+              command:
+                - /shared/check-smee-health.sh
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 25
+            failureThreshold: 12 # High-enough not to fail if other container crashlooping
+        - name: health-check-sidecar
+          image: quay.io/konflux-ci/smee-sidecar:replaced-by-overlay
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+            - name: metrics
+              containerPort: 9100
+          volumeMounts:
+            - name: shared-health
+              mountPath: /shared
+          env:
+            - name: DOWNSTREAM_SERVICE_URL
+              value: "http://no.smee.svc.cluster.local:8080"
+            - name: SMEE_CHANNEL_URL
+              value: "http://localhost:3333/smeesvrmonit"
+            - name: HEALTH_CHECK_TIMEOUT_SECONDS
+              value: "20"
+          livenessProbe:
+            exec:
+              command:
+                - /shared/check-sidecar-health.sh
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 25
+            failureThreshold: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - "ALL"
+            seccompProfile:
+              type: RuntimeDefault
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+          resources:
+            limits:
+              cpu: 100m
+              memory: 128Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi

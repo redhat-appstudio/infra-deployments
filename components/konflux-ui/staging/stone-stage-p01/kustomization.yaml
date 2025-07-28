@@ -6,14 +6,13 @@ resources:
 # - ./configure-oauth-proxy-secret.yaml
 
 configMapGenerator:
-- files:
-  - dex-config.yaml
-  name: dex
-- name: proxy-init-config
-  literals:
-    - IMPERSONATE=true
-    - TEKTON_RESULTS_URL=https://tekton-results-api-service.tekton-results.svc.cluster.local:8080
-    - KUBEARCHIVE_URL=https://kubearchive-api-server.product-kubearchive.svc.cluster.local:8081
+  - name: dex
+    files:
+    - dex-config.yaml
+  - name: proxy-nginx-static
+    files:
+      - kubearchive.conf
+    behavior: merge
 
 patches:
 - path: add-service-certs-patch.yaml

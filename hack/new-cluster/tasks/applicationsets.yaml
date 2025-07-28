@@ -1,0 +1,12 @@
+- name: Look for {{ shortname }} in ApplicationSet {{ filename.split("/")[-1] }}
+  tags: [applicationsets]
+  command: |
+      yq  '.spec.generators[].merge.generators[] | select(has("list")) | .list.elements[] | select(.nameNormalized == "{{ shortname }}" )' {{ filename }}
+  register: result
+  changed_when: result.stdout == ""
+
+- name: Insert {{ shortname }} into ApplicationSet {{ filename.split("/")[-1] }}
+  tags: [applicationsets]
+  command: |
+      yq -i eval '(.spec.generators[].merge.generators[] | select(has("list")) | .list.elements) += {"nameNormalized": "{{ shortname }}", "values.clusterDir": "{{ shortname }}"}' {{ filename }}
+  when: result.stdout == ""

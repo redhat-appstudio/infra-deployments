@@ -34,20 +34,8 @@ data:
     linux-c8xlarge/amd64,\
     linux-c8xlarge/arm64,\
     linux-g6xlarge/amd64,\
-    linux/s390x,\
-    linux-large/s390x,\
-    linux-d200/s390x,\
-    linux-d200-large/s390x,\
     linux-root/arm64,\
-    linux-root/amd64,\
-    linux/ppc64le,\
-    linux-large/ppc64le,\
-    linux-xlarge/ppc64le,\
-    linux-2xlarge/ppc64le,\
-    linux-d200/ppc64le,\
-    linux-d200-large/ppc64le,\
-    linux-d200-xlarge/ppc64le,\
-    linux-d200-2xlarge/ppc64le\
+    linux-root/amd64,
     "
   #dynamic-pool-platforms: linux/ppc64le
   instance-tag: rhtap-staging
@@ -417,191 +405,19 @@ data:
   dynamic.linux-root-amd64.disk: "200"
   dynamic.linux-root-amd64.allocation-timeout: "1200"
 
-  dynamic.linux-s390x.type: ibmz
-  dynamic.linux-s390x.ssh-secret: "internal-stage-ibm-ssh-key"
-  dynamic.linux-s390x.secret: "internal-stage-ibm-api-key"
-  dynamic.linux-s390x.vpc: "konflux-internal-prod-us-east-1"
-  dynamic.linux-s390x.key: "internal-stage-key"
-  dynamic.linux-s390x.subnet: "internal-b"
-  dynamic.linux-s390x.image-id: "r014-23be9e67-4ab2-4dc9-9a51-d56efb06943d"
-  dynamic.linux-s390x.region: "us-east-1"
-  dynamic.linux-s390x.url: "https://us-east.iaas.cloud.ibm.com/v1"
-  dynamic.linux-s390x.profile: "bz2-2x8"
-  dynamic.linux-s390x.max-instances: "50"
-  dynamic.linux-s390x.private-ip: "true"
-  dynamic.linux-s390x.allocation-timeout: "1800"
-  dynamic.linux-s390x.instance-tag: stage-s390x
+  # S390X 8vCPU / 32GiB RAM / 512GB disk
+  host.s390x-static-1.address: "10.130.79.197"
+  host.s390x-static-1.platform: "linux/s390x"
+  host.s390x-static-1.user: "root"
+  host.s390x-static-1.secret: "ibm-s390x-ssh-key"
+  host.s390x-static-1.concurrency: "2"
 
-  dynamic.linux-large-s390x.type: ibmz
-  dynamic.linux-large-s390x.ssh-secret: "internal-stage-ibm-ssh-key"
-  dynamic.linux-large-s390x.secret: "internal-stage-ibm-api-key"
-  dynamic.linux-large-s390x.vpc: "konflux-internal-prod-us-east-1"
-  dynamic.linux-large-s390x.key: "internal-stage-key"
-  dynamic.linux-large-s390x.subnet: "internal-b"
-  dynamic.linux-large-s390x.image-id: "r014-23be9e67-4ab2-4dc9-9a51-d56efb06943d"
-  dynamic.linux-large-s390x.region: "us-east-1"
-  dynamic.linux-large-s390x.url: "https://us-east.iaas.cloud.ibm.com/v1"
-  dynamic.linux-large-s390x.profile: "bz2-4x16"
-  dynamic.linux-large-s390x.max-instances: "10"
-  dynamic.linux-large-s390x.private-ip: "true"
-  dynamic.linux-large-s390x.allocation-timeout: "1800"
-  dynamic.linux-large-s390x.instance-tag: stage-s390x-large
-
-  dynamic.linux-d200-s390x.type: ibmz
-  dynamic.linux-d200-s390x.ssh-secret: "internal-stage-ibm-ssh-key"
-  dynamic.linux-d200-s390x.secret: "internal-stage-ibm-api-key"
-  dynamic.linux-d200-s390x.vpc: "konflux-internal-prod-us-east-1"
-  dynamic.linux-d200-s390x.key: "internal-stage-key"
-  dynamic.linux-d200-s390x.subnet: "internal-b"
-  dynamic.linux-d200-s390x.image-id: "r014-23be9e67-4ab2-4dc9-9a51-d56efb06943d"
-  dynamic.linux-d200-s390x.region: "us-east-1"
-  dynamic.linux-d200-s390x.url: "https://us-east.iaas.cloud.ibm.com/v1"
-  dynamic.linux-d200-s390x.profile: "bz2-2x8"
-  dynamic.linux-d200-s390x.max-instances: "50"
-  dynamic.linux-d200-s390x.private-ip: "true"
-  dynamic.linux-d200-s390x.allocation-timeout: "1800"
-  dynamic.linux-d200-s390x.disk: "200"
-  dynamic.linux-d200-s390x.instance-tag: stage-d200-s390x
-
-  dynamic.linux-d200-large-s390x.type: ibmz
-  dynamic.linux-d200-large-s390x.ssh-secret: "internal-stage-ibm-ssh-key"
-  dynamic.linux-d200-large-s390x.secret: "internal-stage-ibm-api-key"
-  dynamic.linux-d200-large-s390x.vpc: "konflux-internal-prod-us-east-1"
-  dynamic.linux-d200-large-s390x.key: "internal-stage-key"
-  dynamic.linux-d200-large-s390x.subnet: "internal-b"
-  dynamic.linux-d200-large-s390x.image-id: "r014-23be9e67-4ab2-4dc9-9a51-d56efb06943d"
-  dynamic.linux-d200-large-s390x.region: "us-east-1"
-  dynamic.linux-d200-large-s390x.url: "https://us-east.iaas.cloud.ibm.com/v1"
-  dynamic.linux-d200-large-s390x.profile: "bz2-4x16"
-  dynamic.linux-d200-large-s390x.max-instances: "10"
-  dynamic.linux-d200-large-s390x.private-ip: "true"
-  dynamic.linux-d200-large-s390x.allocation-timeout: "1800"
-  dynamic.linux-d200-large-s390x.disk: "200"
-  dynamic.linux-d200-large-s390x.instance-tag: stage-d200-s390x-large
-
-  dynamic.linux-ppc64le.type: ibmp
-  dynamic.linux-ppc64le.ssh-secret: "internal-stage-ibm-ssh-key"
-  dynamic.linux-ppc64le.secret: "internal-stage-ibm-api-key"
-  dynamic.linux-ppc64le.key: "konflux-infra"
-  dynamic.linux-ppc64le.image: "konflux-stage-ppc-base-os-08-16-2024"
-  dynamic.linux-ppc64le.crn: "crn:v1:bluemix:public:power-iaas:wdc06:a/5cb0704ee6304413bd0b171372c0fd77:4e9dc638-7a78-4e7c-b432-e83b7010c531::"
-  dynamic.linux-ppc64le.url: "https://us-east.power-iaas.cloud.ibm.com"
-  dynamic.linux-ppc64le.network: "a6d8d6da-c412-4106-9b57-4e25541b2e7f"
-  dynamic.linux-ppc64le.system: "e980"
-  dynamic.linux-ppc64le.cores: "0.25"
-  dynamic.linux-ppc64le.memory: "8"
-  dynamic.linux-ppc64le.max-instances: "50"
-  dynamic.linux-ppc64le.allocation-timeout: "1800"
-  dynamic.linux-ppc64le.instance-tag: stage-ppc64le
-
-  dynamic.linux-large-ppc64le.type: ibmp
-  dynamic.linux-large-ppc64le.ssh-secret: "internal-stage-ibm-ssh-key"
-  dynamic.linux-large-ppc64le.secret: "internal-stage-ibm-api-key"
-  dynamic.linux-large-ppc64le.key: "konflux-infra"
-  dynamic.linux-large-ppc64le.image: "konflux-stage-ppc-base-os-08-16-2024"
-  dynamic.linux-large-ppc64le.crn: "crn:v1:bluemix:public:power-iaas:wdc06:a/5cb0704ee6304413bd0b171372c0fd77:4e9dc638-7a78-4e7c-b432-e83b7010c531::"
-  dynamic.linux-large-ppc64le.url: "https://us-east.power-iaas.cloud.ibm.com"
-  dynamic.linux-large-ppc64le.network: "a6d8d6da-c412-4106-9b57-4e25541b2e7f"
-  dynamic.linux-large-ppc64le.system: "e980"
-  dynamic.linux-large-ppc64le.cores: "0.5"
-  dynamic.linux-large-ppc64le.memory: "16"
-  dynamic.linux-large-ppc64le.max-instances: "10"
-  dynamic.linux-large-ppc64le.allocation-timeout: "1800"
-  dynamic.linux-large-ppc64le.instance-tag: stage-ppc64le-large
-
-  dynamic.linux-xlarge-ppc64le.type: ibmp
-  dynamic.linux-xlarge-ppc64le.ssh-secret: "internal-stage-ibm-ssh-key"
-  dynamic.linux-xlarge-ppc64le.secret: "internal-stage-ibm-api-key"
-  dynamic.linux-xlarge-ppc64le.key: "konflux-infra"
-  dynamic.linux-xlarge-ppc64le.image: "konflux-stage-ppc-base-os-08-16-2024"
-  dynamic.linux-xlarge-ppc64le.crn: "crn:v1:bluemix:public:power-iaas:wdc06:a/5cb0704ee6304413bd0b171372c0fd77:4e9dc638-7a78-4e7c-b432-e83b7010c531::"
-  dynamic.linux-xlarge-ppc64le.url: "https://us-east.power-iaas.cloud.ibm.com"
-  dynamic.linux-xlarge-ppc64le.network: "a6d8d6da-c412-4106-9b57-4e25541b2e7f"
-  dynamic.linux-xlarge-ppc64le.system: "e980"
-  dynamic.linux-xlarge-ppc64le.cores: "1"
-  dynamic.linux-xlarge-ppc64le.memory: "32"
-  dynamic.linux-xlarge-ppc64le.max-instances: "10"
-  dynamic.linux-xlarge-ppc64le.allocation-timeout: "1800"
-  dynamic.linux-xlarge-ppc64le.instance-tag: stage-ppc64le-xlarge
-
-  dynamic.linux-2xlarge-ppc64le.type: ibmp
-  dynamic.linux-2xlarge-ppc64le.ssh-secret: "internal-stage-ibm-ssh-key"
-  dynamic.linux-2xlarge-ppc64le.secret: "internal-stage-ibm-api-key"
-  dynamic.linux-2xlarge-ppc64le.key: "konflux-infra"
-  dynamic.linux-2xlarge-ppc64le.image: "konflux-stage-ppc-base-os-08-16-2024"
-  dynamic.linux-2xlarge-ppc64le.crn: "crn:v1:bluemix:public:power-iaas:wdc06:a/5cb0704ee6304413bd0b171372c0fd77:4e9dc638-7a78-4e7c-b432-e83b7010c531::"
-  dynamic.linux-2xlarge-ppc64le.url: "https://us-east.power-iaas.cloud.ibm.com"
-  dynamic.linux-2xlarge-ppc64le.network: "a6d8d6da-c412-4106-9b57-4e25541b2e7f"
-  dynamic.linux-2xlarge-ppc64le.system: "e980"
-  dynamic.linux-2xlarge-ppc64le.cores: "2"
-  dynamic.linux-2xlarge-ppc64le.memory: "64"
-  dynamic.linux-2xlarge-ppc64le.max-instances: "10"
-  dynamic.linux-2xlarge-ppc64le.allocation-timeout: "1800"
-  dynamic.linux-2xlarge-ppc64le.instance-tag: stage-ppc64le-2xlarge
-
-  dynamic.linux-d200-ppc64le.type: ibmp
-  dynamic.linux-d200-ppc64le.ssh-secret: "internal-stage-ibm-ssh-key"
-  dynamic.linux-d200-ppc64le.secret: "internal-stage-ibm-api-key"
-  dynamic.linux-d200-ppc64le.key: "konflux-infra"
-  dynamic.linux-d200-ppc64le.image: "konflux-stage-ppc-base-os-08-16-2024"
-  dynamic.linux-d200-ppc64le.crn: "crn:v1:bluemix:public:power-iaas:wdc06:a/5cb0704ee6304413bd0b171372c0fd77:4e9dc638-7a78-4e7c-b432-e83b7010c531::"
-  dynamic.linux-d200-ppc64le.url: "https://us-east.power-iaas.cloud.ibm.com"
-  dynamic.linux-d200-ppc64le.network: "a6d8d6da-c412-4106-9b57-4e25541b2e7f"
-  dynamic.linux-d200-ppc64le.system: "e980"
-  dynamic.linux-d200-ppc64le.cores: "0.25"
-  dynamic.linux-d200-ppc64le.memory: "8"
-  dynamic.linux-d200-ppc64le.max-instances: "10"
-  dynamic.linux-d200-ppc64le.allocation-timeout: "1800"
-  dynamic.linux-d200-ppc64le.disk: "200"
-  dynamic.linux-d200-ppc64le.instance-tag: stage-d200-ppc64le
-
-  dynamic.linux-d200-large-ppc64le.type: ibmp
-  dynamic.linux-d200-large-ppc64le.ssh-secret: "internal-stage-ibm-ssh-key"
-  dynamic.linux-d200-large-ppc64le.secret: "internal-stage-ibm-api-key"
-  dynamic.linux-d200-large-ppc64le.key: "konflux-infra"
-  dynamic.linux-d200-large-ppc64le.image: "konflux-stage-ppc-base-os-08-16-2024"
-  dynamic.linux-d200-large-ppc64le.crn: "crn:v1:bluemix:public:power-iaas:wdc06:a/5cb0704ee6304413bd0b171372c0fd77:4e9dc638-7a78-4e7c-b432-e83b7010c531::"
-  dynamic.linux-d200-large-ppc64le.url: "https://us-east.power-iaas.cloud.ibm.com"
-  dynamic.linux-d200-large-ppc64le.network: "a6d8d6da-c412-4106-9b57-4e25541b2e7f"
-  dynamic.linux-d200-large-ppc64le.system: "e980"
-  dynamic.linux-d200-large-ppc64le.cores: "0.5"
-  dynamic.linux-d200-large-ppc64le.memory: "16"
-  dynamic.linux-d200-large-ppc64le.max-instances: "10"
-  dynamic.linux-d200-large-ppc64le.allocation-timeout: "1800"
-  dynamic.linux-d200-large-ppc64le.disk: "200"
-  dynamic.linux-d200-large-ppc64le.instance-tag: stage-d200-ppc64le-large
-
-  dynamic.linux-d200-xlarge-ppc64le.type: ibmp
-  dynamic.linux-d200-xlarge-ppc64le.ssh-secret: "internal-stage-ibm-ssh-key"
-  dynamic.linux-d200-xlarge-ppc64le.secret: "internal-stage-ibm-api-key"
-  dynamic.linux-d200-xlarge-ppc64le.key: "konflux-infra"
-  dynamic.linux-d200-xlarge-ppc64le.image: "konflux-stage-ppc-base-os-08-16-2024"
-  dynamic.linux-d200-xlarge-ppc64le.crn: "crn:v1:bluemix:public:power-iaas:wdc06:a/5cb0704ee6304413bd0b171372c0fd77:4e9dc638-7a78-4e7c-b432-e83b7010c531::"
-  dynamic.linux-d200-xlarge-ppc64le.url: "https://us-east.power-iaas.cloud.ibm.com"
-  dynamic.linux-d200-xlarge-ppc64le.network: "a6d8d6da-c412-4106-9b57-4e25541b2e7f"
-  dynamic.linux-d200-xlarge-ppc64le.system: "e980"
-  dynamic.linux-d200-xlarge-ppc64le.cores: "1"
-  dynamic.linux-d200-xlarge-ppc64le.memory: "32"
-  dynamic.linux-d200-xlarge-ppc64le.max-instances: "10"
-  dynamic.linux-d200-xlarge-ppc64le.allocation-timeout: "1800"
-  dynamic.linux-d200-xlarge-ppc64le.disk: "200"
-  dynamic.linux-d200-xlarge-ppc64le.instance-tag: stage-d200-ppc64le-xlarge
-
-  dynamic.linux-d200-2xlarge-ppc64le.type: ibmp
-  dynamic.linux-d200-2xlarge-ppc64le.ssh-secret: "internal-stage-ibm-ssh-key"
-  dynamic.linux-d200-2xlarge-ppc64le.secret: "internal-stage-ibm-api-key"
-  dynamic.linux-d200-2xlarge-ppc64le.key: "konflux-infra"
-  dynamic.linux-d200-2xlarge-ppc64le.image: "konflux-stage-ppc-base-os-08-16-2024"
-  dynamic.linux-d200-2xlarge-ppc64le.crn: "crn:v1:bluemix:public:power-iaas:wdc06:a/5cb0704ee6304413bd0b171372c0fd77:4e9dc638-7a78-4e7c-b432-e83b7010c531::"
-  dynamic.linux-d200-2xlarge-ppc64le.url: "https://us-east.power-iaas.cloud.ibm.com"
-  dynamic.linux-d200-2xlarge-ppc64le.network: "a6d8d6da-c412-4106-9b57-4e25541b2e7f"
-  dynamic.linux-d200-2xlarge-ppc64le.system: "e980"
-  dynamic.linux-d200-2xlarge-ppc64le.cores: "2"
-  dynamic.linux-d200-2xlarge-ppc64le.memory: "64"
-  dynamic.linux-d200-2xlarge-ppc64le.max-instances: "10"
-  dynamic.linux-d200-2xlarge-ppc64le.allocation-timeout: "1800"
-  dynamic.linux-d200-2xlarge-ppc64le.disk: "200"
-  dynamic.linux-d200-2xlarge-ppc64le.instance-tag: stage-d200-ppc64le-2xlarge
+  # PPC64LE 1 core(8vCPU) / 32GiB RAM / 512GB disk
+  host.ppc64le-static-1.address: "10.130.79.249"
+  host.ppc64le-static-1.platform: "linux/ppc64le"
+  host.ppc64le-static-1.user: "root"
+  host.ppc64le-static-1.secret: "ibm-ppc-ssh-key"
+  host.ppc64le-static-1.concurrency: "2"
 
 # GPU Instances
   dynamic.linux-g6xlarge-amd64.type: aws

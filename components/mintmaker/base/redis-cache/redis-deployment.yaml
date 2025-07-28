@@ -27,11 +27,11 @@ spec:
           args: ["run-redis"]
           resources:
             requests:
-              memory: "800Mi"
-              cpu: "0.75"
+              memory: 250Mi
+              cpu: 50m
             limits:
-              memory: "1Gi"
-              cpu: "1"
+              memory: 800Mi
+              cpu: 300m
           securityContext:
             runAsNonRoot: true
             runAsUser: 1001

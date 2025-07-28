@@ -1,6 +1,6 @@
 #
 # The contents of this file are automatically generated based on the Konflux configs defined in the
-# github.com/enterprise-contract/config repo. Any manual modifications will be overridden.
+# github.com/conforma/config repo. Any manual modifications will be overridden.
 #
 
 ---
@@ -10,7 +10,7 @@ metadata:
   name: default
   namespace: enterprise-contract-service
 spec:
-  description: 'Includes rules for levels 1, 2 & 3 of SLSA v0.1. This is the default config used for new Konflux applications. Source: https://github.com/enterprise-contract/config/blob/main/default/policy.yaml'
+  description: 'Includes rules for levels 1, 2 & 3 of SLSA v0.1. This is the default config used for new Konflux applications. Source: https://github.com/conforma/config/blob/main/default/policy.yaml'
   name: Default
   publicKey: k8s://openshift-pipelines/public-key
   sources:
@@ -21,6 +21,8 @@ spec:
       data:
         - github.com/release-engineering/rhtap-ec-policy//data
         - oci::quay.io/konflux-ci/tekton-catalog/data-acceptable-bundles:latest
+        - oci::quay.io/konflux-ci/konflux-vanguard/data-acceptable-bundles:latest
+        - oci::quay.io/konflux-ci/integration-service-catalog/data-acceptable-bundles:latest
       name: Default
       policy:
         - oci::quay.io/enterprise-contract/ec-release-policy:konflux
@@ -31,7 +33,7 @@ metadata:
   name: redhat-no-hermetic
   namespace: enterprise-contract-service
 spec:
-  description: 'Includes most of the rules and policies required internally by Red Hat when building Red Hat products. It excludes the requirement of hermetic builds. Source: https://github.com/enterprise-contract/config/blob/main/redhat-no-hermetic/policy.yaml'
+  description: 'Includes most of the rules and policies required internally by Red Hat when building Red Hat products. It excludes the requirement of hermetic builds. Source: https://github.com/conforma/config/blob/main/redhat-no-hermetic/policy.yaml'
   name: Red Hat (non hermetic)
   publicKey: k8s://openshift-pipelines/public-key
   sources:
@@ -44,6 +46,8 @@ spec:
       data:
         - github.com/release-engineering/rhtap-ec-policy//data
         - oci::quay.io/konflux-ci/tekton-catalog/data-acceptable-bundles:latest
+        - oci::quay.io/konflux-ci/konflux-vanguard/data-acceptable-bundles:latest
+        - oci::quay.io/konflux-ci/integration-service-catalog/data-acceptable-bundles:latest
       name: Default
       policy:
         - oci::quay.io/enterprise-contract/ec-release-policy:konflux
@@ -54,7 +58,7 @@ metadata:
   name: redhat-rpms
   namespace: enterprise-contract-service
 spec:
-  description: 'For Red Hat RPM builds in Red Hat Konflux. Source: https://github.com/enterprise-contract/config/blob/main/redhat-rpms/policy.yaml'
+  description: 'For Red Hat RPM builds in Red Hat Konflux. Source: https://github.com/conforma/config/blob/main/redhat-rpms/policy.yaml'
   name: Red Hat RPMs
   publicKey: k8s://openshift-pipelines/public-key
   sources:
@@ -65,6 +69,8 @@ spec:
       data:
         - github.com/release-engineering/rhtap-ec-policy//data
         - oci::quay.io/konflux-ci/tekton-catalog/data-acceptable-bundles:latest
+        - oci::quay.io/konflux-ci/konflux-vanguard/data-acceptable-bundles:latest
+        - oci::quay.io/konflux-ci/integration-service-catalog/data-acceptable-bundles:latest
         - oci::quay.io/enterprise-contract/rpmbuild-data-acceptable-bundles:latest
       name: Default
       policy:
@@ -76,7 +82,7 @@ metadata:
   name: redhat
   namespace: enterprise-contract-service
 spec:
-  description: 'Includes the full set of rules and policies required internally by Red Hat when building Red Hat products. Source: https://github.com/enterprise-contract/config/blob/main/redhat/policy.yaml'
+  description: 'Includes the full set of rules and policies required internally by Red Hat when building Red Hat products. Source: https://github.com/conforma/config/blob/main/redhat/policy.yaml'
   name: Red Hat
   publicKey: k8s://openshift-pipelines/public-key
   sources:
@@ -87,6 +93,8 @@ spec:
       data:
         - github.com/release-engineering/rhtap-ec-policy//data
         - oci::quay.io/konflux-ci/tekton-catalog/data-acceptable-bundles:latest
+        - oci::quay.io/konflux-ci/konflux-vanguard/data-acceptable-bundles:latest
+        - oci::quay.io/konflux-ci/integration-service-catalog/data-acceptable-bundles:latest
       name: Default
       policy:
         - oci::quay.io/enterprise-contract/ec-release-policy:konflux
@@ -97,7 +105,7 @@ metadata:
   name: slsa3
   namespace: enterprise-contract-service
 spec:
-  description: 'Rules specifically related to levels 1, 2 & 3 of SLSA v0.1, plus a set of basic checks that are expected to pass for all Konflux builds. Source: https://github.com/enterprise-contract/config/blob/main/slsa3/policy.yaml'
+  description: 'Rules specifically related to levels 1, 2 & 3 of SLSA v0.1, plus a set of basic checks that are expected to pass for all Konflux builds. Source: https://github.com/conforma/config/blob/main/slsa3/policy.yaml'
   name: SLSA3
   publicKey: k8s://openshift-pipelines/public-key
   sources:
@@ -109,6 +117,8 @@ spec:
       data:
         - github.com/release-engineering/rhtap-ec-policy//data
         - oci::quay.io/konflux-ci/tekton-catalog/data-acceptable-bundles:latest
+        - oci::quay.io/konflux-ci/konflux-vanguard/data-acceptable-bundles:latest
+        - oci::quay.io/konflux-ci/integration-service-catalog/data-acceptable-bundles:latest
       name: Default
       policy:
         - oci::quay.io/enterprise-contract/ec-release-policy:konflux
@@ -130,4 +140,4 @@ spec:
         - github.com/release-engineering/rhtap-ec-policy//data
       name: Default
       policy:
-        - oci::quay.io/enterprise-contract/ec-task-policy:git-2b9b061@sha256:9da69bec5b8c23df2b194c9a480f0965515d0f1f96f72fa0ebc138baf64ffd1a
+        - oci::quay.io/enterprise-contract/ec-task-policy:konflux

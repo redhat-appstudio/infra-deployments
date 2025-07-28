@@ -179,6 +179,17 @@ if [ -n "$DEPLOY_ONLY" ]; then
   done
 fi
 
+# Deploy Kueue if the OCP version >=4.16
+OCP_MINOR=$(oc get clusterversion version -o jsonpath='{.status.desired.version}' | cut -d. -f2)
+echo "Detected OCP minor version: ${OCP_MINOR}"
+if [[ "$OCP_MINOR" -lt 16 ]]; then
+  echo '---' >> $ROOT/argo-cd-apps/overlays/development/delete-applications.yaml
+  yq e -n ".apiVersion=\"argoproj.io/v1alpha1\"
+            | .kind=\"ApplicationSet\"
+            | .metadata.name = \"kueue\"
+            | .\$patch = \"delete\"" >> $ROOT/argo-cd-apps/overlays/development/delete-applications.yaml
+  yq -i 'del(.resources[] | select(test("^kueue/?$")))' "$ROOT/components/policies/development/kustomization.yaml"
+fi
 
 $ROOT/hack/util-set-github-org $MY_GITHUB_ORG
 

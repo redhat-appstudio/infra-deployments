@@ -1031,6 +1031,8 @@ data:
     S3_MULTI_PART_SIZE=5242880
     GCS_BUCKET_NAME=
     STORAGE_EMULATOR_HOST=
+    K8S_QPS=50
+    K8S_BURST=100
     PROFILING=true
     PROFILING_PORT=6060
     FEATURE_GATES='PartialResponse=true'
@@ -1391,10 +1393,10 @@ spec:
         resources:
           limits:
             cpu: 500m
-            memory: 6Gi
+            memory: 8Gi
           requests:
             cpu: 250m
-            memory: 6Gi
+            memory: 8Gi
         securityContext:
           readOnlyRootFilesystem: true
           runAsNonRoot: true
@@ -1529,7 +1531,7 @@ spec:
             secretKeyRef:
               key: db.name
               name: tekton-results-database
-        image: quay.io/konflux-ci/tekton-results-api:425fcd0988b50965139238038e0d3bd3cb4f8bbc
+        image: quay.io/konflux-ci/tekton-results-api:99db802a56c3d62e823e162feee9811e55ed1f5b
         livenessProbe:
           httpGet:
             path: /healthz
@@ -1719,7 +1721,7 @@ spec:
             secretKeyRef:
               key: db.name
               name: tekton-results-database
-        image: quay.io/konflux-ci/tekton-results-api:425fcd0988b50965139238038e0d3bd3cb4f8bbc
+        image: quay.io/konflux-ci/tekton-results-api:99db802a56c3d62e823e162feee9811e55ed1f5b
         livenessProbe:
           httpGet:
             path: /healthz
@@ -1824,7 +1826,7 @@ spec:
             secretKeyRef:
               key: POSTGRES_PASSWORD
               name: tekton-results-postgres
-        image: quay.io/konflux-ci/tekton-results-retention-policy-agent:425fcd0988b50965139238038e0d3bd3cb4f8bbc
+        image: quay.io/konflux-ci/tekton-results-retention-policy-agent:99db802a56c3d62e823e162feee9811e55ed1f5b
         name: retention-policy-agent
         resources:
           limits:
@@ -1935,10 +1937,15 @@ spec:
         - -auth_mode
         - token
         - -check_owner=false
-        - -completed_run_grace_period
-        - 10m
+        - -completed_run_grace_period=5m
+        - -requeue_interval=2m
+        - -store_deadline=240m
+        - -forward_buffer=1m
+        - -qps=50
+        - -burst=50
         - -threadiness=32
         - -logs_api=true
+        - -disable_storing_incomplete_runs=true
         env:
         - name: SYSTEM_NAMESPACE
           valueFrom:
@@ -1956,7 +1963,9 @@ spec:
           value: tekton-results-api-service-for-watcher.tekton-results.svc.cluster.local:8080
         - name: AUTH_MODE
           value: token
-        image: quay.io/konflux-ci/tekton-results-watcher:425fcd0988b50965139238038e0d3bd3cb4f8bbc
+        - name: KUBERNETES_MIN_VERSION
+          value: v1.28.0
+        image: quay.io/konflux-ci/tekton-results-watcher:99db802a56c3d62e823e162feee9811e55ed1f5b
         name: watcher
         ports:
         - containerPort: 9090
@@ -1965,10 +1974,10 @@ spec:
           name: profiling
         resources:
           limits:
-            cpu: 250m
+            cpu: 3000m
             memory: 8Gi
           requests:
-            cpu: 250m
+            cpu: 1000m
             memory: 8Gi
         securityContext:
           allowPrivilegeEscalation: false
@@ -2275,6 +2284,7 @@ spec:
     enable-cluster-resolver: true
     enable-git-resolver: true
     enable-hub-resolver: true
+    enable-param-enum: true
     enable-step-actions: true
     options:
       configMaps:
@@ -2394,10 +2404,10 @@ spec:
                 - name: tekton-pipelines-controller
                   resources:
                     limits:
-                      memory: 12Gi
+                      memory: 16Gi
                     requests:
                       cpu: "1"
-                      memory: 12Gi
+                      memory: 16Gi
                 topologySpreadConstraints:
                 - labelSelector:
                     matchLabels:
@@ -2411,15 +2421,18 @@ spec:
             template:
               spec:
                 containers:
-                - name: controller
+                - env:
+                  - name: GIT_SSL_CAINFO
+                    value: /tekton-custom-certs/ca-bundle.crt
+                  name: controller
                   resources:
                     limits:
-                      memory: 8Gi
+                      memory: 10Gi
                     requests:
                       cpu: 500m
-                      memory: 8Gi
+                      memory: 10Gi
     performance:
-      buckets: 8
+      buckets: 4
       disable-ha: false
       kube-api-burst: 50
       kube-api-qps: 50
@@ -2446,16 +2459,19 @@ spec:
             namespace }}/pipelinerun/{{ pr }}
           custom-console-url-pr-tasklog: https://konflux-ui.apps.kflux-ocp-p01.7ayg.p1.openshiftapps.com/ns/{{
             namespace }}/pipelinerun/{{ pr }}/logs/{{ task }}
+          secret-github-app-token-scoped: "false"
   profile: all
   pruner:
     disabled: false
-    keep-since: 60
+    keep-since: 240
     resources:
     - pipelinerun
-    schedule: '*/10 * * * *'
+    schedule: '*/30 * * * *'
   result:
     disabled: true
   targetNamespace: openshift-pipelines
+  tektonpruner:
+    disabled: true
   trigger:
     options:
       configMaps:
@@ -2500,7 +2516,7 @@ metadata:
   namespace: openshift-marketplace
 spec:
   displayName: custom-operators
-  image: quay.io/openshift-pipeline/pipelines-index-4.15@sha256:64a745bfa289594f0eeb9c6af7646a0b9ab6072da0f2ec909441aa14ae82acf9
+  image: quay.io/openshift-pipeline/pipelines-index-4.15@sha256:6788ffeab369f7a773d7022358f67cd93d094003c3b6c82e3278f620e9065135
   sourceType: grpc
   updateStrategy:
     registryPoll:
@@ -2520,6 +2536,8 @@ spec:
     env:
     - name: AUTOINSTALL_COMPONENTS
       value: "false"
+    - name: IMAGE_ADDONS_TKN_CLI_SERVE
+      value: registry.redhat.io/openshift-pipelines/pipelines-serve-tkn-cli-rhel9@sha256:d055d2b35a663aef3e1aafdbed0b12957867c0670c946ebae66e9c44a768bda2
   name: openshift-pipelines-operator-rh
   source: custom-operators
   sourceNamespace: openshift-marketplace

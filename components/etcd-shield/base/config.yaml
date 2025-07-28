@@ -1,0 +1,12 @@
+destName: etcd-shield-state
+destNamespace: etcd-shield
+prometheus:
+  address: https://prometheus-k8s.openshift-monitoring.svc:9091
+  alertName: EtcdShieldDenyAdmission
+  config:
+    authorization:
+      type: Bearer
+      credentials_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+    tls_config:
+      ca_file: /var/tls/tls.crt
+waitTime: 15s

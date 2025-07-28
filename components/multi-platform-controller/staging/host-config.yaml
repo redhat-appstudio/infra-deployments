@@ -37,7 +37,6 @@ data:
     linux-g4xlarge/amd64,\
     linux-root/arm64,\
     linux-root/amd64,\
-    linux/s390x\
     "
   instance-tag: rhtap-staging
 
@@ -397,31 +396,19 @@ data:
   dynamic.linux-root-amd64.sudo-commands: "/usr/bin/podman"
   dynamic.linux-root-amd64.disk: "200"
 
-  host.ppc1.address: "150.240.147.198"
-  host.ppc1.platform: "linux/ppc64le"
-  host.ppc1.user: "root"
-  host.ppc1.secret: "ibm-ssh-key"
-  host.ppc1.concurrency: "4"
+  # S390X 8vCPU / 32GiB RAM / 512GB disk
+  host.s390x-static-1.address: "10.241.72.6"
+  host.s390x-static-1.platform: "linux/s390x"
+  host.s390x-static-1.user: "root"
+  host.s390x-static-1.secret: "ibm-stage-s390x-ssh-key"
+  host.s390x-static-1.concurrency: "2"
 
-  # host.ibmz1.address: "169.63.177.141"
-  # host.ibmz1.platform: "linux/s390x"
-  # host.ibmz1.user: "root"
-  # host.ibmz1.secret: "ibm-ssh-key"
-  # host.ibmz1.concurrency: "4"
-
-  dynamic.linux-s390x.type: ibmz
-  dynamic.linux-s390x.ssh-secret: "ibm-stage-s390x-ssh-key"
-  dynamic.linux-s390x.secret: "public-stage-ibm-api-key"
-  dynamic.linux-s390x.vpc: "us-east-default-vpc"
-  dynamic.linux-s390x.key: "konflux-s390x-root"
-  dynamic.linux-s390x.subnet: "konflux-ext-subnet"
-  dynamic.linux-s390x.image-id: "r014-96daa951-6026-4112-95b1-87e86e82fcf3"
-  dynamic.linux-s390x.region: "us-east-2"
-  dynamic.linux-s390x.url: "https://us-east.iaas.cloud.ibm.com/v1"
-  dynamic.linux-s390x.profile: "bz2-2x8"
-  dynamic.linux-s390x.max-instances: "4"
-  dynamic.linux-s390x.private-ip: "true"
-  dynamic.linux-s390x.instance-tag: stage-s390x
+  # PPC64LE 1 core(8vCPU) / 32GiB RAM / 512GB disk
+  host.ppc64le-static-1.address: "10.244.32.34"
+  host.ppc64le-static-1.platform: "linux/ppc64le"
+  host.ppc64le-static-1.user: "root"
+  host.ppc64le-static-1.secret: "ibm-stage-ppc-ssh-key"
+  host.ppc64le-static-1.concurrency: "2"
 
 # GPU Instances
   dynamic.linux-g6xlarge-amd64.type: aws

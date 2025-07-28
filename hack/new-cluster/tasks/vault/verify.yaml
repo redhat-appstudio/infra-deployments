@@ -1,0 +1,9 @@
+- name: Check if secret metadata exists (without reading secret) {{ path }}
+  tags: [vault]
+  ansible.builtin.command: >
+    vault kv metadata get {{ path }}
+  register: metadata_check
+  environment:
+    VAULT_ADDR: "{{ vault_addr }}"
+    VAULT_TOKEN: "{{ vault_token }}"
+  changed_when: false

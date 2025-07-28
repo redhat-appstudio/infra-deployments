@@ -1,0 +1,53 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../base
+  - postgresql.yaml
+
+namespace: konflux-kite
+
+# Override config for development
+configMapGenerator:
+  - name: kite-config
+    namespace: konflux-kite
+    literals:
+      - KITE_PROJECT_ENV=development
+      - KITE_HOST=0.0.0.0
+      - KITE_PORT=8080
+      - KITE_DB_SSL_MODE=disable
+      - KITE_LOG_LEVEL=debug
+      - KITE_LOG_FORMAT=text
+      - KITE_ENABLE_CORS=true
+      - KITE_FEATURE_NAMESPACE_CHECKING=false
+      - KITE_FEATURE_WEBHOOKS=true
+      - KITE_ALLOWED_ORIGINS=*
+      - KITE_RATE_LIMIT_RPS=1000
+      - KITE_FEATURE_METRICS=true
+      - KITE_READ_TIMEOUT=30s
+      - KITE_WRITE_TIMEOUT=30s
+      - KITE_IDLE_TIMEOUT=60s
+      - KITE_SHUTDOWN_TIMEOUT=10s
+    behavior: replace
+
+patches:
+  # Development-specific patches
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: konflux-kite
+        namespace: konflux-kite
+      spec:
+        replicas: 1
+        template:
+          spec:
+            containers:
+              - name: kite-api
+                resources:
+                  limits:
+                    cpu: 200m
+                    memory: 256Mi
+                  requests:
+                    cpu: 50m
+                    memory: 128Mi

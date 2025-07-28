@@ -22,4 +22,4 @@ spec:
                 - -c
                 - |
                   etcd_pod=$(oc get pod -l app=etcd -oname -n openshift-etcd | awk -F"/" 'NR==1{ print $2 }')
-                  oc -n openshift-etcd debug pod/${etcd_pod} fragmentationThreshold=15 --image=quay.io/konflux-ci/etcd-defrag:5cd77468927ab368aecfceaaf045b0e64fb10cfa --one-container=true -- /bin/sh -c "chmod +x /opt/defrag.sh && /opt/defrag.sh"
+                  oc -n openshift-etcd debug pod/${etcd_pod} fragmentationThreshold=30 --image=quay.io/konflux-ci/etcd-defrag:788c85baf311517c6534556fdf66f936a7239efb --one-container=true -- /bin/sh -c "chmod +x /opt/defrag.sh && /opt/defrag.sh"

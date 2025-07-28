@@ -15,9 +15,6 @@ admissionController:
         drop:
         - "ALL"
   container:
-    resources:
-      limits:
-        cpu: 500m
     securityContext:
       allowPrivilegeEscalation: false
       readOnlyRootFilesystem: true
@@ -27,9 +24,6 @@ admissionController:
         - "ALL"
 backgroundController:
   replicas: 1
-  resources:
-    limits:
-      cpu: 500m
   securityContext:
     allowPrivilegeEscalation: false
     readOnlyRootFilesystem: true
@@ -39,59 +33,12 @@ backgroundController:
       - "ALL"
 cleanupController:
   enabled: false
-  resources:
-    limits:
-      cpu: 500m
-  securityContext:
-    allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: true
-    runAsNonRoot: true
-    capabilities:
-      drop:
-      - "ALL"
 reportsController:
   enabled: false
-  resources:
-    limits:
-      cpu: 500m
-  securityContext:
-    allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: true
-    runAsNonRoot: true
-    capabilities:
-      drop:
-      - "ALL"
 policyReportsCleanup:
-  securityContext:
-    allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: true
-    runAsNonRoot: true
-    runAsGroup: null
-    runAsUser: null
-    capabilities:
-      drop:
-      - "ALL"
+  enabled: false
 webhooksCleanup:
   enabled: false
-  securityContext:
-    allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: true
-    runAsNonRoot: true
-    runAsGroup: null
-    runAsUser: null
-    capabilities:
-      drop:
-      - "ALL"
-test:
-  securityContext:
-    allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: true
-    runAsNonRoot: true
-    runAsGroup: null
-    runAsUser: null
-    capabilities:
-      drop:
-      - "ALL"
 crds:
   migration:
     securityContext:
@@ -103,3 +50,18 @@ crds:
       capabilities:
         drop:
         - "ALL"
+features:
+  admissionReports:
+    enabled: false
+  aggregateReports:
+    enabled: false
+  policyReports:
+    enabled: false
+  validatingAdmissionPolicyReports:
+    enabled: false
+  reporting:
+    validate: false
+    mutate: false
+    mutateExisting: false
+    imageVerify: false
+    generate: false
