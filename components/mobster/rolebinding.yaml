@@ -10,6 +10,5 @@ roleRef:
   name: mobster-configmap-viewer-role
 subjects:
   - apiGroup: rbac.authorization.k8s.io
-    kind: ServiceAccount
-    name: release-service-account
-    namespace: stonesoup-int-srvc
+    kind: Group
+    name: system:authenticated
