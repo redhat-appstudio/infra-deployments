@@ -1,0 +1,15 @@
+apiVersion: v1
+data:
+  notification-content.json: |
+    {
+      "summary": "There is an example system notification!",
+      "type": "info",
+      "title": "Example Title",
+      "activeTimestamp": "2025-08-12T14:30:00Z"
+    }
+kind: ConfigMap
+metadata:
+  labels:
+    konflux.system.notification: "true"
+  name: konflux-system-notification-configmap-1
+  namespace: konflux-info
