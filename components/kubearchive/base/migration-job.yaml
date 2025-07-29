@@ -20,8 +20,9 @@ spec:
             - set -o errexit;
               git clone https://github.com/kubearchive/kubearchive --depth=1 --branch=${KUBEARCHIVE_VERSION} /tmp/kubearchive;
               cd /tmp/kubearchive;
+              export QUOTED_PASSWORD=$(python3 -c "import urllib.parse; print(urllib.parse.quote('${DATABASE_PASSWORD}', ''))");
               curl --silent -L https://github.com/golang-migrate/migrate/releases/download/${MIGRATE_VERSION}/migrate.linux-amd64.tar.gz | tar xvz migrate;
-              ./migrate -verbose -path integrations/database/postgresql/migrations/ -database postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_URL}:${DATABASE_PORT}/${DATABASE_DB} up
+              ./migrate -verbose -path integrations/database/postgresql/migrations/ -database postgresql://${DATABASE_USER}:${QUOTED_PASSWORD}@${DATABASE_URL}:${DATABASE_PORT}/${DATABASE_DB} up
           resources:
             limits:
               cpu: 10m
