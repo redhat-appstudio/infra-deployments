@@ -3,7 +3,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ../../base
-  - database-secret.yaml
+  - ../base
   - https://github.com/kubearchive/kubearchive/releases/download/v1.2.0/kubearchive.yaml?timeout=90
 
 namespace: product-kubearchive
@@ -19,6 +19,13 @@ patches:
           spec:
             containers:
               - name: migration
+                args:
+                  - set -o errexit;
+                    git clone https://github.com/kubearchive/kubearchive --depth=1 --branch=${KUBEARCHIVE_VERSION} /tmp/kubearchive;
+                    cd /tmp/kubearchive;
+                    export QUOTED_PASSWORD=$(python3 -c "import urllib.parse; print(urllib.parse.quote('${DATABASE_PASSWORD}', ''))");
+                    curl --silent -L https://github.com/golang-migrate/migrate/releases/download/${MIGRATE_VERSION}/migrate.linux-amd64.tar.gz | tar xvz migrate;
+                    ./migrate -verbose -path integrations/database/postgresql/migrations/ -database postgresql://${DATABASE_USER}:${QUOTED_PASSWORD}@${DATABASE_URL}:${DATABASE_PORT}/${DATABASE_DB} up
                 env:
                   - name: KUBEARCHIVE_VERSION
                     value: v1.2.0
@@ -30,6 +37,17 @@ patches:
       metadata:
         name: kubearchive-database-credentials
         namespace: kubearchive
+  - patch: |-
+      apiVersion: external-secrets.io/v1beta1
+      kind: ExternalSecret
+      metadata:
+        name: database-secret
+      spec:
+        secretStoreRef:
+          name: appsre-stonesoup-vault
+        dataFrom:
+          - extract:
+              key: production/platform/terraform/generated/kflux-prd-rh03/kubearchive-database
   # These patches add an annotation so an OpenShift service
   # creates the TLS secrets instead of Cert Manager
   - patch: |-
