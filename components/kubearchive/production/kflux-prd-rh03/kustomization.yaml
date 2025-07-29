@@ -3,7 +3,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ../../base
-  - ../base
+  - database-secret.yaml
   - https://github.com/kubearchive/kubearchive/releases/download/v1.2.0/kubearchive.yaml?timeout=90
 
 namespace: product-kubearchive
@@ -30,17 +30,6 @@ patches:
       metadata:
         name: kubearchive-database-credentials
         namespace: kubearchive
-  - patch: |-
-      apiVersion: external-secrets.io/v1beta1
-      kind: ExternalSecret
-      metadata:
-        name: database-secret
-      spec:
-        secretStoreRef:
-          name: appsre-stonesoup-vault
-        dataFrom:
-          - extract:
-              key: production/platform/terraform/generated/kflux-prd-rh03/kubearchive-database
   # These patches add an annotation so an OpenShift service
   # creates the TLS secrets instead of Cert Manager
   - patch: |-
