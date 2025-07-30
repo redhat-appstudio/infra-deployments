@@ -32,7 +32,7 @@ spec:
         ) * 100 < 100
       for: 5m
       labels:
-        severity: critical
+        severity: warning
         component: kueue
       annotations:
         summary: "Kueue deployment {{ $labels.deployment }} has unavailable replicas"
@@ -115,7 +115,7 @@ spec:
       expr: max by (status) (kueue_cluster_queue_status{cluster_queue="cluster-pipeline-queue", status="active"}) != 1
       for: 2m
       labels:
-        severity: critical
+        severity: warning
         component: kueue
       annotations:
         summary: "Kueue cluster queue is not active"
@@ -196,7 +196,7 @@ spec:
       expr: up{job=~".*kueue.*"} == 0
       for: 5m
       labels:
-        severity: critical
+        severity: warning
         component: kueue
       annotations:
         summary: "Kueue metrics endpoint is down"
@@ -214,6 +214,27 @@ spec:
       annotations:
         summary: "No recent workload admissions in Kueue"
         description: "No workloads have been admitted in the last hour, which might indicate a problem with the admission process"
+        runbook_url: https://gitlab.cee.redhat.com/konflux/docs/sop/-/blob/main/infra/queue.md?ref_type=heads
+        alert_team_handle: <!subteam^S05Q1P4Q2TG>
+        team: konflux-infra
+
+    - alert: KueueMutatingWebhookLowSuccessRate
+      expr: |
+        100 * sum(increase(apiserver_admission_webhook_request_total{
+          name="pipelinerun-kueue-defaulter.tekton-kueue.io", code=~"2.."
+        }[10m]))
+        /
+        sum(increase(apiserver_admission_webhook_request_total{
+          name="pipelinerun-kueue-defaulter.tekton-kueue.io"
+        }[10m]))
+        < 99
+      for: 10m
+      labels:
+        severity: warning
+        component: kueue
+      annotations:
+        summary: "Kueue mutating webhook success rate is below 99%"
+        description: "The mutating webhook 'pipelinerun-kueue-defaulter.tekton-kueue.io' has had a success rate below 99% over the past 10 minutes. Possible causes include webhook errors, rejections, or unreachability (e.g., code=600)."
         runbook_url: https://gitlab.cee.redhat.com/konflux/docs/sop/-/blob/main/infra/queue.md?ref_type=heads
         alert_team_handle: <!subteam^S05Q1P4Q2TG>
         team: konflux-infra
