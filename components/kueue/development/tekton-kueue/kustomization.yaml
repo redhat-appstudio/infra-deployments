@@ -19,3 +19,12 @@ configMapGenerator:
     behavior: replace
     files:
       - config.yaml
+
+patches:
+  - target:
+      kind: Namespace
+      name: tekton-kueue
+    patch: |-
+      - op: add
+        path: /metadata/labels/openshift.io~1cluster-monitoring
+        value: "true"

@@ -33,3 +33,10 @@ patches:
     kind: Deployment
     name: tekton-kueue-controller-manager
     version: v1
+- target:
+    kind: Namespace
+    name: tekton-kueue
+  patch: |-
+    - op: add
+      path: /metadata/labels/openshift.io~1cluster-monitoring
+      value: "true"
