@@ -267,6 +267,10 @@ spec:
         - '{__name__="code:apiserver_request_total:rate5m"}'
         - '{__name__="instance:apiserver_request_total:rate5m"}'
         - '{__name__="prometheus_ready"}'
+        - '{__name__="code:http_request_duration_seconds_sum:rate5m"}'
+        - '{__name__="code:http_request_duration_seconds_bucket:rate5m"}'
+        - '{__name__="code:http_requests_total:rate5m"}'
+        - '{__name__="process_cpu_seconds_total", job="apiserver"}'
 
     relabelings:
     # override the target's address by the prometheus-k8s service name.
