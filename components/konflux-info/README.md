@@ -61,8 +61,8 @@ The file must contain a **YAML list** where each item represents a banner config
 
 ### **Important Behavior**
 
-- The **UI displays only the first valid active banner** from the list, based on current date, time, and optional recurrence settings.
-- If multiple banners are configured, **order matters**. Place the highest-priority banner **at the top of the list**.
+- The <strong style="color: red;">UI displays only the first valid active banner</strong> from the list, based on current date, time, and optional recurrence settings.
+- If multiple banners are configured, <strong style="color: red;">order matters</strong>.
 
 ---
 
@@ -76,7 +76,7 @@ The file must contain a **YAML list** where each item represents a banner config
 | `type`       | string | ✅       | Banner type: `info`, `warning`, or `danger`.                              |
 | `startTime`  | string | ⚠️\*     | Start time in `HH:mm` (24-hour). Required if date-related fields are set. |
 | `endTime`    | string | ⚠️\*     | End time in `HH:mm` (24-hour). Required if date-related fields are set.   |
-| `timeZone`   | string | ❌       | Optional IANA timezone (e.g., `UTC`, `Asia/Shanghai`). Defaults to UTC.   |
+| `timeZone`   | string | ❌       | Optional IANA time zone (e.g., Asia/Shanghai). Omit for UTC (default).    |
 | `year`       | number | ❌       | Year (1970–9999) for one-time banners.                                    |
 | `month`      | number | ❌       | Month (1–12).                                                             |
 | `dayOfWeek`  | number | ❌       | Day of week (0=Sunday, 6=Saturday) for weekly recurrence.                 |
@@ -100,14 +100,14 @@ Example of a `banner-content.yaml` with multiple banners (first active one is sh
   dayOfMonth: 25
   startTime: "10:00"
   endTime: "14:00"
-  timeZone: "UTC"
+  timeZone: "America/Los_Angeles"
 
 - summary: "Maintenance every Sunday"
   type: "info"
   dayOfWeek: 0
   startTime: "02:00"
   endTime: "04:00"
-  timeZone: "UTC"
+  # No timezone is needed when you expect it's UTC.
 ```
 
 #### ✅ **2. One-Time Banner**
@@ -122,7 +122,6 @@ For a single event on a specific date:
   dayOfMonth: 25
   startTime: "10:00"
   endTime: "14:00"
-  timeZone: "UTC"
 ```
 
 For a single event in today
@@ -132,7 +131,6 @@ For a single event in today
   type: "warning"
   startTime: "10:00"
   endTime: "14:00"
-  timeZone: "UTC"
 ```
 
 #### ✅ **2. Weekly Recurring Banner**
@@ -145,7 +143,6 @@ For an event that repeats every week:
   dayOfWeek: 0
   startTime: "02:00"
   endTime: "04:00"
-  timeZone: "UTC"
 ```
 
 #### ✅ **3. Monthly Recurring Banner**
@@ -189,7 +186,7 @@ When there are no events to announce:
 
 2. Edit banner-content.yaml:
 
-- Insert the new banner at the top of the list (highest priority).
+- <strong style="color: red;">Insert the new banner at the top of the list</strong>.
 - Remove obsolete banners to keep the list clean.
 
   Example:
@@ -203,7 +200,6 @@ When there are no events to announce:
     dayOfMonth: 30
     startTime: "09:00"
     endTime: "17:00"
-    timeZone: "UTC"
 
   # Keep other active banners below
   - summary: "Maintenance every Sunday"
@@ -211,7 +207,6 @@ When there are no events to announce:
     dayOfWeek: 0
     startTime: "02:00"
     endTime: "04:00"
-    timeZone: "UTC"
   ```
 
 3. Submit a Pull Request:
@@ -229,6 +224,26 @@ When there are no events to announce:
   Type: New banner
   Purpose: Release announcement for Konflux 1.2
   ```
+
+## ❓ Frequently Asked Questions
+
+- Why is only one banner shown even when multiple are configured?
+
+  <strong style="color: red;">We follow the [PatternFly design guidelines](https://www.patternfly.org/components/banner/design-guidelines) for banners</strong>, which emphasize simplicity and clarity. Showing just one banner line at a time helps avoid overwhelming users and ensures that important messages aren't lost in clutter.
+
+- What does “first active” actually mean?
+
+  <strong style="color: red;">The term 'first' doesn’t imply priority or severity</strong> — it simply refers to the first banner that is currently active based on time and repeat configuration.
+
+  If a banner was scheduled in the past, it should already have been displayed.
+
+  If it's scheduled in the future, it will show when its time comes.
+
+  At any given moment, the system checks which banner is active right now, and picks the first one that matches the criteria.
+
+  🕒 Banners use fields like `startTime`, `endTime`, `dayOfWeek`, etc., to precisely define when they should appear.
+
+  <strong style="color: red;">📝 If multiple messages need to be shared at the same time, consider combining them into a well-written summary inside a single banner.</strong>
 
 ## 📢 Auto Alerts(WIP)
 
