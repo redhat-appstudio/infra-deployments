@@ -2,18 +2,12 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
 - ../base
+- prometheus_rule_test.yaml
 
 patches:
   - path: cluster-id-label.yaml
     target:
       name: appstudio-federate-ms
       kind: MonitoringStack
-      group: monitoring.rhobs
-      version: v1alpha1
-
-  - path: prometheus_rule_test.yaml
-    target:
-      name: appstudio-federate-ms
-      kind: PrometheusRule
       group: monitoring.rhobs
       version: v1alpha1
