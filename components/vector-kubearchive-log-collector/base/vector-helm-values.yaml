@@ -151,8 +151,6 @@ env:
       secretKeyRef:
         name: kubearchive-loki
         key: PASSWORD
-  - name: VECTOR_LOG
-    value: "info"
 nodeSelector:
   konflux-ci.dev/workload: konflux-tenants
 tolerations:
@@ -214,9 +212,17 @@ initContainers:
   - name: init-vector-data-dir
     image: busybox:1.35
     command: ['sh', '-c', 'mkdir -p /vector-data-dir']
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        cpu: 50m
+        memory: 64Mi
     securityContext:
       runAsUser: 0
       allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
     volumeMounts:
       - name: data
         mountPath: /vector-data-dir

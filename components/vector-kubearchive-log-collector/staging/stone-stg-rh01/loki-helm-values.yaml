@@ -58,6 +58,13 @@ gateway:
     repository: nginx
     tag: "1.24-alpine"
     pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
   nginxConfig:
     resolver: dns-default.openshift-dns.svc.cluster.local
 
@@ -93,6 +100,13 @@ lokiCanary:
 
 singleBinary:
   replicas: 1
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
   persistence:
     enabled: false
   extraVolumeMounts:
@@ -101,6 +115,18 @@ singleBinary:
   extraVolumes:
     - name: loki-storage
       emptyDir: {}
+
+# Configure sidecar for rules
+sidecar:
+  rules:
+    enabled: true
+    resources:
+      requests:
+        cpu: 25m
+        memory: 64Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
 
 # Zero out replica counts of other deployment modes
 backend:
@@ -136,11 +162,60 @@ chunksCache:
 resultsCache:
   enabled: true
   allocatedMemory: 256  # Keep results cache but with minimal memory
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 100m
+      memory: 256Mi
   # Explicit image for results cache - using Docker Hub registry
   image:
     repository: memcached
     tag: "1.6.24-alpine"
     pullPolicy: IfNotPresent
+
+# Configure memcached for results cache
+memcached:
+  enabled: true
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 200m
+      memory: 512Mi
+
+# Configure PodDisruptionBudgets with unhealthyPodEvictionPolicy
+podDisruptionBudget:
+  enabled: true
+  maxUnavailable: 1
+  unhealthyPodEvictionPolicy: AlwaysAllow
+
+memcachedChunks:
+  enabled: false  # Disabled for staging
+
+memcachedResults:
+  enabled: true
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 200m
+      memory: 512Mi
+  pdb:
+    create: true
+    maxUnavailable: 1
+    unhealthyPodEvictionPolicy: AlwaysAllow
+
+memcachedFrontend:
+  enabled: false  # Not needed for staging
+
+memcachedIndexQueries:
+  enabled: false  # Not needed for staging
 
 # Disable test pods for cleaner development environment  
 test:
