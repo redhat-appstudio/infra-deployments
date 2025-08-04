@@ -136,7 +136,7 @@ spec:
                 key: DB_NAME
         startupProbe:
           httpGet:
-            path: /health
+            path: /api/v1/health/
             port: http
           initialDelaySeconds: 10
           periodSeconds: 5
@@ -145,7 +145,7 @@ spec:
           successThreshold: 1
         readinessProbe:
           httpGet:
-            path: /health
+            path: /api/v1/health/
             port: http
           initialDelaySeconds: 10
           periodSeconds: 10
@@ -153,7 +153,7 @@ spec:
           failureThreshold: 3
         livenessProbe:
           httpGet:
-            path: /health
+            path: /api/v1/health/
             port: http
           initialDelaySeconds: 30
           periodSeconds: 30
