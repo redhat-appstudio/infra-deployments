@@ -2,20 +2,20 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-  - ../base
-  - loki-secret.yaml
+- ../base
+- loki-secret.yaml
 
 generators:
-  - loki-helm-generator.yaml
-  - grafana-helm-generator.yaml
+- loki-helm-generator.yaml
+- grafana-helm-generator.yaml
 
 patches:
-   - patch: |-
-      apiVersion: external-secrets.io/v1beta1
-      kind: ExternalSecret
-      metadata:
-        name: kubearchive-loki
-      spec:
-        dataFrom:
-          - extract:
-              key: integrations-output/external-resources/appsrep09ue1/konflux-internal-prod/stone-prod-p02-kube-archive-rds
+- patch: |-
+    apiVersion: external-secrets.io/v1beta1
+    kind: ExternalSecret
+    metadata:
+      name: kubearchive-loki
+    spec:
+      dataFrom:
+        - extract:
+            key: integrations-output/external-resources/appsrep09ue1/konflux-internal-prod/stone-prod-p02-kube-archive-rds
