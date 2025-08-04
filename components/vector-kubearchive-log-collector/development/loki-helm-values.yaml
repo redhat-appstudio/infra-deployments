@@ -102,6 +102,10 @@ singleBinary:
       memory: 512Mi
   persistence:
     enabled: false  # No persistent storage for development
+  podDisruptionBudget:
+    enabled: true
+    maxUnavailable: 1
+    unhealthyPodEvictionPolicy: AlwaysAllow
   extraVolumeMounts:
     - name: loki-storage
       mountPath: /var/loki
@@ -179,12 +183,6 @@ memcached:
     limits:
       cpu: 100m
       memory: 256Mi
-
-# Configure PodDisruptionBudgets with unhealthyPodEvictionPolicy
-podDisruptionBudget:
-  enabled: true
-  maxUnavailable: 1
-  unhealthyPodEvictionPolicy: AlwaysAllow
 
 memcachedChunks:
   enabled: false  # Disabled for development
