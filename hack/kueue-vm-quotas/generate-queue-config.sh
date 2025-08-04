@@ -40,6 +40,8 @@ main() {
     local -A queue_configs=(
         ["components/multi-platform-controller/staging/host-config.yaml"]="components/kueue/staging/stone-stg-rh01/queue-config/cluster-queue.yaml"
         ["components/multi-platform-controller/staging-downstream/host-config.yaml"]="components/kueue/staging/stone-stage-p01/queue-config/cluster-queue.yaml"
+        ["components/multi-platform-controller/production/kflux-prd-rh02/host-config.yaml"]="components/kueue/production/kflux-prd-rh02/queue-config/cluster-queue.yaml"
+        ["components/multi-platform-controller/production/kflux-prd-rh03/host-config.yaml"]="components/kueue/production/kflux-prd-rh03/queue-config/cluster-queue.yaml"
     )
     
     # Generate queue configurations
