@@ -154,6 +154,7 @@ bloomGateway:
 
 # Disable memory-intensive caching for development environment  
 chunksCache:
+  enabled: false  # Completely disable chunks cache
   replicas: 0  # Scale to 0 replicas to avoid memory issues
 
 resultsCache:
@@ -171,6 +172,19 @@ resultsCache:
     repository: memcached
     tag: "1.6.24-alpine"
     pullPolicy: IfNotPresent
+  exporter:
+    enabled: true
+    resources:
+      requests:
+        cpu: 25m
+        memory: 32Mi
+      limits:
+        cpu: 50m
+        memory: 64Mi
+  pdb:
+    create: true
+    maxUnavailable: 1
+    unhealthyPodEvictionPolicy: AlwaysAllow
 
 # Configure memcached for results cache
 memcached:
@@ -183,9 +197,20 @@ memcached:
     limits:
       cpu: 100m
       memory: 256Mi
+  exporter:
+    enabled: true
+    resources:
+      requests:
+        cpu: 25m
+        memory: 32Mi
+      limits:
+        cpu: 50m
+        memory: 64Mi
 
 memcachedChunks:
   enabled: false  # Disabled for development
+  exporter:
+    enabled: false
 
 memcachedResults:
   enabled: true
@@ -197,6 +222,15 @@ memcachedResults:
     limits:
       cpu: 100m
       memory: 256Mi
+  exporter:
+    enabled: true
+    resources:
+      requests:
+        cpu: 25m
+        memory: 32Mi
+      limits:
+        cpu: 50m
+        memory: 64Mi
   pdb:
     create: true
     maxUnavailable: 1

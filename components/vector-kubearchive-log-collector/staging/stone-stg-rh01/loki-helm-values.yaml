@@ -109,6 +109,10 @@ singleBinary:
       memory: 1Gi
   persistence:
     enabled: false
+  podDisruptionBudget:
+    enabled: true
+    maxUnavailable: 1
+    unhealthyPodEvictionPolicy: AlwaysAllow
   extraVolumeMounts:
     - name: loki-storage
       mountPath: /var/loki
@@ -155,8 +159,9 @@ bloomCompactor:
 bloomGateway:
   replicas: 0
 
-# Disable memory-intensive caching for development environment  
+# Disable memory-intensive caching for staging environment  
 chunksCache:
+  enabled: false  # Completely disable chunks cache
   replicas: 0  # Scale to 0 replicas to avoid memory issues
 
 resultsCache:
@@ -174,6 +179,19 @@ resultsCache:
     repository: memcached
     tag: "1.6.24-alpine"
     pullPolicy: IfNotPresent
+  exporter:
+    enabled: true
+    resources:
+      requests:
+        cpu: 25m
+        memory: 32Mi
+      limits:
+        cpu: 50m
+        memory: 64Mi
+  pdb:
+    create: true
+    maxUnavailable: 1
+    unhealthyPodEvictionPolicy: AlwaysAllow
 
 # Configure memcached for results cache
 memcached:
@@ -186,15 +204,20 @@ memcached:
     limits:
       cpu: 200m
       memory: 512Mi
-
-# Configure PodDisruptionBudgets with unhealthyPodEvictionPolicy
-podDisruptionBudget:
-  enabled: true
-  maxUnavailable: 1
-  unhealthyPodEvictionPolicy: AlwaysAllow
+  exporter:
+    enabled: true
+    resources:
+      requests:
+        cpu: 25m
+        memory: 32Mi
+      limits:
+        cpu: 50m
+        memory: 64Mi
 
 memcachedChunks:
   enabled: false  # Disabled for staging
+  exporter:
+    enabled: false
 
 memcachedResults:
   enabled: true
@@ -206,6 +229,15 @@ memcachedResults:
     limits:
       cpu: 200m
       memory: 512Mi
+  exporter:
+    enabled: true
+    resources:
+      requests:
+        cpu: 25m
+        memory: 32Mi
+      limits:
+        cpu: 50m
+        memory: 64Mi
   pdb:
     create: true
     maxUnavailable: 1
