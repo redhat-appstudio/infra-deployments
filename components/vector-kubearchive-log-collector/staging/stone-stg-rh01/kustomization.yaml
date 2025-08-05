@@ -14,11 +14,8 @@ patches:
     apiVersion: external-secrets.io/v1beta1
     kind: ExternalSecret
     metadata:
-      annotations:
-        argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-        argocd.argoproj.io/sync-wave: "-1"
       name: kubearchive-loki
-      namespace: vector-kubearchive-log-collector
+      namespace: product-kubearchive-logging
     spec:
       dataFrom:
         - extract:
