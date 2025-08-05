@@ -16,3 +16,17 @@ patches:
       metadata:
         name: kubearchive-database-credentials
         namespace: kubearchive
+  # We don't need the development DB on staging
+  - patch: |-
+      $patch: delete
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: postgresql
+  # We don't need the development DB service on staging
+  - patch: |-
+      $patch: delete
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: postgresql
