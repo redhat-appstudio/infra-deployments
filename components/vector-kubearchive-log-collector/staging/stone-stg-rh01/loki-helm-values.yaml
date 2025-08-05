@@ -1,37 +1,13 @@
-# Copyright KubeArchive Authors
-# SPDX-License-Identifier: Apache-2.0
----
+# Simplified Loki configuration for staging
 loki:
-  # Explicit image configuration to fix ErrImagePull - using Docker Hub registry
-  image:
-    repository: grafana/loki
-    tag: "3.3.0"
-    pullPolicy: IfNotPresent
-  
-  limits_config:
-    max_query_length: 0
-  auth_enabled: true
-  basic_auth:
-    enabled: true
-    existingSecret: kubearchive-loki
-  storage:
-    type: s3
-    s3:
-      region: us-east-1
-      type: "aws_s3"
-    bucketNames:
-      chunks: stone-stg-rh01-loki-storage
-      ruler: stone-stg-rh01-loki-storage
-      admin: stone-stg-rh01-loki-storage
-
   schemaConfig:
     configs:
-      - from: 2024-01-01
+      - from: "2024-04-01"
         store: tsdb
         object_store: s3
         schema: v13
         index:
-          prefix: index_
+          prefix: loki_index_
           period: 24h
 
   commonConfig:
@@ -49,15 +25,10 @@ loki:
 
 deploymentMode: SingleBinary
 
-# Gateway configuration to fix DNS resolver
+# Gateway configuration
 gateway:
   enabled: true
   replicas: 1
-  # Explicit gateway image configuration - using Docker Hub registry
-  image:
-    repository: nginx
-    tag: "1.24-alpine"
-    pullPolicy: IfNotPresent
   resources:
     requests:
       cpu: 50m
@@ -65,23 +36,8 @@ gateway:
     limits:
       cpu: 200m
       memory: 256Mi
-  nginxConfig:
-    resolver: dns-default.openshift-dns.svc.cluster.local
 
-# Configure ServiceAccount for Loki
-serviceAccount:
-  create: false  # We create it manually in loki-pre.yaml
-  name: loki-sa
-
-# OpenShift-compatible security context
-securityContext:
-  runAsNonRoot: false  # Allow running as root for loki
-  allowPrivilegeEscalation: false
-  capabilities:
-    drop:
-      - ALL
-  readOnlyRootFilesystem: false
-
+# Pod and container security contexts
 podSecurityContext:
   runAsNonRoot: false  # Allow running as root for loki
   allowPrivilegeEscalation: false
@@ -120,17 +76,12 @@ singleBinary:
     - name: loki-storage
       emptyDir: {}
 
-# Configure sidecar for rules
+# Disable sidecar completely
 sidecar:
   rules:
-    enabled: true
-    resources:
-      requests:
-        cpu: 25m
-        memory: 64Mi
-      limits:
-        cpu: 100m
-        memory: 128Mi
+    enabled: false
+  datasources:
+    enabled: false
 
 # Zero out replica counts of other deployment modes
 backend:
@@ -159,95 +110,32 @@ bloomCompactor:
 bloomGateway:
   replicas: 0
 
-# Disable memory-intensive caching for staging environment  
+# Disable ALL memcached components
 chunksCache:
-  enabled: false  # Completely disable chunks cache
-  replicas: 0  # Scale to 0 replicas to avoid memory issues
+  enabled: false
+  replicas: 0
 
 resultsCache:
-  enabled: true
-  allocatedMemory: 256  # Keep results cache but with minimal memory
-  resources:
-    requests:
-      cpu: 50m
-      memory: 128Mi
-    limits:
-      cpu: 100m
-      memory: 256Mi
-  # Explicit image for results cache - using Docker Hub registry
-  image:
-    repository: memcached
-    tag: "1.6.24-alpine"
-    pullPolicy: IfNotPresent
-  exporter:
-    enabled: true
-    resources:
-      requests:
-        cpu: 25m
-        memory: 32Mi
-      limits:
-        cpu: 50m
-        memory: 64Mi
-  pdb:
-    create: true
-    maxUnavailable: 1
-    unhealthyPodEvictionPolicy: AlwaysAllow
+  enabled: false
+  replicas: 0
 
-# Configure memcached for results cache
 memcached:
-  enabled: true
-  replicaCount: 1
-  resources:
-    requests:
-      cpu: 100m
-      memory: 256Mi
-    limits:
-      cpu: 200m
-      memory: 512Mi
-  exporter:
-    enabled: true
-    resources:
-      requests:
-        cpu: 25m
-        memory: 32Mi
-      limits:
-        cpu: 50m
-        memory: 64Mi
-
-memcachedChunks:
-  enabled: false  # Disabled for staging
-  exporter:
-    enabled: false
+  enabled: false
 
 memcachedResults:
-  enabled: true
-  replicaCount: 1
-  resources:
-    requests:
-      cpu: 100m
-      memory: 256Mi
-    limits:
-      cpu: 200m
-      memory: 512Mi
-  exporter:
-    enabled: true
-    resources:
-      requests:
-        cpu: 25m
-        memory: 32Mi
-      limits:
-        cpu: 50m
-        memory: 64Mi
-  pdb:
-    create: true
-    maxUnavailable: 1
-    unhealthyPodEvictionPolicy: AlwaysAllow
+  enabled: false
+
+memcachedChunks:
+  enabled: false
 
 memcachedFrontend:
-  enabled: false  # Not needed for staging
+  enabled: false
 
 memcachedIndexQueries:
-  enabled: false  # Not needed for staging
+  enabled: false
+
+memcachedIndexWrites:
+  enabled: false
 
 # Disable test pods for cleaner development environment  
 test:
