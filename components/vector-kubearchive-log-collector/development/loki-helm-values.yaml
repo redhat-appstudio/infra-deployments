@@ -43,6 +43,16 @@ loki:
 
 deploymentMode: SingleBinary
 
+global:
+  dnsNamespace: openshift-dns
+  clusterDomain: cluster.local
+  dnsService: dns-default
+
+# Service Account configuration to match SCC
+serviceAccount:
+  create: false
+  name: vector-kubearchive-log-collector-loki
+
 # Gateway configuration
 gateway:
   enabled: true
@@ -61,7 +71,7 @@ gateway:
       memory: 256Mi
   # Add nginx configuration for OpenShift
   nginxConfig:
-    # Use the cluster DNS resolver
+    # Use the OpenShift DNS resolver
     resolver: dns-default.openshift-dns.svc.cluster.local valid=10s
     # Add proper upstream configuration
     httpSnippets:

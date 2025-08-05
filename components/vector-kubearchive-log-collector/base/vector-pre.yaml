@@ -30,15 +30,7 @@ groups: []
 priority: 10
 readOnlyRootFilesystem: false
 requiredDropCapabilities:
-- CHOWN
-- DAC_OVERRIDE
-- FSETID
-- FOWNER
-- SETGID
-- SETUID
-- SETPCAP
-- NET_BIND_SERVICE
-- KILL
+- ALL
 runAsUser:
   type: RunAsAny
 seLinuxContext:
@@ -86,7 +78,7 @@ metadata:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: vector-scc-user
+  name: kubearchive-vector-scc-user
 subjects:
 - kind: ServiceAccount
   name: vector-kubearchive-log-collector
