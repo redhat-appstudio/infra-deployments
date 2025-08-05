@@ -10,12 +10,35 @@ loki:
           prefix: loki_index_
           period: 24h
 
+  # Storage configuration required by the helm chart
+  storage:
+    type: s3
+    bucketNames:
+      chunks: stone-stg-rh01-loki-storage
+      ruler: stone-stg-rh01-loki-storage
+      admin: stone-stg-rh01-loki-storage
+    s3:
+      endpoint: https://s3.us-east-1.amazonaws.com
+      region: us-east-1
+      bucketNames:
+        chunks: stone-stg-rh01-loki-storage
+        ruler: stone-stg-rh01-loki-storage
+        admin: stone-stg-rh01-loki-storage
+
+  storage_config:
+    aws:
+      region: us-east-1
+      bucketnames: stone-stg-rh01-loki-storage
+
   commonConfig:
     replication_factor: 1
+    path_prefix: /var/loki
 
   compactor:
     retention_enabled: true
     delete_request_store: s3
+    working_directory: /var/loki/compactor
+  
   ruler:
     storage:
       type: s3

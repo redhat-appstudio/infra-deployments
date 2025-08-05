@@ -11,12 +11,30 @@ loki:
           prefix: loki_index_
           period: 24h
 
+  # Storage configuration required by the helm chart
+  storage:
+    type: filesystem
+    bucketNames:
+      chunks: chunks
+      ruler: ruler
+      admin: admin
+    filesystem:
+      chunks_directory: /var/loki/chunks
+      rules_directory: /var/loki/rules
+
+  storage_config:
+    filesystem:
+      directory: /var/loki/chunks
+
   commonConfig:
     replication_factor: 1
+    path_prefix: /var/loki
 
   compactor:
     retention_enabled: true
     delete_request_store: filesystem
+    working_directory: /var/loki/compactor
+  
   ruler:
     storage:
       type: local
