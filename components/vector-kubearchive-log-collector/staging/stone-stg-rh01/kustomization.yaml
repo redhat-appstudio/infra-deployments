@@ -14,8 +14,23 @@ patches:
     apiVersion: external-secrets.io/v1beta1
     kind: ExternalSecret
     metadata:
+      annotations:
+        argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+        argocd.argoproj.io/sync-wave: "-1"
       name: kubearchive-loki
+      namespace: vector-kubearchive-log-collector
     spec:
       dataFrom:
         - extract:
-            key: integrations-output/external-resources/appsrep09ue1/konflux-internal-prod/stone-prod-p02-kube-archive-rds
+            key: staging/kubearchive/loki
+      refreshInterval: 5m
+      secretStoreRef:
+        kind: ClusterSecretStore
+        name: appsre-stonesoup-vault
+      target:
+        creationPolicy: Orphan
+        name: kubearchive-loki
+        template:
+          metadata:
+            annotations:
+              argocd.argoproj.io/sync-options: Prune=false
