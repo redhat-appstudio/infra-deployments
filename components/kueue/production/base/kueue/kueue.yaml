@@ -1,0 +1,21 @@
+---
+apiVersion: kueue.openshift.io/v1
+kind: Kueue
+metadata:
+  labels:
+    app.kubernetes.io/name: kueue-operator
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  name: cluster
+  namespace: openshift-kueue-operator
+spec:
+  managementState: Managed
+  config:
+    integrations:
+      frameworks: # The operator requires at lest one framework to be enabled
+       - BatchJob
+      externalFrameworks:
+       -  group: tekton.dev
+          version: v1
+          resource: pipelineruns
