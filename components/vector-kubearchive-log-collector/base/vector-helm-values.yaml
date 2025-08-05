@@ -207,24 +207,4 @@ extraVolumeMounts:
 persistence:
   enabled: false
 
-# InitContainer to ensure vector data directory exists with proper permissions
-initContainers:
-  - name: init-vector-data-dir
-    image: busybox:1.35
-    command: ['sh', '-c', 'mkdir -p /vector-data-dir']
-    resources:
-      requests:
-        cpu: 10m
-        memory: 32Mi
-      limits:
-        cpu: 50m
-        memory: 64Mi
-    securityContext:
-      runAsUser: 0
-      allowPrivilegeEscalation: false
-      readOnlyRootFilesystem: true
-    volumeMounts:
-      - name: data
-        mountPath: /vector-data-dir
-
 
