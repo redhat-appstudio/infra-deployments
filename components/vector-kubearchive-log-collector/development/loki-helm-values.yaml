@@ -1,119 +1,21 @@
 ---
-# Simplified Loki configuration for development
-loki:
-  schemaConfig:
-    configs:
-      - from: "2024-04-01"
-        store: tsdb
-        object_store: filesystem
-        schema: v13
-        index:
-          prefix: loki_index_
-          period: 24h
-
-  # Storage configuration required by the helm chart
-  storage:
-    type: filesystem
-    bucketNames:
-      chunks: chunks
-      ruler: ruler
-      admin: admin
-    filesystem:
-      chunks_directory: /var/loki/chunks
-      rules_directory: /var/loki/rules
-
-  storage_config:
-    filesystem:
-      directory: /var/loki/chunks
-
-  commonConfig:
-    replication_factor: 1
-    path_prefix: /var/loki
-
-  compactor:
-    retention_enabled: true
-    delete_request_store: filesystem
-    working_directory: /var/loki/compactor
-  
-  ruler:
-    storage:
-      type: local
-      local:
-        directory: /var/loki/ruler
-
+# Ultra-simplified Loki configuration for development
 deploymentMode: SingleBinary
 
-global:
-  dnsNamespace: openshift-dns
-  clusterDomain: cluster.local
-  dnsService: dns-default
+# Disable gateway - not needed for SingleBinary
+gateway:
+  enabled: false
 
-# Service Account configuration to match SCC
+# Service Account configuration to match SCC  
 serviceAccount:
   create: false
   name: vector-kubearchive-log-collector-loki
 
-# Gateway configuration
-gateway:
-  enabled: true
-  replicas: 1
-  # Explicit nginx image configuration for OpenShift compatibility
-  image:
-    repository: nginx
-    tag: "1.25-alpine"
-    pullPolicy: IfNotPresent
-  resources:
-    requests:
-      cpu: 50m
-      memory: 128Mi
-    limits:
-      cpu: 200m
-      memory: 256Mi
-  # Add nginx configuration for OpenShift
-  nginxConfig:
-    # Use the OpenShift DNS resolver
-    resolver: dns-default.openshift-dns.svc.cluster.local valid=10s
-    # Add proper upstream configuration
-    httpSnippets:
-      - "resolver_timeout 5s;"
-    serverSnippets:
-      - "proxy_connect_timeout 300s;"
-      - "proxy_send_timeout 300s;"
-      - "proxy_read_timeout 300s;"
-    locationSnippets:
-      - "proxy_buffering off;"
-      - "proxy_request_buffering off;"
-  # OpenShift compatible security context
-  podSecurityContext:
-    runAsNonRoot: false
-    runAsUser: 0
-    runAsGroup: 0
-    fsGroup: 0
-  containerSecurityContext:
-    runAsNonRoot: false
-    runAsUser: 0
-    allowPrivilegeEscalation: false
-    capabilities:
-      drop:
-        - ALL
-
-# Pod and container security contexts
-podSecurityContext:
-  runAsNonRoot: false  # Allow running as root for loki
-  allowPrivilegeEscalation: false
-
-containerSecurityContext:
-  runAsNonRoot: false  # Allow running as root for loki
-  allowPrivilegeEscalation: false
-  capabilities:
-    drop:
-      - ALL
-  readOnlyRootFilesystem: false
-
-# Disable canary to avoid SCC issues for now
+# Disable canary
 lokiCanary:
   enabled: false
 
+# Single binary configuration - the only thing that matters
 singleBinary:
   replicas: 1
   resources:
@@ -124,33 +26,60 @@ singleBinary:
       cpu: 500m
       memory: 512Mi
   persistence:
-    enabled: false  # No persistent storage for development
+    enabled: false  # Use ephemeral storage for dev
   podDisruptionBudget:
     enabled: true
     maxUnavailable: 1
     unhealthyPodEvictionPolicy: AlwaysAllow
-  extraVolumeMounts:
-    - name: loki-storage
-      mountPath: /var/loki
-  extraVolumes:
-    - name: loki-storage
-      emptyDir: {}  # Use ephemeral storage
 
-# Disable sidecar completely
-sidecar:
-  rules:
-    enabled: false
-  datasources:
-    enabled: false
+# Basic Loki configuration
+loki:
+  commonConfig:
+    replication_factor: 1
+  schemaConfig:
+    configs:
+      - from: "2024-04-01"
+        store: tsdb
+        object_store: filesystem
+        schema: v13
+        index:
+          prefix: loki_index_
+          period: 24h
+  # Required storage configuration for Helm chart
+  storage:
+    type: filesystem
+    bucketNames:
+      chunks: chunks
+      ruler: ruler
+      admin: admin
+  storage_config:
+    filesystem:
+      directory: /var/loki/chunks
 
-# Zero out replica counts of other deployment modes
+# Security contexts for OpenShift
+podSecurityContext:
+  runAsNonRoot: false
+  allowPrivilegeEscalation: false
+
+containerSecurityContext:
+  runAsNonRoot: false
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: false
+
+# Disable test pods
+test:
+  enabled: false
+
+# Explicitly disable all other deployment modes
 backend:
   replicas: 0
 read:
   replicas: 0
 write:
   replicas: 0
-
 ingester:
   replicas: 0
 querier:
@@ -165,38 +94,5 @@ compactor:
   replicas: 0
 indexGateway:
   replicas: 0
-bloomCompactor:
+ruler:
   replicas: 0
-bloomGateway:
-  replicas: 0
-
-# Disable ALL memcached components
-chunksCache:
-  enabled: false
-  replicas: 0
-
-resultsCache:
-  enabled: false
-  replicas: 0
-
-memcached:
-  enabled: false
-
-memcachedResults:
-  enabled: false
-
-memcachedChunks:
-  enabled: false
-
-memcachedFrontend:
-  enabled: false
-
-memcachedIndexQueries:
-  enabled: false
-
-memcachedIndexWrites:
-  enabled: false
-
-# Disable test pods for cleaner development environment  
-test:
-  enabled: false
