@@ -3,6 +3,12 @@ kind: Kustomization
 resources:
 - ../base
 namespace: mintmaker
+
+images:
+  - name: quay.io/konflux-ci/mintmaker
+    newName: quay.io/konflux-ci/mintmaker
+    newTag: a3816e76f5e06ba3114731fc34fa14f76d442b6c
+
 patches:
   - path: pipelines-as-code-secret-path.yaml
     target:
