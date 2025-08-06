@@ -53,6 +53,10 @@ main() {
         ["components/multi-platform-controller/production-downstream/kflux-osp-p01/host-config.yaml"]="components/kueue/production/kflux-osp-p01/queue-config/cluster-queue.yaml"
 
         ["components/multi-platform-controller/production-downstream/stone-prod-p01/host-config.yaml"]="components/kueue/production/stone-prod-p01/queue-config/cluster-queue.yaml"
+
+        ["components/multi-platform-controller/production-downstream/stone-prod-p02/host-config.yaml"]="components/kueue/production/stone-prod-p02/queue-config/cluster-queue.yaml"
+
+        ["components/multi-platform-controller/production/stone-prd-rh01/host-config.yaml"]="components/kueue/production/stone-prd-rh01/queue-config/cluster-queue.yaml"
     )
     
     # Generate queue configurations
