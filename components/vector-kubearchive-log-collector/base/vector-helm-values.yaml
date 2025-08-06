@@ -115,6 +115,7 @@ customConfig:
     loki:
       type: loki
       inputs: ["remap_app_logs"]
+      # Direct connection to Loki service (no gateway)
       endpoint: "http://vector-kubearchive-log-collector-loki.product-kubearchive-logging.svc.cluster.local:3100"
       encoding:
         codec: "json"

@@ -9,9 +9,9 @@ metadata:
 apiVersion: security.openshift.io/v1
 kind: SecurityContextConstraints
 metadata:
-  name: logging-scc
+  name: kubearchive-logging-scc
   annotations:
-    argocd.argoproj.io/sync-wave: "-1"  # Before workloads
+    argocd.argoproj.io/sync-wave: "-1"
 allowHostDirVolumePlugin: true
 allowHostIPC: false
 allowHostNetwork: false
@@ -56,7 +56,7 @@ volumes:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: vector-scc-user
+  name: kubearchive-vector-scc-user
   annotations:
     argocd.argoproj.io/sync-wave: "-1"  # Before workloads
 rules:
@@ -67,7 +67,7 @@ rules:
   verbs:
   - use
   resourceNames:
-  - logging-scc
+  - kubearchive-logging-scc
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding

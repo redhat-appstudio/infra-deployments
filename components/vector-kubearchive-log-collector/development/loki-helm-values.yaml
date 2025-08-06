@@ -15,7 +15,7 @@ serviceAccount:
 lokiCanary:
   enabled: false
 
-# Single binary configuration - the only thing that matters
+# Single binary configuration with proper volume mounts
 singleBinary:
   replicas: 1
   resources:
@@ -31,11 +31,23 @@ singleBinary:
     enabled: true
     maxUnavailable: 1
     unhealthyPodEvictionPolicy: AlwaysAllow
+  # Add writable volume mounts for Loki data directories
+  extraVolumeMounts:
+    - name: loki-storage
+      mountPath: /var/loki
+    - name: tmp-storage
+      mountPath: /tmp
+  extraVolumes:
+    - name: loki-storage
+      emptyDir: {}
+    - name: tmp-storage
+      emptyDir: {}
 
 # Basic Loki configuration
 loki:
   commonConfig:
     replication_factor: 1
+    path_prefix: /var/loki  # This directory will be writable via volume mount
   schemaConfig:
     configs:
       - from: "2024-04-01"
@@ -52,9 +64,21 @@ loki:
       chunks: chunks
       ruler: ruler
       admin: admin
+    filesystem:
+      chunks_directory: /var/loki/chunks
+      rules_directory: /var/loki/rules
   storage_config:
     filesystem:
       directory: /var/loki/chunks
+  # Configure ruler storage to use the writable volume
+  ruler:
+    storage:
+      type: local
+      local:
+        directory: /var/loki/ruler
+  # Configure compactor to use writable volume
+  compactor:
+    working_directory: /var/loki/compactor
 
 # Security contexts for OpenShift
 podSecurityContext:
@@ -67,7 +91,7 @@ containerSecurityContext:
   capabilities:
     drop:
       - ALL
-  readOnlyRootFilesystem: false
+  readOnlyRootFilesystem: true  # Keep read-only root filesystem for security
 
 # Disable test pods
 test:

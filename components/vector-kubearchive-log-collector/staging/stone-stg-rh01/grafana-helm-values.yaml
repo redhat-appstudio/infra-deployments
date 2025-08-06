@@ -53,6 +53,7 @@ datasources:
       - name: Loki
         type: loki
         access: proxy
+        # Direct connection to Loki service (no gateway)
         url: http://vector-kubearchive-log-collector-loki.product-kubearchive-logging.svc.cluster.local:3100
         basicAuth: true
         basicAuthUser: $LOKI_USER
