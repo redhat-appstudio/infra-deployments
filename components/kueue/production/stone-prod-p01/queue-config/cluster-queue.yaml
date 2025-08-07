@@ -1,9 +1,4 @@
 apiVersion: kueue.x-k8s.io/v1beta1
-kind: ResourceFlavor
-metadata:
-  name: default-flavor
----
-apiVersion: kueue.x-k8s.io/v1beta1
 kind: ClusterQueue
 metadata:
   name: cluster-pipeline-queue
@@ -18,7 +13,6 @@ spec:
     reclaimWithinCohort: Never
     withinClusterQueue: Never
   queueingStrategy: BestEffortFIFO
-  stopPolicy: None
   resourceGroups:
   - coveredResources:
     - tekton.dev/pipelineruns
@@ -144,6 +138,12 @@ spec:
       resources:
       - name: localhost
         nominalQuota: '1000'
+  stopPolicy: None
+---
+apiVersion: kueue.x-k8s.io/v1beta1
+kind: ResourceFlavor
+metadata:
+  name: default-flavor
 ---
 apiVersion: kueue.x-k8s.io/v1beta1
 kind: ResourceFlavor
