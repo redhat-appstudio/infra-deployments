@@ -2266,6 +2266,13 @@ spec:
         value: "false"
       - name: IMAGE_ADDONS_TKN_CLI_SERVE
         value: registry.redhat.io/openshift-pipelines/pipelines-serve-tkn-cli-rhel9@sha256:d055d2b35a663aef3e1aafdbed0b12957867c0670c946ebae66e9c44a768bda2
+      # TODO: These override the nightly build to use PaC v0.36.0. Remove these at a later date
+      - name: IMAGE_PAC_PAC_CONTROLLER
+        value: quay.io/openshift-pipeline/pipelines-pipelines-as-code-controller-rhel9@sha256:574a2eb9014ee937307c7cfcb31490a80c8f259c13271dd759e9b74a8d54c5d2
+      - name: IMAGE_PAC_PAC_WEBHOOK
+        value: quay.io/openshift-pipeline/pipelines-pipelines-as-code-webhook-rhel9@sha256:ca6285148d6a6ece681b5583cf4724da98228f97d73cc27e90464425b41ff986
+      - name: IMAGE_PAC_PAC_WATCHER
+        value: quay.io/openshift-pipeline/pipelines-pipelines-as-code-watcher-rhel9@sha256:5bdbc16185dc0def4f9bb1d1b67f5bd83363f8c4285d91597641099322d2a030
 ---
 apiVersion: route.openshift.io/v1
 kind: Route
