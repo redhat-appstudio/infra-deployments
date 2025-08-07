@@ -77,10 +77,9 @@ def extract_static_platform(key: str, value: str, data: Dict[str, Any]) -> Platf
 
 
 def extract_local_platforms(value: str, quota: int = 1000) -> List[PlatformQuota]:
-    """Extract platform quotas from local-platforms config entry."""
     platforms = []
     # Split by comma and clean up whitespace and empty strings
-    platform_names = [name.strip() for name in value.split(',') if name.strip()]
+    platform_names = [name.strip() for name in values.split(',') if name.strip()]
     
     for platform_name in platform_names:
         # Convert platform names like "linux/amd64" to "linux-amd64"
