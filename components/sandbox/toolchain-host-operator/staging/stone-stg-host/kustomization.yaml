@@ -1,17 +1,5 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+namespace: toolchain-host-operator
 resources:
-- ../../base
-- toolchainconfig.yaml
-- space-provisioner-configs.yaml
-- sandbox-sre-host.yaml
-- ../../../user-management/staging/generated-manifests/host
-- ../../../tiers/staging
-patches:
-- patch: |
-    $patch: delete
-    apiVersion: operators.coreos.com/v1alpha1
-    kind: Subscription
-    metadata:
-      name: dev-sandbox-host
-      namespace: toolchain-host-operator
+- ns.yaml
