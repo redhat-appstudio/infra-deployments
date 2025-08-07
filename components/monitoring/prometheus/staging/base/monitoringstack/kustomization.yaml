@@ -1,9 +1,13 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - ../../../stg-dev-common/monitoringstack
+  - ../../../base/monitoringstack
 patches:
   - path: cluster-type-patch.yaml
+    target:
+      name: appstudio-federate-smon
+      kind: ServiceMonitor
+  - path: endpoints-params-match.yaml
     target:
       name: appstudio-federate-smon
       kind: ServiceMonitor
@@ -12,6 +16,10 @@ patches:
       name: appstudio-federate-uwm-smon
       kind: ServiceMonitor
   - path: remote-write-env-details.yaml
+    target:
+      name: appstudio-federate-ms
+      kind: MonitoringStack
+  - path: writeRelabelConfigs-regex.yaml
     target:
       name: appstudio-federate-ms
       kind: MonitoringStack
