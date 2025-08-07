@@ -110,7 +110,8 @@ def parse_host_config(host_config_path: str) -> Dict[str, PlatformQuota]:
     platform_quotas: Dict[str, PlatformQuota] = {}
     data = config.get('data', {})
     
-    for key, value in data.items():
+    # Sort keys for deterministic processing order
+    for key, value in sorted(data.items()):
         platform = None
         
         # Process dynamic platforms
@@ -282,9 +283,15 @@ def process_cluster_queue_update(cluster_queue_path: str, platform_quotas: Dict[
     validate_constraints(new_resource_groups)
     cluster_queue_doc['spec']['resourceGroups'] = new_resource_groups
     
-    # Write back
+    # Sort documents for consistent ordering
+    documents.sort(key=lambda doc: (
+        doc.get('kind', ''),
+        doc.get('metadata', {}).get('name', '') if doc.get('metadata') else ''
+    ))
+    
+    # Write back with sorted keys for deterministic output
     with open(cluster_queue_path, 'w') as f:
-        yaml.dump_all(documents, f, default_flow_style=False, sort_keys=False)
+        yaml.dump_all(documents, f, default_flow_style=False, sort_keys=True)
     
     print(f"\nUpdated {cluster_queue_path}")
     print_summary(new_resource_groups, len(platform_quotas))
