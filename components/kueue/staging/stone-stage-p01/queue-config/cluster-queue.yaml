@@ -1,9 +1,4 @@
 apiVersion: kueue.x-k8s.io/v1beta1
-kind: ResourceFlavor
-metadata:
-  name: default-flavor
----
-apiVersion: kueue.x-k8s.io/v1beta1
 kind: AdmissionCheck
 metadata:
   name: static-admission
@@ -27,7 +22,6 @@ spec:
     reclaimWithinCohort: Never
     withinClusterQueue: Never
   queueingStrategy: BestEffortFIFO
-  stopPolicy: None
   resourceGroups:
   - coveredResources:
     - tekton.dev/pipelineruns
@@ -137,6 +131,12 @@ spec:
         nominalQuota: '1000'
       - name: localhost
         nominalQuota: '1000'
+  stopPolicy: None
+---
+apiVersion: kueue.x-k8s.io/v1beta1
+kind: ResourceFlavor
+metadata:
+  name: default-flavor
 ---
 apiVersion: kueue.x-k8s.io/v1beta1
 kind: ResourceFlavor
