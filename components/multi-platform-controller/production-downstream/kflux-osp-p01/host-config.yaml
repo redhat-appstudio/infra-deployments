@@ -491,7 +491,19 @@ data:
     restorecon -r /home/ec2-user
 
     --//--
+  # S390X 8vCPU / 32GiB RAM / 1TB disk
+  host.s390x-static-1.address: "10.130.78.4"
+  host.s390x-static-1.platform: "linux/s390x"
+  host.s390x-static-1.user: "root"
+  host.s390x-static-1.secret: "ibm-s390x-ssh-key"
+  host.s390x-static-1.concurrency: "4"
 
+  host.s390x-static-2.address: "10.130.78.20"
+  host.s390x-static-2.platform: "linux/s390x"
+  host.s390x-static-2.user: "root"
+  host.s390x-static-2.secret: "ibm-s390x-ssh-key"
+  host.s390x-static-2.concurrency: "4"
+  
   # PPC64LE 4cores(32vCPU) / 128GiB RAM / 2TB disk
   host.pi-static-x0.address: "10.130.81.249"
   host.pi-static-x0.platform: "linux/ppc64le"

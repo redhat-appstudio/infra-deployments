@@ -788,6 +788,9 @@ data:
 
     mkdir -p /etc/cdi
     chmod a+rwx /etc/cdi
+
+    setsebool container_use_devices 1
+    
     su - ec2-user
     nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml
     --//--
