@@ -5,6 +5,7 @@ receivers:
       http:
         endpoint: 0.0.0.0:4318
   zipkin:
+    endpoint: 0.0.0.0:9411
 
 processors:
   batch:
@@ -25,6 +26,6 @@ service:
       processors: [batch]
       exporters: [prometheus]
     traces:
-      receivers: [otlp]
+      receivers: [otlp, zipkin]
       processors: [batch]
-      exporters: [debug,otlp]
+      exporters: [debug, otlp]
