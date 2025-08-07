@@ -42,9 +42,7 @@ spec:
           audience: # added by overlays
         tokenUrl: https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token
       url: # added by overlays
-      writeRelabelConfigs:
-      - action: LabelKeep
-        regex: ""
+      # writeRelabelConfigs:  # added by overlays
 ---
 # Grant permission to Federate In-Cluster Prometheus
 apiVersion: rbac.authorization.k8s.io/v1
@@ -80,8 +78,7 @@ spec:
       app.kubernetes.io/managed-by: observability-operator
       app.kubernetes.io/name: appstudio-federate-ms-prometheus
   endpoints:
-  - params:
-      'match[]': []  # scrape only required metrics from in-cluster prometheus
+  - params: {}  # added by overlays
     relabelings:
     # override the target's address by the prometheus-k8s service name.
     - action: replace
