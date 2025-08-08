@@ -4,6 +4,7 @@ main() {
     echo "Setting secrets for pipeline-service"
     create_namespace tekton-results
     create_namespace tekton-logging
+    create_namespace product-kubearchive-logging
     create_db_secret
     create_s3_secret tekton-results tekton-results-s3
     create_s3_secret tekton-logging tekton-results-s3
