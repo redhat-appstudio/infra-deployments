@@ -1,0 +1,159 @@
+---
+# Ultra-simplified Loki configuration for staging
+deploymentMode: SingleBinary
+
+# Disable gateway - not needed for SingleBinary
+gateway:
+  enabled: false
+
+# Service Account configuration to match SCC  
+serviceAccount:
+  create: false
+  name: vector-kubearchive-log-collector-loki
+
+# Disable canary
+lokiCanary:
+  enabled: false
+
+# Single binary configuration with proper volume mounts
+singleBinary:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+  persistence:
+    enabled: false
+  podDisruptionBudget:
+    enabled: true
+    maxUnavailable: 1
+    unhealthyPodEvictionPolicy: AlwaysAllow
+  # Add writable volume mounts for Loki data directories
+  extraVolumeMounts:
+    - name: loki-storage
+      mountPath: /var/loki
+    - name: tmp-storage
+      mountPath: /tmp
+  extraVolumes:
+    - name: loki-storage
+      emptyDir: {}
+    - name: tmp-storage
+      emptyDir: {}
+
+# Basic Loki configuration with S3 storage
+loki:
+  commonConfig:
+    replication_factor: 1
+    path_prefix: /var/loki  # This directory will be writable via volume mount
+  schemaConfig:
+    configs:
+      - from: "2024-04-01"
+        store: tsdb
+        object_store: s3
+        schema: v13
+        index:
+          prefix: loki_index_
+          period: 24h
+  # Required storage configuration for Helm chart
+  storage:
+    type: s3
+    bucketNames:
+      chunks: stone-stg-rh01-loki-storage
+      ruler: stone-stg-rh01-loki-storage
+      admin: stone-stg-rh01-loki-storage
+    s3:
+      endpoint: https://s3.us-east-1.amazonaws.com
+      region: us-east-1
+  # Required storage_config for Helm chart
+  storage_config:
+    aws:
+      region: us-east-1
+      bucketnames: stone-stg-rh01-loki-storage
+  # Configure ruler storage to use S3
+  ruler:
+    storage:
+      type: s3
+      s3:
+        bucketNames:
+          ruler: stone-stg-rh01-loki-storage
+  # Configure compactor to use writable volume for working directory
+  compactor:
+    working_directory: /var/loki/compactor
+
+# Security contexts for OpenShift
+podSecurityContext:
+  runAsNonRoot: false
+  allowPrivilegeEscalation: false
+
+containerSecurityContext:
+  runAsNonRoot: false
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true  # Keep read-only root filesystem for security
+
+# Disable test pods
+test:
+  enabled: false
+
+# Disable sidecar completely to avoid loki-sc-rules container
+sidecar:
+  rules:
+    enabled: false
+  datasources:
+    enabled: false
+
+# Disable ALL memcached components to avoid exporter containers and PDB issues
+chunksCache:
+  enabled: false
+  replicas: 0
+
+resultsCache:
+  enabled: false
+  replicas: 0
+
+memcached:
+  enabled: false
+
+memcachedResults:
+  enabled: false
+
+memcachedChunks:
+  enabled: false
+
+memcachedFrontend:
+  enabled: false
+
+memcachedIndexQueries:
+  enabled: false
+
+memcachedIndexWrites:
+  enabled: false
+
+# Explicitly disable all other deployment modes
+backend:
+  replicas: 0
+read:
+  replicas: 0
+write:
+  replicas: 0
+ingester:
+  replicas: 0
+querier:
+  replicas: 0
+queryFrontend:
+  replicas: 0
+queryScheduler:
+  replicas: 0
+distributor:
+  replicas: 0
+compactor:
+  replicas: 0
+indexGateway:
+  replicas: 0
+ruler:
+  replicas: 0
