@@ -16,7 +16,9 @@ exporters:
     send_timestamps: true
     add_metric_suffixes: false
   otlp:  # otlp collector that sends traces to signalfx
-    endpoint: http://open-telemetry-opentelemetry-collector.konflux-otel.svc.cluster.local:4318/v1/traces
+    endpoint: open-telemetry-opentelemetry-collector.konflux-otel.svc.cluster.local:4318
+    tls:
+      insecure: true
   debug:
 
 service:
