@@ -20,7 +20,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 28,
+  "id": 14,
   "links": [],
   "panels": [
     {
@@ -145,7 +145,7 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 10,
+        "h": 7,
         "w": 12,
         "x": 12,
         "y": 1
@@ -217,10 +217,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 16,
+        "h": 10,
         "w": 12,
         "x": 12,
-        "y": 11
+        "y": 8
       },
       "id": 16,
       "options": {
@@ -245,9 +245,7 @@
         },
         "showUnfilled": true,
         "sizing": "auto",
-        "text": {
-          "titleSize": 18
-        },
+        "text": {},
         "valueMode": "color"
       },
       "pluginVersion": "11.3.0",
@@ -334,6 +332,154 @@
       "type": "stat"
     },
     {
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 1,
+          "fieldMinMax": false,
+          "mappings": [],
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "#EAB839",
+                "value": 60
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 18
+      },
+      "id": 17,
+      "options": {
+        "displayMode": "lcd",
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "maxVizHeight": 300,
+        "minVizHeight": 16,
+        "minVizWidth": 8,
+        "namePlacement": "top",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "sizing": "auto",
+        "text": {},
+        "valueMode": "color"
+      },
+      "pluginVersion": "11.3.0",
+      "targets": [
+        {
+          "editorMode": "code",
+          "expr": "(\n    pod:container_cpu_usage:sum{namespace=~\"tekton-kueue|kueue-external-admission|openshift-kueue-operator\"}\n    * on(pod)\n    kube_pod_container_status_ready{namespace=~\"tekton-kueue|kueue-external-admission|openshift-kueue-operator\"}\n) / on (pod) group_right max by (pod) (kube_pod_resource_limit{resource='cpu',namespace=~\"tekton-kueue|kueue-external-admission|openshift-kueue-operator\"}) * 100",
+          "legendFormat": "{{pod}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Pods CPU Utilization",
+      "type": "bargauge"
+    },
+    {
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              },
+              {
+                "color": "#EAB839",
+                "value": 95
+              },
+              {
+                "color": "green",
+                "value": 100
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 11,
+        "x": 0,
+        "y": 19
+      },
+      "id": 28,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.3.0",
+      "targets": [
+        {
+          "editorMode": "code",
+          "expr": "100 * sum(increase(apiserver_admission_webhook_request_total{name=\"pipelinerun-kueue-defaulter.tekton-kueue.io\", code=~\"2..\"}[10m]))\n/\nsum(increase(apiserver_admission_webhook_request_total{name=\"pipelinerun-kueue-defaulter.tekton-kueue.io\"}[10m]))",
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Kueue Mutating Webhook Request Success Rate",
+      "type": "stat"
+    },
+    {
       "description": "Monitor the overall health and usage of CEL expressions in tekton-kueue webhook",
       "fieldConfig": {
         "defaults": {
@@ -365,7 +511,7 @@
         "h": 4,
         "w": 11,
         "x": 0,
-        "y": 19
+        "y": 23
       },
       "id": 22,
       "options": {
@@ -428,10 +574,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 26,
-        "w": 11,
-        "x": 0,
-        "y": 23
+        "h": 27,
+        "w": 12,
+        "x": 12,
+        "y": 28
       },
       "id": 18,
       "options": {
@@ -466,91 +612,12 @@
       "type": "stat"
     },
     {
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "decimals": 1,
-          "fieldMinMax": false,
-          "mappings": [],
-          "max": 100,
-          "min": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "#EAB839",
-                "value": 60
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "percent"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 15,
-        "w": 12,
-        "x": 12,
-        "y": 27
-      },
-      "id": 17,
-      "options": {
-        "displayMode": "lcd",
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": false
-        },
-        "maxVizHeight": 300,
-        "minVizHeight": 16,
-        "minVizWidth": 8,
-        "namePlacement": "top",
-        "orientation": "horizontal",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showUnfilled": true,
-        "sizing": "auto",
-        "text": {
-          "titleSize": 18
-        },
-        "valueMode": "color"
-      },
-      "pluginVersion": "11.3.0",
-      "targets": [
-        {
-          "editorMode": "code",
-          "expr": "(\n    pod:container_cpu_usage:sum{namespace=~\"tekton-kueue|kueue-external-admission|openshift-kueue-operator\"}\n    * on(pod)\n    kube_pod_container_status_ready{namespace=~\"tekton-kueue|kueue-external-admission|openshift-kueue-operator\"}\n) / on (pod) group_right max by (pod) (kube_pod_resource_limit{resource='cpu',namespace=~\"tekton-kueue|kueue-external-admission|openshift-kueue-operator\"}) * 100",
-          "legendFormat": "{{pod}}",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "Pods CPU Utilization",
-      "type": "bargauge"
-    },
-    {
       "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 49
+        "y": 55
       },
       "id": 6,
       "panels": [],
@@ -605,7 +672,7 @@
         "h": 6,
         "w": 3,
         "x": 0,
-        "y": 50
+        "y": 56
       },
       "id": 11,
       "options": {
@@ -666,7 +733,7 @@
         "h": 6,
         "w": 8,
         "x": 3,
-        "y": 50
+        "y": 56
       },
       "id": 9,
       "options": {
@@ -723,7 +790,7 @@
         "h": 6,
         "w": 12,
         "x": 12,
-        "y": 50
+        "y": 56
       },
       "id": 10,
       "options": {
@@ -781,7 +848,7 @@
         "h": 6,
         "w": 11,
         "x": 0,
-        "y": 56
+        "y": 62
       },
       "id": 23,
       "options": {
@@ -851,7 +918,7 @@
         "h": 6,
         "w": 12,
         "x": 12,
-        "y": 56
+        "y": 62
       },
       "id": 24,
       "options": {
@@ -912,10 +979,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 43,
+        "h": 56,
         "w": 11,
         "x": 0,
-        "y": 62
+        "y": 68
       },
       "id": 7,
       "options": {
@@ -986,10 +1053,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 35,
+        "h": 56,
         "w": 12,
         "x": 12,
-        "y": 62
+        "y": 68
       },
       "id": 8,
       "options": {
@@ -1043,7 +1110,7 @@
         "h": 15,
         "w": 14,
         "x": 0,
-        "y": 105
+        "y": 124
       },
       "id": 12,
       "options": {
@@ -1117,7 +1184,7 @@
         "h": 13,
         "w": 14,
         "x": 0,
-        "y": 120
+        "y": 139
       },
       "id": 14,
       "options": {
@@ -1190,7 +1257,7 @@
         "h": 13,
         "w": 14,
         "x": 0,
-        "y": 133
+        "y": 152
       },
       "id": 13,
       "options": {
@@ -1248,7 +1315,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 146
+        "y": 165
       },
       "id": 4,
       "panels": [],
@@ -1278,7 +1345,7 @@
         "h": 7,
         "w": 7,
         "x": 0,
-        "y": 147
+        "y": 166
       },
       "id": 2,
       "options": {
@@ -1388,7 +1455,7 @@
         "h": 14,
         "w": 14,
         "x": 0,
-        "y": 154
+        "y": 173
       },
       "id": 15,
       "options": {
@@ -1519,7 +1586,7 @@
         "h": 14,
         "w": 14,
         "x": 0,
-        "y": 168
+        "y": 187
       },
       "id": 20,
       "options": {
@@ -1581,7 +1648,7 @@
         "h": 6,
         "w": 14,
         "x": 0,
-        "y": 182
+        "y": 201
       },
       "id": 26,
       "options": {
@@ -1635,7 +1702,7 @@
         "h": 13,
         "w": 14,
         "x": 0,
-        "y": 188
+        "y": 207
       },
       "id": 21,
       "options": {
@@ -1696,13 +1763,13 @@
     "list": []
   },
   "time": {
-    "from": "now-6h",
+    "from": "now-15m",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "Kueue",
   "uid": "ceq3r2cpy01z4a",
-  "version": 2,
+  "version": 3,
   "weekStart": ""
 }
