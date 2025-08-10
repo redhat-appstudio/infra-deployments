@@ -1,0 +1,32 @@
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: bootstrap-tenant-namespace-queue
+spec:
+  rules:
+  - name: create-local-queue
+    skipBackgroundRequests: true
+    match:
+      any:
+      - resources:
+          kinds:
+          - Namespace
+          selector:
+            matchLabels:
+              konflux-ci.dev/type: tenant
+      - resources:
+          kinds:
+          - Namespace
+          names:
+          - mintmaker
+    generate:
+      generateExisting: true
+      synchronize: true
+      apiVersion: kueue.x-k8s.io/v1beta1
+      kind: LocalQueue
+      name: pipelines-queue
+      namespace: '{{request.object.metadata.name}}'
+      data:
+        spec:
+          clusterQueue: cluster-pipeline-queue
