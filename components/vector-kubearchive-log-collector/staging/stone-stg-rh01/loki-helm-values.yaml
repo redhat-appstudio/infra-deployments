@@ -35,12 +35,8 @@ singleBinary:
   extraVolumeMounts:
     - name: loki-storage
       mountPath: /var/loki
-    - name: tmp-storage
-      mountPath: /tmp
   extraVolumes:
     - name: loki-storage
-      emptyDir: {}
-    - name: tmp-storage
       emptyDir: {}
 
 # Basic Loki configuration with S3 storage
