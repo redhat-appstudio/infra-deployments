@@ -7,11 +7,19 @@ patches:
     target:
       name: appstudio-federate-smon
       kind: ServiceMonitor
+  - path: endpoints-params.yaml
+    target:
+      name: appstudio-federate-smon
+      kind: ServiceMonitor
   - path: cluster-type-patch.yaml
     target:
       name: appstudio-federate-uwm-smon
       kind: ServiceMonitor
   - path: remote-write-env-details.yaml
+    target:
+      name: appstudio-federate-ms
+      kind: MonitoringStack
+  - path: writeRelabelConfigs.yaml
     target:
       name: appstudio-federate-ms
       kind: MonitoringStack
