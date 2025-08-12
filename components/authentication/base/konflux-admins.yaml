@@ -1,5 +1,5 @@
-kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
 metadata:
   name: konflux-admins
 rules:
@@ -354,11 +354,11 @@ rules:
     verbs:
       - '*'
   - apiGroups:
-    - kueue.x-k8s.io
+      - kueue.x-k8s.io
     resources:
-    - '*'
+      - '*'
     verbs:
-    - '*'
+      - '*'
   - apiGroups:
       - flowcontrol.apiserver.k8s.io
     resources:
@@ -368,6 +368,12 @@ rules:
       - get
       - list
       - watch
+  - apiGroups:
+      - project.openshift.io
+    resources:
+      - '*'
+    verbs:
+      - '*'
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
