@@ -786,11 +786,10 @@ data:
     chmod 700 /home/ec2-user/.ssh
     restorecon -r /home/ec2-user
 
-    mkdir -p /etc/cdi
-    chmod a+rwx /etc/cdi
+    mkdir -p /etc/cdi /var/run/cdi
+    chmod a+rwx /etc/cdi /var/run/cdi
 
     setsebool container_use_devices 1
-    
-    su - ec2-user
+
     nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml
     --//--
