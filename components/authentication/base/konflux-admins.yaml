@@ -325,8 +325,13 @@ rules:
     resources:
       - customresourcedefinitions
     verbs:
-      - list
+      - create
       - get
+      - list
+      - watch
+      - patch
+      - update
+      - delete
   - apiGroups:
       - kyverno.io
     resources:
@@ -374,6 +379,18 @@ rules:
       - '*'
     verbs:
       - '*'
+  - apiGroups:
+      - admissionregistration.k8s.io
+    resources:
+      - validatingwebhookconfigurations
+    verbs:
+      - create
+      - get
+      - list
+      - watch
+      - patch
+      - update
+      - delete
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
