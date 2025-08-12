@@ -1,0 +1,29 @@
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: deny-virtual-domain
+spec:
+  validationFailureAction: Enforce
+  rules:
+  - name: deny-virtual-domain-labels-annotations
+    skipBackgroundRequests: true
+    match:
+      any:
+      - resources:
+          kinds:
+          - Namespace
+          selector:
+            matchLabels:
+              konflux-ci.dev/type: tenant
+          operations:
+          - CREATE
+          - UPDATE
+    validate:
+      allowExistingViolations: true
+      cel:
+        expressions:
+        - expression: '!object.metadata.labels.exists(key, key.startsWith("virtual.konflux-ci.dev/"))'
+          message: "Tenant namespaces can not have labels with domain 'virtual.konflux-ci.dev'"
+        - expression: '!has(object.metadata.annotations) || !object.metadata.annotations.exists(key, key.startsWith("virtual.konflux-ci.dev/"))'
+          message: "Tenant namespaces can not have annotations with domain 'virtual.konflux-ci.dev'"
