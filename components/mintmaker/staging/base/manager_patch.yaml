@@ -8,6 +8,11 @@ spec:
     spec:
       containers:
       - name: manager
+        args:
+        - --metrics-bind-address=:8080
+        - --health-probe-bind-address=:8081
+        - --metrics-secure=false
+        - --pprof-bind-address=:6060
         resources:
           limits:
             cpu: 500m
@@ -15,3 +20,6 @@ spec:
           requests:
             cpu: 100m
             memory: 256Mi
+        env:
+        - name: ENABLE_PROFILING
+          value: true
