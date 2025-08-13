@@ -6,7 +6,7 @@ resources:
   - postgresql.yaml
   - vacuum.yaml
   - release-vacuum.yaml
-  - https://github.com/kubearchive/kubearchive/releases/download/v1.5.0/kubearchive.yaml?timeout=90
+  - https://github.com/kubearchive/kubearchive/releases/download/v1.6.0/kubearchive.yaml?timeout=90
 
 namespace: product-kubearchive
 secretGenerator:
@@ -35,7 +35,7 @@ patches:
               spec:
                 containers:
                   - name: vacuum
-                    image: quay.io/kubearchive/vacuum:v1.5.0
+                    image: quay.io/kubearchive/vacuum:v1.6.0
   - patch: |-
       apiVersion: batch/v1
       kind: Job
@@ -48,7 +48,7 @@ patches:
               - name: migration
                 env:
                   - name: KUBEARCHIVE_VERSION
-                    value: v1.5.0
+                    value: v1.6.0
   # These patches add an annotation so an OpenShift service
   # creates the TLS secrets instead of Cert Manager
   - patch: |-
