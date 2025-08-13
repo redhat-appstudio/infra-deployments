@@ -2599,7 +2599,7 @@ spec:
           deployments:
             pipelines-as-code-watcher:
               spec:
-                replicas: 1
+                replicas: 2
             pipelines-as-code-webhook:
               spec:
                 replicas: 2
@@ -2668,7 +2668,7 @@ metadata:
   namespace: openshift-marketplace
 spec:
   displayName: custom-operators
-  image: quay.io/openshift-pipeline/pipelines-index-4.15@sha256:6788ffeab369f7a773d7022358f67cd93d094003c3b6c82e3278f620e9065135
+  image: quay.io/openshift-pipeline/pipelines-index-4.15@sha256:ea4bd6973b821f90fa07166c83e861ef6bfdbbe29ae3539f5813973f188f06ef
   sourceType: grpc
   updateStrategy:
     registryPoll:
@@ -2688,14 +2688,6 @@ spec:
     env:
     - name: AUTOINSTALL_COMPONENTS
       value: "false"
-    - name: IMAGE_ADDONS_TKN_CLI_SERVE
-      value: registry.redhat.io/openshift-pipelines/pipelines-serve-tkn-cli-rhel9@sha256:d055d2b35a663aef3e1aafdbed0b12957867c0670c946ebae66e9c44a768bda2
-    - name: IMAGE_PAC_PAC_CONTROLLER
-      value: ghcr.io/gbenhaim/pipelines-as-code/pipelines-as-code-controller@sha256:dea65f29afcecdd837b0b7389c6824d546b5098bf98ba98f02f27d6a85b0b376
-    - name: IMAGE_PAC_PAC_WATCHER
-      value: ghcr.io/gbenhaim/pipelines-as-code/pipelines-as-code-watcher@sha256:09964eff749f2fb620ae1500cfc538d0765cf0e29fb2f177abb3521400fad403
-    - name: IMAGE_PAC_PAC_WEBHOOK
-      value: ghcr.io/gbenhaim/pipelines-as-code/pipelines-as-code-webhook@sha256:440d6f9311d23b994ef68ffe0513eba832b891fdfb6360385bb635ba154f7526
   name: openshift-pipelines-operator-rh
   source: custom-operators
   sourceNamespace: openshift-marketplace
