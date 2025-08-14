@@ -2,11 +2,11 @@
 role: Agent
 resources:
   requests:
-    cpu: 200m
-    memory: 1024Mi
+    cpu: 512m
+    memory: 4096Mi
   limits:
-    cpu: 1000m
-    memory: 2048Mi
+    cpu: 2000m
+    memory: 4096Mi
 customConfig:
   data_dir: /vector-data-dir
   api:
@@ -20,6 +20,7 @@ customConfig:
       glob_minimum_cooldown_ms: 500
       max_line_bytes: 3145728
       auto_partial_merge: true
+      extra_label_selector: "app.kubernetes.io/managed-by in (tekton-pipelines,pipelinesascode.tekton.dev)"
   transforms:
     reduce_events:
       type: reduce
@@ -92,24 +93,9 @@ customConfig:
           .log_type = "application"
         }
         # --- End: Cronjob Specific Handling ---
-        # Handling general Kubernetes labels
-        if exists(.tmp.kubernetes.pod_labels) {
-          .pod_labels = .tmp.kubernetes.pod_labels
-        } else {
-          .pod_labels = "no_labels"
-        }
-        # General message field handling
-        if exists(.tmp.message) {
-          .message = to_string(del(.tmp.message)) ?? "no_message"
-        } else {
-          .message = "no_message"
-        }
-        # Basic data sanitization to prevent 400 errors
-        # Truncate very long messages
-        if length(.message) > 32768 {
-          .message = slice!(.message, 0, 32768) + "...[TRUNCATED]"
-        }
         # Clean up temporary fields
+        .container = del(.tmp.kubernetes.container_name)
+        .message = del(.tmp.message)
         del(.tmp)
   sinks:
     loki:
