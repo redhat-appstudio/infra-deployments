@@ -53,6 +53,15 @@ loki:
         index:
           prefix: loki_index_
           period: 24h
+  # Configure ingestion limits to handle Vector's data volume
+  limits_config:
+    ingestion_rate_mb: 16          # Increase from default 4MB to 16MB per second
+    ingestion_burst_size_mb: 32    # Allow bursts up to 32MB
+    max_line_size: 256KB           # Allow larger log lines
+    max_streams_per_user: 10000    # Allow more streams per tenant
+    max_global_streams_per_user: 50000
+    reject_old_samples: false      # Don't reject old samples
+    reject_old_samples_max_age: 168h  # Accept samples up to 7 days old
   # Required storage configuration for Helm chart
   storage:
     type: s3
