@@ -20,7 +20,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 14,
+  "id": 7,
   "links": [],
   "panels": [
     {
@@ -252,7 +252,7 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "(\n    container_memory_working_set_bytes{namespace=~\"tekton-kueue|kueue-external-admission|openshift-kueue-operator\", image!=\"\"} \n    * on(container, pod)\n    group_left\n    kube_pod_container_status_ready{namespace=~\"tekton-kueue|kueue-external-admission|openshift-kueue-operator\"}\n)\n    / on (pod) kube_pod_resource_limit{resource='memory',namespace=~\"tekton-kueue|kueue-external-admission|openshift-kueue-operator\"} * 100",
+          "expr": "(\n    container_memory_working_set_bytes{namespace=~\"tekton-kueue|kueue-external-admission|openshift-kueue-operator\", image!=\"\"} \n    * on(container, pod)\n    group_left\n    kube_pod_container_status_ready{namespace=~\"tekton-kueue|kueue-external-admission|openshift-kueue-operator\"}\n)\n    / on (pod) max by (pod) (kube_pod_resource_limit{resource='memory',namespace=~\"tekton-kueue|kueue-external-admission|openshift-kueue-operator\"}) * 100",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
@@ -470,7 +470,7 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "100 * sum(increase(apiserver_admission_webhook_request_total{name=\"pipelinerun-kueue-defaulter.tekton-kueue.io\", code=~\"2..\"}[10m]))\n/\nsum(increase(apiserver_admission_webhook_request_total{name=\"pipelinerun-kueue-defaulter.tekton-kueue.io\"}[10m]))",
+          "expr": "100 * sum(increase(apiserver_admission_webhook_request_total{name=\"pipelinerun-kueue-defaulter.tekton-kueue.io\", code=~\"2..|400\"}[10m]))\n/\nsum(increase(apiserver_admission_webhook_request_total{name=\"pipelinerun-kueue-defaulter.tekton-kueue.io\"}[10m]))",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
@@ -1770,6 +1770,6 @@
   "timezone": "",
   "title": "Kueue",
   "uid": "ceq3r2cpy01z4a",
-  "version": 3,
+  "version": 1,
   "weekStart": ""
 }
