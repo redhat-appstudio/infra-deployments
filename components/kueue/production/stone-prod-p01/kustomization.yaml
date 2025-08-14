@@ -4,16 +4,5 @@ resources:
 - ../base
 - queue-config
 
-patches:
-  - target:
-      kind: MutatingWebhookConfiguration
-      name: tekton-kueue-mutating-webhook-configuration
-    patch: |-
-      - op: replace
-        path: /webhooks/0/namespaceSelector
-        value:
-          matchLabels:
-            kubernetes.io/metadata.name: mintmaker
-
 commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
