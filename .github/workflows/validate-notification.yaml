@@ -1,0 +1,63 @@
+name: Validate System Notification ConfigMaps
+
+on:
+  pull_request:
+    paths:
+      - "components/konflux-info/system-notifications/**/*.yaml"
+      - "components/konflux-info/notification-schema.json"
+env:
+  NOTIFICATION_DIR: components/konflux-info
+  SCHEMA_FILE: components/konflux-info/notification-schema.json
+  TMP_DIR: .tmp/notifications
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install yq (YAML processor)
+        run: |
+          sudo wget https://github.com/mikefarah/yq/releases/download/v4.34.1/yq_linux_amd64 -O /usr/bin/yq
+          sudo chmod +x /usr/bin/yq
+
+      - name: Check konflux-system-notification label present
+        run: |
+          mkdir -p ${{ env.TMP_DIR }}
+          for file in  ${{ env.NOTIFICATION_DIR }}/**/**/system-notifications/*.yaml; do
+            if [[ "$(basename "$file")" == "kustomization.yaml" ]]; then
+              continue
+            fi
+            label=$(yq e '.metadata.labels."konflux.system.notification"' "$file")
+            if [[ "$label" != "\"true\"" && "$label" != "true" ]]; then
+              echo "ERROR: $file is missing konflux-system-notification: \"true\" label"
+              exit 1
+            fi
+          done
+
+      - name: Validate notification-content.json against schema
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+
+      - name: Install ajv-cli for JSON Schema validation
+        run: |
+          npm install -g ajv-cli
+
+      - name: Validate notification-content.json files
+        run: |
+          mkdir -p ${{ env.TMP_DIR }}
+          for file in  ${{ env.NOTIFICATION_DIR }}/**/**/system-notifications/*.yaml; do
+            file_name=$(basename "$file")
+            if [[ "$file_name" == "kustomization.yaml" ]]; then
+              continue
+            fi
+            # Extract JSON content from ConfigMap
+            yq e '.data."notification-content.json"' "$file" > "${TMP_DIR}/${file_name}.json"
+            ajv validate -s "${SCHEMA_FILE}" -d "${TMP_DIR}/${file_name}.json" --errors=text
+            if [ $? -ne 0 ]; then
+              echo "ERROR: notification-content.json in ${file} does not validate against schema"
+              exit 1
+            fi
+          done
