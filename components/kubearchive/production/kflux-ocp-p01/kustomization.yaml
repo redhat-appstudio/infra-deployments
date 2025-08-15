@@ -104,6 +104,7 @@ patches:
           spec:
             containers:
               - name: manager
+                args: [--health-probe-bind-address=:8081]
                 env:
                 - name: KUBEARCHIVE_OTEL_MODE
                   value: enabled
