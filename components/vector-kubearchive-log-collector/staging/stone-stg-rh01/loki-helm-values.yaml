@@ -67,7 +67,6 @@ loki:
     type: s3
     bucketNames:
       chunks: stone-stg-rh01-loki-storage
-      ruler: stone-stg-rh01-loki-storage
       admin: stone-stg-rh01-loki-storage
     s3:
       endpoint: https://s3.us-east-1.amazonaws.com
@@ -77,13 +76,12 @@ loki:
     aws:
       region: us-east-1
       bucketnames: stone-stg-rh01-loki-storage
-  # Configure ruler storage to use S3
+  # Configure ruler storage to use local filesystem (ruler doesn't work well with S3)
   ruler:
     storage:
-      type: s3
-      s3:
-        bucketNames:
-          ruler: stone-stg-rh01-loki-storage
+      type: local
+      local:
+        directory: /var/loki/ruler
   # Configure compactor to use writable volume for working directory
   compactor:
     working_directory: /var/loki/compactor
