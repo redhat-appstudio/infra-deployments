@@ -16,6 +16,9 @@ patches:
     target:
       name: appstudio-federate-ms
       kind: MonitoringStack
+  - path: keep-job-source-label-patch.yaml
+    target:
+      kind: ServiceMonitor
 
 commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
