@@ -38,6 +38,7 @@ spec:
         nominalQuota: 500Ti
   - coveredResources:
     - linux-amd64
+    - linux-arm-64-test
     - linux-arm64
     - linux-c2xlarge-amd64
     - linux-c2xlarge-arm64
@@ -52,12 +53,13 @@ spec:
     - linux-m2xlarge-amd64
     - linux-m2xlarge-arm64
     - linux-m4xlarge-amd64
-    - linux-m4xlarge-arm64
     flavors:
     - name: platform-group-1
       resources:
       - name: linux-amd64
         nominalQuota: '1000'
+      - name: linux-arm-64-test
+        nominalQuota: '1'
       - name: linux-arm64
         nominalQuota: '100'
       - name: linux-c2xlarge-amd64
@@ -86,9 +88,8 @@ spec:
         nominalQuota: '100'
       - name: linux-m4xlarge-amd64
         nominalQuota: '100'
-      - name: linux-m4xlarge-arm64
-        nominalQuota: '100'
   - coveredResources:
+    - linux-m4xlarge-arm64
     - linux-m8xlarge-amd64
     - linux-m8xlarge-arm64
     - linux-mlarge-amd64
@@ -105,6 +106,8 @@ spec:
     flavors:
     - name: platform-group-2
       resources:
+      - name: linux-m4xlarge-arm64
+        nominalQuota: '100'
       - name: linux-m8xlarge-amd64
         nominalQuota: '100'
       - name: linux-m8xlarge-arm64
