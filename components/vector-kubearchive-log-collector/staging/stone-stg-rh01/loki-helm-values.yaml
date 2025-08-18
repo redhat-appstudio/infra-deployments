@@ -67,17 +67,21 @@ loki:
     type: s3
     bucketNames:
       chunks: stone-stg-rh01-loki-storage
+      ruler: stone-stg-rh01-loki-storage
       admin: stone-stg-rh01-loki-storage
     s3:
       endpoint: https://s3.us-east-1.amazonaws.com
       region: us-east-1
-  # Required storage_config for Helm chart
+  # Required storage_config for Helm chart (chunks on S3)
   storage_config:
     aws:
-      region: us-east-1
+      s3: s3://stone-stg-rh01-loki-storage
+      s3forcepathstyle: true
       bucketnames: stone-stg-rh01-loki-storage
-  # Configure ruler storage to use local filesystem (ruler doesn't work well with S3)
+      region: us-east-1
+  # Configure ruler storage to use local filesystem
   ruler:
+    rule_path: /var/loki/ruler
     storage:
       type: local
       local:
