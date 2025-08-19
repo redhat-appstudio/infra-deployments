@@ -26,4 +26,17 @@ spec:
   configMapRef:
     name: grafana-dashboard-image-repository-provision-failure
     key: grafana-dashboard-image-repository-provision-failure.json
-
+---
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDashboard
+metadata:
+  name: grafana-dashboard-image-repository-quay-availability
+  labels:
+    app: appstudio-grafana
+spec:
+  instanceSelector:
+    matchLabels:
+      dashboards: "appstudio-grafana"
+  configMapRef:
+    name: grafana-dashboard-image-repository-quay-availability
+    key: grafana-dashboard-image-repository-quay-availability.json
