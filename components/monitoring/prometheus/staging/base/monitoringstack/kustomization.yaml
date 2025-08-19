@@ -23,6 +23,10 @@ patches:
     target:
       name: appstudio-federate-ms
       kind: MonitoringStack
+  - path: prometheusrule-uwm.yaml
+    target:
+      name: prometheus-recording-rules-uwm-namespace
+      kind: PrometheusRule
 
 commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
