@@ -2,7 +2,7 @@
 apiVersion: kyverno.io/v1
 kind: ClusterPolicy
 metadata:
-  name: validate-restrict-binding-system-authenticated
+  name: validate-restrict-binding-system-authenticated-releng
   annotations:
     policies.kyverno.io/title: Restrict Binding System Groups
     policies.kyverno.io/category: Security
@@ -20,12 +20,6 @@ spec:
       - resources:
           kinds:
           - RoleBinding
-          namespaceSelector:
-            matchLabels:
-              konflux-ci.dev/type: tenant
-    exclude:
-      any:
-      - resources:
           namespaces:
           - rhtap-releng-tenant
     preconditions:
@@ -37,10 +31,12 @@ spec:
         operator: Equals
         value: "ClusterRole"
       - key: "{{ request.object.roleRef.name }}"
-        operator: NotEquals
-        value: "konflux-viewer-user-actions"
+        operator: AllNotIn
+        value: 
+          - konflux-viewer-user-actions
+          - enterprisecontractpolicy-viewer-role
     validate:
       allowExistingViolations: true
       failureAction: Enforce
-      message: "Only ClusterRole konflux-viewer-user-actions can be bound to system:authenticated."
+      message: "Only ClusterRoles 'konflux-viewer-user-actions' and 'enterprisecontractpolicy-viewer-role' can be bound to 'system:authenticated' in namespace 'rhtap-releng-tenant'."
       deny: {}
