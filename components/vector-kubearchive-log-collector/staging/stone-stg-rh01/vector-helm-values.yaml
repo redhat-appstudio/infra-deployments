@@ -103,7 +103,8 @@ customConfig:
       # Direct connection to Loki service (no gateway)
       endpoint: "http://vector-kubearchive-log-collector-loki.product-kubearchive-logging.svc.cluster.local:3100"
       encoding:
-        codec: "json"
+        codec: "text"
+        except_fields: ["tmp"]
       auth:
         strategy: "basic"
         user: "${LOKI_USERNAME}"
@@ -112,10 +113,12 @@ customConfig:
       request:
         headers:
           X-Scope-OrgID: kubearchive
+        timeout_secs: 60
       batch:
-        max_bytes: 10485760
-        timeout_secs: 300 
-      compression: "none"
+        max_bytes: 2097152
+        max_events: 1000
+        timeout_secs: 10
+      compression: "gzip"
       labels:
         job: "vector"
         pod_id: "{{`{{ pod_id }}`}}"
@@ -125,7 +128,7 @@ customConfig:
       buffer:
         type: "memory"
         max_events: 10000
-        when_full: "block"
+        when_full: "drop_newest"
 env:
   - name: LOKI_USERNAME
     valueFrom:
