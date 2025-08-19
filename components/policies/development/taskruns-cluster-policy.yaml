@@ -41,6 +41,9 @@ spec:
             value:
               memory: 256Mi
               cpu: 100m
+          - op: add
+            path: /spec/containers/{{elementIndex}}/imagePullPolicy
+            value: IfNotPresent
         preconditions:
           any:
           - key: '{{ element.resources.requests.memory || '''' }}'
