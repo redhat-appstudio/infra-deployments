@@ -41,9 +41,6 @@ spec:
             value:
               memory: 256Mi
               cpu: 100m
-          - op: add
-            path: /spec/containers/{{elementIndex}}/imagePullPolicy
-            value: IfNotPresent
         preconditions:
           any:
           - key: '{{ element.resources.requests.memory || '''' }}'
@@ -52,5 +49,12 @@ spec:
           - key: '{{ element.resources.requests.cpu || '''' }}'
             operator: NotEquals
             value: ""
+      - list: request.object.spec.containers
+        patchesJson6902: |-
+          - op: remove
+            path: /spec/containers/{{elementIndex}}/imagePullPolicy
+          - op: add
+            path: /spec/containers/{{elementIndex}}/imagePullPolicy
+            value: IfNotPresent
     name: reduce-tekton-pr-taskrun-resource-requests
     skipBackgroundRequests: true
