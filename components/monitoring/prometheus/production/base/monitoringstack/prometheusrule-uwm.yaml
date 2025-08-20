@@ -1,0 +1,12 @@
+---
+- op: replace
+  path: /spec/groups
+  value:
+    - name: rules_container_namespace
+      rules:
+      - expr: |
+          avg by (namespace,container) (rate(container_memory_working_set_bytes{job="kubelet", metrics_path="/metrics/cadvisor", image!=""}[5m]))
+        record: namespace_container:container_memory_working_set_bytes
+      - expr: |
+          avg by (namespace,container) (rate(container_cpu_usage_seconds_total{job="kubelet", metrics_path="/metrics/cadvisor", image!=""}[5m]))
+        record: namespace_container:container_cpu_usage_seconds_total
