@@ -14,6 +14,7 @@
 
     # Namespace: gitops-service-argocd
     - '{__name__="kube_deployment_status_replicas_ready", namespace="gitops-service-argocd"}'
+    - '{__name__="kube_deployment_status_replicas_available", namespace=~"gitops-service-argocd"}'
     - '{__name__="kube_deployment_spec_replicas", namespace=~"gitops-service-argocd"}'
 
     # Namespace: integration-service
@@ -86,6 +87,7 @@
     - '{__name__="kube_deployment_status_replicas_ready", namespace="konflux-kyverno"}'
     - '{__name__="kube_deployment_status_replicas_available", namespace="konflux-kyverno"}'
     - '{__name__="kube_deployment_spec_replicas", namespace="konflux-kyverno"}'
+    - '{__name__="kube_deployment_status_replicas_ready", namespace="konflux-user-support"}'
     - '{__name__="kube_deployment_status_replicas_available", namespace="konflux-user-support"}'
     - '{__name__="kube_deployment_spec_replicas", namespace="konflux-user-support"}'
 
