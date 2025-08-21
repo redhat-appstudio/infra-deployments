@@ -17,6 +17,9 @@ patches:
         spec:
           containers:
             - name: eventing-controller
+              env:
+                - name: APISERVER_RA_IMAGE
+                  value: quay.io/kubearchive/eventing-adapter:v1.16.7-verbose
               resources:
                 requests:
                   cpu: 200m
