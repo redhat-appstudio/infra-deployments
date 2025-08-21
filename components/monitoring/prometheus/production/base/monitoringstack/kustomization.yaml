@@ -7,6 +7,10 @@ patches:
     target:
       name: appstudio-federate-smon
       kind: ServiceMonitor
+  - path: endpoints-params.yaml
+    target:
+      name: appstudio-federate-smon
+      kind: ServiceMonitor
   - path: cluster-type-patch.yaml
     target:
       name: appstudio-federate-uwm-smon
@@ -15,6 +19,14 @@ patches:
     target:
       name: appstudio-federate-ms
       kind: MonitoringStack
+  - path: writeRelabelConfigs.yaml
+    target:
+      name: appstudio-federate-ms
+      kind: MonitoringStack
+  - path: prometheusrule-uwm.yaml
+    target:
+      name: prometheus-recording-rules-uwm-namespace
+      kind: PrometheusRule
 
 commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true

@@ -23,6 +23,11 @@ spec:
           namespaceSelector:
             matchLabels:
               konflux-ci.dev/type: tenant
+    exclude:
+      any:
+      - resources:
+          namespaces:
+          - rhtap-releng-tenant
     preconditions:
       all:
       - key: "{{ request.object.subjects[].name }}"

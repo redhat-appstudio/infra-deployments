@@ -2,7 +2,7 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - ../../development
+  - ../base
   - kubearchive-routes.yaml
   - database-secret.yaml
 
@@ -16,3 +16,67 @@ patches:
       metadata:
         name: kubearchive-database-credentials
         namespace: kubearchive
+  # We don't need the development DB on staging
+  - patch: |-
+      $patch: delete
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: postgresql
+  # We don't need the development DB service on staging
+  - patch: |-
+      $patch: delete
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: postgresql
+  # Only export otel traces that are sampled by parent
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: kubearchive-sink
+        namespace: kubearchive
+      spec:
+        template:
+          spec:
+            containers:
+              - name: kubearchive-sink
+                env:
+                - name: KUBEARCHIVE_OTEL_MODE
+                  value: delegated
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: kubearchive-api-server
+        namespace: kubearchive
+      spec:
+        template:
+          spec:
+            containers:
+              - name: kubearchive-api-server
+                env:
+                - name: KUBEARCHIVE_OTEL_MODE
+                  value: delegated
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: kubearchive-operator
+        namespace: kubearchive
+      spec:
+        template:
+          spec:
+            containers:
+              - name: manager
+                env:
+                - name: KUBEARCHIVE_OTEL_MODE
+                  value: delegated
+
+configMapGenerator:
+  - name: otel-collector-conf
+    behavior: replace
+    namespace: product-kubearchive
+    files:
+      - otel-collector-config.yaml

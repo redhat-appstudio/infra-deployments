@@ -6,29 +6,10 @@ metadata:
   name: tempo
 $patch: delete
 ---
-# KubeArchive not yet ready to go to production
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
-  name: kubearchive
-$patch: delete
----
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
   name: nvme-storage-configurator
-$patch: delete
----
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
-  name: cert-manager
-$patch: delete
----
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
-  name: kueue
 $patch: delete
 ---
 # Kite is still in proof-of-concept phase
@@ -36,4 +17,10 @@ apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
   name: konflux-kite
+$patch: delete
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: vector-kubearchive-log-collector
 $patch: delete

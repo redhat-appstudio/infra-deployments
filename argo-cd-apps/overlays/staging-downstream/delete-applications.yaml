@@ -30,16 +30,15 @@ metadata:
   name: quality-dashboard
 $patch: delete
 ---
-# There is not RDS database provisioned yet for internal staging, starting with external staging only
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
-  name: kubearchive
-$patch: delete
----
 # At this time we're starting with external staging
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
   name: konflux-kite
+$patch: delete
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: vector-kubearchive-log-collector
 $patch: delete

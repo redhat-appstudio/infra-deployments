@@ -1,0 +1,45 @@
+name: Test Tekton-Kueue Configuration
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'components/kueue/**'
+      - 'hack/test-tekton-kueue-config.py'
+      - '.github/workflows/test-tekton-kueue-config.yaml'
+
+jobs:
+  test-tekton-kueue-config:
+    name: Test Tekton-Kueue CEL expressions
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install PyYAML
+
+      - name: Install Podman
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y podman
+
+      - name: Check prerequisites
+        run: |
+          python hack/test-tekton-kueue-config.py --check-setup
+
+      - name: Run Tekton-Kueue configuration tests
+        run: |
+          python hack/test-tekton-kueue-config.py --verbose
+
+      - name: Report success
+        if: success()
+        run: |
+          echo "✅ All Tekton-Kueue CEL expression tests passed successfully" 

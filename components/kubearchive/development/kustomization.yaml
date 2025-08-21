@@ -4,7 +4,9 @@ kind: Kustomization
 resources:
   - ../base
   - postgresql.yaml
-  - https://github.com/kubearchive/kubearchive/releases/download/v1.3.0/kubearchive.yaml?timeout=90
+  - vacuum.yaml
+  - release-vacuum.yaml
+  - https://github.com/kubearchive/kubearchive/releases/download/v1.6.0/kubearchive.yaml?timeout=90
 
 namespace: product-kubearchive
 secretGenerator:
@@ -23,6 +25,19 @@ secretGenerator:
 patches:
   - patch: |-
       apiVersion: batch/v1
+      kind: CronJob
+      metadata:
+        name: vacuum-all
+      spec:
+        jobTemplate:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: vacuum
+                    image: quay.io/kubearchive/vacuum:v1.6.0
+  - patch: |-
+      apiVersion: batch/v1
       kind: Job
       metadata:
         name: kubearchive-schema-migration
@@ -33,7 +48,7 @@ patches:
               - name: migration
                 env:
                   - name: KUBEARCHIVE_VERSION
-                    value: v1.3.0
+                    value: v1.6.0
   # These patches add an annotation so an OpenShift service
   # creates the TLS secrets instead of Cert Manager
   - patch: |-

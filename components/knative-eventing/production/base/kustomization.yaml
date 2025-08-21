@@ -20,7 +20,7 @@ patches:
               image: quay.io/kubearchive/eventing-controller:fix
               env:
               - name: APISERVER_RA_IMAGE
-                value: quay.io/kubearchive/eventing-adapter:fix
+                value: quay.io/kubearchive/eventing-adapter:fix-resync
               resources:
                 requests:
                   cpu: 100m
@@ -28,7 +28,6 @@ patches:
                 limits:
                   cpu: 150m
                   memory: 200Mi
-
 - patch: |-
     apiVersion: apps/v1
     kind: Deployment
@@ -43,10 +42,10 @@ patches:
               resources:
                 requests:
                   cpu: 100m
-                  memory: 100Mi
+                  memory: 1Gi
                 limits:
                   cpu: 150m
-                  memory: 320Mi
+                  memory: 1Gi
 
 - patch: |-
     apiVersion: apps/v1

@@ -39,7 +39,24 @@ main() {
     # Define input-output file pairs
     local -A queue_configs=(
         ["components/multi-platform-controller/staging/host-config.yaml"]="components/kueue/staging/stone-stg-rh01/queue-config/cluster-queue.yaml"
+
         ["components/multi-platform-controller/staging-downstream/host-config.yaml"]="components/kueue/staging/stone-stage-p01/queue-config/cluster-queue.yaml"
+
+        ["components/multi-platform-controller/production/kflux-prd-rh02/host-config.yaml"]="components/kueue/production/kflux-prd-rh02/queue-config/cluster-queue.yaml"
+
+        ["components/multi-platform-controller/production/kflux-prd-rh03/host-config.yaml"]="components/kueue/production/kflux-prd-rh03/queue-config/cluster-queue.yaml"
+
+        ["components/multi-platform-controller/production-downstream/kflux-ocp-p01/host-config.yaml"]="components/kueue/production/kflux-ocp-p01/queue-config/cluster-queue.yaml"
+
+        ["components/multi-platform-controller/production-downstream/kflux-rhel-p01/host-config.yaml"]="components/kueue/production/kflux-rhel-p01/queue-config/cluster-queue.yaml"
+
+        ["components/multi-platform-controller/production-downstream/kflux-osp-p01/host-config.yaml"]="components/kueue/production/kflux-osp-p01/queue-config/cluster-queue.yaml"
+
+        ["components/multi-platform-controller/production-downstream/stone-prod-p01/host-config.yaml"]="components/kueue/production/stone-prod-p01/queue-config/cluster-queue.yaml"
+
+        ["components/multi-platform-controller/production-downstream/stone-prod-p02/host-config.yaml"]="components/kueue/production/stone-prod-p02/queue-config/cluster-queue.yaml"
+
+        ["components/multi-platform-controller/production/stone-prd-rh01/host-config.yaml"]="components/kueue/production/stone-prd-rh01/queue-config/cluster-queue.yaml"
     )
     
     # Generate queue configurations

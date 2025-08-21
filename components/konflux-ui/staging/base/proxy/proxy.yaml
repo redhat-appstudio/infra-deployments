@@ -62,7 +62,7 @@ spec:
 
             # Generate auth.conf with bearer token replacement
             token=$(cat /mnt/api-token/token)
-            sed "s/__BEARER_TOKEN__/$token/g" /mnt/nginx-templates/auth-impersonate.conf > /mnt/nginx-generated-config/auth.conf
+            sed "s/__BEARER_TOKEN__/$token/g" /mnt/nginx-templates/auth.conf > /mnt/nginx-generated-config/auth.conf
 
             chmod 640 /mnt/nginx-generated-config/auth.conf
 

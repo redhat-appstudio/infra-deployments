@@ -183,11 +183,20 @@ fi
 OCP_MINOR=$(oc get clusterversion version -o jsonpath='{.status.desired.version}' | cut -d. -f2)
 echo "Detected OCP minor version: ${OCP_MINOR}"
 if [[ "$OCP_MINOR" -lt 16 ]]; then
-  echo '---' >> $ROOT/argo-cd-apps/overlays/development/delete-applications.yaml
-  yq e -n ".apiVersion=\"argoproj.io/v1alpha1\"
-            | .kind=\"ApplicationSet\"
-            | .metadata.name = \"kueue\"
-            | .\$patch = \"delete\"" >> $ROOT/argo-cd-apps/overlays/development/delete-applications.yaml
+  # Check if kueue is already in the delete-applications.yaml to prevent duplicates
+  DELETE_FILE="$ROOT/argo-cd-apps/overlays/development/delete-applications.yaml"
+  if ! grep -q "name: kueue" "$DELETE_FILE"; then
+    echo "Adding kueue to delete-applications.yaml (OCP version < 4.16)"
+    echo '---' >> "$DELETE_FILE"
+    yq e -n ".apiVersion=\"argoproj.io/v1alpha1\"
+              | .kind=\"ApplicationSet\"
+              | .metadata.name = \"kueue\"
+              | .\$patch = \"delete\"" >> "$DELETE_FILE"
+  else
+    echo "kueue already exists in delete-applications.yaml, skipping duplicate addition"
+  fi
+  
+  # Remove kueue from policies kustomization if present
   yq -i 'del(.resources[] | select(test("^kueue/?$")))' "$ROOT/components/policies/development/kustomization.yaml"
 fi
 
