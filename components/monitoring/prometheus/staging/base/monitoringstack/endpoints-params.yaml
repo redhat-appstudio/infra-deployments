@@ -124,6 +124,8 @@
     - '{__name__="cluster:namespace:pod_memory:active:kube_pod_container_resource_requests", namespace=~"openshift-etcd|openshift-kube-apiserver|build-service|image-controller|integration-service|konflux-ui|product-kubearchive|openshift-kueue-operator|tekton-kueue|kueue-external-admission|mintmaker|multi-platform-controller|namespace-lister|openshift-pipelines|tekton-results|project-controller|smee|smee-client"}'
     - '{__name__="namespace_container:container_memory_working_set_bytes", namespace=~"build-service|image-controller|integration-service|konflux-ui|product-kubearchive|openshift-kueue-operator|tekton-kueue|kueue-external-admission|mintmaker|multi-platform-controller|namespace-lister|openshift-pipelines|tekton-results|project-controller|smee|smee-client"}'
     - '{__name__="namespace_container:container_cpu_usage_seconds_total", namespace=~"openshift-etcd|openshift-kube-apiserver|build-service|image-controller|integration-service|konflux-ui|product-kubearchive|openshift-kueue-operator|tekton-kueue|kueue-external-admission|mintmaker|multi-platform-controller|namespace-lister|openshift-pipelines|tekton-results|project-controller|smee|smee-client"}'
+    - '{__name__="node_namespace_pod_container:container_memory_working_set_bytes", pod=~"etcd-ip-.*|kube-apiserver.*"}'
+    - '{__name__="node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate", pod=~"etcd-ip-.*|kube-apiserver.*"}'
 
     ## Pod Metrics
     - '{__name__="taskrun_pod_create_not_attempted_or_pending_count"}'
