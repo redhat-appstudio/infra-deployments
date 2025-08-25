@@ -26,3 +26,79 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: admin
+# SecurityContextConstraints moved to environment-specific configurations:
+# - Development: Has SCC with minio service accounts
+# - Staging: Has SCC without minio service accounts
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kubearchive-vector-scc-user
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"  # Before workloads
+rules:
+- apiGroups:
+  - security.openshift.io
+  resources:
+  - securitycontextconstraints
+  verbs:
+  - use
+  resourceNames:
+  - kubearchive-logging-scc
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: vector-scc-binding
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"  # Before workloads
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kubearchive-vector-scc-user
+subjects:
+- kind: ServiceAccount
+  name: vector-kubearchive-log-collector
+  namespace: product-kubearchive-logging
+- kind: ServiceAccount
+  name: loki
+  namespace: product-kubearchive-logging
+- kind: ServiceAccount
+  name: loki-sa
+  namespace: product-kubearchive-logging
+- kind: ServiceAccount
+  name: vector-kubearchive-log-collector-grafana
+  namespace: product-kubearchive-logging
+- kind: ServiceAccount
+  name: vector-kubearchive-log-collector-loki
+  namespace: product-kubearchive-logging
+- kind: ServiceAccount
+  name: vector-kubearchive-log-collector-loki-canary
+  namespace: product-kubearchive-logging
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vector-kubearchive-log-collector-loki
+  namespace: product-kubearchive-logging
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"  # Before workloads
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vector-kubearchive-log-collector-grafana
+  namespace: product-kubearchive-logging
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"  # Before workloads
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vector-kubearchive-log-collector-loki-canary
+  namespace: product-kubearchive-logging
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"  # Before workloads
+
+
