@@ -118,7 +118,7 @@ class Handler(BaseHandler):
 
 
 if __name__ == "__main__":
-    port = 8089
+    port_num = 8089
     server = http.server.HTTPServer(("", port), Handler)
     localurl = f"http://localhost:{port}"
     print(f"Opening {localurl} ...", file=sys.stderr)
