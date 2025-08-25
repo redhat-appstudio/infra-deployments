@@ -3,10 +3,3 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 resources:
   - ../base
   - ./rhel
-patches:
-  - patch: |
-      $patch: delete
-      apiVersion: rbac.authorization.k8s.io/v1
-      kind: ClusterRole
-      metadata:
-        name: appstudio-pipelines-runner
