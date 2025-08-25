@@ -143,22 +143,6 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   annotations:
-    argocd.argoproj.io/sync-wave: "0"
-  name: appstudio-pipelines-runner
-rules:
-- apiGroups:
-  - security.openshift.io
-  resourceNames:
-  - appstudio-pipelines-scc
-  resources:
-  - securitycontextconstraints
-  verbs:
-  - use
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
     argocd.argoproj.io/sync-wave: "0"
   name: openshift-gitops-apply-tekton-config-parameters
