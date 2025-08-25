@@ -3,17 +3,3 @@ kind: Kustomization
 resources:
 - ../base
 - queue-config
-
-patches:
-  - target:
-      kind: MutatingWebhookConfiguration
-      name: tekton-kueue-mutating-webhook-configuration
-    patch: |-
-      - op: replace
-        path: /webhooks/0/namespaceSelector
-        value:
-          matchExpressions:
-            - key: kubernetes.io/metadata.name
-              operator: "NotIn"
-              values:
-                - "mshaposh-tenant"
