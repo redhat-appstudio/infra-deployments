@@ -8,9 +8,18 @@ commonAnnotations:
     "Vector runs as Root and attach host Path."
   ignore-check.kube-linter.io/sensitive-host-mounts: |
     "Vector runs requires certain host mounts to watch files being created by pods."
+  ignore-check.kube-linter.io/pdb-unhealthy-pod-eviction-policy: |
+    "Managed by upstream Loki chart (no value exposed for unhealthyPodEvictionPolicy)."
+  ignore-check.kube-linter.io/no-read-only-root-fs: |
+    "Minio post-jobs from chart require write access to filesystem."
+  ignore-check.kube-linter.io/unset-cpu-requirements: |
+    "Minio post-job containers from chart do not expose resource configuration options."
+  ignore-check.kube-linter.io/unset-memory-requirements: |
+    "Minio post-job containers from chart do not expose resource configuration options."
 
 resources:
 - ../base
+- rbac.yaml
 - loki-secret.yaml
 
 generators:
