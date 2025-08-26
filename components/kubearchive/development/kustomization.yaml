@@ -6,7 +6,7 @@ resources:
   - postgresql.yaml
   - vacuum.yaml
   - release-vacuum.yaml
-  - https://github.com/kubearchive/kubearchive/releases/download/v1.6.0/kubearchive.yaml?timeout=90
+  - kubearchive.yaml
 
 namespace: product-kubearchive
 secretGenerator:
@@ -204,3 +204,13 @@ patches:
       metadata:
         name: "kubearchive-operator-certificate"
         namespace: kubearchive
+  # set the correct namespace for the subject
+  - patch: |-
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: ClusterRoleBinding
+      metadata:
+        name: kubearchive-a13e
+      subjects:
+        - kind: ServiceAccount
+          name: kubearchive-a13e
+          namespace: product-kubearchive

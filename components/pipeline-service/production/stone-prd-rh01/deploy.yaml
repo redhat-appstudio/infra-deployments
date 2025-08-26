@@ -2461,6 +2461,7 @@ spec:
             namespace }}/pipelinerun/{{ pr }}
           custom-console-url-pr-tasklog: https://konflux-ui.apps.stone-prd-rh01.pg1f.p1.openshiftapps.com/ns/{{
             namespace }}/pipelinerun/{{ pr }}/logs/{{ task }}
+          enable-cancel-in-progress-on-pull-requests: "true"
           remember-ok-to-test: "false"
           secret-github-app-token-scoped: "false"
   profile: all
@@ -2519,7 +2520,7 @@ metadata:
   namespace: openshift-marketplace
 spec:
   displayName: custom-operators
-  image: quay.io/openshift-pipeline/pipelines-index-4.15@sha256:6788ffeab369f7a773d7022358f67cd93d094003c3b6c82e3278f620e9065135
+  image: quay.io/openshift-pipeline/pipelines-index-4.15@sha256:ea4bd6973b821f90fa07166c83e861ef6bfdbbe29ae3539f5813973f188f06ef
   sourceType: grpc
   updateStrategy:
     registryPoll:
@@ -2539,8 +2540,6 @@ spec:
     env:
     - name: AUTOINSTALL_COMPONENTS
       value: "false"
-    - name: IMAGE_ADDONS_TKN_CLI_SERVE
-      value: registry.redhat.io/openshift-pipelines/pipelines-serve-tkn-cli-rhel9@sha256:d055d2b35a663aef3e1aafdbed0b12957867c0670c946ebae66e9c44a768bda2
     - name: IMAGE_PAC_PAC_CONTROLLER
       value: quay.io/openshift-pipeline/pipelines-pipelines-as-code-controller-rhel9:03e2807aa027874d603600712005820a7cf0961a454344cf5e2e3b70148379de
     - name: IMAGE_PAC_PAC_WATCHER
