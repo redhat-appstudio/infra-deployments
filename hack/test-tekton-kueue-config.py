@@ -110,7 +110,7 @@ def check_prerequisites(should_print: bool = True) -> Prerequisites:
     # Compute repo paths locally
     repo_root = Path(__file__).parent.parent
     config_file = repo_root / "components/kueue/development/tekton-kueue/config.yaml"
-    kustomization_file = repo_root / "components/kueue/staging/base/tekton-kueue/kustomization.yaml"
+    kustomization_file = repo_root / "components/kueue/development/base/tekton-kueue/kustomization.yaml"
 
     # Config file
     if not config_file.exists():
