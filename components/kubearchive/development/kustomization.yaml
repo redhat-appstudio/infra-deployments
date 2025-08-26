@@ -116,6 +116,8 @@ patches:
               - name: manager
                 args: [--health-probe-bind-address=:8081]
                 env:
+                - name: KUBEARCHIVE_MONITOR_ALL_NAMESPACES
+                  value: "true"
                 - name: KUBEARCHIVE_OTEL_MODE
                   value: enabled
                 - name: OTEL_EXPORTER_OTLP_ENDPOINT
@@ -204,13 +206,3 @@ patches:
       metadata:
         name: "kubearchive-operator-certificate"
         namespace: kubearchive
-  # set the correct namespace for the subject
-  - patch: |-
-      apiVersion: rbac.authorization.k8s.io/v1
-      kind: ClusterRoleBinding
-      metadata:
-        name: kubearchive-a13e
-      subjects:
-        - kind: ServiceAccount
-          name: kubearchive-a13e
-          namespace: product-kubearchive
