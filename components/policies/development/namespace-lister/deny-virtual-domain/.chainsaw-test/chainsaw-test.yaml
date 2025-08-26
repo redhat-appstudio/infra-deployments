@@ -1,0 +1,355 @@
+---
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: allow-namespace-without-virtual-label-and-annotation
+spec:
+  concurrent: false
+  description: |
+    Tests that the creation of a tenant namespace neither labeled
+    nor annotated with domain `virtual.konflux-ci.dev` is allowed
+  steps:
+    - name: Apply Kyverno Cluster Policy and assert it exists
+      try:
+        - apply:
+            file: ../deny-virtual-domain.yaml
+        - assert:
+            file: chainsaw-assert-clusterpolicy.yaml
+    - name: Create a tenant namespace without virtual domain label
+      try:
+        - create:
+            file: ./resources/namespace-no-labels.yaml
+            template: true
+            bindings:
+              - name: namespace
+                value: namespace-no-labels
+            expect:
+              - match:
+                  kind: Namespace
+                check:
+                  ($error == null): true
+---
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: allow-tenant-namespace-without-virtual-label-and-annotation
+spec:
+  concurrent: false
+  description: |
+    Tests that creation of a namespace neither labeled nor annotated
+    with `virtual.konflux-ci.dev` is allowed
+  steps:
+    - name: Apply Kyverno Cluster Policy and assert it exists
+      try:
+        - apply:
+            file: ../deny-virtual-domain.yaml
+        - assert:
+            file: chainsaw-assert-clusterpolicy.yaml
+    - name: Create a namespace without labels
+      try:
+        - create:
+            file: ./resources/tenant-namespace.yaml
+            template: true
+            bindings:
+              - name: namespace
+                value: tenant-namespace-allow
+            expect:
+              - match:
+                  kind: Namespace
+                check:
+                  ($error == null): true
+## Annotations
+---
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: allow-namespace-with-virtual-annotation
+spec:
+  concurrent: false
+  description: |
+    Tests that creation of a namespace annotated with
+    `virtual.konflux-ci.dev` is allowed
+  steps:
+    - name: Apply Kyverno Cluster Policy and assert it exists
+      try:
+        - apply:
+            file: ../deny-virtual-domain.yaml
+        - assert:
+            file: chainsaw-assert-clusterpolicy.yaml
+    - name: Create a namespace with virtual label
+      try:
+        - create:
+            file: ./resources/namespace-with-virtual-annotation.yaml
+            template: true
+            bindings:
+              - name: namespace
+                value: namespace-annotation-allow
+            expect:
+              - match:
+                  kind: Namespace
+                check:
+                  ($error == null): true
+---
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: deny-tenant-namespace-with-virtual-annotation
+spec:
+  concurrent: false
+  description: |
+    Tests that creation of a tenant namespace annotated with
+    `virtual.konflux-ci.dev` is denied
+  steps:
+    - name: Apply Kyverno Cluster Policy and assert it exists
+      try:
+        - apply:
+            file: ../deny-virtual-domain.yaml
+        - assert:
+            file: chainsaw-assert-clusterpolicy.yaml
+    - name: Create a tenant namespace with virtual annotation
+      try:
+        - create:
+            file: ./resources/tenant-namespace-with-virtual-annotation.yaml
+            template: true
+            bindings:
+              - name: namespace
+                value: tenant-namespace-annotation-deny
+            expect:
+              - match:
+                  kind: Namespace
+                check:
+                  ($error == null): false
+---
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: deny-promoted-tenant-namespace-with-virtual-annotation
+spec:
+  concurrent: false
+  description: |
+    Tests that a namespace annotated with `virtual.konflux-ci.dev` can not
+    be promoted to tenant namespace
+  steps:
+    - name: Apply Kyverno Cluster Policy and assert it exists
+      try:
+        - apply:
+            file: ../deny-virtual-domain.yaml
+        - assert:
+            file: chainsaw-assert-clusterpolicy.yaml
+    - name: Create a namespace with virtual annotation
+      try:
+        - create:
+            file: ./resources/namespace-with-virtual-annotation.yaml
+            template: true
+            bindings:
+              - name: namespace
+                value: promoted-tenant-namespace-annotation-deny
+            expect:
+              - match:
+                  kind: Namespace
+                check:
+                  ($error == null): true
+    - name: Promote namespace with virtual annotation to tenant namespace
+      try:
+        - apply:
+            file: ./resources/tenant-namespace-with-virtual-annotation.yaml
+            template: true
+            bindings:
+              - name: namespace
+                value: promoted-tenant-namespace-annotation-deny
+            expect:
+              - match:
+                  kind: Namespace
+                check:
+                  ($error == null): false
+---
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: deny-update-existing-tenant-namespace-with-virtual-annotation
+spec:
+  concurrent: false
+  description: |
+    Tests that an existing tenant namespace cannot be updated to add
+    an annotation with `virtual.konflux-ci.dev` domain.
+  steps:
+    - name: Apply Kyverno Cluster Policy and assert it exists
+      try:
+        - apply:
+            file: ../deny-virtual-domain.yaml
+        - assert:
+            file: chainsaw-assert-clusterpolicy.yaml
+    - name: Create a tenant namespace without virtual annotations
+      try:
+        - create:
+            file: ./resources/tenant-namespace.yaml
+            template: true
+            bindings:
+              - name: namespace
+                value: existing-tenant-annotation-deny
+            expect:
+              - match:
+                  kind: Namespace
+                check:
+                  ($error == null): true
+    - name: Update existing tenant namespace with virtual annotation
+      try:
+        - apply:
+            file: ./resources/tenant-namespace-with-virtual-annotation.yaml
+            template: true
+            bindings:
+              - name: namespace
+                value: existing-tenant-annotation-deny
+            expect:
+              - match:
+                  kind: Namespace
+                check:
+                  ($error == null): false
+## Labels
+---
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: allow-namespace-with-virtual-label
+spec:
+  concurrent: false
+  description: |
+    Tests that creation of a namespace labeled with
+    `virtual.konflux-ci.dev` is allowed
+  steps:
+    - name: Apply Kyverno Cluster Policy and assert it exists
+      try:
+        - apply:
+            file: ../deny-virtual-domain.yaml
+        - assert:
+            file: chainsaw-assert-clusterpolicy.yaml
+    - name: Create a namespace with virtual label
+      try:
+        - create:
+            file: ./resources/namespace-with-virtual-label.yaml
+            template: true
+            bindings:
+              - name: namespace
+                value: tenant-namespace-label-allow
+            expect:
+              - match:
+                  kind: Namespace
+                check:
+                  ($error == null): true
+---
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: deny-tenant-namespace-with-virtual-label
+spec:
+  concurrent: false
+  description: |
+    Tests that creation of a tenant namespace labeled with
+    `virtual.konflux-ci.dev` is denied
+  steps:
+    - name: Apply Kyverno Cluster Policy and assert it exists
+      try:
+        - apply:
+            file: ../deny-virtual-domain.yaml
+        - assert:
+            file: chainsaw-assert-clusterpolicy.yaml
+    - name: Create a tenant namespace with virtual labels
+      try:
+        - create:
+            file: ./resources/tenant-namespace-with-virtual-label.yaml
+            template: true
+            bindings:
+              - name: namespace
+                value: tenant-namespace-label-deny
+            expect:
+              - match:
+                  kind: Namespace
+                check:
+                  ($error == null): false
+---
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: deny-promoted-tenant-namespace-with-virtual-label
+spec:
+  concurrent: false
+  description: |
+    Tests that a namespace labeled with `virtual.konflux-ci.dev` can not
+    be promoted to tenant namespace
+  steps:
+    - name: Apply Kyverno Cluster Policy and assert it exists
+      try:
+        - apply:
+            file: ../deny-virtual-domain.yaml
+        - assert:
+            file: chainsaw-assert-clusterpolicy.yaml
+    - name: Create a namespace with virtual labels
+      try:
+        - create:
+            file: ./resources/namespace-with-virtual-label.yaml
+            template: true
+            bindings:
+              - name: namespace
+                value: promoted-tenant-namespace-label-deny
+            expect:
+              - match:
+                  kind: Namespace
+                check:
+                  ($error == null): true
+    - name: Promote namespace with virtual labels to tenant namespace
+      try:
+        - apply:
+            file: ./resources/tenant-namespace-with-virtual-label.yaml
+            template: true
+            bindings:
+              - name: namespace
+                value: promoted-tenant-namespace-label-deny
+            expect:
+              - match:
+                  kind: Namespace
+                check:
+                  ($error == null): false
+---
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: deny-update-existing-tenant-namespace-with-virtual-label
+spec:
+  concurrent: false
+  description: |
+    Tests that an existing tenant namespace cannot be updated to add
+    a label with `virtual.konflux-ci.dev` domain.
+  steps:
+    - name: Apply Kyverno Cluster Policy and assert it exists
+      try:
+        - apply:
+            file: ../deny-virtual-domain.yaml
+        - assert:
+            file: chainsaw-assert-clusterpolicy.yaml
+    - name: Create a tenant namespace without virtual labels
+      try:
+        - create:
+            file: ./resources/tenant-namespace.yaml
+            template: true
+            bindings:
+              - name: namespace
+                value: existing-tenant-label-deny
+            expect:
+              - match:
+                  kind: Namespace
+                check:
+                  ($error == null): true
+    - name: Update existing tenant namespace with virtual label
+      try:
+        - apply:
+            file: ./resources/tenant-namespace-with-virtual-label.yaml
+            template: true
+            bindings:
+              - name: namespace
+                value: existing-tenant-label-deny
+            expect:
+              - match:
+                  kind: Namespace
+                check:
+                  ($error == null): false
+
