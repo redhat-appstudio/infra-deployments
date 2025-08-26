@@ -20,8 +20,7 @@ customConfig:
       glob_minimum_cooldown_ms: 500
       max_line_bytes: 3145728
       auto_partial_merge: true
-      # Temporarily collect from vector namespace for testing - originally was:
-      # extra_label_selector: "app.kubernetes.io/managed-by in (tekton-pipelines,pipelinesascode.tekton.dev)"
+      extra_label_selector: "app.kubernetes.io/managed-by in (tekton-pipelines,pipelinesascode.tekton.dev)"
   transforms:
     reduce_events:
       type: reduce
@@ -55,12 +54,16 @@ customConfig:
         } else {
           .container = "unknown_container"
         }
+<<<<<<< HEAD
         if exists(.tmp.kubernetes.pod_namespace) {
           .namespace = del(.tmp.kubernetes.pod_namespace)
         } else {
           .namespace = "unknown_namespace"
         }
         # General message field handling
+=======
+        # Preserve the actual log message - this was missing!
+>>>>>>> 35ae43080 (several code review fixes)
         if exists(.tmp.message) {
           .message = to_string(del(.tmp.message)) ?? "no_message"
         } else {
