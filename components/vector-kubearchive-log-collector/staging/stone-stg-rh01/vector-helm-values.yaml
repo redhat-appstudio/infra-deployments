@@ -60,7 +60,7 @@ customConfig:
         } else {
           .namespace = "unknown_namespace"
         }
-        # Preserve the actual log message - this was missing!
+        # General message field handling
         if exists(.tmp.message) {
           .message = to_string(del(.tmp.message)) ?? "no_message"
         } else {
