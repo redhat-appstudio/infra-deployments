@@ -28,6 +28,8 @@ data:
     linux-d160-m4xlarge/arm64,\
     linux-m8xlarge/amd64,\
     linux-m8xlarge/arm64,\
+    linux-d160-m8-8xlarge/arm64,\
+    linux-d160-m7-8xlarge/amd64,\
     linux-d160-m8xlarge/amd64,\
     linux-d160-m8xlarge/arm64,\
     linux-c6gd2xlarge/arm64,\
@@ -142,6 +144,19 @@ data:
   dynamic.linux-m8xlarge-arm64.max-instances: "5"
   dynamic.linux-m8xlarge-arm64.subnet-id: subnet-0c39ff75f819abfc5
 
+  dynamic.linux-d160-m8-8xlarge-arm64.type: aws
+  dynamic.linux-d160-m8-8xlarge-arm64.region: us-east-1
+  dynamic.linux-d160-m8-8xlarge-arm64.ami: ami-03d6a5256a46c9feb
+  dynamic.linux-d160-m8-8xlarge-arm64.instance-type: m8g.8xlarge
+  dynamic.linux-d160-m8-8xlarge-arm64.instance-tag: prod-arm64-m8-8xlarge-d160
+  dynamic.linux-d160-m8-8xlarge-arm64.key-name: konflux-prod-ext-mab01
+  dynamic.linux-d160-m8-8xlarge-arm64.aws-secret: aws-account
+  dynamic.linux-d160-m8-8xlarge-arm64.ssh-secret: aws-ssh-key
+  dynamic.linux-d160-m8-8xlarge-arm64.security-group-id: sg-0fbf35ced0d59fd4a
+  dynamic.linux-d160-m8-8xlarge-arm64.max-instances: "5"
+  dynamic.linux-d160-m8-8xlarge-arm64.subnet-id: subnet-0c39ff75f819abfc5
+  dynamic.linux-d160-m8-8xlarge-arm64.disk: "160"
+
   dynamic.linux-d160-m8xlarge-arm64.type: aws
   dynamic.linux-d160-m8xlarge-arm64.region: us-east-1
   dynamic.linux-d160-m8xlarge-arm64.ami: ami-03d6a5256a46c9feb
@@ -212,9 +227,9 @@ data:
      echo "Directory '/home/var-tmp' doesn't exist"
      mkdir -p /home/var-tmp /var/tmp
     fi
-    
+
     mount --bind /home/var-tmp /var/tmp
-    
+
     if [ -d "/home/ec2-user" ]; then
     echo "ec2-user home exists"
     else
@@ -345,6 +360,19 @@ data:
   dynamic.linux-m8xlarge-amd64.security-group-id: sg-0fbf35ced0d59fd4a
   dynamic.linux-m8xlarge-amd64.max-instances: "5"
   dynamic.linux-m8xlarge-amd64.subnet-id: subnet-0c39ff75f819abfc5
+
+  dynamic.linux-d160-m7-8xlarge-amd64.type: aws
+  dynamic.linux-d160-m7-8xlarge-amd64.region: us-east-1
+  dynamic.linux-d160-m7-8xlarge-amd64.ami: ami-026ebd4cfe2c043b2
+  dynamic.linux-d160-m7-8xlarge-amd64.instance-type: m7a.8xlarge
+  dynamic.linux-d160-m7-8xlarge-amd64.instance-tag: prod-amd64-m7-8xlarge-d160
+  dynamic.linux-d160-m7-8xlarge-amd64.key-name: konflux-prod-ext-mab01
+  dynamic.linux-d160-m7-8xlarge-amd64.aws-secret: aws-account
+  dynamic.linux-d160-m7-8xlarge-amd64.ssh-secret: aws-ssh-key
+  dynamic.linux-d160-m7-8xlarge-amd64.security-group-id: sg-0fbf35ced0d59fd4a
+  dynamic.linux-d160-m7-8xlarge-amd64.max-instances: "10"
+  dynamic.linux-d160-m7-8xlarge-amd64.subnet-id: subnet-0c39ff75f819abfc5
+  dynamic.linux-d160-m7-8xlarge-amd64.disk: "160"
 
   dynamic.linux-d160-m8xlarge-amd64.type: aws
   dynamic.linux-d160-m8xlarge-amd64.region: us-east-1
@@ -561,9 +589,9 @@ data:
      echo "Directory '/home/var-tmp' doesn't exist"
      mkdir -p /home/var-tmp /var/tmp
     fi
-    
+
     mount --bind /home/var-tmp /var/tmp
-    
+
     if [ -d "/home/ec2-user" ]; then
     echo "ec2-user home exists"
     else
