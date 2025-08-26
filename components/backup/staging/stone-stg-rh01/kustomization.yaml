@@ -2,6 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ../../base/member
+  - image-repository-resource-modifier.yaml
 patches:
   - target:
       group: external-secrets.io
@@ -21,3 +22,9 @@ patches:
       kind: DataProtectionApplication
       name: velero-aws
     path: dpa-kmskeyid-patch.yaml
+  - target:
+      group: oadp.openshift.io
+      version: v1alpha1
+      kind: DataProtectionApplication
+      name: velero-aws
+    path: dpa-resource-modifier-patch.yaml
