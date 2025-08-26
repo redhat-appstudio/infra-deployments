@@ -173,7 +173,7 @@ TEST_PIPELINERUNS = {
                 "kueue.konflux-ci.dev/requests-linux-amd64": "1",
                 "kueue.konflux-ci.dev/requests-linux-arm64": "1",
                 "kueue.konflux-ci.dev/requests-linux-s390x": "1",
-                "kueue.konflux-ci.dev/requests-aws-ip": "1"  # linux/arm64 requests aws-ip (not in excluded list)
+                "kueue.konflux-ci.dev/requests-aws-ip": "2"
             },
             "labels": {
                 "kueue.x-k8s.io/queue-name": "pipelines-queue",
@@ -220,7 +220,7 @@ TEST_PIPELINERUNS = {
             "annotations": {
                 "kueue.konflux-ci.dev/requests-linux-amd64": "1",
                 "kueue.konflux-ci.dev/requests-linux-arm64": "1",
-                "kueue.konflux-ci.dev/requests-aws-ip": "1"  # linux/arm64 requests aws-ip (not in excluded list)
+                "kueue.konflux-ci.dev/requests-aws-ip": "2"
             },
             "labels": {
                 "kueue.x-k8s.io/queue-name": "pipelines-queue",
@@ -449,7 +449,7 @@ TEST_PIPELINERUNS = {
                 "kueue.konflux-ci.dev/requests-linux-ppc64le": "1",
                 "kueue.konflux-ci.dev/requests-linux-arm64": "1",
                 "kueue.konflux-ci.dev/requests-darwin-amd64": "1",
-                "kueue.konflux-ci.dev/requests-aws-ip": "2"  # linux/arm64 + darwin/amd64 request aws-ip (not in excluded list)
+                "kueue.konflux-ci.dev/requests-aws-ip": "3"
             },
             "labels": {
                 "kueue.x-k8s.io/queue-name": "pipelines-queue",
