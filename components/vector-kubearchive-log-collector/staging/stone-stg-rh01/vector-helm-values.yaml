@@ -54,54 +54,25 @@ customConfig:
         } else {
           .container = "unknown_container"
         }
-        if exists(.tmp.kubernetes.pod_namespace) {
-          .namespace = del(.tmp.kubernetes.pod_namespace)
+        # Preserve the actual log message
+        if exists(.tmp.message) {
+          .message = to_string(del(.tmp.message)) ?? "no_message"
         } else {
-          .namespace = "unlabeled"
+          .message = "no_message"
         }
-        # Handling Tekton-specific labels
-        if exists(.tmp.kubernetes.pod_labels."tekton.dev/taskRunUID") {
-          .taskRunUID = del(.tmp.kubernetes.pod_labels."tekton.dev/taskRunUID")
-        } else {
-          .taskRunUID = "none"
+        # Basic data sanitization to prevent 400 errors
+        # Truncate very long messages
+        if length(.message) > 32768 {
+          .message = slice!(.message, 0, 32768) + "...[TRUNCATED]"
         }
-        if exists(.tmp.kubernetes.pod_labels."tekton.dev/pipelineRunUID") {
-          .pipelineRunUID = del(.tmp.kubernetes.pod_labels."tekton.dev/pipelineRunUID")
-          .result = .pipelineRunUID
-        } else {
-          .result = .taskRunUID
-        }
-        # --- Start: Cronjob Specific Handling ---
-        if exists(.tmp.kubernetes.pod_labels."job-name") {
-          .job_name = del(.tmp.kubernetes.pod_labels."job-name")
-          .log_type = "cronjob"
-          if exists(.tmp.kubernetes.pod_labels."cronjob-name") {
-            .cronjob_name = del(.tmp.kubernetes.pod_labels."cronjob-name")
-          } else {
-            # Using corrected regex pattern without \d
-            .job_name = to_string(.job_name) ?? "default"
-            if match(.job_name, r'^(.*)-[0-9]{8,10}$') {
-              .cronjob_name = replace(.job_name, r'-[0-9]{8,10}$', "")
-            } else {
-              .cronjob_name = "unknown_cronjob"
-            }
-          }
-          if exists(.tmp.kubernetes.pod_labels."controller-uid") {
-              .job_uid = del(.tmp.kubernetes.pod_labels."controller-uid")
-          }
-        } else {
-          .log_type = "application"
-        }
-        # --- End: Cronjob Specific Handling ---
         # Clean up temporary fields
-        .message = del(.tmp.message)
         del(.tmp)
   sinks:
     loki:
       type: loki
       inputs: ["remap_app_logs"]
-      # Direct connection to Loki service (no gateway)
-      endpoint: "http://vector-kubearchive-log-collector-loki.product-kubearchive-logging.svc.cluster.local:3100"
+      # Send to Loki gateway
+      endpoint: "http://vector-kubearchive-log-collector-loki-gateway.product-kubearchive-logging.svc.cluster.local:80"
       encoding:
         codec: "text"
         except_fields: ["tmp"]
