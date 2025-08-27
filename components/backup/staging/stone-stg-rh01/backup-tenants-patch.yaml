@@ -1,0 +1,12 @@
+apiVersion: velero.io/v1
+kind: Schedule
+metadata:
+  name: backup-tenants
+  namespace: openshift-adp
+spec:
+  template:
+    includedResources: []
+    excludedResources:
+    - pipelineruns.tekton.dev
+    - taskruns.tekton.dev
+    - pods
