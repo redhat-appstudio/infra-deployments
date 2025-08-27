@@ -37,21 +37,11 @@ spec:
       - sandbox-sre-member
       - tekton-results
       - toolchain-member-operator
-    includedResources:
-      - applications.appstudio.redhat.com
-      - components.appstudio.redhat.com
-      - environments.appstudio.redhat.com
-      - integrationtestscenarios.appstudio.redhat.com
-      - secrets
-      - snapshots.appstudio.redhat.com
-      - serviceaccounts
-      - rolebindings
-      - namespaces
-      - imagerepositories.appstudio.redhat.com
-      - repositories.pipelinesascode.tekton.dev
-      - releases.appstudio.redhat.com
-      - releaseplans.appstudio.redhat.com
-      - releaseplanadmissions.appstudio.redhat.com
+    excludedResources:
+      - pipelineruns.tekton.dev
+      - pods
+      - resolutionrequests.resolution.tekton.dev
+      - taskruns.tekton.dev
     storageLocation: velero-aws-1
     ttl: 720h0m0s
   useOwnerReferencesInBackup: true
