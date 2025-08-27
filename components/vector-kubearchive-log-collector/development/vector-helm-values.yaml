@@ -20,7 +20,8 @@ customConfig:
       glob_minimum_cooldown_ms: 500
       max_line_bytes: 3145728
       auto_partial_merge: true
-      extra_label_selector: "app.kubernetes.io/managed-by in (tekton-pipelines,pipelinesascode.tekton.dev)"
+      # extra_label_selector removed to collect from all workloads
+      # extra_label_selector: "app.kubernetes.io/managed-by in (tekton-pipelines,pipelinesascode.tekton.dev)"
   transforms:
     reduce_events:
       type: reduce
