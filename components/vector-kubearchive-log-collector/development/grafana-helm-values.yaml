@@ -40,7 +40,7 @@ containerSecurityContext:
 # Service account configuration
 serviceAccount:
   create: false
-  name: vector-kubearchive-log-collector-grafana
+  name: grafana
 
 # Disable test pod for development environment
 testFramework:
@@ -54,7 +54,7 @@ datasources:
         type: loki
         access: proxy
         # Use Loki gateway
-        url: http://vector-kubearchive-log-collector-loki-gateway.product-kubearchive-logging.svc.cluster.local:80
+        url: http://loki-gateway.product-kubearchive-logging.svc.cluster.local:80
         basicAuth: true
         basicAuthUser: $LOKI_USER
         secureJsonData:
