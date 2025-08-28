@@ -38,6 +38,7 @@ spec:
       - linux-amd64
       - linux-s390x
       - linux-ppc64le
+      - aws-ip
       flavors:
       - name: default-flavor
         resources:
@@ -51,6 +52,8 @@ spec:
           nominalQuota: "10"
         - name: linux-ppc64le
           nominalQuota: "10"
+        - name: aws-ip
+          nominalQuota: "250"
         # When a Workload doesn't have cpu or memory requests, if there is a limit range
         # in the namespace, Kueue will assign the requests from it to the Workload.
         # We don't care about the cpu/memory for PipelineRuns, thus setting a high value for both.

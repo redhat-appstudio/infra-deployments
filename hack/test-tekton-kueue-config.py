@@ -26,9 +26,15 @@ Test Scenarios:
        - New style: `build-platforms` parameter → `kueue.konflux-ci.dev/requests-*` annotations
        - Old style: `PLATFORM` parameters in tasks → `kueue.konflux-ci.dev/requests-*` annotations
 
-    2. **Priority Assignment Logic**:
+    2. **AWS IP Resource Requests**:
+       - New style: `build-platforms` parameter → `kueue.konflux-ci.dev/requests-aws-ip` annotations
+         for platforms NOT in the excluded list (linux/ppc64le, linux/s390x, linux-x86-64, local, localhost, linux/amd64)
+       - Old style: `PLATFORM` parameters in tasks → `kueue.konflux-ci.dev/requests-aws-ip` annotations
+         for platforms NOT in the excluded list
+
+    3. **Priority Assignment Logic**:
        - Push events → `konflux-post-merge-build`
-       - Pull requests → `konflux-pre-merge-build` 
+       - Pull requests → `konflux-pre-merge-build`
        - Integration test push → `konflux-post-merge-test`
        - Integration test PR → `konflux-pre-merge-test`
        - Release managed → `konflux-release`
@@ -36,7 +42,7 @@ Test Scenarios:
        - Mintmaker namespace → `konflux-dependency-update`
        - Default → `konflux-default`
 
-    3. **Queue Assignment**: All PipelineRuns get `kueue.x-k8s.io/queue-name: pipelines-queue`
+    4. **Queue Assignment**: All PipelineRuns get `kueue.x-k8s.io/queue-name: pipelines-queue`
 
 Prerequisites:
     - Python 3 with PyYAML
@@ -44,13 +50,13 @@ Prerequisites:
     - Access to the tekton-kueue image specified in the kustomization
 
 CI/CD Integration:
-    The test runs automatically on pull requests via the GitHub action 
+    The test runs automatically on pull requests via the GitHub action
     `.github/workflows/test-tekton-kueue-config.yaml` when:
     - Changes are made to `components/kueue/**`
     - The test script itself is modified
     - The workflow file is modified
 
-    The test will **FAIL** (not skip) if any prerequisites are missing, ensuring 
+    The test will **FAIL** (not skip) if any prerequisites are missing, ensuring
     issues are caught early in CI/CD pipelines.
 """
 
@@ -78,7 +84,7 @@ def get_tekton_kueue_image(kustomization_file: Path) -> str:
     try:
         with open(kustomization_file, 'r') as f:
             kustomization = yaml.safe_load(f)
-        
+
         # Look for the tekton-kueue image in the images section
         images = kustomization.get('images', [])
         for image in images:
@@ -87,9 +93,9 @@ def get_tekton_kueue_image(kustomization_file: Path) -> str:
                 new_tag = image.get('newTag', '')
                 if new_name and new_tag:
                     return f"{new_name}:{new_tag}"
-        
+
         raise ValueError("tekton-kueue image not found in kustomization")
-    
+
     except Exception as e:
         raise RuntimeError(f"Failed to read tekton-kueue image from {kustomization_file}: {e}")
 
@@ -104,7 +110,7 @@ def check_prerequisites(should_print: bool = True) -> Prerequisites:
     # Compute repo paths locally
     repo_root = Path(__file__).parent.parent
     config_file = repo_root / "components/kueue/development/tekton-kueue/config.yaml"
-    kustomization_file = repo_root / "components/kueue/staging/base/tekton-kueue/kustomization.yaml"
+    kustomization_file = repo_root / "components/kueue/development/tekton-kueue/kustomization.yaml"
 
     # Config file
     if not config_file.exists():
@@ -166,7 +172,8 @@ TEST_PIPELINERUNS = {
             "annotations": {
                 "kueue.konflux-ci.dev/requests-linux-amd64": "1",
                 "kueue.konflux-ci.dev/requests-linux-arm64": "1",
-                "kueue.konflux-ci.dev/requests-linux-s390x": "1"
+                "kueue.konflux-ci.dev/requests-linux-s390x": "1",
+                "kueue.konflux-ci.dev/requests-aws-ip": "2"
             },
             "labels": {
                 "kueue.x-k8s.io/queue-name": "pipelines-queue",
@@ -174,7 +181,7 @@ TEST_PIPELINERUNS = {
             }
         }
     },
-    
+
     "multiplatform_old": {
         "name": "Multi-platform pipeline (old style with PLATFORM parameters)",
         "pipelinerun": {
@@ -196,7 +203,7 @@ TEST_PIPELINERUNS = {
                             "taskRef": {"name": "build-task"}
                         },
                         {
-                            "name": "build-task-arm64", 
+                            "name": "build-task-arm64",
                             "params": [{"name": "PLATFORM", "value": "linux/arm64"}],
                             "taskRef": {"name": "build-task"}
                         },
@@ -212,7 +219,8 @@ TEST_PIPELINERUNS = {
         "expected": {
             "annotations": {
                 "kueue.konflux-ci.dev/requests-linux-amd64": "1",
-                "kueue.konflux-ci.dev/requests-linux-arm64": "1"
+                "kueue.konflux-ci.dev/requests-linux-arm64": "1",
+                "kueue.konflux-ci.dev/requests-aws-ip": "2"
             },
             "labels": {
                 "kueue.x-k8s.io/queue-name": "pipelines-queue",
@@ -220,7 +228,7 @@ TEST_PIPELINERUNS = {
             }
         }
     },
-    
+
     "release_managed": {
         "name": "Release managed pipeline",
         "pipelinerun": {
@@ -247,7 +255,7 @@ TEST_PIPELINERUNS = {
             }
         }
     },
-    
+
     "release_tenant": {
         "name": "Release tenant pipeline",
         "pipelinerun": {
@@ -274,7 +282,7 @@ TEST_PIPELINERUNS = {
             }
         }
     },
-    
+
     "mintmaker": {
         "name": "Mintmaker dependency update",
         "pipelinerun": {
@@ -297,7 +305,7 @@ TEST_PIPELINERUNS = {
             }
         }
     },
-    
+
     "integration_test_push": {
         "name": "Integration test pipeline (push event)",
         "pipelinerun": {
@@ -323,7 +331,7 @@ TEST_PIPELINERUNS = {
             }
         }
     },
-    
+
     "integration_test_pr": {
         "name": "Integration test pipeline (pull request event)",
         "pipelinerun": {
@@ -349,7 +357,7 @@ TEST_PIPELINERUNS = {
             }
         }
     },
-    
+
     "default_priority": {
         "name": "Default pipeline (no special labels)",
         "pipelinerun": {
@@ -371,13 +379,90 @@ TEST_PIPELINERUNS = {
                 "kueue.x-k8s.io/priority-class": "konflux-default"
             }
         }
+    },
+
+    "aws_platforms_only": {
+        "name": "Multi-platform pipeline with AWS platforms only (new style)",
+        "pipelinerun": {
+            "apiVersion": "tekton.dev/v1",
+            "kind": "PipelineRun",
+            "metadata": {
+                "name": "test-aws-platforms-only",
+                "namespace": "default",
+                "labels": {
+                    "pipelinesascode.tekton.dev/event-type": "push"
+                }
+            },
+            "spec": {
+                "pipelineRef": {"name": "build-pipeline"},
+                "params": [
+                    {
+                        "name": "build-platforms",
+                        "value": ["linux/arm64", "darwin/amd64", "windows/amd64"]
+                    },
+                    {"name": "other-param", "value": "test"}
+                ],
+                "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
+            }
+        },
+        "expected": {
+            "annotations": {
+                "kueue.konflux-ci.dev/requests-linux-arm64": "1",
+                "kueue.konflux-ci.dev/requests-darwin-amd64": "1",
+                "kueue.konflux-ci.dev/requests-windows-amd64": "1",
+                "kueue.konflux-ci.dev/requests-aws-ip": "3"  # All 3 platforms request aws-ip (none in excluded list)
+            },
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-post-merge-build"
+            }
+        }
+    },
+
+    "mixed_platforms_excluded_included": {
+        "name": "Multi-platform pipeline with mix of excluded and AWS platforms (new style)",
+        "pipelinerun": {
+            "apiVersion": "tekton.dev/v1",
+            "kind": "PipelineRun",
+            "metadata": {
+                "name": "test-mixed-platforms",
+                "namespace": "default",
+                "labels": {
+                    "pipelinesascode.tekton.dev/event-type": "push"
+                }
+            },
+            "spec": {
+                "pipelineRef": {"name": "build-pipeline"},
+                "params": [
+                    {
+                        "name": "build-platforms",
+                        "value": ["linux/amd64", "linux/s390x", "linux/ppc64le", "linux/arm64", "darwin/amd64"]
+                    }
+                ],
+                "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
+            }
+        },
+        "expected": {
+            "annotations": {
+                "kueue.konflux-ci.dev/requests-linux-amd64": "1",
+                "kueue.konflux-ci.dev/requests-linux-s390x": "1",
+                "kueue.konflux-ci.dev/requests-linux-ppc64le": "1",
+                "kueue.konflux-ci.dev/requests-linux-arm64": "1",
+                "kueue.konflux-ci.dev/requests-darwin-amd64": "1",
+                "kueue.konflux-ci.dev/requests-aws-ip": "3"
+            },
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-post-merge-build"
+            }
+        }
     }
 }
 
 
 class TektonKueueMutationTest(unittest.TestCase):
     """Test suite for tekton-kueue CEL expression mutations."""
-    
+
     @classmethod
     def setUpClass(cls):
         """Set up test class - check prerequisites."""
@@ -385,29 +470,29 @@ class TektonKueueMutationTest(unittest.TestCase):
         cls.tekton_kueue_image = info.image
         cls.config_file = info.config_file
         print(f"Using tekton-kueue image: {cls.tekton_kueue_image}")
-    
+
     def run_mutation_test(self, test_data: Dict) -> Dict:
         """Run a single mutation test and return results."""
         pipelinerun = test_data["pipelinerun"]
-        
+
         with tempfile.TemporaryDirectory() as temp_dir:
             # Write the config file
             config_path = Path(temp_dir) / "config.yaml"
             pipelinerun_path = Path(temp_dir) / "pipelinerun.yaml"
-            
+
             # Copy the config file
             import shutil
             shutil.copy2(self.config_file, config_path)
-            
+
             # Write the PipelineRun
             with open(pipelinerun_path, 'w') as f:
                 yaml.dump(pipelinerun, f, default_flow_style=False)
-            
+
             # Set proper permissions
             os.chmod(config_path, 0o644)
             os.chmod(pipelinerun_path, 0o644)
             os.chmod(temp_dir, 0o755)
-            
+
             # Run the mutation
             cmd = [
                 "podman", "run", "--rm",
@@ -417,20 +502,20 @@ class TektonKueueMutationTest(unittest.TestCase):
                 "--pipelinerun-file", "/workspace/pipelinerun.yaml",
                 "--config-dir", "/workspace"
             ]
-            
+
             result = subprocess.run(cmd, capture_output=True, text=True)
-            
+
             if result.returncode != 0:
                 self.fail(f"Mutation failed: {result.stderr}")
-            
+
             # Parse the mutated PipelineRun
             try:
                 mutated = yaml.safe_load(result.stdout)
             except yaml.YAMLError as e:
                 self.fail(f"Failed to parse mutated YAML: {e}")
-            
+
             return mutated
-    
+
     def validate_mutation_result(self, test_key: str, test_data: Dict):
         """Helper method to validate mutation results."""
         with self.subTest(test=test_key):
@@ -440,7 +525,7 @@ class TektonKueueMutationTest(unittest.TestCase):
             original_metadata = test_data["pipelinerun"].get("metadata", {})
             original_annotations = original_metadata.get("annotations", {}) or {}
             original_labels = original_metadata.get("labels", {}) or {}
-            
+
             # Check annotations (full equality vs original + expected)
             annotations = mutated.get("metadata", {}).get("annotations", {})
             expected_annotations = expected["annotations"]
@@ -450,7 +535,7 @@ class TektonKueueMutationTest(unittest.TestCase):
                 expected_annotations_full,
                 f"Annotations mismatch; expected {expected_annotations_full}, got {annotations}"
             )
-            
+
             # Check labels (full equality vs original + expected)
             labels = mutated.get("metadata", {}).get("labels", {})
             expected_labels = expected["labels"]
@@ -460,7 +545,7 @@ class TektonKueueMutationTest(unittest.TestCase):
                 expected_labels_full,
                 f"Labels mismatch; expected {expected_labels_full}, got {labels}"
             )
-    
+
     def test_all_mutations(self):
         """Test all tekton-kueue mutation scenarios."""
         for test_key, test_data in TEST_PIPELINERUNS.items():
@@ -469,16 +554,16 @@ class TektonKueueMutationTest(unittest.TestCase):
 
 if __name__ == "__main__":
     import argparse
-    
+
     parser = argparse.ArgumentParser(description="Test tekton-kueue CEL expressions")
-    parser.add_argument("--check-setup", action="store_true", 
+    parser.add_argument("--check-setup", action="store_true",
                        help="Check if prerequisites are met and show configuration")
     parser.add_argument("--verbose", "-v", action="store_true",
                        help="Run tests with verbose output")
-    
+
     # Parse known args to allow unittest args to pass through
     args, unknown = parser.parse_known_args()
-    
+
     if args.check_setup:
         try:
             info = check_prerequisites(should_print=True)
@@ -489,9 +574,9 @@ if __name__ == "__main__":
         print("\n✅ All prerequisites met! Ready to run tests.")
         print("Run: python hack/test-tekton-kueue-config.py")
         print("\nNote: Tests will FAIL (not skip) if any prerequisites are missing.")
-        
+
     else:
         # Run unittest with remaining args
         verbosity = 2 if args.verbose else 1
         sys.argv = [sys.argv[0]] + unknown
-        unittest.main(verbosity=verbosity) 
+        unittest.main(verbosity=verbosity)
