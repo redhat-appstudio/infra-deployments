@@ -38,12 +38,12 @@ seccompProfiles:
 supplementalGroups:
   type: RunAsAny
 users:
-- system:serviceaccount:product-kubearchive-logging:vector-kubearchive-log-collector
-- system:serviceaccount:product-kubearchive-logging:vector-kubearchive-log-collector-grafana
-- system:serviceaccount:product-kubearchive-logging:vector-kubearchive-log-collector-loki
-- system:serviceaccount:product-kubearchive-logging:vector-kubearchive-log-collector-loki-canary
+- system:serviceaccount:product-kubearchive-logging:vector
+- system:serviceaccount:product-kubearchive-logging:grafana
+- system:serviceaccount:product-kubearchive-logging:loki
+- system:serviceaccount:product-kubearchive-logging:loki-canary
 - system:serviceaccount:product-kubearchive-logging:minio-sa
-- system:serviceaccount:product-kubearchive-logging:vector-kubearchive-log-collector-minio
+- system:serviceaccount:product-kubearchive-logging:minio
 volumes:
 - configMap
 - emptyDir
@@ -64,7 +64,7 @@ metadata:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: vector-kubearchive-log-collector-minio
+  name: minio
   namespace: product-kubearchive-logging
   annotations:
     argocd.argoproj.io/sync-wave: "-1"  # Before workloads
@@ -85,5 +85,5 @@ subjects:
   name: minio-sa
   namespace: product-kubearchive-logging
 - kind: ServiceAccount
-  name: vector-kubearchive-log-collector-minio
+  name: minio
   namespace: product-kubearchive-logging

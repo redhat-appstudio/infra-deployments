@@ -78,7 +78,7 @@ customConfig:
       type: loki
       inputs: ["remap_app_logs"]
       # Send to Loki gateway
-      endpoint: "http://vector-kubearchive-log-collector-loki-gateway.product-kubearchive-logging.svc.cluster.local:80"
+      endpoint: "http://loki-gateway.product-kubearchive-logging.svc.cluster.local:80"
       encoding:
         codec: "text"  # Use text instead of json to avoid metadata issues
         except_fields: ["tmp"]  # Exclude temporary fields
@@ -129,7 +129,7 @@ image:
   tag: 0.46.1-distroless-libc
 serviceAccount:
   create: true
-  name: vector-kubearchive-log-collector
+  name: vector
 securityContext:
   allowPrivilegeEscalation: false
   runAsUser: 0
