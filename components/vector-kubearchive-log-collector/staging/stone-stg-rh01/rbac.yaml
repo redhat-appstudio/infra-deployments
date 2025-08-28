@@ -4,15 +4,15 @@
 
 ---
 # Staging-specific service account with AWS IAM role for S3 access
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: loki-sa
-  namespace: product-kubearchive-logging
-  annotations:
-    argocd.argoproj.io/sync-wave: "-1"  # Before workloads
-    # This annotation links the SA to the AWS IAM Role for S3 access
-    eks.amazonaws.com/role-arn: "arn:aws:iam::663944276957:role/stone-stg-rh01-loki-storage-role"
+# apiVersion: v1
+# kind: ServiceAccount
+# metadata:
+#   name: loki-sa
+#   namespace: product-kubearchive-logging
+#   annotations:
+#     argocd.argoproj.io/sync-wave: "-1"  # Before workloads
+#     # This annotation links the SA to the AWS IAM Role for S3 access
+#     eks.amazonaws.com/role-arn: "arn:aws:iam::663944276957:role/stone-stg-rh01-loki-storage-role"
 ---
 # Staging-specific SecurityContextConstraints (without minio service accounts)
 apiVersion: security.openshift.io/v1
