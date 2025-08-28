@@ -58,7 +58,7 @@ roleRef:
   name: kubearchive-vector-scc-user
 subjects:
 - kind: ServiceAccount
-  name: vector-kubearchive-log-collector
+  name: vector
   namespace: product-kubearchive-logging
 - kind: ServiceAccount
   name: loki
@@ -67,20 +67,20 @@ subjects:
   name: loki-sa
   namespace: product-kubearchive-logging
 - kind: ServiceAccount
-  name: vector-kubearchive-log-collector-grafana
+  name: grafana
   namespace: product-kubearchive-logging
 - kind: ServiceAccount
-  name: vector-kubearchive-log-collector-loki
+  name: loki
   namespace: product-kubearchive-logging
 - kind: ServiceAccount
-  name: vector-kubearchive-log-collector-loki-canary
+  name: loki-canary
   namespace: product-kubearchive-logging
 
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: vector-kubearchive-log-collector-loki
+  name: loki
   namespace: product-kubearchive-logging
   annotations:
     argocd.argoproj.io/sync-wave: "-1"  # Before workloads
@@ -88,7 +88,7 @@ metadata:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: vector-kubearchive-log-collector-grafana
+  name: grafana
   namespace: product-kubearchive-logging
   annotations:
     argocd.argoproj.io/sync-wave: "-1"  # Before workloads
@@ -96,7 +96,7 @@ metadata:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: vector-kubearchive-log-collector-loki-canary
+  name: loki-canary
   namespace: product-kubearchive-logging
   annotations:
     argocd.argoproj.io/sync-wave: "-1"  # Before workloads

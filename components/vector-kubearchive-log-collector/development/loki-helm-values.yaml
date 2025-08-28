@@ -33,7 +33,7 @@ gateway:
 # Service Account configuration to match SCC  
 serviceAccount:
   create: false
-  name: vector-kubearchive-log-collector-loki
+  name: loki
 
 # Basic Loki configuration
 loki:
@@ -50,7 +50,7 @@ loki:
       ruler: loki-data
       admin: loki-data
     s3:
-      endpoint: http://vector-kubearchive-log-collector-minio:9000
+      endpoint: http://minio:9000
       region: us-east-1
       s3ForcePathStyle: true
       insecure: true
@@ -60,7 +60,7 @@ loki:
       s3forcepathstyle: true
       bucketnames: loki-data
       region: us-east-1
-      endpoint: vector-kubearchive-log-collector-minio:9000
+      endpoint: minio:9000
       insecure: true
   schemaConfig:
     configs:
