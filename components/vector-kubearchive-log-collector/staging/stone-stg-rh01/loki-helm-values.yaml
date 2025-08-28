@@ -21,10 +21,12 @@ gateway:
   nginxConfig:
     resolver: "dns-default.openshift-dns.svc.cluster.local."
 
-# Service Account configuration to use IAM role for S3 access
+# Service Account configuration to use IAM role for S3 access via OIDC
 serviceAccount:
-  create: false
+  create: true
   name: loki-sa
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::663944276957:role/stone-stg-rh01-loki-storage-role
 
 # Single binary configuration with proper volume mounts
 singleBinary:
@@ -78,15 +80,15 @@ loki:
       ruler: stone-stg-rh01-loki-storage
       admin: stone-stg-rh01-loki-storage
     s3:
-      endpoint: https://s3.us-east-1.amazonaws.com
       region: us-east-1
   # Required storage_config for Helm chart (chunks on S3)
   storage_config:
     aws:
-      s3: s3://stone-stg-rh01-loki-storage
-      s3forcepathstyle: true
+      #s3forcepathstyle: false  # Use virtual-hosted-style for AWS S3
       bucketnames: stone-stg-rh01-loki-storage
       region: us-east-1
+      # Use OIDC authentication via service account (no explicit credentials needed)
+      #sse_encryption: false
   # Configure ruler storage to use local filesystem
   ruler:
     rule_path: /var/loki/ruler
