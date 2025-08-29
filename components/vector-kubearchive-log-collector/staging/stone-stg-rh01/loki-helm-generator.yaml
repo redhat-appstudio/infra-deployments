@@ -8,3 +8,21 @@ version: 6.30.1
 releaseName: loki
 namespace: product-kubearchive-logging
 valuesFile: loki-helm-values.yaml
+additionalValuesFiles:
+  - loki-helm-stg-values.yaml
+valuesInline:
+  # Cluster-specific overrides
+  serviceAccount:
+    create: true
+    name: loki-sa
+    annotations:
+      eks.amazonaws.com/role-arn: arn:aws:iam::663944276957:role/stone-stg-rh01-loki-storage-role
+  loki:
+    storage:
+      bucketNames:
+        chunks: stone-stg-rh01-loki-storage
+        ruler: stone-stg-rh01-loki-storage
+        admin: stone-stg-rh01-loki-storage
+    storage_config:
+      aws:
+        bucketnames: stone-stg-rh01-loki-storage

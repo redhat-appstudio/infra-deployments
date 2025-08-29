@@ -1,0 +1,17 @@
+---
+# Enable minio for storage
+minio:
+  enabled: true
+  rootUser: loki
+  rootPassword: supersecret
+  mode: standalone
+  persistence:
+    enabled: false  # Use emptyDir for development (no storage class available)
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi  # Increase from 64Mi to 128Mi
+    limits:
+      memory: 256Mi  # Increase from 128Mi to 256Mi
+  postJob:
+    enabled: false
