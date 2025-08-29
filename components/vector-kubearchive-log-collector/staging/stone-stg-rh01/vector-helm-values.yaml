@@ -1,12 +1,6 @@
 ---
 role: Agent
-resources:
-  requests:
-    cpu: 512m
-    memory: 4096Mi
-  limits:
-    cpu: 2000m
-    memory: 4096Mi
+
 customConfig:
   data_dir: /vector-data-dir
   api:
@@ -20,7 +14,6 @@ customConfig:
       glob_minimum_cooldown_ms: 500
       max_line_bytes: 3145728
       auto_partial_merge: true
-      extra_label_selector: "app.kubernetes.io/managed-by in (tekton-pipelines,pipelinesascode.tekton.dev)"
   transforms:
     reduce_events:
       type: reduce
@@ -54,7 +47,7 @@ customConfig:
         } else {
           .container = "unknown_container"
         }
-        # Preserve the actual log message
+        # General message field handling
         if exists(.tmp.message) {
           .message = to_string(del(.tmp.message)) ?? "no_message"
         } else {
@@ -74,8 +67,8 @@ customConfig:
       # Send to Loki gateway
       endpoint: "http://loki-gateway.product-kubearchive-logging.svc.cluster.local:80"
       encoding:
-        codec: "text"
-        except_fields: ["tmp"]
+        codec: "text"  # Use text instead of json to avoid metadata issues
+        except_fields: ["tmp"]  # Exclude temporary fields
       auth:
         strategy: "basic"
         user: "${LOKI_USERNAME}"
@@ -84,12 +77,12 @@ customConfig:
       request:
         headers:
           X-Scope-OrgID: kubearchive
-        timeout_secs: 60
+        timeout_secs: 60  # Shorter timeout
       batch:
-        max_bytes: 2097152
-        max_events: 1000
-        timeout_secs: 10
-      compression: "gzip"
+        max_bytes: 2097152  # Reduce to 2MB (half of Loki's 4MB/sec limit)
+        max_events: 1000   # Limit number of events per batch
+        timeout_secs: 10   # Send batches more frequently
+      compression: "gzip"  # Enable compression to reduce data size
       labels:
         job: "vector"
         pod_id: "{{`{{ pod_id }}`}}"
@@ -99,7 +92,7 @@ customConfig:
       buffer:
         type: "memory"
         max_events: 10000
-        when_full: "drop_newest"
+        when_full: "drop_newest"  # Drop newest instead of blocking
 env:
   - name: LOKI_USERNAME
     valueFrom:

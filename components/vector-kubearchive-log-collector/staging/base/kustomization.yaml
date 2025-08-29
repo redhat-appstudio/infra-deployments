@@ -12,9 +12,11 @@ commonAnnotations:
     "Managed by upstream Loki chart (no value exposed for unhealthyPodEvictionPolicy)."
 
 resources:
-- ../base
+- ../../base
+- loki-secret.yaml
 
-generators:
-- vector-helm-generator.yaml
-- loki-helm-generator.yaml
-- grafana-helm-generator.yaml
+patches:
+  - path: scc-patch.yaml
+    target:
+      kind: SecurityContextConstraints
+      name: kubearchive-logging-scc
