@@ -1,67 +1,23 @@
 ---
-# simplified Loki configuration for development
 deploymentMode: Distributed
 
- # This exposes the Loki gateway so it can be written to and queried externaly
+ # This exposes the Loki gateway so it can be written to and queried externally
 gateway:
-  enabled: true
-  replicas: 1
-  # Fix Docker Hub rate limiting by using Quay.io registry
   image:
-    registry: quay.io
+    registry: quay.io # Use Quay.io registry to prevent docker hub rate limit
     repository: nginx/nginx-unprivileged
     tag: 1.24-alpine
-  resources:
-    requests:
-      cpu: 50m
-      memory: 64Mi
-    limits:
-      memory: 128Mi
-  service:
-    type: ClusterIP
-    port: 80
   nginxConfig:
     resolver: "dns-default.openshift-dns.svc.cluster.local."
-  # Add startup probe for faster readiness
-  readinessProbe:
-    initialDelaySeconds: 5   # Reduce from default 15
-    periodSeconds: 5         # Check more frequently
-    timeoutSeconds: 3
-    failureThreshold: 3
-    successThreshold: 1
-
-# Service Account configuration to match SCC  
-serviceAccount:
-  create: false
-  name: loki
 
 # Basic Loki configuration
 loki:
   # Enable multi-tenancy to handle X-Scope-OrgID headers
   auth_enabled: true
   commonConfig:
-    replication_factor: 1  # Keep at 1 for development
     path_prefix: /var/loki  # This directory will be writable via volume mount
-  # Add storage configuration for development with emptyDir volumes
   storage:
     type: s3
-    bucketNames:
-      chunks: loki-data
-      ruler: loki-data
-      admin: loki-data
-    s3:
-      endpoint: http://minio:9000
-      region: us-east-1
-      s3ForcePathStyle: true
-      insecure: true
-  storage_config:
-    aws:
-      s3: s3://loki-chunks
-      s3forcepathstyle: true
-      bucketnames: loki-data
-      region: us-east-1
-      endpoint: minio:9000
-      insecure: true
   schemaConfig:
     configs:
       - from: "2024-04-01"
@@ -71,32 +27,9 @@ loki:
         index:
           prefix: loki_index_
           period: 24h
-  ingester:
-     chunk_encoding: snappy
-     # Optimize for faster startup
-     chunk_target_size: 1048576  # 1MB chunks for faster processing
-     chunk_idle_period: 30s      # Shorter idle period
-     max_chunk_age: 10m          # Shorter max age for development
-  querier:
-     # Reduce concurrency for development
-     max_concurrent: 2  # Reduce from 4
-  pattern_ingester:
-     enabled: false
-  # Configure compactor to use writable volumes (ruler removed since component is disabled)
+  # Configure compactor to use writable volumes
   compactor:
     working_directory: /var/loki/compactor
-  limits_config:
-       retention_period: 24h     # Reduce from 744h for development
-       ingestion_rate_mb: 5      # Reduce from 10 for development
-       ingestion_burst_size_mb: 10  # Reduce from 20
-       max_streams_per_user: 0
-       max_line_size: 256000
-       reject_old_samples: true
-       reject_old_samples_max_age: 6h  # Reduce from 168h
-       discover_service_name: []
-       allow_structured_metadata: true
-       volume_enabled: true
-       max_global_streams_per_user: 10000  # Reduce from 50000
 
 # Security contexts for OpenShift
 podSecurityContext:
@@ -122,130 +55,16 @@ sidecar:
   datasources:
     enabled: false
 
+# Zero out replica counts of other deployment modes
+
 singleBinary:
   replicas: 0
-
-# Zero out replica counts of other deployment modes
 backend:
   replicas: 0
 read:
   replicas: 0
 write:
   replicas: 0
-
-# Distributed components configuration
-ingester:
-  replicas: 1  # Reduce from 3 to 1 for development
-  autoscaling:
-    enabled: false  # Disable autoscaling for dev
-  zoneAwareReplication:
-    enabled: false
-  resources:
-    requests:
-      cpu: 50m  # Reduce from 100m
-      memory: 128Mi  # Reduce from 256Mi
-    limits:
-      memory: 256Mi  # Reduce from 512Mi
-  persistence:
-    enabled: false  # Disable persistence for dev to avoid storage class issues
-    size: 10Gi
-  affinity: {}
-  podAntiAffinity:
-    soft: {}
-    hard: {}
-
-querier:
-  replicas: 1
-  autoscaling:
-    enabled: false
-  resources:
-    requests:
-      cpu: 50m  # Keep at 50m
-      memory: 128Mi  # Increase from 128Mi for safety
-    limits:
-      memory: 512Mi  # Restore to 512Mi as it needs more memory
-  affinity: {}
-
-queryFrontend:
-  replicas: 1
-  resources:
-    requests:
-      cpu: 25m  # Keep CPU low
-      memory: 128Mi  # Increase from 64Mi
-    limits:
-      memory: 256Mi  # Increase from 128Mi to 256Mi
-
-queryScheduler:
-  replicas: 1
-  resources:
-    requests:
-      cpu: 25m  # Reduce from 50m
-      memory: 32Mi  # Reduce from 64Mi
-    limits:
-      memory: 64Mi  # Reduce from 128Mi
-
-distributor:
-  replicas: 1  # Reduce from 3 to 1 for development
-  autoscaling:
-    enabled: false  # Disable autoscaling for dev
-  maxUnavailable: 1
-  resources:
-    requests:
-      cpu: 50m  # Reduce from 100m
-      memory: 128Mi  # Reduce from 256Mi
-    limits:
-      memory: 256Mi  # Reduce from 512Mi
-  affinity: {}
-
-compactor:
-  replicas: 1
-  resources:
-    requests:
-      cpu: 50m  # Reduce from 100m
-      memory: 64Mi  # Reduce from 128Mi
-    limits:
-      memory: 128Mi  # Reduce from 256Mi
-
-indexGateway:
-  replicas: 1
-  maxUnavailable: 0
-  resources:
-    requests:
-      cpu: 50m  # Reduce from 100m
-      memory: 128Mi  # Reduce from 256Mi
-    limits:
-      memory: 256Mi  # Reduce from 512Mi
-  affinity: {}
-
-ruler:
-  replicas: 0  # Disable ruler - not essential for basic log functionality
-
-# Disable all cache components to avoid Pending issues in development
-chunksCache:
-  enabled: false
-  replicas: 0
-
-resultsCache:
-  enabled: false
-  replicas: 0
-
-memcached:
-  enabled: false
-
-memcachedResults:
-  enabled: false
-
-memcachedChunks:
-  enabled: false
-
-memcachedFrontend:
-  enabled: false
-
-memcachedIndexQueries:
-  enabled: false
-
-memcachedIndexWrites:
-  enabled: false
 
 bloomPlanner:
   replicas: 0
@@ -254,29 +73,8 @@ bloomBuilder:
 bloomGateway:
   replicas: 0
 
-
 # Disable lokiCanary - not essential for core functionality
 lokiCanary:
   enabled: false
 
-# Enable minio for storage
-minio:
-  enabled: true
-  rootUser: loki
-  rootPassword: supersecret
-  mode: standalone
-  persistence:
-    enabled: false  # Use emptyDir for development (no storage class available)
-  resources:
-    requests:
-      cpu: 50m
-      memory: 128Mi  # Increase from 64Mi to 128Mi
-    limits:
-      memory: 256Mi  # Increase from 128Mi to 256Mi
-  postJob:
-    enabled: false
-
-# Disable memcached exporter - not essential for core functionality
-memcachedExporter:
-  enabled: false
 
