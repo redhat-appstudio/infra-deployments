@@ -1,0 +1,44 @@
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: kubearchive-logging-scc
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+allowHostDirVolumePlugin: true
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: false
+allowHostPorts: false
+allowPrivilegeEscalation: false
+allowPrivilegedContainer: false
+allowedCapabilities: null
+defaultAddCapabilities: null
+defaultAllowPrivilegeEscalation: false
+forbiddenSysctls:
+  - '*'
+fsGroup:
+  type: RunAsAny
+groups: []
+priority: 10
+readOnlyRootFilesystem: false
+requiredDropCapabilities:
+  - ALL
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: RunAsAny
+seccompProfiles:
+  - runtime/default
+supplementalGroups:
+  type: RunAsAny
+users:
+  - system:serviceaccount:product-kubearchive-logging:vector
+  - system:serviceaccount:product-kubearchive-logging:loki
+  - system:serviceaccount:product-kubearchive-logging:loki-canary
+volumes:
+  - configMap
+  - emptyDir
+  - hostPath
+  - persistentVolumeClaim
+  - projected
+  - secret
