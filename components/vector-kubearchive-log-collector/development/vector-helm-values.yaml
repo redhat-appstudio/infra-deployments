@@ -1,12 +1,6 @@
 ---
 role: Agent
-resources:
-  requests:
-    cpu: 200m
-    memory: 1024Mi
-  limits:
-    cpu: 1000m
-    memory: 2048Mi
+
 customConfig:
   data_dir: /vector-data-dir
   api:
@@ -20,8 +14,6 @@ customConfig:
       glob_minimum_cooldown_ms: 500
       max_line_bytes: 3145728
       auto_partial_merge: true
-      # extra_label_selector removed to collect from all workloads
-      # extra_label_selector: "app.kubernetes.io/managed-by in (tekton-pipelines,pipelinesascode.tekton.dev)"
   transforms:
     reduce_events:
       type: reduce
@@ -54,11 +46,6 @@ customConfig:
           .container = del(.tmp.kubernetes.container_name)
         } else {
           .container = "unknown_container"
-        }
-        if exists(.tmp.kubernetes.pod_namespace) {
-          .namespace = del(.tmp.kubernetes.pod_namespace)
-        } else {
-          .namespace = "unknown_namespace"
         }
         # General message field handling
         if exists(.tmp.message) {

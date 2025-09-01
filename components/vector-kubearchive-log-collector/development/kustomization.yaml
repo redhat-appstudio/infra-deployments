@@ -21,6 +21,13 @@ resources:
 - ../base
 - rbac.yaml
 - loki-secret.yaml
+- sa.yaml
+
+patches:
+  - path: scc-patch.yaml
+    target:
+      kind: SecurityContextConstraints
+      name: kubearchive-logging-scc
 
 generators:
 - vector-helm-generator.yaml

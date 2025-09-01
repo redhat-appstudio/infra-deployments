@@ -1,44 +1,23 @@
 ---
-# simplified Loki configuration for staging
 deploymentMode: Distributed
 
- # This exposes the Loki gateway so it can be written to and queried externaly
+ # This exposes the Loki gateway so it can be written to and queried externally
 gateway:
-  service:
-    type: LoadBalancer
-  resources:
-    requests:
-      cpu: 100m
-      memory: 128Mi
-    limits:
-      memory: 256Mi
-  # Fix Docker Hub rate limiting by using Quay.io registry
   image:
-    registry: quay.io
+    registry: quay.io # Use Quay.io registry to prevent docker hub rate limit
     repository: nginx/nginx-unprivileged
     tag: 1.24-alpine
-  # Fix DNS resolver for OpenShift
   nginxConfig:
     resolver: "dns-default.openshift-dns.svc.cluster.local."
 
-# Service Account configuration to use IAM role for S3 access via OIDC
-serviceAccount:
-  create: true
-  name: loki-sa
-  annotations:
-    eks.amazonaws.com/role-arn: arn:aws:iam::663944276957:role/stone-stg-rh01-loki-storage-role
-
-# Single binary configuration with proper volume mounts
-singleBinary:
-  replicas: 0
-
-# Basic Loki configuration with S3 storage
+# Basic Loki configuration
 loki:
   # Enable multi-tenancy to handle X-Scope-OrgID headers
   auth_enabled: true
   commonConfig:
-    replication_factor: 3
     path_prefix: /var/loki  # This directory will be writable via volume mount
+  storage:
+    type: s3
   schemaConfig:
     configs:
       - from: "2024-04-01"
@@ -48,55 +27,7 @@ loki:
         index:
           prefix: loki_index_
           period: 24h
-  # Configure ingestion limits to handle Vector's data volume
-  limits_config:
-      retention_period: 744h  # 31 days retention
-      ingestion_rate_mb: 20
-      ingestion_burst_size_mb: 40
-      max_streams_per_user: 0
-      max_line_size: 256000
-      reject_old_samples: false
-      reject_old_samples_max_age: 168h
-      discover_service_name: []
-      allow_structured_metadata: true
-      volume_enabled: true
-      max_global_streams_per_user: 50000
-  # Tuning for high-load queries
-  querier:
-    max_concurrent: 8
-  query_range:
-    # split_queries_by_interval deprecated in Loki 3.x - removed
-    parallelise_shardable_queries: true
-  # Ingester chunking behavior
-  ingester:
-    chunk_target_size: 1536000
-    chunk_idle_period: 1m
-    max_chunk_age: 1h
-  # Required storage configuration for Helm chart
-  storage:
-    type: s3
-    bucketNames:
-      chunks: stone-stg-rh01-loki-storage
-      ruler: stone-stg-rh01-loki-storage
-      admin: stone-stg-rh01-loki-storage
-    s3:
-      region: us-east-1
-  # Required storage_config for Helm chart (chunks on S3)
-  storage_config:
-    aws:
-      #s3forcepathstyle: false  # Use virtual-hosted-style for AWS S3
-      bucketnames: stone-stg-rh01-loki-storage
-      region: us-east-1
-      # Use OIDC authentication via service account (no explicit credentials needed)
-      #sse_encryption: false
-  # Configure ruler storage to use local filesystem
-  ruler:
-    rule_path: /var/loki/ruler
-    storage:
-      type: local
-      local:
-        directory: /var/loki/ruler
-  # Configure compactor to use writable volume for working directory
+  # Configure compactor to use writable volumes
   compactor:
     working_directory: /var/loki/compactor
 
@@ -125,136 +56,15 @@ sidecar:
     enabled: false
 
 # Zero out replica counts of other deployment modes
+
+singleBinary:
+  replicas: 0
 backend:
   replicas: 0
 read:
   replicas: 0
 write:
   replicas: 0
-
-# Distributed components configuration
-ingester:
-  replicas: 3
-  autoscaling:
-    enabled: true
-  zoneAwareReplication:
-    enabled: true
-  maxUnavailable: 1
-  resources:
-    requests:
-      cpu: 500m
-      memory: 1Gi
-    limits:
-      memory: 2Gi
-  persistence:
-    enabled: true
-    size: 10Gi
-  affinity: {}
-  podAntiAffinity:
-    soft: {}
-    hard: {}
-
-# Enable Memcached caches for performance
-chunksCache:
-  enabled: true
-  replicas: 1
-
-resultsCache:
-  enabled: true
-  replicas: 1
-
-memcached:
-  enabled: true
-
-memcachedResults:
-  enabled: true
-
-memcachedChunks:
-  enabled: true
-
-memcachedFrontend:
-  enabled: true
-
-memcachedIndexQueries:
-  enabled: true
-
-memcachedIndexWrites:
-  enabled: true
-
-querier:
-  replicas: 3
-  autoscaling:
-    enabled: true
-  maxUnavailable: 1
-  resources:
-    requests:
-      cpu: 300m
-      memory: 512Mi
-    limits:
-      memory: 1Gi
-  affinity: {}
-
-queryFrontend:
-  replicas: 2
-  maxUnavailable: 1
-  resources:
-    requests:
-      cpu: 200m
-      memory: 256Mi
-    limits:
-      memory: 512Mi
-
-queryScheduler:
-  replicas: 2
-  maxUnavailable: 1
-  resources:
-    requests:
-      cpu: 200m
-      memory: 256Mi
-    limits:
-      memory: 512Mi
-
-distributor:
-  replicas: 3
-  autoscaling:
-    enabled: true
-  maxUnavailable: 1
-  resources:
-    requests:
-      cpu: 300m
-      memory: 512Mi
-    limits:
-      memory: 1Gi
-  affinity: {}
-
-compactor:
-  replicas: 1
-  resources:
-    requests:
-      cpu: 200m
-      memory: 512Mi
-    limits:
-      memory: 1Gi
-
-indexGateway:
-  replicas: 2
-  maxUnavailable: 0
-  resources:
-    requests:
-      cpu: 300m
-      memory: 512Mi
-    limits:
-      memory: 1Gi
-  affinity: {}
-
-ruler:
-  replicas: 1
-  resources:
-    requests:
-      cpu: 100m
-      memory: 256Mi
-    limits:
-      memory: 512Mi
 
 bloomPlanner:
   replicas: 0
@@ -263,20 +73,8 @@ bloomBuilder:
 bloomGateway:
   replicas: 0
 
-
-# Disable canary
+# Disable lokiCanary - not essential for core functionality
 lokiCanary:
   enabled: false
 
-# Disable Minio - staging uses S3 with IAM role
-minio:
-  enabled: false
 
-# Resources for memcached exporter to satisfy linter
-memcachedExporter:
-  resources:
-    requests:
-      cpu: 50m
-      memory: 64Mi
-    limits:
-      memory: 128Mi
