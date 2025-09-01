@@ -1,12 +1,6 @@
 ---
 role: Agent
-resources:
-  requests:
-    cpu: 200m
-    memory: 1024Mi
-  limits:
-    cpu: 1000m
-    memory: 2048Mi
+
 customConfig:
   data_dir: /vector-data-dir
   api:
@@ -20,7 +14,6 @@ customConfig:
       glob_minimum_cooldown_ms: 500
       max_line_bytes: 3145728
       auto_partial_merge: true
-      extra_label_selector: "app.kubernetes.io/managed-by in (tekton-pipelines,pipelinesascode.tekton.dev)"
   transforms:
     reduce_events:
       type: reduce
@@ -54,11 +47,6 @@ customConfig:
         } else {
           .container = "unknown_container"
         }
-        if exists(.tmp.kubernetes.pod_namespace) {
-          .namespace = del(.tmp.kubernetes.pod_namespace)
-        } else {
-          .namespace = "unknown_namespace"
-        }
         # General message field handling
         if exists(.tmp.message) {
           .message = to_string(del(.tmp.message)) ?? "no_message"
@@ -77,7 +65,7 @@ customConfig:
       type: loki
       inputs: ["remap_app_logs"]
       # Send to Loki gateway
-      endpoint: "http://vector-kubearchive-log-collector-loki-gateway.product-kubearchive-logging.svc.cluster.local:80"
+      endpoint: "http://loki-gateway.product-kubearchive-logging.svc.cluster.local:80"
       encoding:
         codec: "text"  # Use text instead of json to avoid metadata issues
         except_fields: ["tmp"]  # Exclude temporary fields
@@ -128,7 +116,7 @@ image:
   tag: 0.46.1-distroless-libc
 serviceAccount:
   create: true
-  name: vector-kubearchive-log-collector
+  name: vector
 securityContext:
   allowPrivilegeEscalation: false
   runAsUser: 0

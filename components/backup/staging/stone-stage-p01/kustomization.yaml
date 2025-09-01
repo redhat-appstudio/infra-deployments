@@ -1,25 +1,31 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - ../../base/all-clusters
-  - ../../base/host/schedules
-  - ../../base/member/schedules
+- ../../base/all-clusters
+- ../../base/host/schedules
+- ../../base/member/schedules
 patches:
-  - target:
-      group: external-secrets.io
-      version: v1beta1
-      kind: ExternalSecret
-      name: backup-s3-credentials
-    path: backup-s3-credentials-patch.yaml
-  - target:
-      group: oadp.openshift.io
-      version: v1alpha1
-      kind: DataProtectionApplication
-      name: velero-aws
-    path: dpa-bucket-patch.yaml
-  - target:
-      group: oadp.openshift.io
-      version: v1alpha1
-      kind: DataProtectionApplication
-      name: velero-aws
-    path: dpa-kmskeyid-patch.yaml
+- path: backup-s3-credentials-patch.yaml
+  target:
+    group: external-secrets.io
+    kind: ExternalSecret
+    name: backup-s3-credentials
+    version: v1beta1
+- path: dpa-bucket-patch.yaml
+  target:
+    group: oadp.openshift.io
+    kind: DataProtectionApplication
+    name: velero-aws
+    version: v1alpha1
+- path: dpa-kmskeyid-patch.yaml
+  target:
+    group: oadp.openshift.io
+    kind: DataProtectionApplication
+    name: velero-aws
+    version: v1alpha1
+- path: backup-tenants-patch.yaml
+  target:
+    group: velero.io
+    kind: Schedule
+    name: backup-tenants
+    version: v1
