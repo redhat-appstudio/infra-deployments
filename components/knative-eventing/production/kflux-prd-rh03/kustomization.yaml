@@ -2,4 +2,134 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - ../base
+  - https://github.com/knative/eventing/releases/download/knative-v1.16.7/eventing.yaml?timeout=90s
+
+patches:
+# kube-lint fixes
+- patch: |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: eventing-controller
+      namespace: knative-eventing
+    spec:
+      template:
+        spec:
+          containers:
+            - name: eventing-controller
+              image: quay.io/kubearchive/eventing-controller:fix
+              env:
+              - name: APISERVER_RA_IMAGE
+                value: quay.io/kubearchive/eventing-adapter:fix-verbose
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 100Mi
+                limits:
+                  cpu: 150m
+                  memory: 200Mi
+- patch: |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: imc-controller
+      namespace: knative-eventing
+    spec:
+      template:
+        spec:
+          containers:
+            - name: controller
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 1Gi
+                limits:
+                  cpu: 150m
+                  memory: 1Gi
+
+- patch: |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: imc-dispatcher
+      namespace: knative-eventing
+    spec:
+      template:
+        spec:
+          containers:
+            - name: dispatcher
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 100Mi
+                limits:
+                  cpu: 150m
+                  memory: 200Mi
+
+# Requests are cpu 100m and memory 100Mi by default
+# This is QoS Guaranteed (150m, 200Mi) because it was OOMKilled on Burstable (100m, 100Mi)
+- patch: |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: mt-broker-controller
+      namespace: knative-eventing
+      annotations:
+        ignore-check.kube-linter.io/unset-memory-requirements: >
+          "Startup traverses all the cluster. Its a known problem, being solved on upstream.
+          See https://github.com/knative/eventing/pull/8418"
+    spec:
+      template:
+        spec:
+          containers:
+            - name: mt-broker-controller
+              resources:
+                requests:
+                  cpu: 150m
+                  memory: 400Mi
+                limits:
+                  cpu: 150m
+
+# Requests are cpu 100m and memory 100Mi by default
+- patch: |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: mt-broker-filter
+      namespace: knative-eventing
+    spec:
+      template:
+        spec:
+          containers:
+            - name: filter
+              resources:
+                limits:
+                  cpu: 150m
+                  memory: 200Mi
+
+# Requests are cpu 100m and memory 100Mi by default
+- patch: |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+     name: mt-broker-ingress
+     namespace: knative-eventing
+    spec:
+      template:
+        spec:
+          containers:
+            - name: ingress
+              resources:
+                limits:
+                  cpu: 150m
+                  memory: 200Mi
+
+# This was causing issues with kube-linter and I didn't want
+# to increase its replicas to 2, so I deleted it instead
+- patch: |-
+    $patch: delete
+    apiVersion: policy/v1
+    kind: PodDisruptionBudget
+    metadata:
+      name: eventing-webhook
+      namespace: knative-eventing
