@@ -6,11 +6,34 @@ cel:
         has(pipelineRun.spec.params) &&
         pipelineRun.spec.params.exists(p, p.name == 'build-platforms') ?
         pipelineRun.spec.params.filter(
-          p, 
+          p,
           p.name == 'build-platforms')[0]
         .value.map(
           p,
-          annotation("kueue.konflux-ci.dev/requests-" + replace(replace(p, "/", "-"), "_", "-"), "1") 
+          resource(replace(replace(p, "/", "-"), "_", "-"), 1)
+        ) : []
+
+    # Request AWS IP for AWS-based platforms
+    - |
+        has(pipelineRun.spec.params) &&
+        pipelineRun.spec.params.exists(p, p.name == 'build-platforms') ?
+        pipelineRun.spec.params.filter(
+          p,
+          p.name == 'build-platforms')[0]
+        .value.filter(
+          p,
+          !(
+            p in [
+              'linux/ppc64le',
+              'linux/s390x',
+              'linux/x86_64',
+              'local',
+              'localhost',
+            ]
+          )
+        ).map(
+          p,
+          resource('aws-ip', 1)
         ) : []
 
     # Set resource requests for multi platform pipelines which doesn't use the build-platforms parameter (old style)
@@ -24,7 +47,33 @@ cel:
       .filter(p, p.size() > 0)
       .map(
         p,
-        annotation("kueue.konflux-ci.dev/requests-" + replace(replace(p[0].value, "/", "-"), "_", "-"), "1")
+        resource(replace(replace(p[0].value, "/", "-"), "_", "-"), 1)
+      ) : []
+
+    # Request AWS IP for AWS-based platforms which doesn't use the build-platforms parameter (old style)
+    - |
+      has(pipelineRun.spec.pipelineSpec) &&
+      pipelineRun.spec.pipelineSpec.tasks.size() > 0 ?
+      pipelineRun.spec.pipelineSpec.tasks.map(
+        task,
+        has(task.params) ? task.params.filter(p, p.name == 'PLATFORM') : []
+      )
+      .filter(p, p.size() > 0)
+      .filter(
+        p,
+        !(
+          p[0].value in [
+            'linux/ppc64le',
+            'linux/s390x',
+            'linux/x86_64',
+            'local',
+            'localhost',
+          ]
+        )
+      )
+      .map(
+        p,
+        resource('aws-ip', 1)
       ) : []
 
     # Set the pipeline priority
