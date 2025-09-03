@@ -2266,6 +2266,13 @@ spec:
     env:
       - name: AUTOINSTALL_COMPONENTS
         value: "false"
+      # PaC v0.37.0 - only delete when updating the index to a version which is *confirmed* to be using >= PaC v0.37.x
+      - name: IMAGE_PAC_PAC_CONTROLLER
+        value: quay.io/openshift-pipeline/pipelines-pipelines-as-code-controller-rhel9:03e2807aa027874d603600712005820a7cf0961a454344cf5e2e3b70148379de
+      - name: IMAGE_PAC_PAC_WATCHER
+        value: quay.io/openshift-pipeline/pipelines-pipelines-as-code-watcher-rhel9:5887db9658dc4f148e3c515577a365c0934ce3de39f8769dcf07e62e3fa9e2af
+      - name: IMAGE_PAC_PAC_WEBHOOK
+        value: quay.io/openshift-pipeline/pipelines-pipelines-as-code-webhook-rhel9:6d6122ec424d243e72d465e936a26c24576ee98df1da3335b59452f9275521ef
 ---
 apiVersion: route.openshift.io/v1
 kind: Route
