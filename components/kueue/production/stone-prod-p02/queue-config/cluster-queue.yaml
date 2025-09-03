@@ -18,6 +18,7 @@ spec:
     - tekton.dev/pipelineruns
     - cpu
     - memory
+    - aws-ip
     flavors:
     - name: default-flavor
       resources:
@@ -27,6 +28,8 @@ spec:
         nominalQuota: 1k
       - name: memory
         nominalQuota: 500Ti
+      - name: aws-ip
+        nominalQuota: '250'
   - coveredResources:
     - linux-amd64
     - linux-arm64
