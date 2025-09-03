@@ -1,0 +1,13 @@
+---
+resources:
+  requests:
+    cpu: 512m
+    memory: 4096Mi
+  limits:
+    cpu: 2000m
+    memory: 4096Mi
+
+customConfig:
+  sources:
+    k8s_logs:
+      extra_label_selector: "app.kubernetes.io/managed-by in (tekton-pipelines,pipelinesascode.tekton.dev)"
