@@ -53,11 +53,6 @@ customConfig:
         } else {
           .message = "no_message"
         }
-        # Basic data sanitization to prevent 400 errors
-        # Truncate very long messages
-        if length(.message) > 32768 {
-          .message = slice!(.message, 0, 32768) + "...[TRUNCATED]"
-        }
         # Clean up temporary fields
         del(.tmp)
   sinks:
