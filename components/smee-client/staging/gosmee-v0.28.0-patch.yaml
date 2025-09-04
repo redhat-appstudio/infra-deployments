@@ -1,0 +1,10 @@
+---
+- op: replace
+  path: /spec/template/spec/containers/0/image
+  value: "ghcr.io/chmouel/gosmee:v0.28.0"
+- op: add
+  path: /spec/template/spec/containers/0/args/3
+  value: "--sse-buffer-size"
+- op: add
+  path: /spec/template/spec/containers/0/args/4
+  value: "2097152"
