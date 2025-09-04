@@ -1,0 +1,19 @@
+---
+# Development-specific ClusterRoleBinding that includes minio service accounts
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: vector-scc-binding-dev-extras
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"  # Before workloads
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kubearchive-vector-scc-user
+subjects:
+- kind: ServiceAccount
+  name: minio-sa
+  namespace: product-kubearchive-logging
+- kind: ServiceAccount
+  name: minio
+  namespace: product-kubearchive-logging

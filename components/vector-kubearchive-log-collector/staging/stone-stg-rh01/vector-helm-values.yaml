@@ -1,12 +1,6 @@
 ---
 role: Agent
-resources:
-  requests:
-    cpu: 512m
-    memory: 4096Mi
-  limits:
-    cpu: 2000m
-    memory: 4096Mi
+
 customConfig:
   data_dir: /vector-data-dir
   api:
@@ -20,7 +14,6 @@ customConfig:
       glob_minimum_cooldown_ms: 500
       max_line_bytes: 3145728
       auto_partial_merge: true
-      extra_label_selector: "app.kubernetes.io/managed-by in (tekton-pipelines,pipelinesascode.tekton.dev)"
   transforms:
     reduce_events:
       type: reduce
@@ -54,57 +47,23 @@ customConfig:
         } else {
           .container = "unknown_container"
         }
-        if exists(.tmp.kubernetes.pod_namespace) {
-          .namespace = del(.tmp.kubernetes.pod_namespace)
+        # General message field handling
+        if exists(.tmp.message) {
+          .message = to_string(del(.tmp.message)) ?? "no_message"
         } else {
-          .namespace = "unlabeled"
+          .message = "no_message"
         }
-        # Handling Tekton-specific labels
-        if exists(.tmp.kubernetes.pod_labels."tekton.dev/taskRunUID") {
-          .taskRunUID = del(.tmp.kubernetes.pod_labels."tekton.dev/taskRunUID")
-        } else {
-          .taskRunUID = "none"
-        }
-        if exists(.tmp.kubernetes.pod_labels."tekton.dev/pipelineRunUID") {
-          .pipelineRunUID = del(.tmp.kubernetes.pod_labels."tekton.dev/pipelineRunUID")
-          .result = .pipelineRunUID
-        } else {
-          .result = .taskRunUID
-        }
-        # --- Start: Cronjob Specific Handling ---
-        if exists(.tmp.kubernetes.pod_labels."job-name") {
-          .job_name = del(.tmp.kubernetes.pod_labels."job-name")
-          .log_type = "cronjob"
-          if exists(.tmp.kubernetes.pod_labels."cronjob-name") {
-            .cronjob_name = del(.tmp.kubernetes.pod_labels."cronjob-name")
-          } else {
-            # Using corrected regex pattern without \d
-            .job_name = to_string(.job_name) ?? "default"
-            if match(.job_name, r'^(.*)-[0-9]{8,10}$') {
-              .cronjob_name = replace(.job_name, r'-[0-9]{8,10}$', "")
-            } else {
-              .cronjob_name = "unknown_cronjob"
-            }
-          }
-          if exists(.tmp.kubernetes.pod_labels."controller-uid") {
-              .job_uid = del(.tmp.kubernetes.pod_labels."controller-uid")
-          }
-        } else {
-          .log_type = "application"
-        }
-        # --- End: Cronjob Specific Handling ---
         # Clean up temporary fields
-        .message = del(.tmp.message)
         del(.tmp)
   sinks:
     loki:
       type: loki
       inputs: ["remap_app_logs"]
-      # Direct connection to Loki service (no gateway)
-      endpoint: "http://vector-kubearchive-log-collector-loki.product-kubearchive-logging.svc.cluster.local:3100"
+      # Send to Loki gateway
+      endpoint: "http://loki-gateway.product-kubearchive-logging.svc.cluster.local:80"
       encoding:
-        codec: "text"
-        except_fields: ["tmp"]
+        codec: "text"  # Use text instead of json to avoid metadata issues
+        except_fields: ["tmp"]  # Exclude temporary fields
       auth:
         strategy: "basic"
         user: "${LOKI_USERNAME}"
@@ -113,12 +72,12 @@ customConfig:
       request:
         headers:
           X-Scope-OrgID: kubearchive
-        timeout_secs: 60
+        timeout_secs: 60  # Shorter timeout
       batch:
-        max_bytes: 2097152
-        max_events: 1000
-        timeout_secs: 10
-      compression: "gzip"
+        max_bytes: 2097152  # Reduce to 2MB (half of Loki's 4MB/sec limit)
+        max_events: 1000   # Limit number of events per batch
+        timeout_secs: 10   # Send batches more frequently
+      compression: "gzip"  # Enable compression to reduce data size
       labels:
         job: "vector"
         pod_id: "{{`{{ pod_id }}`}}"
@@ -128,7 +87,7 @@ customConfig:
       buffer:
         type: "memory"
         max_events: 10000
-        when_full: "drop_newest"
+        when_full: "drop_newest"  # Drop newest instead of blocking
 env:
   - name: LOKI_USERNAME
     valueFrom:
@@ -152,7 +111,7 @@ image:
   tag: 0.46.1-distroless-libc
 serviceAccount:
   create: true
-  name: vector-kubearchive-log-collector
+  name: vector
 securityContext:
   allowPrivilegeEscalation: false
   runAsUser: 0

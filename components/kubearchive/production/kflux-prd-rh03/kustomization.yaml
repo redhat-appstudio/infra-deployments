@@ -4,7 +4,7 @@ kind: Kustomization
 resources:
   - ../../base
   - ../base
-  - https://github.com/kubearchive/kubearchive/releases/download/v1.6.0/kubearchive.yaml?timeout=90
+  - kubearchive.yaml
 
 namespace: product-kubearchive
 
@@ -108,6 +108,8 @@ patches:
               - name: manager
                 args: [--health-probe-bind-address=:8081]
                 env:
+                - name: KUBEARCHIVE_MONITOR_ALL_NAMESPACES
+                  value: "true"
                 - name: KUBEARCHIVE_OTEL_MODE
                   value: enabled
                 - name: OTEL_EXPORTER_OTLP_ENDPOINT
