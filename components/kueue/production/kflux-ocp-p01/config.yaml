@@ -1,0 +1,107 @@
+queueName: pipelines-queue
+cel:
+  expressions:
+    # Set resource requests for multi platform pipelines
+    - |
+        has(pipelineRun.spec.params) &&
+        pipelineRun.spec.params.exists(p, p.name == 'build-platforms') ?
+        pipelineRun.spec.params.filter(
+          p,
+          p.name == 'build-platforms')[0]
+        .value.map(
+          p,
+          resource(replace(replace(p, "/", "-"), "_", "-"), 1)
+        ) : []
+
+    # Request AWS IP for AWS-based platforms
+    - |
+        has(pipelineRun.spec.params) &&
+        pipelineRun.spec.params.exists(p, p.name == 'build-platforms') ?
+        pipelineRun.spec.params.filter(
+          p,
+          p.name == 'build-platforms')[0]
+        .value.filter(
+          p,
+          !(
+            p in [
+              'linux/ppc64le',
+              'linux/s390x',
+              'linux/x86_64',
+              'local',
+              'localhost',
+            ]
+          )
+        ).map(
+          p,
+          resource('aws-ip', 1)
+        ) : []
+
+    # Set resource requests for multi platform pipelines which doesn't use the build-platforms parameter (old style)
+    - |
+      has(pipelineRun.spec.pipelineSpec) &&
+      pipelineRun.spec.pipelineSpec.tasks.size() > 0 ?
+      pipelineRun.spec.pipelineSpec.tasks.map(
+        task,
+        has(task.params) ? task.params.filter(p, p.name == 'PLATFORM') : []
+      )
+      .filter(p, p.size() > 0)
+      .map(
+        p,
+        resource(replace(replace(p[0].value, "/", "-"), "_", "-"), 1)
+      ) : []
+
+    # Request AWS IP for AWS-based platforms which doesn't use the build-platforms parameter (old style)
+    - |
+      has(pipelineRun.spec.pipelineSpec) &&
+      pipelineRun.spec.pipelineSpec.tasks.size() > 0 ?
+      pipelineRun.spec.pipelineSpec.tasks.map(
+        task,
+        has(task.params) ? task.params.filter(p, p.name == 'PLATFORM') : []
+      )
+      .filter(p, p.size() > 0)
+      .filter(
+        p,
+        !(
+          p[0].value in [
+            'linux/ppc64le',
+            'linux/s390x',
+            'linux/x86_64',
+            'local',
+            'localhost',
+          ]
+        )
+      )
+      .map(
+        p,
+        resource('aws-ip', 1)
+      ) : []
+
+    # Set the pipeline priority
+    # First condition is to check if the priority class is already set and keep it if it is
+    # We allow this since the cluster is dedicated to the OCP team.
+    - |
+        has(pipelineRun.metadata.labels) &&
+        'kueue.x-k8s.io/priority-class' in pipelineRun.metadata.labels ?
+        priority(pipelineRun.metadata.labels['kueue.x-k8s.io/priority-class']) :
+
+        pacEventType == 'push' ? priority('konflux-post-merge-build') :
+        pacEventType == 'pull_request' ? priority('konflux-pre-merge-build') :
+        pacTestEventType == 'push' ? priority('konflux-post-merge-test') :
+        pacTestEventType == 'pull_request' ? priority('konflux-pre-merge-test') :
+
+        has(pipelineRun.metadata.labels) &&
+        'appstudio.openshift.io/service' in pipelineRun.metadata.labels &&
+        pipelineRun.metadata.labels['appstudio.openshift.io/service'] == 'release' &&
+        'pipelines.appstudio.openshift.io/type' in pipelineRun.metadata.labels &&
+        pipelineRun.metadata.labels['pipelines.appstudio.openshift.io/type'] == 'managed' ?
+        priority('konflux-release') :
+
+        has(pipelineRun.metadata.labels) &&
+        'appstudio.openshift.io/service' in pipelineRun.metadata.labels &&
+        pipelineRun.metadata.labels['appstudio.openshift.io/service'] == 'release' &&
+        'pipelines.appstudio.openshift.io/type' in pipelineRun.metadata.labels &&
+        pipelineRun.metadata.labels['pipelines.appstudio.openshift.io/type'] == 'tenant' ?
+        priority('konflux-tenant-release') :
+
+        plrNamespace == 'mintmaker' ? priority('konflux-dependency-update') :
+        priority('konflux-default')
