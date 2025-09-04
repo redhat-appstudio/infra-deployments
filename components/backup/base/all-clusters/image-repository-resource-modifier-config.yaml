@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: image-repository-resource-modifier-config
+  namespace: openshift-adp
+  labels:
+    velero.io/plugin-config: ""
+    velero.io/restore-resource-modifier: "true"
+data:
+  imagerepository-modifier.yaml: |
+    version: v1
+    resourceModifierRules:
+    - conditions:
+        groupResource: imagerepositories.appstudio.redhat.com
+      patches:
+      - operation: test
+        path: "/metadata/finalizers"
+      - operation: remove
+        path: "/metadata/finalizers"
