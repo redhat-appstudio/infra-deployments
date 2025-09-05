@@ -38,6 +38,8 @@ spec:
   template:
     metadata:
       name: policies-{{nameNormalized}}
+      annotations:
+        argocd.argoproj.io/compare-options: ServerSideDiff=true,IncludeMutationWebhook=true
     spec:
       project: default
       source:
