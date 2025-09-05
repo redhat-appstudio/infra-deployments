@@ -26,6 +26,12 @@ spec:
         targetRevision: main
       destination:
         server: '{{server}}'
+      ignoreDifferences:
+        - group: machineconfiguration.openshift.io
+          kind: KubeletConfig
+          jsonPointers:
+            - /spec/autoSizingReserved
+            - /spec/machineConfigPoolSelector
       syncPolicy:
         automated:
           prune: true
@@ -33,6 +39,7 @@ spec:
         syncOptions:
           - CreateNamespace=false
           - ServerSideApply=true
+          - RespectIgnoreDifferences=true
         retry:
           limit: -1
           backoff:
