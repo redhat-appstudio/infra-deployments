@@ -3,7 +3,6 @@ kind: Kustomization
 resources:
   - ../../base/local-cluster-secret/all-in-one
   - ../../base/host
-  - ../../base/host/optional/infra-deployments/dev-sso
   - ../../base/member
   - ../../base/all-clusters
   - ../../base/ca-bundle
@@ -11,7 +10,6 @@ resources:
   - ../../base/keycloak
   - ../../base/ui
   - ../../base/eaas
-  - ../../base/toolchain-member
 
 patchesStrategicMerge:
   - delete-applications.yaml
@@ -62,16 +60,6 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: monitoring-workload-grafana
-  - path: development-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: toolchain-host-operator
-  - path: development-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: toolchain-member-operator
   - path: development-overlay-patch.yaml
     target:
       kind: ApplicationSet
