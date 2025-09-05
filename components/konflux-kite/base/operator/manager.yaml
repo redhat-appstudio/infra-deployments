@@ -30,7 +30,7 @@ spec:
         env:
         # Use service discovery via DNS to automatically resolve within the cluster
         - name: KITE_API_URL
-          value: "http://konflux-kite.konflux-kite.svc.cluster.local"
+          value: "http://konflux-kite"
         image: quay.io/konflux-ci/kite-operator:latest
         livenessProbe:
           httpGet:
@@ -55,6 +55,7 @@ spec:
             memory: 64Mi
         securityContext:
           allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
           capabilities:
             drop:
             - ALL
