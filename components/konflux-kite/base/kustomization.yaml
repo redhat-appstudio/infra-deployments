@@ -2,11 +2,20 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
+  # All
   - ns.yaml
-  - rbac.yaml
-  - deployment.yaml
-  - service.yaml
-  - routes.yaml
+  # Backend
+  - backend/rbac.yaml
+  - backend/deployment.yaml
+  - backend/service.yaml
+  - backend/routes.yaml
+  # Operator
+  - operator/service-account.yaml
+  - operator/role.yaml
+  - operator/role-binding.yaml
+  - operator/cluster-role.yaml
+  - operator/cluster-role-binding.yaml
+  - operator/manager.yaml
 
 namespace: konflux-kite
 
@@ -16,6 +25,14 @@ images:
 
   - name: quay.io/konflux-ci/kite-init
     newTag: b25314f9c17124eed9dd1a1f7f243e6f88071010
+
+  - name: quay.io/konflux-ci/kite-operator
+    newTag: b93ea4b
+
+commonLabels:
+  app.kubernetes.io/name: konflux-kite
+  app.kubernetes.io/part-of: kite
+  app.kubernetes.io/version: v0.0.1
 
 configMapGenerator:
   - name: kite-config
