@@ -44,17 +44,6 @@ loki:
       region: us-east-1
       endpoint: minio:9000
       insecure: true
-      s3_use_virtual_host_style: True
-      s3_http_config: [
-        idle_conn_timeout: 90s,
-        response_header_timeout: 0s,
-        insecure_skip_verify: False,
-        max_idle_conns: 100,
-        max_idle_conns_per_host: 100,
-        max_conns_per_host: 0,
-        tls_handshake_timeout: 10s,
-        expect_continue_timeout: 1s
-      ]
   limits_config:
     retention_period: 24h     # Reduce from 744h for development
     ingestion_rate_mb: 5      # Reduce from 10 for development
@@ -73,9 +62,6 @@ loki:
     chunk_idle_period: 5m
     max_chunk_age: 2h
     chunk_retain_period: 1h
-    max_transfer_retries: 3
-    retry_min_backoff: 100ms
-    retry_max_backoff: 10s
     flush_op_timeout: 10m
   querier:
     # Reduce concurrency for development
