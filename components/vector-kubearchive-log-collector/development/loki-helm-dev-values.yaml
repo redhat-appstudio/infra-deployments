@@ -135,6 +135,10 @@ distributor:
 
 compactor:
   replicas: 1
+  working_directory: /var/loki/compactor
+  retention_enabled: true
+  retention_delete_delay: 2h
+  retention_delete_worker_count: 150
   resources:
     requests:
       cpu: 50m  # Reduce from 100m
