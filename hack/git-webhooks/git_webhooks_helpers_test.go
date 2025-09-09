@@ -429,7 +429,7 @@ func TestGetSpecialExternalRepos(t *testing.T) {
 
 			// Test the function
 			fmt.Println("\nRunning test: ", tc.name)
-			result, err := getSpecialExternalRepos(mockExecutor)
+			result, err := getSpecialExternalRepos(mockExecutor, "")
 
 			// Verify results
 			if tc.expectedError != "" {

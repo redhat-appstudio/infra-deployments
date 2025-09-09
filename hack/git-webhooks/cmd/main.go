@@ -9,15 +9,16 @@ import (
 )
 
 var (
-	create     bool
-	delete     bool
-	webhookURL string
+	create, delete, dryRun bool
+	webhookURL, namespace  string
 )
 
 func main() {
 	flag.BoolVar(&create, "create", false, "Flag to create the webhook")
 	flag.BoolVar(&delete, "delete", false, "Flag to delete the webhook")
 	flag.StringVar(&webhookURL, "webhook-url", "", "Required: The webhook URL to reference")
+	flag.BoolVar(&dryRun, "dry-run", false, "Optional: Flag to dry run the webhook creation")
+	flag.StringVar(&namespace, "namespace", "", "Optional: The namespace to use for the webhook")
 	flag.Parse()
 
 	// Check if webhook URL is provided
@@ -35,13 +36,13 @@ func main() {
 	}
 
 	if create {
-		err := gitlab_webhooks.CreateGitWebhooks(webhookURL)
+		err := gitlab_webhooks.CreateGitWebhooks(webhookURL, dryRun, namespace)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
 	} else if delete {
-		err := gitlab_webhooks.DeleteGitWebhooks(webhookURL)
+		err := gitlab_webhooks.DeleteGitWebhooks(webhookURL, dryRun, namespace)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
