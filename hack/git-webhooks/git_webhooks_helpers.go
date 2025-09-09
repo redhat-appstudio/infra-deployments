@@ -2,7 +2,6 @@ package gitwebhooks
 
 import (
 	"bufio"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"os/exec"
@@ -16,27 +15,63 @@ const (
 	pacsSecretType    = "pacs"
 	gitLabComURL      = "https://gitlab.com"
 	gitHubComURL      = "https://github.com"
+	gitLabType        = "gitlab"
+	gitHubType        = "github"
 )
 
+// RepoSecret represents a single Kubernetes Secret resource.
+//
+//	Name: Name of the secret.
+//	Key: Key of the secret.
 type RepoSecret struct {
 	Name string `json:"name"`
 	Key  string `json:"key"`
 }
 
+// GitProvider represents a single Kubernetes GitProvider resource.
+//
+// Type: Type of git provider. Determines which Git provider API and authentication
+//
+//	     flow to use.
+//		 Supported values:
+//		 - 'github': GitHub.com or GitHub Enterprise
+//		 - 'gitlab': GitLab.com or self-hosted GitLab
+//		 - 'bitbucket-datacenter': Bitbucket Data Center (self-hosted)
+//		 - 'bitbucket-cloud': Bitbucket Cloud (bitbucket.org)
+//		 - 'gitea': Gitea instances
+//
+// URL: URL of the git provider API endpoint. This is the base URL for API requests
+//
+//	    to the Git provider (e.g., 'https://api.github.com' for GitHub or a custom
+//	    GitLab instance URL).
+//	WebhookSecret: The secret for the webhook to use.
+//	PacsSecret: The secret for Pipelines as Code (PaC) to use.
+type GitProvider struct {
+	Type          string     `json:"type"`
+	URL           string     `json:"url"`
+	WebhookSecret RepoSecret `json:"webhook_secret"`
+	PacsSecret    RepoSecret `json:"secret"`
+}
+
 // Repository represents a single Kubernetes Repository resource.
+
+// Metadata:
+//
+//	Name: Name of the repository.
+//	Namespace: Namespace of the repository.
+//
+// Spec:
+//
+//	URL: URL of the repository.
+//	GitProvider: GitProvider resource for the repository.
 type Repository struct {
 	Metadata struct {
 		Name      string `json:"name"`
 		Namespace string `json:"namespace"`
 	} `json:"metadata"`
 	Spec struct {
-		URL         string `json:"url"`
-		Type        string `json:"type"`
-		GitProvider struct {
-			URL           string     `json:"url"`
-			WebhookSecret RepoSecret `json:"webhook_secret"`
-			PacsSecret    RepoSecret `json:"secret"`
-		} `json:"git_provider"`
+		URL         string      `json:"url"`
+		GitProvider GitProvider `json:"git_provider"`
 	} `json:"spec"`
 }
 
@@ -46,8 +81,29 @@ func doesRepoHaveSecrets(repo Repository) bool {
 		repo.Spec.GitProvider.PacsSecret != RepoSecret{}
 }
 
-// getSecretToken retrieves the one of the Repository's secret tokens from the cluster.
-func getSecretToken(repo Repository, secretType string) (string, error) {
+// CommandExecutor interface for executing commands (real or mocked)
+type CommandExecutor interface {
+	Output() ([]byte, error)
+}
+
+// RealCommandExecutor wraps exec.Cmd to implement CommandExecutor
+type RealCommandExecutor struct {
+	cmd *exec.Cmd
+}
+
+// implements the CommandExecutor interface.
+func (r *RealCommandExecutor) Output() ([]byte, error) {
+	return r.cmd.Output()
+}
+
+// NewRealCommandExecutor creates a new real command executor
+func NewRealCommandExecutor(cmd *exec.Cmd) CommandExecutor {
+	return &RealCommandExecutor{cmd: cmd}
+}
+
+// getSecretToken retrieves the one of the Repository's secret tokens from the cluster
+// using a command executor.
+func getSecretToken(repo Repository, secretType string, executor CommandExecutor) (string, error) {
 	// Determine which secret to retrieve.
 	var repoSecret RepoSecret
 	if secretType == webhookSecretType {
@@ -58,48 +114,50 @@ func getSecretToken(repo Repository, secretType string) (string, error) {
 		return "", fmt.Errorf("invalid secret type: %s", secretType)
 	}
 
-	// Get the secret from the cluster.
-	secretCmd := exec.Command("oc", "get", "secret", repoSecret.Name, "-n", repo.Metadata.Namespace,
-		"-o", "json")
-	secretOutput, err := secretCmd.Output()
+	// If no executor is provided, create a new real command executor to get the referenced
+	// secret from the cluster.
+	if executor == nil {
+		executor = NewRealCommandExecutor(exec.Command("oc", "get", "secret", repoSecret.Name, "-n",
+			repo.Metadata.Namespace, "-o", "json"))
+	}
+	secretOutput, err := executor.Output()
 	if err != nil {
 		return "", fmt.Errorf("error retrieving secret '%s': %v\n", repoSecret.Name, err)
 	}
 
-	// Unmarshal the secret JSON.
+	// Unmarshal the secret JSON (also decodes the secret token from base64).
 	var secret k8s.Secret
 	err = json.Unmarshal(secretOutput, &secret)
 	if err != nil {
 		return "", fmt.Errorf("error unmarshalling secret JSON for '%s': %v\n", repoSecret.Name, err)
 	}
 
-	// Retrieve and decode the secret token.
+	// Retrieve and return the secret token.
 	secretKeyToken, ok := secret.Data[repoSecret.Key]
 	if !ok {
 		return "", fmt.Errorf("key '%s' not found in secret '%s'", repoSecret.Key, repoSecret.Name)
 	}
-	decodedToken, err := base64.StdEncoding.DecodeString(string(secretKeyToken))
-	if err != nil {
-		return "", fmt.Errorf("error decoding base64 data for secret '%s': %v\n", repoSecret.Name, err)
-	}
-
-	return string(decodedToken), nil
+	return string(secretKeyToken), nil
 }
 
 // getSpecialExternalRepos retrieves all Repositories that either have:
-// 1. a git provider URL of "gitlab.com" (external to Red Hat's gitlab.cee.redhat.com)
+// 1. a git provider URL of "gitlab.com" (external to Red Hat's gitlab.cee.redhat.com) OR
 // 2. a git provider URL of "github.com" and have secrets (thus, not using the Konflux GitHub App)
-func getSpecialExternalRepos() ([]Repository, error) {
+// using an executor
+func getSpecialExternalRepos(executor CommandExecutor) ([]Repository, error) {
 	var repos []Repository
 
 	fmt.Println("Searching for Repository resources with external Git provider URLs '" + gitLabComURL +
 		"' and '" + gitHubComURL + "'...")
 
-	// Get all Repository resources with a git provider URL of either 'https://gitlab.com'
+	// If no executor is provided, create a new real command executor to get the Repository resources
+	// resources with a git provider URL of either 'https://gitlab.com'
 	// or 'https://github.com'.
-	cmd := exec.Command("bash", "-c", `oc get repository -A -o json | jq -c '.items[] |
-	 select(.spec.git_provider.url == "`+gitLabComURL+`" or .spec.git_provider.url == "`+gitHubComURL+`")'`)
-	output, err := cmd.Output()
+	if executor == nil {
+		executor = NewRealCommandExecutor(exec.Command("bash", "-c", `oc get repository -A -o json | jq -c '.items[] |
+	select(.spec.git_provider.url == "`+gitLabComURL+`" or .spec.git_provider.url == "`+gitHubComURL+`")'`))
+	}
+	output, err := executor.Output()
 	if err != nil {
 		return nil, fmt.Errorf("error executing retrieving repository resources: %v\n", err)
 	}
@@ -120,12 +178,17 @@ func getSpecialExternalRepos() ([]Repository, error) {
 			continue
 		}
 
-		// Print a warning message if the repository does not have secrets but has a GitLab URL.
-		// Repositories with a GitHub URL and no secrets are using the GitHub App.
+		// Skip if the repo does not have a git provider.
+		if repo.Spec.GitProvider == (GitProvider{}) {
+			continue
+		}
+
+		// Print a warning message if the repository does not have secrets but has a type of GitLab.
+		// Repositories with a type of GitHub and no secrets are using the GitHub App.
 		if !doesRepoHaveSecrets(repo) {
-			if repo.Spec.GitProvider.URL != gitHubComURL {
+			if repo.Spec.GitProvider.Type != gitHubType {
 				fmt.Printf("Warning: Repository %s does not have webhook and PACs secrets and has a "+
-					"GitLab URL. Skipping...\n", repo.Metadata.Name)
+					"%s URL. Skipping...\n", repo.Metadata.Name, repo.Spec.GitProvider.Type)
 			}
 			continue
 		}

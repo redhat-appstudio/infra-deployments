@@ -21,20 +21,20 @@ import (
 // CreateGitWebhooks creates a new webhook (with a URL of 'webhookURL') for each repository with a
 // webhook pointing directly to the smee server.
 func CreateGitWebhooks(webhookURL string) error {
-	repos, err := getSpecialExternalRepos()
+	repos, err := getSpecialExternalRepos(nil)
 	if err != nil {
 		return fmt.Errorf("error getting special external repositories: %v\n", err)
 	}
 
 	for _, repo := range repos {
-		repoWebhookToken, err := getSecretToken(repo, "webhook")
+		repoWebhookToken, err := getSecretToken(repo, webhookSecretType, nil)
 		if err != nil {
 			fmt.Printf("Warning: error getting webhook secret token for repository %s: %v\n",
 				repo.Metadata.Name, err)
 			continue
 		}
 
-		repoPacsToken, err := getSecretToken(repo, "pacs")
+		repoPacsToken, err := getSecretToken(repo, pacsSecretType, nil)
 		if err != nil {
 			fmt.Printf("Warning: error getting PaC secret token for repository %s: %v\n",
 				repo.Metadata.Name, err)
@@ -70,13 +70,13 @@ func CreateGitWebhooks(webhookURL string) error {
 // with a webhook pointing directly to the smee server. `webhookURL` should be the URL of the old
 // smee server.
 func DeleteGitWebhooks(webhookURL string) error {
-	repos, err := getSpecialExternalRepos()
+	repos, err := getSpecialExternalRepos(nil)
 	if err != nil {
 		return fmt.Errorf("error getting special external repositories: %v\n", err)
 	}
 
 	for _, repo := range repos {
-		repoPacsToken, err := getSecretToken(repo, "pacs")
+		repoPacsToken, err := getSecretToken(repo, pacsSecretType, nil)
 		if err != nil {
 			fmt.Printf("Warning: error getting PaC secret token for repository %s: %v\n",
 				repo.Metadata.Name, err)
