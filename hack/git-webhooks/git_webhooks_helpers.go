@@ -31,21 +31,21 @@ type RepoSecret struct {
 // GitProvider represents a single Kubernetes GitProvider resource.
 //
 // Type: Type of git provider. Determines which Git provider API and authentication
-//
 //	     flow to use.
-//		 Supported values:
-//		 - 'github': GitHub.com or GitHub Enterprise
-//		 - 'gitlab': GitLab.com or self-hosted GitLab
-//		 - 'bitbucket-datacenter': Bitbucket Data Center (self-hosted)
-//		 - 'bitbucket-cloud': Bitbucket Cloud (bitbucket.org)
-//		 - 'gitea': Gitea instances
+
+//	Supported values:
+//	- 'github': GitHub.com or GitHub Enterprise
+//	- 'gitlab': GitLab.com or self-hosted GitLab
+//	- 'bitbucket-datacenter': Bitbucket Data Center (self-hosted)
+//	- 'bitbucket-cloud': Bitbucket Cloud (bitbucket.org)
+//	- 'gitea': Gitea instances
 //
 // URL: URL of the git provider API endpoint. This is the base URL for API requests
-//
 //	    to the Git provider (e.g., 'https://api.github.com' for GitHub or a custom
 //	    GitLab instance URL).
-//	WebhookSecret: The secret for the webhook to use.
-//	PacsSecret: The secret for Pipelines as Code (PaC) to use.
+
+// WebhookSecret: The secret for the webhook to use.
+// PacsSecret: The secret for Pipelines as Code (PaC) to use.
 type GitProvider struct {
 	Type          string     `json:"type"`
 	URL           string     `json:"url"`
@@ -81,22 +81,22 @@ func doesRepoHaveSecrets(repo Repository) bool {
 		repo.Spec.GitProvider.PacsSecret != RepoSecret{}
 }
 
-// CommandExecutor interface for executing commands (real or mocked)
+// CommandExecutor interface for executing commands (real or mocked).
 type CommandExecutor interface {
 	Output() ([]byte, error)
 }
 
-// RealCommandExecutor wraps exec.Cmd to implement CommandExecutor
+// RealCommandExecutor wraps exec.Cmd to implement CommandExecutor.
 type RealCommandExecutor struct {
 	cmd *exec.Cmd
 }
 
-// implements the CommandExecutor interface.
+// Implements the CommandExecutor interface.
 func (r *RealCommandExecutor) Output() ([]byte, error) {
 	return r.cmd.Output()
 }
 
-// NewRealCommandExecutor creates a new real command executor
+// NewRealCommandExecutor creates a new real command executor.
 func NewRealCommandExecutor(cmd *exec.Cmd) CommandExecutor {
 	return &RealCommandExecutor{cmd: cmd}
 }
@@ -137,25 +137,34 @@ func getSecretToken(repo Repository, secretType string, executor CommandExecutor
 	if !ok {
 		return "", fmt.Errorf("key '%s' not found in secret '%s'", repoSecret.Key, repoSecret.Name)
 	}
+	fmt.Printf("DEBUG: Retrieved %s secret for repo '%s' successfully\n", secretType, repo.Metadata.Name)
 	return string(secretKeyToken), nil
 }
 
 // getSpecialExternalRepos retrieves all Repositories that either have:
 // 1. a git provider URL of "gitlab.com" (external to Red Hat's gitlab.cee.redhat.com) OR
 // 2. a git provider URL of "github.com" and have secrets (thus, not using the Konflux GitHub App)
-// using an executor
-func getSpecialExternalRepos(executor CommandExecutor) ([]Repository, error) {
+// using an executor (in the provided namespace, if any).
+func getSpecialExternalRepos(executor CommandExecutor, namespace string) ([]Repository, error) {
 	var repos []Repository
 
 	fmt.Println("Searching for Repository resources with external Git provider URLs '" + gitLabComURL +
 		"' and '" + gitHubComURL + "'...")
+	if namespace != "" {
+		fmt.Println("Searching in namespace: " + namespace + "...")
+	}
 
 	// If no executor is provided, create a new real command executor to get the Repository resources
 	// resources with a git provider URL of either 'https://gitlab.com'
 	// or 'https://github.com'.
 	if executor == nil {
-		executor = NewRealCommandExecutor(exec.Command("bash", "-c", `oc get repository -A -o json | jq -c '.items[] |
+		if namespace != "" {
+			executor = NewRealCommandExecutor(exec.Command("bash", "-c", `oc get repository -n `+namespace+` -o json | jq -c '.items[] |
 	select(.spec.git_provider.url == "`+gitLabComURL+`" or .spec.git_provider.url == "`+gitHubComURL+`")'`))
+		} else {
+			executor = NewRealCommandExecutor(exec.Command("bash", "-c", `oc get repository -A -o json | jq -c '.items[] |
+	select(.spec.git_provider.url == "`+gitLabComURL+`" or .spec.git_provider.url == "`+gitHubComURL+`")'`))
+		}
 	}
 	output, err := executor.Output()
 	if err != nil {
@@ -195,8 +204,8 @@ func getSpecialExternalRepos(executor CommandExecutor) ([]Repository, error) {
 
 		fmt.Println("---")
 		fmt.Printf("Found repository %s in namespace: %s\n", repo.Metadata.Name, repo.Metadata.Namespace)
-		fmt.Printf("Secret name: %s\n", repo.Spec.GitProvider.WebhookSecret.Name)
-		fmt.Printf("Secret key name: %s\n", repo.Spec.GitProvider.WebhookSecret.Key)
+		fmt.Printf("DEBUG: Secret name: %s\n", repo.Spec.GitProvider.WebhookSecret.Name)
+		fmt.Printf("DEBUG: Secret key name: %s\n", repo.Spec.GitProvider.WebhookSecret.Key)
 
 		repos = append(repos, repo)
 	}
