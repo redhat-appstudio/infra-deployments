@@ -17,9 +17,10 @@ patches:
         spec:
           containers:
             - name: eventing-controller
+              image: quay.io/kubearchive/eventing-controller:remove-sar
               env:
                 - name: APISERVER_RA_IMAGE
-                  value: quay.io/kubearchive/eventing-adapter:v1.16.7-verbose
+                  value: quay.io/kubearchive/eventing-adapter:remove-sar
               resources:
                 requests:
                   cpu: 200m
