@@ -47,6 +47,11 @@ customConfig:
         } else {
           .container = "unknown_container"
         }
+        if exists(.tmp.kubernetes.namespace) {
+          .namespace = del(.tmp.kubernetes.namespace)
+        } else {
+          .namespace = "unknown_namespace"
+        }
         # General message field handling
         if exists(.tmp.message) {
           .message = to_string(del(.tmp.message)) ?? "no_message"
