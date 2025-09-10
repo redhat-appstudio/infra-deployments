@@ -21,8 +21,8 @@ customConfig:
         - k8s_logs
       group_by:
         - file
-      flush_period_ms: 2000
-      end_every_period_ms: 2000
+      max_events: 100
+      expire_after_ms: 10000
       merge_strategies:
         message: concat_newline
     remap_app_logs:
