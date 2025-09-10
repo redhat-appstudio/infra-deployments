@@ -49,19 +49,22 @@ loki:
     ingestion_rate_mb: 5      # Reduce from 10 for development
     ingestion_burst_size_mb: 10  # Reduce from 20
     max_streams_per_user: 0
-    max_line_size: 256000
+    max_line_size: 1048576
     reject_old_samples: true
     reject_old_samples_max_age: 6h  # Reduce from 168h
     discover_service_name: []
     allow_structured_metadata: true
     volume_enabled: true
     max_global_streams_per_user: 10000  # Reduce from 50000
+    max_entries_limit_per_query: 100000
+    increment_duplicate_timestamp: true
   ingester:
     chunk_encoding: snappy
-    # Optimize for faster startup
-    chunk_target_size: 1048576  # 1MB chunks for faster processing
-    chunk_idle_period: 30s      # Shorter idle period
-    max_chunk_age: 10m          # Shorter max age for development
+    chunk_target_size: 1048576
+    chunk_idle_period: 5m
+    max_chunk_age: 2h
+    chunk_retain_period: 1h
+    flush_op_timeout: 10m
   querier:
     # Reduce concurrency for development
     max_concurrent: 2  # Reduce from 4
@@ -134,6 +137,9 @@ distributor:
 
 compactor:
   replicas: 1
+  retention_enabled: true
+  retention_delete_delay: 2h
+  retention_delete_worker_count: 150
   resources:
     requests:
       cpu: 50m  # Reduce from 100m
