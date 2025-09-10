@@ -47,11 +47,6 @@ customConfig:
         } else {
           .container = "unknown_container"
         }
-        if exists(.tmp.kubernetes.namespace) {
-          .namespace = del(.tmp.kubernetes.namespace)
-        } else {
-          .namespace = "unknown_namespace"
-        }
         # Preserve the actual log message
         if exists(.tmp.message) {
           .message = to_string(del(.tmp.message)) ?? "no_message"
@@ -87,7 +82,6 @@ customConfig:
         job: "vector"
         pod_id: "{{`{{ pod_id }}`}}"
         container: "{{`{{ container }}`}}"
-        namespace: "{{`{{ namespace }}`}}"
         pod: "{{`{{ pod_name }}`}}"
       buffer:
         type: "memory"
