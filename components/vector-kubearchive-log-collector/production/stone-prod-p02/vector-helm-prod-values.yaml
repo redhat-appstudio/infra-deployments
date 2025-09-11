@@ -11,8 +11,7 @@ customConfig:
   sources:
     k8s_logs:
       extra_label_selector: "app.kubernetes.io/managed-by in (tekton-pipelines,pipelinesascode.tekton.dev)"
-      exclude_namespace:
-        - product-kubearchive-logging
+      extra_field_selector: "metadata.namespace!=product-kubearchive-logging"
 
 podLabels:
   vector.dev/exclude: "false"
