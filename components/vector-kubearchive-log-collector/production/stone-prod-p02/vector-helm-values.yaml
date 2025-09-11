@@ -37,11 +37,6 @@ customConfig:
         } else {
           .pod_id = "unknown_pod_id"
         }
-        if exists(.tmp.kubernetes.pod_name) {
-          .pod_name = del(.tmp.kubernetes.pod_name)
-        } else {
-          .pod_name = "unknown_pod"
-        }
         if exists(.tmp.kubernetes.container_name) {
           .container = del(.tmp.kubernetes.container_name)
         } else {
@@ -82,10 +77,7 @@ customConfig:
         timeout_secs: 5               # Shorter timeout for faster sends
       compression: "gzip"
       labels:
-        job: "vector"
-        pod_id: "{{`{{ pod_id }}`}}"
-        container: "{{`{{ container }}`}}"
-        pod: "{{`{{ pod_name }}`}}"
+        stream: "{{`{{ pod_id }}-{{ container }}`}}"
       buffer:
         type: "memory"
         max_events: 10000
