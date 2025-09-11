@@ -17,11 +17,13 @@ spec:
         - name: shared-health
           emptyDir: {}
       containers:
-        - image: "ghcr.io/chmouel/gosmee:v0.26.1"
+        - image: "ghcr.io/chmouel/gosmee:v0.28.0"
           imagePullPolicy: Always
           name: gosmee
           args:
             - "client"
+            - "--sse-buffer-size"
+            - "2097152"
             - TBA
             - "http://localhost:8080"
           volumeMounts:
