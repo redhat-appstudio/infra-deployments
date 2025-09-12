@@ -1,0 +1,139 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: in-tenant-invalid-rolebinding
+spec:
+  description: |
+    tests that the a invalid RoleBinding can NOT be created
+    in a tenant namespace
+  concurrent: false
+  namespace: 'invalid-systemauthenticated-rb-tenant-namespace'
+  steps:
+  - name: given-kyverno-has-permission-on-resources
+    try:
+    - apply:
+        file: ../kyverno_rbac.yaml
+  - name: given-cluster-policy-is-ready
+    try:
+    - apply:
+        file: ../validate-restrict-binding-sysauth-clusterpolicy.yaml
+    - assert:
+        file: chainsaw-assert-clusterpolicy.yaml
+  - name: given-tenant-namespace-exists
+    try:
+    - apply:
+        file: ./resources/tenant-namespace.yaml
+  - name: then-invalid-rolebinding-can-not-be-created
+    try:
+    - apply:
+        file: ./resources/invalid-systemauthenticated-rolebinding.yaml
+        expect:
+        - check:
+            ($error != null): true
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: in-tenant-valid-rolebinding
+spec:
+  description: |
+    tests that the a any RoleBinding can be created in the
+    tenant namespace 'rhtap-releng-tenant'
+  concurrent: false
+  namespace: 'rhtap-releng-tenant'
+  steps:
+  - name: given-kyverno-has-permission-on-resources
+    try:
+    - apply:
+        file: ../kyverno_rbac.yaml
+  - name: given-cluster-policy-is-ready
+    try:
+    - apply:
+        file: ../validate-restrict-binding-sysauth-clusterpolicy.yaml
+    - assert:
+        file: chainsaw-assert-clusterpolicy.yaml
+  - name: given-tenant-namespace-exists
+    try:
+    - apply:
+        file: ./resources/tenant-namespace.yaml
+  - name: then-valid-rolebinding-can-be-created
+    try:
+    - apply:
+        file: ./resources/valid-systemauthenticated-rolebinding.yaml
+        expect:
+        - check:
+            ($error != null): false
+  - name: then-invalid-rolebinding-can-be-created
+    try:
+    - apply:
+        file: ./resources/invalid-systemauthenticated-rolebinding.yaml
+        expect:
+        - check:
+            ($error != null): false
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: in-tenant-valid-rolebinding
+spec:
+  description: |
+    tests that the a valid RoleBinding can be created in a 
+    tenant namespace
+  concurrent: false
+  namespace: 'valid-systemauthenticated-rb-tenant-namespace'
+  steps:
+  - name: given-kyverno-has-permission-on-resources
+    try:
+    - apply:
+        file: ../kyverno_rbac.yaml
+  - name: given-cluster-policy-is-ready
+    try:
+    - apply:
+        file: ../validate-restrict-binding-sysauth-clusterpolicy.yaml
+    - assert:
+        file: chainsaw-assert-clusterpolicy.yaml
+  - name: given-tenant-namespace-exists
+    try:
+    - apply:
+        file: ./resources/tenant-namespace.yaml
+  - name: then-valid-rolebinding-can-be-created
+    try:
+    - apply:
+        file: ./resources/valid-systemauthenticated-rolebinding.yaml
+        expect:
+        - check:
+            ($error != null): false
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: out-of-tenant-rolebinding
+spec:
+  description: |
+    tests that the whatever RoleBinding can be created in a 
+    non-tenant namespace
+  concurrent: false
+  namespace: 'valid-systemauthenticated-rb-namespace'
+  steps:
+  - name: given-kyverno-has-permission-on-resources
+    try:
+    - apply:
+        file: ../kyverno_rbac.yaml
+  - name: given-cluster-policy-is-ready
+    try:
+    - apply:
+        file: ../validate-restrict-binding-sysauth-clusterpolicy.yaml
+    - assert:
+        file: chainsaw-assert-clusterpolicy.yaml
+  - name: then-rolebinding-can-be-created-in-a-nontenant-namespace
+    try:
+    - apply:
+        file: ./resources/valid-systemauthenticated-rolebinding.yaml
+        expect:
+        - check:
+            ($error != null): false
