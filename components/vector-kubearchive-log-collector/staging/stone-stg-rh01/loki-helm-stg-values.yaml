@@ -50,13 +50,6 @@ loki:
   query_range:
     # split_queries_by_interval deprecated in Loki 3.x - removed
     parallelise_shardable_queries: true
-  # Configure ruler storage to use local filesystem
-  ruler:
-    rule_path: /var/loki/ruler
-    storage:
-      type: local
-      local:
-        directory: /var/loki/ruler
 
 # Distributed components configuration
 ingester:
@@ -149,15 +142,6 @@ indexGateway:
     limits:
       memory: 1Gi
   affinity: {}
-
-ruler:
-  replicas: 1
-  resources:
-    requests:
-      cpu: 100m
-      memory: 256Mi
-    limits:
-      memory: 512Mi
 
 # Enable Memcached caches for performance
 chunksCache:

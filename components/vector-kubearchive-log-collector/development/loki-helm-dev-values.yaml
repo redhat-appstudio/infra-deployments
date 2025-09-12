@@ -29,7 +29,6 @@ loki:
   storage:
     bucketNames:
       chunks: loki-data
-      ruler: loki-data
       admin: loki-data
     s3:
       endpoint: http://minio:9000
@@ -156,9 +155,6 @@ indexGateway:
     limits:
       memory: 256Mi  # Reduce from 512Mi
   affinity: {}
-
-ruler:
-  replicas: 0  # Disable ruler - not essential for basic log functionality
 
 # Disable all cache components to avoid Pending issues in development
 chunksCache:
