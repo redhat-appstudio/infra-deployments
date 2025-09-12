@@ -1,0 +1,42 @@
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: validate-restrict-binding-sysauth-releng
+  annotations:
+    policies.kyverno.io/title: Restrict Binding System Groups
+    policies.kyverno.io/category: Security
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/subject: RoleBinding, RBAC
+    policies.kyverno.io/description: >-
+      We don't want users to bind system:authenticated group with any role
+      except for the konflux-viewer-user-actions ClusterRole.
+spec:
+  rules:
+  - name: restrict-authenticated
+    skipBackgroundRequests: true
+    match:
+      any:
+      - resources:
+          kinds:
+          - RoleBinding
+          namespaces:
+          - rhtap-releng-tenant
+    preconditions:
+      all:
+      - key: "{{ request.object.subjects[].name }}"
+        operator: AnyIn
+        value: "system:authenticated"
+      - key: "{{ request.object.roleRef.kind }}"
+        operator: Equals
+        value: "ClusterRole"
+      - key: "{{ request.object.roleRef.name }}"
+        operator: AllNotIn
+        value: 
+          - konflux-viewer-user-actions
+          - enterprisecontractpolicy-viewer-role
+    validate:
+      allowExistingViolations: true
+      failureAction: Enforce
+      message: "Only ClusterRoles 'konflux-viewer-user-actions' and 'enterprisecontractpolicy-viewer-role' can be bound to 'system:authenticated' in namespace 'rhtap-releng-tenant'."
+      deny: {}
