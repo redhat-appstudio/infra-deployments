@@ -1,0 +1,264 @@
+# This workflow is used to update the available Multi-Platform Controller platform variants table in
+# the user documentation based on changes that occur in clusters' host-values YAML files.
+name: Update Available Platform Variants Table
+
+env:
+  USER_DOCS_PROJECT_ID: "konflux/docs/users"
+  USER_DOCS_REPO: "https://gitlab.com/${USER_DOCS_PROJECT_ID}"
+  MPC_DOC_FILE: "modules/getting-started/pages/multi-platform-builds.adoc"
+  GITLAB_BOT_NAME: "MPC Platform Variants Bot"
+  GITLAB_BOT_EMAIL: "mpc-platform-variants-bot@no-reply.github.com"
+
+on:
+  pull_request_target:
+    paths:
+      - 'components/multi-platform-controller/**/host-values.yaml'
+    types: [opened, synchronize, reopened]
+
+jobs:
+  get-context:
+    if: github.event.pull_request_target.draft == false
+    runs-on: ubuntu-latest
+    outputs:
+      current_mpc_doc: ${{ steps.get-current-mpc-doc.outputs.current_mpc_doc }}
+      host_values: ${{ steps.get-mpc-host-values.outputs.values }}
+      has_host_values: ${{ steps.get-mpc-host-values.outputs.values }}
+    steps:
+      - name: Checkout infra-deployments repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Checkout User Documentation repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.USER_DOCS_REPO }}
+          token: ${{ secrets.USER_DOCS_REPO_TOKEN }}
+          path: user-docs
+
+      - name: Get current MPC documentation file
+        id: get-current-mpc-doc
+        run: |
+           # Check if the MPC documentation file exists and is not empty
+            cd user-docs
+            if [ ! -f "${{ env.MPC_DOC_FILE }}" ]; then
+              echo "Error: Current MPC documentation file ${{ env.MPC_DOC_FILE }} does not exist"
+              exit 1
+            fi
+
+            if [ ! -s "${{ env.MPC_DOC_FILE }}" ]; then
+              echo "Error: Current MPC documentation file ${{ env.MPC_DOC_FILE }} is empty"
+              exit 1
+            fi
+
+            # Read in & save the current MPC documentation file
+            CURRENT_MPC_DOC=$(cat "${{ env.MPC_DOC_FILE }}")
+            echo "current_mpc_doc=${CURRENT_MPC_DOC}" >> $GITHUB_OUTPUT
+
+      - name: Get changed MPC host-values.yaml files
+        id: get-mpc-host-values
+        run: |
+          # Get list of MPC host-values.yaml files changed in this PR
+          CHANGED_FILES=$(git diff --name-only ${{ github.event.pull_request_target.base.sha }} ${{ github.event.pull_request_target.head.sha }} | grep '^components/multi-platform-controller/.*/host-values\.yaml$' || true)
+
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "No MPC host-values.yaml files were changed in this PR"
+            echo "has_host_values=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "Changed MPC host-values.yaml files in this PR:"
+          echo "$CHANGED_FILES"
+          echo "has_host_values=true" >> $GITHUB_OUTPUT
+
+          # Extract only the changed files and convert to JSON using directory names (cluster names) as keys
+          HOST_VALUES_YAMLS="{}"
+          while IFS= read -r file; do
+            if [ -f "$file" ]; then
+              cluster_name=$(dirname "$file" | xargs basename)
+              # Map specific cluster names
+              case "$cluster_name" in
+                "staging")
+                  cluster_name="stone-stg-r01"
+                  ;;
+                "staging-downstream")
+                  cluster_name="stone-stg-p01"
+                  ;;
+                # Add more mappings as needed
+              esac
+
+              echo "Processing $file for cluster: $cluster_name"
+              HOST_VALUES_YAMLS=$(echo "$HOST_VALUES_YAMLS" | jq --arg cluster "$cluster_name" --rawfile content "$file" '. + {($cluster): ($content | fromyaml)}')
+            fi
+          done <<< "$CHANGED_FILES"
+
+          echo "host_values=${HOST_VALUES_YAMLS}" >> $GITHUB_OUTPUT
+
+  check-for-push-updates:
+    # Only run if the PR is not a draft and the action is a synchronize (i.e. a push to the PR branch)
+    if: github.event.pull_request_target.draft == false && github.event.action == 'synchronize'
+    runs-on: ubuntu-latest
+    needs: ["get-context"]
+    outputs:
+      has_recent_changes: ${{ steps.check-recent-changes.outputs.has_recent_changes }}
+    steps:
+      - name: Checkout infra-deployments repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for MPC host-values.yaml file changes in most recent commit
+        id: check-recent-changes
+        run: |
+          # Get the latest commit on the PR branch
+          LATEST_COMMIT=${{ github.event.pull_request_target.head.sha }}
+
+          # Get the previous commit on the PR branch
+          PREVIOUS_COMMIT=$(git rev-parse $LATEST_COMMIT~1)
+
+          echo "Latest commit: $LATEST_COMMIT"
+          echo "Previous commit: $PREVIOUS_COMMIT"
+
+          # Check if any MPC host-values.yaml files changed between the latest and previous commits
+          CHANGED_FILES=$(git diff --name-only $PREVIOUS_COMMIT $LATEST_COMMIT | grep '^components/multi-platform-controller/.*/host-values\.yaml$' || true)
+
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "No MPC host-values.yaml files changed between recent commits"
+            echo "has_recent_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "MPC host-values.yaml files changed between recent commits:"
+            echo "$CHANGED_FILES"
+            echo "has_recent_changes=true" >> $GITHUB_OUTPUT
+          fi
+
+  update-table:
+    # Only run if there are MPC host-values.yaml files changed in the PR upon either an initial or subsequent push
+    # to the PR branch
+    if: |
+      github.event.pull_request_target.draft == false && needs.get-context.outputs.has_host_values == 'true' &&
+      (needs.check-for-push-updates.result == 'skipped' || (needs.check-for-push-updates.result == 'success' &&
+      needs.check-for-push-updates.outputs.has_recent_changes == 'true'))
+    runs-on: ubuntu-latest
+    needs: ["get-context", "check-for-push-updates"]
+    steps:
+      - name: Update platform variants table with Gemini API
+        run: |
+          # Create the prompt for Gemini
+          PROMPT="You are tasked with updating the \"Available Platform Variants by Cluster\" table in an AsciiDoc document.
+
+          Current document content:
+          \`\`\`
+          ${{ fromJSON(needs.get-context.outputs.current_mpc_doc) }}
+          \`\`\`
+
+          Host values files data:
+          \`\`\`json
+          ${{ fromJSON(needs.get-context.outputs.host_values) }}
+          \`\`\`
+
+          Please:
+          1. Analyze the host values files to extract platform availability by cluster
+          2. Update the \"Available Platform Variants by Cluster\" table (around line 166-218 of the current document) with the current platform availability
+          3. Ignore the \"development\" directory.
+          4. Maintain the column order of the current document and only add new columns for new clusters
+          5. Use \"*\" to indicate platform availability, empty cells for unavailability
+          6. Add new rows for new platforms if they are not already present
+          7. Return the complete updated document content
+
+          The table should include all platforms found in the host-values files:
+          - local platforms
+          - dynamic config platforms (various linux-* variants)
+          - static host platforms
+
+          Return only the complete updated AsciiDoc content, no explanations."
+
+          # Call Gemini API
+          RESPONSE=$(curl -s -X POST \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"contents\": [{
+                \"parts\": [{
+                  \"text\": \"$PROMPT\"
+                }]
+              }]
+            }" \
+            "$GEMINI_API_URL?key=${{ secrets.GEMINI_API_KEY }}")
+
+          # Extract the response text
+          UPDATED_CONTENT=$(echo "$RESPONSE" | jq -r '.candidates[0].content.parts[0].text')
+          echo "$UPDATED_CONTENT"
+
+          # Remove markdown code blocks if present
+          if echo "$UPDATED_CONTENT" | grep -q "^```"; then
+            UPDATED_CONTENT=$(echo "$UPDATED_CONTENT" | sed '1d;$d')
+          fi
+
+          # Write updated content
+          echo "$UPDATED_CONTENT" > user-docs/${{ env.MPC_DOC_FILE }}
+
+          echo "Platform variants table updated successfully!"
+
+      - name: Check for changes in the platform variants table
+        id: check-for-changes
+        run: |
+          cd user-docs
+          if git diff --quiet; then
+            echo "changes=false" >> $GITHUB_OUTPUT
+            echo "No changes to the Available Platform Variants table were detected."
+          else
+            echo "changes=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update GitLab MR
+        id: update-gitlab-mr
+        # Only update the MR if there have been changes made in the platform variants table and the action
+        # is a push to the PR branch
+        if: steps.check-for-changes.outputs.changes == 'true' && github.event.action == 'synchronize'
+        run: |
+          cd user-docs
+
+          # Configure Git
+          git config user.name "${{ env.GITLAB_BOT_NAME }}"
+          git config user.email "${{ env.GITLAB_BOT_EMAIL }}"
+
+          # Checkout existing branch & amend the commit
+          BRANCH_NAME="update-platform-variants-${{ github.event.pull_request_target.number }}"
+          git checkout "$BRANCH_NAME"
+          git add ${{ env.MPC_DOC_FILE }}
+          git commit --amend --no-edit
+
+          # Force push the amended commit
+          git push origin "$BRANCH_NAME" --force-with-lease
+
+      - name: Create GitLab MR
+        # Only create a new MR if there have been changes made in the platform variants table and the
+        # update-gitlab-mr job has been skipped (i.e. no MR exists yet)
+        if: steps.check-for-changes.outputs.changes == 'true' && steps.update-gitlab-mr.conclusion == 'skipped'
+        run: |
+          cd user-docs
+
+          # Configure Git
+          git config user.name "${{ env.GITLAB_BOT_NAME }}"
+          git config user.email "${{ env.GITLAB_BOT_EMAIL }}"
+
+          # Create and push a new branch
+          BRANCH_NAME="update-platform-variants-${{ github.event.pull_request_target.number }}"
+          git checkout -b "$BRANCH_NAME"
+          git add ${{ env.MPC_DOC_FILE }}
+          COMMIT_MSG="Update available platform variants from PR #${{ github.event.pull_request_target.number }}\n\n
+          Automatic update commit generated from changes to cluster host-values.yaml\n
+          file(s) in infra-deployments: ${{ github.event.pull_request_target.html_url }}"
+          git commit -m "$COMMIT_MSG"
+          git push origin "$BRANCH_NAME"
+
+          # Create MR using GitLab API
+          curl -X POST \
+            -H "PRIVATE-TOKEN: ${{ secrets.GITLAB_PAT }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "source_branch": "'$BRANCH_NAME'",
+              "target_branch": "main",
+              "title": "Update platform variants table from infra-deployments PR #${{ github.event.pull_request_target.number }}",
+              "description": "$COMMIT_MSG"
+            }' \
+            "https://gitlab.com/api/v4/projects/${{ env.USER_DOCS_PROJECT_ID }}/merge_requests"
