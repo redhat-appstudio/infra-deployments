@@ -21,8 +21,8 @@ customConfig:
         - k8s_logs
       group_by:
         - file
-      flush_period_ms: 2000
-      end_every_period_ms: 2000
+      max_events: 100
+      expire_after_ms: 10000
       merge_strategies:
         message: concat_newline
     remap_app_logs:
@@ -37,11 +37,6 @@ customConfig:
         } else {
           .pod_id = "unknown_pod_id"
         }
-        if exists(.tmp.kubernetes.pod_name) {
-          .pod_name = del(.tmp.kubernetes.pod_name)
-        } else {
-          .pod_name = "unknown_pod"
-        }
         if exists(.tmp.kubernetes.container_name) {
           .container = del(.tmp.kubernetes.container_name)
         } else {
@@ -52,6 +47,9 @@ customConfig:
           .message = to_string(del(.tmp.message)) ?? "no_message"
         } else {
           .message = "no_message"
+        }
+        if length(.message) > 1048576 {
+          .message = slice!(.message, 0, 1048576) + "...[TRUNCATED]"
         }
         # Clean up temporary fields
         del(.tmp)
@@ -74,16 +72,12 @@ customConfig:
           X-Scope-OrgID: kubearchive
         timeout_secs: 60
       batch:
-        max_bytes: 2097152
-        max_events: 1000
-        timeout_secs: 10
+        max_bytes: 4194304            # 4MB batches (Loki's limit)
+        max_events: 2000              # More events per batch
+        timeout_secs: 5               # Shorter timeout for faster sends
       compression: "gzip"
       labels:
-        job: "vector"
-        pod_id: "{{`{{ pod_id }}`}}"
-        container: "{{`{{ container }}`}}"
-        namespace: "{{`{{ namespace }}`}}"
-        pod: "{{`{{ pod_name }}`}}"
+        stream: "{{`{{ pod_id }}-{{ container }}`}}"
       buffer:
         type: "memory"
         max_events: 10000

@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: spacerequest-cleaner
+  name: trust-manager
 spec:
   generators:
     - merge:
@@ -9,15 +9,18 @@ spec:
           - nameNormalized
         generators:
           - clusters:
+              selector:
+                matchLabels:
+                  appstudio.redhat.com/member-cluster: "true"
               values:
-                sourceRoot: components/spacerequest-cleaner
+                sourceRoot: components/trust-manager
                 environment: staging
                 clusterDir: ""
           - list:
               elements: []
   template:
     metadata:
-      name: spacerequest-cleaner-{{nameNormalized}}
+      name: trust-manager-{{nameNormalized}}
     spec:
       project: default
       source:
@@ -25,15 +28,17 @@ spec:
         repoURL: https://github.com/redhat-appstudio/infra-deployments.git
         targetRevision: main
       destination:
-        namespace: spacerequest-cleaner
+        namespace: cert-manager
         server: '{{server}}'
       syncPolicy:
         automated:
           prune: true
-          selfHeal: true
+          selfHeal: false
         syncOptions:
-        - CreateNamespace=true
+          - CreateNamespace=true
         retry:
-          limit: 50
+          limit: -1
           backoff:
-            duration: 15s
+            duration: 10s
+            factor: 2
+            maxDuration: 3m
