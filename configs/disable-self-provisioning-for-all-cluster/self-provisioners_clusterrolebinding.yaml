@@ -2,7 +2,10 @@ kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   annotations:
-    argocd.argoproj.io/sync-options: ServerSideApply=true
     rbac.authorization.kubernetes.io/autoupdate: 'false'
   name: self-provisioners
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: self-provisioner
 subjects: [] # no one is allowed here
