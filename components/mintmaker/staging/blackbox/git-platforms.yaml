@@ -1,0 +1,74 @@
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: github-probe
+  namespace: mintmaker
+  labels:
+    app.kubernetes.io/name: mintmaker
+    app.kubernetes.io/managed-by: kustomize
+spec:
+  jobName: "github-probe"
+  prober:
+    url: git-platforms-exporter:9115
+    scheme: http
+    pod:
+      namespace: mintmaker
+      selector:
+        matchLabels:
+          app: git-platforms-exporter
+      port: http 
+  module: http_2xx
+  targets:
+    staticConfig:
+      static:
+        - https://github.com
+---
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: gitlab-probe
+  namespace: mintmaker
+  labels:
+    app.kubernetes.io/name: mintmaker
+    app.kubernetes.io/managed-by: kustomize
+spec:
+  jobName: "gitlab-probe"
+  prober:
+    url: git-platforms-exporter:9115
+    scheme: http
+    pod:
+      namespace: mintmaker
+      selector:
+        matchLabels:
+          app: git-platforms-exporter
+      port: http 
+  module: http_2xx
+  targets:
+    staticConfig:
+      static:
+        - https://gitlab.com
+---
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: gitlab-cee-probe
+  namespace: mintmaker
+  labels:
+    app.kubernetes.io/name: mintmaker
+    app.kubernetes.io/managed-by: kustomize
+spec:
+  jobName: "gitlab-cee-probe"
+  prober:
+    url: git-platforms-exporter:9115
+    scheme: http
+    pod:
+      namespace: mintmaker
+      selector:
+        matchLabels:
+          app: git-platforms-exporter
+      port: http 
+  module: http_2xx
+  targets:
+    staticConfig:
+      static:
+        - https://gitlab.cee.redhat.com
