@@ -10,7 +10,6 @@ resources:
   - ../../base/repository-validator
   - ../../base/keycloak
   - ../../base/eaas
-  - ../../base/toolchain-member
 
 patchesStrategicMerge:
   - delete-applications.yaml
@@ -61,16 +60,6 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: monitoring-workload-grafana
-  - path: development-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: toolchain-host-operator
-  - path: development-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: toolchain-member-operator
   - path: development-overlay-patch.yaml
     target:
       kind: ApplicationSet
