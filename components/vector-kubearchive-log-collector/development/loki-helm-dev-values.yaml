@@ -29,7 +29,6 @@ loki:
   storage:
     bucketNames:
       chunks: loki-data
-      ruler: loki-data
       admin: loki-data
     s3:
       endpoint: http://minio:9000
@@ -53,6 +52,7 @@ loki:
     reject_old_samples: true
     reject_old_samples_max_age: 6h  # Reduce from 168h
     discover_service_name: []
+    discover_log_levels: false
     volume_enabled: true
     max_global_streams_per_user: 10000  # Reduce from 50000
     max_entries_limit_per_query: 100000
@@ -156,9 +156,6 @@ indexGateway:
     limits:
       memory: 256Mi  # Reduce from 512Mi
   affinity: {}
-
-ruler:
-  replicas: 0  # Disable ruler - not essential for basic log functionality
 
 # Disable all cache components to avoid Pending issues in development
 chunksCache:
