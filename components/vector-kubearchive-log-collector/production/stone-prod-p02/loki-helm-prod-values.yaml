@@ -40,7 +40,7 @@ loki:
       max_entries_limit_per_query: 100000
       increment_duplicate_timestamp: true
   ingester:
-    chunk_target_size: 1536000
+    chunk_target_size: 4194304        # 4MB
     chunk_idle_period: 1m
     max_chunk_age: 1h
     chunk_encoding: snappy            # Compress data (reduces S3 transfer size)
