@@ -8,7 +8,6 @@ resources:
   - ../../base/tekton-ci
   - ../../base/konflux-ci
   - ../../base/cluster-secret-store-rh
-  - ../../base/toolchain-member
   - ../../base/eaas
 
 namespace: konflux-public-production
@@ -91,16 +90,6 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: monitoring-workload-grafana
-  - path: production-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: toolchain-host-operator
-  - path: production-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: toolchain-member-operator
   - path: production-overlay-patch.yaml
     target:
       kind: ApplicationSet
