@@ -21,8 +21,8 @@ customConfig:
         - k8s_logs
       group_by:
         - file
-      flush_period_ms: 2000
-      end_every_period_ms: 2000
+      max_events: 100
+      expire_after_ms: 10000
       merge_strategies:
         message: concat_newline
     remap_app_logs:
@@ -37,11 +37,6 @@ customConfig:
         } else {
           .pod_id = "unknown_pod_id"
         }
-        if exists(.tmp.kubernetes.pod_name) {
-          .pod_name = del(.tmp.kubernetes.pod_name)
-        } else {
-          .pod_name = "unknown_pod"
-        }
         if exists(.tmp.kubernetes.container_name) {
           .container = del(.tmp.kubernetes.container_name)
         } else {
@@ -53,10 +48,8 @@ customConfig:
         } else {
           .message = "no_message"
         }
-        # Basic data sanitization to prevent 400 errors
-        # Truncate very long messages
-        if length(.message) > 32768 {
-          .message = slice!(.message, 0, 32768) + "...[TRUNCATED]"
+        if length(.message) > 1048576 {
+          .message = slice!(.message, 0, 1048576) + "...[TRUNCATED]"
         }
         # Clean up temporary fields
         del(.tmp)
@@ -79,16 +72,12 @@ customConfig:
           X-Scope-OrgID: kubearchive
         timeout_secs: 60  # Shorter timeout
       batch:
-        max_bytes: 2097152  # Reduce to 2MB (half of Loki's 4MB/sec limit)
-        max_events: 1000   # Limit number of events per batch
-        timeout_secs: 10   # Send batches more frequently
+        max_bytes: 4194304            # 4MB batches (Loki's limit)
+        max_events: 2000              # More events per batch
+        timeout_secs: 5               # Shorter timeout for faster sends
       compression: "gzip"  # Enable compression to reduce data size
       labels:
-        job: "vector"
-        pod_id: "{{`{{ pod_id }}`}}"
-        container: "{{`{{ container }}`}}"
-        namespace: "{{`{{ namespace }}`}}"
-        pod: "{{`{{ pod_name }}`}}"
+        stream: "{{`{{ pod_id }}-{{ container }}`}}"
       buffer:
         type: "memory"
         max_events: 10000

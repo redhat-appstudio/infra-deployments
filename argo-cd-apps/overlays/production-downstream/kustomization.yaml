@@ -3,7 +3,6 @@ kind: Kustomization
 resources:
   - ../konflux-public-staging
   - ../../base/smee-client
-  - ../../base/ui
   - ../../base/ca-bundle
   - ../../base/keycloak
   - ../../base/repository-validator
@@ -131,11 +130,6 @@ patches:
     target:
       kind: ApplicationSet
       version: v1alpha1
-      name: ui
-  - path: production-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
       name: smee-client
   - path: production-overlay-patch.yaml
     target:
@@ -157,11 +151,6 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: project-controller
-  - path: production-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: spacerequest-cleaner
   - path: production-overlay-patch.yaml
     target:
       kind: ApplicationSet
@@ -196,7 +185,17 @@ patches:
     target:
       kind: ApplicationSet
       version: v1alpha1
+      name: crossplane-config
+  - path: production-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
       name: konflux-info
+  - path: production-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: vector-kubearchive-log-collector
   - path: production-overlay-patch.yaml
     target:
       kind: ApplicationSet

@@ -6,3 +6,10 @@ resources:
 
 commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+
+configMapGenerator:
+  - name: tekton-kueue-config
+    namespace: tekton-kueue
+    behavior: replace
+    files:
+      - config.yaml
