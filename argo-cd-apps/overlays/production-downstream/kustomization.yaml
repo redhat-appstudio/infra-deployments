@@ -3,7 +3,6 @@ kind: Kustomization
 resources:
   - ../konflux-public-staging
   - ../../base/smee-client
-  - ../../base/ui
   - ../../base/ca-bundle
   - ../../base/keycloak
   - ../../base/repository-validator
@@ -127,11 +126,6 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: smee
-  - path: production-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: ui
   - path: production-overlay-patch.yaml
     target:
       kind: ApplicationSet
