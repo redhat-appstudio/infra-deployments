@@ -11,12 +11,12 @@ spec:
   - Ingress
   ingress:
   - from:
-    - podSelector:
-        matchLabels:
-          app: proxy
-      namespaceSelector:
+    - namespaceSelector:
         matchLabels:
           kubernetes.io/metadata.name: konflux-ui
+      podSelector:
+        matchLabels:
+          app: proxy
     ports:
-    - port: 8080
-      protocol: TCP
+    - protocol: TCP
+      port: 8080
