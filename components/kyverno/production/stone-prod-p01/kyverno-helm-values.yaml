@@ -20,6 +20,8 @@ admissionController:
         drop:
         - "ALL"
   container:
+    extraArgs:
+      leaderElectionRetryPeriod: 26s
     resources:
       requests:
         cpu: 4000m
@@ -42,6 +44,8 @@ admissionController:
     secure: false
 backgroundController:
   replicas: 3
+  extraArgs:
+    leaderElectionRetryPeriod: 26s
   resources:
     requests:
       cpu: 4000m
@@ -64,6 +68,8 @@ backgroundController:
     secure: false
 cleanupController:
   replicas: 3
+  extraArgs:
+    leaderElectionRetryPeriod: 26s
   resources:
     requests:
       cpu: 500m

@@ -22,7 +22,7 @@ admissionController:
         - "ALL"
   container:
     extraArgs:
-      leaderElectionRetryPeriod: 5s
+      leaderElectionRetryPeriod: 26s
     resources:
       requests:
         cpu: 6000m
@@ -48,7 +48,7 @@ backgroundController:
   extraArgs:
     clientRateLimitBurst: 2000
     clientRateLimitQPS: 2000
-    leaderElectionRetryPeriod: 5s
+    leaderElectionRetryPeriod: 26s
   resources:
     requests:
       cpu: 6000m
@@ -79,7 +79,7 @@ cleanupController:
       cpu: 500m
       memory: 128Mi
   extraArgs:
-    leaderElectionRetryPeriod: 5s
+    leaderElectionRetryPeriod: 26s
   securityContext:
     allowPrivilegeEscalation: false
     readOnlyRootFilesystem: true
