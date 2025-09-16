@@ -68,6 +68,11 @@ customConfig:
       encoding:
         codec: "text"
         except_fields: ["tmp"]
+        only_fields:
+          - message
+      structured_metadata:
+        pod_id: "{{`{{ pod_id }}`}}"
+        container: "{{`{{ container }}`}}"
       auth:
         strategy: "basic"
         user: "${LOKI_USERNAME}"
