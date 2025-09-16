@@ -30,7 +30,6 @@ main() {
     done
 
     "${ROOT}/hack/deploy-argocd.sh"
-    "${ROOT}/hack/bootstrap-host-cluster.sh"
     "${ROOT}/hack/bootstrap-member-cluster.sh"
     "${ROOT}/hack/bootstrap-cluster-common.sh"
 
