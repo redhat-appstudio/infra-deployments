@@ -1,0 +1,34 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: conforma-verifier-listener
+  namespace: default # Change as needed
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: conforma-verifier-listener
+  namespace: default # Change as needed
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list"]
+  - apiGroups: ["tekton.dev"]
+    resources: ["taskruns"]
+    verbs: ["create"]
+  - apiGroups: ["appstudio.redhat.com"]
+    resources: ["snapshots"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: conforma-verifier-listener
+  namespace: default # Change as needed
+subjects:
+  - kind: ServiceAccount
+    name: conforma-verifier-listener
+roleRef:
+  kind: Role
+  name: conforma-verifier-listener
+  apiGroup: rbac.authorization.k8s.io 

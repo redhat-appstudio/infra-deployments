@@ -1,0 +1,10 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: conforma-verifier-listener
+spec:
+  template:
+    spec:
+      serviceAccountName: conforma-verifier-listener
+      containers:
+        - image: ko://github.com/conforma/knative-service/cmd/launch-taskrun

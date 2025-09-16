@@ -1,0 +1,17 @@
+apiVersion: eventing.knative.dev/v1
+kind: Trigger
+metadata:
+  name: snapshot-trigger
+  namespace: default # Change as needed
+spec:
+  broker: default
+  filter:
+    attributes:
+      type: dev.knative.apiserver.resource.add
+      apiversion: appstudio.redhat.com/v1alpha1
+      kind: Snapshot
+  subscriber:
+    ref:
+      apiVersion: serving.knative.dev/v1
+      kind: Service
+      name: conforma-verifier-listener 

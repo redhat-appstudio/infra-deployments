@@ -1,0 +1,43 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Use the base configuration
+resources:
+- ../base
+
+# Staging-specific namespace
+namespace: conforma
+
+# Staging-specific configuration with VSA support
+configMapGenerator:
+- behavior: replace
+  literals:
+  - POLICY_CONFIGURATION=github.com/enterprise-contract/config//slsa3
+  - IGNORE_REKOR=true
+  - PUBLIC_KEY=-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEZP/0htjhVt2y0ohjgtIIgICOtQtA\nnaYJRuLprwIv6FDhZ5yFjYUEtsmoNcW7rx2KM6FOXGsCX3BNc7qhHELT+g==\n-----END PUBLIC KEY-----
+  name: taskrun-config
+
+# Container image reference for Conforma knative-service
+images:
+- name: ko://github.com/conforma/knative-service/cmd/launch-taskrun
+  newName: quay.io/conforma/knative-service
+  newTag: latest
+
+# Labels for staging environment
+labels:
+- includeSelectors: false
+  pairs:
+    app.kubernetes.io/name: conforma-verifier-listener
+    app.kubernetes.io/component: verifier
+    app.kubernetes.io/part-of: conforma
+    app.kubernetes.io/environment: staging
+    app.kubernetes.io/managed-by: kustomize
+
+# Annotations for staging
+commonAnnotations:
+  deployment.environment: staging
+  deployment.managed-by: conforma-team
+
+# Staging-specific patches
+patches:
+- path: staging-patches.yaml
