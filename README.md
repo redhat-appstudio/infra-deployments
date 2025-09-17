@@ -1,5 +1,6 @@
 # StoneSoup Infrastructure Deployments
 
+
 For the full documentation click [here](https://redhat-appstudio.github.io/infra-deployments/docs/introduction/about.html)
 
 When working on documentation updates, you may want to enable GitHub pages for your forked repository,
