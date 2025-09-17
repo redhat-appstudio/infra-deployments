@@ -118,6 +118,15 @@ jobs:
             🤖 Hi @${{ github.actor }}, I've received your request, and I'm working on it now! You can track my progress [in the logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for more details.
           REPOSITORY: '${{ github.repository }}'
         run: |-
+          if [[ "${{ steps.mint_identity_token.outputs.token }}" == "${{ env.GITHUB_TOKEN }}" ]]; then
+            echo "Mint Identity Token is being used."
+          elif [[ "${{ secrets.GITHUB_TOKEN }}" == "${{ env.GITHUB_TOKEN }}" ]]; then
+            echo "Secrets Token is being used."
+          elif [[ "${{ github.token }}" == "${{ env.GITHUB_TOKEN }}" ]]; then
+            echo "Default token is being used."
+          else
+            echo "No match for token."
+          fi
           gh issue comment "${ISSUE_NUMBER}" \
             --body "${MESSAGE}" \
             --repo "${REPOSITORY}"
