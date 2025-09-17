@@ -28,8 +28,11 @@ loki:
       retention_period: 744h  # 31 days retention
       ingestion_rate_mb: 20
       ingestion_burst_size_mb: 40
+      ingestion_rate_strategy: "local"
       max_streams_per_user: 0
       max_line_size: 2097152
+      per_stream_rate_limit: 20M
+      per_stream_rate_limit_burst: 50M
       reject_old_samples: false
       reject_old_samples_max_age: 168h
       discover_service_name: []
