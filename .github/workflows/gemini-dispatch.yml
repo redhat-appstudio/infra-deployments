@@ -7,7 +7,7 @@ on:
   pull_request_review:
     types:
       - 'submitted'
-  pull_request:
+  pull_request_target:
     types:
       - 'opened'
   issues:
@@ -48,7 +48,7 @@ jobs:
     # For issues: only on open/reopen
     if: |-
       (
-        github.event_name == 'pull_request'
+        github.event_name == 'pull_request_target'
       ) || (
         github.event.sender.type == 'User' &&
         startsWith(github.event.comment.body || github.event.review.body || github.event.issue.body, '@gemini-cli') &&
@@ -109,6 +109,44 @@ jobs:
             } else {
               core.setOutput('command', 'fallthrough');
             }
+      
+      - name: 'Add Gemini helper comment'
+        if: '${{ github.event_name }}.${{ github.event.action }} == "pull_request.opened"'
+        env:
+          GITHUB_TOKEN: '${{ steps.mint_identity_token.outputs.token || secrets.GITHUB_TOKEN || github.token }}'
+          PR_NUMBER: '${{ github.event.pull_request.number }}'
+          REPOSITORY: '${{ github.repository }}'
+          MESSAGE: |-
+            ## 🤖 Gemini AI Assistant Available
+
+            Hi @${{ github.actor }}! I'm here to help with your pull request. You can interact with me using the following commands:
+
+            ### Available Commands
+
+            - **`@gemini-cli /review`** - Request a comprehensive code review
+              - Example: `@gemini-cli /review Please focus on security and performance`
+            
+            - **`@gemini-cli <your question>`** - Ask me anything about the codebase
+              - Example: `@gemini-cli How can I improve this function?`
+              - Example: `@gemini-cli What are the best practices for error handling here?`
+
+            ### How to Use
+
+            1. Simply type one of the commands above in a comment on this PR
+            2. I'll analyze your code and provide detailed feedback
+            3. You can track my progress in the [workflow logs](https://github.com/${{ github.repository }}/actions)
+
+            ### Permissions
+
+            Only **OWNER**, **MEMBER**, or **COLLABORATOR** users can trigger my responses. This ensures secure and appropriate usage.
+
+            ---
+            
+            *This message was automatically added to help you get started with the Gemini AI assistant. Feel free to delete this comment if you don't need assistance.*
+        run: |-
+          gh pr comment "${PR_NUMBER}" \
+            --body "${MESSAGE}" \
+            --repo "${REPOSITORY}"
 
       - name: 'Acknowledge request'
         env:
