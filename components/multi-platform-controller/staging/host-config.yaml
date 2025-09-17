@@ -7,12 +7,12 @@ metadata:
   namespace: multi-platform-controller
 data:
   local-platforms: "\
-    linux/amd64,\
     linux/x86_64,\
     local,\
     localhost,\
     "
   dynamic-platforms: "\
+    linux/amd64,\
     linux/arm64,\
     linux-mlarge/amd64,\
     linux-mlarge/arm64,\
@@ -73,18 +73,6 @@ data:
   dynamic.linux-mlarge-arm64.security-group-id: sg-05bc8dd0b52158567
   dynamic.linux-mlarge-arm64.max-instances: "250"
   dynamic.linux-mlarge-arm64.subnet-id: subnet-030738beb81d3863a
-
-  dynamic.linux-mlarge-amd64.type: aws
-  dynamic.linux-mlarge-amd64.region: us-east-1
-  dynamic.linux-mlarge-amd64.ami: ami-026ebd4cfe2c043b2
-  dynamic.linux-mlarge-amd64.instance-type: m6a.large
-  dynamic.linux-mlarge-amd64.instance-tag: stage-amd64-mlarge
-  dynamic.linux-mlarge-amd64.key-name: konflux-stage-ext-mab01
-  dynamic.linux-mlarge-amd64.aws-secret: aws-account
-  dynamic.linux-mlarge-amd64.ssh-secret: aws-ssh-key
-  dynamic.linux-mlarge-amd64.security-group-id: sg-05bc8dd0b52158567
-  dynamic.linux-mlarge-amd64.max-instances: "250"
-  dynamic.linux-mlarge-amd64.subnet-id: subnet-030738beb81d3863a
 
   dynamic.linux-mxlarge-arm64.type: aws
   dynamic.linux-mxlarge-arm64.region: us-east-1
@@ -209,6 +197,30 @@ data:
     restorecon -r /home/ec2-user
 
     --//--
+
+  dynamic.linux-amd64.type: aws
+  dynamic.linux-amd64.region: us-east-1
+  dynamic.linux-amd64.ami: ami-026ebd4cfe2c043b2
+  dynamic.linux-amd64.instance-type: m6a.large
+  dynamic.linux-amd64.instance-tag: stage-amd64
+  dynamic.linux-amd64.key-name: konflux-stage-ext-mab01
+  dynamic.linux-amd64.aws-secret: aws-account
+  dynamic.linux-amd64.ssh-secret: aws-ssh-key
+  dynamic.linux-amd64.security-group-id: sg-05bc8dd0b52158567
+  dynamic.linux-amd64.max-instances: "250"
+  dynamic.linux-amd64.subnet-id: subnet-030738beb81d3863a
+
+  dynamic.linux-mlarge-amd64.type: aws
+  dynamic.linux-mlarge-amd64.region: us-east-1
+  dynamic.linux-mlarge-amd64.ami: ami-026ebd4cfe2c043b2
+  dynamic.linux-mlarge-amd64.instance-type: m6a.large
+  dynamic.linux-mlarge-amd64.instance-tag: stage-amd64-mlarge
+  dynamic.linux-mlarge-amd64.key-name: konflux-stage-ext-mab01
+  dynamic.linux-mlarge-amd64.aws-secret: aws-account
+  dynamic.linux-mlarge-amd64.ssh-secret: aws-ssh-key
+  dynamic.linux-mlarge-amd64.security-group-id: sg-05bc8dd0b52158567
+  dynamic.linux-mlarge-amd64.max-instances: "250"
+  dynamic.linux-mlarge-amd64.subnet-id: subnet-030738beb81d3863a
 
   dynamic.linux-mxlarge-amd64.type: aws
   dynamic.linux-mxlarge-amd64.region: us-east-1
