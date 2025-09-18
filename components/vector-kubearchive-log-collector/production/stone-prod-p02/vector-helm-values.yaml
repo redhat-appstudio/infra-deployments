@@ -83,9 +83,9 @@ customConfig:
           X-Scope-OrgID: kubearchive
         timeout_secs: 60
       batch:
-        max_bytes: 4194304            # 4MB batches (Loki's limit)
-        max_events: 2000              # More events per batch
-        timeout_secs: 5               # Shorter timeout for faster sends
+        max_bytes: 10485760           # 10MB batches
+        max_events: 10000              # More events per batch
+        timeout_secs: 30               # Shorter timeout for faster sends
       compression: "gzip"
       labels:
         stream: "{{`{{ namespace }}`}}"
