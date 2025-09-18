@@ -49,3 +49,10 @@ jobs:
       - name: Upload SARIF report files to GitHub
         uses: github/codeql-action/upload-sarif@v3
         if: always()
+
+      - name: Upload artifacts
+        uses: actions/upload-artifacts@v4
+        if: steps.kube-linter-action-scan.outcome != "success"
+        with:
+          name: kustomize-manifests
+          path: kustomizedfiles
