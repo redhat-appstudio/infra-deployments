@@ -117,9 +117,6 @@ spec:
         - containerPort: 8080
           name: web
           protocol: TCP
-        - containerPort: 8888
-          name: web-metrics
-          protocol: TCP
         - containerPort: 9443
           name: web-tls
           protocol: TCP
@@ -179,6 +176,26 @@ spec:
           requests:
             cpu: 30m
             memory: 128Mi
+        securityContext:
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 1001
+      - image: nginx/nginx-prometheus-exporter:1.1.0
+        name: nginx-prometheus-exporter
+        args:
+          - -nginx.scrape-uri=http://localhost:9090/metrics
+          - -web.listen-address=:9113
+        ports:
+          - containerPort: 9113
+            name: exporter
+            protocol: TCP
+        resources:
+          limits:
+            cpu: 100m
+            memory: 64Mi
+          requests:
+            cpu: 10m
+            memory: 32Mi
         securityContext:
           readOnlyRootFilesystem: true
           runAsNonRoot: true
@@ -303,3 +320,19 @@ subjects:
 - kind: ServiceAccount
   name: proxy
   namespace: konflux-ui
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: proxy-nginx-metrics
+  labels:
+    app: proxy
+spec:
+  endpoints:
+  - port: exporter
+    path: /metrics
+    interval: 30s
+    scheme: http
+  selector:
+    matchLabels:
+      app: proxy
