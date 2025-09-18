@@ -50,9 +50,6 @@ loki:
     chunk_encoding: snappy            # Compress data (reduces S3 transfer size)
     chunk_retain_period: 1h           # Keep chunks in memory after flush
     flush_op_timeout: 10m             # Add timeout for S3 operations
-    max_transfer_retries: 10          # Add retry logic
-    retry_min_backoff: 100ms          # Minimum backoff
-    retry_max_backoff: 10s            # Maximum backoff
 
   # Tuning for high-load queries
   querier:
