@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: taskrun-config
+  namespace: default # Change as needed
+
+data:
+  POLICY_CONFIGURATION: "github.com/enterprise-contract/config//slsa3"
+  PUBLIC_KEY: |
+    -----BEGIN PUBLIC KEY-----
+    MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEZP/0htjhVt2y0ohjgtIIgICOtQtA
+    naYJRuLprwIv6FDhZ5yFjYUEtsmoNcW7rx2KM6FOXGsCX3BNc7qhHELT+g==
+    -----END PUBLIC KEY-----
+  IGNORE_REKOR: "true"
