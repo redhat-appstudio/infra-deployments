@@ -48,7 +48,7 @@ jobs:
           export FILES="$(realpath kustomizedfiles)"
           export OUTPUT="$(realpath ../results/kube-linter.sarif)"
           cd kube-linter
-          go run cmd/kube-linter/kube-linter.go --format sarif --verbose "${FILES}" > "${OUTPUT}"
+          go run cmd/kube-linter/kube-linter.go lint --format sarif --verbose "${FILES}" > "${OUTPUT}"
 
 
       - name: Upload SARIF report files to GitHub
