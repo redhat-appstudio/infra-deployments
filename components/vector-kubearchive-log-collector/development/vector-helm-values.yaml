@@ -21,8 +21,8 @@ customConfig:
         - k8s_logs
       group_by:
         - file
-      flush_period_ms: 2000
-      end_every_period_ms: 2000
+      max_events: 100
+      expire_after_ms: 10000
       merge_strategies:
         message: concat_newline
     remap_app_logs:
@@ -37,15 +37,16 @@ customConfig:
         } else {
           .pod_id = "unknown_pod_id"
         }
-        if exists(.tmp.kubernetes.pod_name) {
-          .pod_name = del(.tmp.kubernetes.pod_name)
-        } else {
-          .pod_name = "unknown_pod"
-        }
         if exists(.tmp.kubernetes.container_name) {
           .container = del(.tmp.kubernetes.container_name)
         } else {
           .container = "unknown_container"
+        }
+        # Extract namespace for low cardinality labeling
+        if exists(.tmp.kubernetes.pod_namespace) {
+          .namespace = del(.tmp.kubernetes.pod_namespace)
+        } else {
+          .namespace = "unknown_namespace"
         }
         # General message field handling
         if exists(.tmp.message) {
@@ -55,8 +56,8 @@ customConfig:
         }
         # Basic data sanitization to prevent 400 errors
         # Truncate very long messages
-        if length(.message) > 32768 {
-          .message = slice!(.message, 0, 32768) + "...[TRUNCATED]"
+        if length(.message) > 1048576 {
+          .message = slice!(.message, 0, 1048576) + "...[TRUNCATED]"
         }
         # Clean up temporary fields
         del(.tmp)
@@ -69,6 +70,11 @@ customConfig:
       encoding:
         codec: "text"  # Use text instead of json to avoid metadata issues
         except_fields: ["tmp"]  # Exclude temporary fields
+        only_fields:
+          - message
+      structured_metadata:
+        pod_id: "{{`{{ pod_id }}`}}"
+        container: "{{`{{ container }}`}}"
       auth:
         strategy: "basic"
         user: "${LOKI_USERNAME}"
@@ -84,11 +90,7 @@ customConfig:
         timeout_secs: 10   # Send batches more frequently
       compression: "gzip"  # Enable compression to reduce data size
       labels:
-        job: "vector"
-        pod_id: "{{`{{ pod_id }}`}}"
-        container: "{{`{{ container }}`}}"
-        namespace: "{{`{{ namespace }}`}}"
-        pod: "{{`{{ pod_name }}`}}"
+        stream: "{{`{{ namespace }}`}}"
       buffer:
         type: "memory"
         max_events: 10000

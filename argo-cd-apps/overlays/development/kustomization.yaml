@@ -9,9 +9,7 @@ resources:
   - ../../base/ca-bundle
   - ../../base/repository-validator
   - ../../base/keycloak
-  - ../../base/ui
   - ../../base/eaas
-  - ../../base/toolchain-member
 
 patchesStrategicMerge:
   - delete-applications.yaml
@@ -66,16 +64,6 @@ patches:
     target:
       kind: ApplicationSet
       version: v1alpha1
-      name: toolchain-host-operator
-  - path: development-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: toolchain-member-operator
-  - path: development-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
       name: ingresscontroller
   - path: development-overlay-patch.yaml
     target:
@@ -92,11 +80,6 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: integration
-  - path: development-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: smee
   - path: set-local-cluster-label.yaml
     target:
       kind: ApplicationSet
@@ -107,16 +90,6 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: keycloak
-  - path: set-local-cluster-label.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: ui
-  - path: development-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: ui
   - path: development-overlay-patch.yaml
     target:
       kind: ApplicationSet
@@ -132,11 +105,6 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: project-controller
-  - path: development-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: spacerequest-cleaner
   # The 'appstudio.redhat.com/eaas-cluster' cluster role label must also be present for
   # cluster-as-a-service to be deployed.
   - path: development-overlay-patch.yaml
@@ -183,6 +151,11 @@ patches:
     target:
       kind: ApplicationSet
       version: v1alpha1
+      name: crossplane-config
+  - path: development-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
       name: vector-kubearchive-log-collector
   - path: development-overlay-patch.yaml
     target:
@@ -224,4 +197,13 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: konflux-kite
-
+  - path: development-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: trust-manager
+  - path: development-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: squid

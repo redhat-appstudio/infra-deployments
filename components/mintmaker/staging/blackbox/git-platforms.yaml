@@ -1,0 +1,22 @@
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: github-probe
+  namespace: mintmaker
+  labels:
+    monitoring.rhobs/stack:  appstudio-federate-ms
+    app.kubernetes.io/name: mintmaker
+    app.kubernetes.io/managed-by: kustomize
+spec:
+  jobName: "git-probe"
+  interval: 30s
+  scrapeTimeout: 10s
+  prober:
+    url: git-platforms-exporter.mintmaker.svc.cluster.local:9115
+  module: http_2xx
+  targets:
+    staticConfig:
+      static:
+        - https://www.github.com
+      labels:
+        target: github

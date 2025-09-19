@@ -3,18 +3,19 @@ kind: Kustomization
 resources:
 - ../../base
 - ../../base/external-secrets
-- https://github.com/konflux-ci/mintmaker/config/default?ref=d9daa8e361dc4714b598bd9443ae32b0e8384f79
-- https://github.com/konflux-ci/mintmaker/config/renovate?ref=d9daa8e361dc4714b598bd9443ae32b0e8384f79
+- ../blackbox
+- https://github.com/konflux-ci/mintmaker/config/default?ref=48e6ff6be7f9d2c6660b9ec97227bd015473edd0
+- https://github.com/konflux-ci/mintmaker/config/renovate?ref=48e6ff6be7f9d2c6660b9ec97227bd015473edd0
 
 namespace: mintmaker
 
 images:
 - name: quay.io/konflux-ci/mintmaker
   newName: quay.io/konflux-ci/mintmaker
-  newTag: d9daa8e361dc4714b598bd9443ae32b0e8384f79
+  newTag: 48e6ff6be7f9d2c6660b9ec97227bd015473edd0
 - name: quay.io/konflux-ci/mintmaker-renovate-image
   newName: quay.io/konflux-ci/mintmaker-renovate-image
-  newTag: e5a6e37a42c9d6ca64793c6b125e7082879d121c
+  newTag: 77b806adc62ced470c015f66d991e74a21595d59
 
 commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
@@ -24,3 +25,6 @@ patches:
 
 configurations:
 - kustomizeconfig.yaml
+
+components:
+  - ../../components/rh-certs
