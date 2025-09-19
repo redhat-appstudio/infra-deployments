@@ -1,0 +1,23 @@
+apiVersion: builtin
+kind: HelmChartInflationGenerator
+metadata:
+  name: squid-helm
+name: squid-helm
+repo: oci://quay.io/konflux-ci/caching
+version: 0.1.275+b74f6fd
+valuesInline:
+  installCertManagerComponents: false
+  mirrord:
+    enabled: false
+  test:
+    enabled: false
+  cert-manager:
+    enabled: false
+  environment: release
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
