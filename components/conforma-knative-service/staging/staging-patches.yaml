@@ -1,9 +1,9 @@
 ---
-# Staging-specific patches for Conforma Verifier Listener
+# Staging-specific patches for Conforma Knative Service
 apiVersion: serving.knative.dev/v1
 kind: Service
 metadata:
-  name: conforma-verifier-listener
+  name: conforma-knative-service
   annotations:
     # VSA attestation support for staging
     chains.tekton.dev/signed: "true"
@@ -39,18 +39,18 @@ spec:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: conforma-verifier-listener
+  name: conforma-knative-service
 rules:
-  - apiGroups: [""]
-    resources: ["configmaps"]
-    verbs: ["get", "list"]
-  - apiGroups: ["tekton.dev"]
-    resources: ["taskruns"]
-    verbs: ["create", "get", "list", "watch"]
-  - apiGroups: ["appstudio.redhat.com"]
-    resources: ["snapshots"]
-    verbs: ["get", "list", "watch"]
+  - apiGroups: []
+    resources: [configmaps]
+    verbs: [get, list]
+  - apiGroups: [tekton.dev]
+    resources: [taskruns]
+    verbs: [create, get, list, watch]
+  - apiGroups: [appstudio.redhat.com]
+    resources: [snapshots]
+    verbs: [get, list, watch]
   # Additional permissions for VSA attestation
-  - apiGroups: ["tekton.dev"]
-    resources: ["pipelineruns"]
-    verbs: ["get", "list", "watch"]
+  - apiGroups: [tekton.dev]
+    resources: [pipelineruns]
+    verbs: [get, list, watch]

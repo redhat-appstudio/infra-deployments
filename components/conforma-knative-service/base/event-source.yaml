@@ -3,7 +3,7 @@ kind: ApiServerSource
 metadata:
   name: snapshot-events
 spec:
-  serviceAccountName: conforma-verifier-listener
+  serviceAccountName: conforma-knative-service
   mode: Resource
   resources:
     - apiVersion: appstudio.redhat.com/v1alpha1
@@ -12,4 +12,4 @@ spec:
     ref:
       apiVersion: serving.knative.dev/v1
       kind: Service
-      name: conforma-verifier-listener 
+      name: conforma-knative-service
