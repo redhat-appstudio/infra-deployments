@@ -51,7 +51,7 @@ jobs:
         if: always()
 
       - name: Upload artifacts
-        uses: actions/upload-artifacts@v4
+        uses: actions/upload-artifact@v4
         if: steps.kube-linter-action-scan.outcome == 'failure'
         with:
           name: kustomize-manifests
