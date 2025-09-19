@@ -120,9 +120,6 @@ spec:
         - containerPort: 9443
           name: web-tls
           protocol: TCP
-        - containerPort: 9090
-          name: metrics
-          protocol: TCP
         resources:
           limits:
             cpu: 300m
@@ -186,8 +183,9 @@ spec:
       - image: nginx/nginx-prometheus-exporter:1.1.0
         name: nginx-prometheus-exporter
         args:
-          - -nginx.scrape-uri=http://localhost:9090/metrics
-          - -web.listen-address=:9113
+          - --nginx.scrape-uri=https://localhost:9443/metrics
+          - --nginx.ssl-verify=false
+          - --web.listen-address=:9113
         ports:
           - containerPort: 9113
             name: exporter
@@ -202,7 +200,7 @@ spec:
         securityContext:
           readOnlyRootFilesystem: true
           runAsNonRoot: true
-          runAsUser: 1001
+          runAsUser:
       volumes:
         - configMap:
             defaultMode: 420
@@ -250,17 +248,13 @@ spec:
   ipFamilyPolicy: SingleStack
   ports:
     - name: web
-      port: 8888
+      port: 8080
       protocol: TCP
       targetPort: web
     - name: web-tls
       port: 9443
       protocol: TCP
       targetPort: web-tls
-    - name: metrics
-      port: 9090
-      protocol: TCP
-      targetPort: metrics
     - name: exporter
       port: 9113
       protocol: TCP
