@@ -34,17 +34,22 @@ jobs:
             | \
             xargs -I {} -n1 -P8  bash -c 'dir=$(dirname "{}"); output_file=$(echo $dir | tr / -)-kustomization.yaml; if ! log=$(kustomize build --enable-helm "$dir" -o "kustomizedfiles/$output_file" 2>&1); then echo "Error when running kustomize build for $dir: $log" && exit 1;fi'
 
-      - name: Scan yaml files with kube-linter
-        uses: stackrox/kube-linter-action@v1.0.4
-        id: kube-linter-action-scan
+      - uses: actions/setup-go@v5
         with:
-          version: v0.7.6
-          # Adjust this directory to the location where your kubernetes resources and helm charts are located.
-          directory: kustomizedfiles
-          # The following two settings make kube-linter produce scan analysis in SARIF format which would then be
-          # made available in GitHub UI via upload-sarif action below.
-          format: sarif
-          output-file: ../results/kube-linter.sarif
+          version: v1.24.0
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          repository: sadlerap/kube-linter
+          path: kube-linter
+      - name: Scan yaml files with kube-linter
+        shell: bash
+        run: |
+          export FILES="$(realpath kustomizedfiles)"
+          export OUTPUT="$(realpath ../results/kube-linter.sarif)"
+          cd kube-linter
+          go run cmd/kube-linter/kube-linter.go --format sarif --verbose "${FILES}" > "${OUTPUT}"
+
 
       - name: Upload SARIF report files to GitHub
         uses: github/codeql-action/upload-sarif@v3
