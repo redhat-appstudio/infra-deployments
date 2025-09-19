@@ -180,6 +180,27 @@ spec:
           readOnlyRootFilesystem: true
           runAsNonRoot: true
           runAsUser: 1001
+      - image: nginx/nginx-prometheus-exporter:1.1.0
+        name: nginx-prometheus-exporter
+        args:
+          - --nginx.scrape-uri=https://localhost:9443/metrics
+          - --nginx.ssl-verify=false
+          - --web.listen-address=:9113
+        ports:
+          - containerPort: 9113
+            name: exporter
+            protocol: TCP
+        resources:
+          limits:
+            cpu: 100m
+            memory: 64Mi
+          requests:
+            cpu: 10m
+            memory: 32Mi
+        securityContext:
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser:
       volumes:
         - configMap:
             defaultMode: 420
@@ -227,13 +248,17 @@ spec:
   ipFamilyPolicy: SingleStack
   ports:
     - name: web
-      port: 8888
+      port: 8080
       protocol: TCP
       targetPort: web
     - name: web-tls
       port: 9443
       protocol: TCP
       targetPort: web-tls
+    - name: exporter
+      port: 9113
+      protocol: TCP
+      targetPort: exporter
   selector:
     app: proxy
 ---
@@ -300,3 +325,19 @@ subjects:
 - kind: ServiceAccount
   name: proxy
   namespace: konflux-ui
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: proxy-nginx-metrics
+  labels:
+    app: proxy
+spec:
+  endpoints:
+  - port: exporter
+    path: /metrics
+    interval: 30s
+    scheme: http
+  selector:
+    matchLabels:
+      app: proxy
