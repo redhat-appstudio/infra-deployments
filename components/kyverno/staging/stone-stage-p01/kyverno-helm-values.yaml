@@ -40,7 +40,7 @@ admissionController:
     disabled: false
   podDisruptionBudget:
     enabled: true
-    minAvailable: 1
+    minAvailable: 40%
   serviceMonitor:
     enabled: true
     # kyverno doesn't seem to support HTTPS on metrics
@@ -67,7 +67,7 @@ backgroundController:
     disabled: false
   podDisruptionBudget:
     enabled: true
-    minAvailable: 1
+    minAvailable: 40%
   serviceMonitor:
     enabled: true
     # kyverno doesn't seem to support HTTPS on metrics
@@ -94,7 +94,7 @@ cleanupController:
     disabled: false
   podDisruptionBudget:
     enabled: true
-    minAvailable: 1
+    minAvailable: 40%
   serviceMonitor:
     enabled: true
     # kyverno doesn't seem to support HTTPS on metrics
