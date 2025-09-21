@@ -1,12 +1,12 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-- https://github.com/konflux-ci/tekton-kueue/config/default?ref=90f5e30da72461ecd93f8d287a30fc0a2a941063
+- https://github.com/konflux-ci/tekton-kueue/config/default?ref=cce428580ce6be1fe65bd42cd26a5a492c24842b
 
 images:
 - name: konflux-ci/tekton-kueue
   newName: quay.io/konflux-ci/tekton-kueue
-  newTag: 90f5e30da72461ecd93f8d287a30fc0a2a941063
+  newTag: cce428580ce6be1fe65bd42cd26a5a492c24842b
 
 namespace: tekton-kueue
 # ensure that installation starts after the installation of kueue complete
@@ -21,22 +21,10 @@ configMapGenerator:
       - config.yaml
 
 patches:
-- path: webhook-patch.yaml
-  target:
-    group: apps
-    kind: Deployment
-    name: tekton-kueue-webhook
-    version: v1
-- path: controller-patch.yaml
-  target:
-    group: apps
-    kind: Deployment
-    name: tekton-kueue-controller-manager
-    version: v1
-- target:
-    kind: Namespace
-    name: tekton-kueue
-  patch: |-
-    - op: add
-      path: /metadata/labels/openshift.io~1cluster-monitoring
-      value: "true"
+  - target:
+      kind: Namespace
+      name: tekton-kueue
+    patch: |-
+      - op: add
+        path: /metadata/labels/openshift.io~1cluster-monitoring
+        value: "true"
