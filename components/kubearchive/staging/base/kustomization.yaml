@@ -7,19 +7,6 @@ resources:
 
 patches:
   - patch: |-
-      apiVersion: v1
-      kind: ConfigMap
-      metadata:
-        name: kubearchive-logging
-        namespace: product-kubearchive
-      data:
-        POD_ID: "cel:metadata.uid"
-        NAMESPACE: "cel:metadata.namespace"
-        START: "cel:status.?startTime == optional.none() ? int(now()-duration('1h'))*1000000000: status.startTime"
-        END: "cel:status.?startTime == optional.none() ? int(now()+duration('1h'))*1000000000: int(timestamp(status.startTime)+duration('6h'))*1000000000" # temporary workaround until CONTAINER_NAME is allowed on CEL expressions as variable: 6 hours since the container started
-        LOG_URL: "http://loki-gateway.product-kubearchive-logging.svc.cluster.local:80/loki/api/v1/query_range?query=%7Bstream%3D%22{NAMESPACE}%22%7D%20%7C%20pod_id%20%3D%20%60{POD_ID}%60%20%7C%20container%20%3D%20%60{CONTAINER_NAME}%60&start={START}&end={END}&direction=forward"
-        LOG_URL_JSONPATH: "$.data.result[*].values[*][1]"
-  - patch: |-
       $patch: delete
       apiVersion: v1
       kind: Secret
