@@ -3,3 +3,6 @@ checks:
   - liveness-port
   - readiness-port
   - startup-port
+  # disabled because removed jobs will get recreated by argo, causing them to
+  # run more frequently than intended
+  - job-ttl-seconds-after-finished
