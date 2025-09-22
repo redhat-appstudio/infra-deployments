@@ -10,6 +10,33 @@ namespace: product-kubearchive
 
 patches:
   - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: kubearchive-api-server
+        namespace: kubearchive
+      spec:
+        replicas: 0
+
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: kubearchive-sink
+        namespace: kubearchive
+      spec:
+        replicas: 0
+
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: kubearchive-operator
+        namespace: kubearchive
+      spec:
+        replicas: 0
+
+  - patch: |-
       $patch: delete
       apiVersion: v1
       kind: Secret
