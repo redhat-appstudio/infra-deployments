@@ -713,7 +713,7 @@ data:
 # GPU Instances
   dynamic.linux-g64xlarge-amd64.type: aws
   dynamic.linux-g64xlarge-amd64.region: us-east-1
-  dynamic.linux-g64xlarge-amd64.ami: ami-08d4b06f9fe91c604
+  dynamic.linux-g64xlarge-amd64.ami: ami-0133ba5e6e6d57a02
   dynamic.linux-g64xlarge-amd64.instance-type: g6.4xlarge
   dynamic.linux-g64xlarge-amd64.key-name: kflux-prd-rh03-key-pair
   dynamic.linux-g64xlarge-amd64.aws-secret: aws-account
@@ -792,4 +792,6 @@ data:
     setsebool container_use_devices 1
 
     nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml
+    
+    chmod a+rw /etc/cdi/nvidia.yaml
     --//--
