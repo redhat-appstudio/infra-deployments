@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: smee
+  name: squid
 spec:
   generators:
     - merge:
@@ -9,19 +9,20 @@ spec:
           - nameNormalized
         generators:
           - clusters:
+              selector:
+                matchLabels:
+                  appstudio.redhat.com/member-cluster: "true"
               values:
-                sourceRoot: components/smee
+                sourceRoot: components/squid
                 environment: staging
                 clusterDir: ""
-          -  list:
-              elements:
-                - nameNormalized: stone-prd-host1
-                  values.clusterDir: stone-prd-host1
-                - nameNormalized: stone-stg-host
-                  values.clusterDir: stone-stg-host
+          - list:
+              elements: []
   template:
     metadata:
-      name: smee-{{nameNormalized}}
+      name: squid-{{nameNormalized}}
+      annotations:
+        argocd.argoproj.io/sync-wave: "1"
     spec:
       project: default
       source:
@@ -29,12 +30,12 @@ spec:
         repoURL: https://github.com/redhat-appstudio/infra-deployments.git
         targetRevision: main
       destination:
-        namespace: smee
+        namespace: proxy
         server: '{{server}}'
       syncPolicy:
         automated:
           prune: true
-          selfHeal: true
+          selfHeal: false
         syncOptions:
           - CreateNamespace=true
         retry:
