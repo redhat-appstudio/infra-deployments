@@ -6,7 +6,7 @@ resources:
   - postgresql.yaml
   - vacuum.yaml
   - release-vacuum.yaml
-  - kubearchive.yaml
+  - https://github.com/kubearchive/kubearchive/releases/download/v1.7.0/kubearchive.yaml?timeout=90
 
 namespace: product-kubearchive
 secretGenerator:
@@ -67,7 +67,7 @@ patches:
               - name: migration
                 env:
                   - name: KUBEARCHIVE_VERSION
-                    value: v1.6.0
+                    value: v1.7.0
   # These patches add an annotation so an OpenShift service
   # creates the TLS secrets instead of Cert Manager
   - patch: |-
@@ -135,8 +135,6 @@ patches:
               - name: manager
                 args: [--health-probe-bind-address=:8081]
                 env:
-                - name: KUBEARCHIVE_MONITOR_ALL_NAMESPACES
-                  value: "true"
                 - name: KUBEARCHIVE_OTEL_MODE
                   value: enabled
                 - name: OTEL_EXPORTER_OTLP_ENDPOINT
