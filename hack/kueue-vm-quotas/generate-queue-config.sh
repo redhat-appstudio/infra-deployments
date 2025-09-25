@@ -59,7 +59,7 @@ generate_host_config() {
     
     
     # Build relative path to base
-    local relative_base="base/multi-platform-controller-host-config"
+    local relative_base="base/host-config-chart"
     for ((i=0; i<depth; i++)); do
         relative_base="../$relative_base"
     done
