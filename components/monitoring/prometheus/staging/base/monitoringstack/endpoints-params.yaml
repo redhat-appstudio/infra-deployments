@@ -153,6 +153,14 @@
     - '{__name__="watcher_client_latency_bucket"}'
     - '{__name__="pac_watcher_work_queue_depth"}'
     - '{__name__="pac_watcher_client_latency_bucket"}'
+    - '{__name__="watcher_reconcile_latency_bucket", namespace="openshift-pipelines", job="tekton-chains"}'
+    - '{__name__="watcher_workqueue_longest_running_processor_seconds_count", container="tekton-chains-controller", service="tekton-chains"}'
+    - '{__name__="watcher_go_gc_cpu_fraction", namespace="openshift-pipelines",container="tekton-chains-controller", job="tekton-chains"}'
+    - '{__name__="workqueue_depth", namespace="openshift-pipelines", service="pipeline-metrics-exporter-service", container="pipeline-metrics-exporter"}'
+    - '{__name__="pac_watcher_workqueue_unfinished_work_seconds_count"}'
+    - '{__name__="pac_watcher_client_results"}'
+    - '{__name__="pipelinerun_failed_by_pvc_quota_count"}'
+    - '{__name__="tekton_pipelines_controller_taskrun_count"}'
 
     ## Kueue Metrics
     - '{__name__="tekton_kueue_cel_evaluations_total"}'

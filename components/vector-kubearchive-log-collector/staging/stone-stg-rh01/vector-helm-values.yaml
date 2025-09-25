@@ -42,6 +42,12 @@ customConfig:
         } else {
           .container = "unknown_container"
         }
+        # Extract namespace for low cardinality labeling
+        if exists(.tmp.kubernetes.pod_namespace) {
+          .namespace = del(.tmp.kubernetes.pod_namespace)
+        } else {
+          .namespace = "unknown_namespace"
+        }
         # General message field handling
         if exists(.tmp.message) {
           .message = to_string(del(.tmp.message)) ?? "no_message"
@@ -62,6 +68,11 @@ customConfig:
       encoding:
         codec: "text"  # Use text instead of json to avoid metadata issues
         except_fields: ["tmp"]  # Exclude temporary fields
+        only_fields:
+          - message
+      structured_metadata:
+        pod_id: "{{`{{ pod_id }}`}}"
+        container: "{{`{{ container }}`}}"
       auth:
         strategy: "basic"
         user: "${LOKI_USERNAME}"
@@ -77,7 +88,7 @@ customConfig:
         timeout_secs: 5               # Shorter timeout for faster sends
       compression: "gzip"  # Enable compression to reduce data size
       labels:
-        stream: "{{`{{ pod_id }}-{{ container }}`}}"
+        stream: "{{`{{ namespace }}`}}"
       buffer:
         type: "memory"
         max_events: 10000
