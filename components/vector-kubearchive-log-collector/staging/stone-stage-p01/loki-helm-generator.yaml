@@ -1,0 +1,27 @@
+apiVersion: builtin
+kind: HelmChartInflationGenerator
+metadata:
+  name: loki
+name: loki
+repo: https://grafana.github.io/helm-charts
+version: 6.30.1
+releaseName: loki
+namespace: product-kubearchive-logging
+valuesFile: loki-helm-values.yaml
+additionalValuesFiles:
+  - loki-helm-stg-values.yaml
+valuesInline:
+  # Cluster-specific overrides
+  serviceAccount:
+    create: true
+    name: loki-sa
+    annotations:
+      eks.amazonaws.com/role-arn: "arn:aws:iam::558441962910:role/stone-stage-p01-loki-storage-role"
+  loki:
+    storage:
+      bucketNames:
+        chunks: stone-stage-p01-loki-storage
+        admin: stone-stage-p01-loki-storage
+    storage_config:
+      aws:
+        bucketnames: stone-stage-p01-loki-storage
