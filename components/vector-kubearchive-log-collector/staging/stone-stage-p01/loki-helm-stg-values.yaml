@@ -1,0 +1,189 @@
+---
+gateway:
+  service:
+    type: LoadBalancer
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      memory: 256Mi
+
+# Basic Loki configuration with S3 storage
+loki:
+  commonConfig:
+    replication_factor: 3
+  storage:
+    type: s3
+    # bucketNames: Fill it on the generator for each cluster
+    s3:
+      region: us-east-1
+  storage_config:
+    aws:
+      # bucketnames: Fill it on the generator for each cluster
+      region: us-east-1
+      s3forcepathstyle: false 
+  # Configure ingestion limits to handle Vector's data volume
+  limits_config:
+      retention_period: 744h  # 31 days retention
+      ingestion_rate_mb: 20
+      ingestion_burst_size_mb: 40
+      ingestion_rate_strategy: "local"
+      max_streams_per_user: 0
+      max_line_size: 2097152
+      per_stream_rate_limit: 20M
+      per_stream_rate_limit_burst: 50M
+      reject_old_samples: false
+      reject_old_samples_max_age: 168h
+      discover_service_name: []
+      discover_log_levels: false
+      volume_enabled: true
+      max_global_streams_per_user: 50000
+      max_entries_limit_per_query: 100000
+      increment_duplicate_timestamp: true
+      allow_structured_metadata: true
+  ingester:
+    chunk_target_size: 4194304  # 4MB
+    chunk_idle_period: 5m
+    max_chunk_age: 2h
+    chunk_retain_period: 1h
+    chunk_encoding: snappy
+    flush_op_timeout: 10m
+  # Tuning for high-load queries
+  querier:
+    max_concurrent: 8
+  query_range:
+    # split_queries_by_interval deprecated in Loki 3.x - removed
+    parallelise_shardable_queries: true
+
+# Distributed components configuration
+ingester:
+  replicas: 3
+  autoscaling:
+    enabled: true
+  zoneAwareReplication:
+    enabled: true
+  maxUnavailable: 1
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+  persistence:
+    enabled: true
+    size: 10Gi
+  affinity: {}
+  podAntiAffinity:
+    soft: {}
+    hard: {}
+
+querier:
+  replicas: 3
+  autoscaling:
+    enabled: true
+  maxUnavailable: 1
+  resources:
+    requests:
+      cpu: 300m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
+  affinity: {}
+
+queryFrontend:
+  replicas: 2
+  maxUnavailable: 1
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      memory: 512Mi
+
+queryScheduler:
+  replicas: 2
+  maxUnavailable: 1
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      memory: 512Mi
+
+distributor:
+  replicas: 3
+  autoscaling:
+    enabled: true
+  maxUnavailable: 1
+  resources:
+    requests:
+      cpu: 300m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
+  affinity: {}
+
+compactor:
+  replicas: 1
+  retention_enabled: true
+  retention_delete_delay: 2h
+  retention_delete_worker_count: 150
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
+
+indexGateway:
+  replicas: 2
+  maxUnavailable: 0
+  resources:
+    requests:
+      cpu: 300m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
+  affinity: {}
+
+# Enable Memcached caches for performance
+chunksCache:
+  enabled: true
+  replicas: 1
+
+resultsCache:
+  enabled: true
+  replicas: 1
+
+memcached:
+  enabled: true
+
+memcachedResults:
+  enabled: true
+
+memcachedChunks:
+  enabled: true
+
+memcachedFrontend:
+  enabled: true
+
+memcachedIndexQueries:
+  enabled: true
+
+memcachedIndexWrites:
+  enabled: true
+
+# Disable Minio - staging uses S3 with IAM role
+minio:
+  enabled: false
+
+# Resources for memcached exporter to satisfy linter
+memcachedExporter:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      memory: 128Mi
