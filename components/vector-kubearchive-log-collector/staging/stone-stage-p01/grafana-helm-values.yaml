@@ -1,0 +1,79 @@
+# Copyright KubeArchive Authors
+# SPDX-License-Identifier: Apache-2.0
+---
+# Admin user configuration  
+adminUser: admin
+adminPassword: password  # nosecret - used for development and staging
+
+# Resource requirements
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# OpenShift-compatible security context using assigned UID range
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000770000
+  runAsGroup: 1000770000
+  fsGroup: 1000770000
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000770000
+  runAsGroup: 1000770000
+  fsGroup: 1000770000
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 1000770000
+  runAsGroup: 1000770000
+
+# Service account configuration
+serviceAccount:
+  create: false
+  name: grafana
+
+# Disable test pod for development environment
+testFramework:
+  enabled: false
+
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+      - name: Loki
+        type: loki
+        access: proxy
+        # Use Loki gateway
+        url: http://loki-gateway.product-kubearchive-logging.svc.cluster.local:80
+        basicAuth: true
+        basicAuthUser: $LOKI_USER
+        secureJsonData:
+          basicAuthPassword: $LOKI_PWD
+          httpHeaderValue1: "kubearchive"
+        jsonData:
+          httpHeaderName1: "X-Scope-OrgID"
+          httpMethod: "GET"
+        isDefault: true
+        editable: true
+
+sidecar:
+  datasources:
+    envValueFrom:
+      LOKI_USER:
+        secretKeyRef:
+          name: kubearchive-loki
+          key: USERNAME
+      LOKI_PWD:
+        secretKeyRef:
+          name: kubearchive-loki
+          key: PASSWORD

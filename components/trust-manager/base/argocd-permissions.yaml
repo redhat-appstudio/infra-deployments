@@ -1,0 +1,28 @@
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: trust-manager-bundles-manager
+rules:
+  - verbs:
+      - patch
+      - get
+      - list
+      - create
+      - delete
+    apiGroups:
+      - trust.cert-manager.io
+    resources:
+      - bundles
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: grant-argocd-trust-manager-bundles-permissions
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: trust-manager-bundles-manager
+subjects:
+- kind: ServiceAccount
+  name: openshift-gitops-argocd-application-controller
+  namespace: openshift-gitops
