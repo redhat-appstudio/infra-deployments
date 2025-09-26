@@ -38,6 +38,11 @@ admissionController:
         - "ALL"
   metering:
     disabled: false
+  podDisruptionBudget:
+    enabled: true
+    maxUnavailable: 2
+    minAvailable: null
+    unhealthyPodEvictionPolicy: AlwaysAllow
   serviceMonitor:
     enabled: true
     # kyverno doesn't seem to support HTTPS on metrics
@@ -62,6 +67,11 @@ backgroundController:
       - "ALL"
   metering:
     disabled: false
+  podDisruptionBudget:
+    enabled: true
+    maxUnavailable: 2
+    minAvailable: null
+    unhealthyPodEvictionPolicy: AlwaysAllow
   serviceMonitor:
     enabled: true
     # kyverno doesn't seem to support HTTPS on metrics
@@ -86,6 +96,11 @@ cleanupController:
       - "ALL"
   metering:
     disabled: false
+  podDisruptionBudget:
+    enabled: true
+    maxUnavailable: 2
+    minAvailable: null
+    unhealthyPodEvictionPolicy: AlwaysAllow
   serviceMonitor:
     enabled: true
     # kyverno doesn't seem to support HTTPS on metrics
