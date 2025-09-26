@@ -34,6 +34,11 @@ admissionController:
       capabilities:
         drop:
         - "ALL"
+  podDisruptionBudget:
+    enabled: true
+    maxUnavailable: 2
+    minAvailable: null
+    unhealthyPodEvictionPolicy: AlwaysAllow
 backgroundController:
   replicas: 3
   extraArgs:
@@ -52,6 +57,11 @@ backgroundController:
     capabilities:
       drop:
       - "ALL"
+  podDisruptionBudget:
+    enabled: true
+    maxUnavailable: 2
+    minAvailable: null
+    unhealthyPodEvictionPolicy: AlwaysAllow
 cleanupController:
   replicas: 3
   extraArgs:
@@ -70,6 +80,11 @@ cleanupController:
     capabilities:
       drop:
       - "ALL"
+  podDisruptionBudget:
+    enabled: true
+    maxUnavailable: 2
+    minAvailable: null
+    unhealthyPodEvictionPolicy: AlwaysAllow
 reportsController:
   replicas: 3
   resources:
@@ -82,6 +97,11 @@ reportsController:
     capabilities:
       drop:
       - "ALL"
+  podDisruptionBudget:
+    enabled: true
+    maxUnavailable: 2
+    minAvailable: null
+    unhealthyPodEvictionPolicy: AlwaysAllow
 policyReportsCleanup:
   image:
     registry: mirror.gcr.io
