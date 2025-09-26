@@ -6,6 +6,8 @@ resources:
   - postgresql.yaml
   - vacuum.yaml
   - release-vacuum.yaml
+  - kubearchive-config.yaml
+  - pipelines-vacuum.yaml
   - https://github.com/kubearchive/kubearchive/releases/download/v1.7.0/kubearchive.yaml?timeout=90
 
 namespace: product-kubearchive
@@ -54,7 +56,33 @@ patches:
               spec:
                 containers:
                   - name: vacuum
-                    image: quay.io/kubearchive/vacuum:v1.6.0
+                    image: quay.io/kubearchive/vacuum:v1.7.0
+  - patch: |-
+      apiVersion: batch/v1
+      kind: CronJob
+      metadata:
+        name: releases-vacuum
+      spec:
+        jobTemplate:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: vacuum
+                    image: quay.io/kubearchive/vacuum:v1.7.0
+  - patch: |-
+      apiVersion: batch/v1
+      kind: CronJob
+      metadata:
+        name: pipelines-vacuum
+      spec:
+        jobTemplate:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: vacuum
+                    image: quay.io/kubearchive/vacuum:v1.7.0
   - patch: |-
       apiVersion: batch/v1
       kind: Job
