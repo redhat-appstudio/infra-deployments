@@ -88,7 +88,7 @@ customConfig:
         timeout_secs: 5               # Shorter timeout for faster sends
       compression: "gzip"  # Enable compression to reduce data size
       labels:
-        stream: "{{`{{ namespace }}`}}"
+        stream: "{{`{{ cluster_id }}`}}-{{`{{ namespace }}`}}"
       buffer:
         type: "memory"
         max_events: 10000
@@ -104,6 +104,11 @@ env:
       secretKeyRef:
         name: kubearchive-loki
         key: PASSWORD
+  - name: CLUSTER_ID
+    valueFrom:
+      configMapKeyRef:
+        name: cluster-id-config
+        key: CLUSTER_ID
 nodeSelector:
   konflux-ci.dev/workload: konflux-tenants
 tolerations:

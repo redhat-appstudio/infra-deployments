@@ -104,6 +104,11 @@ env:
       secretKeyRef:
         name: kubearchive-loki
         key: PASSWORD
+  - name: CLUSTER_ID
+    valueFrom:
+      configMapKeyRef:
+        name: cluster-id-config
+        key: CLUSTER_ID
 nodeSelector:
   konflux-ci.dev/workload: konflux-tenants
 tolerations:
