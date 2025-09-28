@@ -35,6 +35,8 @@ spec:
               metadata:
                 name: cluster-id-config
                 namespace: product-kubearchive-logging
+                annotations:
+                  argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
               data:
                 CLUSTER_ID: "$CLUSTER_ID"
               EOF
