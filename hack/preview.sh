@@ -5,32 +5,20 @@ ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/..
 
 # Print help message
 function print_help() {
-  echo "Usage: $0 MODE [--toolchain] [--keycloak] [--obo] [--eaas] [-h|--help]"
+  echo "Usage: $0 MODE [--obo] [--eaas] [-h|--help]"
   echo "  MODE             upstream/preview (default: upstream)"
-  echo "  --toolchain  (only in preview mode) Install toolchain operators"
-  echo "  --keycloak   (only in preview mode) Configure the toolchain operator to use keycloak deployed on the cluster"
   echo "  --obo        (only in preview mode) Install Observability operator and Prometheus instance for federation"
   echo "  --eaas       (only in preview mode) Install environment as a service components"
   echo
-  echo "Example usage: \`$0 --toolchain --keycloak --obo --eaas"
+  echo "Example usage: \`$0 --obo --eaas"
 }
 
-TOOLCHAIN=false
-KEYCLOAK=false
 OBO=false
 EAAS=false
 
 while [[ $# -gt 0 ]]; do
   key=$1
   case $key in
-    --toolchain)
-      TOOLCHAIN=true
-      shift
-      ;;
-    --keycloak)
-      KEYCLOAK=true
-      shift
-      ;;
     --obo)
       OBO=true
       shift
@@ -48,35 +36,6 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
-
-if $TOOLCHAIN ; then
-  echo "Deploying toolchain"
-  "$ROOT/hack/sandbox-development-mode.sh"
-
-  if $KEYCLOAK; then
-    echo "Patching toolchain config to use keylcoak installed on the cluster"
-
-    BASE_URL=$(oc get ingresses.config.openshift.io/cluster -o jsonpath={.spec.domain})
-    RHSSO_URL="https://keycloak-dev-sso.$BASE_URL"
-
-    oc patch ToolchainConfig/config -n toolchain-host-operator --type=merge --patch-file=/dev/stdin << EOF
-spec:
-  host:
-    registrationService:
-      auth:
-        authClientConfigRaw: '{
-                  "realm": "redhat-external",
-                  "auth-server-url": "$RHSSO_URL/auth",
-                  "ssl-required": "none",
-                  "resource": "cloud-services",
-                  "clientId": "cloud-services",
-                  "public-client": true
-                }'
-        authClientLibraryURL: $RHSSO_URL/auth/js/keycloak.js
-        authClientPublicKeysURL: $RHSSO_URL/auth/realms/redhat-external/protocol/openid-connect/certs
-EOF
-  fi
-fi
 
 if [ -f $ROOT/hack/preview.env ]; then
     source $ROOT/hack/preview.env
@@ -195,7 +154,7 @@ if [[ "$OCP_MINOR" -lt 16 ]]; then
   else
     echo "kueue already exists in delete-applications.yaml, skipping duplicate addition"
   fi
-  
+
   # Remove kueue from policies kustomization if present
   yq -i 'del(.resources[] | select(test("^kueue/?$")))' "$ROOT/components/policies/development/kustomization.yaml"
 fi
@@ -331,26 +290,6 @@ while :; do
   # end temporary work around for https://issues.redhat.com/browse/SRVKP-3245
   sleep $INTERVAL
 done
-
-
-if $KEYCLOAK && $TOOLCHAIN ; then
-  echo "Restarting toolchain registration service to pick up keycloak's certs."
-  oc rollout restart StatefulSet/keycloak -n dev-sso
-  oc wait --for=condition=Ready pod/keycloak-0 -n dev-sso --timeout=5m
-
-  oc delete deployment/registration-service -n toolchain-host-operator
-  # Wait for the new deployment to be available
-  timeout --foreground 5m bash  <<- "EOF"
-		while [[ "$(oc get deployment/registration-service -n toolchain-host-operator -o jsonpath='{.status.conditions[?(@.type=="Available")].status}')" != "True" ]]; do
-			echo "Waiting for registration-service to be available again"
-			sleep 2
-		done
-		EOF
-  if [ $? -ne 0 ]; then
-	  echo "Timed out waiting for registration-service to be available"
-	  exit 1
-  fi
-fi
 
 # Sometimes Tekton CRDs need a few mins to be ready
 retry=0
