@@ -1,0 +1,59 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: cluster-id-update-job
+  annotations:
+    # Allow the job to be recreated when the command changes
+    argocd.argoproj.io/sync-options: Force=true,Replace=true
+    ignore-check.kube-linter.io/no-read-only-root-fs: >
+      "This job needs to update ConfigMaps, so it needs write access."
+spec:
+  parallelism: 1
+  backoffLimit: 3
+  template:
+    spec:
+      # Use an existing service account that has cluster permissions
+      # Common options: default, pipeline, tekton-pipelines-controller, etc.
+      serviceAccountName: default
+      containers:
+        - name: cluster-id-updater
+          image: quay.io/openshift/origin-cli:latest
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              set -o errexit
+              echo "Starting cluster ID update job..."
+              
+              # Get the cluster ID
+              echo "Fetching cluster ID..."
+              CLUSTER_ID=$(oc get clusterversion -o jsonpath='{.items[].spec.clusterID}' 2>/dev/null || echo "unknown-cluster")
+              echo "Cluster ID: $CLUSTER_ID"
+              
+              # Create or update ConfigMap with cluster ID
+              echo "Creating/updating ConfigMap..."
+              cat <<EOF | oc apply -f -
+              apiVersion: v1
+              kind: ConfigMap
+              metadata:
+                name: cluster-id-config
+                namespace: product-kubearchive-logging
+              data:
+                CLUSTER_ID: "$CLUSTER_ID"
+              EOF
+              
+              echo "Successfully updated cluster ID to: $CLUSTER_ID"
+              echo "Job completed successfully"
+          resources:
+            limits:
+              cpu: 100m
+              memory: 128Mi
+            requests:
+              cpu: 50m
+              memory: 64Mi
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+      restartPolicy: Never
