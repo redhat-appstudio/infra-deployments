@@ -12,9 +12,7 @@ spec:
   backoffLimit: 3
   template:
     spec:
-      # Use an existing service account that has cluster permissions
-      # Common options: default, pipeline, tekton-pipelines-controller, etc.
-      serviceAccountName: default
+      serviceAccountName: cluster-id-updater
       containers:
         - name: cluster-id-updater
           image: quay.io/openshift/origin-cli:latest
