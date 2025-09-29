@@ -3,48 +3,12 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ../../base
-  - kubearchive-routes.yaml
-  - database-secret.yaml
-  - release-vacuum.yaml
-  - vacuum.yaml
-  - kubearchive.yaml
-  - external-secret.yaml
+  - ../base
+  - https://github.com/kubearchive/kubearchive/releases/download/v1.6.0/kubearchive.yaml?timeout=90
 
 namespace: product-kubearchive
 
-# Generate kubearchive-logging ConfigMap with hash for automatic restarts
-# Due to quoting limitations of generators we need to introduce the values with the |
-# See https://github.com/kubernetes-sigs/kustomize/issues/4845#issuecomment-1671570428
-configMapGenerator:
-  - name: kubearchive-logging
-    literals:
-      - |
-        POD_ID=cel:metadata.uid
-      - |
-        NAMESPACE=cel:metadata.namespace
-      - |
-        START=cel:status.?startTime == optional.none() ? int(now()-duration('1h'))*1000000000: status.startTime
-      - |
-        END=cel:status.?startTime == optional.none() ? int(now()+duration('1h'))*1000000000: int(timestamp(status.startTime)+duration('6h'))*1000000000
-      - |
-        LOG_URL=http://loki-gateway.product-kubearchive-logging.svc.cluster.local:80/loki/api/v1/query_range?query=%7Bstream%3D%22{NAMESPACE}%22%7D%20%7C%20pod_id%20%3D%20%60{POD_ID}%60%20%7C%20container%20%3D%20%60{CONTAINER_NAME}%60&start={START}&end={END}&direction=forward
-      - |
-        LOG_URL_JSONPATH=$.data.result[*].values[*][1]
-
 patches:
-  - patch: |-
-      apiVersion: batch/v1
-      kind: CronJob
-      metadata:
-        name: vacuum-all
-      spec:
-        jobTemplate:
-          spec:
-            template:
-              spec:
-                containers:
-                  - name: vacuum
-                    image: quay.io/kubearchive/vacuum:v1.6.0
   - patch: |-
       apiVersion: batch/v1
       kind: Job
@@ -57,7 +21,26 @@ patches:
               - name: migration
                 env:
                   - name: KUBEARCHIVE_VERSION
-                    value: v1.7.0
+                    value: v1.6.0
+  # We don't need the Secret as it will be created by the ExternalSecrets Operator
+  - patch: |-
+      $patch: delete
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: kubearchive-database-credentials
+        namespace: kubearchive
+  - patch: |-
+      apiVersion: external-secrets.io/v1beta1
+      kind: ExternalSecret
+      metadata:
+        name: database-secret
+      spec:
+        secretStoreRef:
+          name: appsre-stonesoup-vault
+        dataFrom:
+          - extract:
+              key: production/platform/terraform/generated/kflux-osp-p01/kubearchive-database
   # These patches add an annotation so an OpenShift service
   # creates the TLS secrets instead of Cert Manager
   - patch: |-
@@ -136,11 +119,11 @@ patches:
                   - containerPort: 8081
                 resources:
                   limits:
-                    cpu: 500m
-                    memory: 256Mi
+                    cpu: 100m
+                    memory: 512Mi
                   requests:
-                    cpu: 10m
-                    memory: 256Mi
+                    cpu: 100m
+                    memory: 512Mi
 
   - patch: |-
       apiVersion: apps/v1
@@ -169,14 +152,6 @@ patches:
                     cpu: 200m
                     memory: 128Mi
 
-  # This deletes the Job coming from the kubearchive.yaml file
-  - patch: |-
-      $patch: delete
-      apiVersion: batch/v1
-      kind: Job
-      metadata:
-        name: kubearchive-schema-migration
-        namespace: kubearchive
   # We don't need this CronJob as it is suspended, we can enable it later
   - patch: |-
       $patch: delete
@@ -220,12 +195,4 @@ patches:
       kind: Certificate
       metadata:
         name: "kubearchive-operator-certificate"
-        namespace: kubearchive
-  # Delete the original ConfigMap since we're generating it with configMapGenerator
-  - patch: |-
-      $patch: delete
-      apiVersion: v1
-      kind: ConfigMap
-      metadata:
-        name: kubearchive-logging
         namespace: kubearchive
