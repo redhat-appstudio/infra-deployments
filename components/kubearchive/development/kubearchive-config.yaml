@@ -1,0 +1,32 @@
+---
+apiVersion: kubearchive.org/v1
+kind: ClusterKubeArchiveConfig
+metadata:
+  name: kubearchive
+  namespace: product-kubearchive
+spec:
+  resources:
+    - selector:
+        apiVersion: appstudio.redhat.com/v1alpha1
+        kind: Snapshot
+      archiveOnDelete: 'true'
+    - selector:
+        apiVersion: appstudio.redhat.com/v1alpha1
+        kind: Release
+      archiveWhen: has(status.completionTime)
+      deleteWhen: timestamp(metadata.creationTimestamp) < now() - duration("5d")
+    - selector:
+        apiVersion: tekton.dev/v1
+        kind: PipelineRun
+      archiveWhen: has(status.completionTime)
+      deleteWhen: has(status.completionTime) && timestamp(metadata.completionTime) < now() - duration("5m")
+    - selector:
+        apiVersion: tekton.dev/v1
+        kind: TaskRun
+      archiveWhen: has(status.completionTime)
+      archiveOnDelete: 'true'
+    - selector:
+        apiVersion: v1
+        kind: Pod
+      archiveWhen: has(metadata.labels) && "tekton.dev/taskRunUID" in metadata.labels && status.phase in ['Succeeded', 'Failed', 'Unknown']
+      archiveOnDelete: has(metadata.labels) && "tekton.dev/taskRunUID" in metadata.labels
