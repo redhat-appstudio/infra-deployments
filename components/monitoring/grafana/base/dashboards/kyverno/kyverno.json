@@ -3,10 +3,6 @@
     "list": [
       {
         "builtIn": 1,
-        "datasource": {
-          "type": "datasource",
-          "uid": "grafana"
-        },
         "enable": true,
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
@@ -41,10 +37,6 @@
       "type": "row"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "P22466E8E7855F1E0"
-      },
       "description": "Displays the count of deployments in the konflux-kyverno namespace where the desired number of replicas does not match the actual ready replicas.",
       "fieldConfig": {
         "defaults": {
@@ -120,10 +112,6 @@
       "pluginVersion": "11.6.3",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "P22466E8E7855F1E0"
-          },
           "editorMode": "code",
           "exemplar": true,
           "expr": "kube_deployment_spec_replicas{namespace=\"konflux-kyverno\"} != kube_deployment_status_replicas_ready{namespace=\"konflux-kyverno\"}",
@@ -137,10 +125,6 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "P22466E8E7855F1E0"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -187,10 +171,6 @@
       "pluginVersion": "11.6.3",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "P22466E8E7855F1E0"
-          },
           "editorMode": "code",
           "exemplar": true,
           "expr": "count(count(kyverno_policy_rule_info_total==1) by (policy_name))",
@@ -204,10 +184,6 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "P22466E8E7855F1E0"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -254,10 +230,6 @@
       "pluginVersion": "11.6.3",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "P22466E8E7855F1E0"
-          },
           "editorMode": "code",
           "exemplar": true,
           "expr": "count(kyverno_policy_rule_info_total{rule_type=\"generate\"}==1) by (rule_name)",
@@ -271,10 +243,6 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "P22466E8E7855F1E0"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -337,10 +305,6 @@
       "pluginVersion": "11.6.3",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "P22466E8E7855F1E0"
-          },
           "editorMode": "code",
           "exemplar": true,
           "expr": "sum(increase(kyverno_policy_results_total{rule_result=\"fail\", policy_background_mode=\"true\"}[24h]) or vector(0))*100/sum(increase(kyverno_policy_results_total{policy_background_mode=\"true\"}[24h]))",
@@ -355,10 +319,6 @@
       "type": "gauge"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "P22466E8E7855F1E0"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -405,10 +365,6 @@
       "pluginVersion": "11.6.3",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "P22466E8E7855F1E0"
-          },
           "editorMode": "code",
           "exemplar": true,
           "expr": "count(kyverno_policy_rule_info_total{rule_type=\"validate\"}==1) by (rule_name)",
@@ -422,10 +378,6 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "P22466E8E7855F1E0"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -488,10 +440,6 @@
       "pluginVersion": "11.6.3",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "P22466E8E7855F1E0"
-          },
           "editorMode": "code",
           "exemplar": true,
           "expr": "sum(increase(kyverno_policy_results_total{rule_result=\"fail\"}[24h]) or vector(0))*100/sum(increase(kyverno_policy_results_total[24h]))",
@@ -519,10 +467,6 @@
       "type": "row"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "P22466E8E7855F1E0"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -606,10 +550,6 @@
       "pluginVersion": "11.6.3",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "P22466E8E7855F1E0"
-          },
           "editorMode": "code",
           "exemplar": true,
           "expr": "sum(increase(kyverno_policy_results_total{rule_execution_cause=\"admission_request\"}[5m])) by (rule_result)",
@@ -623,10 +563,6 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "P22466E8E7855F1E0"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -751,10 +687,6 @@
       "pluginVersion": "11.6.3",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "P22466E8E7855F1E0"
-          },
           "editorMode": "code",
           "exemplar": true,
           "expr": "sum(increase(kyverno_policy_results_total{rule_execution_cause=\"background_scan\"}[5m])) by (rule_result)",
@@ -768,10 +700,6 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "P22466E8E7855F1E0"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -906,10 +834,6 @@
       "pluginVersion": "11.6.3",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "P22466E8E7855F1E0"
-          },
           "editorMode": "code",
           "exemplar": true,
           "expr": "sum by (policy_type) (\n  sum by (policy_name, policy_type) (\n    increase(kyverno_policy_results_total{rule_result=\"fail\"}[5m])\n  )\n)\nOR\nsum by (policy_type) (\n  kyverno_policy_results_total * 0\n)",
@@ -923,10 +847,6 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "P22466E8E7855F1E0"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1051,10 +971,6 @@
       "pluginVersion": "11.6.3",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "P22466E8E7855F1E0"
-          },
           "editorMode": "code",
           "exemplar": true,
           "expr": "sum(sum(increase(kyverno_policy_results_total{rule_execution_cause=\"admission_request\"}[5m])) by (policy_name, rule_result)) by (rule_result)",
@@ -1068,10 +984,6 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "P22466E8E7855F1E0"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1196,10 +1108,6 @@
       "pluginVersion": "11.6.3",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "P22466E8E7855F1E0"
-          },
           "editorMode": "code",
           "exemplar": true,
           "expr": "sum(sum(increase(kyverno_policy_results_total{rule_execution_cause=\"background_scan\"}[5m])) by (policy_name, rule_result)) by (rule_result)",
@@ -1226,10 +1134,6 @@
       "type": "row"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "P22466E8E7855F1E0"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1340,10 +1244,6 @@
       "pluginVersion": "11.6.3",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "P22466E8E7855F1E0"
-          },
           "editorMode": "code",
           "exemplar": true,
           "expr": "count(count(kyverno_policy_rule_info_total==1) by (policy_name))",
@@ -1357,10 +1257,6 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "P22466E8E7855F1E0"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1475,10 +1371,6 @@
       "pluginVersion": "11.6.3",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "P22466E8E7855F1E0"
-          },
           "editorMode": "code",
           "exemplar": true,
           "expr": "count(count(kyverno_policy_rule_info_total==1) by (policy_name, policy_validation_mode)) by (policy_validation_mode)",
@@ -1492,10 +1384,6 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "P22466E8E7855F1E0"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1610,10 +1498,6 @@
       "pluginVersion": "11.6.3",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "P22466E8E7855F1E0"
-          },
           "editorMode": "code",
           "exemplar": true,
           "expr": "count(kyverno_policy_rule_info_total==1) by (rule_type, rule_name)",
@@ -1627,10 +1511,6 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "P22466E8E7855F1E0"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1730,10 +1610,6 @@
       "pluginVersion": "11.6.3",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "P22466E8E7855F1E0"
-          },
           "editorMode": "code",
           "exemplar": true,
           "expr": "count(count(kyverno_policy_rule_info_total{policy_background_mode=\"true\"}==1) by (policy_name, policy_type))",
@@ -1760,10 +1636,6 @@
       "type": "row"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "P22466E8E7855F1E0"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1847,10 +1719,6 @@
       "pluginVersion": "11.6.3",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "P22466E8E7855F1E0"
-          },
           "editorMode": "code",
           "exemplar": true,
           "expr": "sum(rate(kyverno_policy_execution_duration_seconds_sum[5m])) by (rule_type) / sum(rate(kyverno_policy_execution_duration_seconds_count[5m])) by (rule_type)",
@@ -1864,10 +1732,6 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "P22466E8E7855F1E0"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1982,10 +1846,6 @@
       "pluginVersion": "11.6.3",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "P22466E8E7855F1E0"
-          },
           "editorMode": "code",
           "exemplar": true,
           "expr": "sum(rate(kyverno_policy_execution_duration_seconds_sum[5m])) by (policy_type) / sum(rate(kyverno_policy_execution_duration_seconds_count[5m])) by (policy_type)",
@@ -1999,10 +1859,6 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "P22466E8E7855F1E0"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2049,10 +1905,6 @@
       "pluginVersion": "11.6.3",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "P22466E8E7855F1E0"
-          },
           "editorMode": "code",
           "exemplar": true,
           "expr": "sum(kyverno_policy_execution_duration_seconds_sum) / sum(kyverno_policy_execution_duration_seconds_count)",
@@ -2066,10 +1918,6 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "P22466E8E7855F1E0"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2116,10 +1964,6 @@
       "pluginVersion": "11.6.3",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "P22466E8E7855F1E0"
-          },
           "editorMode": "code",
           "exemplar": true,
           "expr": "avg(sum(kyverno_policy_execution_duration_seconds_sum) by (policy_name, policy_type) / sum(kyverno_policy_execution_duration_seconds_count) by (policy_name, policy_type))",
@@ -2146,10 +1990,6 @@
       "type": "row"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "P22466E8E7855F1E0"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2233,10 +2073,6 @@
       "pluginVersion": "11.6.3",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "P22466E8E7855F1E0"
-          },
           "editorMode": "code",
           "exemplar": true,
           "expr": "sum(rate(kyverno_admission_review_duration_seconds_sum[5m])) by (resource_request_operation) / sum(rate(kyverno_admission_review_duration_seconds_count[5m])) by (resource_request_operation)",
@@ -2251,10 +2087,6 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "P22466E8E7855F1E0"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2338,10 +2170,6 @@
       "pluginVersion": "11.6.3",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "P22466E8E7855F1E0"
-          },
           "editorMode": "code",
           "exemplar": true,
           "expr": "sum(rate(kyverno_admission_review_duration_seconds_sum[5m])) by (resource_kind) / sum(rate(kyverno_admission_review_duration_seconds_count[5m])) by (resource_kind)",
@@ -2356,10 +2184,6 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "P22466E8E7855F1E0"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2406,10 +2230,6 @@
       "pluginVersion": "11.6.3",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "P22466E8E7855F1E0"
-          },
           "editorMode": "code",
           "exemplar": true,
           "expr": "sum(increase(kyverno_admission_requests_total[5m]))",
@@ -2423,10 +2243,6 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "P22466E8E7855F1E0"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2473,10 +2289,6 @@
       "pluginVersion": "11.6.3",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "P22466E8E7855F1E0"
-          },
           "editorMode": "code",
           "exemplar": true,
           "expr": "sum(kyverno_admission_review_duration_seconds_sum)/sum(kyverno_admission_review_duration_seconds_count)",
@@ -2503,10 +2315,6 @@
       "type": "row"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "P22466E8E7855F1E0"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2606,10 +2414,6 @@
       "pluginVersion": "11.6.3",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "P22466E8E7855F1E0"
-          },
           "disableTextWrap": false,
           "editorMode": "code",
           "exemplar": true,
@@ -2628,10 +2432,6 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "P22466E8E7855F1E0"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2731,10 +2531,6 @@
       "pluginVersion": "11.6.3",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "P22466E8E7855F1E0"
-          },
           "editorMode": "code",
           "exemplar": true,
           "expr": "sum(increase(kyverno_policy_changes_total[5m])) by (policy_type)",
@@ -2748,10 +2544,6 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "P22466E8E7855F1E0"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2798,10 +2590,6 @@
       "pluginVersion": "11.6.3",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "P22466E8E7855F1E0"
-          },
           "editorMode": "code",
           "exemplar": true,
           "expr": "sum(increase(kyverno_policy_changes_total[24h]))",
@@ -2815,10 +2603,6 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "P22466E8E7855F1E0"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2865,10 +2649,6 @@
       "pluginVersion": "11.6.3",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "P22466E8E7855F1E0"
-          },
           "editorMode": "code",
           "exemplar": true,
           "expr": "sum(rate(kyverno_policy_changes_total[5m]))",
@@ -2895,10 +2675,6 @@
       "type": "row"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "P22466E8E7855F1E0"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2998,10 +2774,6 @@
       "pluginVersion": "11.6.3",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "P22466E8E7855F1E0"
-          },
           "editorMode": "code",
           "exemplar": true,
           "expr": "sum(increase(kyverno_admission_requests_total[5m])) by (resource_request_operation)",
@@ -3016,10 +2788,6 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "P22466E8E7855F1E0"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -3119,10 +2887,6 @@
       "pluginVersion": "11.6.3",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "P22466E8E7855F1E0"
-          },
           "editorMode": "code",
           "exemplar": true,
           "expr": "sum(increase(kyverno_admission_requests_total[5m])) by (resource_kind)",
@@ -3137,10 +2901,6 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "P22466E8E7855F1E0"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -3187,10 +2947,6 @@
       "pluginVersion": "11.6.3",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "P22466E8E7855F1E0"
-          },
           "editorMode": "code",
           "exemplar": true,
           "expr": "sum(increase(kyverno_admission_requests_total[24h]))",
