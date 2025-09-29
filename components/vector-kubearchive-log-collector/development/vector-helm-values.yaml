@@ -49,7 +49,7 @@ customConfig:
           .namespace = "unknown_namespace"
         }
         # Set cluster ID from environment variable
-        .cluster_id = get_env_var!("CLUSTER_ID") ?? "unknown_cluster"
+        .cluster_id = env_var!("CLUSTER_ID") ?? "unknown_cluster"
         # General message field handling
         if exists(.tmp.message) {
           .message = to_string(del(.tmp.message)) ?? "no_message"
