@@ -7,7 +7,6 @@ resources:
   - ../../base/all-clusters
   - ../../base/ca-bundle
   - ../../base/repository-validator
-  - ../../base/keycloak
   - ../../base/eaas
 
 patchesStrategicMerge:
@@ -79,16 +78,6 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: integration
-  - path: set-local-cluster-label.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: keycloak
-  - path: development-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: keycloak
   - path: development-overlay-patch.yaml
     target:
       kind: ApplicationSet
