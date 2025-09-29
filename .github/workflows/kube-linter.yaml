@@ -52,7 +52,7 @@ jobs:
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
-        if: steps.kube-linter-action-scan.outcome == 'failure'
+        if: failure() && steps.kube-linter-action-scan.outcome == 'failure'
         with:
           name: kustomize-manifests
           path: kustomizedfiles
