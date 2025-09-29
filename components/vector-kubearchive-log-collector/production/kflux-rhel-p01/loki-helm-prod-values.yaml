@@ -31,7 +31,7 @@ loki:
       ingestion_burst_size_mb: 100
       ingestion_rate_strategy: "local"
       max_streams_per_user: 0
-      max_line_size: 3145728
+      max_line_size: 2097152
       per_stream_rate_limit: 50M
       per_stream_rate_limit_burst: 200M
       reject_old_samples: false
@@ -161,21 +161,39 @@ resultsCache:
 
 memcached:
   enabled: true
+  extraArgs:
+    - "-I"
+    - "4m"
 
 memcachedResults:
   enabled: true
+  extraArgs:
+    - "-I"
+    - "4m"
 
 memcachedChunks:
   enabled: true
+  extraArgs:
+    - "-I"
+    - "4m"
 
 memcachedFrontend:
   enabled: true
+  extraArgs:
+    - "-I"
+    - "4m"
 
 memcachedIndexQueries:
   enabled: true
+  extraArgs:
+    - "-I"
+    - "4m"
 
 memcachedIndexWrites:
   enabled: true
+  extraArgs:
+    - "-I"
+    - "4m"
 
 # Disable Minio - staging uses S3 with IAM role
 minio:
