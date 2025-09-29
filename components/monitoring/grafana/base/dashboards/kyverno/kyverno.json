@@ -20,7 +20,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 1059999,
+  "id": 1060041,
   "links": [],
   "panels": [
     {
@@ -232,7 +232,7 @@
         {
           "editorMode": "code",
           "exemplar": true,
-          "expr": "count(kyverno_policy_rule_info_total{rule_type=\"generate\"}==1) by (rule_name)",
+          "expr": "count(count(kyverno_policy_rule_info_total{rule_type=\"generate\"}==1) by (rule_name))",
           "interval": "",
           "legendFormat": "",
           "range": true,
@@ -367,7 +367,7 @@
         {
           "editorMode": "code",
           "exemplar": true,
-          "expr": "count(kyverno_policy_rule_info_total{rule_type=\"validate\"}==1) by (rule_name)",
+          "expr": "count(count(kyverno_policy_rule_info_total{rule_type=\"validate\"}==1) by (rule_name))",
           "interval": "",
           "legendFormat": "",
           "range": true,
@@ -1500,7 +1500,7 @@
         {
           "editorMode": "code",
           "exemplar": true,
-          "expr": "count(kyverno_policy_rule_info_total==1) by (rule_type, rule_name)",
+          "expr": "count(kyverno_policy_rule_info_total==1) by (rule_type)",
           "interval": "",
           "legendFormat": "Rule Type: {{rule_type}}",
           "range": true,
