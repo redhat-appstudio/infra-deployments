@@ -161,22 +161,36 @@ resultsCache:
 
 memcached:
   enabled: true
+  extraArgs:
+    - "-I"
+    - "4m"
 
 memcachedResults:
   enabled: true
+  extraArgs:
+    - "-I"
+    - "4m"
 
 memcachedChunks:
   enabled: true
-
+  extraArgs:
+    - "-I"
+    - "4m"
 memcachedFrontend:
   enabled: true
-
+  extraArgs:
+    - "-I"
+    - "4m"
 memcachedIndexQueries:
   enabled: true
-
+  extraArgs:
+    - "-I"
+    - "4m"
 memcachedIndexWrites:
   enabled: true
-
+  extraArgs:
+    - "-I"
+    - "4m"
 # Disable Minio - staging uses S3 with IAM role
 minio:
   enabled: false
