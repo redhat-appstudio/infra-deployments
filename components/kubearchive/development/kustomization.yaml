@@ -8,7 +8,7 @@ resources:
   - release-vacuum.yaml
   - kubearchive-config.yaml
   - pipelines-vacuum.yaml
-  - https://github.com/kubearchive/kubearchive/releases/download/v1.7.0/kubearchive.yaml?timeout=90
+  - kubearchive.yaml
 
 namespace: product-kubearchive
 secretGenerator:
@@ -56,7 +56,7 @@ patches:
               spec:
                 containers:
                   - name: vacuum
-                    image: quay.io/kubearchive/vacuum:v1.7.0
+                    image: quay.io/kubearchive/vacuum:no-eventing-1a13a90
   - patch: |-
       apiVersion: batch/v1
       kind: CronJob
@@ -69,7 +69,7 @@ patches:
               spec:
                 containers:
                   - name: vacuum
-                    image: quay.io/kubearchive/vacuum:v1.7.0
+                    image: quay.io/kubearchive/vacuum:no-eventing-1a13a90
   - patch: |-
       apiVersion: batch/v1
       kind: CronJob
@@ -82,13 +82,18 @@ patches:
               spec:
                 containers:
                   - name: vacuum
-                    image: quay.io/kubearchive/vacuum:v1.7.0
+                    image: quay.io/kubearchive/vacuum:no-eventing-1a13a90
   - patch: |-
       apiVersion: batch/v1
       kind: Job
       metadata:
         name: kubearchive-schema-migration
+        namespace: kubearchive
+        annotations:
+          ignore-check.kube-linter.io/no-read-only-root-fs: >
+            "This job needs to clone a repository to do its job, so it needs write access to the FS."
       spec:
+        suspend: false
         template:
           spec:
             containers:

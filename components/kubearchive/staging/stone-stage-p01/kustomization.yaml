@@ -2,146 +2,35 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - ../../base
+  - ../base
   - kubearchive-routes.yaml
   - database-secret.yaml
-  - release-vacuum.yaml
-  - vacuum.yaml
-  - kubearchive.yaml
-  - external-secret.yaml
 
 namespace: product-kubearchive
 
-# Generate kubearchive-logging ConfigMap with hash for automatic restarts
-# Due to quoting limitations of generators we need to introduce the values with the |
-# See https://github.com/kubernetes-sigs/kustomize/issues/4845#issuecomment-1671570428
-configMapGenerator:
-  - name: kubearchive-logging
-    literals:
-      - |
-        POD_ID=cel:metadata.uid
-      - |
-        NAMESPACE=cel:metadata.namespace
-      - |
-        START=cel:status.?startTime == optional.none() ? int(now()-duration('1h'))*1000000000: status.startTime
-      - |
-        END=cel:status.?startTime == optional.none() ? int(now()+duration('1h'))*1000000000: int(timestamp(status.startTime)+duration('6h'))*1000000000
-      - |
-        LOG_URL=http://loki-gateway.product-kubearchive-logging.svc.cluster.local:80/loki/api/v1/query_range?query=%7Bstream%3D%22{NAMESPACE}%22%7D%20%7C%20pod_id%20%3D%20%60{POD_ID}%60%20%7C%20container%20%3D%20%60{CONTAINER_NAME}%60&start={START}&end={END}&direction=forward
-      - |
-        LOG_URL_JSONPATH=$.data.result[*].values[*][1]
-
 patches:
   - patch: |-
-      apiVersion: batch/v1
-      kind: CronJob
-      metadata:
-        name: vacuum-all
-      spec:
-        jobTemplate:
-          spec:
-            template:
-              spec:
-                containers:
-                  - name: vacuum
-                    image: quay.io/kubearchive/vacuum:v1.6.0
-  - patch: |-
-      apiVersion: batch/v1
-      kind: Job
-      metadata:
-        name: kubearchive-schema-migration
-      spec:
-        template:
-          spec:
-            containers:
-              - name: migration
-                env:
-                  - name: KUBEARCHIVE_VERSION
-                    value: v1.7.0
-  # These patches add an annotation so an OpenShift service
-  # creates the TLS secrets instead of Cert Manager
-  - patch: |-
+      $patch: delete
       apiVersion: v1
-      kind: Service
+      kind: Secret
       metadata:
-        name: kubearchive-api-server
+        name: kubearchive-database-credentials
         namespace: kubearchive
-        annotations:
-          service.beta.openshift.io/serving-cert-secret-name: kubearchive-api-server-tls
+  # We don't need the development DB on staging
   - patch: |-
-      apiVersion: v1
-      kind: Service
-      metadata:
-        name: kubearchive-operator-webhooks
-        namespace: kubearchive
-        annotations:
-          service.beta.openshift.io/serving-cert-secret-name: kubearchive-operator-tls
-  - patch: |-
-      apiVersion: admissionregistration.k8s.io/v1
-      kind: MutatingWebhookConfiguration
-      metadata:
-        name: kubearchive-mutating-webhook-configuration
-        annotations:
-          service.beta.openshift.io/inject-cabundle: "true"
-  - patch: |-
-      apiVersion: admissionregistration.k8s.io/v1
-      kind: ValidatingWebhookConfiguration
-      metadata:
-        name: kubearchive-validating-webhook-configuration
-        annotations:
-          service.beta.openshift.io/inject-cabundle: "true"
-  # These patches solve Kube Linter problems
-  - patch: |-
+      $patch: delete
       apiVersion: apps/v1
       kind: Deployment
       metadata:
-        name: kubearchive-api-server
-        namespace: kubearchive
-      spec:
-        template:
-          spec:
-            containers:
-              - name: kubearchive-api-server
-                env:
-                - name: KUBEARCHIVE_OTEL_MODE
-                  value: enabled
-                - name: OTEL_EXPORTER_OTLP_ENDPOINT
-                  value: http://otel-collector:4318
-                - name: AUTH_IMPERSONATE
-                  value: "true"
-                securityContext:
-                  readOnlyRootFilesystem: true
-                  runAsNonRoot: true
+        name: postgresql
+  # We don't need the development DB service on staging
   - patch: |-
-      apiVersion: apps/v1
-      kind: Deployment
+      $patch: delete
+      apiVersion: v1
+      kind: Service
       metadata:
-        name: kubearchive-operator
-        namespace: kubearchive
-      spec:
-        template:
-          spec:
-            containers:
-              - name: manager
-                args: [--health-probe-bind-address=:8081]
-                env:
-                - name: KUBEARCHIVE_OTEL_MODE
-                  value: enabled
-                - name: OTEL_EXPORTER_OTLP_ENDPOINT
-                  value: http://otel-collector:4318
-                securityContext:
-                  readOnlyRootFilesystem: true
-                  runAsNonRoot: true
-                ports:
-                  - containerPort: 8081
-                resources:
-                  limits:
-                    cpu: 500m
-                    memory: 256Mi
-                  requests:
-                    cpu: 10m
-                    memory: 256Mi
-
+        name: postgresql
+  # Only export otel traces that are sampled by parent
   - patch: |-
       apiVersion: apps/v1
       kind: Deployment
@@ -155,77 +44,39 @@ patches:
               - name: kubearchive-sink
                 env:
                 - name: KUBEARCHIVE_OTEL_MODE
-                  value: enabled
-                - name: OTEL_EXPORTER_OTLP_ENDPOINT
-                  value: http://otel-collector:4318
-                securityContext:
-                  readOnlyRootFilesystem: true
-                  runAsNonRoot: true
-                resources:
-                  limits:
-                    cpu: 200m
-                    memory: 128Mi
-                  requests:
-                    cpu: 200m
-                    memory: 128Mi
+                  value: delegated
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: kubearchive-api-server
+        namespace: kubearchive
+      spec:
+        template:
+          spec:
+            containers:
+              - name: kubearchive-api-server
+                env:
+                - name: KUBEARCHIVE_OTEL_MODE
+                  value: delegated
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: kubearchive-operator
+        namespace: kubearchive
+      spec:
+        template:
+          spec:
+            containers:
+              - name: manager
+                env:
+                - name: KUBEARCHIVE_OTEL_MODE
+                  value: delegated
 
-  # This deletes the Job coming from the kubearchive.yaml file
-  - patch: |-
-      $patch: delete
-      apiVersion: batch/v1
-      kind: Job
-      metadata:
-        name: kubearchive-schema-migration
-        namespace: kubearchive
-  # We don't need this CronJob as it is suspended, we can enable it later
-  - patch: |-
-      $patch: delete
-      apiVersion: batch/v1
-      kind: CronJob
-      metadata:
-        name: cluster-vacuum
-        namespace: kubearchive
-  # These patches remove Certificates and Issuer from Cert-Manager
-  - patch: |-
-      $patch: delete
-      apiVersion: cert-manager.io/v1
-      kind: Certificate
-      metadata:
-        name: "kubearchive-api-server-certificate"
-        namespace: kubearchive
-  - patch: |-
-      $patch: delete
-      apiVersion: cert-manager.io/v1
-      kind: Certificate
-      metadata:
-        name: "kubearchive-ca"
-        namespace: kubearchive
-  - patch: |-
-      $patch: delete
-      apiVersion: cert-manager.io/v1
-      kind: Issuer
-      metadata:
-        name: "kubearchive-ca"
-        namespace: kubearchive
-  - patch: |-
-      $patch: delete
-      apiVersion: cert-manager.io/v1
-      kind: Issuer
-      metadata:
-        name: "kubearchive"
-        namespace: kubearchive
-  - patch: |-
-      $patch: delete
-      apiVersion: cert-manager.io/v1
-      kind: Certificate
-      metadata:
-        name: "kubearchive-operator-certificate"
-        namespace: kubearchive
-  # Delete the original ConfigMap since we're generating it with configMapGenerator
-  - patch: |-
-      $patch: delete
-      apiVersion: v1
-      kind: ConfigMap
-      metadata:
-        name: kubearchive-logging
-        namespace: kubearchive
+configMapGenerator:
+  - name: otel-collector-conf
+    behavior: replace
+    namespace: product-kubearchive
+    files:
+      - otel-collector-config.yaml
