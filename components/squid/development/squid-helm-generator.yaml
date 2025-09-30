@@ -4,7 +4,7 @@ metadata:
   name: squid-helm
 name: squid-helm
 repo: oci://quay.io/konflux-ci/caching
-version: 0.1.330+c77cfdd
+version: 0.1.350+97f7dcc
 valuesInline:
   installCertManagerComponents: false
   mirrord:
@@ -21,3 +21,11 @@ valuesInline:
     limits:
       cpu: 200m
       memory: 256Mi
+  icapServer:
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
