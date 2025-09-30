@@ -47,6 +47,13 @@ loki:
       max_entries_limit_per_query: 100000
       increment_duplicate_timestamp: true
       allow_structured_metadata: true
+  runtimeConfig:
+    configs:
+      kubearchive:
+        log-push-request: true
+        log-push-request-streams: true
+        log-stream-creation: true
+        log-duplicate-stream-info: true
   ingester:
     chunk_target_size: 8388608        # 8MB 
     chunk_idle_period: 5m
@@ -132,11 +139,6 @@ distributor:
       memory: 1Gi
     limits:
       memory: 2Gi
-  extraArgs:
-    - "-operational-config.log-push-request=true"
-    - "-operational-config.log-push-request-streams=true"
-    - "-operational-config.log-stream-creation=true"
-    - "-operational-config.log-duplicate-stream-info=true"
   affinity: {}
 
 compactor:
