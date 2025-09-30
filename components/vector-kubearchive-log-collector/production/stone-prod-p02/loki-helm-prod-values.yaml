@@ -47,6 +47,12 @@ loki:
       max_entries_limit_per_query: 100000
       increment_duplicate_timestamp: true
       allow_structured_metadata: true
+  runtimeConfig:
+    configs:
+      log_stream_creation: true
+      log_push_request: true
+      log_push_request_streams: true
+      log_duplicate_stream_info: true
   ingester:
     chunk_target_size: 8388608        # 8MB 
     chunk_idle_period: 5m
