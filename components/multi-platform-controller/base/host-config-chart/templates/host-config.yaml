@@ -80,7 +80,7 @@ data:
   {{- $config := index .Values.dynamicConfigs "linux-d160-amd64" | default (dict) }}
   dynamic.linux-d160-amd64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.linux-d160-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-d160-amd64$config.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-d160-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
   dynamic.linux-d160-amd64.instance-type: {{ (index $config "instance-type") | default "m6a.large" | quote }}
   dynamic.linux-d160-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-d160" $environment) | quote }}
   dynamic.linux-d160-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
@@ -97,7 +97,7 @@ data:
   {{- $config := index .Values.dynamicConfigs "linux-d160-arm64" | default (dict) }}
   dynamic.linux-d160-arm64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.linux-d160-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-d160-arm64$config.ami: {{ default (index $arm "ami") $config.ami | quote }}
+  dynamic.linux-d160-arm64.ami: {{ default (index $arm "ami") $config.ami | quote }}
   dynamic.linux-d160-arm64.instance-type: {{ (index $config "instance-type") | default "m6g.large" | quote }}
   dynamic.linux-d160-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64-d160" $environment) | quote }}
   dynamic.linux-d160-arm64.key-name: {{ default (index $arm "key-name") ((index $config "key-name")) | quote }}
@@ -115,7 +115,7 @@ data:
   {{- $config := index .Values.dynamicConfigs "linux-mlarge-arm64" | default (dict) }}
   dynamic.linux-mlarge-arm64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.linux-mlarge-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-mlarge-arm64$config.ami: {{ default (index $arm "ami") $config.ami | quote }}
+  dynamic.linux-mlarge-arm64.ami: {{ default (index $arm "ami") $config.ami | quote }}
   dynamic.linux-mlarge-arm64.instance-type: {{ (index $config "instance-type") | default "m6g.large" | quote }}
   dynamic.linux-mlarge-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64-mlarge" $environment) | quote }}
   dynamic.linux-mlarge-arm64.key-name: {{ default (index $arm "key-name") ((index $config "key-name")) | quote }}
@@ -131,7 +131,7 @@ data:
   {{- $config := index .Values.dynamicConfigs "linux-mlarge-amd64" | default (dict) }}
   dynamic.linux-mlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.linux-mlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-mlarge-amd64$config.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-mlarge-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
   dynamic.linux-mlarge-amd64.instance-type: {{ (index $config "instance-type") | default "m6a.large" | quote }}
   dynamic.linux-mlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-mlarge" $environment) | quote }}
   dynamic.linux-mlarge-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
@@ -147,7 +147,7 @@ data:
   {{- $config := index .Values.dynamicConfigs "linux-d160-mlarge-arm64" | default (dict) }}
   dynamic.linux-d160-mlarge-arm64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.linux-d160-mlarge-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-d160-mlarge-arm64$config.ami: {{ default (index $arm "ami") $config.ami | quote }}
+  dynamic.linux-d160-mlarge-arm64.ami: {{ default (index $arm "ami") $config.ami | quote }}
   dynamic.linux-d160-mlarge-arm64.instance-type: {{ (index $config "instance-type") | default "m6g.large" | quote }}
   dynamic.linux-d160-mlarge-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64-mlarge-d160" $environment) | quote }}
   dynamic.linux-d160-mlarge-arm64.key-name: {{ default (index $arm "key-name") ((index $config "key-name")) | quote }}
@@ -164,7 +164,7 @@ data:
   {{- $config := index .Values.dynamicConfigs "linux-d160-mlarge-amd64" | default (dict) }}
   dynamic.linux-d160-mlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.linux-d160-mlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-d160-mlarge-amd64$config.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-d160-mlarge-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
   dynamic.linux-d160-mlarge-amd64.instance-type: {{ (index $config "instance-type") | default "m6a.large" | quote }}
   dynamic.linux-d160-mlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-mlarge-d160" $environment) | quote }}
   dynamic.linux-d160-mlarge-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
@@ -181,7 +181,7 @@ data:
   {{- $config := index .Values.dynamicConfigs "linux-mxlarge-arm64" | default (dict) }}
   dynamic.linux-mxlarge-arm64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.linux-mxlarge-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-mxlarge-arm64$config.ami: {{ default (index $arm "ami") $config.ami | quote }}
+  dynamic.linux-mxlarge-arm64.ami: {{ default (index $arm "ami") $config.ami | quote }}
   dynamic.linux-mxlarge-arm64.instance-type: {{ (index $config "instance-type") | default "m6g.xlarge" | quote }}
   dynamic.linux-mxlarge-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64-mxlarge" $environment) | quote }}
   dynamic.linux-mxlarge-arm64.key-name: {{ default (index $arm "key-name") ((index $config "key-name")) | quote }}
@@ -197,7 +197,7 @@ data:
   {{- $config := index .Values.dynamicConfigs "linux-mxlarge-amd64" | default (dict) }}
   dynamic.linux-mxlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.linux-mxlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-mxlarge-amd64$config.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-mxlarge-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
   dynamic.linux-mxlarge-amd64.instance-type: {{ (index $config "instance-type") | default "m6a.xlarge" | quote }}
   dynamic.linux-mxlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-mxlarge" $environment) | quote }}
   dynamic.linux-mxlarge-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
@@ -213,7 +213,7 @@ data:
   {{- $config := index .Values.dynamicConfigs "linux-d160-mxlarge-arm64" | default (dict) }}
   dynamic.linux-d160-mxlarge-arm64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.linux-d160-mxlarge-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-d160-mxlarge-arm64$config.ami: {{ default (index $arm "ami") $config.ami | quote }}
+  dynamic.linux-d160-mxlarge-arm64.ami: {{ default (index $arm "ami") $config.ami | quote }}
   dynamic.linux-d160-mxlarge-arm64.instance-type: {{ (index $config "instance-type") | default "m6g.xlarge" | quote }}
   dynamic.linux-d160-mxlarge-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64-mxlarge-d160" $environment) | quote }}
   dynamic.linux-d160-mxlarge-arm64.key-name: {{ default (index $arm "key-name") ((index $config "key-name")) | quote }}
@@ -230,7 +230,7 @@ data:
   {{- $config := index .Values.dynamicConfigs "linux-d160-mxlarge-amd64" | default (dict) }}
   dynamic.linux-d160-mxlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.linux-d160-mxlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-d160-mxlarge-amd64$config.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-d160-mxlarge-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
   dynamic.linux-d160-mxlarge-amd64.instance-type: {{ (index $config "instance-type") | default "m6a.xlarge" | quote }}
   dynamic.linux-d160-mxlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-mxlarge-d160" $environment) | quote }}
   dynamic.linux-d160-mxlarge-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
@@ -247,7 +247,7 @@ data:
   {{- $config := index .Values.dynamicConfigs "linux-m2xlarge-arm64" | default (dict) }}
   dynamic.linux-m2xlarge-arm64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.linux-m2xlarge-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-m2xlarge-arm64$config.ami: {{ default (index $arm "ami") $config.ami | quote }}
+  dynamic.linux-m2xlarge-arm64.ami: {{ default (index $arm "ami") $config.ami | quote }}
   dynamic.linux-m2xlarge-arm64.instance-type: {{ (index $config "instance-type") | default "m6g.2xlarge" | quote }}
   dynamic.linux-m2xlarge-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64-m2xlarge" $environment) | quote }}
   dynamic.linux-m2xlarge-arm64.key-name: {{ default (index $arm "key-name") ((index $config "key-name")) | quote }}
@@ -263,7 +263,7 @@ data:
   {{- $config := index .Values.dynamicConfigs "linux-m2xlarge-amd64" | default (dict) }}
   dynamic.linux-m2xlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.linux-m2xlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-m2xlarge-amd64$config.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-m2xlarge-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
   dynamic.linux-m2xlarge-amd64.instance-type: {{ (index $config "instance-type") | default "m6a.2xlarge" | quote }}
   dynamic.linux-m2xlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-m2xlarge" $environment) | quote }}
   dynamic.linux-m2xlarge-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
@@ -279,7 +279,7 @@ data:
   {{- $config := index .Values.dynamicConfigs "linux-d160-m2xlarge-arm64" | default (dict) }}
   dynamic.linux-d160-m2xlarge-arm64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.linux-d160-m2xlarge-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-d160-m2xlarge-arm64$config.ami: {{ default (index $arm "ami") $config.ami | quote }}
+  dynamic.linux-d160-m2xlarge-arm64.ami: {{ default (index $arm "ami") $config.ami | quote }}
   dynamic.linux-d160-m2xlarge-arm64.instance-type: {{ (index $config "instance-type") | default "m6g.2xlarge" | quote }}
   dynamic.linux-d160-m2xlarge-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64-m2xlarge-d160" $environment) | quote }}
   dynamic.linux-d160-m2xlarge-arm64.key-name: {{ default (index $arm "key-name") ((index $config "key-name")) | quote }}
@@ -296,7 +296,7 @@ data:
   {{- $config := index .Values.dynamicConfigs "linux-d160-m2xlarge-amd64" | default (dict) }}
   dynamic.linux-d160-m2xlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.linux-d160-m2xlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-d160-m2xlarge-amd64$config.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-d160-m2xlarge-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
   dynamic.linux-d160-m2xlarge-amd64.instance-type: {{ (index $config "instance-type") | default "m6a.2xlarge" | quote }}
   dynamic.linux-d160-m2xlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-m2xlarge-d160" $environment) | quote }}
   dynamic.linux-d160-m2xlarge-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
@@ -313,7 +313,7 @@ data:
   {{- $config := index .Values.dynamicConfigs "linux-m4xlarge-arm64" | default (dict) }}
   dynamic.linux-m4xlarge-arm64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.linux-m4xlarge-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-m4xlarge-arm64$config.ami: {{ default (index $arm "ami") $config.ami | quote }}
+  dynamic.linux-m4xlarge-arm64.ami: {{ default (index $arm "ami") $config.ami | quote }}
   dynamic.linux-m4xlarge-arm64.instance-type: {{ (index $config "instance-type") | default "m6g.4xlarge" | quote }}
   dynamic.linux-m4xlarge-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64-m4xlarge" $environment) | quote }}
   dynamic.linux-m4xlarge-arm64.key-name: {{ default (index $arm "key-name") ((index $config "key-name")) | quote }}
@@ -329,7 +329,7 @@ data:
   {{- $config := index .Values.dynamicConfigs "linux-m4xlarge-amd64" | default (dict) }}
   dynamic.linux-m4xlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.linux-m4xlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-m4xlarge-amd64$config.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-m4xlarge-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
   dynamic.linux-m4xlarge-amd64.instance-type: {{ (index $config "instance-type") | default "m6a.4xlarge" | quote }}
   dynamic.linux-m4xlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-m4xlarge" $environment) | quote }}
   dynamic.linux-m4xlarge-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
@@ -345,7 +345,7 @@ data:
   {{- $config := index .Values.dynamicConfigs "linux-d160-m4xlarge-arm64" | default (dict) }}
   dynamic.linux-d160-m4xlarge-arm64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.linux-d160-m4xlarge-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-d160-m4xlarge-arm64$config.ami: {{ default (index $arm "ami") $config.ami | quote }}
+  dynamic.linux-d160-m4xlarge-arm64.ami: {{ default (index $arm "ami") $config.ami | quote }}
   dynamic.linux-d160-m4xlarge-arm64.instance-type: {{ (index $config "instance-type") | default "m6g.4xlarge" | quote }}
   dynamic.linux-d160-m4xlarge-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64-m4xlarge-d160" $environment) | quote }}
   dynamic.linux-d160-m4xlarge-arm64.key-name: {{ default (index $arm "key-name") ((index $config "key-name")) | quote }}
@@ -362,7 +362,7 @@ data:
   {{- $config := index .Values.dynamicConfigs "linux-d160-m4xlarge-amd64" | default (dict) }}
   dynamic.linux-d160-m4xlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.linux-d160-m4xlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-d160-m4xlarge-amd64$config.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-d160-m4xlarge-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
   dynamic.linux-d160-m4xlarge-amd64.instance-type: {{ (index $config "instance-type") | default "m6a.4xlarge" | quote }}
   dynamic.linux-d160-m4xlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-m4xlarge-d160" $environment) | quote }}
   dynamic.linux-d160-m4xlarge-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
@@ -395,7 +395,7 @@ data:
   {{- $config := index .Values.dynamicConfigs "linux-m8xlarge-amd64" | default (dict) }}
   dynamic.linux-m8xlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.linux-m8xlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-m8xlarge-amd64$config.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-m8xlarge-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
   dynamic.linux-m8xlarge-amd64.instance-type: {{ (index $config "instance-type") | default "m6a.8xlarge" | quote }}
   dynamic.linux-m8xlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-m8xlarge" $environment) | quote }}
   dynamic.linux-m8xlarge-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
@@ -411,7 +411,7 @@ data:
   {{- $config := index .Values.dynamicConfigs "linux-d160-m7-8xlarge-amd64" | default (dict) }}
   dynamic.linux-d160-m7-8xlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.linux-d160-m7-8xlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-d160-m7-8xlarge-amd64$config.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-d160-m7-8xlarge-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
   dynamic.linux-d160-m7-8xlarge-amd64.instance-type: {{ (index $config "instance-type") | default "m7a.8xlarge" | quote }}
   dynamic.linux-d160-m7-8xlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-m7-8xlarge-d160" $environment) | quote }}
   dynamic.linux-d160-m7-8xlarge-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
@@ -428,7 +428,7 @@ data:
   {{- $config := index .Values.dynamicConfigs "linux-d160-m8-8xlarge-arm64" | default (dict) }}
   dynamic.linux-d160-m8-8xlarge-arm64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.linux-d160-m8-8xlarge-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-d160-m8-8xlarge-arm64$config.ami: {{ default (index $arm "ami") $config.ami | quote }}
+  dynamic.linux-d160-m8-8xlarge-arm64.ami: {{ default (index $arm "ami") $config.ami | quote }}
   dynamic.linux-d160-m8-8xlarge-arm64.instance-type: {{ (index $config "instance-type") | default "m8g.8xlarge" | quote }}
   dynamic.linux-d160-m8-8xlarge-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64-m8-8xlarge-d160" $environment) | quote }}
   dynamic.linux-d160-m8-8xlarge-arm64.key-name: {{ default (index $arm "key-name") ((index $config "key-name")) | quote }}
@@ -446,7 +446,7 @@ data:
   {{- $config := index .Values.dynamicConfigs "linux-d160-m8xlarge-arm64" | default (dict) }}
   dynamic.linux-d160-m8xlarge-arm64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.linux-d160-m8xlarge-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-d160-m8xlarge-arm64$config.ami: {{ default (index $arm "ami") $config.ami | quote }}
+  dynamic.linux-d160-m8xlarge-arm64.ami: {{ default (index $arm "ami") $config.ami | quote }}
   dynamic.linux-d160-m8xlarge-arm64.instance-type: {{ (index $config "instance-type") | default "m6g.8xlarge" | quote }}
   dynamic.linux-d160-m8xlarge-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64-m8xlarge-d160" $environment) | quote }}
   dynamic.linux-d160-m8xlarge-arm64.key-name: {{ default (index $arm "key-name") ((index $config "key-name")) | quote }}
@@ -463,7 +463,7 @@ data:
   {{- $config := index .Values.dynamicConfigs "linux-d160-m8xlarge-amd64" | default (dict) }}
   dynamic.linux-d160-m8xlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.linux-d160-m8xlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-d160-m8xlarge-amd64$config.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-d160-m8xlarge-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
   dynamic.linux-d160-m8xlarge-amd64.instance-type: {{ (index $config "instance-type") | default "m6a.8xlarge" | quote }}
   dynamic.linux-d160-m8xlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-m8xlarge-d160" $environment) | quote }}
   dynamic.linux-d160-m8xlarge-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
@@ -480,7 +480,7 @@ data:
   {{- $config := index .Values.dynamicConfigs "linux-c6gd2xlarge-arm64" | default (dict) }}
   dynamic.linux-c6gd2xlarge-arm64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.linux-c6gd2xlarge-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-c6gd2xlarge-arm64$config.ami: {{ default (index $arm "ami") $config.ami | quote }}
+  dynamic.linux-c6gd2xlarge-arm64.ami: {{ default (index $arm "ami") $config.ami | quote }}
   dynamic.linux-c6gd2xlarge-arm64.instance-type: {{ (index $config "instance-type") | default "c6gd.2xlarge" | quote }}
   dynamic.linux-c6gd2xlarge-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64-c6gd2xlarge" $environment) | quote }}
   dynamic.linux-c6gd2xlarge-arm64.key-name: {{ default (index $arm "key-name") ((index $config "key-name")) | quote }}
@@ -503,7 +503,7 @@ data:
   {{- $config := index .Values.dynamicConfigs "linux-cxlarge-arm64" | default (dict) }}
   dynamic.linux-cxlarge-arm64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.linux-cxlarge-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-cxlarge-arm64$config.ami: {{ default (index $arm "ami") $config.ami | quote }}
+  dynamic.linux-cxlarge-arm64.ami: {{ default (index $arm "ami") $config.ami | quote }}
   dynamic.linux-cxlarge-arm64.instance-type: {{ (index $config "instance-type") | default "c6g.xlarge" | quote }}
   dynamic.linux-cxlarge-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64-cxlarge" $environment) | quote }}
   dynamic.linux-cxlarge-arm64.key-name: {{ default (index $arm "key-name") ((index $config "key-name")) | quote }}
@@ -519,7 +519,7 @@ data:
   {{- $config := index .Values.dynamicConfigs "linux-cxlarge-amd64" | default (dict) }}
   dynamic.linux-cxlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.linux-cxlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-cxlarge-amd64$config.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-cxlarge-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
   dynamic.linux-cxlarge-amd64.instance-type: {{ (index $config "instance-type") | default "c6a.xlarge" | quote }}
   dynamic.linux-cxlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-cxlarge" $environment) | quote }}
   dynamic.linux-cxlarge-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
@@ -535,7 +535,7 @@ data:
   {{- $config := index .Values.dynamicConfigs "linux-d160-cxlarge-arm64" | default (dict) }}
   dynamic.linux-d160-cxlarge-arm64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.linux-d160-cxlarge-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-d160-cxlarge-arm64$config.ami: {{ default (index $arm "ami") $config.ami | quote }}
+  dynamic.linux-d160-cxlarge-arm64.ami: {{ default (index $arm "ami") $config.ami | quote }}
   dynamic.linux-d160-cxlarge-arm64.instance-type: {{ (index $config "instance-type") | default "c6g.xlarge" | quote }}
   dynamic.linux-d160-cxlarge-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64-cxlarge-d160" $environment) | quote }}
   dynamic.linux-d160-cxlarge-arm64.key-name: {{ default (index $arm "key-name") ((index $config "key-name")) | quote }}
@@ -552,7 +552,7 @@ data:
   {{- $config := index .Values.dynamicConfigs "linux-d160-cxlarge-amd64" | default (dict) }}
   dynamic.linux-d160-cxlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.linux-d160-cxlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-d160-cxlarge-amd64$config.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-d160-cxlarge-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
   dynamic.linux-d160-cxlarge-amd64.instance-type: {{ (index $config "instance-type") | default "c6a.xlarge" | quote }}
   dynamic.linux-d160-cxlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-cxlarge-d160" $environment) | quote }}
   dynamic.linux-d160-cxlarge-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
@@ -569,7 +569,7 @@ data:
   {{- $config := index .Values.dynamicConfigs "linux-c2xlarge-arm64" | default (dict) }}
   dynamic.linux-c2xlarge-arm64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.linux-c2xlarge-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-c2xlarge-arm64$config.ami: {{ default (index $arm "ami") $config.ami | quote }}
+  dynamic.linux-c2xlarge-arm64.ami: {{ default (index $arm "ami") $config.ami | quote }}
   dynamic.linux-c2xlarge-arm64.instance-type: {{ (index $config "instance-type") | default "c6g.2xlarge" | quote }}
   dynamic.linux-c2xlarge-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64-c2xlarge" $environment) | quote }}
   dynamic.linux-c2xlarge-arm64.key-name: {{ default (index $arm "key-name") ((index $config "key-name")) | quote }}
@@ -585,7 +585,7 @@ data:
   {{- $config := index .Values.dynamicConfigs "linux-c2xlarge-amd64" | default (dict) }}
   dynamic.linux-c2xlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.linux-c2xlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-c2xlarge-amd64$config.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-c2xlarge-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
   dynamic.linux-c2xlarge-amd64.instance-type: {{ (index $config "instance-type") | default "c6a.2xlarge" | quote }}
   dynamic.linux-c2xlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-c2xlarge" $environment) | quote }}
   dynamic.linux-c2xlarge-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
@@ -601,7 +601,7 @@ data:
   {{- $config := index .Values.dynamicConfigs "linux-d160-c2xlarge-arm64" | default (dict) }}
   dynamic.linux-d160-c2xlarge-arm64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.linux-d160-c2xlarge-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-d160-c2xlarge-arm64$config.ami: {{ default (index $arm "ami") $config.ami | quote }}
+  dynamic.linux-d160-c2xlarge-arm64.ami: {{ default (index $arm "ami") $config.ami | quote }}
   dynamic.linux-d160-c2xlarge-arm64.instance-type: {{ (index $config "instance-type") | default "c6g.2xlarge" | quote }}
   dynamic.linux-d160-c2xlarge-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64-c2xlarge-d160" $environment) | quote }}
   dynamic.linux-d160-c2xlarge-arm64.key-name: {{ default (index $arm "key-name") ((index $config "key-name")) | quote }}
@@ -618,7 +618,7 @@ data:
   {{- $config := index .Values.dynamicConfigs "linux-d160-c2xlarge-amd64" | default (dict) }}
   dynamic.linux-d160-c2xlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.linux-d160-c2xlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-d160-c2xlarge-amd64$config.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-d160-c2xlarge-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
   dynamic.linux-d160-c2xlarge-amd64.instance-type: {{ (index $config "instance-type") | default "c6a.2xlarge" | quote }}
   dynamic.linux-d160-c2xlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-c2xlarge-d160" $environment) | quote }}
   dynamic.linux-d160-c2xlarge-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
@@ -635,7 +635,7 @@ data:
   {{- $config := index .Values.dynamicConfigs "linux-c4xlarge-arm64" | default (dict) }}
   dynamic.linux-c4xlarge-arm64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.linux-c4xlarge-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-c4xlarge-arm64$config.ami: {{ default (index $arm "ami") $config.ami | quote }}
+  dynamic.linux-c4xlarge-arm64.ami: {{ default (index $arm "ami") $config.ami | quote }}
   dynamic.linux-c4xlarge-arm64.instance-type: {{ (index $config "instance-type") | default "c6g.4xlarge" | quote }}
   dynamic.linux-c4xlarge-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64-c4xlarge" $environment) | quote }}
   dynamic.linux-c4xlarge-arm64.key-name: {{ default (index $arm "key-name") ((index $config "key-name")) | quote }}
@@ -651,7 +651,7 @@ data:
   {{- $config := index .Values.dynamicConfigs "linux-c4xlarge-amd64" | default (dict) }}
   dynamic.linux-c4xlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.linux-c4xlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-c4xlarge-amd64$config.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-c4xlarge-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
   dynamic.linux-c4xlarge-amd64.instance-type:  {{ (index $config "instance-type") | default "c6a.4xlarge" | quote }}
   dynamic.linux-c4xlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-c4xlarge" $environment) | quote }}
   dynamic.linux-c4xlarge-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
@@ -667,7 +667,7 @@ data:
   {{- $config := index .Values.dynamicConfigs "linux-d160-c4xlarge-arm64" | default (dict) }}
   dynamic.linux-d160-c4xlarge-arm64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.linux-d160-c4xlarge-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-d160-c4xlarge-arm64$config.ami: {{ default (index $arm "ami") $config.ami | quote }}
+  dynamic.linux-d160-c4xlarge-arm64.ami: {{ default (index $arm "ami") $config.ami | quote }}
   dynamic.linux-d160-c4xlarge-arm64.instance-type: {{ (index $config "instance-type") | default "c6g.4xlarge" | quote }}
   dynamic.linux-d160-c4xlarge-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64-c4xlarge-d160" $environment) | quote }}
   dynamic.linux-d160-c4xlarge-arm64.key-name: {{ default (index $arm "key-name") ((index $config "key-name")) | quote }}
@@ -684,7 +684,7 @@ data:
   {{- $config := index .Values.dynamicConfigs "linux-d160-c4xlarge-amd64" | default (dict) }}
   dynamic.linux-d160-c4xlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.linux-d160-c4xlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-d160-c4xlarge-amd64$config.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-d160-c4xlarge-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
   dynamic.linux-d160-c4xlarge-amd64.instance-type: {{ (index $config "instance-type") | default "c6a.4xlarge" | quote }}
   dynamic.linux-d160-c4xlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-c4xlarge-d160" $environment) | quote }}
   dynamic.linux-d160-c4xlarge-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
@@ -701,7 +701,7 @@ data:
   {{- $config := index .Values.dynamicConfigs "linux-d320-c4xlarge-arm64" | default (dict) }}
   dynamic.linux-d320-c4xlarge-arm64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.linux-d320-c4xlarge-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-d320-c4xlarge-arm64$config.ami: {{ default (index $arm "ami") $config.ami | quote }}
+  dynamic.linux-d320-c4xlarge-arm64.ami: {{ default (index $arm "ami") $config.ami | quote }}
   dynamic.linux-d320-c4xlarge-arm64.instance-type: {{ (index $config "instance-type") | default "c6g.4xlarge" | quote }}
   dynamic.linux-d320-c4xlarge-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64-c4xlarge-d320" $environment) | quote }}
   dynamic.linux-d320-c4xlarge-arm64.key-name: {{ default (index $arm "key-name") ((index $config "key-name")) | quote }}
@@ -718,7 +718,7 @@ data:
   {{- $config := index .Values.dynamicConfigs "linux-d320-c4xlarge-amd64" | default (dict) }}
   dynamic.linux-d320-c4xlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.linux-d320-c4xlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-d320-c4xlarge-amd64$config.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-d320-c4xlarge-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
   dynamic.linux-d320-c4xlarge-amd64.instance-type: {{ (index $config "instance-type") | default "c6a.4xlarge" | quote }}
   dynamic.linux-d320-c4xlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-c4xlarge-d320" $environment) | quote }}
   dynamic.linux-d320-c4xlarge-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
@@ -735,7 +735,7 @@ data:
   {{- $config := index .Values.dynamicConfigs "linux-c8xlarge-arm64" | default (dict) }}
   dynamic.linux-c8xlarge-arm64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.linux-c8xlarge-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-c8xlarge-arm64$config.ami: {{ default (index $arm "ami") $config.ami | quote }}
+  dynamic.linux-c8xlarge-arm64.ami: {{ default (index $arm "ami") $config.ami | quote }}
   dynamic.linux-c8xlarge-arm64.instance-type: {{ (index $config "instance-type") | default "c6g.8xlarge" | quote }}
   dynamic.linux-c8xlarge-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64-c8xlarge" $environment) | quote }}
   dynamic.linux-c8xlarge-arm64.key-name: {{ default (index $arm "key-name") ((index $config "key-name")) | quote }}
@@ -751,7 +751,7 @@ data:
   {{- $config := index .Values.dynamicConfigs "linux-c8xlarge-amd64" | default (dict) }}
   dynamic.linux-c8xlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.linux-c8xlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-c8xlarge-amd64$config.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-c8xlarge-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
   dynamic.linux-c8xlarge-amd64.instance-type:  {{ (index $config "instance-type") | default "c6a.8xlarge" | quote }}
   dynamic.linux-c8xlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-c8xlarge" $environment) | quote }}
   dynamic.linux-c8xlarge-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
@@ -767,7 +767,7 @@ data:
   {{- $config := index .Values.dynamicConfigs "linux-d160-c8xlarge-arm64" | default (dict) }}
   dynamic.linux-d160-c8xlarge-arm64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.linux-d160-c8xlarge-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-d160-c8xlarge-arm64$config.ami: {{ default (index $arm "ami") $config.ami | quote }}
+  dynamic.linux-d160-c8xlarge-arm64.ami: {{ default (index $arm "ami") $config.ami | quote }}
   dynamic.linux-d160-c8xlarge-arm64.instance-type: {{ (index $config "instance-type") | default "c6g.8xlarge" | quote }}
   dynamic.linux-d160-c8xlarge-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64-c8xlarge-d160" $environment) | quote }}
   dynamic.linux-d160-c8xlarge-arm64.key-name: {{ default (index $arm "key-name") ((index $config "key-name")) | quote }}
@@ -784,7 +784,7 @@ data:
   {{- $config := index .Values.dynamicConfigs "linux-d160-c8xlarge-amd64" | default (dict) }}
   dynamic.linux-d160-c8xlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.linux-d160-c8xlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-d160-c8xlarge-amd64$config.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-d160-c8xlarge-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
   dynamic.linux-d160-c8xlarge-amd64.instance-type: {{ (index $config "instance-type") | default "c6a.8xlarge" | quote }}
   dynamic.linux-d160-c8xlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-c8xlarge-d160" $environment) | quote }}
   dynamic.linux-d160-c8xlarge-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
@@ -802,7 +802,7 @@ data:
   {{- $config := index .Values.dynamicConfigs "linux-g6xlarge-amd64" | default (dict) }}
   dynamic.linux-g6xlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.linux-g6xlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-g6xlarge-amd64$config.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-g6xlarge-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
   dynamic.linux-g6xlarge-amd64.instance-type: {{ (index $config "instance-type") | default "g6.xlarge" | quote }}
   dynamic.linux-g6xlarge-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
   dynamic.linux-g6xlarge-amd64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
@@ -826,7 +826,7 @@ data:
   {{- $config := index .Values.dynamicConfigs "linux-g64xlarge-amd64" | default (dict) }}
   dynamic.linux-g64xlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.linux-g64xlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-g64xlarge-amd64$config.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-g64xlarge-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
   dynamic.linux-g64xlarge-amd64.instance-type: {{ (index $config "instance-type") | default "g6.4xlarge" | quote }}
   dynamic.linux-g64xlarge-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
   dynamic.linux-g64xlarge-amd64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
@@ -852,7 +852,7 @@ data:
   {{- $config := index .Values.dynamicConfigs "linux-root-arm64" | default (dict) }}
   dynamic.linux-root-arm64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.linux-root-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-root-arm64$config.ami: {{ default (index $arm "ami") $config.ami | quote }}
+  dynamic.linux-root-arm64.ami: {{ default (index $arm "ami") $config.ami | quote }}
   dynamic.linux-root-arm64.instance-type: {{ (index $config "instance-type") | default "m6g.large" | quote }}
   dynamic.linux-root-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64-root" $environment) | quote }}
   dynamic.linux-root-arm64.key-name: {{ default (index $arm "key-name") ((index $config "key-name")) | quote }}
@@ -877,7 +877,7 @@ data:
   {{- $config := index .Values.dynamicConfigs "linux-root-amd64" | default (dict) }}
   dynamic.linux-root-amd64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.linux-root-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-root-amd64$config.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-root-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
   dynamic.linux-root-amd64.instance-type: {{ (index $config "instance-type") | default "m5.2xlarge" | quote }}
   dynamic.linux-root-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-root" $environment) | quote }}
   dynamic.linux-root-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
@@ -903,7 +903,7 @@ data:
   {{- $config := index .Values.dynamicConfigs "linux-fast-amd64" | default (dict) }}
   dynamic.linux-fast-amd64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.linux-fast-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-fast-amd64$config.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-fast-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
   dynamic.linux-fast-amd64.instance-type: {{ (index $config "instance-type") | default "c7a.8xlarge" | quote }}
   dynamic.linux-fast-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-fast" $environment) | quote }}
   dynamic.linux-fast-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
@@ -920,7 +920,7 @@ data:
   {{- $config := index .Values.dynamicConfigs "linux-extra-fast-amd64" | default (dict) }}
   dynamic.linux-extra-fast-amd64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.linux-extra-fast-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-extra-fast-amd64$config.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-extra-fast-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
   dynamic.linux-extra-fast-amd64.instance-type: {{ (index $config "instance-type") | default "c7a.12xlarge" | quote }}
   dynamic.linux-extra-fast-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-extra-fast" $environment) | quote }}
   dynamic.linux-extra-fast-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
