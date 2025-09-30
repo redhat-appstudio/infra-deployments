@@ -19,9 +19,14 @@ spec:
           selector:
             matchLabels:
               konflux-ci.dev/type: tenant
-    celPreconditions:
-    - name: "on update, oldObject had no konflux-ci.dev/type=tenant label"
-      expression: "request.operation != UPDATE || ! (has(oldObject.metadata.labels) && 'konflux-ci.dev/type' in oldObject.metadata.labels && oldObject.metadata.labels['konflux-ci.dev/type] == 'tenant')"
+    preconditions:
+      any:
+      - key: "{{ request.operation || '' }}"
+        operator: NotEquals
+        value: "UPDATE"
+      - key: "{{ contains(keys(request.oldObject.metadata), 'labels') && lookup(request.oldObject.metadata.labels, 'konflux-ci.dev/type') || '' }}"
+        operator: NotEquals
+        value: "tenant"
     generate:
       generateExisting: true
       synchronize: false
@@ -39,9 +44,14 @@ spec:
           selector:
             matchLabels:
               konflux-ci.dev/type: tenant
-    celPreconditions:
-    - name: "on update, oldObject had no konflux-ci.dev/type=tenant label"
-      expression: "request.operation != UPDATE || ! (has(oldObject.metadata.labels) && 'konflux-ci.dev/type' in oldObject.metadata.labels && oldObject.metadata.labels['konflux-ci.dev/type] == 'tenant')"
+    preconditions:
+      any:
+      - key: "{{ request.operation || '' }}"
+        operator: NotEquals
+        value: "UPDATE"
+      - key: "{{ contains(keys(request.oldObject.metadata), 'labels') && lookup(request.oldObject.metadata.labels, 'konflux-ci.dev/type') || '' }}"
+        operator: NotEquals
+        value: "tenant"
     generate:
       generateExisting: true
       synchronize: false

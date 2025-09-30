@@ -1,0 +1,48 @@
+---
+apiVersion: kubearchive.org/v1
+kind: ClusterVacuumConfig
+metadata:
+  name: vacuum-config-all
+spec:
+  namespaces: {}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: vacuum-all
+  annotations:
+    # Needed if just the command is changed, otherwise the job needs to be deleted manually
+    argocd.argoproj.io/sync-options: Force=true,Replace=true
+spec:
+  schedule: "20 1 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: kubearchive-cluster-vacuum
+          containers:
+            - name: vacuum
+              image: quay.io/kubearchive/vacuum:v1.6.0
+              command: [ "/ko-app/vacuum" ]
+              args:
+                - --type
+                - cluster
+                - --config
+                - vacuum-config-all
+              env:
+                - name: KUBEARCHIVE_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                     fieldPath: metadata.namespace
+              securityContext:
+                readOnlyRootFilesystem: true
+                runAsNonRoot: true
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
+                limits:
+                  cpu: 100m
+                  memory: 256Mi
+          restartPolicy: Never
+
