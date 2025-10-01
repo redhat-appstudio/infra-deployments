@@ -1,0 +1,941 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    build.appstudio.redhat.com/multi-platform-config: hosts
+  name: host-config
+  namespace: multi-platform-controller
+data:
+  local-platforms: "\
+    {{ join ",\\\n    " (.Values.localPlatforms | default (list "linux/x86_64" "local" "localhost")) }}\
+  "
+
+
+  {{- $outs := list }}
+  {{- range $k, $v := .Values.dynamicConfigs }}
+    {{- $parts := splitList "-" $k }}
+    {{- $last := index $parts (sub (len $parts) 1) }}
+    {{- $prefix := join "-" (slice $parts 0 (sub (len $parts) 1)) }}
+    {{- $outs = append $outs (printf "%s/%s" $prefix $last) }}
+  {{- end }}
+  dynamic-platforms: "\
+    {{ join ",\\\n    " $outs }}\
+  "
+
+  {{- if .Values.dynamicPoolPlatforms }}
+  dynamic-pool-platforms: {{ .Values.dynamicPoolPlatforms }}
+  {{- end }}
+
+  instance-tag: {{ .Values.instanceTag | default "rhtap-prod" }}
+
+  {{- $defaultTags := dict "Project" "Konflux" "Owner" "konflux-infra@redhat.com" "ManagedBy" "Konflux Infra Team" "app-code" "ASSH-001" "service-phase" "Production" "cost-center" "670" }}
+  {{- $mergedTags := merge (.Values.additionalInstanceTags | default dict) $defaultTags }}
+
+  additional-instance-tags: "\
+  {{- $keys := keys $mergedTags | sortAlpha }}
+  {{- range $i, $k := $keys }}
+      {{ $k }}={{ index $mergedTags $k }}{{- if lt $i (sub (len $keys) 1) }},{{ end }}\
+  {{- end }}
+      "
+
+  {{- $arm := (index .Values "archDefaults" "arm64") | default (dict) }}
+  {{- $amd := (index .Values "archDefaults" "amd64") | default (dict) }}
+  {{- $environment := .Values.environment | default "prod" }}
+
+  # cpu:memory (1:4)
+  {{- if hasKey .Values.dynamicConfigs "linux-arm64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-arm64" | default (dict) }}
+  dynamic.linux-arm64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-arm64.ami: {{ default (index $arm "ami") $config.ami | quote }}
+  dynamic.linux-arm64.instance-type: {{ (index $config "instance-type") | default "m6g.large" | quote }}
+  dynamic.linux-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64" $environment) | quote }}
+  dynamic.linux-arm64.key-name: {{ default (index $arm "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-arm64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-arm64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-arm64.security-group-id: {{ default (index $arm "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-arm64.allocation-timeout: "1200"
+  {{ end }}
+
+
+  {{- if hasKey .Values.dynamicConfigs "linux-amd64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-amd64" | default (dict) }}
+  dynamic.linux-amd64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-amd64.instance-type: {{ (index $config "instance-type") | default "m6a.large" | quote }}
+  dynamic.linux-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64" $environment) | quote }}
+  dynamic.linux-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-amd64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-amd64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-amd64.allocation-timeout: "1200"
+  {{ end }}
+
+  {{- if hasKey .Values.dynamicConfigs "linux-d160-amd64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-d160-amd64" | default (dict) }}
+  dynamic.linux-d160-amd64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-d160-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-d160-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-d160-amd64.instance-type: {{ (index $config "instance-type") | default "m6a.large" | quote }}
+  dynamic.linux-d160-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-d160" $environment) | quote }}
+  dynamic.linux-d160-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-d160-amd64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-d160-amd64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-d160-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-d160-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-d160-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d160-amd64.disk: "160"
+  dynamic.linux-d160-amd64.allocation-timeout: "1200"
+  {{ end }}
+
+  {{- if hasKey .Values.dynamicConfigs "linux-d160-arm64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-d160-arm64" | default (dict) }}
+  dynamic.linux-d160-arm64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-d160-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-d160-arm64.ami: {{ default (index $arm "ami") $config.ami | quote }}
+  dynamic.linux-d160-arm64.instance-type: {{ (index $config "instance-type") | default "m6g.large" | quote }}
+  dynamic.linux-d160-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64-d160" $environment) | quote }}
+  dynamic.linux-d160-arm64.key-name: {{ default (index $arm "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-d160-arm64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-d160-arm64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-d160-arm64.security-group-id: {{ default (index $arm "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-d160-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-d160-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d160-arm64.disk: "160"
+  dynamic.linux-d160-arm64.allocation-timeout: "1200"
+  {{ end }}
+
+
+  {{- if hasKey .Values.dynamicConfigs "linux-mlarge-arm64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-mlarge-arm64" | default (dict) }}
+  dynamic.linux-mlarge-arm64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-mlarge-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-mlarge-arm64.ami: {{ default (index $arm "ami") $config.ami | quote }}
+  dynamic.linux-mlarge-arm64.instance-type: {{ (index $config "instance-type") | default "m6g.large" | quote }}
+  dynamic.linux-mlarge-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64-mlarge" $environment) | quote }}
+  dynamic.linux-mlarge-arm64.key-name: {{ default (index $arm "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-mlarge-arm64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-mlarge-arm64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-mlarge-arm64.security-group-id: {{ default (index $arm "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-mlarge-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-mlarge-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-mlarge-arm64.allocation-timeout: "1200"
+  {{ end }}
+
+  {{- if hasKey .Values.dynamicConfigs "linux-mlarge-amd64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-mlarge-amd64" | default (dict) }}
+  dynamic.linux-mlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-mlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-mlarge-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-mlarge-amd64.instance-type: {{ (index $config "instance-type") | default "m6a.large" | quote }}
+  dynamic.linux-mlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-mlarge" $environment) | quote }}
+  dynamic.linux-mlarge-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-mlarge-amd64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-mlarge-amd64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-mlarge-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-mlarge-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-mlarge-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-mlarge-amd64.allocation-timeout: "1200"
+  {{ end }}
+
+  {{- if hasKey .Values.dynamicConfigs "linux-d160-mlarge-arm64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-d160-mlarge-arm64" | default (dict) }}
+  dynamic.linux-d160-mlarge-arm64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-d160-mlarge-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-d160-mlarge-arm64.ami: {{ default (index $arm "ami") $config.ami | quote }}
+  dynamic.linux-d160-mlarge-arm64.instance-type: {{ (index $config "instance-type") | default "m6g.large" | quote }}
+  dynamic.linux-d160-mlarge-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64-mlarge-d160" $environment) | quote }}
+  dynamic.linux-d160-mlarge-arm64.key-name: {{ default (index $arm "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-d160-mlarge-arm64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-d160-mlarge-arm64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-d160-mlarge-arm64.security-group-id: {{ default (index $arm "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-d160-mlarge-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-d160-mlarge-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d160-mlarge-arm64.disk: "160"
+  dynamic.linux-d160-mlarge-arm64.allocation-timeout: "1200"
+  {{ end }}
+
+  {{- if hasKey .Values.dynamicConfigs "linux-d160-mlarge-amd64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-d160-mlarge-amd64" | default (dict) }}
+  dynamic.linux-d160-mlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-d160-mlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-d160-mlarge-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-d160-mlarge-amd64.instance-type: {{ (index $config "instance-type") | default "m6a.large" | quote }}
+  dynamic.linux-d160-mlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-mlarge-d160" $environment) | quote }}
+  dynamic.linux-d160-mlarge-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-d160-mlarge-amd64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-d160-mlarge-amd64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-d160-mlarge-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-d160-mlarge-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-d160-mlarge-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d160-mlarge-amd64.disk: "160"
+  dynamic.linux-d160-mlarge-amd64.allocation-timeout: "1200"
+  {{ end }}
+
+  {{- if hasKey .Values.dynamicConfigs "linux-mxlarge-arm64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-mxlarge-arm64" | default (dict) }}
+  dynamic.linux-mxlarge-arm64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-mxlarge-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-mxlarge-arm64.ami: {{ default (index $arm "ami") $config.ami | quote }}
+  dynamic.linux-mxlarge-arm64.instance-type: {{ (index $config "instance-type") | default "m6g.xlarge" | quote }}
+  dynamic.linux-mxlarge-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64-mxlarge" $environment) | quote }}
+  dynamic.linux-mxlarge-arm64.key-name: {{ default (index $arm "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-mxlarge-arm64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-mxlarge-arm64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-mxlarge-arm64.security-group-id: {{ default (index $arm "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-mxlarge-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-mxlarge-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-mxlarge-arm64.allocation-timeout: "1200"
+  {{ end }}
+
+  {{- if hasKey .Values.dynamicConfigs "linux-mxlarge-amd64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-mxlarge-amd64" | default (dict) }}
+  dynamic.linux-mxlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-mxlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-mxlarge-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-mxlarge-amd64.instance-type: {{ (index $config "instance-type") | default "m6a.xlarge" | quote }}
+  dynamic.linux-mxlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-mxlarge" $environment) | quote }}
+  dynamic.linux-mxlarge-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-mxlarge-amd64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-mxlarge-amd64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-mxlarge-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-mxlarge-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-mxlarge-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-mxlarge-amd64.allocation-timeout: "1200"
+  {{ end }}
+
+  {{- if hasKey .Values.dynamicConfigs "linux-d160-mxlarge-arm64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-d160-mxlarge-arm64" | default (dict) }}
+  dynamic.linux-d160-mxlarge-arm64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-d160-mxlarge-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-d160-mxlarge-arm64.ami: {{ default (index $arm "ami") $config.ami | quote }}
+  dynamic.linux-d160-mxlarge-arm64.instance-type: {{ (index $config "instance-type") | default "m6g.xlarge" | quote }}
+  dynamic.linux-d160-mxlarge-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64-mxlarge-d160" $environment) | quote }}
+  dynamic.linux-d160-mxlarge-arm64.key-name: {{ default (index $arm "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-d160-mxlarge-arm64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-d160-mxlarge-arm64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-d160-mxlarge-arm64.security-group-id: {{ default (index $arm "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-d160-mxlarge-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-d160-mxlarge-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d160-mxlarge-arm64.disk: "160"
+  dynamic.linux-d160-mxlarge-arm64.allocation-timeout: "1200"
+  {{ end }}
+
+  {{- if hasKey .Values.dynamicConfigs "linux-d160-mxlarge-amd64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-d160-mxlarge-amd64" | default (dict) }}
+  dynamic.linux-d160-mxlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-d160-mxlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-d160-mxlarge-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-d160-mxlarge-amd64.instance-type: {{ (index $config "instance-type") | default "m6a.xlarge" | quote }}
+  dynamic.linux-d160-mxlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-mxlarge-d160" $environment) | quote }}
+  dynamic.linux-d160-mxlarge-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-d160-mxlarge-amd64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-d160-mxlarge-amd64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-d160-mxlarge-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-d160-mxlarge-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-d160-mxlarge-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d160-mxlarge-amd64.disk: "160"
+  dynamic.linux-d160-mxlarge-amd64.allocation-timeout: "1200"
+  {{ end }}
+
+  {{- if hasKey .Values.dynamicConfigs "linux-m2xlarge-arm64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-m2xlarge-arm64" | default (dict) }}
+  dynamic.linux-m2xlarge-arm64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-m2xlarge-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-m2xlarge-arm64.ami: {{ default (index $arm "ami") $config.ami | quote }}
+  dynamic.linux-m2xlarge-arm64.instance-type: {{ (index $config "instance-type") | default "m6g.2xlarge" | quote }}
+  dynamic.linux-m2xlarge-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64-m2xlarge" $environment) | quote }}
+  dynamic.linux-m2xlarge-arm64.key-name: {{ default (index $arm "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-m2xlarge-arm64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-m2xlarge-arm64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-m2xlarge-arm64.security-group-id: {{ default (index $arm "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-m2xlarge-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-m2xlarge-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-m2xlarge-arm64.allocation-timeout: "1200"
+  {{ end }}
+
+  {{- if hasKey .Values.dynamicConfigs "linux-m2xlarge-amd64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-m2xlarge-amd64" | default (dict) }}
+  dynamic.linux-m2xlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-m2xlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-m2xlarge-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-m2xlarge-amd64.instance-type: {{ (index $config "instance-type") | default "m6a.2xlarge" | quote }}
+  dynamic.linux-m2xlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-m2xlarge" $environment) | quote }}
+  dynamic.linux-m2xlarge-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-m2xlarge-amd64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-m2xlarge-amd64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-m2xlarge-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-m2xlarge-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-m2xlarge-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-m2xlarge-amd64.allocation-timeout: "1200"
+  {{ end }}
+
+  {{- if hasKey .Values.dynamicConfigs "linux-d160-m2xlarge-arm64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-d160-m2xlarge-arm64" | default (dict) }}
+  dynamic.linux-d160-m2xlarge-arm64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-d160-m2xlarge-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-d160-m2xlarge-arm64.ami: {{ default (index $arm "ami") $config.ami | quote }}
+  dynamic.linux-d160-m2xlarge-arm64.instance-type: {{ (index $config "instance-type") | default "m6g.2xlarge" | quote }}
+  dynamic.linux-d160-m2xlarge-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64-m2xlarge-d160" $environment) | quote }}
+  dynamic.linux-d160-m2xlarge-arm64.key-name: {{ default (index $arm "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-d160-m2xlarge-arm64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-d160-m2xlarge-arm64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-d160-m2xlarge-arm64.security-group-id: {{ default (index $arm "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-d160-m2xlarge-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-d160-m2xlarge-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d160-m2xlarge-arm64.disk: "160"
+  dynamic.linux-d160-m2xlarge-arm64.allocation-timeout: "1200"
+  {{ end }}
+
+  {{- if hasKey .Values.dynamicConfigs "linux-d160-m2xlarge-amd64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-d160-m2xlarge-amd64" | default (dict) }}
+  dynamic.linux-d160-m2xlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-d160-m2xlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-d160-m2xlarge-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-d160-m2xlarge-amd64.instance-type: {{ (index $config "instance-type") | default "m6a.2xlarge" | quote }}
+  dynamic.linux-d160-m2xlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-m2xlarge-d160" $environment) | quote }}
+  dynamic.linux-d160-m2xlarge-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-d160-m2xlarge-amd64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-d160-m2xlarge-amd64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-d160-m2xlarge-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-d160-m2xlarge-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-d160-m2xlarge-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d160-m2xlarge-amd64.disk: "160"
+  dynamic.linux-d160-m2xlarge-amd64.allocation-timeout: "1200"
+  {{ end }}
+
+  {{- if hasKey .Values.dynamicConfigs "linux-m4xlarge-arm64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-m4xlarge-arm64" | default (dict) }}
+  dynamic.linux-m4xlarge-arm64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-m4xlarge-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-m4xlarge-arm64.ami: {{ default (index $arm "ami") $config.ami | quote }}
+  dynamic.linux-m4xlarge-arm64.instance-type: {{ (index $config "instance-type") | default "m6g.4xlarge" | quote }}
+  dynamic.linux-m4xlarge-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64-m4xlarge" $environment) | quote }}
+  dynamic.linux-m4xlarge-arm64.key-name: {{ default (index $arm "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-m4xlarge-arm64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-m4xlarge-arm64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-m4xlarge-arm64.security-group-id: {{ default (index $arm "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-m4xlarge-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-m4xlarge-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-m4xlarge-arm64.allocation-timeout: "1200"
+  {{ end }}
+
+  {{- if hasKey .Values.dynamicConfigs "linux-m4xlarge-amd64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-m4xlarge-amd64" | default (dict) }}
+  dynamic.linux-m4xlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-m4xlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-m4xlarge-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-m4xlarge-amd64.instance-type: {{ (index $config "instance-type") | default "m6a.4xlarge" | quote }}
+  dynamic.linux-m4xlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-m4xlarge" $environment) | quote }}
+  dynamic.linux-m4xlarge-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-m4xlarge-amd64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-m4xlarge-amd64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-m4xlarge-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-m4xlarge-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-m4xlarge-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-m4xlarge-amd64.allocation-timeout: "1200"
+  {{ end }}
+
+  {{- if hasKey .Values.dynamicConfigs "linux-d160-m4xlarge-arm64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-d160-m4xlarge-arm64" | default (dict) }}
+  dynamic.linux-d160-m4xlarge-arm64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-d160-m4xlarge-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-d160-m4xlarge-arm64.ami: {{ default (index $arm "ami") $config.ami | quote }}
+  dynamic.linux-d160-m4xlarge-arm64.instance-type: {{ (index $config "instance-type") | default "m6g.4xlarge" | quote }}
+  dynamic.linux-d160-m4xlarge-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64-m4xlarge-d160" $environment) | quote }}
+  dynamic.linux-d160-m4xlarge-arm64.key-name: {{ default (index $arm "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-d160-m4xlarge-arm64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-d160-m4xlarge-arm64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-d160-m4xlarge-arm64.security-group-id: {{ default (index $arm "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-d160-m4xlarge-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-d160-m4xlarge-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d160-m4xlarge-arm64.disk: "160"
+  dynamic.linux-d160-m4xlarge-arm64.allocation-timeout: "1200"
+  {{ end }}
+
+  {{- if hasKey .Values.dynamicConfigs "linux-d160-m4xlarge-amd64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-d160-m4xlarge-amd64" | default (dict) }}
+  dynamic.linux-d160-m4xlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-d160-m4xlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-d160-m4xlarge-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-d160-m4xlarge-amd64.instance-type: {{ (index $config "instance-type") | default "m6a.4xlarge" | quote }}
+  dynamic.linux-d160-m4xlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-m4xlarge-d160" $environment) | quote }}
+  dynamic.linux-d160-m4xlarge-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-d160-m4xlarge-amd64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-d160-m4xlarge-amd64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-d160-m4xlarge-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-d160-m4xlarge-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-d160-m4xlarge-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d160-m4xlarge-amd64.disk: "160"
+  dynamic.linux-d160-m4xlarge-amd64.allocation-timeout: "1200"
+  {{ end }}
+
+  {{- if hasKey .Values.dynamicConfigs "linux-m8xlarge-arm64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-m8xlarge-arm64" | default (dict) }}
+  dynamic.linux-m8xlarge-arm64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-m8xlarge-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-m8xlarge-arm64.ami: {{ default (index $arm "ami") $config.ami | quote }}
+  dynamic.linux-m8xlarge-arm64.instance-type: {{ (index $config "instance-type") | default "m6g.8xlarge" | quote }}
+  dynamic.linux-m8xlarge-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64-m8xlarge" $environment) | quote }}
+  dynamic.linux-m8xlarge-arm64.key-name: {{ default (index $arm "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-m8xlarge-arm64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-m8xlarge-arm64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-m8xlarge-arm64.security-group-id: {{ default (index $arm "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-m8xlarge-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-m8xlarge-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-m8xlarge-arm64.allocation-timeout: "1200"
+  {{ end }}
+
+  {{- if hasKey .Values.dynamicConfigs "linux-m8xlarge-amd64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-m8xlarge-amd64" | default (dict) }}
+  dynamic.linux-m8xlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-m8xlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-m8xlarge-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-m8xlarge-amd64.instance-type: {{ (index $config "instance-type") | default "m6a.8xlarge" | quote }}
+  dynamic.linux-m8xlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-m8xlarge" $environment) | quote }}
+  dynamic.linux-m8xlarge-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-m8xlarge-amd64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-m8xlarge-amd64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-m8xlarge-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-m8xlarge-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-m8xlarge-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-m8xlarge-amd64.allocation-timeout: "1200"
+  {{ end }}
+
+  {{- if hasKey .Values.dynamicConfigs "linux-d160-m7-8xlarge-amd64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-d160-m7-8xlarge-amd64" | default (dict) }}
+  dynamic.linux-d160-m7-8xlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-d160-m7-8xlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-d160-m7-8xlarge-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-d160-m7-8xlarge-amd64.instance-type: {{ (index $config "instance-type") | default "m7a.8xlarge" | quote }}
+  dynamic.linux-d160-m7-8xlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-m7-8xlarge-d160" $environment) | quote }}
+  dynamic.linux-d160-m7-8xlarge-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-d160-m7-8xlarge-amd64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-d160-m7-8xlarge-amd64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-d160-m7-8xlarge-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-d160-m7-8xlarge-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-d160-m7-8xlarge-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d160-m7-8xlarge-amd64.disk: "160"
+  dynamic.linux-d160-m7-8xlarge-amd64.allocation-timeout: "1200"
+  {{ end }}
+
+  {{- if hasKey .Values.dynamicConfigs "linux-d160-m8-8xlarge-arm64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-d160-m8-8xlarge-arm64" | default (dict) }}
+  dynamic.linux-d160-m8-8xlarge-arm64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-d160-m8-8xlarge-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-d160-m8-8xlarge-arm64.ami: {{ default (index $arm "ami") $config.ami | quote }}
+  dynamic.linux-d160-m8-8xlarge-arm64.instance-type: {{ (index $config "instance-type") | default "m8g.8xlarge" | quote }}
+  dynamic.linux-d160-m8-8xlarge-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64-m8-8xlarge-d160" $environment) | quote }}
+  dynamic.linux-d160-m8-8xlarge-arm64.key-name: {{ default (index $arm "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-d160-m8-8xlarge-arm64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-d160-m8-8xlarge-arm64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-d160-m8-8xlarge-arm64.security-group-id: {{ default (index $arm "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-d160-m8-8xlarge-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-d160-m8-8xlarge-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d160-m8-8xlarge-arm64.disk: "160"
+  dynamic.linux-d160-m8-8xlarge-arm64.allocation-timeout: "1200"
+  {{ end }}
+
+
+  {{- if hasKey .Values.dynamicConfigs "linux-d160-m8xlarge-arm64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-d160-m8xlarge-arm64" | default (dict) }}
+  dynamic.linux-d160-m8xlarge-arm64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-d160-m8xlarge-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-d160-m8xlarge-arm64.ami: {{ default (index $arm "ami") $config.ami | quote }}
+  dynamic.linux-d160-m8xlarge-arm64.instance-type: {{ (index $config "instance-type") | default "m6g.8xlarge" | quote }}
+  dynamic.linux-d160-m8xlarge-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64-m8xlarge-d160" $environment) | quote }}
+  dynamic.linux-d160-m8xlarge-arm64.key-name: {{ default (index $arm "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-d160-m8xlarge-arm64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-d160-m8xlarge-arm64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-d160-m8xlarge-arm64.security-group-id: {{ default (index $arm "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-d160-m8xlarge-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-d160-m8xlarge-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d160-m8xlarge-arm64.disk: "160"
+  dynamic.linux-d160-m8xlarge-arm64.allocation-timeout: "1200"
+  {{ end }}
+
+  {{- if hasKey .Values.dynamicConfigs "linux-d160-m8xlarge-amd64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-d160-m8xlarge-amd64" | default (dict) }}
+  dynamic.linux-d160-m8xlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-d160-m8xlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-d160-m8xlarge-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-d160-m8xlarge-amd64.instance-type: {{ (index $config "instance-type") | default "m6a.8xlarge" | quote }}
+  dynamic.linux-d160-m8xlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-m8xlarge-d160" $environment) | quote }}
+  dynamic.linux-d160-m8xlarge-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-d160-m8xlarge-amd64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-d160-m8xlarge-amd64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-d160-m8xlarge-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-d160-m8xlarge-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-d160-m8xlarge-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d160-m8xlarge-amd64.disk: "160"
+  dynamic.linux-d160-m8xlarge-amd64.allocation-timeout: "1200"
+  {{ end }}
+
+  {{- if hasKey .Values.dynamicConfigs "linux-c6gd2xlarge-arm64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-c6gd2xlarge-arm64" | default (dict) }}
+  dynamic.linux-c6gd2xlarge-arm64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-c6gd2xlarge-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-c6gd2xlarge-arm64.ami: {{ default (index $arm "ami") $config.ami | quote }}
+  dynamic.linux-c6gd2xlarge-arm64.instance-type: {{ (index $config "instance-type") | default "c6gd.2xlarge" | quote }}
+  dynamic.linux-c6gd2xlarge-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64-c6gd2xlarge" $environment) | quote }}
+  dynamic.linux-c6gd2xlarge-arm64.key-name: {{ default (index $arm "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-c6gd2xlarge-arm64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-c6gd2xlarge-arm64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-c6gd2xlarge-arm64.security-group-id: {{ default (index $arm "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-c6gd2xlarge-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-c6gd2xlarge-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-c6gd2xlarge-arm64.allocation-timeout: "1200"
+  {{- if (index $config "user-data") }}
+  dynamic.linux-c6gd2xlarge-arm64.user-data: |
+  {{- $lines := splitList "\n" (index $config "user-data") }}
+  {{- range $line := $lines }}
+    {{ $line }}
+  {{- end }}
+  {{- end }}
+  {{ end }}
+
+  {{- if hasKey .Values.dynamicConfigs "linux-cxlarge-arm64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-cxlarge-arm64" | default (dict) }}
+  dynamic.linux-cxlarge-arm64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-cxlarge-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-cxlarge-arm64.ami: {{ default (index $arm "ami") $config.ami | quote }}
+  dynamic.linux-cxlarge-arm64.instance-type: {{ (index $config "instance-type") | default "c6g.xlarge" | quote }}
+  dynamic.linux-cxlarge-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64-cxlarge" $environment) | quote }}
+  dynamic.linux-cxlarge-arm64.key-name: {{ default (index $arm "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-cxlarge-arm64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-cxlarge-arm64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-cxlarge-arm64.security-group-id: {{ default (index $arm "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-cxlarge-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-cxlarge-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-cxlarge-arm64.allocation-timeout: "1200"
+  {{ end }}
+
+  {{- if hasKey .Values.dynamicConfigs "linux-cxlarge-amd64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-cxlarge-amd64" | default (dict) }}
+  dynamic.linux-cxlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-cxlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-cxlarge-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-cxlarge-amd64.instance-type: {{ (index $config "instance-type") | default "c6a.xlarge" | quote }}
+  dynamic.linux-cxlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-cxlarge" $environment) | quote }}
+  dynamic.linux-cxlarge-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-cxlarge-amd64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-cxlarge-amd64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-cxlarge-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-cxlarge-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-cxlarge-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-cxlarge-amd64.allocation-timeout: "1200"
+  {{ end }}
+
+  {{- if hasKey .Values.dynamicConfigs "linux-d160-cxlarge-arm64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-d160-cxlarge-arm64" | default (dict) }}
+  dynamic.linux-d160-cxlarge-arm64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-d160-cxlarge-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-d160-cxlarge-arm64.ami: {{ default (index $arm "ami") $config.ami | quote }}
+  dynamic.linux-d160-cxlarge-arm64.instance-type: {{ (index $config "instance-type") | default "c6g.xlarge" | quote }}
+  dynamic.linux-d160-cxlarge-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64-cxlarge-d160" $environment) | quote }}
+  dynamic.linux-d160-cxlarge-arm64.key-name: {{ default (index $arm "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-d160-cxlarge-arm64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-d160-cxlarge-arm64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-d160-cxlarge-arm64.security-group-id: {{ default (index $arm "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-d160-cxlarge-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-d160-cxlarge-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d160-cxlarge-arm64.disk: "160"
+  dynamic.linux-d160-cxlarge-arm64.allocation-timeout: "1200"
+  {{ end }}
+
+  {{- if hasKey .Values.dynamicConfigs "linux-d160-cxlarge-amd64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-d160-cxlarge-amd64" | default (dict) }}
+  dynamic.linux-d160-cxlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-d160-cxlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-d160-cxlarge-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-d160-cxlarge-amd64.instance-type: {{ (index $config "instance-type") | default "c6a.xlarge" | quote }}
+  dynamic.linux-d160-cxlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-cxlarge-d160" $environment) | quote }}
+  dynamic.linux-d160-cxlarge-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-d160-cxlarge-amd64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-d160-cxlarge-amd64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-d160-cxlarge-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-d160-cxlarge-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-d160-cxlarge-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d160-cxlarge-amd64.disk: "160"
+  dynamic.linux-d160-cxlarge-amd64.allocation-timeout: "1200"
+  {{ end }}
+
+  {{- if hasKey .Values.dynamicConfigs "linux-c2xlarge-arm64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-c2xlarge-arm64" | default (dict) }}
+  dynamic.linux-c2xlarge-arm64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-c2xlarge-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-c2xlarge-arm64.ami: {{ default (index $arm "ami") $config.ami | quote }}
+  dynamic.linux-c2xlarge-arm64.instance-type: {{ (index $config "instance-type") | default "c6g.2xlarge" | quote }}
+  dynamic.linux-c2xlarge-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64-c2xlarge" $environment) | quote }}
+  dynamic.linux-c2xlarge-arm64.key-name: {{ default (index $arm "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-c2xlarge-arm64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-c2xlarge-arm64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-c2xlarge-arm64.security-group-id: {{ default (index $arm "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-c2xlarge-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-c2xlarge-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-c2xlarge-arm64.allocation-timeout: "1200"
+  {{ end }}
+
+  {{- if hasKey .Values.dynamicConfigs "linux-c2xlarge-amd64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-c2xlarge-amd64" | default (dict) }}
+  dynamic.linux-c2xlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-c2xlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-c2xlarge-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-c2xlarge-amd64.instance-type: {{ (index $config "instance-type") | default "c6a.2xlarge" | quote }}
+  dynamic.linux-c2xlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-c2xlarge" $environment) | quote }}
+  dynamic.linux-c2xlarge-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-c2xlarge-amd64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-c2xlarge-amd64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-c2xlarge-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-c2xlarge-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-c2xlarge-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-c2xlarge-amd64.allocation-timeout: "1200"
+  {{ end }}
+
+  {{- if hasKey .Values.dynamicConfigs "linux-d160-c2xlarge-arm64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-d160-c2xlarge-arm64" | default (dict) }}
+  dynamic.linux-d160-c2xlarge-arm64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-d160-c2xlarge-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-d160-c2xlarge-arm64.ami: {{ default (index $arm "ami") $config.ami | quote }}
+  dynamic.linux-d160-c2xlarge-arm64.instance-type: {{ (index $config "instance-type") | default "c6g.2xlarge" | quote }}
+  dynamic.linux-d160-c2xlarge-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64-c2xlarge-d160" $environment) | quote }}
+  dynamic.linux-d160-c2xlarge-arm64.key-name: {{ default (index $arm "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-d160-c2xlarge-arm64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-d160-c2xlarge-arm64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-d160-c2xlarge-arm64.security-group-id: {{ default (index $arm "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-d160-c2xlarge-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-d160-c2xlarge-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d160-c2xlarge-arm64.disk: "160"
+  dynamic.linux-d160-c2xlarge-arm64.allocation-timeout: "1200"
+  {{ end }}
+
+  {{- if hasKey .Values.dynamicConfigs "linux-d160-c2xlarge-amd64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-d160-c2xlarge-amd64" | default (dict) }}
+  dynamic.linux-d160-c2xlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-d160-c2xlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-d160-c2xlarge-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-d160-c2xlarge-amd64.instance-type: {{ (index $config "instance-type") | default "c6a.2xlarge" | quote }}
+  dynamic.linux-d160-c2xlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-c2xlarge-d160" $environment) | quote }}
+  dynamic.linux-d160-c2xlarge-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-d160-c2xlarge-amd64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-d160-c2xlarge-amd64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-d160-c2xlarge-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-d160-c2xlarge-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-d160-c2xlarge-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d160-c2xlarge-amd64.disk: "160"
+  dynamic.linux-d160-c2xlarge-amd64.allocation-timeout: "1200"
+  {{ end }}
+
+  {{- if hasKey .Values.dynamicConfigs "linux-c4xlarge-arm64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-c4xlarge-arm64" | default (dict) }}
+  dynamic.linux-c4xlarge-arm64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-c4xlarge-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-c4xlarge-arm64.ami: {{ default (index $arm "ami") $config.ami | quote }}
+  dynamic.linux-c4xlarge-arm64.instance-type: {{ (index $config "instance-type") | default "c6g.4xlarge" | quote }}
+  dynamic.linux-c4xlarge-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64-c4xlarge" $environment) | quote }}
+  dynamic.linux-c4xlarge-arm64.key-name: {{ default (index $arm "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-c4xlarge-arm64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-c4xlarge-arm64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-c4xlarge-arm64.security-group-id: {{ default (index $arm "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-c4xlarge-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-c4xlarge-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-c4xlarge-arm64.allocation-timeout: "1200"
+  {{ end }}
+
+  {{- if hasKey .Values.dynamicConfigs "linux-c4xlarge-amd64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-c4xlarge-amd64" | default (dict) }}
+  dynamic.linux-c4xlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-c4xlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-c4xlarge-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-c4xlarge-amd64.instance-type:  {{ (index $config "instance-type") | default "c6a.4xlarge" | quote }}
+  dynamic.linux-c4xlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-c4xlarge" $environment) | quote }}
+  dynamic.linux-c4xlarge-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-c4xlarge-amd64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-c4xlarge-amd64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-c4xlarge-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-c4xlarge-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-c4xlarge-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-c4xlarge-amd64.allocation-timeout: "1200"
+  {{ end }}
+
+  {{- if hasKey .Values.dynamicConfigs "linux-d160-c4xlarge-arm64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-d160-c4xlarge-arm64" | default (dict) }}
+  dynamic.linux-d160-c4xlarge-arm64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-d160-c4xlarge-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-d160-c4xlarge-arm64.ami: {{ default (index $arm "ami") $config.ami | quote }}
+  dynamic.linux-d160-c4xlarge-arm64.instance-type: {{ (index $config "instance-type") | default "c6g.4xlarge" | quote }}
+  dynamic.linux-d160-c4xlarge-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64-c4xlarge-d160" $environment) | quote }}
+  dynamic.linux-d160-c4xlarge-arm64.key-name: {{ default (index $arm "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-d160-c4xlarge-arm64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-d160-c4xlarge-arm64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-d160-c4xlarge-arm64.security-group-id: {{ default (index $arm "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-d160-c4xlarge-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-d160-c4xlarge-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d160-c4xlarge-arm64.disk: "160"
+  dynamic.linux-d160-c4xlarge-arm64.allocation-timeout: "1200"
+  {{ end }}
+
+  {{- if hasKey .Values.dynamicConfigs "linux-d160-c4xlarge-amd64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-d160-c4xlarge-amd64" | default (dict) }}
+  dynamic.linux-d160-c4xlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-d160-c4xlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-d160-c4xlarge-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-d160-c4xlarge-amd64.instance-type: {{ (index $config "instance-type") | default "c6a.4xlarge" | quote }}
+  dynamic.linux-d160-c4xlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-c4xlarge-d160" $environment) | quote }}
+  dynamic.linux-d160-c4xlarge-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-d160-c4xlarge-amd64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-d160-c4xlarge-amd64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-d160-c4xlarge-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-d160-c4xlarge-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-d160-c4xlarge-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d160-c4xlarge-amd64.disk: "160"
+  dynamic.linux-d160-c4xlarge-amd64.allocation-timeout: "1200"
+  {{ end }}
+
+  {{- if hasKey .Values.dynamicConfigs "linux-d320-c4xlarge-arm64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-d320-c4xlarge-arm64" | default (dict) }}
+  dynamic.linux-d320-c4xlarge-arm64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-d320-c4xlarge-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-d320-c4xlarge-arm64.ami: {{ default (index $arm "ami") $config.ami | quote }}
+  dynamic.linux-d320-c4xlarge-arm64.instance-type: {{ (index $config "instance-type") | default "c6g.4xlarge" | quote }}
+  dynamic.linux-d320-c4xlarge-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64-c4xlarge-d320" $environment) | quote }}
+  dynamic.linux-d320-c4xlarge-arm64.key-name: {{ default (index $arm "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-d320-c4xlarge-arm64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-d320-c4xlarge-arm64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-d320-c4xlarge-arm64.security-group-id: {{ default (index $arm "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-d320-c4xlarge-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-d320-c4xlarge-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d320-c4xlarge-arm64.disk: "320"
+  dynamic.linux-d320-c4xlarge-arm64.allocation-timeout: "1200"
+  {{ end }}
+
+  {{- if hasKey .Values.dynamicConfigs "linux-d320-c4xlarge-amd64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-d320-c4xlarge-amd64" | default (dict) }}
+  dynamic.linux-d320-c4xlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-d320-c4xlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-d320-c4xlarge-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-d320-c4xlarge-amd64.instance-type: {{ (index $config "instance-type") | default "c6a.4xlarge" | quote }}
+  dynamic.linux-d320-c4xlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-c4xlarge-d320" $environment) | quote }}
+  dynamic.linux-d320-c4xlarge-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-d320-c4xlarge-amd64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-d320-c4xlarge-amd64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-d320-c4xlarge-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-d320-c4xlarge-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-d320-c4xlarge-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d320-c4xlarge-amd64.disk: "320"
+  dynamic.linux-d320-c4xlarge-amd64.allocation-timeout: "1200"
+  {{ end }}
+
+  {{- if hasKey .Values.dynamicConfigs "linux-c8xlarge-arm64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-c8xlarge-arm64" | default (dict) }}
+  dynamic.linux-c8xlarge-arm64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-c8xlarge-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-c8xlarge-arm64.ami: {{ default (index $arm "ami") $config.ami | quote }}
+  dynamic.linux-c8xlarge-arm64.instance-type: {{ (index $config "instance-type") | default "c6g.8xlarge" | quote }}
+  dynamic.linux-c8xlarge-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64-c8xlarge" $environment) | quote }}
+  dynamic.linux-c8xlarge-arm64.key-name: {{ default (index $arm "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-c8xlarge-arm64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-c8xlarge-arm64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-c8xlarge-arm64.security-group-id: {{ default (index $arm "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-c8xlarge-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-c8xlarge-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-c8xlarge-arm64.allocation-timeout: "1200"
+  {{ end }}
+
+  {{- if hasKey .Values.dynamicConfigs "linux-c8xlarge-amd64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-c8xlarge-amd64" | default (dict) }}
+  dynamic.linux-c8xlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-c8xlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-c8xlarge-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-c8xlarge-amd64.instance-type:  {{ (index $config "instance-type") | default "c6a.8xlarge" | quote }}
+  dynamic.linux-c8xlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-c8xlarge" $environment) | quote }}
+  dynamic.linux-c8xlarge-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-c8xlarge-amd64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-c8xlarge-amd64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-c8xlarge-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-c8xlarge-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-c8xlarge-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-c8xlarge-amd64.allocation-timeout: "1200"
+  {{ end }}
+
+  {{- if hasKey .Values.dynamicConfigs "linux-d160-c8xlarge-arm64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-d160-c8xlarge-arm64" | default (dict) }}
+  dynamic.linux-d160-c8xlarge-arm64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-d160-c8xlarge-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-d160-c8xlarge-arm64.ami: {{ default (index $arm "ami") $config.ami | quote }}
+  dynamic.linux-d160-c8xlarge-arm64.instance-type: {{ (index $config "instance-type") | default "c6g.8xlarge" | quote }}
+  dynamic.linux-d160-c8xlarge-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64-c8xlarge-d160" $environment) | quote }}
+  dynamic.linux-d160-c8xlarge-arm64.key-name: {{ default (index $arm "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-d160-c8xlarge-arm64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-d160-c8xlarge-arm64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-d160-c8xlarge-arm64.security-group-id: {{ default (index $arm "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-d160-c8xlarge-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-d160-c8xlarge-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d160-c8xlarge-arm64.disk: "160"
+  dynamic.linux-d160-c8xlarge-arm64.allocation-timeout: "1200"
+  {{ end }}
+
+  {{- if hasKey .Values.dynamicConfigs "linux-d160-c8xlarge-amd64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-d160-c8xlarge-amd64" | default (dict) }}
+  dynamic.linux-d160-c8xlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-d160-c8xlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-d160-c8xlarge-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-d160-c8xlarge-amd64.instance-type: {{ (index $config "instance-type") | default "c6a.8xlarge" | quote }}
+  dynamic.linux-d160-c8xlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-c8xlarge-d160" $environment) | quote }}
+  dynamic.linux-d160-c8xlarge-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-d160-c8xlarge-amd64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-d160-c8xlarge-amd64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-d160-c8xlarge-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-d160-c8xlarge-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-d160-c8xlarge-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d160-c8xlarge-amd64.disk: "160"
+  dynamic.linux-d160-c8xlarge-amd64.allocation-timeout: "1200"
+  {{ end }}
+
+  # GPU Instances
+  {{- if hasKey .Values.dynamicConfigs "linux-g6xlarge-amd64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-g6xlarge-amd64" | default (dict) }}
+  dynamic.linux-g6xlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-g6xlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-g6xlarge-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-g6xlarge-amd64.instance-type: {{ (index $config "instance-type") | default "g6.xlarge" | quote }}
+  dynamic.linux-g6xlarge-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-g6xlarge-amd64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-g6xlarge-amd64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-g6xlarge-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-g6xlarge-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-g6xlarge-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-g6xlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-g6xlarge" $environment) | quote }}
+  dynamic.linux-g6xlarge-amd64.allocation-timeout: "1200"
+  {{- if (index $config "user-data") }}
+  dynamic.linux-g6xlarge-amd64.user-data: |
+  {{- $lines := splitList "\n" (index $config "user-data") }}
+  {{- range $line := $lines }}
+    {{ $line }}
+  {{- end }}
+  {{- end }}
+  {{ end }}
+
+
+  {{- if hasKey .Values.dynamicConfigs "linux-g64xlarge-amd64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-g64xlarge-amd64" | default (dict) }}
+  dynamic.linux-g64xlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-g64xlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-g64xlarge-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-g64xlarge-amd64.instance-type: {{ (index $config "instance-type") | default "g6.4xlarge" | quote }}
+  dynamic.linux-g64xlarge-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-g64xlarge-amd64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-g64xlarge-amd64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-g64xlarge-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-g64xlarge-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-g64xlarge-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-g64xlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-g64xlarge" $environment) | quote }}
+  dynamic.linux-g64xlarge-amd64.allocation-timeout: "1200"
+  {{- if (index $config "user-data") }}
+  dynamic.linux-g64xlarge-amd64.user-data: |
+  {{- $lines := splitList "\n" (index $config "user-data") }}
+  {{- range $line := $lines }}
+    {{ $line }}
+  {{ end }}
+  {{- end }}
+  {{ end }}
+
+
+
+  # Root access
+  {{- if hasKey .Values.dynamicConfigs "linux-root-arm64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-root-arm64" | default (dict) }}
+  dynamic.linux-root-arm64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-root-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-root-arm64.ami: {{ default (index $arm "ami") $config.ami | quote }}
+  dynamic.linux-root-arm64.instance-type: {{ (index $config "instance-type") | default "m6g.large" | quote }}
+  dynamic.linux-root-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64-root" $environment) | quote }}
+  dynamic.linux-root-arm64.key-name: {{ default (index $arm "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-root-arm64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-root-arm64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-root-arm64.security-group-id: {{ default (index $arm "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-root-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-root-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-root-arm64.sudo-commands: {{ (index $config "sudo-commands") | default "/usr/bin/podman" | quote }}
+  dynamic.linux-root-arm64.disk: {{ index $config "disk" | default "200" | quote }}
+  dynamic.linux-root-arm64.allocation-timeout: "1200"
+  {{- if (index $config "user-data") }}
+  dynamic.linux-root-arm64.user-data: |
+  {{- $lines := splitList "\n" (index $config "user-data") }}
+  {{- range $line := $lines }}
+    {{ $line }}
+  {{ end }}
+  {{- end }}
+  {{ end }}
+
+  {{- if hasKey .Values.dynamicConfigs "linux-root-amd64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-root-amd64" | default (dict) }}
+  dynamic.linux-root-amd64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-root-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-root-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-root-amd64.instance-type: {{ (index $config "instance-type") | default "m5.2xlarge" | quote }}
+  dynamic.linux-root-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-root" $environment) | quote }}
+  dynamic.linux-root-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-root-amd64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-root-amd64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-root-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-root-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-root-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-root-amd64.sudo-commands: {{ (index $config "sudo-commands") | default "/usr/bin/podman" | quote }}
+  dynamic.linux-root-amd64.disk: {{index $config "disk" | default "200" | quote }}
+  dynamic.linux-root-amd64.allocation-timeout: "1200"
+  {{- if (index $config "user-data") }}
+  dynamic.linux-root-amd64.user-data: |
+  {{- $lines := splitList "\n" (index $config "user-data") }}
+  {{- range $line := $lines }}
+    {{ $line }}
+  {{- end }}
+  {{- end }}
+  {{ end }}
+
+  # Fast platforms for production
+  {{- if hasKey .Values.dynamicConfigs "linux-fast-amd64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-fast-amd64" | default (dict) }}
+  dynamic.linux-fast-amd64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-fast-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-fast-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-fast-amd64.instance-type: {{ (index $config "instance-type") | default "c7a.8xlarge" | quote }}
+  dynamic.linux-fast-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-fast" $environment) | quote }}
+  dynamic.linux-fast-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-fast-amd64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-fast-amd64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-fast-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-fast-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-fast-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-fast-amd64.disk: {{ index $config "disk" | default "200" | quote }}
+  dynamic.linux-fast-amd64.allocation-timeout: "1200"
+  {{ end }}
+
+  {{- if hasKey .Values.dynamicConfigs "linux-extra-fast-amd64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-extra-fast-amd64" | default (dict) }}
+  dynamic.linux-extra-fast-amd64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-extra-fast-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-extra-fast-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-extra-fast-amd64.instance-type: {{ (index $config "instance-type") | default "c7a.12xlarge" | quote }}
+  dynamic.linux-extra-fast-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-extra-fast" $environment) | quote }}
+  dynamic.linux-extra-fast-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-extra-fast-amd64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-extra-fast-amd64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-extra-fast-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-extra-fast-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-extra-fast-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-extra-fast-amd64.disk: {{ index $config "disk" | default "200" | quote }}
+  dynamic.linux-extra-fast-amd64.allocation-timeout: "1200"
+  {{ end }}
+
+  # Static hosts configuration
+  {{- range $host, $config := .Values.staticHosts }}
+  {{- range $key, $value := $config }}
+  host.{{ $host }}.{{ $key }}: {{ $value | quote }}
+  {{- end }}
+  {{ end }}
