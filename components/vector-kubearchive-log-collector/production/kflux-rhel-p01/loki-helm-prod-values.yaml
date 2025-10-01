@@ -1,4 +1,7 @@
 ---
+global:
+  extraArgs:
+    - "-log.level=debug"
 gateway:
   service:
     type: LoadBalancer
@@ -48,7 +51,7 @@ loki:
       kubearchive:
         log_push_request: true
         log_push_request_streams: true
-        log_stream_creation: true
+        log_stream_creation: false
         log_duplicate_stream_info: true
   ingester:
     chunk_target_size: 8388608        # 8MB 
