@@ -1,4 +1,8 @@
 ---
+global:
+  extraArgs:
+    - "-log.level=debug"
+
 gateway:
   service:
     type: LoadBalancer
@@ -43,6 +47,13 @@ loki:
       max_entries_limit_per_query: 100000
       increment_duplicate_timestamp: true
       allow_structured_metadata: true
+  runtimeConfig:
+    configs:
+      kubearchive:
+        log_push_request: true
+        log_push_request_streams: true
+        log_stream_creation: false
+        log_duplicate_stream_info: true
   ingester:
     chunk_target_size: 8388608        # 8MB 
     chunk_idle_period: 5m
@@ -50,7 +61,17 @@ loki:
     chunk_encoding: snappy            # Compress data (reduces S3 transfer size)
     chunk_retain_period: 1h           # Keep chunks in memory after flush
     flush_op_timeout: 10m             # Add timeout for S3 operations
-
+  server:
+    grpc_server_max_recv_msg_size: 15728640  # 15MB
+    grpc_server_max_send_msg_size: 15728640
+  ingester_client:
+    grpc_client_config:
+      max_recv_msg_size: 15728640  # 15MB
+      max_send_msg_size: 15728640  # 15MB
+  query_scheduler:
+    grpc_client_config:
+      max_recv_msg_size: 15728640  # 15MB
+      max_send_msg_size: 15728640  # 15MB
   # Tuning for high-load queries
   querier:
     max_concurrent: 8
