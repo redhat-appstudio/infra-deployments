@@ -9,11 +9,17 @@ images:
   - name: quay.io/konflux-ci/mintmaker
     newName: quay.io/konflux-ci/mintmaker
     newTag: 3382a7be73b0fce18d4d1a4726fdb20e64de6cc5
+  - name: quay.io/konflux-ci/mintmaker-renovate-image
+    newName: quay.io/konflux-ci/mintmaker-renovate-image
+    newTag: latest
 
 namespace: mintmaker
 
 commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+
+configurations:
+- kustomizeconfig.yaml
 
 components:
   - ../components/rh-certs
