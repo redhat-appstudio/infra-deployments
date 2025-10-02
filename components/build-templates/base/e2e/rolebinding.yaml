@@ -95,12 +95,12 @@ roleRef:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: application-manager-konflux-integration-runner
+  name: integration-runner-resources-konflux-integration-runner
   namespace: build-templates-e2e
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: application-manager
+  name: integration-runner-resources
 subjects:
 - kind: ServiceAccount
   name: konflux-integration-runner
