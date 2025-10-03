@@ -24,17 +24,7 @@ generate_host_config() {
     local input_dir="${input_file%/*}"
     local host_values_file="$input_dir/host-values.yaml"
     
-    # ========================================================================
-    # BACKWARD COMPATIBILITY BLOCK - Remove this section when all host-config.yaml files are eliminated
-    # ========================================================================
-    if [[ -f "$input_file" ]]; then
-        echo "Using existing host-config.yaml: $input_file"
-        return 1  # Return 1 to indicate file was NOT generated
-    fi
-    # ========================================================================
-    # END BACKWARD COMPATIBILITY BLOCK
-    # ========================================================================
-    
+
     # Check if host-values.yaml exists for helm template generation
     if [[ ! -f "$host_values_file" ]]; then
         echo "ERROR: Neither $input_file nor $host_values_file exists"
