@@ -1,0 +1,41 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: repository-url-validator
+spec:
+  failurePolicy: Fail
+  paramKind:
+    apiVersion: v1
+    kind: ConfigMap
+  matchConstraints:
+    resourceRules:
+    - apiGroups: ["pipelinesascode.tekton.dev"]
+      apiVersions: ["v1alpha1"]
+      operations: ["CREATE", "UPDATE"]
+      resources: ["repositories"]
+  variables:
+    # Parse the JSON config from the ConfigMap
+    - name: allowedPrefixes
+      expression: |
+        has(params.data) && has(params.data['config.json']) ? 
+        json.decode(params.data['config.json']) : []
+    # Check if any prefix is empty (allow-all case)
+    - name: allowAll
+      expression: |
+        size(variables.allowedPrefixes) == 1 &&
+        variables.allowedPrefixes[0] == ""
+  validations:
+    - expression: |
+        variables.allowAll || 
+        variables.allowedPrefixes.exists(prefix, 
+          prefix != "" && object.spec.url.startsWith(prefix)
+        )
+      messageExpression: |
+        'Repository URL "' + object.spec.url + 
+        '" is not allowed on this cluster. Contact support.' 
+      reason: Forbidden
+  auditAnnotations:
+    - key: "repository-url-validation"
+      valueExpression: |
+        'Repository URL: ' + object.spec.url + 
+        ', Allowed prefixes: ' + string(variables.allowedPrefixes)
