@@ -1,0 +1,105 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kueue-crd-checker
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kueue-crd-checker
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+rules:
+- apiGroups: ["apiextensions.k8s.io"]
+  resources: ["customresourcedefinitions"]
+  verbs: ["get"]
+  resourceNames: ["localqueues.kueue.x-k8s.io"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kueue-crd-checker
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kueue-crd-checker
+subjects:
+- kind: ServiceAccount
+  name: kueue-crd-checker
+  namespace: will-be-replaced-by-kustomization
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kueue-crd-check
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: crd-check
+        image: quay.io/openshift/origin-cli:4.17
+        securityContext:
+          runAsNonRoot: true
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        command:
+        - /bin/bash
+        - -c
+        - |
+          set -e
+
+          echo "Starting CRD check..."
+
+          # Configuration
+          TIMEOUT=300  # 5 minutes timeout
+          INTERVAL=10  # Check every 10 seconds
+          START_TIME=$(date +%s)
+
+          # Define CRDs to check
+          CRDS=(
+            "localqueues.kueue.x-k8s.io"
+          )
+
+          echo "Checking if required CRDs exist..."
+
+          # Check all CRDs with global timeout
+          while ! oc get crd "${CRDS[@]}"; do
+            CURRENT_TIME=$(date +%s)
+            ELAPSED=$((CURRENT_TIME - START_TIME))
+
+            if [ $ELAPSED -gt $TIMEOUT ]; then
+              echo "ERROR: Global timeout reached (${TIMEOUT}s). Required CRDs not found."
+              echo "Missing CRDs: ${CRDS[*]}"
+              exit 1
+            fi
+
+            echo "Required CRDs not found yet. Waiting ${INTERVAL}s... (${ELAPSED}s/${TIMEOUT}s elapsed)"
+            sleep $INTERVAL
+          done
+
+          echo "SUCCESS: All required CRDs found!"
+          echo "Pre-sync hook completed successfully."
+          exit 0
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "100m"
+          limits:
+            memory: "128Mi"
+            cpu: "200m"
+      serviceAccountName: kueue-crd-checker
