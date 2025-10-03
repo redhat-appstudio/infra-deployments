@@ -1,0 +1,21 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: validate-cost-management-labels
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["namespaces"]
+  variables:
+    - name: costCenterLabel
+      expression: "'cost-center' in object.metadata.labels ? object.metadata.labels['cost-center'] : ''"
+  validations:
+    - expression: "variables.costCenterLabel != ''"
+      message: 'all tenant namespaces must have the cost-center label'
+    - expression: "variables.costCenterLabel.matches('^[0-9]+$')"
+      message: 'cost-center label can only contain numbers.'
