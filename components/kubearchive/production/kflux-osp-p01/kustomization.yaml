@@ -4,11 +4,47 @@ kind: Kustomization
 resources:
   - ../../base
   - ../base
+  - external-secret.yaml
   - https://github.com/kubearchive/kubearchive/releases/download/v1.6.0/kubearchive.yaml?timeout=90
 
 namespace: product-kubearchive
 
+# Generate kubearchive-logging ConfigMap with hash for automatic restarts
+# Due to quoting limitations of generators we need to introduce the values with the |
+# See https://github.com/kubernetes-sigs/kustomize/issues/4845#issuecomment-1671570428
+configMapGenerator:
+    - name: kubearchive-logging
+      literals:
+          - |
+              POD_ID=cel:metadata.uid
+          - |
+              NAMESPACE=cel:metadata.namespace
+          - |
+              START=cel:status.?startTime == optional.none() ? int(now()-duration('1h'))*1000000000: status.startTime
+          - |
+              END=cel:status.?startTime == optional.none() ? int(now()+duration('1h'))*1000000000: int(timestamp(status.startTime)+duration('6h'))*1000000000
+          - |
+              LOG_URL=http://loki-gateway.product-kubearchive-logging.svc.cluster.local:80/loki/api/v1/query_range?query=%7Bstream%3D%22{NAMESPACE}%22%7D%20%7C%20pod_id%20%3D%20%60{POD_ID}%60%20%7C%20container%20%3D%20%60{CONTAINER_NAME}%60&start={START}&end={END}&direction=forward
+          - |
+              LOG_URL_JSONPATH=$.data.result[*].values[*][1]
+
 patches:
+  - patch: |-
+      $patch: delete
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: kubearchive-logging
+        namespace: kubearchive
+
+  - patch: |-
+      $patch: delete
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: kubearchive-logging
+        namespace: kubearchive
+
   - patch: |-
       apiVersion: batch/v1
       kind: Job
