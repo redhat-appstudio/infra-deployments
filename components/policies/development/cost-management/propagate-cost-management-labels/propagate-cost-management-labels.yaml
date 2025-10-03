@@ -10,7 +10,7 @@ metadata:
     policies.kyverno.io/subject: Pod
     policies.kyverno.io/description: >-
       Propagates the `cost-center` label from non-managed tenant namespaces to pods,
-      and sets the `insights_cost_management_optimizations` label to `true` on those pods.
+      and sets the `cost_management_optimizations` label to `true` on those pods.
 spec:
   webhookConfiguration:
     failurePolicy: Ignore
@@ -53,4 +53,4 @@ spec:
         metadata:
           labels:
             cost-center: "{{ costcenterLabel }}"
-            insights_cost_management_optimizations: "true"
+            cost_management_optimizations: "true"
