@@ -5,5 +5,13 @@ namespace: multi-platform-controller
 
 resources:
 - ../base
-- host-config.yaml
 - external-secrets.yaml
+
+helmGlobals:
+  chartHome: ../../base
+
+helmCharts:
+- name: host-config-chart
+  releaseName: host-config
+  namespace: multi-platform-controller
+  valuesFile: host-values.yaml
