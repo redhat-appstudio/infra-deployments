@@ -864,6 +864,12 @@ data:
   dynamic.linux-root-arm64.sudo-commands: {{ (index $config "sudo-commands") | default "/usr/bin/podman" | quote }}
   dynamic.linux-root-arm64.disk: {{ index $config "disk" | default "200" | quote }}
   dynamic.linux-root-arm64.allocation-timeout: "1200"
+  {{- if (index $config "iops") }}
+  dynamic.linux-root-arm64.iops: {{ index $config "iops" | quote }}
+  {{ end }}
+  {{- if (index $config "throughput") }}
+  dynamic.linux-root-arm64.throughput: {{ index $config "throughput" | quote }}
+  {{ end }}
   {{- if (index $config "user-data") }}
   dynamic.linux-root-arm64.user-data: |
   {{- $lines := splitList "\n" (index $config "user-data") }}
