@@ -150,19 +150,17 @@ spec:
           readOnlyRootFilesystem: true
           runAsNonRoot: true
           runAsUser: 1001
-      - image: otel/opentelemetry-collector-contrib:0.85.0
+      - image: quay.io/factory2/otel-collector-sp/otel-binary-image:latest
         name: otel-collector
-        command:
-        - "/otelcol-contrib"
-        - "--config=/conf/otel-collector-conf.yaml"
+        command: ["/usr/local/bin/otel-collector-sp", "--config", "/conf/otel-collector-config.yaml"]
         ports:
         - containerPort: 8889
           name: otel-metrics
         volumeMounts:
         - name: nginx-logs
           mountPath: /var/log/nginx
-        - mountPath: /conf 
-          subPath: otel-collector-conf.yaml
+        - mountPath: /conf/otel-collector-config.yaml
+          subPath: otel-collector-config.yaml
           name: otel-collector-config
           readOnly: true
         readinessProbe:
@@ -250,6 +248,13 @@ spec:
             secretName: proxy
         - name: static-content
           emptyDir: {}
+        - configMap:
+            defaultMode: 420
+            name: otel-collector-config
+            items:
+              - key: otel-collector-conf.yaml
+                path: otel-collector-config.yaml
+          name: otel-collector-config
 ---
 apiVersion: v1
 kind: Service
