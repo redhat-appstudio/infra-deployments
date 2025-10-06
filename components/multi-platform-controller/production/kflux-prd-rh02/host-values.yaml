@@ -74,41 +74,19 @@ dynamicConfigs:
 
       #!/bin/bash -ex
 
-      if lsblk -no FSTYPE /dev/nvme1n1 | grep -qE '\S'; then
-       echo "File system exists on the disk."
-      else
-       echo "No file system found on the disk /dev/nvme1n1"
-       mkfs -t xfs /dev/nvme1n1
-      fi
-
+      # Format and mount NVMe disk
+      mkfs -t xfs /dev/nvme1n1
       mount /dev/nvme1n1 /home
 
-      if [ -d "/home/var-lib-containers" ]; then
-       echo "Directory '/home/var-lib-containers' exist"
-      else
-       echo "Directory '/home/var-lib-containers' doesn't exist"
-       mkdir -p /home/var-lib-containers /var/lib/containers
-      fi
+      # Create required directories
+      mkdir -p /home/var-lib-containers /var/lib/containers /home/var-tmp /var/tmp /home/ec2-user/.ssh
 
+      # Setup bind mounts
       mount --bind /home/var-lib-containers /var/lib/containers
-
-      if [ -d "/home/var-tmp" ]; then
-       echo "Directory '/home/var-tmp' exist"
-      else
-       echo "Directory '/home/var-tmp' doesn't exist"
-       mkdir -p /home/var-tmp /var/tmp
-      fi
-      
       mount --bind /home/var-tmp /var/tmp
-      
-      if [ -d "/home/ec2-user" ]; then
-      echo "ec2-user home exists"
-      else
-      echo "ec2-user home doesn't exist"
-      mkdir -p /home/ec2-user/.ssh
-      chown -R ec2-user /home/ec2-user
-      fi
 
+      # Configure ec2-user SSH access
+      chown -R ec2-user /home/ec2-user
       sed -n 's,.*\(ssh-.*\s\),\1,p' /root/.ssh/authorized_keys > /home/ec2-user/.ssh/authorized_keys
       chown ec2-user /home/ec2-user/.ssh/authorized_keys
       chmod 600 /home/ec2-user/.ssh/authorized_keys
@@ -159,51 +137,28 @@ dynamicConfigs:
 
       #!/bin/bash -ex
 
-      if lsblk -no FSTYPE /dev/nvme1n1 | grep -qE '\S'; then
-        echo "File system exists on the disk."
-      else
-        echo "No file system found on the disk /dev/nvme1n1"
-        mkfs -t xfs /dev/nvme1n1
-      fi
-
+      # Format and mount NVMe disk
+      mkfs -t xfs /dev/nvme1n1
       mount /dev/nvme1n1 /home
 
-      if [ -d "/home/var-lib-containers" ]; then
-        echo "Directory '/home/var-lib-containers' exist"
-      else
-        echo "Directory '/home/var-lib-containers' doesn't exist"
-        mkdir -p /home/var-lib-containers /var/lib/containers
-      fi
+      # Create required directories
+      mkdir -p /home/var-lib-containers /var/lib/containers /home/var-tmp /var/tmp /home/ec2-user/.ssh /etc/cdi
 
+      # Setup bind mounts
       mount --bind /home/var-lib-containers /var/lib/containers
-
-      if [ -d "/home/var-tmp" ]; then
-        echo "Directory '/home/var-tmp' exist"
-      else
-        echo "Directory '/home/var-tmp' doesn't exist"
-        mkdir -p /home/var-tmp /var/tmp
-      fi
-
       mount --bind /home/var-tmp /var/tmp
       chmod a+rw /var/tmp
 
-      if [ -d "/home/ec2-user" ]; then
-        echo "ec2-user home exists"
-      else
-        echo "ec2-user home doesn't exist"
-        mkdir -p /home/ec2-user/.ssh
-        chown -R ec2-user /home/ec2-user
-      fi
-
+      # Configure ec2-user SSH access
+      chown -R ec2-user /home/ec2-user
       sed -n 's,.*\(ssh-.*\s\),\1,p' /root/.ssh/authorized_keys > /home/ec2-user/.ssh/authorized_keys
       chown ec2-user /home/ec2-user/.ssh/authorized_keys
       chmod 600 /home/ec2-user/.ssh/authorized_keys
       chmod 700 /home/ec2-user/.ssh
       restorecon -r /home/ec2-user
 
-      mkdir -p /etc/cdi
+      # GPU setup
       chmod a+rwx /etc/cdi
-      su - ec2-user
       nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml
       --//--
 
@@ -239,41 +194,19 @@ dynamicConfigs:
       
       #!/bin/bash -ex
       
-      if lsblk -no FSTYPE /dev/nvme1n1 | grep -qE '\S'; then
-       echo "File system exists on the disk."
-      else
-       echo "No file system found on the disk /dev/nvme1n1"
-       mkfs -t xfs /dev/nvme1n1
-      fi
-      
+      # Format and mount NVMe disk
+      mkfs -t xfs /dev/nvme1n1
       mount /dev/nvme1n1 /home
       
-      if [ -d "/home/var-lib-containers" ]; then
-       echo "Directory '/home/var-lib-containers' exist"
-      else
-       echo "Directory '/home/var-lib-containers' doesn't exist"
-       mkdir -p /home/var-lib-containers /var/lib/containers
-      fi
+      # Create required directories
+      mkdir -p /home/var-lib-containers /var/lib/containers /home/var-tmp /var/tmp /home/ec2-user/.ssh
       
+      # Setup bind mounts
       mount --bind /home/var-lib-containers /var/lib/containers
-      
-      if [ -d "/home/var-tmp" ]; then
-       echo "Directory '/home/var-tmp' exist"
-      else
-       echo "Directory '/home/var-tmp' doesn't exist"
-       mkdir -p /home/var-tmp /var/tmp
-      fi
-      
       mount --bind /home/var-tmp /var/tmp
       
-      if [ -d "/home/ec2-user" ]; then
-      echo "ec2-user home exists"
-      else
-      echo "ec2-user home doesn't exist"
-      mkdir -p /home/ec2-user/.ssh
+      # Configure ec2-user SSH access
       chown -R ec2-user /home/ec2-user
-      fi
-      
       sed -n 's,.*\(ssh-.*\s\),\1,p' /root/.ssh/authorized_keys > /home/ec2-user/.ssh/authorized_keys
       chown ec2-user /home/ec2-user/.ssh/authorized_keys
       chmod 600 /home/ec2-user/.ssh/authorized_keys
