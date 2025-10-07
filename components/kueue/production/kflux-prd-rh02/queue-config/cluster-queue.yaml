@@ -84,6 +84,8 @@ spec:
         nominalQuota: '250'
   - coveredResources:
     - linux-d160-m8xlarge-arm64
+    - linux-d320-m8xlarge-amd64
+    - linux-d320-m8xlarge-arm64
     - linux-extra-fast-amd64
     - linux-fast-amd64
     - linux-g64xlarge-amd64
@@ -97,12 +99,14 @@ spec:
     - linux-mlarge-arm64
     - linux-mxlarge-amd64
     - linux-mxlarge-arm64
-    - linux-ppc64le
-    - linux-root-amd64
     flavors:
     - name: platform-group-2
       resources:
       - name: linux-d160-m8xlarge-arm64
+        nominalQuota: '250'
+      - name: linux-d320-m8xlarge-amd64
+        nominalQuota: '250'
+      - name: linux-d320-m8xlarge-arm64
         nominalQuota: '250'
       - name: linux-extra-fast-amd64
         nominalQuota: '250'
@@ -130,11 +134,9 @@ spec:
         nominalQuota: '250'
       - name: linux-mxlarge-arm64
         nominalQuota: '250'
-      - name: linux-ppc64le
-        nominalQuota: '64'
-      - name: linux-root-amd64
-        nominalQuota: '250'
   - coveredResources:
+    - linux-ppc64le
+    - linux-root-amd64
     - linux-root-arm64
     - linux-s390x
     - linux-x86-64
@@ -143,6 +145,10 @@ spec:
     flavors:
     - name: platform-group-3
       resources:
+      - name: linux-ppc64le
+        nominalQuota: '64'
+      - name: linux-root-amd64
+        nominalQuota: '250'
       - name: linux-root-arm64
         nominalQuota: '250'
       - name: linux-s390x
