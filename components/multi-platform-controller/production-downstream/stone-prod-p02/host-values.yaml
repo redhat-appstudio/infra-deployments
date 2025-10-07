@@ -120,8 +120,8 @@ dynamicConfigs:
 
   linux-g4xlarge-amd64: {}
 
-  linux-g6xlarge-amd64:
-    ami: "ami-0ad6c6b0ac6c36199"
+  linux-g64xlarge-amd64:
+    ami: "ami-0133ba5e6e6d57a02"
     user-data: |
       Content-Type: multipart/mixed; boundary="//"
       MIME-Version: 1.0
@@ -149,7 +149,7 @@ dynamicConfigs:
       mount /dev/nvme1n1 /home
 
       # Create required directories
-      mkdir -p /home/var-lib-containers /var/lib/containers /home/var-tmp /var/tmp /home/ec2-user/.ssh /etc/cdi
+      mkdir -p /home/var-lib-containers /var/lib/containers /home/var-tmp /var/tmp /home/ec2-user/.ssh
 
       # Setup bind mounts
       mount --bind /home/var-lib-containers /var/lib/containers
@@ -165,8 +165,11 @@ dynamicConfigs:
       restorecon -r /home/ec2-user
 
       # GPU setup
-      chmod a+rwx /etc/cdi
+      mkdir -p /etc/cdi /var/run/cdi
+      chmod a+rwx /etc/cdi /var/run/cdi
+      setsebool container_use_devices 1 2>/dev/null || true
       nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml
+      chmod a+rw /etc/cdi/nvidia.yaml
       --//--
 
   linux-root-arm64:
