@@ -6,13 +6,21 @@ namespace: multi-platform-controller
 resources:
 - ../../base/common
 - ../../base/rbac
-- host-config.yaml
 - external-secrets.yaml
 - https://github.com/konflux-ci/multi-platform-controller/deploy/operator?ref=207461e3d7b3818e523284dac86d9e8758173bde
 - https://github.com/konflux-ci/multi-platform-controller/deploy/otp?ref=207461e3d7b3818e523284dac86d9e8758173bde
 
 components:
   - ../../k-components/manager-resources
+
+helmGlobals:
+  chartHome: ../../base
+
+helmCharts:
+- name: host-config-chart
+  releaseName: host-config
+  namespace: multi-platform-controller
+  valuesFile: host-values.yaml
 
 images:
 - name: multi-platform-controller
