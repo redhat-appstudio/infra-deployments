@@ -17,9 +17,8 @@ spec:
     # Parse the JSON config from the ConfigMap
     - name: allowedPrefixes
       expression: |
-        'data' in params && 'config.json' in params.data ?
-        json.decode(params.data['config.json']) :
-        []
+        'data' in params && 'config' in params.data ?
+        params.data['config'].split('\n') : []
     # Check if any prefix is empty (allow-all case)
     - name: allowAll
       expression: |
