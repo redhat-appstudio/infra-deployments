@@ -11,7 +11,7 @@ import random
 import string
 import sys
 import urllib.parse
-import webbrowser
+
 
 import requests
 
