@@ -186,6 +186,9 @@ spec:
         ports:
         - containerPort: 8889
           name: otel-metrics
+        - containerPort: 13133
+          name: otel-health
+          protocol: TCP
         volumeMounts:
         - name: logs
           mountPath: /var/log/nginx
@@ -281,6 +284,10 @@ spec:
       protocol: TCP
       port: 8889
       targetPort: 8889
+    - name: otel-health
+      protocol: TCP
+      port: 13133
+      targetPort: 13133
   selector:
     app: proxy
 ---
