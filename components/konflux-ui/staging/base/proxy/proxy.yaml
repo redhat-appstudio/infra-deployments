@@ -150,6 +150,42 @@ spec:
           readOnlyRootFilesystem: true
           runAsNonRoot: true
           runAsUser: 1001
+      - image: quay.io/factory2/otel-collector-sp/otel-binary-image:0.113.0
+        name: otel-collector
+        command: ["/usr/local/bin/otel-collector-sp", "--config", "/conf/otel-collector-config.yaml"]
+        ports:
+        - containerPort: 8889
+          name: otel-metrics
+        volumeMounts:
+        - name: logs
+          mountPath: /var/log/nginx
+        - mountPath: /conf/otel-collector-config.yaml
+          subPath: otel-collector-config.yaml
+          name: otel-collector-config
+          readOnly: true
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8889
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8889
+          initialDelaySeconds: 30
+          periodSeconds: 60
+        securityContext:
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 1001
+        resources:
+          limits:
+            cpu: 150m
+            memory: 256Mi
+          requests:
+            cpu: 50m
+            memory: 128Mi
       - image: quay.io/oauth2-proxy/oauth2-proxy@sha256:3da33b9670c67bd782277f99acadf7026f75b9507bfba2088eb2d497266ef7fc
         name: oauth2-proxy
         env:
@@ -212,6 +248,13 @@ spec:
             secretName: proxy
         - name: static-content
           emptyDir: {}
+        - configMap:
+            defaultMode: 420
+            name: otel-collector-config
+            items:
+              - key: otel-collector-config.yaml
+                path: otel-collector-config.yaml
+          name: otel-collector-config
 ---
 apiVersion: v1
 kind: Service
@@ -234,6 +277,10 @@ spec:
       port: 9443
       protocol: TCP
       targetPort: web-tls
+    - name: otel-metrics
+      protocol: TCP
+      port: 8889
+      targetPort: 8889
   selector:
     app: proxy
 ---
@@ -300,3 +347,15 @@ subjects:
 - kind: ServiceAccount
   name: proxy
   namespace: konflux-ui
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: nginx-proxy-monitor
+spec:
+  selector:
+    matchLabels:
+      app: nginx-proxy
+  endpoints:
+  - port: otel-metrics
+    interval: 15s
