@@ -1,0 +1,43 @@
+receivers:
+  filelog/nginx:
+    include:
+      - /var/log/nginx/access.log
+    start_at: beginning
+    max_log_size: 100MiB
+    operators:
+      - type: regex_parser
+        regex: '^(?P<remote_addr>[^ ]*) - (?P<remote_user>[^ ]*) \[(?P<time_local>[^\]]*)\] "(?P<method>[^ ]*) (?P<path>[^ ]*) (?P<protocol>[^"]*)" (?P<status>\d+) (?P<body_bytes_sent>\d+) "(?P<http_referer>[^"]*)" "(?P<http_user_agent>[^"]*)"$'
+processors:
+  transform/status_to_int:
+    log_statements:
+      - context: log
+        statements:
+          - set(attributes["status_int"], Int(attributes["status"]))
+
+exporters:
+  prometheus:
+    endpoint: "0.0.0.0:8889"
+
+connectors:
+  count:
+    logs:
+      nginx_otel_http_request_errors:
+        description: HTTP 4xx and 5xx errors from NGINX
+        conditions:
+          - 'attributes["status_int"] >= 400 and attributes["status_int"] < 600'
+        attributes:
+          - key: method
+            value: attributes["method"]
+          - key: status
+            value: attributes["status"]
+
+service:
+  pipelines:
+    logs:
+      receivers: [filelog/nginx]
+      processors: [transform/status_to_int]
+      exporters: [count]
+    metrics:
+      receivers: [count]
+      processors: []
+      exporters: [prometheus]
