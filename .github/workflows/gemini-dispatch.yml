@@ -4,19 +4,21 @@ on:
   pull_request_review_comment:
     types:
       - 'created'
+      - 'edited'
   pull_request_review:
     types:
       - 'submitted'
+      - 'edited'
   pull_request_target:
     types:
       - 'opened'
-  issues:
-    types:
-      - 'opened'
-      - 'reopened'
-  issue_comment:
-    types:
-      - 'created'
+  # issues:
+  #   types:
+  #     - 'opened'
+  #     - 'reopened'
+  # issue_comment:
+  #   types:
+  #     - 'created'
 
 defaults:
   run:
@@ -96,20 +98,23 @@ jobs:
               core.setOutput('command', 'review');
               const additionalContext = request.replace(/^@gemini-cli \/review/, '').trim();
               core.setOutput('additional_context', additionalContext);
-            } else if (request.startsWith("@gemini-cli /triage")) {
-              core.setOutput('command', 'triage');
+            } else if (eventType === 'pull_request.opened' || eventType == 'pull_request_target.opened') {
+              core.setOutput('command', 'review');
             } else if (request.startsWith("@gemini-cli")) {
               core.setOutput('command', 'invoke');
               const additionalContext = request.replace(/^@gemini-cli/, '').trim();
               core.setOutput('additional_context', additionalContext);
-            } else if (eventType === 'pull_request.opened') {
-              core.setOutput('command', 'review');
-            } else if (['issues.opened', 'issues.reopened'].includes(eventType)) {
-              core.setOutput('command', 'triage');
             } else {
-              core.setOutput('command', 'fallthrough');
+              core.setOutput('command', 'unknown');
             }
-      
+
+            ## Triage support if needed later
+            # else if (request.startsWith("@gemini-cli /triage")) {
+            #   core.setOutput('command', 'triage');
+            # } else if (['issues.opened', 'issues.reopened'].includes(eventType)) {
+            #   core.setOutput('command', 'triage');
+            # }
+
       - name: 'Add Gemini helper comment'
         if: '${{ github.event_name }}.${{ github.event.action }} == "pull_request.opened"'
         env:
@@ -125,7 +130,7 @@ jobs:
 
             - **`@gemini-cli /review`** - Request a comprehensive code review
               - Example: `@gemini-cli /review Please focus on security and performance`
-            
+
             - **`@gemini-cli <your question>`** - Ask me anything about the codebase
               - Example: `@gemini-cli How can I improve this function?`
               - Example: `@gemini-cli What are the best practices for error handling here?`
@@ -141,7 +146,7 @@ jobs:
             Only **OWNER**, **MEMBER**, or **COLLABORATOR** users can trigger my responses. This ensures secure and appropriate usage.
 
             ---
-            
+
             *This message was automatically added to help you get started with the Gemini AI assistant. Feel free to delete this comment if you don't need assistance.*
         run: |-
           gh pr comment "${PR_NUMBER}" \
@@ -153,7 +158,8 @@ jobs:
           GITHUB_TOKEN: '${{ steps.mint_identity_token.outputs.token || secrets.GITHUB_TOKEN || github.token }}'
           ISSUE_NUMBER: '${{ github.event.pull_request.number || github.event.issue.number }}'
           MESSAGE: |-
-            🤖 Hi @${{ github.actor }}, I've received your request, and I'm working on it now! You can track my progress [in the logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for more details.
+            🤖 Hi @${{ github.actor }}, I've received your request, and I'm working on it now! I will be running the job associated with '${{ outputs.command }}'' command.
+            You can track my progress [in the logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for more details.
           REPOSITORY: '${{ github.repository }}'
         run: |-
           gh issue comment "${ISSUE_NUMBER}" \
@@ -188,54 +194,54 @@ jobs:
   #     additional_context: '${{ needs.dispatch.outputs.additional_context }}'
   #   secrets: 'inherit'
 
-  # invoke:
-  #   needs: 'dispatch'
-  #   if: |-
-  #     ${{ needs.dispatch.outputs.command == 'invoke' }}
-  #   uses: './.github/workflows/gemini-invoke.yml'
-  #   permissions:
-  #     contents: 'read'
-  #     id-token: 'write'
-  #     issues: 'write'
-  #     pull-requests: 'write'
-  #   with:
-  #     additional_context: '${{ needs.dispatch.outputs.additional_context }}'
-  #   secrets: 'inherit'
+  invoke:
+    needs: 'dispatch'
+    if: |-
+      ${{ needs.dispatch.outputs.command == 'invoke' }}
+    uses: './.github/workflows/gemini-invoke.yml'
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+      issues: 'write'
+      pull-requests: 'write'
+    with:
+      additional_context: '${{ needs.dispatch.outputs.additional_context }}'
+    secrets: 'inherit'
 
-  # fallthrough:
-  #   needs:
-  #     - 'dispatch'
-  #     - 'review'
-  #     - 'triage'
-  #     - 'invoke'
-  #   if: |-
-  #     ${{ always() && !cancelled() && (failure() || needs.dispatch.outputs.command == 'fallthrough') }}
-  #   runs-on: 'ubuntu-latest'
-  #   permissions:
-  #     contents: 'read'
-  #     issues: 'write'
-  #     pull-requests: 'write'
-  #   steps:
-  #     - name: 'Mint identity token'
-  #       id: 'mint_identity_token'
-  #       if: |-
-  #         ${{ vars.APP_ID }}
-  #       uses: 'actions/create-github-app-token@a8d616148505b5069dccd32f177bb87d7f39123b' # ratchet:actions/create-github-app-token@v2
-  #       with:
-  #         app-id: '${{ vars.APP_ID }}'
-  #         private-key: '${{ secrets.APP_PRIVATE_KEY }}'
-  #         permission-contents: 'read'
-  #         permission-issues: 'write'
-  #         permission-pull-requests: 'write'
+  unknown:
+    needs:
+      - 'dispatch'
+      - 'review'
+      - 'triage'
+      - 'invoke'
+    if: |-
+      ${{ always() && !cancelled() && (failure() || needs.dispatch.outputs.command == 'unknown') }}
+    runs-on: 'ubuntu-latest'
+    permissions:
+      contents: 'read'
+      issues: 'write'
+      pull-requests: 'write'
+    steps:
+      - name: 'Mint identity token'
+        id: 'mint_identity_token'
+        if: |-
+          ${{ vars.APP_ID }}
+        uses: 'actions/create-github-app-token@a8d616148505b5069dccd32f177bb87d7f39123b' # ratchet:actions/create-github-app-token@v2
+        with:
+          app-id: '${{ vars.APP_ID }}'
+          private-key: '${{ secrets.APP_PRIVATE_KEY }}'
+          permission-contents: 'read'
+          permission-issues: 'write'
+          permission-pull-requests: 'write'
 
-  #     - name: 'Send failure comment'
-  #       env:
-  #         GITHUB_TOKEN: '${{ steps.mint_identity_token.outputs.token || secrets.GITHUB_TOKEN || github.token }}'
-  #         ISSUE_NUMBER: '${{ github.event.pull_request.number || github.event.issue.number }}'
-  #         MESSAGE: |-
-  #           🤖 I'm sorry @${{ github.actor }}, but I was unable to process your request. Please [see the logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for more details.
-  #         REPOSITORY: '${{ github.repository }}'
-  #       run: |-
-  #         gh issue comment "${ISSUE_NUMBER}" \
-  #           --body "${MESSAGE}" \
-  #           --repo "${REPOSITORY}"
+      - name: 'Send failure comment'
+        env:
+          GITHUB_TOKEN: '${{ steps.mint_identity_token.outputs.token || secrets.GITHUB_TOKEN || github.token }}'
+          ISSUE_NUMBER: '${{ github.event.pull_request.number || github.event.issue.number }}'
+          MESSAGE: |-
+            🤖 I'm sorry @${{ github.actor }}, but I was unable to process your request. Please [see the logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for more details.
+          REPOSITORY: '${{ github.repository }}'
+        run: |-
+          gh issue comment "${ISSUE_NUMBER}" \
+            --body "${MESSAGE}" \
+            --repo "${REPOSITORY}"
