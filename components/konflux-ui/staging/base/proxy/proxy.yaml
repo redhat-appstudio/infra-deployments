@@ -195,14 +195,14 @@ spec:
           readOnly: true
         readinessProbe:
           httpGet:
-            path: /
-            port: 8889
+            path: /health
+            port: 13133
           initialDelaySeconds: 5
           periodSeconds: 5
         livenessProbe:
           httpGet:
-            path: /
-            port: 8889
+            path: /health
+            port: 13133
           initialDelaySeconds: 30
           periodSeconds: 60
         securityContext:
