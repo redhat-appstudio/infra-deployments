@@ -141,7 +141,12 @@ dynamicConfigs:
       #!/bin/bash -ex
 
       # Format and mount NVMe disk
-      mkfs -t xfs /dev/nvme1n1
+      if lsblk -no FSTYPE /dev/nvme1n1 | grep -qE '\S'; then
+        echo "File system exists on the disk."
+      else
+        echo "No file system found on the disk /dev/nvme1n1"
+        mkfs -t xfs /dev/nvme1n1
+      fi
       mount /dev/nvme1n1 /home
 
       # Create required directories
