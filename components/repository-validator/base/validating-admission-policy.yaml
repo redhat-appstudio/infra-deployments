@@ -38,4 +38,4 @@ spec:
     - key: "repository-url-validation"
       valueExpression: |
         'Repository URL: ' + object.spec.url + 
-        ', Allowed prefixes: ' + string(variables.allowedPrefixes)
+        ', Allowed prefixes: [' + variables.allowedPrefixes.join(', ') + ']'
