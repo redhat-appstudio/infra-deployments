@@ -6,9 +6,13 @@ resources:
 # - ./configure-oauth-proxy-secret.yaml
 
 configMapGenerator:
-- files:
-  - dex-config.yaml
-  name: dex
+  - name: dex
+    files:
+    - dex-config.yaml
+  - name: proxy-nginx-static
+    behavior: merge
+    files:
+    - kite.conf
 
 
 patches:
