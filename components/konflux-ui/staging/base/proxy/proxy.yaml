@@ -150,6 +150,36 @@ spec:
           readOnlyRootFilesystem: true
           runAsNonRoot: true
           runAsUser: 1001
+      - image: quay.io/oauth2-proxy/oauth2-proxy@sha256:3da33b9670c67bd782277f99acadf7026f75b9507bfba2088eb2d497266ef7fc
+        name: oauth2-proxy
+        env:
+        - name: OAUTH2_PROXY_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: oauth2-proxy-client-secret
+              key: client-secret
+        - name: OAUTH2_PROXY_COOKIE_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: oauth2-proxy-cookie-secret
+              key: cookie-secret
+        args:
+          - tba
+        ports:
+          - containerPort: 6000
+            name: web
+            protocol: TCP
+        resources:
+          limits:
+            cpu: 300m
+            memory: 256Mi
+          requests:
+            cpu: 30m
+            memory: 128Mi
+        securityContext:
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 1001
       - image: quay.io/factory2/otel-collector-sp/otel-binary-image:0.113.0
         name: otel-collector
         command: ["/usr/local/bin/otel-collector-sp", "--config", "/conf/otel-collector-config.yaml"]
@@ -186,36 +216,6 @@ spec:
           requests:
             cpu: 50m
             memory: 128Mi
-      - image: quay.io/oauth2-proxy/oauth2-proxy@sha256:3da33b9670c67bd782277f99acadf7026f75b9507bfba2088eb2d497266ef7fc
-        name: oauth2-proxy
-        env:
-        - name: OAUTH2_PROXY_CLIENT_SECRET
-          valueFrom:
-            secretKeyRef:
-              name: oauth2-proxy-client-secret
-              key: client-secret
-        - name: OAUTH2_PROXY_COOKIE_SECRET
-          valueFrom:
-            secretKeyRef:
-              name: oauth2-proxy-cookie-secret
-              key: cookie-secret
-        args:
-          - tba
-        ports:
-          - containerPort: 6000
-            name: web
-            protocol: TCP
-        resources:
-          limits:
-            cpu: 300m
-            memory: 256Mi
-          requests:
-            cpu: 30m
-            memory: 128Mi
-        securityContext:
-          readOnlyRootFilesystem: true
-          runAsNonRoot: true
-          runAsUser: 1001
       volumes:
         - configMap:
             defaultMode: 420
