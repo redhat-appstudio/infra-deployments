@@ -186,6 +186,9 @@ spec:
         ports:
         - containerPort: 8889
           name: otel-metrics
+        - containerPort: 13133
+          name: otel-health
+          protocol: TCP
         volumeMounts:
         - name: logs
           mountPath: /var/log/nginx
@@ -195,14 +198,14 @@ spec:
           readOnly: true
         readinessProbe:
           httpGet:
-            path: /
-            port: 8889
+            path: /health
+            port: 13133
           initialDelaySeconds: 5
           periodSeconds: 5
         livenessProbe:
           httpGet:
-            path: /
-            port: 8889
+            path: /health
+            port: 13133
           initialDelaySeconds: 30
           periodSeconds: 60
         securityContext:
