@@ -17,17 +17,14 @@ patches:
         spec:
           containers:
             - name: eventing-controller
-              image: quay.io/kubearchive/eventing-controller:fix
-              env:
-              - name: APISERVER_RA_IMAGE
-                value: quay.io/kubearchive/eventing-adapter:fix-resync
+              image: quay.io/kubearchive/eventing-controller:remove-sar
               resources:
                 requests:
                   cpu: 100m
                   memory: 100Mi
                 limits:
                   cpu: 150m
-                  memory: 200Mi
+                  memory: 512Mi
 - patch: |-
     apiVersion: apps/v1
     kind: Deployment

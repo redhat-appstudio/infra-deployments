@@ -38,23 +38,21 @@ jobs:
         uses: stackrox/kube-linter-action@v1.0.4
         id: kube-linter-action-scan
         with:
-          version: v0.7.2
+          version: v0.7.6
           # Adjust this directory to the location where your kubernetes resources and helm charts are located.
           directory: kustomizedfiles
           # The following two settings make kube-linter produce scan analysis in SARIF format which would then be
           # made available in GitHub UI via upload-sarif action below.
           format: sarif
           output-file: ../results/kube-linter.sarif
-        # The following line prevents aborting the workflow immediately in case your files fail kube-linter checks.
-        # This allows the following upload-sarif action to still upload the results to your GitHub repo.
-        continue-on-error: true
 
       - name: Upload SARIF report files to GitHub
         uses: github/codeql-action/upload-sarif@v3
+        if: always()
 
-      # Ensure the workflow eventually fails if files did not pass kube-linter checks.
-      - name: Verify kube-linter-action succeeded
-        shell: bash
-        run: |
-          echo "If this step fails, kube-linter found issues. Check the output of the scan step above."
-          [[ "${{ steps.kube-linter-action-scan.outcome }}" == "success" ]]
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        if: failure() && steps.kube-linter-action-scan.outcome == 'failure'
+        with:
+          name: kustomize-manifests
+          path: kustomizedfiles

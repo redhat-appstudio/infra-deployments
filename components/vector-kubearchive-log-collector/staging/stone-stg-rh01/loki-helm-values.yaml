@@ -1,49 +1,23 @@
 ---
-# Ultra-simplified Loki configuration for staging
-deploymentMode: SingleBinary
+deploymentMode: Distributed
 
-# Disable gateway - not needed for SingleBinary
+ # This exposes the Loki gateway so it can be written to and queried externally
 gateway:
-  enabled: false
+  image:
+    registry: quay.io # Use Quay.io registry to prevent docker hub rate limit
+    repository: nginx/nginx-unprivileged
+    tag: 1.24-alpine
+  nginxConfig:
+    resolver: "dns-default.openshift-dns.svc.cluster.local."
 
-# Service Account configuration to use IAM role for S3 access
-serviceAccount:
-  create: false
-  name: loki-sa
-
-# Disable canary
-lokiCanary:
-  enabled: false
-
-# Single binary configuration with proper volume mounts
-singleBinary:
-  replicas: 1
-  resources:
-    requests:
-      cpu: 200m
-      memory: 512Mi
-    limits:
-      cpu: 1000m
-      memory: 1Gi
-  persistence:
-    enabled: false
-  podDisruptionBudget:
-    enabled: true
-    maxUnavailable: 1
-    unhealthyPodEvictionPolicy: AlwaysAllow
-  # Add writable volume mounts for Loki data directories
-  extraVolumeMounts:
-    - name: loki-storage
-      mountPath: /var/loki
-  extraVolumes:
-    - name: loki-storage
-      emptyDir: {}
-
-# Basic Loki configuration with S3 storage
+# Basic Loki configuration
 loki:
+  # Enable multi-tenancy to handle X-Scope-OrgID headers
+  auth_enabled: true
   commonConfig:
-    replication_factor: 1
     path_prefix: /var/loki  # This directory will be writable via volume mount
+  storage:
+    type: s3
   schemaConfig:
     configs:
       - from: "2024-04-01"
@@ -53,40 +27,7 @@ loki:
         index:
           prefix: loki_index_
           period: 24h
-  # Configure ingestion limits to handle Vector's data volume
-  limits_config:
-    ingestion_rate_mb: 16          # Increase from default 4MB to 16MB per second
-    ingestion_burst_size_mb: 32    # Allow bursts up to 32MB
-    max_line_size: 256KB           # Allow larger log lines
-    max_streams_per_user: 10000    # Allow more streams per tenant
-    max_global_streams_per_user: 50000
-    reject_old_samples: false      # Don't reject old samples
-    reject_old_samples_max_age: 168h  # Accept samples up to 7 days old
-  # Required storage configuration for Helm chart
-  storage:
-    type: s3
-    bucketNames:
-      chunks: stone-stg-rh01-loki-storage
-      ruler: stone-stg-rh01-loki-storage
-      admin: stone-stg-rh01-loki-storage
-    s3:
-      endpoint: https://s3.us-east-1.amazonaws.com
-      region: us-east-1
-  # Required storage_config for Helm chart (chunks on S3)
-  storage_config:
-    aws:
-      s3: s3://stone-stg-rh01-loki-storage
-      s3forcepathstyle: true
-      bucketnames: stone-stg-rh01-loki-storage
-      region: us-east-1
-  # Configure ruler storage to use local filesystem
-  ruler:
-    rule_path: /var/loki/ruler
-    storage:
-      type: local
-      local:
-        directory: /var/loki/ruler
-  # Configure compactor to use writable volume for working directory
+  # Configure compactor to use writable volumes
   compactor:
     working_directory: /var/loki/compactor
 
@@ -114,53 +55,28 @@ sidecar:
   datasources:
     enabled: false
 
-# Disable ALL memcached components to avoid exporter containers and PDB issues
-chunksCache:
-  enabled: false
+# Zero out replica counts of other deployment modes
+
+singleBinary:
   replicas: 0
-
-resultsCache:
-  enabled: false
-  replicas: 0
-
-memcached:
-  enabled: false
-
-memcachedResults:
-  enabled: false
-
-memcachedChunks:
-  enabled: false
-
-memcachedFrontend:
-  enabled: false
-
-memcachedIndexQueries:
-  enabled: false
-
-memcachedIndexWrites:
-  enabled: false
-
-# Explicitly disable all other deployment modes
 backend:
   replicas: 0
 read:
   replicas: 0
 write:
   replicas: 0
-ingester:
+
+bloomPlanner:
   replicas: 0
-querier:
+bloomBuilder:
   replicas: 0
-queryFrontend:
+bloomGateway:
   replicas: 0
-queryScheduler:
-  replicas: 0
-distributor:
-  replicas: 0
-compactor:
-  replicas: 0
-indexGateway:
-  replicas: 0
+
+# Disable lokiCanary - not essential for core functionality
+lokiCanary:
+  enabled: false
+
+# Disable the ruler - not needed as we aren't using metrics
 ruler:
-  replicas: 0
+  enabled: false

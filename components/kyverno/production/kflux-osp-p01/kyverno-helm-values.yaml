@@ -18,6 +18,8 @@ admissionController:
         drop:
         - "ALL"
   container:
+    extraArgs:
+      leaderElectionRetryPeriod: 26s
     resources:
       requests:
         cpu: 4000m
@@ -32,8 +34,15 @@ admissionController:
       capabilities:
         drop:
         - "ALL"
+  podDisruptionBudget:
+    enabled: true
+    maxUnavailable: 2
+    minAvailable: null
+    unhealthyPodEvictionPolicy: AlwaysAllow
 backgroundController:
   replicas: 3
+  extraArgs:
+    leaderElectionRetryPeriod: 26s
   resources:
     requests:
       cpu: 4000m
@@ -48,8 +57,15 @@ backgroundController:
     capabilities:
       drop:
       - "ALL"
+  podDisruptionBudget:
+    enabled: true
+    maxUnavailable: 2
+    minAvailable: null
+    unhealthyPodEvictionPolicy: AlwaysAllow
 cleanupController:
   replicas: 3
+  extraArgs:
+    leaderElectionRetryPeriod: 26s
   resources:
     requests:
       cpu: 500m
@@ -64,6 +80,11 @@ cleanupController:
     capabilities:
       drop:
       - "ALL"
+  podDisruptionBudget:
+    enabled: true
+    maxUnavailable: 2
+    minAvailable: null
+    unhealthyPodEvictionPolicy: AlwaysAllow
 reportsController:
   replicas: 3
   resources:
@@ -76,6 +97,11 @@ reportsController:
     capabilities:
       drop:
       - "ALL"
+  podDisruptionBudget:
+    enabled: true
+    maxUnavailable: 2
+    minAvailable: null
+    unhealthyPodEvictionPolicy: AlwaysAllow
 policyReportsCleanup:
   image:
     registry: mirror.gcr.io

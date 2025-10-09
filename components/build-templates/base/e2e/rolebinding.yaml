@@ -96,4 +96,31 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: build-admin
-  
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: konflux-integration-runner-rolebinding
+  namespace: build-templates-e2e
+subjects:
+  - kind: ServiceAccount
+    name: konflux-integration-runner
+    namespace: rhtap-build-tenant
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: konflux-integration-runner
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: application-manager-konflux-integration-runner
+  namespace: build-templates-e2e
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: application-manager
+subjects:
+- kind: ServiceAccount
+  name: konflux-integration-runner
+  namespace: rhtap-build-tenant

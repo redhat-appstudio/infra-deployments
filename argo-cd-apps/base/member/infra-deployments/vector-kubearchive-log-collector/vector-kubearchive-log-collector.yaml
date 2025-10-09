@@ -12,11 +12,32 @@ spec:
               values:
                 sourceRoot: components/vector-kubearchive-log-collector
                 environment: staging
-                clusterDir: ""
+                clusterDir: empty-base
           - list:
               elements:
+                # Staging
+                - nameNormalized: stone-stage-p01
+                  values.clusterDir: stone-stage-p01
                 - nameNormalized: stone-stg-rh01
                   values.clusterDir: stone-stg-rh01
+                # Private
+                - nameNormalized: kflux-ocp-p01
+                  values.clusterDir: kflux-ocp-p01
+                - nameNormalized: kflux-osp-p01
+                  values.clusterDir: kflux-osp-p01
+                # - nameNormalized: stone-prod-p01
+                #   values.clusterDir: stone-prod-p01
+                - nameNormalized: stone-prod-p02
+                  values.clusterDir: stone-prod-p02
+                # - nameNormalized: pentest-p01
+                #   values.clusterDir: pentest-p01
+                # Public
+                - nameNormalized: stone-prd-rh01
+                  values.clusterDir: stone-prd-rh01
+                - nameNormalized: kflux-rhel-p01
+                  values.clusterDir: kflux-rhel-p01
+                - nameNormalized: kflux-prd-rh03
+                  values.clusterDir: kflux-prd-rh03
   template:
     metadata:
       name: vector-kubearchive-log-collector-{{nameNormalized}}
@@ -44,8 +65,8 @@ spec:
       project: default
       source:
         path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
-        repoURL: https://github.com/olegbet/infra-deployments.git
-        targetRevision: KONFLUX-8225_add_log_forwarder_for_loki
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+        targetRevision: main
       destination:
         namespace: product-kubearchive-logging
         server: '{{server}}'

@@ -3,8 +3,17 @@ kind: Kustomization
 namespace: multi-platform-controller
 resources:
 - ../base
-- host-config.yaml
 - external-secrets.yaml
 
 patches:
 - path: manager_resources_patch.yaml
+
+helmGlobals:
+  chartHome: ../../base
+
+helmCharts:
+- name: host-config-chart
+  releaseName: host-config
+  namespace: multi-platform-controller
+  repo: ../../base
+  valuesFile: host-values.yaml

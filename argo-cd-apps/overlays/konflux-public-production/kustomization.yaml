@@ -8,7 +8,6 @@ resources:
   - ../../base/tekton-ci
   - ../../base/konflux-ci
   - ../../base/cluster-secret-store-rh
-  - ../../base/toolchain-member
   - ../../base/eaas
 
 namespace: konflux-public-production
@@ -37,6 +36,7 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: has
+  - path: production-overlay-patch.yaml
     target:
       kind: ApplicationSet
       version: v1alpha1
@@ -95,16 +95,6 @@ patches:
     target:
       kind: ApplicationSet
       version: v1alpha1
-      name: toolchain-host-operator
-  - path: production-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: toolchain-member-operator
-  - path: production-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
       name: cluster-secret-store-rh
   - path: production-overlay-patch.yaml
     target:
@@ -135,17 +125,7 @@ patches:
     target:
       kind: ApplicationSet
       version: v1alpha1
-      name: smee
-  - path: production-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
       name: project-controller
-  - path: production-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: spacerequest-cleaner
   - path: production-overlay-patch.yaml
     target:
       kind: ApplicationSet
@@ -165,11 +145,6 @@ patches:
     target:
       kind: ApplicationSet
       version: v1alpha1
-      name: workspaces-member
-  - path: production-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
       name: notification-controller
   - path: production-overlay-patch.yaml
     target:
@@ -181,6 +156,11 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: crossplane-control-plane
+  - path: production-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: crossplane-config
   - path: production-overlay-patch.yaml
     target:
       kind: ApplicationSet
@@ -245,9 +225,19 @@ patches:
     target:
       kind: ApplicationSet
       version: v1alpha1
+      name: vector-kubearchive-log-collector
+  - path: production-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
       name: cert-manager
   - path: production-overlay-patch.yaml
     target:
       kind: ApplicationSet
       version: v1alpha1
       name: kueue
+  - path: production-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: pulp-access-controller

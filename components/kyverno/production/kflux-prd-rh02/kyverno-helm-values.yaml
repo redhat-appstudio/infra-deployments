@@ -20,6 +20,8 @@ admissionController:
         drop:
         - "ALL"
   container:
+    extraArgs:
+      leaderElectionRetryPeriod: 26s
     resources:
       requests:
         cpu: 4000m
@@ -36,12 +38,19 @@ admissionController:
         - "ALL"
   metering:
     disabled: false
+  podDisruptionBudget:
+    enabled: true
+    maxUnavailable: 2
+    minAvailable: null
+    unhealthyPodEvictionPolicy: AlwaysAllow
   serviceMonitor:
     enabled: true
     # kyverno doesn't seem to support HTTPS on metrics
     secure: false
 backgroundController:
   replicas: 3
+  extraArgs:
+    leaderElectionRetryPeriod: 26s
   resources:
     requests:
       cpu: 4000m
@@ -58,12 +67,19 @@ backgroundController:
       - "ALL"
   metering:
     disabled: false
+  podDisruptionBudget:
+    enabled: true
+    maxUnavailable: 2
+    minAvailable: null
+    unhealthyPodEvictionPolicy: AlwaysAllow
   serviceMonitor:
     enabled: true
     # kyverno doesn't seem to support HTTPS on metrics
     secure: false
 cleanupController:
   replicas: 3
+  extraArgs:
+    leaderElectionRetryPeriod: 26s
   resources:
     requests:
       cpu: 500m
@@ -80,6 +96,11 @@ cleanupController:
       - "ALL"
   metering:
     disabled: false
+  podDisruptionBudget:
+    enabled: true
+    maxUnavailable: 2
+    minAvailable: null
+    unhealthyPodEvictionPolicy: AlwaysAllow
   serviceMonitor:
     enabled: true
     # kyverno doesn't seem to support HTTPS on metrics
