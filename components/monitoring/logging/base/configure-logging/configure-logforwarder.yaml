@@ -36,6 +36,18 @@ spec:
           token:
               secretName: log-forwarder-splunk-rhtap-audit-secret
               key: hecToken
+    - name: dynatrace-logs
+      type: http
+      http:
+        url: https://dynatrace.example.com/api/v2/logs/ingest
+        headers:
+          - name: Authorization
+            valueFrom:
+              secretKeyRef:
+                name: log-forwarder-dynatrace-secret
+                key: authorization
+          - name: Content-Type
+            value: application/json; charset=utf-8
   filters:
     - name: parse-json
       type: parse
@@ -45,6 +57,7 @@ spec:
         - application
       outputRefs:
         - splunk-receiver-application
+        - dynatrace-logs
       filterRefs:
         - parse-json
     - name: fluentd-forward-logs-to-splunk-rhtap-audit-index
