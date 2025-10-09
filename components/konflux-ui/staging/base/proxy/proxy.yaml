@@ -180,7 +180,8 @@ spec:
           readOnlyRootFilesystem: true
           runAsNonRoot: true
           runAsUser: 1001
-      - image: quay.io/factory2/otel-collector-sp/otel-binary-image:0.113.0
+      - image: quay.io/factory2/otel-collector-sp/otel-binary-image:0.137.0
+        imagePullPolicy: Always
         name: otel-collector
         command: ["/usr/local/bin/otel-collector-sp", "--config", "/conf/otel-collector-config.yaml"]
         ports:
