@@ -1,0 +1,53 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: namespace-limit
+spec:
+  background: false
+  validationFailureAction: Enforce
+  rules:
+    - name: limit-user-namespaces
+      match:
+        resources:
+          kinds:
+            - Namespace
+          operations:
+            - CREATE
+      preconditions:
+        all:
+        - key: "{{ konfluxConfig.data.sre_group_name }}"
+          operator: NotIn
+          value: "{{ request.userInfo.groups }}"
+        - key: "system:serviceaccounts"
+          operator: NotIn
+          value: "{{ request.userInfo.groups }}"
+      context:
+      - name: konfluxConfig 
+        configMap:
+          name: konflux-config
+          namespace: kyverno
+      - name: userName
+        variable:
+          value: "{{ request.userInfo.username }}"
+      - name: userNameHash
+        variable:
+          value: "{{ sha256(userName) }}"
+      - name: userNameHash1
+        variable:
+          value: "{{ truncate(userNameHash, `32`) }}"
+      - name: userNameHash2
+        variable:
+          value: "{{ trim_prefix(userNameHash, userNameHash1) }}"
+      - name: ownedNamespaces
+        apiCall:
+          urlPath: "/api/v1/namespaces?labelSelector=username-hash-1%3D{{ userNameHash1 }}%2Cusername-hash-2%3D{{ userNameHash2 }}"
+      - name: namespacesLimit
+        variable:
+          value: "{{ konfluxConfig.data.namespace_limit }}"
+      validate:
+        message: "Maximum number of namespaces ({{ namespacesLimit }}) reached for {{ userName }}"
+        deny:
+          conditions:
+            - key: "{{ length(ownedNamespaces.items) }}"
+              operator: GreaterThanOrEquals
+              value: "{{ namespacesLimit }}"
