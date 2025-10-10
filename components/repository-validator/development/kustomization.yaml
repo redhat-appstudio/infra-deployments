@@ -4,8 +4,8 @@ resources:
   - ../base
 configMapGenerator:
   - name: config
-    files: 
-      - config
+    literals:
+      - config=*
 generatorOptions:
   labels:
     app.kubernetes.io/name: repository-validator
