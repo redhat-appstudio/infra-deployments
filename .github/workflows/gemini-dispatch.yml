@@ -109,7 +109,7 @@ jobs:
             } else {
               core.setOutput('command', 'fallthrough');
             }
-      
+
       - name: 'Add Gemini helper comment'
         if: '${{ github.event_name }}.${{ github.event.action }} == "pull_request.opened"'
         env:
@@ -125,7 +125,7 @@ jobs:
 
             - **`@gemini-cli /review`** - Request a comprehensive code review
               - Example: `@gemini-cli /review Please focus on security and performance`
-            
+
             - **`@gemini-cli <your question>`** - Ask me anything about the codebase
               - Example: `@gemini-cli How can I improve this function?`
               - Example: `@gemini-cli What are the best practices for error handling here?`
@@ -141,7 +141,7 @@ jobs:
             Only **OWNER**, **MEMBER**, or **COLLABORATOR** users can trigger my responses. This ensures secure and appropriate usage.
 
             ---
-            
+
             *This message was automatically added to help you get started with the Gemini AI assistant. Feel free to delete this comment if you don't need assistance.*
         run: |-
           gh pr comment "${PR_NUMBER}" \
