@@ -26,16 +26,16 @@ spec:
         variables.allowedPrefixes[0] == "*"
   validations:
     - expression: |
-        variables.allowAll || 
-        variables.allowedPrefixes.exists(prefix, 
+        variables.allowAll ||
+        variables.allowedPrefixes.exists(prefix,
           prefix != "" && object.spec.url.startsWith(prefix)
         )
       messageExpression: |
-        'Repository URL "' + object.spec.url + 
-        '" is not allowed on this cluster. Contact support.' 
+        'Repository URL "' + object.spec.url +
+        '" is not allowed on this cluster. Contact support.'
       reason: Forbidden
   auditAnnotations:
     - key: "repository-url-validation"
       valueExpression: |
-        'Repository URL: ' + object.spec.url + 
+        'Repository URL: ' + object.spec.url +
         ', Allowed prefixes: [' + variables.allowedPrefixes.join(', ') + ']'
