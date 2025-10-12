@@ -16,7 +16,7 @@ type: kubernetes.io/service-account-token
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: o11y-product-kubearchive-logging-metrics-reader
+  name: product-kubearchive-logging-metrics-reader
 rules:
 - nonResourceURLs:
   - /metrics
@@ -26,11 +26,11 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: prometheus-o11y-product-kubearchive-logging-metrics-reader
+  name: prometheus-product-kubearchive-logging-metrics-reader
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: o11y-product-kubearchive-logging-metrics-reader
+  name: product-kubearchive-logging-metrics-reader
 subjects:
 - kind: ServiceAccount
   name: metrics-reader
@@ -39,7 +39,7 @@ subjects:
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: o11y-product-kubearchive-logging
+  name: product-kubearchive-logging-monitor
   namespace: product-kubearchive-logging
 spec:
   endpoints:
