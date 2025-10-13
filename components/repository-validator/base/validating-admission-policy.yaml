@@ -14,12 +14,13 @@ spec:
       operations: ["CREATE", "UPDATE"]
       resources: ["repositories"]
   variables:
-    # Parse the JSON config from the ConfigMap
+    # Parse the config from the ConfigMap, strip quotes if needed
     - name: allowedPrefixes
       expression: |
         'data' in params && 'config' in params.data ?
-        params.data['config'].split('\n') : []
-    # Check if any prefix is empty (allow-all case)
+        params.data['config'].split('\n').
+        map(p,p.matches('^".*"$') ? p.substring(1, size(p) - 1) : p) : []
+    # Check if prefix is wildcard (allow-all case)
     - name: allowAll
       expression: |
         size(variables.allowedPrefixes) == 1 &&
