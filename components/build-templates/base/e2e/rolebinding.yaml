@@ -9,13 +9,10 @@ roleRef:
   name:  edit
 subjects:
 - kind: ServiceAccount
-  name: appstudio-pipeline
-  namespace: tekton-ci
-- kind: ServiceAccount
-  name: appstudio-pipeline
+  name: konflux-ci-sa
   namespace: konflux-ci
 - kind: ServiceAccount
-  name: appstudio-pipeline
+  name: konflux-integration-runner
   namespace: rhtap-build-tenant
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -28,13 +25,10 @@ roleRef:
   name:  edit-namespace
 subjects:
 - kind: ServiceAccount
-  name: appstudio-pipeline
-  namespace: tekton-ci
-- kind: ServiceAccount
-  name: appstudio-pipeline
+  name: konflux-ci-sa
   namespace: konflux-ci
 - kind: ServiceAccount
-  name: appstudio-pipeline
+  name: konflux-integration-runner
   namespace: rhtap-build-tenant
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -47,27 +41,11 @@ roleRef:
   name:  admin-buildpipelineselectors
 subjects:
 - kind: ServiceAccount
-  name: appstudio-pipeline
-  namespace: tekton-ci
-- kind: ServiceAccount
-  name: appstudio-pipeline
+  name: konflux-ci-sa
   namespace: konflux-ci
 - kind: ServiceAccount
-  name: appstudio-pipeline
+  name: konflux-integration-runner
   namespace: rhtap-build-tenant
----
-kind: RoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: appstudio-pipelines-runner-rolebinding
-subjects:
-  - kind: ServiceAccount
-    name: appstudio-pipeline
-    namespace: build-templates-e2e
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: appstudio-pipelines-runner
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -80,7 +58,7 @@ roleRef:
   name: test-runner
 subjects:
 - kind: ServiceAccount
-  name: appstudio-pipeline
+  name: konflux-ci-sa
   namespace: konflux-ci
 ---
 kind: RoleBinding
