@@ -102,3 +102,17 @@ subjects:
 - kind: ServiceAccount
   name: konflux-integration-runner
   namespace: rhtap-build-tenant
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: ec-manager-konflux-integration-runner
+  namespace: build-templates-e2e
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: ec-manager
+subjects:
+- kind: ServiceAccount
+  name: konflux-integration-runner
+  namespace: build-templates-e2e
