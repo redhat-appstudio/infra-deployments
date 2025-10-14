@@ -7,3 +7,19 @@ images:
   - name: quay.io/redhat-appstudio/o11y
     newName: quay.io/redhat-appstudio/o11y
     newTag: 21c4f16228d2294435bc236ade2b91f61e887171
+
+patches:
+  - patch: |-
+      apiVersion: apps/v1
+      kind: DaemonSet
+      metadata:
+        name: registry-exporter-ds
+        namespace: appstudio-registry-exporter
+      spec:
+        template:
+          spec:
+            containers:
+              - name: exporters
+                env:
+                - name: QUAY_URL
+                  value: quay.io/redhat-user-workloads-stage/appstudio-registry-exporter/appstudio-registry-exporter
