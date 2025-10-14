@@ -7,6 +7,11 @@ receivers:
     operators:
       - type: regex_parser
         regex: '^(?P<remote_addr>[^ ]*) - (?P<remote_user>[^ ]*) \[(?P<time_local>[^\]]*)\] "(?P<method>[^ ]*) (?P<path>[^ ]*) (?P<protocol>[^"]*)" (?P<status>\d+) (?P<body_bytes_sent>\d+) "(?P<http_referer>[^"]*)" "(?P<http_user_agent>[^"]*)"$'
+      - type: time_parser
+        parse_from: attributes.time_local
+        layout: '%d/%b/%Y:%H:%M:%S %z'
+        to_timestamp: true
+
 processors:
   transform/status_to_int:
     log_statements:
@@ -21,6 +26,8 @@ extensions:
 exporters:
   prometheus:
     endpoint: "0.0.0.0:8889"
+  debug:
+    verbosity: detailed
 
 connectors:
   count:
@@ -41,8 +48,8 @@ service:
     logs:
       receivers: [filelog/nginx]
       processors: [transform/status_to_int]
-      exporters: [count]
+      exporters: [count, debug]
     metrics:
       receivers: [count]
       processors: []
-      exporters: [prometheus]
+      exporters: [prometheus, debug]
