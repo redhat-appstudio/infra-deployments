@@ -2,8 +2,7 @@ receivers:
   filelog/nginx:
     include:
       - /var/log/nginx/access.log
-    start_at: beginning
-    max_log_size: 100MiB
+    start_at: end
     operators:
       - type: regex_parser
         regex: '^(?P<remote_addr>[^ ]*) - (?P<remote_user>[^ ]*) \[(?P<time_local>[^\]]*)\] "(?P<method>[^ ]*) (?P<path>[^ ]*) (?P<protocol>[^"]*)" (?P<status>\d+) (?P<body_bytes_sent>\d+) "(?P<http_referer>[^"]*)" "(?P<http_user_agent>[^"]*)"$'
