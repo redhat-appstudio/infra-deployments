@@ -2,8 +2,7 @@ receivers:
   filelog/nginx:
     include:
       - /var/log/nginx/access.log
-    start_at: beginning
-    max_log_size: 100MiB
+    start_at: end
     operators:
       - type: regex_parser
         regex: '^(?P<remote_addr>[^ ]*) - (?P<remote_user>[^ ]*) \[(?P<time_local>[^\]]*)\] "(?P<method>[^ ]*) (?P<path>[^ ]*) (?P<protocol>[^"]*)" (?P<status>\d+) (?P<body_bytes_sent>\d+) "(?P<http_referer>[^"]*)" "(?P<http_user_agent>[^"]*)"$'
@@ -18,6 +17,13 @@ processors:
       - context: log
         statements:
           - set(attributes["status_int"], Int(attributes["status"]))
+  deltatocumulative:
+    max_stale: 10m
+    max_streams: 10000
+  batch:
+    timeout: 10s
+    send_batch_size: 100
+    send_batch_max_size: 200
 
 extensions:
   health_check:
@@ -47,9 +53,9 @@ service:
   pipelines:
     logs:
       receivers: [filelog/nginx]
-      processors: [transform/status_to_int]
+      processors: [transform/status_to_int, batch]
       exporters: [count, debug]
     metrics:
       receivers: [count]
-      processors: []
+      processors: [deltatocumulative, batch]
       exporters: [prometheus, debug]
