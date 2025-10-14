@@ -63,6 +63,7 @@ spec:
           - |
             set -e
 
+            # Generate runtime-config.js with PUBLIC_ variables
             out=/mnt/static-content/runtime-config.js
             printf "window.KONFLUX_RUNTIME = window.KONFLUX_RUNTIME || {};\n" > "$out"
             env | grep -E '^PUBLIC_' | while IFS='=' read -r name value; do
@@ -70,7 +71,7 @@ spec:
               printf 'window.KONFLUX_RUNTIME.%s = "%s";\n' "$name" "$esc" >> "$out"
             done
 
-            # Apply cluster-specific overrides from ConfigMap files, if present
+            # Apply cluster-specific variables from ConfigMap files to runtime-config.js, if present
             if [ -d /mnt/ui-runtime-env-variables ]; then
               for f in /mnt/ui-runtime-env-variables/*; do
                 [ -f "$f" ] || continue
