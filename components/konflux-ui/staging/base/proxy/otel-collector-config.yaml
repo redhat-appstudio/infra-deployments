@@ -32,8 +32,6 @@ extensions:
 exporters:
   prometheus:
     endpoint: "0.0.0.0:8889"
-  debug:
-    verbosity: detailed
 
 connectors:
   count:
@@ -54,8 +52,8 @@ service:
     logs:
       receivers: [filelog/nginx]
       processors: [transform/status_to_int, batch]
-      exporters: [count, debug]
+      exporters: [count]
     metrics:
       receivers: [count]
       processors: [deltatocumulative, batch]
-      exporters: [prometheus, debug]
+      exporters: [prometheus]
