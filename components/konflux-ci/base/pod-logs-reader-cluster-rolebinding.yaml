@@ -1,0 +1,12 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: pod-logs-reader-from-all-namespaces-rolebinding
+subjects:
+- kind: ServiceAccount
+  name: konflux-ci-sa
+  namespace: konflux-ci
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: pod-logs-reader-from-all-namespaces
