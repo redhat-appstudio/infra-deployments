@@ -27,7 +27,7 @@ loki:
     aws:
       # bucketnames: Fill it on the generator for each cluster
       region: us-east-1
-      s3forcepathstyle: false 
+      s3forcepathstyle: false
   # Configure ingestion limits to handle Vector's data volume
   limits_config:
       retention_period: 744h  # 31 days retention
@@ -55,7 +55,7 @@ loki:
         log_stream_creation: false
         log_duplicate_stream_info: true
   ingester:
-    chunk_target_size: 8388608        # 8MB 
+    chunk_target_size: 8388608        # 8MB
     chunk_idle_period: 5m
     max_chunk_age: 2h
     chunk_encoding: snappy            # Compress data (reduces S3 transfer size)

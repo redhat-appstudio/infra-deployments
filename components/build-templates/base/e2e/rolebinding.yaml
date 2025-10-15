@@ -2,11 +2,11 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name:  edit-pipeline-from-build-templates
+  name: edit-pipeline-from-build-templates
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name:  edit
+  name: edit
 subjects:
 - kind: ServiceAccount
   name: konflux-ci-sa
@@ -18,11 +18,11 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name:  edit-pipeline-from-build-templates-namespace
+  name: edit-pipeline-from-build-templates-namespace
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name:  edit-namespace
+  name: edit-namespace
 subjects:
 - kind: ServiceAccount
   name: konflux-ci-sa
@@ -34,11 +34,11 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name:  admin-buildpipelineselectors-from-ci-namespaces
+  name: admin-buildpipelineselectors-from-ci-namespaces
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name:  admin-buildpipelineselectors
+  name: admin-buildpipelineselectors
 subjects:
 - kind: ServiceAccount
   name: konflux-ci-sa

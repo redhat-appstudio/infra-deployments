@@ -154,12 +154,10 @@ extraVolumeMounts:
   - name: varlog
     mountPath: /var/log/pods
     readOnly: true
-  - name: varlibdockercontainers  
+  - name: varlibdockercontainers
     mountPath: /var/lib/containers
     readOnly: true
 
 # Configure Vector to use emptyDir for its default data volume instead of hostPath
 persistence:
   enabled: false
-
-
