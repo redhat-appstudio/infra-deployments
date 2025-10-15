@@ -197,6 +197,46 @@ spec:
           readOnlyRootFilesystem: true
           runAsNonRoot: true
           runAsUser: 1001
+      - image: quay.io/factory2/otel-collector-sp/otel-binary-image:0.137.0
+        imagePullPolicy: Always
+        name: otel-collector
+        command: ["/usr/local/bin/otel-collector-sp", "--config", "/conf/otel-collector-config.yaml"]
+        ports:
+        - containerPort: 8889
+          name: otel-metrics
+        - containerPort: 13133
+          name: otel-health
+          protocol: TCP
+        volumeMounts:
+        - name: logs
+          mountPath: /var/log/nginx
+        - mountPath: /conf/otel-collector-config.yaml
+          subPath: otel-collector-config.yaml
+          name: otel-collector-config
+          readOnly: true
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 13133
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 13133
+          initialDelaySeconds: 30
+          periodSeconds: 60
+        securityContext:
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 1001
+        resources:
+          limits:
+            cpu: 150m
+            memory: 256Mi
+          requests:
+            cpu: 50m
+            memory: 128Mi
       volumes:
         - configMap:
             defaultMode: 420
@@ -229,6 +269,13 @@ spec:
             secretName: proxy
         - name: static-content
           emptyDir: {}
+        - configMap:
+            defaultMode: 420
+            name: otel-collector-config
+            items:
+              - key: otel-collector-config.yaml
+                path: otel-collector-config.yaml
+          name: otel-collector-config
 ---
 apiVersion: v1
 kind: Service
@@ -251,6 +298,10 @@ spec:
       port: 9443
       protocol: TCP
       targetPort: web-tls
+    - name: otel-metrics
+      protocol: TCP
+      port: 8889
+      targetPort: 8889
   selector:
     app: proxy
 ---
@@ -304,6 +355,18 @@ rules:
 - apiGroups: [""]
   resources: ["namespaces"]
   verbs: ["list", "get"]
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: nginx-proxy-monitor
+spec:
+  selector:
+    matchLabels:
+      app: proxy
+  endpoints:
+  - port: otel-metrics
+    interval: 15s
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
