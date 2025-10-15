@@ -1,0 +1,59 @@
+receivers:
+  filelog/nginx:
+    include:
+      - /var/log/nginx/access.log
+    start_at: end
+    operators:
+      - type: regex_parser
+        regex: '^(?P<remote_addr>[^ ]*) - (?P<remote_user>[^ ]*) \[(?P<time_local>[^\]]*)\] "(?P<method>[^ ]*) (?P<path>[^ ]*) (?P<protocol>[^"]*)" (?P<status>\d+) (?P<body_bytes_sent>\d+) "(?P<http_referer>[^"]*)" "(?P<http_user_agent>[^"]*)"$'
+      - type: time_parser
+        parse_from: attributes.time_local
+        layout: '%d/%b/%Y:%H:%M:%S %z'
+        to_timestamp: true
+
+processors:
+  transform/status_to_int:
+    log_statements:
+      - context: log
+        statements:
+          - set(attributes["status_int"], Int(attributes["status"]))
+  deltatocumulative:
+    max_stale: 10m
+    max_streams: 10000
+  batch:
+    timeout: 10s
+    send_batch_size: 100
+    send_batch_max_size: 200
+
+extensions:
+  health_check:
+    endpoint: "0.0.0.0:13133"
+
+exporters:
+  prometheus:
+    endpoint: "0.0.0.0:8889"
+
+connectors:
+  count:
+    logs:
+      nginx_otel_http_request_errors:
+        description: HTTP 4xx and 5xx errors from NGINX
+        conditions:
+          - 'attributes["status_int"] >= 400 and attributes["status_int"] < 600'
+        attributes:
+          - key: method
+            value: attributes["method"]
+          - key: status
+            value: attributes["status"]
+
+service:
+  extensions: [health_check]
+  pipelines:
+    logs:
+      receivers: [filelog/nginx]
+      processors: [transform/status_to_int, batch]
+      exporters: [count]
+    metrics:
+      receivers: [count]
+      processors: [deltatocumulative, batch]
+      exporters: [prometheus]
