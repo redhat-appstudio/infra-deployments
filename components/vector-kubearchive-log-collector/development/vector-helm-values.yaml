@@ -97,10 +97,10 @@ customConfig:
         type: "memory"
         max_events: 10000
         when_full: "drop_newest"  # Drop newest instead of blocking
-  prometheus_sink:
-    type: prometheus_exporter
-    inputs:
-      - metrics
+    prometheus_sink:
+      type: prometheus_exporter
+      inputs:
+        - metrics
 env:
   - name: LOKI_USERNAME
     valueFrom:
