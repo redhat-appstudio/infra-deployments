@@ -165,6 +165,7 @@ dynamicConfigs:
       chmod a+rwx /etc/cdi /var/run/cdi
       setsebool container_use_devices 1 2>/dev/null || true
       nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml
+      su - ec2-user
       chmod a+rw /etc/cdi/nvidia.yaml
       --//--
 
