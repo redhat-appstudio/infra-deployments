@@ -972,6 +972,40 @@ data:
   dynamic.linux-extra-fast-amd64.allocation-timeout: "1200"
   {{ end }}
 
+  {{- if hasKey .Values.dynamicConfigs "linux-test-amd64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-test-amd64" | default (dict) }}
+  dynamic.linux-test-amd64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-test-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-test-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-test-amd64.instance-type: {{ (index $config "instance-type") | default "m6a.large" | quote }}
+  dynamic.linux-test-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-test" $environment) | quote }}
+  dynamic.linux-test-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-test-amd64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-test-amd64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-test-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-test-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-test-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-test-amd64.disk: {{ index $config "disk" | default "200" | quote }}
+  dynamic.linux-test-amd64.allocation-timeout: "1200"
+  {{ end }}
+
+  {{- if hasKey .Values.dynamicConfigs "linux-test-arm64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-test-arm64" | default (dict) }}
+  dynamic.linux-test-arm64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-test-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-test-arm64.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-test-arm64.instance-type: {{ (index $config "instance-type") | default "m6g.large" | quote }}
+  dynamic.linux-test-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64-test" $environment) | quote }}
+  dynamic.linux-test-arm64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-test-arm64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-test-arm64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-test-arm64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-test-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-test-arm64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-test-arm64.disk: {{ index $config "disk" | default "200" | quote }}
+  dynamic.linux-test-arm64.allocation-timeout: "1200"
+  {{ end }}
+
   # Static hosts configuration
   {{- range $host, $config := .Values.staticHosts }}
   {{- range $key, $value := $config }}
