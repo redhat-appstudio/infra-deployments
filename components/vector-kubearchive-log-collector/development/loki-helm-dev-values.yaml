@@ -30,6 +30,14 @@ serviceAccount:
 loki:
   commonConfig:
     replication_factor: 1
+  memberlist:
+    join_members: []
+    dead_node_reclaim_time: 0s
+    gossip_interval: 2s
+    push_pull_interval: 10s
+    gossip_nodes: 2
+    gossip_to_dead_nodes_time: 15s
+    left_ingesters_timeout: 30s
   storage:
     bucketNames:
       chunks: loki-data
@@ -105,9 +113,9 @@ ingester:
   resources:
     requests:
       cpu: 50m  # Reduce from 100m
-      memory: 128Mi  # Reduce from 256Mi
+      memory: 256Mi  # Increase from 128Mi to prevent OOM
     limits:
-      memory: 256Mi  # Reduce from 512Mi
+      memory: 512Mi  # Increase from 256Mi to prevent OOM
   persistence:
     enabled: false  # Disable persistence for dev to avoid storage class issues
     size: 10Gi
