@@ -1,0 +1,16 @@
+name: Lint manifests with yamllint
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+jobs:
+  yamllint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lint yaml manifests
+        run: |
+          yamllint -f github .

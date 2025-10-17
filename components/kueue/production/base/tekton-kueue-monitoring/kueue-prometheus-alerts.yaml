@@ -44,7 +44,7 @@ spec:
     - alert: KueueHighMemoryUtilization
       expr: |
         (
-            container_memory_working_set_bytes{namespace=~"tekton-kueue|kueue-external-admission|openshift-kueue-operator", image!=""} 
+            container_memory_working_set_bytes{namespace=~"tekton-kueue|kueue-external-admission|openshift-kueue-operator", image!=""}
             * on(container, pod)
             group_left
             kube_pod_container_status_ready{namespace=~"tekton-kueue|kueue-external-admission|openshift-kueue-operator"}
@@ -60,7 +60,7 @@ spec:
         runbook_url: https://gitlab.cee.redhat.com/konflux/docs/sop/-/blob/main/infra/queue.md?ref_type=heads
         alert_team_handle: <!subteam^S05Q1P4Q2TG>
         team: konflux-infra
-  
+
     - alert: KueueHighCPUUtilization
       expr: |
         (
@@ -158,7 +158,7 @@ spec:
         component: kueue
       annotations:
         summary: "High resource reservation in Kueue cluster queue"
-        description: "Resource {{ $labels.resource }} reservation is {{ $value }}% of nominal quota, which is above 90%"  
+        description: "Resource {{ $labels.resource }} reservation is {{ $value }}% of nominal quota, which is above 90%"
         runbook_url: https://gitlab.cee.redhat.com/konflux/docs/sop/-/blob/main/infra/queue.md?ref_type=heads
         alert_team_handle: <!subteam^S05Q1P4Q2TG>
         team: konflux-infra

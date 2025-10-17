@@ -4,7 +4,6 @@ resources:
   - ../konflux-public-staging
   - ../../base/smee-client
   - ../../base/ca-bundle
-  - ../../base/keycloak
   - ../../base/repository-validator
   - ../../base/cluster-secret-store-rh
   - ../../base/monitoring-workload-kanary
@@ -37,6 +36,7 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: has
+  - path: production-overlay-patch.yaml
     target:
       kind: ApplicationSet
       version: v1alpha1
@@ -121,11 +121,6 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: ca-bundle
-  - path: production-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: keycloak
   - path: production-overlay-patch.yaml
     target:
       kind: ApplicationSet

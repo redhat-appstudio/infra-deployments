@@ -70,6 +70,13 @@ patches:
           spec:
             containers:
               - name: manager
+                resources:
+                  limits:
+                    cpu: 200m
+                    memory: 3072Mi
+                  requests:
+                    cpu: 200m
+                    memory: 3072Mi
                 env:
                 - name: KUBEARCHIVE_OTEL_MODE
                   value: delegated

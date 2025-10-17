@@ -24,7 +24,7 @@ patches:
                   memory: 100Mi
                 limits:
                   cpu: 150m
-                  memory: 200Mi
+                  memory: 512Mi
 - patch: |-
     apiVersion: apps/v1
     kind: Deployment
@@ -43,6 +43,25 @@ patches:
                 limits:
                   cpu: 150m
                   memory: 1Gi
+
+- patch: |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: eventing-webhook
+      namespace: knative-eventing
+    spec:
+      template:
+        spec:
+          containers:
+            - name: eventing-webhook
+              resources:
+                requests:
+                  cpu: 200m
+                  memory: 200Mi
+                limits:
+                  cpu: 200m
+                  memory: 512Mi
 
 - patch: |-
     apiVersion: apps/v1

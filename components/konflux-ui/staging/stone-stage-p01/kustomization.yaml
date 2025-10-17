@@ -9,6 +9,10 @@ configMapGenerator:
   - name: dex
     files:
     - dex-config.yaml
+  - name: proxy-nginx-static
+    files:
+      - kite.conf
+    behavior: merge
 
 patches:
 - path: add-service-certs-patch.yaml
