@@ -14,7 +14,8 @@ spec:
         apiVersion: appstudio.redhat.com/v1alpha1
         kind: Release
       archiveWhen: has(status.completionTime)
-      deleteWhen: timestamp(metadata.creationTimestamp) < now() - duration("5d")
+      # 120h == 5d because CEL duration only supports h, m, s, ms, us, ns suffixes
+      deleteWhen: timestamp(metadata.creationTimestamp) < now() - duration("120h")
     - selector:
         apiVersion: tekton.dev/v1
         kind: PipelineRun
