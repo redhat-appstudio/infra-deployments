@@ -52,7 +52,7 @@ loki:
       kubearchive:
         log_push_request: true
         log_push_request_streams: true
-        log_stream_creation: true
+        log_stream_creation: false
         log_duplicate_stream_info: true
   ingester:
     chunk_target_size: 8388608        # 8MB
@@ -83,7 +83,7 @@ loki:
 ingester:
   replicas: 3
   autoscaling:
-    enabled: true
+    enabled: false  # Disable HPA to avoid conflicts with fixed replicas
   zoneAwareReplication:
     enabled: true
   maxUnavailable: 1

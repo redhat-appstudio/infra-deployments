@@ -43,6 +43,10 @@ loki:
       region: us-east-1
       endpoint: minio:9000
       insecure: true
+      # S3 retry configuration
+      max_retries: 10
+      backoff_min_period: 100ms
+      backoff_max_period: 10s
   limits_config:
     retention_period: 24h     # Reduce from 744h for development
     ingestion_rate_mb: 5      # Reduce from 10 for development
@@ -79,7 +83,7 @@ ingester:
   autoscaling:
     enabled: false  # Disable autoscaling for dev
   zoneAwareReplication:
-    enabled: false
+    enabled: true
   resources:
     requests:
       cpu: 50m  # Reduce from 100m
