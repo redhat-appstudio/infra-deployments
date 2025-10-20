@@ -18,19 +18,6 @@ patches:
         name: kubearchive-database-credentials
         namespace: kubearchive
   - patch: |-
-      apiVersion: batch/v1
-      kind: Job
-      metadata:
-        name: kubearchive-schema-migration
-      spec:
-        template:
-          spec:
-            containers:
-              - name: migration
-                env:
-                  - name: KUBEARCHIVE_VERSION
-                    value: v1.0.1
-  - patch: |-
       apiVersion: external-secrets.io/v1beta1
       kind: ExternalSecret
       metadata:
@@ -115,10 +102,10 @@ patches:
                 resources:
                   limits:
                     cpu: 500m
-                    memory: 256Mi
+                    memory: 1Gi
                   requests:
-                    cpu: 10m
-                    memory: 256Mi
+                    cpu: 100m
+                    memory: 1Gi
 
   - patch: |-
       apiVersion: apps/v1
