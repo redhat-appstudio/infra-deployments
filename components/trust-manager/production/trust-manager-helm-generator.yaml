@@ -1,0 +1,25 @@
+apiVersion: builtin
+kind: HelmChartInflationGenerator
+metadata:
+  name: trust-manager
+name: trust-manager
+repo: https://charts.jetstack.io
+version: 0.19.0
+namespace: cert-manager
+releaseName: trust-manager
+valuesInline:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+  defaultPackage:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
