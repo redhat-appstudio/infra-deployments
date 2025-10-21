@@ -79,11 +79,9 @@ patches:
       metadata:
         name: database-secret
       spec:
-        secretStoreRef:
-          name: appsre-stonesoup-vault
         dataFrom:
           - extract:
-              key: production/platform/terraform/generated/kflux-prd-rh02/kubearchive-database
+              key: integrations-output/external-resources/appsrep09ue1/kflux-prd-rh02/kflux-prd-rh02-kube-archive-rds
   # These patches add an annotation so an OpenShift service
   # creates the TLS secrets instead of Cert Manager
   - patch: |-
