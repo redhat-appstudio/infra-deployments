@@ -1,0 +1,161 @@
+---
+role: Agent
+
+customConfig:
+  data_dir: /vector-data-dir
+  api:
+    enabled: true
+    address: 127.0.0.1:8686
+    playground: false
+  sources:
+    k8s_logs:
+      type: kubernetes_logs
+      rotate_wait_secs: 5
+      glob_minimum_cooldown_ms: 500
+      max_line_bytes: 3145728
+      auto_partial_merge: true
+  transforms:
+    reduce_events:
+      type: reduce
+      inputs:
+        - k8s_logs
+      group_by:
+        - file
+      max_events: 100
+      expire_after_ms: 10000
+      merge_strategies:
+        message: concat_newline
+    remap_app_logs:
+      type: remap
+      inputs:
+        - reduce_events
+      source: |-
+        .tmp = del(.)
+        # Preserve original kubernetes fields for Loki labels
+        if exists(.tmp.kubernetes.pod_uid) {
+          .pod_id = del(.tmp.kubernetes.pod_uid)
+        } else {
+          .pod_id = "unknown_pod_id"
+        }
+        if exists(.tmp.kubernetes.container_name) {
+          .container = del(.tmp.kubernetes.container_name)
+        } else {
+          .container = "unknown_container"
+        }
+        # Extract namespace for low cardinality labeling
+        if exists(.tmp.kubernetes.pod_namespace) {
+          .namespace = del(.tmp.kubernetes.pod_namespace)
+        } else {
+          .namespace = "unknown_namespace"
+        }
+        # Preserve the actual log message
+        if exists(.tmp.message) {
+          .message = to_string(del(.tmp.message)) ?? "no_message"
+        } else {
+          .message = "no_message"
+        }
+        if length(.message) > 1048576 {
+          .message = slice!(.message, 0, 1048576) + "...[TRUNCATED]"
+        }
+        # Clean up temporary fields
+        del(.tmp)
+  sinks:
+    loki:
+      type: loki
+      inputs: ["remap_app_logs"]
+      # Send to Loki gateway
+      endpoint: "http://loki-gateway.product-kubearchive-logging.svc.cluster.local:80"
+      encoding:
+        codec: "text"
+        except_fields: ["tmp"]
+        only_fields:
+          - message
+      structured_metadata:
+        pod_id: "{{`{{ pod_id }}`}}"
+        container: "{{`{{ container }}`}}"
+      auth:
+        strategy: "basic"
+        user: "${LOKI_USERNAME}"
+        password: "${LOKI_PASSWORD}"
+      tenant_id: "kubearchive"
+      request:
+        headers:
+          X-Scope-OrgID: kubearchive
+        timeout_secs: 60
+      batch:
+        max_bytes: 10485760           # 10MB batches
+        max_events: 10000
+        timeout_secs: 30
+      compression: "gzip"
+      labels:
+        stream: "{{`{{ namespace }}`}}"
+      buffer:
+        type: "memory"
+        max_events: 10000
+        when_full: "drop_newest"
+env:
+  - name: LOKI_USERNAME
+    valueFrom:
+      secretKeyRef:
+        name: kubearchive-loki
+        key: USERNAME
+  - name: LOKI_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: kubearchive-loki
+        key: PASSWORD
+nodeSelector:
+  konflux-ci.dev/workload: konflux-tenants
+tolerations:
+  - effect: NoSchedule
+    key: konflux-ci.dev/workload
+    operator: Equal
+    value: konflux-tenants
+image:
+  repository: quay.io/kubearchive/vector
+  tag: 0.46.1-distroless-libc
+serviceAccount:
+  create: true
+  name: vector
+securityContext:
+  allowPrivilegeEscalation: false
+  runAsUser: 0
+  capabilities:
+    drop:
+    - CHOWN
+    - DAC_OVERRIDE
+    - FOWNER
+    - FSETID
+    - KILL
+    - NET_BIND_SERVICE
+    - SETGID
+    - SETPCAP
+    - SETUID
+  readOnlyRootFilesystem: true
+  seLinuxOptions:
+    type: spc_t
+  seccompProfile:
+    type: RuntimeDefault
+
+# Override default volumes to be more specific and secure
+extraVolumes:
+  - name: varlog
+    hostPath:
+      path: /var/log/pods
+      type: Directory
+  - name: varlibdockercontainers
+    hostPath:
+      path: /var/lib/containers
+      type: DirectoryOrCreate
+
+extraVolumeMounts:
+  - name: varlog
+    mountPath: /var/log/pods
+    readOnly: true
+  - name: varlibdockercontainers
+    mountPath: /var/lib/containers
+    readOnly: true
+
+# Configure Vector to use emptyDir for its default data volume instead of hostPath
+persistence:
+  enabled: false

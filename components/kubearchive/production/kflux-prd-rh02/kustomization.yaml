@@ -4,11 +4,67 @@ kind: Kustomization
 resources:
   - ../../base
   - ../base
-  - https://github.com/kubearchive/kubearchive/releases/download/v1.0.1/kubearchive.yaml?timeout=90
+  - external-secret.yaml
+  - https://github.com/kubearchive/kubearchive/releases/download/v1.9.0/kubearchive.yaml?timeout=90
 
 namespace: product-kubearchive
 
+# Generate kubearchive-logging ConfigMap with hash for automatic restarts
+# Due to quoting limitations of generators we need to introduce the values with the |
+# See https://github.com/kubernetes-sigs/kustomize/issues/4845#issuecomment-1671570428
+configMapGenerator:
+    - name: kubearchive-logging
+      literals:
+          - |
+              POD_ID=cel:metadata.uid
+          - |
+              NAMESPACE=cel:metadata.namespace
+          - |
+              START=cel:status.?startTime == optional.none() ? int(now()-duration('1h'))*1000000000: status.startTime
+          - |
+              END=cel:status.?startTime == optional.none() ? int(now()+duration('1h'))*1000000000: int(timestamp(status.startTime)+duration('6h'))*1000000000
+          - |
+              LOG_URL=http://loki-gateway.product-kubearchive-logging.svc.cluster.local:80/loki/api/v1/query_range?query=%7Bstream%3D%22{NAMESPACE}%22%7D%20%7C%20pod_id%20%3D%20%60{POD_ID}%60%20%7C%20container%20%3D%20%60{CONTAINER_NAME}%60&start={START}&end={END}&direction=forward
+          - |
+              LOG_URL_JSONPATH=$.data.result[*].values[*][1]
+
 patches:
+  - patch: |-
+      $patch: delete
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: kubearchive-logging
+        namespace: kubearchive
+
+  - patch: |-
+      $patch: delete
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: kubearchive-logging
+        namespace: kubearchive
+
+  - patch: |-
+      apiVersion: batch/v1
+      kind: Job
+      metadata:
+        name: kubearchive-schema-migration
+        namespace: kubearchive
+        annotations:
+          # Needed if just the command is changed, otherwise the job needs to be deleted manually
+          argocd.argoproj.io/sync-options: Force=true,Replace=true
+          ignore-check.kube-linter.io/no-read-only-root-fs: >
+            "This job needs to clone a repository to do its job, so it needs write access to the FS."
+      spec:
+        suspend: false
+        template:
+          spec:
+            containers:
+              - name: migration
+                env:
+                  - name: KUBEARCHIVE_VERSION
+                    value: v1.9.0
   # We don't need the Secret as it will be created by the ExternalSecrets Operator
   - patch: |-
       $patch: delete
@@ -23,9 +79,11 @@ patches:
       metadata:
         name: database-secret
       spec:
+        secretStoreRef:
+          name: appsre-stonesoup-vault
         dataFrom:
           - extract:
-              key: integrations-output/external-resources/appsrep09ue1/kflux-prd-rh02/kflux-prd-rh02-kube-archive-rds
+              key: production/platform/terraform/generated/kflux-prd-rh02/kubearchive-database
   # These patches add an annotation so an OpenShift service
   # creates the TLS secrets instead of Cert Manager
   - patch: |-
@@ -75,6 +133,8 @@ patches:
                   value: enabled
                 - name: OTEL_EXPORTER_OTLP_ENDPOINT
                   value: http://otel-collector:4318
+                - name: AUTH_IMPERSONATE
+                  value: "true"
                 securityContext:
                   readOnlyRootFilesystem: true
                   runAsNonRoot: true
@@ -89,6 +149,7 @@ patches:
           spec:
             containers:
               - name: manager
+                args: [--health-probe-bind-address=:8081]
                 env:
                 - name: KUBEARCHIVE_OTEL_MODE
                   value: enabled
@@ -101,11 +162,11 @@ patches:
                   - containerPort: 8081
                 resources:
                   limits:
-                    cpu: 500m
-                    memory: 1Gi
+                    cpu: 250m
+                    memory: 1.5Gi
                   requests:
-                    cpu: 100m
-                    memory: 1Gi
+                    cpu: 250m
+                    memory: 1.5Gi
 
   - patch: |-
       apiVersion: apps/v1
