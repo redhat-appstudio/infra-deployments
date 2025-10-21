@@ -262,6 +262,62 @@ PIPELINERUN_DEFINITIONS: Dict[str, PipelineRunTestData] = {
             }
         }
     },
+    "multiplatform_old_no_pipelineSpecTasks": {
+        "name": "Multi-platform pipeline (old style with PLATFORM parameters): no tasks in pipelineSpec",
+        "pipelinerun": {
+            "apiVersion": "tekton.dev/v1",
+            "kind": "PipelineRun",
+            "metadata": {
+                "name": "test-multiplatform-old",
+                "namespace": "default",
+                "labels": {
+                    "pipelinesascode.tekton.dev/event-type": "pull_request"
+                }
+            },
+            "spec": {
+                "pipelineSpec": {
+                    "tasks": None,
+                },
+                "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
+            }
+        },
+        "expected": {
+            "annotations": {},
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-pre-merge-build",
+                "pipelinesascode.tekton.dev/event-type": "pull_request"
+            }
+        }
+    },
+    "multiplatform_old_empty_pipelineSpecTasks": {
+        "name": "Multi-platform pipeline (old style with PLATFORM parameters): empty tasks in pipelineSpec",
+        "pipelinerun": {
+            "apiVersion": "tekton.dev/v1",
+            "kind": "PipelineRun",
+            "metadata": {
+                "name": "test-multiplatform-old",
+                "namespace": "default",
+                "labels": {
+                    "pipelinesascode.tekton.dev/event-type": "pull_request"
+                }
+            },
+            "spec": {
+                "pipelineSpec": {
+                    "tasks": [],
+                },
+                "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
+            }
+        },
+        "expected": {
+            "annotations": {},
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-pre-merge-build",
+                "pipelinesascode.tekton.dev/event-type": "pull_request"
+            }
+        }
+    },
 
     "release_managed": {
         "name": "Release managed pipeline",
@@ -600,6 +656,16 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
     },
     "mixed_platforms_excluded_included_dev": {
         "pipelinerun_key": "mixed_platforms_excluded_included",
+        "config_key": "development"
+    },
+
+    # multiplatform_old edge cases
+    "multiplatform_old_no_pipelineSpecTasks": {
+        "pipelinerun_key": "multiplatform_old_no_pipelineSpecTasks",
+        "config_key": "development"
+    },
+    "multiplatform_old_empty_pipelineSpecTasks": {
+        "pipelinerun_key": "multiplatform_old_empty_pipelineSpecTasks",
         "config_key": "development"
     },
 
