@@ -14,8 +14,9 @@ spec:
         kind: Release
       archiveWhen: has(status.completionTime)
       archiveOnDelete: 'true'
-      # 120h == 5d because CEL duration only supports h, m, s, ms, us, ns suffixes
-      deleteWhen: timestamp(metadata.creationTimestamp) < now() - duration("120h")
+      # CEL duration only supports h, m, s, ms, us, ns suffixes, so we convert days to hours
+      # Uses gracePeriodDays from Release spec if present (capped at 30 days max), otherwise defaults to 5 days (120h)
+      deleteWhen: 'timestamp(metadata.creationTimestamp) < now() - duration(string(has(spec.gracePeriodDays) ? (spec.gracePeriodDays > 30 ? 720 : spec.gracePeriodDays * 24) : 120) + "h")'
     - selector:
         apiVersion: tekton.dev/v1
         kind: PipelineRun
