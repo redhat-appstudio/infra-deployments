@@ -106,13 +106,16 @@ env:
       secretKeyRef:
         name: kubearchive-loki
         key: PASSWORD
-nodeSelector:
-  konflux-ci.dev/workload: konflux-tenants
-tolerations:
-  - effect: NoSchedule
-    key: konflux-ci.dev/workload
-    operator: Equal
-    value: konflux-tenants
+affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 1
+        preference:
+          matchExpressions:
+          - key: konflux-ci.dev/workload
+            operator: In
+            values:
+              - konflux-tenants
 image:
   repository: quay.io/kubearchive/vector
   tag: 0.46.1-distroless-libc
