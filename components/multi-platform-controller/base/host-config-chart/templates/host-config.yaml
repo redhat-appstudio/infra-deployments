@@ -987,6 +987,14 @@ data:
   dynamic.linux-test-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
   dynamic.linux-test-amd64.disk: {{ index $config "disk" | default "200" | quote }}
   dynamic.linux-test-amd64.allocation-timeout: "1200"
+  dynamic.linux-test-amd64.sudo-commands: {{ (index $config "sudo-commands") | default "/usr/bin/podman" | quote }}
+  {{- if (index $config "user-data") }}
+  dynamic.linux-test-amd64.user-data: |
+  {{- $lines := splitList "\n" (index $config "user-data") }}
+  {{- range $line := $lines }}
+    {{ $line }}
+  {{- end }}
+  {{- end }}
   {{ end }}
 
   {{- if hasKey .Values.dynamicConfigs "linux-test-arm64" }}
@@ -1004,6 +1012,20 @@ data:
   dynamic.linux-test-arm64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
   dynamic.linux-test-arm64.disk: {{ index $config "disk" | default "200" | quote }}
   dynamic.linux-test-arm64.allocation-timeout: "1200"
+  dynamic.linux-test-arm64.sudo-commands: {{ (index $config "sudo-commands") | default "/usr/bin/podman" | quote }}
+  {{- if (index $config "iops") }}
+  dynamic.linux-test-arm64.iops: {{ index $config "iops" | quote }}
+  {{ end }}
+  {{- if (index $config "throughput") }}
+  dynamic.linux-test-arm64.throughput: {{ index $config "throughput" | quote }}
+  {{ end }}
+  {{- if (index $config "user-data") }}
+  dynamic.linux-test-arm64.user-data: |
+  {{- $lines := splitList "\n" (index $config "user-data") }}
+  {{- range $line := $lines }}
+    {{ $line }}
+  {{- end }}
+  {{- end }}
   {{ end }}
 
   # Static hosts configuration
