@@ -26,6 +26,7 @@
     - '{__name__="kube_deployment_status_replicas_ready", namespace="konflux-ui"}'
     - '{__name__="kube_deployment_status_replicas_available", namespace="konflux-ui"}'
     - '{__name__="kube_deployment_spec_replicas", namespace="konflux-ui"}'
+    - '{__name__="nginx_otel_http_request_errors_total", namespace="konflux-ui"}'
 
     # Namespace: mintmaker
     - '{__name__="kube_deployment_status_replicas_ready", namespace="mintmaker"}'
@@ -91,15 +92,19 @@
     - '{__name__="kube_deployment_status_replicas_available", namespace="konflux-support-ops"}'
     - '{__name__="kube_deployment_spec_replicas", namespace="konflux-support-ops"}'
 
+    # Namespace: proxy
+    - '{__name__="squid_up", namespace="proxy"}'
+
     ## Container Metrics
     - '{__name__="kube_pod_container_status_waiting_reason", namespace!~".*-tenant|openshift-.*|kube-.*"}'
     - '{__name__="kube_pod_container_resource_limits", namespace="release-service"}'
     - '{__name__="kube_pod_container_status_terminated_reason", namespace=~"release-service|openshift-etcd|openshift-kube-apiserver|build-service|image-controller|integration-service|konflux-ui|product-kubearchive|openshift-kueue-operator|tekton-kueue|kueue-external-admission|mintmaker|multi-platform-controller|namespace-lister|openshift-pipelines|tekton-results|project-controller|smee|smee-client"}'
+    - '{__name__="kube_pod_container_status_last_terminated_reason", namespace!~".*-tenant", reason="OOMKilled"}'
     - '{__name__="kube_pod_container_status_last_terminated_reason", namespace="release-service"}'
     - '{__name__="kube_pod_container_status_ready", namespace=~"release-service|tekton-kueue|kueue-external-admission|openshift-kueue-operator"}'
     - '{__name__="container_cpu_usage_seconds_total", namespace=~"release-service|openshift-etcd"}'
     - '{__name__="container_memory_usage_bytes", namespace=~"release-service|openshift-etcd"}'
-    - '{__name__="kube_pod_container_status_restarts_total", namespace=~"openshift-pipelines|release-service|tekton-kueue|kueue-external-admission|openshift-kueue-operator|konflux-ui|openshift-etcd|openshift-kube-apiserver|build-service|image-controller|integration-service|product-kubearchive|mintmaker|multi-platform-controller|namespace-lister|tekton-results|project-controller|smee|smee-client"}'
+    - '{__name__="kube_pod_container_status_restarts_total", namespace!~".*-tenant"}'
     - '{__name__="namespace:container_memory_usage_bytes:sum", namespace=~"release-service|openshift-etcd|openshift-kube-apiserver|build-service|image-controller|integration-service|konflux-ui|product-kubearchive|openshift-kueue-operator|tekton-kueue|kueue-external-admission|mintmaker|multi-platform-controller|namespace-lister|openshift-pipelines|tekton-results|project-controller|smee|smee-client"}'
     - '{__name__="namespace:container_cpu_usage:sum", namespace=~"release-service|openshift-etcd|openshift-kube-apiserver|build-service|image-controller|integration-service|konflux-ui|product-kubearchive|openshift-kueue-operator|tekton-kueue|kueue-external-admission|mintmaker|multi-platform-controller|namespace-lister|openshift-pipelines|tekton-results|project-controller|smee|smee-client"}'
     - '{__name__="namespace_memory:kube_pod_container_resource_requests:sum", namespace=~"release-service|openshift-etcd|openshift-kube-apiserver|build-service|image-controller|integration-service|konflux-ui|product-kubearchive|openshift-kueue-operator|tekton-kueue|kueue-external-admission|mintmaker|multi-platform-controller|namespace-lister|openshift-pipelines|tekton-results|project-controller|smee|smee-client"}'

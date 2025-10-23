@@ -1,10 +1,5 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - https://github.com/konflux-ci/repository-validator/config/ocp?ref=1a1bd5856c7caf40ebf3d9a24fce209ba8a74bd9
-  - https://github.com/redhat-appstudio/internal-infra-deployments/components/repository-validator/production?ref=a40e6a95826c0cc782fc55f35c87c44bd88a08ad
-images:
-  - name: controller
-    newName: quay.io/redhat-user-workloads/konflux-infra-tenant/repository-validator/repository-validator
-    newTag: 1a1bd5856c7caf40ebf3d9a24fce209ba8a74bd9
-namespace: repository-validator
+  - https://github.com/redhat-appstudio/internal-infra-deployments/components/repository-validator/production?ref=015a6727fad4014ffc973b6941b076a93fb39324
+  - ../base

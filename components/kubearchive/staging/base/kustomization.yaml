@@ -13,3 +13,23 @@ patches:
       metadata:
         name: kubearchive-logging
         namespace: kubearchive
+
+  - patch: |-
+      apiVersion: batch/v1
+      kind: CronJob
+      metadata:
+        name: vacuum-all
+      spec:
+        jobTemplate:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: vacuum
+                    resources:
+                      requests:
+                        cpu: 100m
+                        memory: 1Gi
+                      limits:
+                        cpu: 100m
+                        memory: 1Gi
