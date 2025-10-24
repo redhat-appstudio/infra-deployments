@@ -1,0 +1,47 @@
+name: Openshift Pipelines CI
+
+on:
+  pull_request_target:
+    types: [opened, synchronize] # Only run on pull requests that are opened or updated
+    paths:
+      - "components/pipeline-service/**/main-pipeline-service-configuration.yaml"
+      # Any changes to main-pipeline-service-configuration will change the deploy.yaml, but not vice versa
+      - "components/pipeline-service/**/deploy.yaml"
+
+jobs:
+  validate-pipelines-index:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+    steps:
+      - name: Checkout pull request head
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha }} # Use the head SHA of the pull request
+          path: head
+          sparse-checkout: components/pipeline-service
+      - name: Checkout pull request base
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.base }} # Use the head SHA of the pull request
+          path: base
+          sparse-checkout: components/pipeline-service
+      - name: Compare pipelines indexes
+        id: compare_indexes
+        run: ./head/components/pipeline-service/ci/check_bundle_is_upgrade.sh
+      - name: Comment warnings
+        if: ${{ steps.compare_indexes.outputs.comment != "" }}
+        uses: actions/github-script@v8
+        env:
+          MESSAGE: ${{steps.compare_indexes.outputs.comment}}
+        with:
+          script: |
+            const message = process.env.MESSAGE;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `Warnings found\n${message}`,
+            });
