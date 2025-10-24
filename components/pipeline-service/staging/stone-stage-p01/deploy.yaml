@@ -2656,7 +2656,7 @@ metadata:
   namespace: openshift-marketplace
 spec:
   displayName: custom-operators
-  image: quay.io/openshift-pipeline/pipelines-index-4.17@sha256:6c984e7de8a71c0291fe28c31234d144a6cc5658fdee43965b1e3aedc9600d80
+  image: quay.io/openshift-pipeline/pipelines-index-4.17@sha256:a6a0ab73565bb51344c0443e4447a8878d6a8e45ab3be44b3a6d2de0491364a8
   sourceType: grpc
   updateStrategy:
     registryPoll:
@@ -2676,6 +2676,8 @@ spec:
     env:
     - name: AUTOINSTALL_COMPONENTS
       value: "false"
+    - name: IMAGE_PIPELINES_CONSOLE_PLUGIN
+      value: quay.io/openshift-pipeline/pipelines-console-plugin-rhel9@sha256:6069f5659392ee604992b12c6fa972f4d20e74fc71e6aade68a0dbc567f24cbd
   name: openshift-pipelines-operator-rh
   source: custom-operators
   sourceNamespace: openshift-marketplace
