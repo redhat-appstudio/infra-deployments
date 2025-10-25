@@ -14,6 +14,8 @@ customConfig:
       glob_minimum_cooldown_ms: 500
       max_line_bytes: 3145728
       auto_partial_merge: true
+    metrics:
+      type: internal_metrics
   transforms:
     reduce_events:
       type: reduce
@@ -95,6 +97,10 @@ customConfig:
         type: "memory"
         max_events: 10000
         when_full: "drop_newest"  # Drop newest instead of blocking
+    prometheus_sink:
+      type: prometheus_exporter
+      inputs:
+        - metrics
 env:
   - name: LOKI_USERNAME
     valueFrom:
