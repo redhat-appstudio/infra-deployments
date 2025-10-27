@@ -38,6 +38,10 @@ cel:
 
     # Set resource requests for multi platform pipelines which doesn't use the build-platforms parameter (old style)
     - |
+      !(
+        has(pipelineRun.spec.params) &&
+        pipelineRun.spec.params.exists(p, p.name == 'build-platforms')
+      ) &&
       has(pipelineRun.spec.pipelineSpec) &&
       has(pipelineRun.spec.pipelineSpec.tasks) &&
       pipelineRun.spec.pipelineSpec.tasks.size() > 0 ?
@@ -53,6 +57,10 @@ cel:
 
     # Request AWS IP for AWS-based platforms which doesn't use the build-platforms parameter (old style)
     - |
+      !(
+        has(pipelineRun.spec.params) &&
+        pipelineRun.spec.params.exists(p, p.name == 'build-platforms')
+      ) &&
       has(pipelineRun.spec.pipelineSpec) &&
       has(pipelineRun.spec.pipelineSpec.tasks) &&
       pipelineRun.spec.pipelineSpec.tasks.size() > 0 ?
