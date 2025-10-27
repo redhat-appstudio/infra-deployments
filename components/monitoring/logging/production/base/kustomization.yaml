@@ -22,15 +22,6 @@ patches:
       - op: replace
         path: /spec/dataFrom/0/extract/key
         value: production/monitoring/logging/fluentd/splunk-forwarder-rhtap-production-audit
-  - target:
-      group: external-secrets.io
-      version: v1beta1
-      kind: ExternalSecret
-      name: log-forwarder-dynatrace-external-secret
-    patch: |
-      - op: replace
-        path: /spec/dataFrom/0/extract/key
-        value: production/monitoring/logging/fluentd/dynatrace-poc-forwarder-rhtap-production
   - path: ../base/patches/configure-logforwarder-compression-patch.yaml
     target:
       group: observability.openshift.io
