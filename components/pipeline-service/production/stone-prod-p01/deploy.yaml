@@ -2522,7 +2522,7 @@ metadata:
   namespace: openshift-marketplace
 spec:
   displayName: custom-operators
-  image: quay.io/openshift-pipeline/pipelines-index-4.15@sha256:ea4bd6973b821f90fa07166c83e861ef6bfdbbe29ae3539f5813973f188f06ef
+  image: quay.io/openshift-pipeline/pipelines-index-4.17@sha256:a6a0ab73565bb51344c0443e4447a8878d6a8e45ab3be44b3a6d2de0491364a8
   sourceType: grpc
   updateStrategy:
     registryPoll:
@@ -2542,12 +2542,8 @@ spec:
     env:
     - name: AUTOINSTALL_COMPONENTS
       value: "false"
-    - name: IMAGE_PAC_PAC_CONTROLLER
-      value: quay.io/openshift-pipeline/pipelines-pipelines-as-code-controller-rhel9:03e2807aa027874d603600712005820a7cf0961a454344cf5e2e3b70148379de
-    - name: IMAGE_PAC_PAC_WATCHER
-      value: quay.io/openshift-pipeline/pipelines-pipelines-as-code-watcher-rhel9:5887db9658dc4f148e3c515577a365c0934ce3de39f8769dcf07e62e3fa9e2af
-    - name: IMAGE_PAC_PAC_WEBHOOK
-      value: quay.io/openshift-pipeline/pipelines-pipelines-as-code-webhook-rhel9:6d6122ec424d243e72d465e936a26c24576ee98df1da3335b59452f9275521ef
+    - name: IMAGE_PIPELINES_CONSOLE_PLUGIN
+      value: quay.io/openshift-pipeline/pipelines-console-plugin-rhel9@sha256:6069f5659392ee604992b12c6fa972f4d20e74fc71e6aade68a0dbc567f24cbd
   name: openshift-pipelines-operator-rh
   source: custom-operators
   sourceNamespace: openshift-marketplace
