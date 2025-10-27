@@ -1,0 +1,41 @@
+kind: ApplicationSet
+apiVersion: argoproj.io/v1alpha1
+metadata:
+  name: monitoring-blackbox
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              values:
+                sourceRoot: components/monitoring/blackbox
+                environment: staging
+                clusterDir: base
+          - list:
+              elements:
+                - nameNormalized: stone-stage-p01
+                  values.clusterDir: stone-stage-p01
+  template:
+    metadata:
+      name: monitoring-blackbox-{{nameNormalized}}
+    spec:
+      project: default
+      source:
+        path: "{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}"
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+        targetRevision: main
+      destination:
+        namespace: appstudio-monitoring
+        server: "{{server}}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=false
+        retry:
+          limit: 50
+          backoff:
+            duration: 15s

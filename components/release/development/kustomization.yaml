@@ -3,23 +3,17 @@ kind: Kustomization
 resources:
   - ../base
   - ../base/monitor/development
-  - https://github.com/konflux-ci/release-service/config/default?ref=d183c5f0a90b8894cc6983157051fafea1faf87e
+  - https://github.com/konflux-ci/release-service/config/default?ref=8143cee5796367395496de758e095395eba2fe38
   - release_service_config.yaml
 
 images:
   - name: quay.io/konflux-ci/release-service
     newName: quay.io/konflux-ci/release-service
-    newTag: d183c5f0a90b8894cc6983157051fafea1faf87e
+    newTag: 8143cee5796367395496de758e095395eba2fe38
 
 namespace: release-service
 
 patches:
-  - target:
-      group: apps
-      version: v1
-      kind: Deployment
-      name: controller-manager
-    path: sealights-token-patch.yaml
   - target:
       group: apps
       version: v1

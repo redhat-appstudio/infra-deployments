@@ -2,72 +2,50 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name:  edit-pipeline-from-build-templates
+  name: edit-pipeline-from-build-templates
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name:  edit
+  name: edit
 subjects:
 - kind: ServiceAccount
-  name: appstudio-pipeline
-  namespace: tekton-ci
-- kind: ServiceAccount
-  name: appstudio-pipeline
+  name: konflux-ci-sa
   namespace: konflux-ci
 - kind: ServiceAccount
-  name: appstudio-pipeline
+  name: konflux-integration-runner
   namespace: rhtap-build-tenant
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name:  edit-pipeline-from-build-templates-namespace
+  name: edit-pipeline-from-build-templates-namespace
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name:  edit-namespace
+  name: edit-namespace
 subjects:
 - kind: ServiceAccount
-  name: appstudio-pipeline
-  namespace: tekton-ci
-- kind: ServiceAccount
-  name: appstudio-pipeline
+  name: konflux-ci-sa
   namespace: konflux-ci
 - kind: ServiceAccount
-  name: appstudio-pipeline
+  name: konflux-integration-runner
   namespace: rhtap-build-tenant
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name:  admin-buildpipelineselectors-from-ci-namespaces
+  name: admin-buildpipelineselectors-from-ci-namespaces
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name:  admin-buildpipelineselectors
+  name: admin-buildpipelineselectors
 subjects:
 - kind: ServiceAccount
-  name: appstudio-pipeline
-  namespace: tekton-ci
-- kind: ServiceAccount
-  name: appstudio-pipeline
+  name: konflux-ci-sa
   namespace: konflux-ci
 - kind: ServiceAccount
-  name: appstudio-pipeline
+  name: konflux-integration-runner
   namespace: rhtap-build-tenant
----
-kind: RoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: appstudio-pipelines-runner-rolebinding
-subjects:
-  - kind: ServiceAccount
-    name: appstudio-pipeline
-    namespace: build-templates-e2e
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: appstudio-pipelines-runner
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -80,7 +58,7 @@ roleRef:
   name: test-runner
 subjects:
 - kind: ServiceAccount
-  name: appstudio-pipeline
+  name: konflux-ci-sa
   namespace: konflux-ci
 ---
 kind: RoleBinding
@@ -106,6 +84,9 @@ subjects:
   - kind: ServiceAccount
     name: konflux-integration-runner
     namespace: rhtap-build-tenant
+  - kind: ServiceAccount
+    name: konflux-integration-runner
+    namespace: build-templates-e2e
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -114,12 +95,12 @@ roleRef:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: application-manager-konflux-integration-runner
+  name: integration-runner-resources-konflux-integration-runner
   namespace: build-templates-e2e
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: application-manager
+  name: integration-runner-resources
 subjects:
 - kind: ServiceAccount
   name: konflux-integration-runner

@@ -44,17 +44,17 @@ spec:
                        if(now > expirationTime) {
                          args="%s:%s\n"
                          printf(args, $1, $2)
-                       } 
+                       }
                     }' $KUBECTL_OUTPUT > $EXPIRED_RELEASES_FILE
-                  # The deleteAndLog will run the Release deletion and save the operation in a structured way that        
-                  # can be read easily by kubectl or journalctl                                                           
+                  # The deleteAndLog will run the Release deletion and save the operation in a structured way that
+                  # can be read easily by kubectl or journalctl
                   function deleteAndLog() {
                     release=${1%:*}
                     namespace=${1#*:}
                     kubectl delete release $release -n $namespace |while read logLine; do
                       echo "INFO: namespace=${namespace} log=${logLine}"
-                    done                                                                                                  
-                  }                                                                                                       
+                    done
+                  }
                   export -f deleteAndLog
                   xargs -a ${EXPIRED_RELEASES_FILE} -i -P ${MAX_PROCS} bash -c 'deleteAndLog "{}"'
               imagePullPolicy: IfNotPresent
