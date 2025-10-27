@@ -1,4 +1,4 @@
-# Create service account to add Prometheus Datasource 
+# Create service account to add Prometheus Datasource
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -94,14 +94,14 @@ metadata:
   name: ocp-injected-certs
 ---
 # Create the Grafana instance
-# A service account is created automatically by the operator, the name is 
+# A service account is created automatically by the operator, the name is
 # derived from the grafana name: <Grafana_name>-sa
 apiVersion: grafana.integreatly.org/v1beta1
 kind: Grafana
 metadata:
   namespace: appstudio-grafana
   name: grafana-oauth
-  labels: 
+  labels:
     dashboards: "appstudio-grafana"
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
@@ -161,7 +161,7 @@ spec:
                 - '-openshift-ca=/etc/pki/tls/cert.pem'
                 - '-openshift-ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt'
                 - '-openshift-ca=/etc/proxy/certs/ca-bundle.crt'
-                - '-skip-auth-regex=^/metrics'            
+                - '-skip-auth-regex=^/metrics'
               image: quay.io/openshift/origin-oauth-proxy@sha256:b6536bfcfaf30a6425d589facd672bae3245f933b2a7399bda3f12e393bd671b
               ports:
                 - containerPort: 9091
@@ -177,7 +177,7 @@ spec:
                 - mountPath: /etc/proxy/certs
                   name: ocp-injected-certs
                   readOnly: false
-             
+
   service:
     metadata:
       annotations:
@@ -188,7 +188,7 @@ spec:
           port: 9091
           protocol: TCP
           targetPort: https
-    
+
 ---
 # Adding route to Grafana
 # The service is created by the operator and named <Grafana_name>-service
@@ -209,7 +209,7 @@ spec:
     name: grafana-oauth-service
     weight: 100
   wildcardPolicy: None
----  
+---
 # Add prometheus Datasource to Grafana
 # Using the thanos-querier url for the datasource
 apiVersion: grafana.integreatly.org/v1beta1
@@ -248,7 +248,7 @@ apiVersion: grafana.integreatly.org/v1beta1
 kind: GrafanaDashboard
 metadata:
   name: example-dashboard
-  labels: 
+  labels:
     app: appstudio-grafana
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true

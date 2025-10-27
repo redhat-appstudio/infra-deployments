@@ -8,7 +8,7 @@ resources:
   - release-vacuum.yaml
   - kubearchive-config.yaml
   - pipelines-vacuum.yaml
-  - kubearchive.yaml
+  - https://github.com/kubearchive/kubearchive/releases/download/v1.10.0/kubearchive.yaml?timeout=90
 
 namespace: product-kubearchive
 secretGenerator:
@@ -56,7 +56,7 @@ patches:
               spec:
                 containers:
                   - name: vacuum
-                    image: quay.io/kubearchive/vacuum:no-eventing-1a13a90
+                    image: quay.io/kubearchive/vacuum:v1.10.0
   - patch: |-
       apiVersion: batch/v1
       kind: CronJob
@@ -69,7 +69,7 @@ patches:
               spec:
                 containers:
                   - name: vacuum
-                    image: quay.io/kubearchive/vacuum:no-eventing-1a13a90
+                    image: quay.io/kubearchive/vacuum:v1.10.0
   - patch: |-
       apiVersion: batch/v1
       kind: CronJob
@@ -82,7 +82,7 @@ patches:
               spec:
                 containers:
                   - name: vacuum
-                    image: quay.io/kubearchive/vacuum:no-eventing-1a13a90
+                    image: quay.io/kubearchive/vacuum:v1.10.0
   - patch: |-
       apiVersion: batch/v1
       kind: Job
@@ -90,6 +90,8 @@ patches:
         name: kubearchive-schema-migration
         namespace: kubearchive
         annotations:
+          # Needed if just the command is changed, otherwise the job needs to be deleted manually
+          argocd.argoproj.io/sync-options: Force=true,Replace=true
           ignore-check.kube-linter.io/no-read-only-root-fs: >
             "This job needs to clone a repository to do its job, so it needs write access to the FS."
       spec:
@@ -100,7 +102,7 @@ patches:
               - name: migration
                 env:
                   - name: KUBEARCHIVE_VERSION
-                    value: v1.7.0
+                    value: v1.10.0
   # These patches add an annotation so an OpenShift service
   # creates the TLS secrets instead of Cert Manager
   - patch: |-
