@@ -7,13 +7,11 @@
     http:
       url: https://esx13060.live.dynatrace.com/api/v2/logs/ingest
       headers:
-        - name: Authorization
-          valueFrom:
-            secretKeyRef:
-              name: log-forwarder-dynatrace-secret
-              key: authorization
-        - name: Content-Type
-          value: application/json; charset=utf-8
+        Authorization:
+          secretKeyRef:
+            name: log-forwarder-dynatrace-secret
+            key: authorization
+        Content-Type: application/json; charset=utf-8
 - op: add
   path: /spec/pipelines/0/outputRefs/-
   value: dynatrace-logs
