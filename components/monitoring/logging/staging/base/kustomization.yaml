@@ -28,3 +28,18 @@ patches:
       version: v1
       kind: ClusterLogForwarder
       name: instance
+  - target:
+      group: external-secrets.io
+      version: v1beta1
+      kind: ExternalSecret
+      name: log-forwarder-dynatrace-external-secret
+    patch: |
+      - op: replace
+        path: /spec/dataFrom/0/extract/key
+        value: staging/monitoring/logging/fluentd/dynatrace-poc-forwarder-rhtap-staging
+  - path: ../base/patches/configure-logforwarder-dynatrace-patch.yaml
+    target:
+      group: observability.openshift.io
+      version: v1
+      kind: ClusterLogForwarder
+      name: instance
