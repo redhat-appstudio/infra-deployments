@@ -6,17 +6,14 @@
     type: http
     http:
       url: https://esx13060.live.dynatrace.com/api/v2/logs/ingest
-      authentication:
-        type: custom
-        custom:
-          header: Authorization
-          prefix: "Api-Token "
-          token:
-            secretName: log-forwarder-dynatrace-secret
-            key: authorization
+      method: POST
       headers:
         Content-Type: application/json; charset=utf-8
+      authentication:
+        token:
+          secret:
+            key: authorization
+            name: log-forwarder-dynatrace-secret
 - op: add
   path: /spec/pipelines/0/outputRefs/-
   value: dynatrace-logs
-
