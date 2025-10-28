@@ -15,8 +15,8 @@ gateway:
     port: 80
   # Add startup probe for faster readiness
   readinessProbe:
-    initialDelaySeconds: 5   # Reduce from default 15
-    periodSeconds: 5         # Check more frequently
+    initialDelaySeconds: 5
+    periodSeconds: 5
     timeoutSeconds: 3
     failureThreshold: 3
     successThreshold: 1
@@ -105,9 +105,9 @@ loki:
 
 # Distributed components configuration
 ingester:
-  replicas: 1  # Reduce from 3 to 1 for development
+  replicas: 3  # Reduce from 3 to 1 for development
   autoscaling:
-    enabled: false  # Disable autoscaling for dev
+    enabled: true  # Disable autoscaling for dev
   zoneAwareReplication:
     enabled: false
   resources:
@@ -126,13 +126,13 @@ ingester:
 
 querier:
   replicas: 3
+  maxUnavailable: 1
   autoscaling:
     enabled: true
     minReplicas: 1
     maxReplicas: 3
     targetCPUUtilizationPercentage: 75
     targetMemoryUtilizationPercentage: 85
-    maxUnavailable: 1
     podDisruptionBudget:
       enabled: true
       minAvailable: 1
@@ -182,18 +182,13 @@ queryScheduler:
 
 distributor:
   replicas: 3  
+  maxUnavailable: 1
   autoscaling:
-    enabled: true  
-    autoscaling:
-      enabled: true
-      minReplicas: 1
-      maxReplicas: 3
-      targetCPUUtilizationPercentage: 75
-      targetMemoryUtilizationPercentage: 85
-      maxUnavailable: 1
-    podDisruptionBudget:
-      enabled: true
-      minAvailable: 1
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 3
+    targetCPUUtilizationPercentage: 75
+    targetMemoryUtilizationPercentage: 85
     behavior:
       scaleDown:
         stabilizationWindowSeconds: 300
@@ -212,7 +207,6 @@ distributor:
             value: 1 
             periodSeconds: 60  
         selectPolicy: Min  
-  maxUnavailable: 1
   resources:
     requests:
       cpu: 50m  # Reduce from 100m
