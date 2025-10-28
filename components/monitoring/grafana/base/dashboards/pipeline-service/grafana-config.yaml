@@ -555,7 +555,7 @@ data:
               "targets": [
                 {
                   "exemplar": true,
-                  "expr": "sum by (status) (rate(tekton_pipelines_controller_pipelinerun_count[1h]))* 3600",
+                  "expr": "sum by (status) (rate(tekton_pipelines_controller_pipelinerun_total[1h]))* 3600",
                   "interval": "",
                   "intervalFactor": 1,
                   "legendFormat": "",
@@ -644,7 +644,7 @@ data:
               "targets": [
                 {
                   "exemplar": true,
-                  "expr": "sum (rate(tekton_pipelines_controller_pipelinerun_count{status=\"success\"}[1h])) / sum (rate(tekton_pipelines_controller_pipelinerun_count[1h]))",
+                  "expr": "sum (rate(tekton_pipelines_controller_pipelinerun_total{status=\"success\"}[1h])) / sum (rate(tekton_pipelines_controller_pipelinerun_total[1h]))",
                   "format": "table",
                   "hide": false,
                   "instant": false,
@@ -1136,7 +1136,7 @@ data:
               "targets": [
                 {
                   "exemplar": true,
-                  "expr": "tekton_pipelines_controller_running_taskruns_count",
+                  "expr": "tekton_pipelines_controller_running_taskruns_total",
                   "interval": "",
                   "legendFormat": "",
                   "refId": "A"
@@ -1515,7 +1515,8 @@ data:
                         "value": 600
                       }
                     ]
-                  }
+                  },
+                  "unit": "s"
                 },
                 "overrides": []
               },
@@ -1573,7 +1574,8 @@ data:
                         "value": 80
                       }
                     ]
-                  }
+                  },
+                  "unit": "s"
                 },
                 "overrides": []
               },
@@ -1631,7 +1633,8 @@ data:
                         "value": 600
                       }
                     ]
-                  }
+                  },
+                  "unit": "s"
                 },
                 "overrides": []
               },
@@ -1689,7 +1692,8 @@ data:
                         "value": 80
                       }
                     ]
-                  }
+                  },
+                  "unit": "s"
                 },
                 "overrides": []
               },
@@ -1747,7 +1751,8 @@ data:
                         "value": 600
                       }
                     ]
-                  }
+                  },
+                  "unit": "s"
                 },
                 "overrides": []
               },
@@ -1805,7 +1810,8 @@ data:
                         "value": 600
                       }
                     ]
-                  }
+                  },
+                  "unit": "s"
                 },
                 "overrides": []
               },
@@ -2304,7 +2310,7 @@ data:
               "targets": [
                 {
                   "exemplar": true,
-                  "expr": "sum by (event_type) (rate(pac_watcher_pipelines_as_code_pipelinerun_count[1h]))*3600",
+                  "expr": "sum by (event_type) (rate(pac_watcher_pipelines_as_code_pipelinerun_total[1h]))*3600",
                   "interval": "",
                   "legendFormat": "",
                   "refId": "A"
