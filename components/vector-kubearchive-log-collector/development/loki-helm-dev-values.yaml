@@ -105,9 +105,9 @@ loki:
 
 # Distributed components configuration
 ingester:
-  replicas: 3  
+  replicas: 3
   autoscaling:
-    enabled: true  
+    enabled: true
   zoneAwareReplication:
     enabled: false
   resources:
@@ -142,18 +142,18 @@ querier:
         policies:
           - type: Percent
             value: 10
-            periodSeconds: 60  
-        selectPolicy: Min 
+            periodSeconds: 60
+        selectPolicy: Min
       scaleUp:
-        stabilizationWindowSeconds: 60 
+        stabilizationWindowSeconds: 60
         policies:
           - type: Percent
-            value: 50 
-            periodSeconds: 60  
+            value: 50
+            periodSeconds: 60
           - type: Pods
-            value: 1 
-            periodSeconds: 60  
-        selectPolicy: Min  
+            value: 1
+            periodSeconds: 60
+        selectPolicy: Min
   resources:
     requests:
       cpu: 50m  # Keep at 50m
@@ -181,7 +181,7 @@ queryScheduler:
       memory: 64Mi  # Reduce from 128Mi
 
 distributor:
-  replicas: 3  
+  replicas: 3
   maxUnavailable: 1
   autoscaling:
     enabled: true
@@ -195,18 +195,18 @@ distributor:
         policies:
           - type: Percent
             value: 10
-            periodSeconds: 60  
-        selectPolicy: Min 
+            periodSeconds: 60
+        selectPolicy: Min
       scaleUp:
-        stabilizationWindowSeconds: 60 
+        stabilizationWindowSeconds: 60
         policies:
           - type: Percent
-            value: 50 
-            periodSeconds: 60  
+            value: 50
+            periodSeconds: 60
           - type: Pods
-            value: 1 
-            periodSeconds: 60  
-        selectPolicy: Min  
+            value: 1
+            periodSeconds: 60
+        selectPolicy: Min
   resources:
     requests:
       cpu: 50m  # Reduce from 100m
@@ -276,6 +276,3 @@ memcachedIndexWrites:
   enabled: true
   replicas: 1
   maxItemMemory: 10
-
-
-
