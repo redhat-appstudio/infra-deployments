@@ -14,6 +14,8 @@ customConfig:
       glob_minimum_cooldown_ms: 500
       max_line_bytes: 3145728
       auto_partial_merge: true
+    metrics:
+      type: internal_metrics
   transforms:
     reduce_events:
       type: reduce
@@ -95,6 +97,10 @@ customConfig:
         type: "memory"
         max_events: 10000
         when_full: "drop_newest"  # Drop newest instead of blocking
+    prometheus_sink:
+      type: prometheus_exporter
+      inputs:
+        - metrics
 env:
   - name: LOKI_USERNAME
     valueFrom:
@@ -106,13 +112,16 @@ env:
       secretKeyRef:
         name: kubearchive-loki
         key: PASSWORD
-nodeSelector:
-  konflux-ci.dev/workload: konflux-tenants
-tolerations:
-  - effect: NoSchedule
-    key: konflux-ci.dev/workload
-    operator: Equal
-    value: konflux-tenants
+affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 1
+        preference:
+          matchExpressions:
+          - key: konflux-ci.dev/workload
+            operator: In
+            values:
+              - konflux-tenants
 image:
   repository: quay.io/kubearchive/vector
   tag: 0.46.1-distroless-libc

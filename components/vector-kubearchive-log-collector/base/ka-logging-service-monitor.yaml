@@ -1,0 +1,56 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: metrics-reader
+  namespace: product-kubearchive-logging
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: metrics-reader
+  namespace: product-kubearchive-logging
+  annotations:
+    kubernetes.io/service-account.name: metrics-reader
+type: kubernetes.io/service-account-token
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: product-kubearchive-logging-metrics-reader
+rules:
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus-product-kubearchive-logging-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: product-kubearchive-logging-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: metrics-reader
+  namespace: product-kubearchive-logging
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: product-kubearchive-logging-monitor
+  namespace: product-kubearchive-logging
+spec:
+  endpoints:
+  - path: /metrics
+    port: https
+    scheme: https
+    bearerTokenSecret:
+      name: "metrics-reader"
+      key: token
+    tlsConfig:
+      insecureSkipVerify: true
+  selector:
+    matchLabels:
+      app: kube-rbac-proxy
