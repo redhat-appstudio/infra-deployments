@@ -37,7 +37,7 @@ loki:
       max_streams_per_user: 0
       max_line_size: 2097152
       per_stream_rate_limit: 100M
-      per_stream_rate_limit_burst: 400M
+      per_stream_rate_limit_burst: 300M
       reject_old_samples: false
       reject_old_samples_max_age: 168h
       discover_service_name: []
@@ -83,17 +83,17 @@ loki:
 ingester:
   replicas: 3
   autoscaling:
-    enabled: false  # Disable HPA to avoid conflicts with fixed replicas
+    enabled: false
   zoneAwareReplication:
     enabled: true
   maxUnavailable: 1
   resources:
     requests:
       cpu: 500m
-      memory: 1Gi
+      memory: 2Gi
     limits:
       cpu: 2000m
-      memory: 2Gi
+      memory: 4Gi
   persistence:
     enabled: true
     size: 10Gi
