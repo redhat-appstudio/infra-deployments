@@ -55,12 +55,12 @@ loki:
         log_stream_creation: false
         log_duplicate_stream_info: true
   ingester:
-    chunk_target_size: 8388608        # 8MB
+    chunk_target_size: 4194304       
     chunk_idle_period: 5m
     max_chunk_age: 2h
-    chunk_encoding: snappy            # Compress data (reduces S3 transfer size)
-    chunk_retain_period: 1h           # Keep chunks in memory after flush
-    flush_op_timeout: 10m             # Add timeout for S3 operations
+    chunk_encoding: snappy            
+    chunk_retain_period: 1h          
+    flush_op_timeout: 10m            
   server:
     grpc_server_max_recv_msg_size: 15728640  # 15MB
     grpc_server_max_send_msg_size: 15728640
