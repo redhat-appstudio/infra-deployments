@@ -66,10 +66,6 @@ spec:
             # Generate runtime-config.js with PUBLIC_ variables
             out=/mnt/static-content/runtime-config.js
             printf "window.KONFLUX_RUNTIME = window.KONFLUX_RUNTIME || {};\n" > "$out"
-            env | grep -E '^PUBLIC_' | while IFS='=' read -r name value; do
-              esc=$(printf '%s' "$value" | sed -e 's/\\\\/\\\\\\\\/g' -e 's/\"/\\\"/g')
-              printf 'window.KONFLUX_RUNTIME.%s = "%s";\n' "$name" "$esc" >> "$out"
-            done
 
             # Apply cluster-specific variables from ConfigMap files to runtime-config.js, if present
             if [ -d /mnt/ui-runtime-env-variables ]; then
