@@ -4,6 +4,8 @@ kind: PrometheusRule
 metadata:
   name: kubearchive-rules
   namespace: product-kubearchive
+  labels:
+    openshift.io/prometheus-rule-evaluation-scope: leaf-prometheus
 spec:
   groups:
     - name: rules_kubearchive
