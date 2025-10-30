@@ -1,0 +1,23 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: kubearchive-rules
+  namespace: product-kubearchive
+spec:
+  groups:
+    - name: rules_kubearchive
+      rules:
+      - record: kubearchive:api:latency
+        expr: |
+          sum by (http_status_code, http_route)(rate(http_server_request_duration_sum{exported_job="kubearchive.api"}[5m])) / sum by (http_status_code, http_route)(rate(http_server_request_duration_count{exported_job="kubearchive.api"}[5m]))
+      - record: kubearchive:sink:latency
+        expr: |
+          sum by (http_status_code, http_route)(rate(http_server_request_duration_sum{exported_job="kubearchive.sink"}[5m])) / sum by (http_status_code, http_route)(rate(http_server_request_duration_count{exported_job="kubearchive.sink"}[5m]))
+      - record: kubearchive:api:db_latency
+        expr: |
+          sum by (method) (rate(db_sql_latency_sum{exported_job="kubearchive.api"}[5m])) / sum by (method) (rate(db_sql_latency_count{exported_job="kubearchive.api"}[5m]))
+      - record: kubearchive:sink:db_latency
+        expr: |
+          sum by (method) (rate(db_sql_latency_sum{exported_job="kubearchive.sink"}[5m])) / sum by (method) (rate(db_sql_latency_count{exported_job="kubearchive.sink"}[5m]))
+
