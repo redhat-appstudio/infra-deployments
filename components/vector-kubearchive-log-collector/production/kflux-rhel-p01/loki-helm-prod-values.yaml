@@ -54,7 +54,7 @@ loki:
         log_stream_creation: false
         log_duplicate_stream_info: true
   ingester:
-    chunk_target_size: 8388608        # 8MB
+    chunk_target_size: 4194304        
     chunk_idle_period: 5m
     max_chunk_age: 2h
     chunk_encoding: snappy            # Compress data (reduces S3 transfer size)
@@ -205,11 +205,9 @@ memcachedIndexWrites:
   enabled: true
   maxItemMemory: 10  # MB
 
-# Disable Minio - staging uses S3 with IAM role
 minio:
   enabled: false
 
-# Resources for memcached exporter to satisfy linter
 memcachedExporter:
   resources:
     requests:
