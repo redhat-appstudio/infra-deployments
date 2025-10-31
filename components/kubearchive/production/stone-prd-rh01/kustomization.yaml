@@ -5,7 +5,8 @@ resources:
   - ../../base
   - ../base
   - external-secret.yaml
-  - https://github.com/kubearchive/kubearchive/releases/download/v1.10.0/kubearchive.yaml?timeout=90
+  - kubearchive.yaml
+#   - https://github.com/kubearchive/kubearchive/releases/download/v1.10.0/kubearchive.yaml?timeout=90
 
 namespace: product-kubearchive
 
@@ -174,11 +175,11 @@ patches:
                   - containerPort: 8081
                 resources:
                   limits:
-                    cpu: 250m
-                    memory: 1500Mi
+                    cpu: 500m
+                    memory: 8Gi
                   requests:
-                    cpu: 250m
-                    memory: 1500Mi
+                    cpu: 500m
+                    memory: 8Gi
 
   - patch: |-
       apiVersion: apps/v1
