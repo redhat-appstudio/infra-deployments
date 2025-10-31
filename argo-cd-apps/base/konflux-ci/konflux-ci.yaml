@@ -35,9 +35,9 @@ spec:
       ignoreDifferences:
       - group: ""
         kind: "ServiceAccount"
-        name: appstudio-pipeline
+        name: konflux-ci-sa
         jqPathExpressions:
-        - .imagePullSecrets[] | select(.name | startswith("appstudio-pipeline-dockercfg"))
+        - .imagePullSecrets[] | select(.name | startswith("konflux-ci-sa-dockercfg"))
       syncPolicy:
         automated:
           prune: true

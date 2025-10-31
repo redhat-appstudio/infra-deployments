@@ -286,15 +286,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - ""
-  resourceNames:
-  - appstudio-pipeline
-  resources:
-  - serviceaccounts
-  verbs:
-  - get
-  - list
-- apiGroups:
   - pipelinesascode.tekton.dev
   - results.tekton.dev
   - tekton.dev
@@ -2282,7 +2273,7 @@ spec:
   - name: createCABundleConfigMaps
     value: "false"
   pipeline:
-    default-service-account: appstudio-pipeline
+    default-service-account: default
     enable-api-fields: alpha
     enable-bundles-resolver: true
     enable-cluster-resolver: true
