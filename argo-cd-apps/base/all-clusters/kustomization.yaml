@@ -5,3 +5,5 @@ resources:
 components:
   - ../../k-components/inject-argocd-namespace
   - ../../k-components/deploy-to-all-clusters
+  # This component must run after deploy-to-all-clusters to add exclusion
+  - ../../k-components/exclude-stone-stage-p01-from-eso
