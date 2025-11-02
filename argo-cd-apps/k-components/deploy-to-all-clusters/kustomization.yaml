@@ -7,3 +7,5 @@ patches:
       group: argoproj.io
       version: v1alpha1
       kind: ApplicationSet
+      # Exclude ApplicationSets that already have their own selectors
+      labelSelector: deploy-to-all-clusters/excluded != true

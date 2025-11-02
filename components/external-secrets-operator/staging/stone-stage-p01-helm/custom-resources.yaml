@@ -1,0 +1,46 @@
+# Custom resources that match the OLM deployment
+# These may need to be applied separately if the Helm chart doesn't create them with exact labels
+
+---
+# Custom metrics Service (matching operator-config.yaml)
+# This service may be created by the Helm chart, but we ensure labels match
+apiVersion: v1
+kind: Service
+metadata:
+  name: cluster-external-secrets-metrics
+  namespace: external-secrets-operator
+  annotations:
+    ignore-check.kube-linter.io/dangling-service: "False positive"
+  labels:
+    app.kubernetes.io/name: external-secrets
+    app.kubernetes.io/instance: cluster
+spec:
+  type: ClusterIP
+  ports:
+  - name: metrics
+    port: 8080
+    targetPort: 8080
+    protocol: TCP
+  selector:
+    app.kubernetes.io/name: external-secrets
+    app.kubernetes.io/instance: cluster
+---
+# ServiceMonitor (matching operator-config.yaml)
+# This may be created by Helm chart, but we ensure exact configuration
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: external-secrets-operator
+  namespace: external-secrets-operator
+  labels:
+    app.kubernetes.io/name: external-secrets
+    app.kubernetes.io/instance: cluster
+spec:
+  endpoints:
+  - port: metrics
+    scheme: http
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: external-secrets
+      app.kubernetes.io/instance: cluster
+
