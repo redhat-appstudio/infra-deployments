@@ -2,6 +2,38 @@
 global:
   extraArgs:
     - "-log.level=debug"
+
+autoscale: &autoscale
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 3
+    targetCPUUtilizationPercentage: 75
+    targetMemoryUtilizationPercentage: 85
+    podDisruptionBudget:
+      enabled: true
+      minAvailable: 1
+    behavior:
+      enabled: true
+      scaleDown:
+        stabilizationWindowSeconds: 300
+        policies:
+          - type: Percent
+            value: 10
+            periodSeconds: 60
+        selectPolicy: Min
+      scaleUp:
+        stabilizationWindowSeconds: 60
+        policies:
+          - type: Percent
+            value: 50
+            periodSeconds: 60
+          - type: Pods
+            value: 1
+            periodSeconds: 60
+        selectPolicy: Min
+
+
 gateway:
   service:
     type: LoadBalancer
@@ -82,6 +114,7 @@ ingester:
   replicas: 3
   autoscaling:
     enabled: true
+    <<: *autoscale
   zoneAwareReplication:
     enabled: true
   maxUnavailable: 1
@@ -101,9 +134,10 @@ ingester:
     hard: {}
 
 querier:
-  replicas: 2
+  replicas: 3
   autoscaling:
-    enabled: false
+    enabled: true
+    <<: *autoscale
   maxUnavailable: 1
   resources:
     requests:
@@ -137,6 +171,7 @@ distributor:
   replicas: 3
   autoscaling:
     enabled: true
+    <<: *autoscale
   maxUnavailable: 1
   resources:
     requests:
