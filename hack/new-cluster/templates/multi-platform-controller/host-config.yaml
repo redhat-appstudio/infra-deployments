@@ -194,6 +194,8 @@ data:
 
     mount --bind /home/var-tmp /var/tmp
 
+    restorecon -r /var/lib/containers /var/tmp
+
     if [ -d "/home/ec2-user" ]; then
     echo "ec2-user home exists"
     else
@@ -487,6 +489,8 @@ data:
 
     mount --bind /home/var-tmp /var/tmp
 
+    restorecon -r /var/lib/containers /var/tmp
+
     if [ -d "/home/ec2-user" ]; then
     echo "ec2-user home exists"
     else
@@ -763,6 +767,8 @@ data:
 
     mount --bind /home/var-tmp /var/tmp
     chmod a+rw /var/tmp
+
+    restorecon -r /var/lib/containers /var/tmp
 
     if [ -d "/home/ec2-user" ]; then
       echo "ec2-user home exists"

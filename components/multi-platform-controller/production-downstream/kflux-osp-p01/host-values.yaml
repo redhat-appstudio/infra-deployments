@@ -76,6 +76,7 @@ dynamicConfigs:
       # Setup bind mounts
       mount --bind /home/var-lib-containers /var/lib/containers
       mount --bind /home/var-tmp /var/tmp
+      restorecon -r /var/lib/containers /var/tmp
 
       # Configure ec2-user SSH access
       chown -R ec2-user /home/ec2-user
@@ -140,6 +141,7 @@ dynamicConfigs:
       mount --bind /home/var-lib-containers /var/lib/containers
       mount --bind /home/var-tmp /var/tmp
       chmod a+rw /var/tmp
+      restorecon -r /var/lib/containers /var/tmp
 
       # Configure ec2-user SSH access
       chown -R ec2-user /home/ec2-user
@@ -200,6 +202,7 @@ dynamicConfigs:
       # Setup bind mounts
       mount --bind /home/var-lib-containers /var/lib/containers
       mount --bind /home/var-tmp /var/tmp
+      restorecon -r /var/lib/containers /var/tmp
 
       # Configure ec2-user SSH access
       chown -R ec2-user /home/ec2-user
