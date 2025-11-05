@@ -1,0 +1,37 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: all-access-appstudio-grafana
+  namespace: appstudio-grafana
+rules:
+# Grant full access to all base API resources
+- apiGroups: [""]
+  resources: ["*"]
+  verbs: ["*"]
+# Grant full access to all API resources provided by Grafana Operator
+- apiGroups: ["grafana.integreatly.org"]
+  resources: ["*"]
+  verbs: ["*"]
+# Grant full access to OpenShift Route resources
+- apiGroups: ["route.openshift.io"]
+  resources: ["*"]
+  verbs: ["*"]
+# Grant full access to some Operator resources for quick fixes
+- apiGroups: ["operators.coreos.com"]
+  resources: ["clusterserviceversions", "subscriptions", "operatorgroups"]
+  verbs: ["*"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: all-access-appstudio-grafana
+  namespace: appstudio-grafana
+subjects:
+- apiGroup: rbac.authorization.k8s.io
+  kind: Group
+  name: konflux-o11y-admins
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: all-access-appstudio-grafana
+
