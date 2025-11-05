@@ -12,13 +12,6 @@ policies:
 resources:
 - ./resources/labeled-namespace-konflux.yaml
 results:
-- policy: bootstrap-tenant-namespace-rbcm
-  generatedResource: ./resources/expected-rolebinding-appstudio-runner.yaml
-  kind: Namespace
-  resources:
-  - labeled-namespace-konflux
-  result: pass
-  rule: create-appstudio-runner-rolebinding
 - policy: bootstrap-tenant-namespace-np-ocpconsole
   generatedResource: ./resources/expected-networkpolicy_allow-from-console-namespaces.yml
   kind: Namespace

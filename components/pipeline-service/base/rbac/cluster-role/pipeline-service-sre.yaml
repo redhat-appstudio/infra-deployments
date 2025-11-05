@@ -32,16 +32,6 @@ rules:
       - watch
     resources:
       - secrets
-  # Grant access to the default account used to run pipelines
-  - apiGroups:
-      - ""
-    resources:
-      - "serviceaccounts"
-    resourceNames:
-      - "appstudio-pipeline"
-    verbs:
-      - "get"
-      - "list"
   # Grant full access to pipeline related resources
   - apiGroups:
       - pipelinesascode.tekton.dev
