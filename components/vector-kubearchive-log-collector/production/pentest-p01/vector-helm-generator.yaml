@@ -1,0 +1,12 @@
+apiVersion: builtin
+kind: HelmChartInflationGenerator
+metadata:
+  name: vector
+name: vector
+repo: https://helm.vector.dev
+version: 0.43.0
+releaseName: vector
+namespace: product-kubearchive-logging
+valuesFile: vector-helm-values.yaml
+additionalValuesFiles:
+  - vector-helm-prod-values.yaml
