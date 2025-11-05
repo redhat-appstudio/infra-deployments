@@ -28,6 +28,17 @@ patches:
     target:
       kind: SecurityContextConstraints
       name: kubearchive-logging-scc
+  # Patch all Loki PodDisruptionBudgets to allow eviction of unhealthy pods
+  # This is critical for StatefulSets where stale pods should be evicted
+  - patch: |
+      - op: add
+        path: /spec/unhealthyPodEvictionPolicy
+        value: AlwaysAllow
+    target:
+      group: policy
+      version: v1
+      kind: PodDisruptionBudget
+      labelSelector: app.kubernetes.io/name=loki
 
 generators:
 - vector-helm-generator.yaml
