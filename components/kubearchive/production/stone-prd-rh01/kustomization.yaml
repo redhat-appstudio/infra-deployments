@@ -164,6 +164,8 @@ patches:
               - name: manager
                 args: [--health-probe-bind-address=:8081]
                 env:
+                - name: GOMEMLIMIT
+                  value: 13Gi
                 - name: KUBEARCHIVE_OTEL_MODE
                   value: enabled
                 - name: OTEL_EXPORTER_OTLP_ENDPOINT
