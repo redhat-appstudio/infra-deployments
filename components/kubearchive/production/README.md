@@ -30,7 +30,6 @@ New clusters (Konflux Automation):
 * kflux-rhel-p01
 * kflux-osp-p01
 
-
 ### app-interface databases
 
 The paths to the DB secrets are built from
