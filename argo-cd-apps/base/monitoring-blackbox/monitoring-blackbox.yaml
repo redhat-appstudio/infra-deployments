@@ -31,6 +31,12 @@ spec:
       destination:
         namespace: appstudio-monitoring
         server: "{{server}}"
+      ignoreDifferences:
+      - group: ""
+        kind: "ConfigMap"
+        name: ca-inject
+        jqPathExpressions:
+        - .data
       syncPolicy:
         automated:
           prune: true
