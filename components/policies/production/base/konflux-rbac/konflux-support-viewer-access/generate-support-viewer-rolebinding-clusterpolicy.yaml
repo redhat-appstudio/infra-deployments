@@ -1,0 +1,68 @@
+---
+# This ClusterPolicy automatically generates a RoleBinding in all tenant namespaces
+# to grant read-only access to the 'konflux-sre' and 'ai-konflux-user-support' groups,
+# as well as individual users listed in the konflux-support-users ConfigMap.
+#
+# This policy is designed to ensure that these groups and users have consistent
+# visibility across tenant namespaces for monitoring, troubleshooting, or support.
+# 
+# Individual user access is required for the Konflux UI, which only supports
+# User subjects (not Group subjects) for authentication.
+
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: generate-konflux-support-read-only-rolebinding
+  annotations:
+    policies.kyverno.io/title: "Generate Read-Only RoleBinding for Konflux Support Users and Groups"
+    policies.kyverno.io/category: Multi-Tenancy
+    policies.kyverno.io/description: >-
+      This policy automatically generates a RoleBinding in all tenant namespaces.
+      The RoleBinding binds the 'konflux-sre' and 'ai-konflux-user-support' groups,
+      plus individual support users from a ConfigMap, to the Konflux-specific
+      'konflux-viewer-user-actions' ClusterRole, granting them comprehensive
+      read-only access to resources within each tenant namespace, therefore
+      allowing better, fast and streamlined support via both CLI and UI.
+spec:
+  background: false
+  rules:
+    - name: generate-read-only-rolebinding
+      match:
+        any:
+        - resources:
+            kinds:
+            - /v1/Namespace
+            selector:
+              matchLabels:
+                konflux-ci.dev/type: tenant
+      context:
+      - name: supportUsers
+        configMap:
+          name: konflux-rbac-konflux-support-users
+          namespace: konflux-policies
+      generate:
+        generateExisting: true
+        synchronize: true
+        apiVersion: rbac.authorization.k8s.io/v1
+        kind: RoleBinding
+        name: konflux-read-only-binding
+        namespace: "{{request.object.metadata.name}}"
+        data:
+          subjects: |-
+            {{ 
+              concat(
+                '[
+                  {"kind": "Group", "name": "konflux-sre", "apiGroup": "rbac.authorization.k8s.io"},
+                  {"kind": "Group", "name": "ai-konflux-user-support", "apiGroup": "rbac.authorization.k8s.io"}',
+                split(supportUsers.data.users, '\n') | 
+                  map(&trim(@), @) | 
+                  [?@ != ''] | 
+                  map(&concat(',{"kind": "User", "name": "', @, '", "apiGroup": "rbac.authorization.k8s.io"}'), @) | 
+                  join('', @),
+                ']'
+              ) | parse_json(@)
+            }}
+          roleRef:
+            kind: ClusterRole
+            name: konflux-viewer-user-actions
+            apiGroup: rbac.authorization.k8s.io
