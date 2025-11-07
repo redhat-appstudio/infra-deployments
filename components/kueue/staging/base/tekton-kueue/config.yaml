@@ -78,6 +78,12 @@ cel:
         resource('aws-ip', 1)
       ) : []
 
+    # Set mintmaker resource requests.
+    # Necessary since mintmaker refreshes can overload clusters without a
+    # bottleneck on the number of pipelineruns running.
+    - |
+        plrNamespace == 'mintmaker' ? [resource('mintmaker', 1)] : []
+
     # Set the pipeline priority
     - |
         pacEventType == 'push' ? priority('konflux-post-merge-build') :
