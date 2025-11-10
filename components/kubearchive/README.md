@@ -1,5 +1,25 @@
 # KubeArchive README
 
+## Release Retention and gracePeriodDays
+
+KubeArchive is configured to automatically delete Releases based on their retention period. The retention period can be customized using the `gracePeriodDays` field in the Release spec.
+
+### How it works
+
+- **Default behavior**: If a Release does not have `gracePeriodDays` specified, it will be deleted 5 days after creation.
+- **Custom retention**: If a Release has `spec.gracePeriodDays` set, that value will be used instead.
+- **Maximum cap**: To prevent abuse, there is a maximum retention period of 30 days. Even if `gracePeriodDays` is set higher than 30, the Release will be deleted after 30 days.
+
+### Examples
+
+- Release with no `gracePeriodDays`: deleted after 5 days
+- Release with `gracePeriodDays: 10`: deleted after 10 days
+- Release with `gracePeriodDays: 45`: deleted after 30 days (capped at maximum)
+
+### Important note
+
+Deleted Releases are archived in KubeArchive and can still be accessed through the KubeArchive API. The deletion from the cluster is automatic, but the historical data is preserved.
+
 ## Upgrading
 
 To upgrade start by upgrading development, which also upgrades staging. The diff should

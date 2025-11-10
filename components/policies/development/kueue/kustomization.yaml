@@ -2,3 +2,16 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
 - queue-config
+- pre-sync-hook.yaml
+
+namespace: konflux-policies
+
+replacements:
+  - source:
+      kind: ServiceAccount
+      fieldPath: metadata.namespace
+    targets:
+      - select:
+          kind: ClusterRoleBinding
+        fieldPaths:
+          - subjects.0.namespace

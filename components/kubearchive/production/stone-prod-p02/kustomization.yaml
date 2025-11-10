@@ -5,7 +5,7 @@ resources:
   - ../../base
   - ../base
   - external-secret.yaml
-  - https://github.com/kubearchive/kubearchive/releases/download/v1.9.0/kubearchive.yaml?timeout=90
+  - https://github.com/kubearchive/kubearchive/releases/download/v1.11.1/kubearchive.yaml?timeout=90
 
 namespace: product-kubearchive
 
@@ -47,6 +47,20 @@ patches:
 
   - patch: |-
       apiVersion: batch/v1
+      kind: CronJob
+      metadata:
+        name: releases-vacuum
+      spec:
+        jobTemplate:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: vacuum
+                    image: quay.io/kubearchive/vacuum:v1.11.1
+
+  - patch: |-
+      apiVersion: batch/v1
       kind: Job
       metadata:
         name: kubearchive-schema-migration
@@ -64,7 +78,7 @@ patches:
               - name: migration
                 env:
                   - name: KUBEARCHIVE_VERSION
-                    value: v1.9.0
+                    value: v1.11.1
   # We don't need the Secret as it will be created by the ExternalSecrets Operator
   - patch: |-
       $patch: delete
@@ -149,6 +163,9 @@ patches:
               - name: manager
                 args: [--health-probe-bind-address=:8081]
                 env:
+                - name: GOMEMLIMIT
+                  value: 4GiB
+                  valueFrom: null # required because valueFrom comes from the original
                 - name: KUBEARCHIVE_OTEL_MODE
                   value: enabled
                 - name: OTEL_EXPORTER_OTLP_ENDPOINT
@@ -160,11 +177,11 @@ patches:
                   - containerPort: 8081
                 resources:
                   limits:
-                    cpu: 250m
-                    memory: 1Gi
+                    cpu: 500m
+                    memory: 5Gi
                   requests:
-                    cpu: 250m
-                    memory: 1Gi
+                    cpu: 500m
+                    memory: 5Gi
 
   - patch: |-
       apiVersion: apps/v1

@@ -6,7 +6,6 @@ main() {
     load_global_vars
     "${ROOT}/secret-creator/quality-dashboard/create-quality-dashboard-secrets.sh"
     "${ROOT}/secret-creator/create-ci-helper-app-secret.sh"
-    "${ROOT}/secret-creator/create-sealights-secrets.sh"
 }
 
 load_global_vars() {

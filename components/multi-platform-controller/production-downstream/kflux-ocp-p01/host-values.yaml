@@ -3,13 +3,13 @@ environment: "prod"
 
 archDefaults:
   arm64:
-    ami: "ami-03d6a5256a46c9feb"
+    ami: "ami-06f37afe6d4f43c47"
     key-name: "kflux-ocp-p01-key-pair"
     security-group-id: "sg-0a1f3fdbbf7198922"
     subnet-id: "subnet-0864e71d16676bf7f"
 
   amd64:
-    ami: "ami-026ebd4cfe2c043b2"
+    ami: "ami-01aaf1c29c7e0f0af"
     key-name: "kflux-ocp-p01-key-pair"
     security-group-id: "sg-0a1f3fdbbf7198922"
     subnet-id: "subnet-0864e71d16676bf7f"
@@ -90,6 +90,7 @@ dynamicConfigs:
       # Setup bind mounts
       mount --bind /home/var-lib-containers /var/lib/containers
       mount --bind /home/var-tmp /var/tmp
+      restorecon -r /var/lib/containers /var/tmp
 
       # Configure ec2-user SSH access
       chown -R ec2-user /home/ec2-user
@@ -166,6 +167,7 @@ dynamicConfigs:
       mount --bind /home/var-lib-containers /var/lib/containers
       mount --bind /home/var-tmp /var/tmp
       chmod a+rw /var/tmp
+      restorecon -r /var/lib/containers /var/tmp
 
       # Configure ec2-user SSH access
       chown -R ec2-user /home/ec2-user
@@ -226,6 +228,7 @@ dynamicConfigs:
       # Setup bind mounts
       mount --bind /home/var-lib-containers /var/lib/containers
       mount --bind /home/var-tmp /var/tmp
+      restorecon -r /var/lib/containers /var/tmp
 
       # Configure ec2-user SSH access
       chown -R ec2-user /home/ec2-user
@@ -301,96 +304,96 @@ staticHosts:
     address: "10.130.85.132"
     concurrency: "4"
     platform: "linux/s390x"
-    secret: "s390x-static-ssh-key"
+    secret: "ibm-s390x-ssh-key"
     user: "root"
 
   s390x-static-2:
     address: "10.130.85.133"
     concurrency: "4"
     platform: "linux/s390x"
-    secret: "s390x-static-ssh-key"
+    secret: "ibm-s390x-ssh-key"
     user: "root"
 
   s390x-static-3:
     address: "10.130.85.134"
     concurrency: "4"
     platform: "linux/s390x"
-    secret: "s390x-static-ssh-key"
+    secret: "ibm-s390x-ssh-key"
     user: "root"
 
   s390x-static-4:
     address: "10.130.85.135"
     concurrency: "4"
     platform: "linux/s390x"
-    secret: "s390x-static-ssh-key"
+    secret: "ibm-s390x-ssh-key"
     user: "root"
 
   s390x-static-5:
     address: "10.130.85.164"
     concurrency: "4"
     platform: "linux/s390x"
-    secret: "s390x-static-ssh-key"
+    secret: "ibm-s390x-ssh-key"
     user: "root"
 
   s390x-static-6:
     address: "10.130.85.196"
     concurrency: "4"
     platform: "linux/s390x"
-    secret: "s390x-static-ssh-key"
+    secret: "ibm-s390x-ssh-key"
     user: "root"
 
   s390x-static-7:
     address: "10.130.85.197"
     concurrency: "4"
     platform: "linux/s390x"
-    secret: "s390x-static-ssh-key"
+    secret: "ibm-s390x-ssh-key"
     user: "root"
 
   s390x-static-8:
     address: "10.130.85.198"
     concurrency: "4"
     platform: "linux/s390x"
-    secret: "s390x-static-ssh-key"
+    secret: "ibm-s390x-ssh-key"
     user: "root"
 
   s390x-static-9:
     address: "10.130.85.199"
     concurrency: "4"
     platform: "linux/s390x"
-    secret: "s390x-static-ssh-key"
+    secret: "ibm-s390x-ssh-key"
     user: "root"
 
   s390x-static-10:
     address: "10.130.85.200"
     concurrency: "4"
     platform: "linux/s390x"
-    secret: "s390x-static-ssh-key"
+    secret: "ibm-s390x-ssh-key"
     user: "root"
 
   s390x-static-11:
     address: "10.130.85.201"
     concurrency: "4"
     platform: "linux/s390x"
-    secret: "s390x-static-ssh-key"
+    secret: "ibm-s390x-ssh-key"
     user: "root"
 
   s390x-static-12:
     address: "10.130.85.202"
     concurrency: "4"
     platform: "linux/s390x"
-    secret: "s390x-static-ssh-key"
+    secret: "ibm-s390x-ssh-key"
     user: "root"
 
   s390x-static-13:
     address: "10.130.85.203"
     concurrency: "4"
     platform: "linux/s390x"
-    secret: "s390x-static-ssh-key"
+    secret: "ibm-s390x-ssh-key"
     user: "root"
 
   s390x-static-14:
     address: "10.130.85.137"
     concurrency: "4"
     platform: "linux/s390x"
-    secret: "s390x-static-ssh-key"
+    secret: "ibm-s390x-ssh-key"
     user: "root"

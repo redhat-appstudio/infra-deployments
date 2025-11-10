@@ -2,12 +2,12 @@ environment: "prod"
 
 archDefaults:
   arm64:
-    ami: "ami-03d6a5256a46c9feb"
+    ami: "ami-06f37afe6d4f43c47"
     key-name: "kflux-prd-rh03-key-pair"
     security-group-id: "sg-0759f4a43faada557"
     subnet-id: "subnet-0263af86f44821eac"
   amd64:
-    ami: "ami-026ebd4cfe2c043b2"
+    ami: "ami-01aaf1c29c7e0f0af"
     key-name: "kflux-prd-rh03-key-pair"
     security-group-id: "sg-0759f4a43faada557"
     subnet-id: "subnet-0263af86f44821eac"
@@ -83,6 +83,7 @@ dynamicConfigs:
       # Setup bind mounts
       mount --bind /home/var-lib-containers /var/lib/containers
       mount --bind /home/var-tmp /var/tmp
+      restorecon -r /var/lib/containers /var/tmp
 
       # Configure ec2-user SSH access
       chown -R ec2-user /home/ec2-user
@@ -156,6 +157,7 @@ dynamicConfigs:
       mount --bind /home/var-lib-containers /var/lib/containers
       mount --bind /home/var-tmp /var/tmp
       chmod a+rw /var/tmp
+      restorecon -r /var/lib/containers /var/tmp
 
       # Configure ec2-user SSH access
       chown -R ec2-user /home/ec2-user
@@ -216,6 +218,7 @@ dynamicConfigs:
       # Setup bind mounts
       mount --bind /home/var-lib-containers /var/lib/containers
       mount --bind /home/var-tmp /var/tmp
+      restorecon -r /var/lib/containers /var/tmp
 
       # Configure ec2-user SSH access
       chown -R ec2-user /home/ec2-user

@@ -42,11 +42,6 @@ spec:
     - apply:
         file: resources/actual-namespace-konfluxcidev.yaml
         template: true
-  - name: then-rolebinding-is-created
-    try:
-    - assert:
-        file: resources/expected-rolebinding.yaml
-        template: true
   - name: then-resources-are-created
     try:
     - assert:
@@ -97,23 +92,10 @@ spec:
     - apply:
         file: resources/actual-namespace-unlabeled.yaml
         template: true
-  - name: given-rolebinding-does-not-exist
-    try:
-    - delete:
-        file: resources/expected-rolebinding.yaml
-        template: true
-        expect:
-        - check:
-            ($error != null): true
   - name: when-konfluxcidev-label-is-added
     try:
     - apply:
         file: resources/actual-namespace-konfluxcidev.yaml
-        template: true
-  - name: then-rolebinding-is-created
-    try:
-    - assert:
-        file: resources/expected-rolebinding.yaml
         template: true
   - name: then-resources-are-created
     try:
@@ -164,14 +146,6 @@ spec:
     - apply:
         file: resources/actual-namespace-unlabeled.yaml
         template: true
-  - name: then-rolebinding-is-not-created
-    try:
-    - delete:
-        file: resources/expected-rolebinding.yaml
-        template: true
-        expect:
-        - check:
-            ($error != null): true
   - name: then-resources-are-not-created
     try:
     - delete:
@@ -231,14 +205,6 @@ spec:
     - assert:
         file: resources/expected-resources.yaml
         template: true
-  - name: then-rolebinding-is-not-created
-    try:
-    - delete:
-        file: resources/expected-rolebinding.yaml
-        template: true
-        expect:
-        - check:
-            ($error != null): true
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
 apiVersion: chainsaw.kyverno.io/v1alpha1
@@ -284,14 +250,6 @@ spec:
         file: ../bootstrap-tenant-namespace-rbcm-clusterpolicy.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
-  - name: then-rolebinding-is-not-created
-    try:
-    - delete:
-        file: resources/expected-rolebinding.yaml
-        template: true
-        expect:
-        - check:
-            ($error != null): true
   - name: then-resources-are-not-created
     try:
     - delete:
@@ -322,11 +280,6 @@ spec:
     - apply:
         file: resources/actual-namespace-konfluxcidev.yaml
         template: true
-  - name: given-rolebinding-is-created
-    try:
-    - apply:
-        file: resources/actual-existing-rolebinding.yaml
-        template: true
   - name: then-resources-are-not-changed
     try:
     - apply:
@@ -356,11 +309,6 @@ spec:
         file: ../bootstrap-tenant-namespace-rbcm-clusterpolicy.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
-  - name: then-rolebinding-is-not-changed
-    try:
-    - assert:
-        file: resources/actual-existing-rolebinding.yaml
-        template: true
   - name: then-resources-are-not-changed
     try:
     - assert:
