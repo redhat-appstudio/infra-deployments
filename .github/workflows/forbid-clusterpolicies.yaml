@@ -31,5 +31,6 @@ jobs:
             ! -path 'components/repository-validator/staging/*' \
             ! -path 'components/repository-validator/production/*' \
             ! -path 'components/monitoring/blackbox/staging/*' \
+            ! -path 'components/monitoring/blackbox/production/*' \
             | \
             xargs -I {} -n1 -P8  bash -c './hack/forbid-clusterpolicies.sh $(dirname "{}")'
