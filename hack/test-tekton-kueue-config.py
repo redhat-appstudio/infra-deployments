@@ -388,7 +388,9 @@ PIPELINERUN_DEFINITIONS: Dict[str, PipelineRunTestData] = {
             }
         },
         "expected": {
-            "annotations": {},
+            "annotations": {
+                "kueue.konflux-ci.dev/requests-mintmaker": "1",
+            },
             "labels": {
                 "kueue.x-k8s.io/queue-name": "pipelines-queue",
                 "kueue.x-k8s.io/priority-class": "konflux-dependency-update"
@@ -680,6 +682,10 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
     },
     "integration_test_push_staging": {
         "pipelinerun_key": "integration_test_push",
+        "config_key": "staging"
+    },
+    "mintmaker_staging": {
+        "pipelinerun_key": "mintmaker",
         "config_key": "staging"
     },
 
