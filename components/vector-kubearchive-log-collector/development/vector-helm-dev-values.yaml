@@ -3,6 +3,8 @@ resources:
   requests:
     cpu: 200m
     memory: 1024Mi
+    ephemeral-storage: 2Gi  # Request ephemeral storage to prevent DiskPressure evictions
   limits:
     cpu: 1000m
     memory: 2048Mi
+    ephemeral-storage: 5Gi  # Limit ephemeral storage usage to prevent unbounded disk growth
