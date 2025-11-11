@@ -122,6 +122,28 @@ affinity:
             operator: In
             values:
               - konflux-tenants
+tolerations:
+  # Tolerate standard Kubernetes node taints to allow scheduling on temporarily not-ready nodes
+  # This is important for DaemonSets that should run on all nodes
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300  # Wait 5 minutes before evicting from not-ready nodes
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300  # Wait 5 minutes before evicting from unreachable nodes
+  # Tolerate node pressure conditions to prevent eviction during temporary resource pressure
+  # These allow pods to stay on nodes during brief pressure events
+  - effect: NoSchedule
+    key: node.kubernetes.io/memory-pressure
+    operator: Exists
+  - effect: NoSchedule
+    key: node.kubernetes.io/disk-pressure
+    operator: Exists
+  - effect: NoSchedule
+    key: node.kubernetes.io/pid-pressure
+    operator: Exists
 image:
   repository: quay.io/kubearchive/vector
   tag: 0.46.1-distroless-libc
