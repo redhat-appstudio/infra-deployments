@@ -590,6 +590,65 @@ PIPELINERUN_DEFINITIONS: Dict[str, PipelineRunTestData] = {
         }
     },
 
+    "prefer-new-parameters": {
+        "name": "Only use new platform parameters when both old and new parameters exist",
+        "pipelinerun": {
+            "apiVersion": "tekton.dev/v1",
+            "kind": "PipelineRun",
+            "metadata": {
+                "name": "prefer-new-platform-parameters",
+                "namespace": "default",
+                "labels": {
+                    "pipelinesascode.tekton.dev/event-type": "push",
+                }
+            },
+            "spec": {
+                "pipelineRef": {"name": "build-pipeline"},
+                "params": [
+                    {
+                        "name": "build-platforms",
+                        "value": ["linux/amd64", "linux/arm64", "linux/s390x"]
+                    },
+                    {
+                        "name": "other-param",
+                        "value": "test"
+                    }
+                ],
+                "pipelineSpec": {
+                    "tasks": [
+                        {
+                            "name": "build-task-amd64",
+                            "params": [{"name": "PLATFORM", "value": "linux/amd64"}],
+                            "taskRef": {"name": "build-task"}
+                        },
+                        {
+                            "name": "build-task-arm64",
+                            "params": [{"name": "PLATFORM", "value": "linux/arm64"}],
+                            "taskRef": {"name": "build-task"}
+                        },
+                        {
+                            "name": "other-task",
+                            "taskRef": {"name": "other-task"}
+                        }
+                    ]
+                },
+                "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
+            }
+        },
+        "expected": {
+            "annotations": {
+                "kueue.konflux-ci.dev/requests-linux-amd64": "1",
+                "kueue.konflux-ci.dev/requests-linux-s390x": "1",
+                "kueue.konflux-ci.dev/requests-linux-arm64": "1",
+                "kueue.konflux-ci.dev/requests-aws-ip": "2",
+            },
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-post-merge-build",
+            }
+        }
+    },
+
 }
 
 # Configuration combinations that can be applied to any PipelineRun
@@ -660,6 +719,10 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
         "pipelinerun_key": "mixed_platforms_excluded_included",
         "config_key": "development"
     },
+    "prefer_new_parameters_dev": {
+        "pipelinerun_key": "prefer-new-parameters",
+        "config_key": "development"
+    },
 
     # multiplatform_old edge cases
     "multiplatform_old_no_pipelineSpecTasks": {
@@ -688,6 +751,10 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
         "pipelinerun_key": "mintmaker",
         "config_key": "staging"
     },
+    "prefer_new_parameters_staging": {
+        "pipelinerun_key": "prefer-new-parameters",
+        "config_key": "staging"
+    },
 
     # Test key PipelineRuns with production config
     "multiplatform_new_production": {
@@ -696,6 +763,10 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
     },
     "release_managed_production": {
         "pipelinerun_key": "release_managed",
+        "config_key": "production"
+    },
+    "mintmaker_production": {
+        "pipelinerun_key": "mintmaker",
         "config_key": "production"
     },
 
