@@ -5,7 +5,7 @@ resources:
   - ../../base
   - ../base
   - external-secret.yaml
-  - https://github.com/kubearchive/kubearchive/releases/download/v1.10.0/kubearchive.yaml?timeout=90
+  - https://github.com/kubearchive/kubearchive/releases/download/v1.12.0/kubearchive.yaml?timeout=90
 
 namespace: product-kubearchive
 
@@ -57,7 +57,7 @@ patches:
               spec:
                 containers:
                   - name: vacuum
-                    image: quay.io/kubearchive/vacuum:v1.10.0
+                    image: quay.io/kubearchive/vacuum:v1.12.0
 
   - patch: |-
       apiVersion: batch/v1
@@ -78,7 +78,7 @@ patches:
               - name: migration
                 env:
                   - name: KUBEARCHIVE_VERSION
-                    value: v1.10.0
+                    value: v1.12.0
   # We don't need the Secret as it will be created by the ExternalSecrets Operator
   - patch: |-
       $patch: delete
@@ -176,11 +176,11 @@ patches:
                   - containerPort: 8081
                 resources:
                   limits:
-                    cpu: 100m
-                    memory: 1Gi
+                    cpu: 1
+                    memory: 5Gi
                   requests:
-                    cpu: 100m
-                    memory: 1Gi
+                    cpu: 1
+                    memory: 5Gi
 
   - patch: |-
       apiVersion: apps/v1
