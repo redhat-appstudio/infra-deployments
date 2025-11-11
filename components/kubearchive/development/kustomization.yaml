@@ -142,7 +142,10 @@ patches:
       metadata:
         name: kubearchive-api-server
         namespace: kubearchive
+        annotations:
+          ignore-check.kube-linter.io/no-anti-affinity: "It is not needed for now"
       spec:
+        replicas: 2
         template:
           spec:
             containers:

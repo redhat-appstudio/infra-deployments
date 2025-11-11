@@ -1697,7 +1697,7 @@ spec:
   - name: createCABundleConfigMaps
     value: "false"
   pipeline:
-    default-service-account: appstudio-pipeline
+    default-service-account: default
     enable-api-fields: alpha
     enable-bundles-resolver: true
     enable-cluster-resolver: true
@@ -1705,6 +1705,8 @@ spec:
     enable-hub-resolver: true
     enable-param-enum: true
     enable-step-actions: true
+    metrics.pipelinerun.level: namespace
+    metrics.taskrun.level: namespace
     options:
       configMaps:
         config-logging:

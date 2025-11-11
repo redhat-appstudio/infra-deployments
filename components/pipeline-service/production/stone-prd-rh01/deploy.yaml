@@ -286,15 +286,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - ""
-  resourceNames:
-  - appstudio-pipeline
-  resources:
-  - serviceaccounts
-  verbs:
-  - get
-  - list
-- apiGroups:
   - pipelinesascode.tekton.dev
   - results.tekton.dev
   - tekton.dev
@@ -1174,7 +1165,7 @@ data:
     # ignored.
     metrics.allow-stackdriver-custom-metrics: "false"
     metrics.taskrun.level: "task"
-    metrics.taskrun.duration-type: "lastvalue"
+    metrics.taskrun.duration-type: "histogram"
     metrics.pipelinerun.level: "pipeline"
     metrics.pipelinerun.duration-type: "histogram"
   profiling.enable: "true"
@@ -2280,7 +2271,7 @@ spec:
   - name: createCABundleConfigMaps
     value: "false"
   pipeline:
-    default-service-account: appstudio-pipeline
+    default-service-account: default
     enable-api-fields: alpha
     enable-bundles-resolver: true
     enable-cluster-resolver: true
@@ -2288,9 +2279,8 @@ spec:
     enable-hub-resolver: true
     enable-param-enum: true
     enable-step-actions: true
-    # Test to try and reduce cardinality
-    metrics.pipelinerun.duration-type: lastvalue
-    metrics.taskrun.duration-type: lastvalue
+    metrics.pipelinerun.level: namespace
+    metrics.taskrun.level: namespace
     options:
       configMaps:
         config-defaults:
