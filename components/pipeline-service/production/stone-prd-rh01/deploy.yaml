@@ -1165,7 +1165,7 @@ data:
     # ignored.
     metrics.allow-stackdriver-custom-metrics: "false"
     metrics.taskrun.level: "task"
-    metrics.taskrun.duration-type: "lastvalue"
+    metrics.taskrun.duration-type: "histogram"
     metrics.pipelinerun.level: "pipeline"
     metrics.pipelinerun.duration-type: "histogram"
   profiling.enable: "true"
@@ -2279,9 +2279,8 @@ spec:
     enable-hub-resolver: true
     enable-param-enum: true
     enable-step-actions: true
-    # Test to try and reduce cardinality
-    metrics.pipelinerun.duration-type: lastvalue
-    metrics.taskrun.duration-type: lastvalue
+    metrics.pipelinerun.level: namespace
+    metrics.taskrun.level: namespace
     options:
       configMaps:
         config-defaults:
