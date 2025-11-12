@@ -17,7 +17,7 @@ gateway:
   readinessProbe:
     httpGet:
       path: /ready
-      port: http
+      port: 80  # Use numeric port instead of named port to avoid parsing errors
     initialDelaySeconds: 5   # Reduce from default 15
     periodSeconds: 5         # Check more frequently
     timeoutSeconds: 3
@@ -213,12 +213,24 @@ chunksCache:
   parallelism: 10  # Parallel threads for cache operations
   maxItemMemory: 30  # MB - Increased from 10MB to handle chunks (3MB target + compression overhead + metadata)
   defaultValidity: 12h  # How long cached chunks are stored
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi  # Reduced from default ~10Gi for development
+    limits:
+      memory: 256Mi  # Reduced from default ~10Gi for development
 
 resultsCache:
   enabled: true
   replicas: 1
   maxItemMemory: 100  # MB - Increased from 10MB to handle large query results (can be much larger than chunks)
   defaultValidity: 12h  # How long cached query results are stored
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi  # Reduced from default ~10Gi for development
+    limits:
+      memory: 256Mi  # Reduced from default ~10Gi for development
 
 memcached:
   enabled: true
