@@ -769,6 +769,10 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
         "pipelinerun_key": "mintmaker",
         "config_key": "production"
     },
+    "prefer_new_parameters_staging": {
+        "pipelinerun_key": "prefer-new-parameters",
+        "config_key": "production"
+    },
 
     # Example: Test the same PipelineRun with different configs to show reusability
     "user-specific-priority_and_mixed_platforms_production-kflux-ocp-p01": {
