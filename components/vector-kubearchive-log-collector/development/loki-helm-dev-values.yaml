@@ -87,16 +87,16 @@ loki:
     chunk_retain_period: 1h
     flush_op_timeout: 10m
   server:
-    grpc_server_max_recv_msg_size: 15728640  # 15MB
-    grpc_server_max_send_msg_size: 15728640
+    grpc_server_max_recv_msg_size: 33554432
+    grpc_server_max_send_msg_size: 33554432
   ingester_client:
     grpc_client_config:
-      max_recv_msg_size: 15728640  # 15MB
-      max_send_msg_size: 15728640  # 15MB
+      max_recv_msg_size: 33554432
+      max_send_msg_size: 33554432
   query_scheduler:
     grpc_client_config:
-      max_recv_msg_size: 15728640  # 15MB
-      max_send_msg_size: 15728640  # 15MB
+      max_recv_msg_size: 33554432
+      max_send_msg_size: 33554432
   querier:
     # Reduce concurrency for development
     max_concurrent: 2  # Reduce from 4
@@ -107,9 +107,16 @@ loki:
 ingester:
   replicas: 1  # Reduce from 3 to 1 for development
   autoscaling:
-    enabled: false  # Disable autoscaling for dev
+    enabled: true  # Disable autoscaling for dev
   zoneAwareReplication:
-    enabled: false
+    enabled: true
+    maxUnavailable: 1
+  readinessProbe:
+    initialDelaySeconds: 60
+    periodSeconds: 10
+    timeoutSeconds: 5
+    successThreshold: 1
+    failureThreshold: 6
   resources:
     requests:
       cpu: 50m  # Reduce from 100m

@@ -62,16 +62,16 @@ loki:
     chunk_retain_period: 1h           # Keep chunks in memory after flush
     flush_op_timeout: 10m             # Add timeout for S3 operations
   server:
-    grpc_server_max_recv_msg_size: 15728640  # 15MB
-    grpc_server_max_send_msg_size: 15728640
+    grpc_server_max_recv_msg_size: 33554432  # 32MB - Increased to handle 8MB chunks with overhead
+    grpc_server_max_send_msg_size: 33554432
   ingester_client:
     grpc_client_config:
-      max_recv_msg_size: 15728640  # 15MB
-      max_send_msg_size: 15728640  # 15MB
+      max_recv_msg_size: 33554432  # 32MB
+      max_send_msg_size: 33554432  # 32MB
   query_scheduler:
     grpc_client_config:
-      max_recv_msg_size: 15728640  # 15MB
-      max_send_msg_size: 15728640  # 15MB
+      max_recv_msg_size: 33554432  # 32MB
+      max_send_msg_size: 33554432  # 32MB
   # Tuning for high-load queries
   querier:
     max_concurrent: 8
@@ -87,6 +87,13 @@ ingester:
   zoneAwareReplication:
     enabled: true
   maxUnavailable: 1
+  # Increase readiness probe tolerance for high load situations
+  readinessProbe:
+    initialDelaySeconds: 60
+    periodSeconds: 10
+    timeoutSeconds: 5
+    successThreshold: 1
+    failureThreshold: 6  # Allow 6 failures (60s) before marking unready
   resources:
     requests:
       cpu: 500m
