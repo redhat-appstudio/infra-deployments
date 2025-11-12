@@ -160,6 +160,9 @@ patches:
                 securityContext:
                   readOnlyRootFilesystem: true
                   runAsNonRoot: true
+                resources:
+                  limits:
+                    memory: 512Mi
   - patch: |-
       apiVersion: apps/v1
       kind: Deployment
