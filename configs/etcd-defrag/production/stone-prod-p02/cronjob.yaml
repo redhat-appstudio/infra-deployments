@@ -1,0 +1,40 @@
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: etcd-maintenance
+  namespace: etcd-maintenance
+spec:
+  schedule: "*/5 * * * *"
+  successfulJobsHistoryLimit: 50
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: etcd-maintenance
+          restartPolicy: OnFailure
+          containers:
+            - name: etcd-maintenance
+              image: registry.redhat.io/openshift4/ose-cli
+              imagePullPolicy: IfNotPresent
+              env:
+              - name: IMAGE
+                value: quay.io/konflux-ci/etcd-defrag@sha256:c0981581f1f205b85ff3f5d15bcfcf2df1568561fe2686fe0780aeee3589e19f
+              - name: FRAGMENTATION_THRESHOLD
+                value: "30"
+              - name: DISK_USAGE_THRESHOLD
+                value: "70" # lower threshold of etcd-shield
+              - name: RECLAIM_SPACE_THRESHOLD
+                value: "1024"
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  etcd_pod=$(oc get pod -l app=etcd -oname -n openshift-etcd | awk -F"/" 'NR==1{ print $2 }')
+                  oc -n openshift-etcd debug pod/${etcd_pod} \
+                    fragmentationThreshold="${FRAGMENTATION_THRESHOLD}"\
+                    diskUsageThreshold="${DISK_USAGE_THRESHOLD}" \
+                    reclaimSpaceThreshold="${RECLAIM_SPACE_THRESHOLD}" \
+                    --image="${IMAGE}" \
+                    --one-container=true \
+                    -- /bin/sh -c "chmod +x /opt/defrag.sh && /opt/defrag.sh"
