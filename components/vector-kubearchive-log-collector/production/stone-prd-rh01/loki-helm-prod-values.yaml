@@ -89,6 +89,9 @@ ingester:
   maxUnavailable: 1
   # Increase readiness probe tolerance for high load situations
   readinessProbe:
+    httpGet:
+      path: /ready
+      port: http-metrics
     initialDelaySeconds: 60
     periodSeconds: 10
     timeoutSeconds: 5

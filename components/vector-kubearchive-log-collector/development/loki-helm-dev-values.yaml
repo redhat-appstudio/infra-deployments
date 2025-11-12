@@ -15,6 +15,9 @@ gateway:
     port: 80
   # Add startup probe for faster readiness
   readinessProbe:
+    httpGet:
+      path: /ready
+      port: http
     initialDelaySeconds: 5   # Reduce from default 15
     periodSeconds: 5         # Check more frequently
     timeoutSeconds: 3
@@ -112,6 +115,9 @@ ingester:
     enabled: true
     maxUnavailable: 1
   readinessProbe:
+    httpGet:
+      path: /ready
+      port: http-metrics
     initialDelaySeconds: 60
     periodSeconds: 10
     timeoutSeconds: 5
