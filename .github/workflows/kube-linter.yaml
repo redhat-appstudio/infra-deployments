@@ -26,7 +26,7 @@ jobs:
 
       - name: Run kustomize build
         run: |
-          find argo-cd-apps components -name 'kustomization.yaml' \
+          find argo-cd-apps components configs -name 'kustomization.yaml' \
             ! -path '*/k-components/*' \
             ! -path 'components/repository-validator/staging/*' \
             ! -path 'components/repository-validator/production/*' \
