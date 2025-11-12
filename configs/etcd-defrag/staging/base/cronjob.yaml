@@ -17,9 +17,24 @@ spec:
             - name: etcd-maintenance
               image: registry.redhat.io/openshift4/ose-cli
               imagePullPolicy: IfNotPresent
+              env:
+              - name: IMAGE
+                value: quay.io/konflux-ci/etcd-defrag@sha256:2836cc71ad74f77ac3b759162afdd22ca81837747500523bfd6396ce5e248a58
+              - name: FRAGMENTATION_THRESHOLD
+                value: 30
+              - name: DISK_USAGE_THRESHOLD
+                value: 60
+              - name: RECLAIM_SPACE_THRESHOLD
+                value: 1024
               command:
                 - /bin/sh
                 - -c
                 - |
                   etcd_pod=$(oc get pod -l app=etcd -oname -n openshift-etcd | awk -F"/" 'NR==1{ print $2 }')
-                  oc -n openshift-etcd debug pod/${etcd_pod} fragmentationThreshold=30 --image=quay.io/konflux-ci/etcd-defrag:788c85baf311517c6534556fdf66f936a7239efb --one-container=true -- /bin/sh -c "chmod +x /opt/defrag.sh && /opt/defrag.sh"
+                  oc -n openshift-etcd debug pod/${etcd_pod} \
+                    fragmentationThreshold="${FRAGMENTATION_THRESHOLD}"\
+                    diskUsageThreshold="${DISK_USAGE_THRESHOLD}" \
+                    reclaimSpaceThreshold="${RECLAIM_SPACE_THRESHOLD}" \
+                    --image="${IMAGE}" \
+                    --one-container=true \
+                    -- /bin/sh -c "chmod +x /opt/defrag.sh && /opt/defrag.sh"
