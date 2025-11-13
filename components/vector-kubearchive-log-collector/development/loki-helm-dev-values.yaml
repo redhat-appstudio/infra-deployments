@@ -12,12 +12,12 @@ gateway:
       memory: 128Mi
   service:
     type: ClusterIP
-    port: 80
+    port: 80  # External service port (nginx listens on 8080 internally)
   # Add startup probe for faster readiness
   readinessProbe:
     httpGet:
       path: /ready
-      port: 80  # Use numeric port instead of named port to avoid parsing errors
+      port: 8080  # Nginx listens on port 8080 internally, not 80
     initialDelaySeconds: 5   # Reduce from default 15
     periodSeconds: 5         # Check more frequently
     timeoutSeconds: 3
