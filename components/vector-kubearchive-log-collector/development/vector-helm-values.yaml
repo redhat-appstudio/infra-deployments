@@ -112,10 +112,18 @@ env:
       secretKeyRef:
         name: kubearchive-loki
         key: PASSWORD
-# Use required nodeSelector to limit vector pods to konflux-tenants nodes only
-# This prevents scheduling on all nodes and reduces resource pressure
-nodeSelector:
-  konflux-ci.dev/workload: konflux-tenants
+# Use preferred nodeSelector for development to allow scheduling flexibility
+# Prefer konflux-tenants nodes but allow scheduling on other nodes if needed
+affinity:
+  nodeAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 100
+      preference:
+        matchExpressions:
+        - key: konflux-ci.dev/workload
+          operator: In
+          values:
+          - konflux-tenants
 tolerations:
   - effect: NoSchedule
     key: konflux-ci.dev/workload
