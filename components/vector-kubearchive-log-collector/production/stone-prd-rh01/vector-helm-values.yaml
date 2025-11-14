@@ -104,25 +104,16 @@ env:
       secretKeyRef:
         name: kubearchive-loki
         key: PASSWORD
-# Use preferred nodeSelector instead of required to allow scheduling on other nodes if needed
-# This provides flexibility while still preferring konflux-tenants nodes
-affinity:
-  nodeAffinity:
-    preferredDuringSchedulingIgnoredDuringExecution:
-    - weight: 100
-      preference:
-        matchExpressions:
-        - key: konflux-ci.dev/workload
-          operator: In
-          values:
-          - konflux-tenants
+# Use required nodeSelector to limit vector pods to konflux-tenants nodes only
+# This prevents scheduling on all 110 nodes and reduces resource pressure
+nodeSelector:
+  konflux-ci.dev/workload: konflux-tenants
 tolerations:
   - effect: NoSchedule
     key: konflux-ci.dev/workload
     operator: Equal
     value: konflux-tenants
   # Tolerate standard Kubernetes node taints to allow scheduling on temporarily not-ready nodes
-  # This is important for DaemonSets that should run on all nodes
   - effect: NoExecute
     key: node.kubernetes.io/not-ready
     operator: Exists
