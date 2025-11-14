@@ -12,9 +12,12 @@ gateway:
       memory: 128Mi
   service:
     type: ClusterIP
-    port: 80
+    port: 80  # External service port (nginx listens on 8080 internally)
   # Add startup probe for faster readiness
   readinessProbe:
+    httpGet:
+      path: /ready
+      port: 8080  # Nginx listens on port 8080 internally, not 80
     initialDelaySeconds: 5   # Reduce from default 15
     periodSeconds: 5         # Check more frequently
     timeoutSeconds: 3
@@ -87,16 +90,16 @@ loki:
     chunk_retain_period: 1h
     flush_op_timeout: 10m
   server:
-    grpc_server_max_recv_msg_size: 15728640  # 15MB
-    grpc_server_max_send_msg_size: 15728640
+    grpc_server_max_recv_msg_size: 33554432
+    grpc_server_max_send_msg_size: 33554432
   ingester_client:
     grpc_client_config:
-      max_recv_msg_size: 15728640  # 15MB
-      max_send_msg_size: 15728640  # 15MB
+      max_recv_msg_size: 33554432
+      max_send_msg_size: 33554432
   query_scheduler:
     grpc_client_config:
-      max_recv_msg_size: 15728640  # 15MB
-      max_send_msg_size: 15728640  # 15MB
+      max_recv_msg_size: 33554432
+      max_send_msg_size: 33554432
   querier:
     # Reduce concurrency for development
     max_concurrent: 2  # Reduce from 4
@@ -107,9 +110,19 @@ loki:
 ingester:
   replicas: 1  # Reduce from 3 to 1 for development
   autoscaling:
-    enabled: false  # Disable autoscaling for dev
+    enabled: true  # Disable autoscaling for dev
   zoneAwareReplication:
-    enabled: false
+    enabled: true
+    maxUnavailable: 1
+  readinessProbe:
+    httpGet:
+      path: /ready
+      port: http-metrics
+    initialDelaySeconds: 60
+    periodSeconds: 10
+    timeoutSeconds: 5
+    successThreshold: 1
+    failureThreshold: 6
   resources:
     requests:
       cpu: 50m  # Reduce from 100m
@@ -200,12 +213,24 @@ chunksCache:
   parallelism: 10  # Parallel threads for cache operations
   maxItemMemory: 30  # MB - Increased from 10MB to handle chunks (3MB target + compression overhead + metadata)
   defaultValidity: 12h  # How long cached chunks are stored
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi  # Reduced from default ~10Gi for development
+    limits:
+      memory: 256Mi  # Reduced from default ~10Gi for development
 
 resultsCache:
   enabled: true
   replicas: 1
   maxItemMemory: 100  # MB - Increased from 10MB to handle large query results (can be much larger than chunks)
   defaultValidity: 12h  # How long cached query results are stored
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi  # Reduced from default ~10Gi for development
+    limits:
+      memory: 256Mi  # Reduced from default ~10Gi for development
 
 memcached:
   enabled: true
