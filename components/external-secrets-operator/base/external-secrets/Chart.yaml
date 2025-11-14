@@ -1,10 +1,12 @@
 apiVersion: v2
 appVersion: v0.11.0
-dependencies:
-- condition: bitwarden-sdk-server.enabled
-  name: bitwarden-sdk-server
-  repository: oci://ghcr.io/external-secrets/charts
-  version: v0.3.1
+# Dependencies removed - bitwarden-sdk-server is disabled and causes CI issues
+# If needed in the future, add back with: helm dependency update
+# dependencies:
+# - condition: bitwarden-sdk-server.enabled
+#   name: bitwarden-sdk-server
+#   repository: oci://ghcr.io/external-secrets/charts
+#   version: v0.3.1
 description: External secret management for Kubernetes
 home: https://github.com/external-secrets/external-secrets
 icon: https://raw.githubusercontent.com/external-secrets/external-secrets/main/assets/eso-logo-large.png
