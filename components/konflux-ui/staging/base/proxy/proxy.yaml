@@ -96,11 +96,6 @@ spec:
       - name: generate-nginx-configs
         image: registry.access.redhat.com/ubi9/ubi@sha256:66233eebd72bb5baa25190d4f55e1dc3fff3a9b77186c1f91a0abdb274452072
         env:
-        - name: WATSON_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: watson-config
-              key: API_KEY
         command:
           - sh
           - -c
@@ -114,7 +109,8 @@ spec:
             chmod 640 /mnt/nginx-generated-config/auth.conf
 
             # Generate watson-auth.conf with Basic auth from Watson API key
-            watson_basic=$(cat /mnt/watson-api-key/API_KEY)
+            watson_api_key=$(cat /mnt/watson-api-key/API_KEY)
+            watson_basic=$(printf "apikey:%s" "$watson_api_key" | base64 | tr -d '\n')
             sed "s/__WATSON_BASIC_AUTH__/$watson_basic/g" /mnt/nginx-templates/watson-auth.conf > /mnt/nginx-generated-config/watson-auth.conf
 
             chmod 640 /mnt/nginx-generated-config/watson-auth.conf
@@ -305,6 +301,9 @@ spec:
         - name: api-token
           secret:
             secretName: proxy
+        - name: watson-api-key
+          secret:
+            secretName: API_KEY
         - name: static-content
           emptyDir: {}
         - name: ui-runtime-env-variables
