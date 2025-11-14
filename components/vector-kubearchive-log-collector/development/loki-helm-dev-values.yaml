@@ -204,7 +204,7 @@ chunksCache:
 resultsCache:
   enabled: true
   replicas: 1
-  maxItemMemory: 100  # MB - Increased from 10MB to handle large query results (can be much larger than chunks)
+  maxItemMemory: 30 
   defaultValidity: 12h  # How long cached query results are stored
 
 memcached:
@@ -215,7 +215,7 @@ memcached:
 # These don't deploy separate instances - they configure shared settings
 memcachedResults:
   enabled: true
-  maxItemMemory: 100  # MB - For query result caching
+  maxItemMemory: 30  # MB - For query result caching
 
 memcachedChunks:
   enabled: true
@@ -223,15 +223,15 @@ memcachedChunks:
 
 memcachedFrontend:
   enabled: true
-  maxItemMemory: 100  # MB - Frontend cache can handle large query results
+  maxItemMemory: 10  # MB - Frontend cache can handle large query results
 
 memcachedIndexQueries:
   enabled: true
-  maxItemMemory: 50  # MB - Index queries can be large
+  maxItemMemory: 10  # MB - Index queries can be large
 
 memcachedIndexWrites:
   enabled: true
-  maxItemMemory: 30  # MB - Index write operations
+  maxItemMemory: 10  # MB - Index write operations
 
 
 
