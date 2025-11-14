@@ -114,7 +114,7 @@ spec:
             chmod 640 /mnt/nginx-generated-config/auth.conf
 
             # Generate watson-auth.conf with Basic auth from Watson API key
-            watson_basic=$(printf "apikey:%s" "$WATSON_API_KEY" | base64 | tr -d '\n')
+            watson_basic=$(cat /mnt/watson-api-key/API_KEY)
             sed "s/__WATSON_BASIC_AUTH__/$watson_basic/g" /mnt/nginx-templates/watson-auth.conf > /mnt/nginx-generated-config/watson-auth.conf
 
             chmod 640 /mnt/nginx-generated-config/watson-auth.conf
@@ -126,6 +126,8 @@ spec:
           mountPath: /mnt/nginx-templates
         - name: api-token
           mountPath: /mnt/api-token
+        - name: watson-api-key
+          mountPath: /mnt/watson-api-key
         securityContext:
           readOnlyRootFilesystem: true
           runAsNonRoot: true
