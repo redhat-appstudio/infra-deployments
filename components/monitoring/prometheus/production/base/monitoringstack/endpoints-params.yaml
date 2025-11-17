@@ -127,6 +127,9 @@
     - '{__name__="namespace_container:container_cpu_usage_seconds_total", namespace=~"release-service|openshift-etcd|openshift-kube-apiserver|build-service|image-controller|integration-service|konflux-ui|product-kubearchive|product-kubearchive-logging|openshift-kueue-operator|tekton-kueue|kueue-external-admission|mintmaker|multi-platform-controller|namespace-lister|openshift-pipelines|tekton-results|project-controller|smee|smee-client"}'
     - '{__name__="node_namespace_pod_container:container_memory_working_set_bytes", pod=~"etcd-ip-.*|kube-apiserver.*"}'
     - '{__name__="node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate", pod=~"etcd-ip-.*|kube-apiserver.*"}'
+    - '{__name__="kube_pod_container_info", namespace!~".*-tenant|openshift-.*|kube-.*"}'
+    - '{__name__="kube_pod_container_info", namespace="openshift-pipelines"}'
+    - '{__name__="kube_pod_container_info", namespace=~".*-tenant", image=~"quay\\.io/konflux-ci/.*|quay\\.io/conforma/.*|quay\\.io/enterprise-contract/.*"}'
 
     ## Pod Metrics
     - '{__name__="taskrun_pod_create_not_attempted_or_pending_count"}'
