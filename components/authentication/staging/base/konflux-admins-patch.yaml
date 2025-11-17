@@ -41,8 +41,25 @@ rules:
       - spifilecontentrequests
     verbs:
       - '*'
-  # Grant all permissions on ALL other non-core API groups using specific group names
-  # This covers all custom resources, OpenShift resources, and extended APIs
+  # Grant READ-ONLY access (plus delete) to API groups that can create pods
+  # These can be used to create pods which could access secrets
+  # Delete is allowed for cleanup, but create/update/patch are blocked
+  - apiGroups:
+      - apps
+      - apps.openshift.io
+      - argoproj.io
+      - batch
+      - operator.tekton.dev
+      - tekton.dev
+    resources:
+      - '*'
+    verbs:
+      - get
+      - list
+      - watch
+      - delete
+  # Grant all permissions on ALL other non-core API groups
+  # These API groups cannot be used to create pods or access secrets
   - apiGroups:
       - acme.cert-manager.io
       - addon.open-cluster-management.io
@@ -53,15 +70,11 @@ rules:
       - apiextensions.k8s.io
       - apiregistration.k8s.io
       - apiserver.openshift.io
-      - apps
-      - apps.openshift.io
-      - argoproj.io
       - authentication.k8s.io
       - authorization.k8s.io
       - authorization.openshift.io
       - autoscaling
       - autoscaling.openshift.io
-      - batch
       - bootstrap.cluster.x-k8s.io
       - build.openshift.io
       - capi-provider.agent-install.openshift.io
@@ -146,7 +159,6 @@ rules:
       - operator.external-secrets.io
       - operator.open-cluster-management.io
       - operator.openshift.io
-      - operator.tekton.dev
       - ops.crossplane.io
       - package-operator.run
       - packages.operators.coreos.com
@@ -184,7 +196,6 @@ rules:
       - sources.knative.dev
       - splunkforwarder.managed.openshift.io
       - storage.k8s.io
-      - tekton.dev
       - template.openshift.io
       - triggers.tekton.dev
       - trust.cert-manager.io
@@ -201,8 +212,8 @@ rules:
       - '*'
     verbs:
       - '*'
-  # Grant all permissions on core API group resources EXCEPT secrets
-  # This explicitly lists all core resources to avoid granting access to secrets
+  # Grant all permissions on SAFE core API group resources
+  # These resources cannot be used to access secrets
   - apiGroups:
       - ''
     resources:
@@ -221,6 +232,22 @@ rules:
       - persistentvolumeclaims/status
       - persistentvolumes
       - persistentvolumes/status
+      - resourcequotas
+      - resourcequotas/status
+      - serviceaccounts
+      - serviceaccounts/token
+      - services
+      - services/proxy
+      - services/status
+      # NOTE: 'secrets' is intentionally omitted from this list
+    verbs:
+      - '*'
+  # Grant READ-ONLY access (plus delete) to pod-related resources
+  # Creating/exec'ing pods can be used to access secrets, so create/update/patch are blocked
+  # Delete is allowed for cleanup
+  - apiGroups:
+      - ''
+    resources:
       - pods
       - pods/attach
       - pods/binding
@@ -235,16 +262,11 @@ rules:
       - replicationcontrollers
       - replicationcontrollers/scale
       - replicationcontrollers/status
-      - resourcequotas
-      - resourcequotas/status
-      - serviceaccounts
-      - serviceaccounts/token
-      - services
-      - services/proxy
-      - services/status
-      # NOTE: 'secrets' is intentionally omitted from this list
     verbs:
-      - '*'
+      - get
+      - list
+      - watch
+      - delete
   # Grant all permissions on non-resource URLs
   - nonResourceURLs:
       - '*'
