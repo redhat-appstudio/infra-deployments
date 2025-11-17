@@ -1,0 +1,50 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: konflux-admins-pod-exec
+  annotations:
+    description: "Additional permissions for konflux-admins to exec into pods in specific namespaces"
+rules:
+  # Grant pod exec/attach/portforward permissions
+  # This ClusterRole is intended to be bound via RoleBindings in specific namespaces only
+  - apiGroups:
+      - ''
+    resources:
+      - pods/exec
+      - pods/attach
+      - pods/portforward
+    verbs:
+      - create
+      - get
+---
+# RoleBinding for pod exec in default namespace
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: konflux-admins-pod-exec
+  namespace: default
+subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: konflux-admins
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: konflux-admins-pod-exec
+---
+# RoleBinding for pod exec in openshift-etcd namespace
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: konflux-admins-pod-exec
+  namespace: openshift-etcd
+subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: konflux-admins
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: konflux-admins-pod-exec
+
