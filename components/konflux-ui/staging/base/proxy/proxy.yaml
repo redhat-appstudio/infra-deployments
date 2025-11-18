@@ -52,8 +52,47 @@ spec:
           requests:
             cpu: 10m
             memory: 64Mi
+      - name: render-runtime-config
+        image: registry.access.redhat.com/ubi9/ubi@sha256:66233eebd72bb5baa25190d4f55e1dc3fff3a9b77186c1f91a0abdb274452072
+        command:
+          - sh
+          - -c
+          - |
+            set -e
+
+            # Generate runtime-config.js with PUBLIC_ variables
+            out=/mnt/static-content/runtime-config.js
+            printf "window.KONFLUX_RUNTIME = window.KONFLUX_RUNTIME || {};\n" > "$out"
+
+            # Apply cluster-specific variables from ConfigMap files to runtime-config.js, if present
+            if [ -d /mnt/ui-runtime-env-variables ]; then
+              for f in /mnt/ui-runtime-env-variables/*; do
+                [ -f "$f" ] || continue
+                name=$(basename "$f")
+                value=$(cat "$f")
+                esc=$(printf '%s' "$value" | sed -e 's/\\\\/\\\\\\\\/g' -e 's/\"/\\\"/g')
+                printf 'if (window.KONFLUX_RUNTIME["%s"] === undefined) { window.KONFLUX_RUNTIME["%s"] = "%s"; }\n' "$name" "$name" "$esc" >> "$out"
+              done
+            fi
+        volumeMounts:
+        - name: static-content
+          mountPath: /mnt/static-content
+        - name: ui-runtime-env-variables
+          mountPath: /mnt/ui-runtime-env-variables
+        securityContext:
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 1001
+        resources:
+          limits:
+            cpu: 50m
+            memory: 128Mi
+          requests:
+            cpu: 10m
+            memory: 64Mi
       - name: generate-nginx-configs
         image: registry.access.redhat.com/ubi9/ubi@sha256:66233eebd72bb5baa25190d4f55e1dc3fff3a9b77186c1f91a0abdb274452072
+        env:
         command:
           - sh
           - -c
@@ -66,6 +105,13 @@ spec:
 
             chmod 640 /mnt/nginx-generated-config/auth.conf
 
+            # Generate watson-auth.conf with Basic auth from Watson API key
+            watson_api_key=$(cat /mnt/watson-api-key/API_KEY)
+            watson_basic=$(printf "apikey:%s" "$watson_api_key" | base64 | tr -d '\n')
+            sed "s/__WATSON_BASIC_AUTH__/$watson_basic/g" /mnt/nginx-templates/watson-auth.conf > /mnt/nginx-generated-config/watson-auth.conf
+
+            chmod 640 /mnt/nginx-generated-config/watson-auth.conf
+
         volumeMounts:
         - name: nginx-generated-config
           mountPath: /mnt/nginx-generated-config
@@ -73,6 +119,8 @@ spec:
           mountPath: /mnt/nginx-templates
         - name: api-token
           mountPath: /mnt/api-token
+        - name: watson-api-key
+          mountPath: /mnt/watson-api-key
         securityContext:
           readOnlyRootFilesystem: true
           runAsNonRoot: true
@@ -250,8 +298,15 @@ spec:
         - name: api-token
           secret:
             secretName: proxy
+        - name: watson-api-key
+          secret:
+            secretName: watson-config
         - name: static-content
           emptyDir: {}
+        - name: ui-runtime-env-variables
+          configMap:
+            name: ui-runtime-env-variables
+            optional: true
         - configMap:
             defaultMode: 420
             name: otel-collector-config
