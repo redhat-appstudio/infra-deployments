@@ -180,6 +180,12 @@
     - '{__name__="kueue_cluster_queue_status"}'
     - '{__name__="kueue_admission_wait_time_seconds_bucket"}'
     - '{__name__="up", job=~".*kueue.*"}'
+    - '{__name__="kueue_admitted_active_workloads", cluster_queue="cluster-pipeline-queue"}'
+    - '{__name__="kueue_pending_workloads", cluster_queue="cluster-pipeline-queue"}'
+    - '{__name__="kueue_admitted_workloads_total"}'
+    - '{__name__="kueue_cluster_queue_resource_reservation", cluster_queue="cluster-pipeline-queue"}'
+    - '{__name__="kueue_cluster_queue_nominal_quota", cluster_queue="cluster-pipeline-queue"}'
+    - '{__name__="kueue_quota_reserved_wait_time_seconds_bucket", cluster_queue="cluster-pipeline-queue"}'
 
     ## ArgoCD Metrics
     - '{__name__="argocd_app_reconcile_bucket", namespace="gitops-service-argocd"}'
@@ -211,6 +217,7 @@
     - '{__name__="etcd_server_id", namespace="openshift-etcd"}'
     - '{__name__="etcd_server_quota_backend_bytes", namespace="openshift-etcd"}'
     - '{__name__="etcd_mvcc_db_total_size_in_bytes", namespace="openshift-etcd"}'
+    - '{__name__="etcd_mvcc_db_total_size_in_use_in_bytes", namespace="openshift-etcd"}'
     - '{__name__="etcd_server_received_total", namespace="openshift-etcd"}'
     - '{__name__="etcd_network_active_peers", namespace="openshift-etcd"}'
     - '{__name__="etcd_network_peer_round_trip_time_seconds_bucket"}'
@@ -242,6 +249,7 @@
     - '{__name__="kube_node_role"}'
     - '{__name__="kube_node_status_allocatable", resource=~"cpu|memory"}'
     - '{__name__="kube_node_status_condition", condition="MemoryPressure", status="true"}'
+    - '{__name__="kube_namespace_labels", label_konflux_ci_dev_type="tenant"}'
 
     ## Node Metrics
     - '{__name__="node_cpu_seconds_total", mode="idle"}'
