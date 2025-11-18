@@ -26,6 +26,7 @@
     - '{__name__="kube_deployment_status_replicas_ready", namespace="konflux-ui"}'
     - '{__name__="kube_deployment_status_replicas_available", namespace="konflux-ui"}'
     - '{__name__="kube_deployment_spec_replicas", namespace="konflux-ui"}'
+    - '{__name__="nginx_otel_http_request_errors_total", namespace="konflux-ui"}'
 
     # Namespace: mintmaker
     - '{__name__="kube_deployment_status_replicas_ready", namespace="mintmaker"}'
@@ -96,13 +97,31 @@
     - '{__name__="kube_deployment_status_replicas_available", namespace="konflux-support-ops"}'
     - '{__name__="kube_deployment_spec_replicas", namespace="konflux-support-ops"}'
 
+    # Namespace: proxy
+    - '{__name__="squid_up", namespace="proxy"}'
+
+    # Namespace: openshift-kueue-operator
+    - '{__name__="kube_deployment_status_replicas_ready", namespace="openshift-kueue-operator"}'
+    - '{__name__="kube_deployment_status_replicas_available", namespace="openshift-kueue-operator"}'
+    - '{__name__="kube_deployment_spec_replicas", namespace="openshift-kueue-operator"}'
+
+    # Namespace: tekton-kueue
+    - '{__name__="kube_deployment_status_replicas_ready", namespace="tekton-kueue"}'
+    - '{__name__="kube_deployment_status_replicas_available", namespace="tekton-kueue"}'
+    - '{__name__="kube_deployment_spec_replicas", namespace="tekton-kueue"}'
+
+    # Namespace: kueue-external-admission
+    - '{__name__="kube_deployment_status_replicas_ready", namespace="kueue-external-admission"}'
+    - '{__name__="kube_deployment_status_replicas_available", namespace="kueue-external-admission"}'
+    - '{__name__="kube_deployment_spec_replicas", namespace="kueue-external-admission"}'
+
     ## Container Metrics
     - '{__name__="kube_pod_container_status_waiting_reason", namespace!~".*-tenant|openshift-.*|kube-.*"}'
     - '{__name__="kube_pod_container_resource_limits", namespace="release-service"}'
     - '{__name__="kube_pod_container_status_terminated_reason", namespace=~"release-service|openshift-etcd|openshift-kube-apiserver|build-service|image-controller|integration-service|konflux-ui|product-kubearchive|product-kubearchive-logging|openshift-kueue-operator|tekton-kueue|kueue-external-admission|mintmaker|multi-platform-controller|namespace-lister|openshift-pipelines|tekton-results|project-controller|smee|smee-client"}'
     - '{__name__="kube_pod_container_status_last_terminated_reason", namespace!~".*-tenant", reason="OOMKilled"}'
     - '{__name__="kube_pod_container_status_last_terminated_reason", namespace="release-service"}'
-    - '{__name__="kube_pod_container_status_ready", namespace=~"release-service|tekton-kueue|kueue-external-admission|openshift-kueue-operator"}'
+    - '{__name__="kube_pod_container_status_ready", namespace=~"release-service"}'
     - '{__name__="container_cpu_usage_seconds_total", namespace=~"release-service|openshift-etcd"}'
     - '{__name__="container_memory_usage_bytes", namespace=~"release-service|openshift-etcd"}'
     - '{__name__="kube_pod_container_status_restarts_total", namespace!~".*-tenant"}'
@@ -154,8 +173,8 @@
     - '{__name__="tekton_pipelines_controller_pipelinerun_duration_seconds_sum"}'
     - '{__name__="tekton_pipelines_controller_pipelinerun_duration_seconds_count"}'
     - '{__name__="tekton_pipelines_controller_pipelinerun_total"}'
-    - '{__name__="tekton_pipelines_controller_running_pipelineruns_waiting_on_pipeline_resolution"}'
     - '{__name__="tekton_pipelines_controller_running_pipelineruns"}'
+    - '{__name__="tekton_pipelines_controller_running_pipelineruns_waiting_on_pipeline_resolution"}'
     - '{__name__="tekton_pipelines_controller_running_pipelineruns_waiting_on_task_resolution"}'
     - '{__name__="tekton_pipelines_controller_taskrun_total"}'
     - '{__name__="tekton_pipelines_controller_running_taskruns"}'
@@ -176,6 +195,16 @@
     - '{__name__="kueue_cluster_queue_status"}'
     - '{__name__="kueue_admission_wait_time_seconds_bucket"}'
     - '{__name__="up", job=~".*kueue.*"}'
+    - '{__name__="kueue_admitted_active_workloads", cluster_queue="cluster-pipeline-queue"}'
+    - '{__name__="kueue_pending_workloads", cluster_queue="cluster-pipeline-queue"}'
+    - '{__name__="kueue_admitted_workloads_total"}'
+    - '{__name__="kueue_cluster_queue_resource_reservation", cluster_queue="cluster-pipeline-queue"}'
+    - '{__name__="kueue_cluster_queue_nominal_quota", cluster_queue="cluster-pipeline-queue"}'
+    - '{__name__="kueue_quota_reserved_wait_time_seconds_bucket", cluster_queue="cluster-pipeline-queue"}'
+    - '{__name__="kueue_admission_attempt_duration_seconds_bucket"}'
+    - '{__name__="kueue_cluster_queue_resource_usage", cluster_queue="cluster-pipeline-queue"}'
+    - '{__name__="kueue_cluster_queue_resource_reservation", cluster_queue="cluster-pipeline-queue"}'
+    - '{__name__="kueue_admission_checks_wait_time_seconds_bucket", cluster_queue="cluster-pipeline-queue"}'
 
     ## ArgoCD Metrics
     - '{__name__="argocd_app_reconcile_bucket", namespace="gitops-service-argocd"}'
@@ -207,6 +236,7 @@
     - '{__name__="etcd_server_id", namespace="openshift-etcd"}'
     - '{__name__="etcd_server_quota_backend_bytes", namespace="openshift-etcd"}'
     - '{__name__="etcd_mvcc_db_total_size_in_bytes", namespace="openshift-etcd"}'
+    - '{__name__="etcd_mvcc_db_total_size_in_use_in_bytes", namespace="openshift-etcd"}'
     - '{__name__="etcd_server_received_total", namespace="openshift-etcd"}'
     - '{__name__="etcd_network_active_peers", namespace="openshift-etcd"}'
     - '{__name__="etcd_network_peer_round_trip_time_seconds_bucket"}'
@@ -238,6 +268,7 @@
     - '{__name__="kube_node_role"}'
     - '{__name__="kube_node_status_allocatable", resource=~"cpu|memory"}'
     - '{__name__="kube_node_status_condition", condition="MemoryPressure", status="true"}'
+    - '{__name__="kube_namespace_labels", label_konflux_ci_dev_type="tenant"}'
 
     ## Node Metrics
     - '{__name__="node_cpu_seconds_total", mode="idle"}'
