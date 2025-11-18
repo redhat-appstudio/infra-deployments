@@ -100,13 +100,28 @@
     # Namespace: proxy
     - '{__name__="squid_up", namespace="proxy"}'
 
+    # Namespace: openshift-kueue-operator
+    - '{__name__="kube_deployment_status_replicas_ready", namespace="openshift-kueue-operator"}'
+    - '{__name__="kube_deployment_status_replicas_available", namespace="openshift-kueue-operator"}'
+    - '{__name__="kube_deployment_spec_replicas", namespace="openshift-kueue-operator"}'
+
+    # Namespace: tekton-kueue
+    - '{__name__="kube_deployment_status_replicas_ready", namespace="tekton-kueue"}'
+    - '{__name__="kube_deployment_status_replicas_available", namespace="tekton-kueue"}'
+    - '{__name__="kube_deployment_spec_replicas", namespace="tekton-kueue"}'
+
+    # Namespace: kueue-external-admission
+    - '{__name__="kube_deployment_status_replicas_ready", namespace="kueue-external-admission"}'
+    - '{__name__="kube_deployment_status_replicas_available", namespace="kueue-external-admission"}'
+    - '{__name__="kube_deployment_spec_replicas", namespace="kueue-external-admission"}'
+
     ## Container Metrics
     - '{__name__="kube_pod_container_status_waiting_reason", namespace!~".*-tenant|openshift-.*|kube-.*"}'
     - '{__name__="kube_pod_container_resource_limits", namespace="release-service"}'
     - '{__name__="kube_pod_container_status_terminated_reason", namespace=~"release-service|openshift-etcd|openshift-kube-apiserver|build-service|image-controller|integration-service|konflux-ui|product-kubearchive|product-kubearchive-logging|openshift-kueue-operator|tekton-kueue|kueue-external-admission|mintmaker|multi-platform-controller|namespace-lister|openshift-pipelines|tekton-results|project-controller|smee|smee-client"}'
     - '{__name__="kube_pod_container_status_last_terminated_reason", namespace!~".*-tenant", reason="OOMKilled"}'
     - '{__name__="kube_pod_container_status_last_terminated_reason", namespace="release-service"}'
-    - '{__name__="kube_pod_container_status_ready", namespace=~"release-service|tekton-kueue|kueue-external-admission|openshift-kueue-operator"}'
+    - '{__name__="kube_pod_container_status_ready", namespace=~"release-service"}'
     - '{__name__="container_cpu_usage_seconds_total", namespace=~"release-service|openshift-etcd"}'
     - '{__name__="container_memory_usage_bytes", namespace=~"release-service|openshift-etcd"}'
     - '{__name__="kube_pod_container_status_restarts_total", namespace!~".*-tenant"}'
@@ -186,6 +201,10 @@
     - '{__name__="kueue_cluster_queue_resource_reservation", cluster_queue="cluster-pipeline-queue"}'
     - '{__name__="kueue_cluster_queue_nominal_quota", cluster_queue="cluster-pipeline-queue"}'
     - '{__name__="kueue_quota_reserved_wait_time_seconds_bucket", cluster_queue="cluster-pipeline-queue"}'
+    - '{__name__="kueue_admission_attempt_duration_seconds_bucket"}'
+    - '{__name__="kueue_cluster_queue_resource_usage", cluster_queue="cluster-pipeline-queue"}'
+    - '{__name__="kueue_cluster_queue_resource_reservation", cluster_queue="cluster-pipeline-queue"}'
+    - '{__name__="kueue_admission_checks_wait_time_seconds_bucket", cluster_queue="cluster-pipeline-queue"}'
 
     ## ArgoCD Metrics
     - '{__name__="argocd_app_reconcile_bucket", namespace="gitops-service-argocd"}'
