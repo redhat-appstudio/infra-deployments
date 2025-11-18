@@ -1,0 +1,23 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: konflux-ci-test-runner-pods
+  namespace: build-service
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "pods/log"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: konflux-ci-test-runner-pods-binding
+  namespace: build-service
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: konflux-ci-test-runner-pods
+subjects:
+  - kind: ServiceAccount
+    name: konflux-ci-sa
+    namespace: konflux-ci
