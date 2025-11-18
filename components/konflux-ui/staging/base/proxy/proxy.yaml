@@ -82,6 +82,8 @@ spec:
           mountPath: /mnt/static-content
         - name: ui-runtime-env-variables
           mountPath: /mnt/ui-runtime-env-variables
+        - name: watson-api-key
+          mountPath: /mnt/watson-api-key
         securityContext:
           readOnlyRootFilesystem: true
           runAsNonRoot: true
@@ -303,7 +305,7 @@ spec:
             secretName: proxy
         - name: watson-api-key
           secret:
-            secretName: API_KEY
+            secretName: watson-config
         - name: static-content
           emptyDir: {}
         - name: ui-runtime-env-variables
