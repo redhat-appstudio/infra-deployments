@@ -9,7 +9,7 @@ metadata:
     {{- if and .Values.crds.conversion.enabled .Values.webhook.certManager.enabled .Values.webhook.certManager.addInjectorAnnotations }}
     cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ include "external-secrets.fullname" . }}-webhook
     {{- end }}
-    controller-gen.kubebuilder.io/version: v0.16.5
+    controller-gen.kubebuilder.io/version: v0.17.3
   labels:
     external-secrets.io/component: controller
   name: acraccesstokens.generators.external-secrets.io
@@ -29,7 +29,7 @@ spec:
       schema:
         openAPIV3Schema:
           description: |-
-            ACRAccessToken returns a Azure Container Registry token
+            ACRAccessToken returns an Azure Container Registry token
             that can be used for pushing/pulling images.
             Note: by default it will return an ACR Refresh Token with full access
             (depending on the identity).
@@ -211,16 +211,4 @@ spec:
       storage: true
       subresources:
         status: {}
-{{- if .Values.crds.conversion.enabled }}
-  conversion:
-    strategy: Webhook
-    webhook:
-      conversionReviewVersions:
-        - v1
-      clientConfig:
-        service:
-          name: {{ include "external-secrets.fullname" . }}-webhook
-          namespace: {{ .Release.Namespace | quote }}
-          path: /convert
-{{- end }}
 {{- end }}
