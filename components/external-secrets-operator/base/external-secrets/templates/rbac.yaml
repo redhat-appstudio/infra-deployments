@@ -17,10 +17,19 @@ rules:
     - "external-secrets.io"
     resources:
     - "secretstores"
+    {{- if .Values.processClusterStore }}
     - "clustersecretstores"
+    {{- end }}
     - "externalsecrets"
+    {{- if .Values.processClusterExternalSecret }}
     - "clusterexternalsecrets"
+    {{- end }}
+    {{- if .Values.processPushSecret }}
     - "pushsecrets"
+    {{- end }}
+    {{- if .Values.processClusterPushSecret }}
+    - "clusterpushsecrets"
+    {{- end }}
     verbs:
     - "get"
     - "list"
@@ -30,23 +39,59 @@ rules:
     resources:
     - "externalsecrets"
     - "externalsecrets/status"
+    {{- if .Values.openshiftFinalizers }}
     - "externalsecrets/finalizers"
+    {{- end }}
     - "secretstores"
     - "secretstores/status"
+    {{- if .Values.openshiftFinalizers }}
     - "secretstores/finalizers"
+    {{- end }}
+    {{- if .Values.processClusterStore }}
     - "clustersecretstores"
     - "clustersecretstores/status"
+    {{- if .Values.openshiftFinalizers }}
     - "clustersecretstores/finalizers"
+    {{- end }}
+    {{- end }}
+    {{- if .Values.processClusterExternalSecret }}
     - "clusterexternalsecrets"
     - "clusterexternalsecrets/status"
+    {{- if .Values.openshiftFinalizers }}
     - "clusterexternalsecrets/finalizers"
+    {{- end }}
+    {{- end }}
+    {{- if .Values.processPushSecret }}
     - "pushsecrets"
     - "pushsecrets/status"
+    {{- if .Values.openshiftFinalizers }}
     - "pushsecrets/finalizers"
+    {{- end }}
+    {{- end }}
+    {{- if .Values.processClusterPushSecret }}
+    - "clusterpushsecrets"
+    - "clusterpushsecrets/status"
+    {{- if .Values.openshiftFinalizers }}
+    - "clusterpushsecrets/finalizers"
+    {{- end }}
+    {{- end }}
     verbs:
     - "get"
     - "update"
     - "patch"
+  - apiGroups:
+    - "generators.external-secrets.io"
+    resources:
+    - "generatorstates"
+    verbs:
+    - "get"
+    - "list"
+    - "watch"
+    - "create"
+    - "update"
+    - "patch"
+    - "delete"
+    - "deletecollection"
   - apiGroups:
     - "generators.external-secrets.io"
     resources:
@@ -56,11 +101,13 @@ rules:
     - "fakes"
     - "gcraccesstokens"
     - "githubaccesstokens"
+    - "quayaccesstokens"
     - "passwords"
     - "stssessiontokens"
     - "uuids"
     - "vaultdynamicsecrets"
     - "webhooks"
+    - "grafanas"
     verbs:
     - "get"
     - "list"
@@ -115,6 +162,16 @@ rules:
     - "create"
     - "update"
     - "delete"
+  {{- if .Values.processPushSecret }}
+  - apiGroups:
+    - "external-secrets.io"
+    resources:
+    - "pushsecrets"
+    verbs:
+    - "create"
+    - "update"
+    - "delete"
+  {{- end }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 {{- if and .Values.scopedNamespace .Values.scopedRBAC }}
@@ -129,8 +186,12 @@ metadata:
   {{- end }}
   labels:
     {{- include "external-secrets.labels" . | nindent 4 }}
+    {{- if .Values.rbac.aggregateToView }}
     rbac.authorization.k8s.io/aggregate-to-view: "true"
+    {{- end }}
+    {{- if .Values.rbac.aggregateToEdit }}
     rbac.authorization.k8s.io/aggregate-to-edit: "true"
+    {{- end }}
     rbac.authorization.k8s.io/aggregate-to-admin: "true"
 rules:
   - apiGroups:
@@ -138,8 +199,15 @@ rules:
     resources:
       - "externalsecrets"
       - "secretstores"
+      {{- if .Values.processClusterStore }}
       - "clustersecretstores"
+      {{- end }}
+      {{- if .Values.processPushSecret }}
       - "pushsecrets"
+      {{- end }}
+      {{- if .Values.processClusterPushSecret }}
+      - "clusterpushsecrets"
+      {{- end }}
     verbs:
       - "get"
       - "watch"
@@ -153,9 +221,12 @@ rules:
     - "fakes"
     - "gcraccesstokens"
     - "githubaccesstokens"
+    - "quayaccesstokens"
     - "passwords"
     - "vaultdynamicsecrets"
     - "webhooks"
+    - "grafanas"
+    - "generatorstates"
     verbs:
       - "get"
       - "watch"
@@ -174,7 +245,9 @@ metadata:
   {{- end }}
   labels:
     {{- include "external-secrets.labels" . | nindent 4 }}
+    {{- if .Values.rbac.aggregateToEdit }}
     rbac.authorization.k8s.io/aggregate-to-edit: "true"
+    {{- end }}
     rbac.authorization.k8s.io/aggregate-to-admin: "true"
 rules:
   - apiGroups:
@@ -182,8 +255,15 @@ rules:
     resources:
       - "externalsecrets"
       - "secretstores"
+      {{- if .Values.processClusterStore }}
       - "clustersecretstores"
+      {{- end }}
+      {{- if .Values.processPushSecret }}
       - "pushsecrets"
+      {{- end }}
+      {{- if .Values.processClusterPushSecret }}
+      - "clusterpushsecrets"
+      {{- end }}
     verbs:
       - "create"
       - "delete"
@@ -199,9 +279,12 @@ rules:
     - "fakes"
     - "gcraccesstokens"
     - "githubaccesstokens"
+    - "quayaccesstokens"
     - "passwords"
     - "vaultdynamicsecrets"
     - "webhooks"
+    - "grafanas"
+    - "generatorstates"
     verbs:
       - "create"
       - "delete"
@@ -298,6 +381,9 @@ rules:
     - "external-secrets.io"
     resources:
     - "externalsecrets"
+    {{- if .Values.processPushSecret }}
+    - "pushsecrets"
+    {{- end }}
     verbs:
     - "get"
     - "list"
