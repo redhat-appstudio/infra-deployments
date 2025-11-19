@@ -9,7 +9,7 @@ metadata:
     {{- if and .Values.crds.conversion.enabled .Values.webhook.certManager.enabled .Values.webhook.certManager.addInjectorAnnotations }}
     cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ include "external-secrets.fullname" . }}-webhook
     {{- end }}
-    controller-gen.kubebuilder.io/version: v0.16.5
+    controller-gen.kubebuilder.io/version: v0.17.3
   labels:
     external-secrets.io/component: controller
   name: stssessiontokens.generators.external-secrets.io
@@ -213,16 +213,4 @@ spec:
       storage: true
       subresources:
         status: {}
-{{- if .Values.crds.conversion.enabled }}
-  conversion:
-    strategy: Webhook
-    webhook:
-      conversionReviewVersions:
-        - v1
-      clientConfig:
-        service:
-          name: {{ include "external-secrets.fullname" . }}-webhook
-          namespace: {{ .Release.Namespace | quote }}
-          path: /convert
-{{- end }}
 {{- end }}
