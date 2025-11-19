@@ -59,7 +59,7 @@ This is an example using the `kflux-prd-rh03` cluster:
 
 ```yaml
 --
-apiVersion: external-secrets.io/v1beta1
+apiVersion: external-secrets.io/v1
 kind: ExternalSecret
 metadata:
   annotations:
