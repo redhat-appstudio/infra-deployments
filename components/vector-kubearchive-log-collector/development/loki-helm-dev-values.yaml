@@ -57,26 +57,22 @@ loki:
     min_join_backoff: 1s
     rejoin_interval: 90s
   storage:
-    # bucketNames:
-    #   chunks: loki-data
-    #   admin: loki-data
-    # s3:
-    #   endpoint: http://minio:9000
-    #   region: us-east-1
-    #   s3ForcePathStyle: true
-    #   insecure: true
-    type: filesystem
+    bucketNames:
+      chunks: loki-data
+      admin: loki-data
+    s3:
+      endpoint: http://minio:9000
+      region: us-east-1
+      s3ForcePathStyle: true
+      insecure: true
   storage_config:
-    # aws:
-    #   s3: s3://loki-chunks
-    #   s3forcepathstyle: true
-    #   bucketnames: loki-data
-    #   region: us-east-1
-    #   endpoint: minio:9000
-    #   insecure: true
-    # Filesystem storage configuration
-    filesystem:
-      directory: /var/loki/chunks
+    aws:
+      s3: s3://loki-chunks
+      s3forcepathstyle: true
+      bucketnames: loki-data
+      region: us-east-1
+      endpoint: minio:9000
+      insecure: true
   limits_config:
     retention_period: 24h     # Reduce from 744h for development
     ingestion_rate_mb: 5      # Reduce from 10 for development
