@@ -149,6 +149,7 @@
     - '{__name__="kube_pod_container_info", namespace!~".*-tenant|openshift-.*|kube-.*"}'
     - '{__name__="kube_pod_container_info", namespace="openshift-pipelines"}'
     - '{__name__="kube_pod_container_info", namespace=~".*-tenant", image=~"quay\\.io/konflux-ci/.*|quay\\.io/conforma/.*|quay\\.io/enterprise-contract/.*"}'
+    - '{__name__="container_runtime_crio_image_pulls_failure_total"}'
 
     ## Pod Metrics
     - '{__name__="taskrun_pod_create_not_attempted_or_pending_count"}'
