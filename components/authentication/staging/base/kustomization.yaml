@@ -2,3 +2,10 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ../../base
+patches:
+  - path: group-sync-filter-patch.yaml
+    target:
+      name: konflux-rover-groups
+      kind: GroupSync
+      group: redhatcop.redhat.io
+      version: v1alpha1
