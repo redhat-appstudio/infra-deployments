@@ -1,0 +1,31 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: image-rbac-proxy
+resources:
+- ../base
+- https://github.com/konflux-ci/image-rbac-proxy/deploy/base?ref=2da855394221a336f76e6e8dc3c93b71da8e19f5
+# Enable this to create/rotate oauth secret
+# - ../../oauth
+
+images:
+- name: quay.io/konflux-ci/image-rbac-proxy
+  newName: quay.io/emilyzheng/image-rbac-proxy
+  newTag: stage
+
+configMapGenerator:
+  - name: dex
+    files:
+      - dex-config.yaml
+
+patches:
+- path: configmap.yaml
+- path: route-patch.yaml
+  target:
+    kind: Route
+    group: route.openshift.io
+    version: v1
+- path: sa-patch.yaml
+  target:
+    kind: ServiceAccount
+    name: dex-client
+    version: v1
