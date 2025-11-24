@@ -144,13 +144,23 @@ ingester:
     hard: {}
   # AWS credentials for S3/MinIO access
   # These match the MinIO credentials from loki-helm-minio-values.yaml
+  # Using secretKeyRef to satisfy kube-linter security requirements
   extraEnv:
     - name: AWS_ACCESS_KEY_ID
-      value: "loki"
+      valueFrom:
+        secretKeyRef:
+          name: kubearchive-loki
+          key: AWS_ACCESS_KEY_ID
     - name: AWS_SECRET_ACCESS_KEY
-      value: "supersecret"
+      valueFrom:
+        secretKeyRef:
+          name: kubearchive-loki
+          key: AWS_SECRET_ACCESS_KEY
     - name: AWS_DEFAULT_REGION
-      value: "us-east-1"
+      valueFrom:
+        secretKeyRef:
+          name: kubearchive-loki
+          key: AWS_DEFAULT_REGION
   # Graceful shutdown configuration to prevent stale ring instances
   # Give Loki time to flush chunks and leave the ring gracefully
   # Set to 90s to be longer than left_ingesters_timeout (60s) but still allow quick cleanup
