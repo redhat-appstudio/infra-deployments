@@ -17,6 +17,32 @@ gateway:
 loki:
   commonConfig:
     replication_factor: 3
+  memberlist:
+    join_members: []
+    # How long to wait before reclaiming a dead node's tokens
+    # Reduced to 2 minutes for development (faster cleanup with single replica)
+    # This helps remove stale ring instances quickly when pods are restarted
+    dead_node_reclaim_time: 2m
+    # How often to gossip with other nodes (lower = faster detection of failures)
+    # Keep at 2s for quick failure detection
+    gossip_interval: 2s
+    # How often to do full state sync with other nodes
+    # Reduced for development to sync faster
+    push_pull_interval: 5s
+    # Number of random nodes to gossip with per interval
+    # Set to 1 for development (only 1 ingester replica)
+    gossip_nodes: 1
+    # How long to continue gossiping to dead nodes (helps propagate death info)
+    # Reduced for development to propagate death info faster
+    gossip_to_dead_nodes_time: 10s
+    # How long to wait for an ingester to gracefully leave before considering it dead
+    # This should be longer than terminationGracePeriodSeconds to allow graceful shutdown
+    # Reduced to 60s for development (faster cleanup)
+    left_ingesters_timeout: 60s
+    max_join_backoff: 1m
+    max_join_retries: 10
+    min_join_backoff: 1s
+    rejoin_interval: 90s
   # Required storage configuration for Helm chart
   storage:
     type: s3
@@ -55,6 +81,7 @@ loki:
         log_stream_creation: false
         log_duplicate_stream_info: true
   ingester:
+    autoforget_unhealthy: true
     chunk_target_size: 8388608        # 8MB
     chunk_idle_period: 5m
     max_chunk_age: 2h

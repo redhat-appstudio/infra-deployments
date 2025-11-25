@@ -32,12 +32,30 @@ loki:
     replication_factor: 1
   memberlist:
     join_members: []
-    dead_node_reclaim_time: 0s
+    # How long to wait before reclaiming a dead node's tokens
+    # Reduced to 2 minutes for development (faster cleanup with single replica)
+    # This helps remove stale ring instances quickly when pods are restarted
+    dead_node_reclaim_time: 2m
+    # How often to gossip with other nodes (lower = faster detection of failures)
+    # Keep at 2s for quick failure detection
     gossip_interval: 2s
-    push_pull_interval: 10s
-    gossip_nodes: 2
-    gossip_to_dead_nodes_time: 15s
-    left_ingesters_timeout: 30s
+    # How often to do full state sync with other nodes
+    # Reduced for development to sync faster
+    push_pull_interval: 5s
+    # Number of random nodes to gossip with per interval
+    # Set to 1 for development (only 1 ingester replica)
+    gossip_nodes: 1
+    # How long to continue gossiping to dead nodes (helps propagate death info)
+    # Reduced for development to propagate death info faster
+    gossip_to_dead_nodes_time: 10s
+    # How long to wait for an ingester to gracefully leave before considering it dead
+    # This should be longer than terminationGracePeriodSeconds to allow graceful shutdown
+    # Reduced to 60s for development (faster cleanup)
+    left_ingesters_timeout: 60s
+    max_join_backoff: 1m
+    max_join_retries: 10
+    min_join_backoff: 1s
+    rejoin_interval: 90s
   storage:
     bucketNames:
       chunks: loki-data
@@ -80,6 +98,7 @@ loki:
         log_stream_creation: false
         log_duplicate_stream_info: true
   ingester:
+    autoforget_unhealthy: true
     chunk_encoding: snappy
     chunk_target_size: 3145728
     chunk_idle_period: 5m
@@ -123,6 +142,38 @@ ingester:
   podAntiAffinity:
     soft: {}
     hard: {}
+  # AWS credentials for S3/MinIO access
+  # These match the MinIO credentials from loki-helm-minio-values.yaml
+  # Using secretKeyRef to satisfy kube-linter security requirements
+  extraEnv:
+    - name: AWS_ACCESS_KEY_ID
+      valueFrom:
+        secretKeyRef:
+          name: kubearchive-loki
+          key: AWS_ACCESS_KEY_ID
+    - name: AWS_SECRET_ACCESS_KEY
+      valueFrom:
+        secretKeyRef:
+          name: kubearchive-loki
+          key: AWS_SECRET_ACCESS_KEY
+    - name: AWS_DEFAULT_REGION
+      valueFrom:
+        secretKeyRef:
+          name: kubearchive-loki
+          key: AWS_DEFAULT_REGION
+  # Graceful shutdown configuration to prevent stale ring instances
+  # Give Loki time to flush chunks and leave the ring gracefully
+  # Set to 90s to be longer than left_ingesters_timeout (60s) but still allow quick cleanup
+  terminationGracePeriodSeconds: 90
+  lifecycle:
+    preStop:
+      exec:
+        # Sleep to allow readiness probe to fail, removing pod from service endpoints
+        # This gives distributor time to stop sending new requests before shutdown
+        command:
+          - /bin/sh
+          - -c
+          - sleep 10
 
 querier:
   replicas: 1
@@ -198,40 +249,40 @@ chunksCache:
   replicas: 1
   batchSize: 256  # Batch size for sending/receiving chunks from cache
   parallelism: 10  # Parallel threads for cache operations
-  maxItemMemory: 30  # MB - Increased from 10MB to handle chunks (3MB target + compression overhead + metadata)
+  maxItemMemory: 10  # MB
   defaultValidity: 12h  # How long cached chunks are stored
 
 resultsCache:
   enabled: true
   replicas: 1
-  maxItemMemory: 100  # MB - Increased from 10MB to handle large query results (can be much larger than chunks)
+  maxItemMemory: 10  # MB
   defaultValidity: 12h  # How long cached query results are stored
 
 memcached:
   enabled: true
-  maxItemMemory: 30  # MB - Shared default for general memcached instances
+  maxItemMemory: 10  # MB - Shared default for general memcached instances
 
 # Shared memcached configuration (used as defaults for all memcached instances)
 # These don't deploy separate instances - they configure shared settings
 memcachedResults:
   enabled: true
-  maxItemMemory: 100  # MB - For query result caching
+  maxItemMemory: 10  # MB - For query result caching
 
 memcachedChunks:
   enabled: true
-  maxItemMemory: 30  # MB - For chunk caching
+  maxItemMemory: 10  # MB - For chunk caching
 
 memcachedFrontend:
   enabled: true
-  maxItemMemory: 100  # MB - Frontend cache can handle large query results
+  maxItemMemory: 10  # MB - Frontend cache can handle large query results
 
 memcachedIndexQueries:
   enabled: true
-  maxItemMemory: 50  # MB - Index queries can be large
+  maxItemMemory: 10  # MB - Index queries can be large
 
 memcachedIndexWrites:
   enabled: true
-  maxItemMemory: 30  # MB - Index write operations
+  maxItemMemory: 10  # MB - Index write operations
 
 
 

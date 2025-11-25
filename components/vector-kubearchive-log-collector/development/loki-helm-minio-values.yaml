@@ -1,7 +1,8 @@
 ---
 # Enable minio for storage
+# Required for distributed mode - filesystem storage is not supported in distributed deployments
 minio:
-  enabled: false
+  enabled: true
   rootUser: loki
   rootPassword: supersecret
   mode: standalone
