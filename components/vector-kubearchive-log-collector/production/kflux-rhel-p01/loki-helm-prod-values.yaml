@@ -16,6 +16,24 @@ gateway:
 loki:
   commonConfig:
     replication_factor: 3
+  # Memberlist configuration to prevent stale ring instances
+  # This ensures unhealthy/dead ingesters are automatically removed from the ring
+  memberlist:
+    join_members: []
+    # How long to wait before reclaiming a dead node's tokens
+    # Set to 5 minutes to allow graceful shutdowns but remove stale instances quickly
+    dead_node_reclaim_time: 5m
+    # How often to gossip with other nodes (lower = faster detection of failures)
+    gossip_interval: 2s
+    # How often to do full state sync with other nodes
+    push_pull_interval: 10s
+    # Number of random nodes to gossip with per interval
+    gossip_nodes: 3
+    # How long to continue gossiping to dead nodes (helps propagate death info)
+    gossip_to_dead_nodes_time: 15s
+    # How long to wait for an ingester to gracefully leave before considering it dead
+    # This should be longer than terminationGracePeriodSeconds to allow graceful shutdown
+    left_ingesters_timeout: 90s
   # Required storage configuration for Helm chart
   storage:
     type: s3
@@ -54,6 +72,7 @@ loki:
         log_stream_creation: false
         log_duplicate_stream_info: true
   ingester:
+    autoforget_unhealthy: true
     chunk_target_size: 8388608        # 8MB
     chunk_idle_period: 5m
     max_chunk_age: 2h
@@ -100,6 +119,18 @@ ingester:
   podAntiAffinity:
     soft: {}
     hard: {}
+  # Graceful shutdown configuration to prevent stale ring instances
+  # Give Loki time to flush chunks and leave the ring gracefully
+  terminationGracePeriodSeconds: 120  # 2 minutes - longer than left_ingesters_timeout
+  lifecycle:
+    preStop:
+      exec:
+        # Sleep to allow readiness probe to fail, removing pod from service endpoints
+        # This gives distributor time to stop sending new requests before shutdown
+        command:
+          - /bin/sh
+          - -c
+          - sleep 10
 
 querier:
   replicas: 3
