@@ -1,0 +1,112 @@
+---
+# Allow ingress for validating webhook from Kubernetes API server
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-webhook-ingress
+  namespace: external-secrets-operator
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: external-secrets
+      app.kubernetes.io/name: external-secrets-webhook
+  policyTypes:
+  - Ingress
+  ingress:
+  # Allow webhook traffic from API server (required for CRD validation)
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: openshift-kube-apiserver
+    ports:
+    - protocol: TCP
+      port: 10250  # Webhook port
+  # Allow internal communication from the main ESO controller (required for validation checks)
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: external-secrets # Selector for the main controller
+    ports:
+    - protocol: TCP
+      port: 10250
+---
+# Allow metrics scraping from monitoring namespace
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-metrics-ingress
+  namespace: external-secrets-operator
+spec:
+  # Selects ALL ESO Pods (Controller, Webhook, Cert Controller)
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: external-secrets
+  policyTypes:
+  - Ingress
+  ingress:
+  # Allow Prometheus to scrape metrics
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: appstudio-workload-monitoring
+    ports:
+    - protocol: TCP
+      port: 8080  # Metrics port
+  # Also allow from openshift-monitoring if it exists
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: openshift-monitoring
+    ports:
+    - protocol: TCP
+      port: 8080
+---
+# Allow health checks from kubelet (for liveness/readiness probes)
+# Health checks come from the node network, so we allow from all namespaces
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-health-checks
+  namespace: external-secrets-operator
+spec:
+  # Selects ALL ESO Pods (Controller, Webhook, Cert Controller)
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: external-secrets
+  policyTypes:
+  - Ingress
+  ingress:
+  # Allow health checks on port 8081 (used by cert-controller and webhook)
+  # Allow from all namespaces (kubelet health checks come from node network)
+  # This is safe because health checks are read-only and internal to the cluster
+  - from:
+    - namespaceSelector: {}  # Allow from all namespaces (includes node network)
+    ports:
+    - protocol: TCP
+      port: 8081  # Health check port for readiness/liveness probes
+
+---
+# Allow intra-namespace communication
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-same-namespace
+  namespace: external-secrets-operator
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: external-secrets
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: external-secrets
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: external-secrets
+
