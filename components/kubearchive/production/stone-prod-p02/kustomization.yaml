@@ -5,24 +5,38 @@ resources:
   - ../../base
   - ../base
   - external-secret.yaml
-  - https://github.com/kubearchive/kubearchive/releases/download/v1.6.0/kubearchive.yaml?timeout=90
+  - kubearchive.yaml
 
 namespace: product-kubearchive
 
-patches:
+# Generate kubearchive-logging ConfigMap with hash for automatic restarts
+# Due to quoting limitations of generators we need to introduce the values with the |
+# See https://github.com/kubernetes-sigs/kustomize/issues/4845#issuecomment-1671570428
+configMapGenerator:
+    - name: kubearchive-logging
+      literals:
+          - |
+              POD_ID=cel:metadata.uid
+          - |
+              NAMESPACE=cel:metadata.namespace
+          - |
+              START=cel:status.?startTime == optional.none() ? int(now()-duration('1h'))*1000000000: status.startTime
+          - |
+              END=cel:status.?startTime == optional.none() ? int(now()+duration('1h'))*1000000000: int(timestamp(status.startTime)+duration('6h'))*1000000000
+          - |
+              LOG_URL=http://loki-gateway.product-kubearchive-logging.svc.cluster.local:80/loki/api/v1/query_range?query=%7Bstream%3D%22{NAMESPACE}%22%7D%20%7C%20pod_id%20%3D%20%60{POD_ID}%60%20%7C%20container%20%3D%20%60{CONTAINER_NAME}%60&start={START}&end={END}&direction=forward
+          - |
+              LOG_URL_JSONPATH=$.data.result[*].values[*][1]
 
+patches:
   - patch: |-
+      $patch: delete
       apiVersion: v1
       kind: ConfigMap
       metadata:
         name: kubearchive-logging
         namespace: kubearchive
-      data:
-        POD_ID: "cel:metadata.uid"
-        START: "cel:status.?startTime == optional.none() ? int(now()-duration('1h'))*1000000000: status.startTime"
-        END: "cel:status.?startTime == optional.none() ? int(now()+duration('1h'))*1000000000: int(timestamp(status.startTime)+duration('6h'))*1000000000" # temporary workaround until CONTAINER_NAME is allowed on CEL expressions as variable: 6 hours since the container started
-        LOG_URL: "http://loki-gateway.product-kubearchive-logging.svc.cluster.local:80/loki/api/v1/query_range?query=%7Bstream%3D%22{NAMESPACE}%22%7D%20%7C%20pod_id%20%3D%20%60{POD_ID}%60%20%7C%20container%20%3D%20%60{CONTAINER_NAME}%60&start={START}&end={END}&direction=forward"
-        LOG_URL_JSONPATH: "$.data.result[*].values[*][1]"
+
   - patch: |-
       $patch: delete
       apiVersion: v1
@@ -33,17 +47,38 @@ patches:
 
   - patch: |-
       apiVersion: batch/v1
+      kind: CronJob
+      metadata:
+        name: releases-vacuum
+      spec:
+        jobTemplate:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: vacuum
+                    image: quay.io/kubearchive/vacuum:v1.14.0
+
+  - patch: |-
+      apiVersion: batch/v1
       kind: Job
       metadata:
         name: kubearchive-schema-migration
+        namespace: kubearchive
+        annotations:
+          # Needed if just the command is changed, otherwise the job needs to be deleted manually
+          argocd.argoproj.io/sync-options: Force=true,Replace=true
+          ignore-check.kube-linter.io/no-read-only-root-fs: >
+            "This job needs to clone a repository to do its job, so it needs write access to the FS."
       spec:
+        suspend: false
         template:
           spec:
             containers:
               - name: migration
                 env:
                   - name: KUBEARCHIVE_VERSION
-                    value: v1.6.0
+                    value: v1.14.0
   # We don't need the Secret as it will be created by the ExternalSecrets Operator
   - patch: |-
       $patch: delete
@@ -124,10 +159,15 @@ patches:
       spec:
         template:
           spec:
+            securityContext:
+              runAsUser: null
             containers:
               - name: manager
                 args: [--health-probe-bind-address=:8081]
                 env:
+                - name: GOMEMLIMIT
+                  value: 4GiB
+                  valueFrom: null # required because valueFrom comes from the original
                 - name: KUBEARCHIVE_OTEL_MODE
                   value: enabled
                 - name: OTEL_EXPORTER_OTLP_ENDPOINT
@@ -139,11 +179,11 @@ patches:
                   - containerPort: 8081
                 resources:
                   limits:
-                    cpu: 100m
-                    memory: 512Mi
+                    cpu: 500m
+                    memory: 5Gi
                   requests:
-                    cpu: 100m
-                    memory: 512Mi
+                    cpu: 500m
+                    memory: 5Gi
 
   - patch: |-
       apiVersion: apps/v1

@@ -1,13 +1,12 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - https://github.com/konflux-ci/repository-validator/config/ocp?ref=1a1bd5856c7caf40ebf3d9a24fce209ba8a74bd9
-images:
-  - name: controller
-    newName: quay.io/redhat-user-workloads/konflux-infra-tenant/repository-validator/repository-validator
-    newTag: 1a1bd5856c7caf40ebf3d9a24fce209ba8a74bd9
+  - ../base
 configMapGenerator:
   - name: config
-    files: 
-      - config.json
+    literals:
+      - config=*
+generatorOptions:
+  labels:
+    app.kubernetes.io/name: repository-validator
 namespace: repository-validator

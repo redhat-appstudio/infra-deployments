@@ -2,18 +2,24 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ../base
-  - https://github.com/konflux-ci/mintmaker/config/default?ref=688b2b63f5da525b94e8ac60761c5685563dc2c0
-  - https://github.com/konflux-ci/mintmaker/config/renovate?ref=688b2b63f5da525b94e8ac60761c5685563dc2c0
+  - https://github.com/konflux-ci/mintmaker/config/default?ref=8a12c3f643836c401d1e5d16bd2c1e45c65828d4
+  - https://github.com/konflux-ci/mintmaker/config/renovate?ref=8a12c3f643836c401d1e5d16bd2c1e45c65828d4
 
 images:
   - name: quay.io/konflux-ci/mintmaker
     newName: quay.io/konflux-ci/mintmaker
-    newTag: 688b2b63f5da525b94e8ac60761c5685563dc2c0
+    newTag: 8a12c3f643836c401d1e5d16bd2c1e45c65828d4
+  - name: quay.io/konflux-ci/mintmaker-renovate-image
+    newName: quay.io/konflux-ci/mintmaker-renovate-image
+    newTag: latest
 
 namespace: mintmaker
 
 commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+
+configurations:
+- kustomizeconfig.yaml
 
 components:
   - ../components/rh-certs

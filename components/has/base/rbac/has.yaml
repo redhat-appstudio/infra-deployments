@@ -6,8 +6,22 @@ metadata:
 subjects:
   - apiGroup: rbac.authorization.k8s.io
     kind: Group
-    name: konflux-has
+    name: konflux-integration
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: component-maintainer
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: view-konflux-integration-runner
+  namespace: application-service
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view
+subjects:
+- kind: ServiceAccount
+  name: konflux-integration-runner
+  namespace: rhtap-build-tenant

@@ -1,7 +1,6 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - ../../base/host
   - ../../base/member
   - ../../base/all-clusters
   - ../../base/backup
@@ -9,6 +8,7 @@ resources:
   - ../../base/konflux-ci
   - ../../base/cluster-secret-store-rh
   - ../../base/eaas
+  - ../../base/monitoring-blackbox
 
 namespace: konflux-public-production
 
@@ -36,6 +36,7 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: has
+  - path: production-overlay-patch.yaml
     target:
       kind: ApplicationSet
       version: v1alpha1
@@ -50,11 +51,6 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: cluster-secret-store
-  - path: production-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: sprayproxy
   - path: production-overlay-patch.yaml
     target:
       kind: ApplicationSet
@@ -124,11 +120,6 @@ patches:
     target:
       kind: ApplicationSet
       version: v1alpha1
-      name: smee
-  - path: production-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
       name: project-controller
   - path: production-overlay-patch.yaml
     target:
@@ -149,11 +140,6 @@ patches:
     target:
       kind: ApplicationSet
       version: v1alpha1
-      name: workspaces-member
-  - path: production-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
       name: notification-controller
   - path: production-overlay-patch.yaml
     target:
@@ -170,11 +156,6 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: crossplane-config
-  - path: production-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: ingresscontroller
   - path: production-overlay-patch.yaml
     target:
       kind: ApplicationSet
@@ -224,12 +205,22 @@ patches:
     target:
       kind: ApplicationSet
       version: v1alpha1
+      name: etcd-defrag
+  - path: production-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
       name: policies
   - path: production-overlay-patch.yaml
     target:
       kind: ApplicationSet
       version: v1alpha1
       name: kubearchive
+  - path: production-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: vector-kubearchive-log-collector
   - path: production-overlay-patch.yaml
     target:
       kind: ApplicationSet
@@ -245,3 +236,18 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: pulp-access-controller
+  - path: production-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: squid
+  - path: production-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: trust-manager
+  - path: production-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: monitoring-blackbox

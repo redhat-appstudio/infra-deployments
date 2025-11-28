@@ -61,7 +61,7 @@ These are the steps to add your own component:
     - See `components/gitops/staging` for more complex structure, where overlays are further structured for cluster specific configurations.
 
 3. Create an Argo CD `ApplicationSet` resource in `argo-cd-apps/base/directory/team-name/(team-name).yaml` or `argo-cd-apps/base/team-name/(team-name).yaml` depending on your application.
-    - There are quite a few directories in `argo-cd-apps/` directory, such as `base/member/` (for member clusters), `base/host/` (for host cluster), `base/all-clusters/` (for all the clusters) etc. Therefore, please choose the      appropriate directory to create `ApplicationSet` for your application or create a new directory `team-name` if none of the existing directories suits your application.
+    - There are quite a few directories in `argo-cd-apps/` directory, such as `base/member/` (for member clusters), `base/eaas/` (for EaaS clusters), `base/all-clusters/` (for all the clusters) etc. Therefore, please choose the appropriate directory to create `ApplicationSet` for your application or create a new directory `team-name` if none of the existing directories suits your application.
 
     - See `argo-cd-apps/base/member/gitops/gitops.yaml` for a template of how `ApplicationSet` should look like.
     - The `.spec.template.spec.source.path` value should point to the directory you created in previous step.

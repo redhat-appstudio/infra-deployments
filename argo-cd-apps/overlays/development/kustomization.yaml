@@ -2,13 +2,10 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ../../base/local-cluster-secret/all-in-one
-  - ../../base/host
-  - ../../base/host/optional/infra-deployments/dev-sso
   - ../../base/member
   - ../../base/all-clusters
   - ../../base/ca-bundle
   - ../../base/repository-validator
-  - ../../base/keycloak
   - ../../base/eaas
 
 patchesStrategicMerge:
@@ -64,11 +61,6 @@ patches:
     target:
       kind: ApplicationSet
       version: v1alpha1
-      name: ingresscontroller
-  - path: development-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
       name: release
   - path: development-overlay-patch.yaml
     target:
@@ -80,21 +72,6 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: integration
-  - path: development-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: smee
-  - path: set-local-cluster-label.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: keycloak
-  - path: development-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: keycloak
   - path: development-overlay-patch.yaml
     target:
       kind: ApplicationSet
@@ -207,3 +184,8 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: trust-manager
+  - path: development-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: squid

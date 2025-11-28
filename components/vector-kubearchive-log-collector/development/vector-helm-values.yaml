@@ -14,6 +14,8 @@ customConfig:
       glob_minimum_cooldown_ms: 500
       max_line_bytes: 3145728
       auto_partial_merge: true
+    metrics:
+      type: internal_metrics
   transforms:
     reduce_events:
       type: reduce
@@ -95,6 +97,10 @@ customConfig:
         type: "memory"
         max_events: 10000
         when_full: "drop_newest"  # Drop newest instead of blocking
+    prometheus_sink:
+      type: prometheus_exporter
+      inputs:
+        - metrics
 env:
   - name: LOKI_USERNAME
     valueFrom:
@@ -106,13 +112,38 @@ env:
       secretKeyRef:
         name: kubearchive-loki
         key: PASSWORD
-nodeSelector:
-  konflux-ci.dev/workload: konflux-tenants
+affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 1
+        preference:
+          matchExpressions:
+          - key: konflux-ci.dev/workload
+            operator: In
+            values:
+              - konflux-tenants
 tolerations:
+  # Tolerate standard Kubernetes node taints to allow scheduling on temporarily not-ready nodes
+  # This is important for DaemonSets that should run on all nodes
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300  # Wait 5 minutes before evicting from not-ready nodes
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300  # Wait 5 minutes before evicting from unreachable nodes
+  # Tolerate node pressure conditions to prevent eviction during temporary resource pressure
+  # These allow pods to stay on nodes during brief pressure events
   - effect: NoSchedule
-    key: konflux-ci.dev/workload
-    operator: Equal
-    value: konflux-tenants
+    key: node.kubernetes.io/memory-pressure
+    operator: Exists
+  - effect: NoSchedule
+    key: node.kubernetes.io/disk-pressure
+    operator: Exists
+  - effect: NoSchedule
+    key: node.kubernetes.io/pid-pressure
+    operator: Exists
 image:
   repository: quay.io/kubearchive/vector
   tag: 0.46.1-distroless-libc
@@ -154,12 +185,10 @@ extraVolumeMounts:
   - name: varlog
     mountPath: /var/log/pods
     readOnly: true
-  - name: varlibdockercontainers  
+  - name: varlibdockercontainers
     mountPath: /var/lib/containers
     readOnly: true
 
 # Configure Vector to use emptyDir for its default data volume instead of hostPath
 persistence:
   enabled: false
-
-

@@ -1,0 +1,39 @@
+---
+# Namespace for Dynatrace Operator and resources
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dynatrace
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+  labels:
+    argocd.argoproj.io/managed-by: openshift-gitops
+---
+# OperatorGroup for Dynatrace Operator
+# Defines the scope of the operator installation
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  name: dynatrace
+  namespace: dynatrace
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  upgradeStrategy: Default
+---
+# Subscription for Dynatrace Operator installation
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: dynatrace-operator
+  namespace: dynatrace
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  channel: alpha
+  installPlanApproval: Automatic
+  name: dynatrace-operator
+  source: certified-operators
+  sourceNamespace: openshift-marketplace
+  startingCSV: dynatrace-operator.v1.7.1
+

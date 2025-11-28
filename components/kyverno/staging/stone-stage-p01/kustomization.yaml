@@ -4,36 +4,13 @@ kind: Kustomization
 namespace: konflux-kyverno
 
 generators:
-  - kyverno-helm-generator.yaml
-
-replacements:
-  # enforce serviceAccountName is used instead of serviceAccount in Jobs
-  # TODO: these replacements can be removed when bumping to kyverno:1.14
-  # https://github.com/kyverno/kyverno/pull/12158
-  - source:
-      group: batch
-      version: v1
-      kind: Job
-      name: konflux-kyverno-migrate-resources
-      namespace: konflux-kyverno
-      fieldPath: spec.template.spec.serviceAccount
-    targets:
-      - select:
-          group: batch
-          version: v1
-          kind: Job
-          namespace: konflux-kyverno
-          name: konflux-kyverno-migrate-resources
-        fieldPaths:
-          - spec.template.spec.serviceAccountName
-        options:
-          create: true
+- kyverno-helm-generator.yaml
 
 # set resources to jobs
 patches:
-  - path: job_resources.yaml
-    target:
-      group: batch
-      version: v1
-      kind: Job
-      name: konflux-kyverno-migrate-resources
+- path: job_resources.yaml
+  target:
+    group: batch
+    kind: Job
+    name: konflux-kyverno-migrate-resources
+    version: v1

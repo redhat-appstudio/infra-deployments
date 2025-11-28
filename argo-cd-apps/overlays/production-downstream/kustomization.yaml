@@ -4,7 +4,6 @@ resources:
   - ../konflux-public-staging
   - ../../base/smee-client
   - ../../base/ca-bundle
-  - ../../base/keycloak
   - ../../base/repository-validator
   - ../../base/cluster-secret-store-rh
   - ../../base/monitoring-workload-kanary
@@ -37,6 +36,7 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: has
+  - path: production-overlay-patch.yaml
     target:
       kind: ApplicationSet
       version: v1alpha1
@@ -115,22 +115,12 @@ patches:
     target:
       kind: ApplicationSet
       version: v1alpha1
-      name: smee
-  - path: production-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
       name: smee-client
   - path: production-overlay-patch.yaml
     target:
       kind: ApplicationSet
       version: v1alpha1
       name: ca-bundle
-  - path: production-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: keycloak
   - path: production-overlay-patch.yaml
     target:
       kind: ApplicationSet
@@ -205,11 +195,6 @@ patches:
     target:
       kind: ApplicationSet
       version: v1alpha1
-      name: workspaces-member
-  - path: production-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
       name: konflux-ui
   - path: production-overlay-patch.yaml
     target:
@@ -231,6 +216,11 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: etcd-shield
+  - path: production-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: etcd-defrag
   - path: production-overlay-patch.yaml
     target:
       kind: ApplicationSet
@@ -261,3 +251,18 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: pulp-access-controller
+  - path: production-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: squid
+  - path: production-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: trust-manager
+  - path: production-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: monitoring-blackbox

@@ -57,3 +57,23 @@ rules:
       - list
       - watch
       - delete
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: integration-runner-resources
+  namespace: build-templates-e2e
+rules:
+  - apiGroups:
+      - appstudio.redhat.com
+    resources:
+      - applications
+      - components
+    verbs:
+      - get
+      - list
+      - create
+      - watch
+      - update
+      - patch
+      - delete

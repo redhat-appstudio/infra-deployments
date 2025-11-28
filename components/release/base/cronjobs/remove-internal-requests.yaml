@@ -44,18 +44,18 @@ spec:
                        if(yesterday > completionTime) {
                          args="%s:%s\n"
                          printf(args, $1, $2)
-                       } 
+                       }
                     }' $KUBECTL_OUTPUT > $INTERNAL_REQUESTS_FILE
 
-                  # The deleteAndLog will run the CR deletion and save the operation in a structured way that        
-                  # can be read easily by kubectl or journalctl                                                           
+                  # The deleteAndLog will run the CR deletion and save the operation in a structured way that
+                  # can be read easily by kubectl or journalctl
                   function deleteAndLog() {
                     ir=${1%:*}
                     namespace=${1#*:}
                     kubectl delete internalrequest $ir -n $namespace |while read logLine; do
                       echo "INFO: namespace=${namespace} log=${logLine}"
-                    done                                                                                                  
-                  }                                                                                                       
+                    done
+                  }
                   export -f deleteAndLog
                   xargs -a ${INTERNAL_REQUESTS_FILE} -i -P ${MAX_PROCS} bash -c 'deleteAndLog "{}"'
               imagePullPolicy: IfNotPresent

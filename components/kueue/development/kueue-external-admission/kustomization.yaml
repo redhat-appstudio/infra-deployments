@@ -25,3 +25,9 @@ patches:
       - op: replace
         path: /data/shouldAdmit
         value: "true"
+  - path: controller-patch.yaml
+    target:
+      group: apps
+      kind: Deployment
+      name: alert-mgr-kueue-admission-controller-manager
+      version: v1

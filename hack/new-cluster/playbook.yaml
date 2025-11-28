@@ -35,8 +35,8 @@
     github_organization: "redhat-appstudio"
     github_application: "red-hat-konflux-{{ shortname }}"
 
-    smee_webhook_server_slug: "{{ (env == 'staging') | ternary('stone-stg-host.qc0p.p1', 'stone-prd-host1.wdlc.p1') }}"
-    smee_webhook_server: "https://smee-smee.apps.{{ smee_webhook_server_slug }}.openshiftapps.com"
+    smee_webhook_server_slug: "{{ (env == 'staging') | ternary('kflux-c-stg-e01.3zdg.p3', 'kflux-c-prd-e01.yo5u.p3') }}"
+    smee_webhook_server: "https://smee-smee.apps.rosa.{{ smee_webhook_server_slug }}.openshiftapps.com"
     smee_webhook_url: "{{ smee_webhook_server }}/redhathook{{cutename}}"
 
     required_vars:

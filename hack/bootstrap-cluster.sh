@@ -3,18 +3,10 @@
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"/..
 
 main() {
-    local mode keycloak toolchain obo eaas
+    local mode obo eaas
     while [[ $# -gt 0 ]]; do
         key=$1
         case $key in
-        --toolchain | -t)
-            toolchain="--toolchain"
-            shift
-            ;;
-        --keycloak | -kc)
-            keycloak="--keycloak"
-            shift
-            ;;
         --obo | -o)
             obo="--obo"
             shift
@@ -62,7 +54,7 @@ main() {
         fi
         ;;
     "preview")
-        $ROOT/hack/preview.sh $toolchain $keycloak $obo $eaas
+        $ROOT/hack/preview.sh $obo $eaas
         ;;
     esac
 
@@ -73,15 +65,13 @@ main() {
 }
 
 print_help() {
-    echo "Usae: $0 MODE [-t|--toolchain] [-kc|--keycloak] [-o|--obo] [-e|--eaas] [-h|--help]"
+    echo "Usae: $0 MODE [-o|--obo] [-e|--eaas] [-h|--help]"
     echo "  MODE             upstream/preview (default: upstream)"
-    echo "  -t, --toolchain  (only in preview mode) Install toolchain operators"
-    echo "  -kc, --keycloak  (only in preview mode) Configure the toolchain operator to use keycloak deployed on the cluster"
     echo "  -o, --obo        (only in preview mode) Install Observability operator and Prometheus instance for federation"
     echo "  -e  --eaas       (only in preview mode) Install environment as a service components"
     echo "  -h, --help       Show this help message and exit"
     echo
-    echo "Example usage: \`$0 preview --toolchain --keycloak --obo --eaas"
+    echo "Example usage: \`$0 preview --obo --eaas"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
