@@ -8,7 +8,10 @@ metadata:
 spec:
   dataFrom:
     - extract:
+        conversionStrategy: Default
+        decodingStrategy: None
         key: production/build/tekton-ci/konflux-ci-repo-creator
+        metadataPolicy: None
   refreshInterval: 15m
   secretStoreRef:
     kind: ClusterSecretStore

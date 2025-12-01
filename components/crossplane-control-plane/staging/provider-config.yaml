@@ -12,7 +12,6 @@ spec:
       namespace: crossplane-system
       name: eaas-cluster
       key: kubeconfig
-
 ---
 apiVersion: external-secrets.io/v1beta1
 kind: ExternalSecret
@@ -25,7 +24,10 @@ metadata:
 spec:
   dataFrom:
     - extract:
+        conversionStrategy: Default
+        decodingStrategy: None
         key: staging/eaas/eaas-stage-kubeconfig
+        metadataPolicy: None
   refreshInterval: 1h
   secretStoreRef:
     kind: ClusterSecretStore

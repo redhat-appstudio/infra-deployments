@@ -8,7 +8,10 @@ metadata:
 spec:
   dataFrom:
     - extract:
+        conversionStrategy: Default
+        decodingStrategy: None
         key: "production/integration-service/tekton-ci/clair-in-ci-db-github-token"
+        metadataPolicy: None
   refreshInterval: 1h
   secretStoreRef:
     kind: ClusterSecretStore
