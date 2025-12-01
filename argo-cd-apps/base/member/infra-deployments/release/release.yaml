@@ -27,6 +27,13 @@ spec:
       destination:
         namespace: release-service
         server: '{{server}}'
+      ignoreDifferences:
+        - group: external-secrets.io
+          kind: ExternalSecret
+          jqPathExpressions:
+            - .spec.dataFrom[].extract.conversionStrategy
+            - .spec.dataFrom[].extract.decodingStrategy
+            - .spec.dataFrom[].extract.metadataPolicy
       syncPolicy:
         automated:
           prune: true
