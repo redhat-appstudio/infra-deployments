@@ -74,6 +74,8 @@ loki:
       endpoint: minio:9000
       insecure: true
   limits_config:
+    shard_streams:
+      enabled: false
     retention_period: 24h     # Reduce from 744h for development
     ingestion_rate_mb: 5      # Reduce from 10 for development
     ingestion_burst_size_mb: 10  # Reduce from 20
@@ -283,6 +285,3 @@ memcachedIndexQueries:
 memcachedIndexWrites:
   enabled: true
   maxItemMemory: 10  # MB - Index write operations
-
-
-
