@@ -156,6 +156,8 @@ kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: everyone-view
+  labels:
+    namespace-lister.konflux-ci.dev/use-for-access: "true"
 subjects: [] # added by patch to avoid duplicating the groups
 roleRef:
   apiGroup: rbac.authorization.k8s.io
