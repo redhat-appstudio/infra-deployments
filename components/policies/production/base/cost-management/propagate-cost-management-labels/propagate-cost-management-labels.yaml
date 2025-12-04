@@ -1,0 +1,56 @@
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: propagate-cost-management-labels
+  annotations:
+    policies.kyverno.io/title: Propagate Cost-Center from Namespace
+    policies.kyverno.io/category: Cost Management
+    policies.kyverno.io/severity: low
+    policies.kyverno.io/subject: Pod
+    policies.kyverno.io/description: >-
+      Propagates the `cost-center` label from non-managed tenant namespaces to pods,
+      and sets the `cost_management_optimizations` label to `true` on those pods.
+spec:
+  webhookConfiguration:
+    failurePolicy: Ignore
+  rules:
+  - name: propagate-existing-cost-center-from-namespace
+    skipBackgroundRequests: true
+    match:
+      any:
+      - resources:
+          kinds:
+          - Pod
+          namespaceSelector:
+            matchLabels:
+              konflux-ci.dev/type: tenant
+            matchExpressions:
+            - key: kubernetes.io/metadata.name
+              operator: NotIn
+              values:
+                  # managed tenant namespaces
+                  - rhtap-releng-tenant
+                  - rh-managed-bifrost-tenant
+                  - rh-managed-cnv-fbc-tenant
+                  - rh-managed-mng-s-2-tenant
+                  - rh-managed-red-hat-acm-tenant
+                  - rh-managed-rhtap-ser-tenant
+                  - rhel-on-gitlab-tenant
+    context:
+    - name: costcenterLabel
+      apiCall:
+        urlPath: "/api/v1/namespaces/{{ request.object.metadata.namespace }}"
+        method: GET
+        jmesPath: "metadata.labels.\"cost-center\" || '' "
+    preconditions:
+      all:
+      - key: "{{ costcenterLabel }}"
+        operator: NotEquals
+        value: ""
+    mutate:
+      patchStrategicMerge:
+        metadata:
+          labels:
+            cost-center: "{{ costcenterLabel }}"
+            cost_management_optimizations: "true"

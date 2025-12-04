@@ -1,0 +1,195 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: label-propagation-valid-cost-center
+spec:
+  concurrent: false
+  description: |
+    tests that the labels are correctly set on pods in tenant namespace
+    that have the `cost-center` label
+  steps:
+    - name: Create namespaces for testing
+      try:
+        - create:
+            file: ./resources/namespace-cost-center.yaml
+            template: true
+            bindings:
+              - name: namespace
+                value: tenant
+              - name: cost_center
+                value: "670"
+    - name: Apply RBAC
+      try:
+        - apply:
+            file: ../kyverno-rbac.yaml
+    - name: Apply kyverno Cluster Policy and assert it exists
+      try:
+        - apply:
+            file: ../propagate-cost-management-labels.yaml
+        - assert:
+            file: chainsaw-assert-clusterpolicy.yaml
+            template: true
+            bindings:
+              - name: cluster_policy_name
+                value: propagate-cost-management-labels
+    - name: create pods in tenant
+      try:
+        - create:
+            file: ./resources/pod.yaml
+            bindings:
+              - name: namespace
+                value: tenant
+            template: true
+    - name: assert pods in the tenant are labeled
+      try:
+        - assert:
+            file: ./resources/expected-pod-matching.yaml
+            template: true
+            bindings:
+              - name: namespace
+                value: tenant
+              - name: cost_center
+                value: "670"
+---
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: label-not-applied-random-ns
+spec:
+  concurrent: false
+  description: |
+    tests that the label is not applied to pods in a non-tenant namespace
+  steps:
+    - name: Create namespaces for testing
+      try:
+        - create:
+            file: ./resources/namespace-nonmatching.yaml
+    - name: Apply RBAC
+      try:
+        - apply:
+            file: ../kyverno-rbac.yaml
+    - name: Apply kyverno Cluster Policy and assert it exists
+      try:
+        - apply:
+            file: ../propagate-cost-management-labels.yaml
+        - assert:
+            file: chainsaw-assert-clusterpolicy.yaml
+            template: true
+            bindings:
+              - name: cluster_policy_name
+                value: propagate-cost-management-labels
+    - name: create pods in random-ns
+      try:
+        - create:
+            file: ./resources/pod.yaml
+            template: true
+            bindings:
+              - name: namespace
+                value: random-ns
+    - name: assert pods in random-ns are not labeled
+      try:
+        - assert:
+            file: ./resources/pod.yaml
+            template: true
+            bindings:
+              - name: namespace
+                value: random-ns
+---
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: rule-not-applied-to-rhtap-releng-tenant
+spec:
+  concurrent: false
+  description: |
+    Tests that the Kyverno policy does not apply to pods in managed tenant namespaces.
+  steps:
+    - name: Create a managed namespace
+      try:
+        - create:
+            file: ./resources/namespace-no-cost-center.yaml
+            template: true
+            bindings:
+              - name: namespace
+                value: rhtap-releng-tenant
+    - name: Apply RBAC
+      try:
+        - apply:
+            file: ../kyverno-rbac.yaml
+    - name: Apply Kyverno Cluster Policy and assert it exists
+      try:
+        - apply:
+            file: ../propagate-cost-management-labels.yaml
+        - assert:
+            file: chainsaw-assert-clusterpolicy.yaml
+            template: true
+            bindings:
+              - name: cluster_policy_name
+                value: propagate-cost-management-labels
+    - name: Create a pod in the namespace
+      try:
+        - create:
+            file: ./resources/pod.yaml
+            template: true
+            bindings:
+              - name: namespace
+                value: rhtap-releng-tenant
+    - name: Assert pod in namespace is not labeled
+      try:
+        - assert:
+            resource:
+              apiVersion: v1
+              kind: Pod
+              metadata:
+                name: demo-pod
+                namespace: rhtap-releng-tenant
+                labels: {}
+---
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: create-pod-in-tenant-namespace-without-cost-center
+spec:
+  concurrent: false
+  description: |
+    Tests that it is possible to create a pod in an existing tenant namespace
+    that does not have the `cost-center` label.
+  steps:
+    - name: Create a tenant namespace without cost-center label
+      try:
+        - create:
+            file: ./resources/namespace-no-cost-center.yaml
+            template: true
+            bindings:
+              - name: namespace
+                value: tenant-no-cost-center
+    - name: Apply RBAC
+      try:
+        - apply:
+            file: ../kyverno-rbac.yaml
+    - name: Apply Kyverno Cluster Policy and assert it exists
+      try:
+        - apply:
+            file: ../propagate-cost-management-labels.yaml
+        - assert:
+            file: chainsaw-assert-clusterpolicy.yaml
+            template: true
+            bindings:
+              - name: cluster_policy_name
+                value: propagate-cost-management-labels
+    - name: Create a pod in the tenant namespace without cost-center label
+      try:
+        - create:
+            file: ./resources/pod.yaml
+            template: true
+            bindings:
+              - name: namespace
+                value: tenant-no-cost-center
+    - name: Assert pod in tenant namespace is created successfully
+      try:
+        - assert:
+            file: ./resources/pod.yaml
+            template: true
+            bindings:
+              - name: namespace
+                value: tenant-no-cost-center
