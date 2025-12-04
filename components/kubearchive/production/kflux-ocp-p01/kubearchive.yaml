@@ -5,7 +5,7 @@ metadata:
     app.kubernetes.io/component: namespace
     app.kubernetes.io/name: kubearchive
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.14.0
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive
 ---
 apiVersion: apiextensions.k8s.io/v1
@@ -71,6 +71,24 @@ spec:
                         type: string
                       deleteWhen:
                         type: string
+                      keepLastWhen:
+                        items:
+                          properties:
+                            count:
+                              type: integer
+                            name:
+                              type: string
+                            sortBy:
+                              default: metadata.creationTimestamp
+                              type: string
+                            when:
+                              type: string
+                          required:
+                            - count
+                            - name
+                            - when
+                          type: object
+                        type: array
                       selector:
                         properties:
                           apiVersion:
@@ -239,6 +257,36 @@ spec:
                         type: string
                       deleteWhen:
                         type: string
+                      keepLastWhen:
+                        properties:
+                          keep:
+                            items:
+                              properties:
+                                count:
+                                  type: integer
+                                sortBy:
+                                  default: metadata.creationTimestamp
+                                  type: string
+                                when:
+                                  type: string
+                              required:
+                                - count
+                                - when
+                              type: object
+                            type: array
+                          override:
+                            items:
+                              properties:
+                                count:
+                                  type: integer
+                                name:
+                                  type: string
+                              required:
+                                - count
+                                - name
+                              type: object
+                            type: array
+                        type: object
                       selector:
                         properties:
                           apiVersion:
@@ -402,6 +450,24 @@ spec:
                         type: string
                       deleteWhen:
                         type: string
+                      keepLastWhen:
+                        items:
+                          properties:
+                            count:
+                              type: integer
+                            name:
+                              type: string
+                            sortBy:
+                              default: metadata.creationTimestamp
+                              type: string
+                            when:
+                              type: string
+                          required:
+                            - count
+                            - name
+                            - when
+                          type: object
+                        type: array
                       selector:
                         properties:
                           apiVersion:
@@ -424,6 +490,36 @@ spec:
                           type: string
                         deleteWhen:
                           type: string
+                        keepLastWhen:
+                          properties:
+                            keep:
+                              items:
+                                properties:
+                                  count:
+                                    type: integer
+                                  sortBy:
+                                    default: metadata.creationTimestamp
+                                    type: string
+                                  when:
+                                    type: string
+                                required:
+                                  - count
+                                  - when
+                                type: object
+                              type: array
+                            override:
+                              items:
+                                properties:
+                                  count:
+                                    type: integer
+                                  name:
+                                    type: string
+                                required:
+                                  - count
+                                  - name
+                                type: object
+                              type: array
+                          type: object
                         selector:
                           properties:
                             apiVersion:
@@ -456,7 +552,7 @@ metadata:
     app.kubernetes.io/component: api-server
     app.kubernetes.io/name: kubearchive-api-server
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.14.0
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-api-server
   namespace: kubearchive
 ---
@@ -467,7 +563,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-vacuum
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.14.0
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-cluster-vacuum
   namespace: kubearchive
 ---
@@ -478,7 +574,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-operator
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.14.0
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-operator
   namespace: kubearchive
 ---
@@ -489,7 +585,7 @@ metadata:
     app.kubernetes.io/component: sink
     app.kubernetes.io/name: kubearchive-sink
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.14.0
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-sink
   namespace: kubearchive
 ---
@@ -500,7 +596,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-operator-leader-election
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.14.0
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-operator-leader-election
   namespace: kubearchive
 rules:
@@ -543,7 +639,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-vacuum
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.14.0
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-vacuum
   namespace: kubearchive
 rules:
@@ -563,7 +659,7 @@ metadata:
     app.kubernetes.io/component: api-server
     app.kubernetes.io/name: kubearchive-api-server
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.14.0
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-api-server
 rules:
   - apiGroups:
@@ -581,7 +677,7 @@ metadata:
   labels:
     app.kubernetes.io/name: kubearchive-edit
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.14.0
+    app.kubernetes.io/version: v1.15.0
     rbac.authorization.k8s.io/aggregate-to-edit: "true"
   name: kubearchive-edit
 rules:
@@ -695,7 +791,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-operator-config-editor
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.14.0
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-operator-config-editor
 rules:
   - apiGroups:
@@ -724,7 +820,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-operator-config-viewer
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.14.0
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-operator-config-viewer
 rules:
   - apiGroups:
@@ -748,7 +844,7 @@ metadata:
   labels:
     app.kubernetes.io/name: kubearchive-view
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.14.0
+    app.kubernetes.io/version: v1.15.0
     rbac.authorization.k8s.io/aggregate-to-view: "true"
   name: kubearchive-view
 rules:
@@ -772,7 +868,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-operator-leader-election
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.14.0
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-operator-leader-election
   namespace: kubearchive
 roleRef:
@@ -791,7 +887,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-vacuum
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.14.0
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-vacuum
   namespace: kubearchive
 roleRef:
@@ -810,7 +906,7 @@ metadata:
     app.kubernetes.io/component: api-server
     app.kubernetes.io/name: kubearchive-api-server
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.14.0
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-api-server
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -828,7 +924,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-operator
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.14.0
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-operator
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -847,7 +943,7 @@ metadata:
     app.kubernetes.io/component: logging
     app.kubernetes.io/name: kubearchive-logging
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.14.0
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-logging
   namespace: kubearchive
 ---
@@ -864,7 +960,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-operator
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.14.0
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-operator
   namespace: kubearchive
 ---
@@ -882,7 +978,7 @@ metadata:
     app.kubernetes.io/component: database
     app.kubernetes.io/name: kubearchive-database-credentials
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.14.0
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-database-credentials
   namespace: kubearchive
 type: Opaque
@@ -896,7 +992,7 @@ metadata:
     app.kubernetes.io/component: logging
     app.kubernetes.io/name: kubearchive-logging
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.14.0
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-logging
   namespace: kubearchive
 type: Opaque
@@ -908,7 +1004,7 @@ metadata:
     app.kubernetes.io/component: api-server
     app.kubernetes.io/name: kubearchive-api-server
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.14.0
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-api-server
   namespace: kubearchive
 spec:
@@ -927,7 +1023,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-operator-webhooks
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.14.0
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-operator-webhooks
   namespace: kubearchive
 spec:
@@ -950,7 +1046,7 @@ metadata:
     app.kubernetes.io/component: sink
     app.kubernetes.io/name: kubearchive-sink
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.14.0
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-sink
   namespace: kubearchive
 spec:
@@ -968,7 +1064,7 @@ metadata:
     app.kubernetes.io/component: api-server
     app.kubernetes.io/name: kubearchive-api-server
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.14.0
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-api-server
   namespace: kubearchive
 spec:
@@ -1018,7 +1114,7 @@ spec:
           envFrom:
             - secretRef:
                 name: kubearchive-database-credentials
-          image: quay.io/kubearchive/api:v1.14.0@sha256:febbb666e02158e6730eb31a023d56b5273f618b1963850fddd9ac0373fcbd4f
+          image: quay.io/kubearchive/api:v1.15.0@sha256:71542a0c7d92addfaf7ce41fbe0413a18b6996b57919a77e31ca21d4b5ebc3f8
           livenessProbe:
             httpGet:
               path: /livez
@@ -1066,7 +1162,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-operator
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.14.0
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-operator
   namespace: kubearchive
 spec:
@@ -1112,7 +1208,7 @@ spec:
               valueFrom:
                 resourceFieldRef:
                   resource: limits.cpu
-          image: quay.io/kubearchive/operator:v1.14.0@sha256:df64259c829dd4ab9ce8452c53d5a399332392d60639adef4223a84a5c5ad4f1
+          image: quay.io/kubearchive/operator:v1.15.0@sha256:7d363f268261b4b284196cb081f317fc0998c453dfe7a0cbd4888ae6706a9078
           livenessProbe:
             httpGet:
               path: /healthz
@@ -1174,7 +1270,7 @@ metadata:
     app.kubernetes.io/component: sink
     app.kubernetes.io/name: kubearchive-sink
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.14.0
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-sink
   namespace: kubearchive
 spec:
@@ -1222,7 +1318,7 @@ spec:
           envFrom:
             - secretRef:
                 name: kubearchive-database-credentials
-          image: quay.io/kubearchive/sink:v1.14.0@sha256:a5ec06e82452e6a694cfaee34baa6a004179d29b4afb985908336fc7beb060fe
+          image: quay.io/kubearchive/sink:v1.15.0@sha256:009a2ef650dd3ce84c9208cba50c20a8eea0b3c7c1699ef853af3590bf274aed
           livenessProbe:
             httpGet:
               path: /livez
@@ -1263,7 +1359,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-vacuum
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.14.0
+    app.kubernetes.io/version: v1.15.0
   name: cluster-vacuum
   namespace: kubearchive
 spec:
@@ -1284,7 +1380,7 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.namespace
-              image: quay.io/kubearchive/vacuum:v1.14.0@sha256:43d361edffd675179a3e0871f4cc375415838162a4fecd7e558770a7f73b0d7d
+              image: quay.io/kubearchive/vacuum:v1.15.0@sha256:8a8129519078542e7d45524d4e2f5c4b782bc81f384927fd72ec361e318fbf99
               name: vacuum
           restartPolicy: Never
           serviceAccount: kubearchive-cluster-vacuum
@@ -1298,7 +1394,7 @@ metadata:
     app.kubernetes.io/component: kubearchive
     app.kubernetes.io/name: kubearchive-schema-migration
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.14.0
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-schema-migration
   namespace: kubearchive
 spec:
@@ -1315,7 +1411,7 @@ spec:
             - -c
           env:
             - name: KUBEARCHIVE_VERSION
-              value: v1.14.0
+              value: v1.15.0
             - name: MIGRATE_VERSION
               value: v4.18.3
           envFrom:
@@ -1341,7 +1437,7 @@ metadata:
     app.kubernetes.io/component: api-server
     app.kubernetes.io/name: kubearchive-api-server-certificate
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.14.0
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-api-server-certificate
   namespace: kubearchive
 spec:
@@ -1375,7 +1471,7 @@ metadata:
     app.kubernetes.io/component: certs
     app.kubernetes.io/name: kubearchive-ca
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.14.0
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-ca
   namespace: kubearchive
 spec:
@@ -1397,7 +1493,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-operator-certificate
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.14.0
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-operator-certificate
   namespace: kubearchive
 spec:
@@ -1416,7 +1512,7 @@ metadata:
     app.kubernetes.io/component: certs
     app.kubernetes.io/name: kubearchive
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.14.0
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive
   namespace: kubearchive
 spec:
@@ -1430,7 +1526,7 @@ metadata:
     app.kubernetes.io/component: certs
     app.kubernetes.io/name: kubearchive-ca
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.14.0
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-ca
   namespace: kubearchive
 spec:
@@ -1445,7 +1541,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-mutating-webhook-configuration
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.14.0
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-mutating-webhook-configuration
 webhooks:
   - admissionReviewVersions:
@@ -1558,7 +1654,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-validating-webhook-configuration
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.14.0
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-validating-webhook-configuration
 webhooks:
   - admissionReviewVersions:
