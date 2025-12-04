@@ -2,6 +2,10 @@
   path: /spec/configuration/velero/args
   value:
     client-page-size: 100
-    client-qps: "50.0"
+- op: add
+  path: /spec/configuration/velero
+  value:
+    resourceTimeout: 20m
+    client-qps: 50
     client-burst: 100
-    request-timeout: 10m
+    logLevel: debug
