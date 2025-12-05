@@ -83,7 +83,6 @@ spec:
                 os.type:
                   enabled: true
         receivers:
-          # Example receiver - copy and modify for each log source
           filelog/rh_rhtap_stage_mpc_audit:
             include:
               - /var/log/audit/audit.log
@@ -134,16 +133,6 @@ spec:
                 field: attributes["com.splunk.sourcetype"]
                 value: secure  # e.g., access_combined, nginx_error
                 on_error: send
-              # Optional: Add filters for complex log processing
-              # - type: filter
-              #   expr: 'attributes["log.file.path"] matches "pattern"'
-        
-          # Add more receivers as needed following the same pattern
-          # filelog/rh_assh-001_{SOURCETYPE}_2:
-          #   include:
-          #   - {LOG_FILE_PATH_2}
-          #   ...
-        
         service:
           extensions:
             - file_storage/otc
