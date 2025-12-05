@@ -988,8 +988,21 @@ data:
   dynamic.macos-mac2metal-arm64.disk: {{ index $config "disk" | default "100" | quote }}
   dynamic.macos-mac2metal-arm64.allocation-timeout: "1200"
   dynamic.macos-mac2metal-arm64.tenancy: "host"
-  dynamic.macos-mac2metal-arm64.host-resource-group: {{ index $config "host-resource-group" | quote }}
-  dynamic.macos-mac2metal-arm64.license-configuration: {{ index $config "license-configuration" | quote }}
+  dynamic.macos-mac2metal-arm64.host-resource-group-arn: {{ index $config "host-resource-group-arn" | quote }}
+  dynamic.macos-mac2metal-arm64.license-configuration-arn: {{ index $config "license-configuration-arn" | quote }}
+  {{- if (index $config "iops") }}
+  dynamic.macos-mac2metal-arm64.iops: {{ index $config "iops" | quote }}
+  {{ end }}
+  {{- if (index $config "throughput") }}
+  dynamic.macos-mac2metal-arm64.throughput: {{ index $config "throughput" | quote }}
+  {{ end }}
+  {{- if (index $config "user-data") }}
+  dynamic.macos-mac2metal-arm64.user-data: |
+  {{- $lines := splitList "\n" (index $config "user-data") }}
+  {{- range $line := $lines }}
+    {{ $line }}
+  {{- end }}
+  {{- end }}
   {{ end }}
 
 
