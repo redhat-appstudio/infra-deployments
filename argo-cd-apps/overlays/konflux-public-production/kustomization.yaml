@@ -8,6 +8,7 @@ resources:
   - ../../base/konflux-ci
   - ../../base/cluster-secret-store-rh
   - ../../base/eaas
+  - ../../base/monitoring-blackbox
 
 namespace: konflux-public-production
 
@@ -204,6 +205,11 @@ patches:
     target:
       kind: ApplicationSet
       version: v1alpha1
+      name: etcd-defrag
+  - path: production-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
       name: policies
   - path: production-overlay-patch.yaml
     target:
@@ -240,3 +246,8 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: trust-manager
+  - path: production-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: monitoring-blackbox

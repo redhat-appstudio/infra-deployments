@@ -104,16 +104,44 @@ env:
       secretKeyRef:
         name: kubearchive-loki
         key: PASSWORD
+# Use preferred nodeSelector instead of required to allow scheduling on other nodes if needed
+# This provides flexibility while still preferring konflux-tenants nodes
 affinity:
-    nodeAffinity:
-      preferredDuringSchedulingIgnoredDuringExecution:
-      - weight: 1
-        preference:
-          matchExpressions:
-          - key: konflux-ci.dev/workload
-            operator: In
-            values:
-              - konflux-tenants
+  nodeAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 100
+      preference:
+        matchExpressions:
+        - key: konflux-ci.dev/workload
+          operator: In
+          values:
+          - konflux-tenants
+tolerations:
+  - effect: NoSchedule
+    key: konflux-ci.dev/workload
+    operator: Equal
+    value: konflux-tenants
+  # Tolerate standard Kubernetes node taints to allow scheduling on temporarily not-ready nodes
+  # This is important for DaemonSets that should run on all nodes
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300  # Wait 5 minutes before evicting from not-ready nodes
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300  # Wait 5 minutes before evicting from unreachable nodes
+  # Tolerate node pressure conditions to prevent eviction during temporary resource pressure
+  # These allow pods to stay on nodes during brief pressure events
+  - effect: NoSchedule
+    key: node.kubernetes.io/memory-pressure
+    operator: Exists
+  - effect: NoSchedule
+    key: node.kubernetes.io/disk-pressure
+    operator: Exists
+  - effect: NoSchedule
+    key: node.kubernetes.io/pid-pressure
+    operator: Exists
 image:
   repository: quay.io/kubearchive/vector
   tag: 0.46.1-distroless-libc

@@ -31,6 +31,7 @@ jobs:
             ! -path 'components/repository-validator/staging/*' \
             ! -path 'components/repository-validator/production/*' \
             ! -path 'components/monitoring/blackbox/staging/*' \
+            ! -path 'components/monitoring/blackbox/production/*' \
             ! -path 'components/*/chainsaw/*' \
             | \
             xargs -I {} -n1 -P8  bash -c 'dir=$(dirname "{}"); output_file=$(echo $dir | tr / -)-kustomization.yaml; if ! log=$(kustomize build --enable-helm "$dir" -o "kustomizedfiles/$output_file" 2>&1); then echo "Error when running kustomize build for $dir: $log" && exit 1;fi'

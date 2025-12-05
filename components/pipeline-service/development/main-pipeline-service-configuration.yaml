@@ -1883,7 +1883,7 @@ spec:
     - name: createCABundleConfigMaps
       value: "false"
   pipeline:
-    default-service-account: appstudio-pipeline
+    default-service-account: default
     enable-api-fields: alpha
     enable-bundles-resolver: true
     enable-cluster-resolver: true
@@ -2243,7 +2243,7 @@ metadata:
   namespace: openshift-marketplace
 spec:
   displayName: custom-operators
-  image: quay.io/openshift-pipeline/pipelines-index-4.17@sha256:a6a0ab73565bb51344c0443e4447a8878d6a8e45ab3be44b3a6d2de0491364a8
+  image: quay.io/openshift-pipeline/pipelines-index-4.17@sha256:92bd402729a9985593a49ec87b658cda7639f0fbf46bfe71a75acf035012b78c
   sourceType: grpc
   updateStrategy:
     registryPoll:
@@ -2266,10 +2266,6 @@ spec:
     env:
       - name: AUTOINSTALL_COMPONENTS
         value: "false"
-      # TODO: remove this image override when possible
-      # Console plugin builds have been broken. Though the console plugin isn't used by Konflux, overriding here ensures the deployment succeeds
-      - name: IMAGE_PIPELINES_CONSOLE_PLUGIN
-        value: quay.io/openshift-pipeline/pipelines-console-plugin-rhel9@sha256:6069f5659392ee604992b12c6fa972f4d20e74fc71e6aade68a0dbc567f24cbd
 ---
 apiVersion: route.openshift.io/v1
 kind: Route
@@ -2326,48 +2322,6 @@ runAsUser:
   type: RunAsAny
 seLinuxContext:
   type: MustRunAs
-supplementalGroups:
-  type: RunAsAny
-users: []
-volumes:
-- configMap
-- downwardAPI
-- emptyDir
-- persistentVolumeClaim
-- projected
-- secret
----
-allowHostDirVolumePlugin: false
-allowHostIPC: false
-allowHostNetwork: false
-allowHostPID: false
-allowHostPorts: false
-allowPrivilegeEscalation: false
-allowPrivilegedContainer: false
-allowedCapabilities:
-- SETFCAP
-apiVersion: security.openshift.io/v1
-defaultAddCapabilities: null
-fsGroup:
-  type: MustRunAs
-groups:
-- system:cluster-admins
-kind: SecurityContextConstraints
-metadata:
-  annotations:
-    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-    argocd.argoproj.io/sync-wave: "0"
-  name: appstudio-pipelines-nested-containerization-scc
-priority: 10
-readOnlyRootFilesystem: false
-requiredDropCapabilities:
-- MKNOD
-runAsUser:
-  type: RunAsAny
-seLinuxContext:
-  type: MustRunAs
-  seLinuxOptions:
-    type: container_runtime_t
 supplementalGroups:
   type: RunAsAny
 users: []

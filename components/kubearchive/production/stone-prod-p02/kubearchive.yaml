@@ -5,7 +5,7 @@ metadata:
     app.kubernetes.io/component: namespace
     app.kubernetes.io/name: kubearchive
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: workqueue-dea81b2
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive
 ---
 apiVersion: apiextensions.k8s.io/v1
@@ -71,6 +71,24 @@ spec:
                         type: string
                       deleteWhen:
                         type: string
+                      keepLastWhen:
+                        items:
+                          properties:
+                            count:
+                              type: integer
+                            name:
+                              type: string
+                            sortBy:
+                              default: metadata.creationTimestamp
+                              type: string
+                            when:
+                              type: string
+                          required:
+                            - count
+                            - name
+                            - when
+                          type: object
+                        type: array
                       selector:
                         properties:
                           apiVersion:
@@ -239,6 +257,36 @@ spec:
                         type: string
                       deleteWhen:
                         type: string
+                      keepLastWhen:
+                        properties:
+                          keep:
+                            items:
+                              properties:
+                                count:
+                                  type: integer
+                                sortBy:
+                                  default: metadata.creationTimestamp
+                                  type: string
+                                when:
+                                  type: string
+                              required:
+                                - count
+                                - when
+                              type: object
+                            type: array
+                          override:
+                            items:
+                              properties:
+                                count:
+                                  type: integer
+                                name:
+                                  type: string
+                              required:
+                                - count
+                                - name
+                              type: object
+                            type: array
+                        type: object
                       selector:
                         properties:
                           apiVersion:
@@ -393,6 +441,45 @@ spec:
             spec:
               description: SinkFilterSpec defines the desired state of SinkFilter resource
               properties:
+                cluster:
+                  items:
+                    properties:
+                      archiveOnDelete:
+                        type: string
+                      archiveWhen:
+                        type: string
+                      deleteWhen:
+                        type: string
+                      keepLastWhen:
+                        items:
+                          properties:
+                            count:
+                              type: integer
+                            name:
+                              type: string
+                            sortBy:
+                              default: metadata.creationTimestamp
+                              type: string
+                            when:
+                              type: string
+                          required:
+                            - count
+                            - name
+                            - when
+                          type: object
+                        type: array
+                      selector:
+                        properties:
+                          apiVersion:
+                            type: string
+                          kind:
+                            type: string
+                        required:
+                          - apiVersion
+                          - kind
+                        type: object
+                    type: object
+                  type: array
                 namespaces:
                   additionalProperties:
                     items:
@@ -403,6 +490,36 @@ spec:
                           type: string
                         deleteWhen:
                           type: string
+                        keepLastWhen:
+                          properties:
+                            keep:
+                              items:
+                                properties:
+                                  count:
+                                    type: integer
+                                  sortBy:
+                                    default: metadata.creationTimestamp
+                                    type: string
+                                  when:
+                                    type: string
+                                required:
+                                  - count
+                                  - when
+                                type: object
+                              type: array
+                            override:
+                              items:
+                                properties:
+                                  count:
+                                    type: integer
+                                  name:
+                                    type: string
+                                required:
+                                  - count
+                                  - name
+                                type: object
+                              type: array
+                          type: object
                         selector:
                           properties:
                             apiVersion:
@@ -435,7 +552,7 @@ metadata:
     app.kubernetes.io/component: api-server
     app.kubernetes.io/name: kubearchive-api-server
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: workqueue-dea81b2
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-api-server
   namespace: kubearchive
 ---
@@ -446,7 +563,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-vacuum
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: workqueue-dea81b2
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-cluster-vacuum
   namespace: kubearchive
 ---
@@ -457,7 +574,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-operator
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: workqueue-dea81b2
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-operator
   namespace: kubearchive
 ---
@@ -468,7 +585,7 @@ metadata:
     app.kubernetes.io/component: sink
     app.kubernetes.io/name: kubearchive-sink
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: workqueue-dea81b2
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-sink
   namespace: kubearchive
 ---
@@ -477,29 +594,9 @@ kind: Role
 metadata:
   labels:
     app.kubernetes.io/component: operator
-    app.kubernetes.io/name: kubearchive-vacuum
-    app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: workqueue-dea81b2
-  name: kubearchive-cluster-vacuum
-  namespace: kubearchive
-rules:
-  - apiGroups:
-      - kubearchive.org
-    resources:
-      - sinkfilters
-      - clustervacuumconfigs
-    verbs:
-      - get
-      - list
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  labels:
-    app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-operator-leader-election
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: workqueue-dea81b2
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-operator-leader-election
   namespace: kubearchive
 rules:
@@ -539,36 +636,18 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   labels:
-    app.kubernetes.io/component: sink
-    app.kubernetes.io/name: kubearchive-sink-watch
+    app.kubernetes.io/component: operator
+    app.kubernetes.io/name: kubearchive-vacuum
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: workqueue-dea81b2
-  name: kubearchive-sink-watch
+    app.kubernetes.io/version: v1.15.0
+  name: kubearchive-vacuum
   namespace: kubearchive
 rules:
   - apiGroups:
       - kubearchive.org
     resources:
       - sinkfilters
-    verbs:
-      - get
-      - list
-      - watch
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  labels:
-    app.kubernetes.io/component: operator
-    app.kubernetes.io/name: kubearchive-vacuum
-    app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: workqueue-dea81b2
-  name: clusterkubearchiveconfig-read
-rules:
-  - apiGroups:
-      - kubearchive.org
-    resources:
-      - clusterkubearchiveconfigs
+      - clustervacuumconfigs
     verbs:
       - get
       - list
@@ -580,7 +659,7 @@ metadata:
     app.kubernetes.io/component: api-server
     app.kubernetes.io/name: kubearchive-api-server
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: workqueue-dea81b2
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-api-server
 rules:
   - apiGroups:
@@ -598,14 +677,18 @@ metadata:
   labels:
     app.kubernetes.io/name: kubearchive-edit
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: workqueue-dea81b2
+    app.kubernetes.io/version: v1.15.0
     rbac.authorization.k8s.io/aggregate-to-edit: "true"
   name: kubearchive-edit
 rules:
   - apiGroups:
       - kubearchive.org
     resources:
-      - '*'
+      - clusterkubearchiveconfigs
+      - clustervacuumconfigs
+      - kubearchiveconfigs
+      - namespacevacuumconfigs
+      - sinkfilters
     verbs:
       - create
       - update
@@ -708,7 +791,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-operator-config-editor
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: workqueue-dea81b2
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-operator-config-editor
 rules:
   - apiGroups:
@@ -737,7 +820,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-operator-config-viewer
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: workqueue-dea81b2
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-operator-config-viewer
 rules:
   - apiGroups:
@@ -761,14 +844,18 @@ metadata:
   labels:
     app.kubernetes.io/name: kubearchive-view
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: workqueue-dea81b2
+    app.kubernetes.io/version: v1.15.0
     rbac.authorization.k8s.io/aggregate-to-view: "true"
   name: kubearchive-view
 rules:
   - apiGroups:
       - kubearchive.org
     resources:
-      - '*'
+      - clusterkubearchiveconfigs
+      - clustervacuumconfigs
+      - kubearchiveconfigs
+      - namespacevacuumconfigs
+      - sinkfilters
     verbs:
       - get
       - list
@@ -779,28 +866,9 @@ kind: RoleBinding
 metadata:
   labels:
     app.kubernetes.io/component: operator
-    app.kubernetes.io/name: kubearchive-vacuum
-    app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: workqueue-dea81b2
-  name: kubearchive-cluster-vacuum
-  namespace: kubearchive
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: kubearchive-cluster-vacuum
-subjects:
-  - kind: ServiceAccount
-    name: kubearchive-cluster-vacuum
-    namespace: kubearchive
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  labels:
-    app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-operator-leader-election
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: workqueue-dea81b2
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-operator-leader-election
   namespace: kubearchive
 roleRef:
@@ -816,34 +884,16 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   labels:
-    app.kubernetes.io/component: sink
-    app.kubernetes.io/name: kubearchive-sink-watch
+    app.kubernetes.io/component: operator
+    app.kubernetes.io/name: kubearchive-vacuum
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: workqueue-dea81b2
-  name: kubearchive-sink-watch
+    app.kubernetes.io/version: v1.15.0
+  name: kubearchive-vacuum
   namespace: kubearchive
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: kubearchive-sink-watch
-subjects:
-  - kind: ServiceAccount
-    name: kubearchive-sink
-    namespace: kubearchive
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  labels:
-    app.kubernetes.io/component: operator
-    app.kubernetes.io/name: kubearchive-vacuum
-    app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: workqueue-dea81b2
-  name: clusterkubearchiveconfig-read
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: clusterkubearchiveconfig-read
+  name: kubearchive-vacuum
 subjects:
   - kind: ServiceAccount
     name: kubearchive-cluster-vacuum
@@ -856,7 +906,7 @@ metadata:
     app.kubernetes.io/component: api-server
     app.kubernetes.io/name: kubearchive-api-server
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: workqueue-dea81b2
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-api-server
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -874,7 +924,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-operator
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: workqueue-dea81b2
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-operator
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -893,8 +943,25 @@ metadata:
     app.kubernetes.io/component: logging
     app.kubernetes.io/name: kubearchive-logging
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: workqueue-dea81b2
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-logging
+  namespace: kubearchive
+---
+apiVersion: v1
+data:
+  resources.yaml: |
+    - selector:
+        kind: "--all--"
+        apiVersion: "--all--"
+      workers: 3
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/component: operator
+    app.kubernetes.io/name: kubearchive-operator
+    app.kubernetes.io/part-of: kubearchive
+    app.kubernetes.io/version: v1.15.0
+  name: kubearchive-operator
   namespace: kubearchive
 ---
 apiVersion: v1
@@ -911,7 +978,7 @@ metadata:
     app.kubernetes.io/component: database
     app.kubernetes.io/name: kubearchive-database-credentials
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: workqueue-dea81b2
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-database-credentials
   namespace: kubearchive
 type: Opaque
@@ -925,7 +992,7 @@ metadata:
     app.kubernetes.io/component: logging
     app.kubernetes.io/name: kubearchive-logging
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: workqueue-dea81b2
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-logging
   namespace: kubearchive
 type: Opaque
@@ -937,7 +1004,7 @@ metadata:
     app.kubernetes.io/component: api-server
     app.kubernetes.io/name: kubearchive-api-server
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: workqueue-dea81b2
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-api-server
   namespace: kubearchive
 spec:
@@ -956,7 +1023,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-operator-webhooks
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: workqueue-dea81b2
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-operator-webhooks
   namespace: kubearchive
 spec:
@@ -979,7 +1046,7 @@ metadata:
     app.kubernetes.io/component: sink
     app.kubernetes.io/name: kubearchive-sink
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: workqueue-dea81b2
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-sink
   namespace: kubearchive
 spec:
@@ -997,7 +1064,7 @@ metadata:
     app.kubernetes.io/component: api-server
     app.kubernetes.io/name: kubearchive-api-server
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: workqueue-dea81b2
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-api-server
   namespace: kubearchive
 spec:
@@ -1047,7 +1114,7 @@ spec:
           envFrom:
             - secretRef:
                 name: kubearchive-database-credentials
-          image: quay.io/kubearchive/api:workqueue-dea81b2@sha256:542e7d78b743f27fcb111f4ebc40faa4fb3cbb6c2aabf7e70648dd06f0f24694
+          image: quay.io/kubearchive/api:v1.15.0@sha256:71542a0c7d92addfaf7ce41fbe0413a18b6996b57919a77e31ca21d4b5ebc3f8
           livenessProbe:
             httpGet:
               path: /livez
@@ -1095,7 +1162,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-operator
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: workqueue-dea81b2
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-operator
   namespace: kubearchive
 spec:
@@ -1141,7 +1208,7 @@ spec:
               valueFrom:
                 resourceFieldRef:
                   resource: limits.cpu
-          image: quay.io/kubearchive/operator:workqueue-dea81b2@sha256:8017f9216bc9cd636a1a5b1900715c7703032434644a44d28020e7c701efc3e4
+          image: quay.io/kubearchive/operator:v1.15.0@sha256:7d363f268261b4b284196cb081f317fc0998c453dfe7a0cbd4888ae6706a9078
           livenessProbe:
             httpGet:
               path: /healthz
@@ -1178,8 +1245,12 @@ spec:
             - mountPath: /tmp/k8s-webhook-server/serving-certs
               name: cert
               readOnly: true
+            - mountPath: /etc/kubearchive/config
+              name: operator-config
+              readOnly: true
       securityContext:
         runAsNonRoot: true
+        runAsUser: 1000
       serviceAccountName: kubearchive-operator
       terminationGracePeriodSeconds: 10
       volumes:
@@ -1187,6 +1258,10 @@ spec:
           secret:
             defaultMode: 420
             secretName: kubearchive-operator-tls
+        - configMap:
+            defaultMode: 420
+            name: kubearchive-operator
+          name: operator-config
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -1195,7 +1270,7 @@ metadata:
     app.kubernetes.io/component: sink
     app.kubernetes.io/name: kubearchive-sink
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: workqueue-dea81b2
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-sink
   namespace: kubearchive
 spec:
@@ -1243,7 +1318,7 @@ spec:
           envFrom:
             - secretRef:
                 name: kubearchive-database-credentials
-          image: quay.io/kubearchive/sink:workqueue-dea81b2@sha256:8e2934cf2f442ac4276e66e8f3e881eda646c4c98d292eb340fb0d36c1758665
+          image: quay.io/kubearchive/sink:v1.15.0@sha256:009a2ef650dd3ce84c9208cba50c20a8eea0b3c7c1699ef853af3590bf274aed
           livenessProbe:
             httpGet:
               path: /livez
@@ -1284,7 +1359,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-vacuum
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: workqueue-dea81b2
+    app.kubernetes.io/version: v1.15.0
   name: cluster-vacuum
   namespace: kubearchive
 spec:
@@ -1305,7 +1380,7 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.namespace
-              image: quay.io/kubearchive/vacuum:workqueue-dea81b2@sha256:8614128c76ce285c4c1dece6225c416e004b5ab57670089a1092652915779738
+              image: quay.io/kubearchive/vacuum:v1.15.0@sha256:8a8129519078542e7d45524d4e2f5c4b782bc81f384927fd72ec361e318fbf99
               name: vacuum
           restartPolicy: Never
           serviceAccount: kubearchive-cluster-vacuum
@@ -1319,7 +1394,7 @@ metadata:
     app.kubernetes.io/component: kubearchive
     app.kubernetes.io/name: kubearchive-schema-migration
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: workqueue-dea81b2
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-schema-migration
   namespace: kubearchive
 spec:
@@ -1336,7 +1411,7 @@ spec:
             - -c
           env:
             - name: KUBEARCHIVE_VERSION
-              value: workqueue-dea81b2
+              value: v1.15.0
             - name: MIGRATE_VERSION
               value: v4.18.3
           envFrom:
@@ -1362,7 +1437,7 @@ metadata:
     app.kubernetes.io/component: api-server
     app.kubernetes.io/name: kubearchive-api-server-certificate
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: workqueue-dea81b2
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-api-server-certificate
   namespace: kubearchive
 spec:
@@ -1396,7 +1471,7 @@ metadata:
     app.kubernetes.io/component: certs
     app.kubernetes.io/name: kubearchive-ca
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: workqueue-dea81b2
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-ca
   namespace: kubearchive
 spec:
@@ -1418,7 +1493,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-operator-certificate
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: workqueue-dea81b2
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-operator-certificate
   namespace: kubearchive
 spec:
@@ -1437,7 +1512,7 @@ metadata:
     app.kubernetes.io/component: certs
     app.kubernetes.io/name: kubearchive
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: workqueue-dea81b2
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive
   namespace: kubearchive
 spec:
@@ -1451,7 +1526,7 @@ metadata:
     app.kubernetes.io/component: certs
     app.kubernetes.io/name: kubearchive-ca
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: workqueue-dea81b2
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-ca
   namespace: kubearchive
 spec:
@@ -1466,7 +1541,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-mutating-webhook-configuration
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: workqueue-dea81b2
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-mutating-webhook-configuration
 webhooks:
   - admissionReviewVersions:
@@ -1579,7 +1654,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-validating-webhook-configuration
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: workqueue-dea81b2
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-validating-webhook-configuration
 webhooks:
   - admissionReviewVersions:

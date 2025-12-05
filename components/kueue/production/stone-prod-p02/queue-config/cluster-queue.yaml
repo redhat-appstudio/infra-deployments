@@ -19,17 +19,20 @@ spec:
     - cpu
     - memory
     - aws-ip
+    - mintmaker
     flavors:
     - name: default-flavor
       resources:
       - name: tekton.dev/pipelineruns
-        nominalQuota: '500'
+        nominalQuota: '300'
       - name: cpu
         nominalQuota: 1k
       - name: memory
         nominalQuota: 500Ti
       - name: aws-ip
         nominalQuota: '250'
+      - name: mintmaker
+        nominalQuota: '150'
   - coveredResources:
     - linux-amd64
     - linux-arm64
@@ -164,7 +167,7 @@ spec:
       - name: linux-root-arm64
         nominalQuota: '250'
       - name: linux-s390x
-        nominalQuota: '64'
+        nominalQuota: '72'
       - name: linux-x86-64
         nominalQuota: '1000'
       - name: local

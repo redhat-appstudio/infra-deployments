@@ -1,0 +1,61 @@
+---
+apiVersion: dynatrace.com/v1beta5
+kind: DynaKube
+metadata:
+  name: konflux-stage-cluster
+  namespace: dynatrace
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  apiUrl: https://esx13060.live.dynatrace.com/api
+  tokens: dynakube-secret
+  skipCertCheck: false
+  activeGate:
+    capabilities:
+      - routing
+      - kubernetes-monitoring
+      - dynatrace-api
+    replicas: 2
+    resources:
+      limits:
+        cpu: 2000m
+        memory: 4096Mi
+      requests:
+        cpu: 500m
+        memory: 512Mi
+  logMonitoring: {}
+  metadataEnrichment:
+    enabled: true
+    namespaceSelector: {}
+  oneAgent:
+    hostGroup: konflux-stage-clusters
+    cloudNativeFullStack:
+      tolerations:
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/master
+          operator: Exists
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/control-plane
+          operator: Exists
+        - effect: NoSchedule
+          key: konflux-ci.dev/workload
+          operator: Exists
+      oneAgentResources:
+        requests:
+          cpu: 200m
+          memory: 768Mi
+        limits:
+          cpu: 300m
+          memory: 2048Mi
+  templates:
+    extensionExecutionController:
+      imageRef: {}
+      resources: {}
+    kspmNodeConfigurationCollector:
+      imageRef: {}
+      nodeAffinity: {}
+      resources: {}
+    otelCollector:
+      imageRef: {}
+      resources: {}
+

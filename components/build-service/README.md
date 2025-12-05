@@ -54,7 +54,7 @@ Before creating component in Stage cluster it's necessary install GitHub applica
 
 ### Repository secrets
 
-The secret must be linked secret to `appstudio-pipeline` service account in the execution namespace
+The secret must be linked to `build-pipeline-<component-name>` service account in the execution namespace.
 
 ## Build Service secrets
 
