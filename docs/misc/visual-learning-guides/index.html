@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Konflux CI/CD Visual Guide</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: white;
+            text-align: center;
+            font-size: 3em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .subtitle {
+            color: rgba(255,255,255,0.9);
+            text-align: center;
+            font-size: 1.3em;
+            margin-bottom: 50px;
+        }
+        
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+        
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+        
+        .card-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+        
+        .card h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+        
+        .card p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        
+        .card-tag {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            margin-right: 5px;
+            margin-top: 10px;
+        }
+        
+        .difficulty {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            margin-top: 10px;
+        }
+        
+        .difficulty.beginner {
+            background: #48bb78;
+            color: white;
+        }
+        
+        .difficulty.intermediate {
+            background: #ed8936;
+            color: white;
+        }
+        
+        .difficulty.advanced {
+            background: #f56565;
+            color: white;
+        }
+        
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 50px;
+            opacity: 0.8;
+        }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2em;
+            }
+            
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 Konflux CI/CD Visual Guide</h1>
+        <p class="subtitle">Interactive diagrams and visual resources to understand the complete workflow</p>
+        
+        <div class="cards-grid">
+            <a href="README.html" class="card">
+                <div class="card-icon">ℹ️</div>
+                <h2>About & Contributing</h2>
+                <p>Information about these visual guides, technical details, style guide, and how to contribute new guides or update existing ones.</p>
+                <span class="difficulty beginner">All Levels</span>
+                <span class="card-tag">Meta</span>
+            </a>
+            
+            <a href="visual-components-map.html" class="card">
+                <div class="card-icon">🧩</div>
+                <h2>Complete Components Map</h2>
+                <p>Searchable directory of all 50+ Konflux components organized by category (Core CI/CD, Platform, Developer Tools, Infrastructure, Monitoring).</p>
+                <span class="difficulty beginner">Beginner</span>
+                <span class="card-tag">Searchable</span>
+            </a>
+            
+            <a href="visual-pr-workflow.html" class="card">
+                <div class="card-icon">🔄</div>
+                <h2>PR Workflow Timeline</h2>
+                <p>Watch the complete journey of a code change from PR to production deployment with animated timeline and real timing estimates.</p>
+                <span class="difficulty beginner">Beginner</span>
+                <span class="card-tag">Animated</span>
+            </a>
+            
+            <a href="visual-testing-flow.html" class="card">
+                <div class="card-icon">🧪</div>
+                <h2>E2E Testing Flow</h2>
+                <p>Explore the 4-phase testing process with real test suite names: cluster provisioning, bootstrap, test execution, and reporting with expandable details.</p>
+                <span class="difficulty intermediate">Intermediate</span>
+                <span class="card-tag">Expandable</span>
+            </a>
+            
+            <a href="visual-e2e-infra-tests.html" class="card">
+                <div class="card-icon">🧪</div>
+                <h2>E2E Tests for infra-deployments</h2>
+                <p>EXACTLY what tests run when infra-deployments CI triggers. Intelligent rules engine, component-specific tests, and what each label means.</p>
+                <span class="difficulty intermediate">Intermediate</span>
+                <span class="card-tag">Critical</span>
+            </a>
+            
+            <a href="visual-renovate-workflow.html" class="card">
+                <div class="card-icon">🤖</div>
+                <h2>Renovate/MintMaker Workflow</h2>
+                <p>Deep dive into HOW and WHEN MintMaker creates automated PRs in infra-deployments. Real timing, real examples, real file locations from your workspace!</p>
+                <span class="difficulty intermediate">Intermediate</span>
+                <span class="card-tag">Detailed</span>
+            </a>
+            
+            <a href="visual-pr-pairing.html" class="card">
+                <div class="card-icon">🤝</div>
+                <h2>PR Pairing Explained</h2>
+                <p>Complete guide to PR pairing for breaking changes with side-by-side comparisons, real examples, and exact syntax reference.</p>
+                <span class="difficulty intermediate">Intermediate</span>
+                <span class="card-tag">Step-by-Step</span>
+            </a>
+            
+            <a href="visual-kustomize-overlays.html" class="card">
+                <div class="card-icon">🎨</div>
+                <h2>Understanding Kustomize Overlays</h2>
+                <p>Complete guide to overlay patterns used throughout infra-deployments. Learn base vs overlays, when to use each, and how to structure your changes properly.</p>
+                <span class="difficulty intermediate">Intermediate</span>
+                <span class="card-tag">Fundamental</span>
+            </a>
+        </div>
+        
+        <div class="footer">
+            <p>💡 Tip: Start with "Components Map" if you're new, or jump to any specific topic you need!</p>
+            <p style="margin-top: 10px; opacity: 0.6;">Konflux CI/CD Documentation • Visual Learning Resources</p>
+        </div>
+    </div>
+</body>
+</html>
+

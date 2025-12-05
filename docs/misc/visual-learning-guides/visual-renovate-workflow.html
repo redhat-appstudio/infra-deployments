@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Renovate/MintMaker Workflow - Visual Guide</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .info-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .info-card h2 {
+            font-size: 1.8em;
+            margin-bottom: 15px;
+        }
+        
+        .timeline-section {
+            background: white;
+            border-radius: 10px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .step {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 40px;
+            position: relative;
+        }
+        
+        .step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            left: 35px;
+            top: 80px;
+            bottom: -40px;
+            width: 3px;
+            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .step-number {
+            flex-shrink: 0;
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            position: relative;
+            z-index: 1;
+        }
+        
+        .step-content {
+            flex: 1;
+        }
+        
+        .step-title {
+            font-size: 1.6em;
+            color: #2d3748;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .step-time {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+        }
+        
+        .step-description {
+            color: #4a5568;
+            line-height: 1.7;
+            font-size: 1.05em;
+            margin-bottom: 15px;
+        }
+        
+        .code-block {
+            background: #2d3748;
+            color: #68d391;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-size: 0.9em;
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+        
+        .code-comment {
+            color: #a0aec0;
+        }
+        
+        .code-highlight {
+            color: #fbbf24;
+            font-weight: bold;
+        }
+        
+        .example-pr {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        
+        .example-pr-title {
+            font-weight: bold;
+            font-size: 1.2em;
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+        
+        .diagram-box {
+            background: #f8f9fa;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            padding: 30px;
+            margin: 20px 0;
+        }
+        
+        .flow-diagram {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .flow-box {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 20px;
+            min-width: 200px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .flow-box-title {
+            font-weight: bold;
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+        
+        .flow-arrow {
+            font-size: 2em;
+            color: #667eea;
+        }
+        
+        .real-example {
+            background: linear-gradient(135deg, #c6f6d5 0%, #9ae6b4 100%);
+            border-left: 4px solid #48bb78;
+            padding: 25px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .real-example h3 {
+            color: #2f855a;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        .link-button {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            margin-top: 10px;
+            transition: background 0.3s ease;
+        }
+        
+        .link-button:hover {
+            background: #5568d3;
+        }
+        
+        .key-fact {
+            background: #fff3cd;
+            border-left: 4px solid #fbbf24;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .key-fact strong {
+            color: #d97706;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-link">← Back to Visual Guide Index</a>
+        
+        <div class="header">
+            <h1>🤖 MintMaker & Renovate Workflow</h1>
+            <p>How Automated Dependency Updates Create PRs in infra-deployments</p>
+        </div>
+        
+        <div class="info-card">
+            <h2>🎯 What is MintMaker?</h2>
+            <p style="font-size: 1.1em; line-height: 1.7; margin-top: 15px;">
+                <strong>MintMaker is a Kubernetes operator</strong> that automates dependency updates for Konflux components. 
+                It uses <strong>Renovate</strong> (the popular dependency update tool) to scan for new container images 
+                and automatically creates Pull Requests in infra-deployments when new versions are available.
+            </p>
+            <p style="font-size: 1.1em; line-height: 1.7; margin-top: 15px;">
+                <strong>Think of it as:</strong> A robot that constantly watches for new component images and automatically 
+                updates infra-deployments manifests (across all Kustomize overlays) so your deployments stay current.
+            </p>
+            <p style="font-size: 1.05em; margin-top: 15px;">
+                📚 <strong>Learn More:</strong> <a href="visual-kustomize-overlays.html" style="color: white; font-weight: bold; text-decoration: underline;">Understanding Kustomize Overlays</a> | 
+                <a href="https://github.com/konflux-ci/mintmaker" style="color: white; font-weight: bold; text-decoration: underline;">MintMaker Repo</a>
+            </p>
+        </div>
+        
+        <div class="timeline-section">
+            <h2 style="margin-bottom: 30px; color: #2d3748; font-size: 2em;">Complete Workflow: From Image Build to PR</h2>
+            
+            <!-- Step 1 -->
+            <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <div class="step-title">Component PR Merges</div>
+                    <div class="step-time">Time: 0 minutes</div>
+                    <div class="step-description">
+                        A developer's PR merges in a component repository (e.g., build-service). This is the starting point 
+                        of the entire automated workflow.
+                    </div>
+                    <div class="example-pr">
+                        <div class="example-pr-title">Example: PR #1234 in konflux-ci/build-service</div>
+                        Title: Add support for new build platform<br>
+                        Status: ✅ Merged to main branch
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Step 2 -->
+            <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <div class="step-title">Postsubmit CI Builds New Image</div>
+                    <div class="step-time">Duration: 10-15 minutes</div>
+                    <div class="step-description">
+                        After merge, the postsubmit CI job automatically builds a new container image and pushes it to 
+                        quay.io with multiple tags.
+                    </div>
+                    <div class="code-block">
+<span class="code-comment"># GitHub Actions or other CI builds and pushes image</span>
+docker build -t quay.io/konflux-ci/build-service:main .
+docker push quay.io/konflux-ci/build-service:main
+
+<span class="code-comment"># Multiple tags are created:</span>
+<span class="code-highlight">:latest</span>                              <span class="code-comment"># Always points to latest main</span>
+<span class="code-highlight">:main-abc123d</span>                        <span class="code-comment"># Branch + short commit SHA</span>
+<span class="code-highlight">:sha-abc123def456789...</span>             <span class="code-comment"># Full commit SHA</span>
+<span class="code-highlight">:affd5b51b3d597ae73a84702e82da7df215915db</span> <span class="code-comment"># Actual example!</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Step 3 -->
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <div class="step-title">MintMaker Detects New Image</div>
+                    <div class="step-time">Wait Time: Up to 2 hours (scanning interval)</div>
+                    <div class="step-description">
+                        MintMaker runs Renovate on a schedule. When it scans, Renovate queries the quay.io registry API to 
+                        check for new image tags. It compares the found tags with what's currently in infra-deployments manifests.
+                    </div>
+                    <div class="code-block">
+<span class="code-comment"># Renovate scans quay.io registry</span>
+GET https://quay.io/api/v1/repository/konflux-ci/build-service/tag/
+
+<span class="code-comment"># Returns all available tags</span>
+{
+  "tags": [
+    {"name": "latest", "manifest_digest": "sha256:..."},
+    {"name": "main-abc123d", "manifest_digest": "sha256:..."},
+    {"name": <span class="code-highlight">"affd5b51b3d597ae73a84702e82da7df215915db"</span>, ...}
+  ]
+}
+
+<span class="code-comment"># Compares with current infra-deployments/components/build-service/*/kustomization.yaml</span>
+<span class="code-comment"># Current: old456e</span>
+<span class="code-comment"># Latest:  affd5b51b3d597ae73a84702e82da7df215915db ← NEW!</span>
+                    </div>
+                    
+                    <div class="key-fact">
+                        <strong>⏰ Scanning Schedule:</strong> MintMaker runs Renovate periodically (typically every 2 hours). 
+                        This is why there's a delay between image push and PR creation - it waits for the next scan cycle!
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Step 4 -->
+            <div class="step">
+                <div class="step-number">4</div>
+                <div class="step-content">
+                    <div class="step-title">Renovate Creates Git Branch</div>
+                    <div class="step-time">Duration: 1-2 minutes</div>
+                    <div class="step-description">
+                        Renovate clones infra-deployments, creates a new branch, and updates the image reference in the 
+                        kustomization.yaml files for all environments (development, staging, production).
+                    </div>
+                    <div class="code-block">
+<span class="code-comment"># Branch created by Renovate</span>
+renovate/konflux-ci-build-service-affd5b51
+
+<span class="code-comment"># Files updated (REAL LOCATIONS in your workspace!):</span>
+📝 components/build-service/development/kustomization.yaml
+📝 components/build-service/staging/base/kustomization.yaml
+📝 components/build-service/production/base/kustomization.yaml
+
+<span class="code-comment"># What changes:</span>
+images:
+- name: quay.io/konflux-ci/build-service
+  newName: quay.io/konflux-ci/build-service
+  newTag: <span class="code-highlight">affd5b51b3d597ae73a84702e82da7df215915db</span>  <span class="code-comment">← UPDATED!</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Step 5 -->
+            <div class="step">
+                <div class="step-number">5</div>
+                <div class="step-content">
+                    <div class="step-title">Renovate Opens Pull Request</div>
+                    <div class="step-time">Duration: < 1 minute</div>
+                    <div class="step-description">
+                        Renovate pushes the branch and creates a PR in infra-deployments with details about the update.
+                    </div>
+                    <div class="real-example">
+                        <h3>🎯 Real Example PR Structure</h3>
+                        <strong>Title:</strong> Update konflux-ci/build-service Docker tag to affd5b51<br><br>
+                        <strong>Body:</strong>
+                        <div class="code-block" style="background: white; color: #2d3748; margin-top: 10px;">
+This PR contains the following updates:
+
+| Package | Update | Change |
+|---------|--------|--------|
+| quay.io/konflux-ci/build-service | digest | `old456e` -> `affd5b51` |
+
+🔗 <span class="code-highlight">Source PR: https://github.com/konflux-ci/build-service/pull/1234</span>
+
+📝 Commits included in this update:
+- abc123d - Add support for new build platform (@developer)
+- def456e - Fix build template validation (@developer)
+
+---
+📦 Updated in: development, staging, production
+🤖 Automated by MintMaker/Renovate
+                        </div>
+                        <strong>Files Changed:</strong> 3 (dev, staging, prod kustomization.yaml)<br>
+                        <strong>Assignees:</strong> None (automated)<br>
+                        <strong>Labels:</strong> dependencies, automated
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Step 6 -->
+            <div class="step">
+                <div class="step-number">6</div>
+                <div class="step-content">
+                    <div class="step-title">OpenShift CI Tests the PR</div>
+                    <div class="step-time">Duration: 1-1.5 hours</div>
+                    <div class="step-description">
+                        GitHub webhook triggers OpenShift CI (Prow). CI provisions a cluster, installs Konflux with the NEW 
+                        image, and runs the complete E2E test suite to validate the update works.
+                    </div>
+                    <div class="code-block">
+<span class="code-comment"># OpenShift CI workflow</span>
+1. Provision OpenShift 4.17 cluster on AWS
+2. Clone infra-deployments at PR branch
+3. Run bootstrap script with NEW build-service image
+4. Run E2E tests (see separate visual guide!)
+5. Report results back to GitHub PR
+
+<span class="code-comment"># Tests validate:</span>
+✅ New image deploys successfully
+✅ Build service API works
+✅ Pipelines can be created
+✅ Multi-platform builds function
+✅ All integration points work
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Step 7 -->
+            <div class="step">
+                <div class="step-number">7</div>
+                <div class="step-content">
+                    <div class="step-title">Human Review & Merge</div>
+                    <div class="step-time">Duration: Hours to days (human decision)</div>
+                    <div class="step-description">
+                        A human reviews the PR, checks test results, and merges if everything looks good. This is the only 
+                        manual step in the entire workflow!
+                    </div>
+                    <div class="example-pr">
+                        <div class="example-pr-title">Review Checklist</div>
+                        ✅ CI tests passed<br>
+                        ✅ No breaking changes in commit messages<br>
+                        ✅ Image tag looks correct<br>
+                        ✅ All environments updated consistently<br>
+                        <br>
+                        Action: <strong>Approve and Merge</strong> 🎉
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Step 8 -->
+            <div class="step">
+                <div class="step-number">8</div>
+                <div class="step-content">
+                    <div class="step-title">ArgoCD Deploys to Clusters</div>
+                    <div class="step-time">Duration: 3-5 minutes per environment</div>
+                    <div class="step-description">
+                        After merge, ArgoCD (running in actual clusters) detects the manifest change and syncs the new image 
+                        to development, then staging, then production environments.
+                    </div>
+                    <div class="code-block">
+<span class="code-comment"># ArgoCD sync process</span>
+1. ArgoCD polls infra-deployments every 3 minutes
+2. Detects: components/build-service/.../kustomization.yaml changed
+3. Marks Application as "OutOfSync"
+4. Automatically syncs (or waits for approval)
+5. Kubernetes pulls new image: 
+   quay.io/konflux-ci/build-service@sha256:...
+6. Performs rolling update of build-service pods
+7. New pods start with updated image
+8. Old pods terminate after new ones are healthy
+
+<span class="code-comment"># Result:</span>
+<span class="code-highlight">build-service is now running with your merged changes!</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Key Facts Section -->
+        <div class="timeline-section">
+            <h2 style="margin-bottom: 30px; color: #2d3748; font-size: 2em;">🔑 Key Facts & Timing</h2>
+            
+            <div class="diagram-box">
+                <h3 style="margin-bottom: 20px; color: #2d3748;">Complete Timeline Breakdown</h3>
+                <div style="background: white; padding: 20px; border-radius: 5px;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr style="background: #f8f9fa;">
+                            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e2e8f0;">Phase</th>
+                            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e2e8f0;">Duration</th>
+                            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e2e8f0;">Type</th>
+                        </tr>
+                        <tr>
+                            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">Image Build</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">10-15 minutes</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">Automated</td>
+                        </tr>
+                        <tr style="background: #f8f9fa;">
+                            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;"><strong>⏰ Wait for Scan</strong></td>
+                            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;"><strong>Up to 2 hours</strong></td>
+                            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">Scheduled</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">PR Creation</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">1-2 minutes</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">Automated</td>
+                        </tr>
+                        <tr style="background: #f8f9fa;">
+                            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">CI Testing</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">1-1.5 hours</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">Automated</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;"><strong>👤 Human Review</strong></td>
+                            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;"><strong>Hours to days</strong></td>
+                            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;"><strong>Manual</strong></td>
+                        </tr>
+                        <tr style="background: #f8f9fa;">
+                            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">ArgoCD Deployment</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">3-5 minutes</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">Automated</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 12px; font-weight: bold;">TOTAL (excluding review)</td>
+                            <td style="padding: 12px; font-weight: bold;">3-4 hours typical</td>
+                            <td style="padding: 12px;"></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="key-fact" style="margin-top: 30px;">
+                <strong>💡 Why the 2-hour wait?</strong> MintMaker runs Renovate on a schedule (not continuously) to balance 
+                resource usage with freshness. This means your new image won't be detected immediately - it waits for the 
+                next scan cycle. This is intentional and expected!
+            </div>
+            
+            <div class="key-fact">
+                <strong>🎯 What Gets Updated:</strong> Renovate updates ALL environments in one PR: development, staging, AND 
+                production. This ensures consistency across environments and reduces the number of PRs.
+            </div>
+            
+            <div class="key-fact">
+                <strong>🔍 How Renovate Knows About Images:</strong> It reads the <code>images:</code> section in kustomization.yaml 
+                files. The <code>newName</code> field tells it which registry/repository to check, and it looks for newer 
+                <code>newTag</code> values.
+            </div>
+        </div>
+        
+        <!-- Real File Locations -->
+        <div class="timeline-section">
+            <h2 style="margin-bottom: 30px; color: #2d3748; font-size: 2em;">📁 Real File Locations</h2>
+            
+            <!-- MintMaker Location -->
+            <div style="background: #f8f9fa; border-radius: 10px; padding: 20px; margin-bottom: 20px; border-left: 4px solid #667eea;">
+                <h3 style="color: #2d3748; margin-bottom: 15px;">🤖 MintMaker Operator Deployment</h3>
+                <code style="background: #2d3748; color: #68d391; padding: 10px 15px; border-radius: 5px; display: block; font-size: 0.95em;">
+                    components/mintmaker/
+                </code>
+                <div style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
+                    <span style="background: #e2e8f0; padding: 5px 12px; border-radius: 15px; font-size: 0.85em;">base/</span>
+                    <span style="background: #e2e8f0; padding: 5px 12px; border-radius: 15px; font-size: 0.85em;">development/</span>
+                    <span style="background: #e2e8f0; padding: 5px 12px; border-radius: 15px; font-size: 0.85em;">staging/</span>
+                    <span style="background: #e2e8f0; padding: 5px 12px; border-radius: 15px; font-size: 0.85em;">production/</span>
+                </div>
+            </div>
+            
+            <!-- Files Renovate Updates -->
+            <div style="background: #f0fff4; border-radius: 10px; padding: 20px; margin-bottom: 20px; border-left: 4px solid #48bb78;">
+                <h3 style="color: #2f855a; margin-bottom: 15px;">📝 Files Renovate Updates (build-service example)</h3>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                        <code style="background: #2d3748; color: #68d391; padding: 8px 12px; border-radius: 5px; font-size: 0.9em;">components/build-service/development/kustomization.yaml</code>
+                        <span style="color: #48bb78; font-weight: bold;">← Renovate updates</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                        <code style="background: #2d3748; color: #68d391; padding: 8px 12px; border-radius: 5px; font-size: 0.9em;">components/build-service/staging/base/kustomization.yaml</code>
+                        <span style="color: #48bb78; font-weight: bold;">← And this</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                        <code style="background: #2d3748; color: #68d391; padding: 8px 12px; border-radius: 5px; font-size: 0.9em;">components/build-service/production/base/kustomization.yaml</code>
+                        <span style="color: #48bb78; font-weight: bold;">← And this</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- What Changes -->
+            <div style="background: #fff3cd; border-radius: 10px; padding: 20px; margin-bottom: 20px; border-left: 4px solid #fbbf24;">
+                <h3 style="color: #d97706; margin-bottom: 15px;">🔄 What Changes in Each File</h3>
+                <p style="color: #4a5568; margin-bottom: 10px;">Each kustomization.yaml contains an <code>images:</code> section:</p>
+                <div class="code-block" style="margin: 0;">
+images:
+- name: quay.io/konflux-ci/build-service
+  newName: quay.io/konflux-ci/build-service
+  newTag: <span class="code-highlight">affd5b51b3d597...</span>  <span class="code-comment">← This line changes!</span>
+                </div>
+            </div>
+            
+            <div style="margin-top: 20px;">
+                <a href="https://github.com/konflux-ci/mintmaker" target="_blank" class="link-button">
+                    View MintMaker Source Code →
+                </a>
+                <a href="https://docs.renovatebot.com" target="_blank" class="link-button" style="background: #48bb78;">
+                    Renovate Documentation →
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

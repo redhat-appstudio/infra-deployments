@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testing Flow - Visual Guide</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .phase-container {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .phase-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .phase-header:hover {
+            transform: translateX(5px);
+        }
+        
+        .phase-header.phase-1 { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .phase-header.phase-2 { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .phase-header.phase-3 { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .phase-header.phase-4 { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+        
+        .phase-title-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            color: white;
+        }
+        
+        .phase-number {
+            font-size: 2em;
+            font-weight: bold;
+            width: 50px;
+            height: 50px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .phase-title {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        
+        .phase-duration {
+            color: white;
+            font-size: 1.2em;
+            font-weight: 600;
+            background: rgba(255,255,255,0.2);
+            padding: 8px 20px;
+            border-radius: 20px;
+        }
+        
+        .phase-content {
+            padding: 20px;
+            display: none;
+        }
+        
+        .phase-content.active {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .step-item {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+        }
+        
+        .step-title {
+            font-weight: bold;
+            font-size: 1.2em;
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+        
+        .step-description {
+            color: #4a5568;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+        
+        .step-code {
+            background: #2d3748;
+            color: #68d391;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            overflow-x: auto;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+        
+        .test-suites-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .test-suite-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            border: 2px solid #e2e8f0;
+            transition: all 0.3s ease;
+        }
+        
+        .test-suite-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+        }
+        
+        .test-suite-name {
+            font-weight: bold;
+            font-size: 1.2em;
+            color: #2d3748;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .test-suite-icon {
+            font-size: 1.5em;
+        }
+        
+        .test-suite-description {
+            color: #4a5568;
+            line-height: 1.5;
+            margin-bottom: 10px;
+        }
+        
+        .test-suite-tests {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        .test-tag {
+            background: #e2e8f0;
+            color: #4a5568;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+        }
+        
+        .timeline-viz {
+            background: white;
+            border-radius: 10px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .timeline-bar {
+            width: 100%;
+            height: 60px;
+            background: #e2e8f0;
+            border-radius: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .timeline-segment {
+            position: absolute;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .timeline-segment:hover {
+            filter: brightness(1.1);
+        }
+        
+        .timeline-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            font-size: 0.9em;
+            color: #4a5568;
+        }
+        
+        .ginkgo-info {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .ginkgo-title {
+            font-size: 1.8em;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        
+        .ginkgo-features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .ginkgo-feature {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 8px;
+        }
+        
+        .ginkgo-feature strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .expand-arrow {
+            font-size: 1.5em;
+            transition: transform 0.3s ease;
+        }
+        
+        .expand-arrow.rotated {
+            transform: rotate(180deg);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-link">← Back to Visual Guide Index</a>
+        
+        <div class="header">
+            <h1>🧪 Complete Testing Flow</h1>
+            <p>How Konflux E2E Tests Execute on Every PR</p>
+        </div>
+        
+        <div class="ginkgo-info">
+            <div class="ginkgo-title">🎯 Powered by Ginkgo & Gomega</div>
+            <p style="font-size: 1.1em; margin-bottom: 20px;">
+                All Konflux E2E tests are written in Go using the Ginkgo BDD (Behavior-Driven Development) framework with Gomega assertions. 
+                Tests are defined in the <a href="https://github.com/konflux-ci/e2e-tests" style="color: white; font-weight: bold; text-decoration: underline;">e2e-tests Repository</a> and validate that component services work correctly together.
+            </p>
+            <div class="ginkgo-features">
+                <div class="ginkgo-feature">
+                    <strong>📝 BDD Style</strong>
+                    Describe/Context/It blocks for readable tests
+                </div>
+                <div class="ginkgo-feature">
+                    <strong>🏷️ Label Filtering</strong>
+                    Run specific test suites with --label-filter
+                </div>
+                <div class="ginkgo-feature">
+                    <strong>⚡ Parallel Execution</strong>
+                    Tests run concurrently for speed
+                </div>
+                <div class="ginkgo-feature">
+                    <strong>📊 Rich Reporting</strong>
+                    JUnit XML and JSON output formats
+                </div>
+                <div class="ginkgo-feature">
+                    <strong>🔧 Before/After Hooks</strong>
+                    Setup and teardown per suite/spec
+                </div>
+                <div class="ginkgo-feature">
+                    <strong>🎭 Mage Build System</strong>
+                    Tasks defined in magefiles for automation
+                </div>
+            </div>
+        </div>
+        
+        <div class="timeline-viz">
+            <h2 style="margin-bottom: 20px; color: #2d3748;">Complete Test Execution Timeline</h2>
+            <p style="color: #4a5568; margin-bottom: 15px;">
+                <strong>📊 Example Data (60-day sample size):</strong><br>
+                • Success: ~40 minutes average<br>
+                • Failure: ~106 minutes average (waits for timeout)<br>
+                • This timeline shows typical test execution phases
+            </p>
+            <div class="timeline-bar">
+                <div class="timeline-segment" style="left: 0; width: 12%; background: #667eea;">
+                    Cluster<br>Setup<br>5-10m
+                </div>
+                <div class="timeline-segment" style="left: 12%; width: 50%; background: #f093fb;">
+                    Bootstrap Konflux<br>(infra-deployments)<br>20-25m
+                </div>
+                <div class="timeline-segment" style="left: 62%; width: 30%; background: #4facfe;">
+                    Test Execution<br>(e2e-tests)<br>12-15m
+                </div>
+                <div class="timeline-segment" style="left: 92%; width: 8%; background: #43e97b;">
+                    Report<br>3-5m
+                </div>
+            </div>
+            <div class="timeline-labels">
+                <span>0 min</span>
+                <span>10 min</span>
+                <span>20 min</span>
+                <span>30 min</span>
+                <span>40 min (✅ Success)</span>
+                <span style="color: #ef4444; font-weight: bold;">106 min (❌ Failure timeout)</span>
+            </div>
+        </div>
+        
+        <!-- Phase 1: Cluster Provisioning -->
+        <div class="phase-container">
+            <div class="phase-header phase-1" onclick="togglePhase(this)">
+                <div class="phase-title-group">
+                    <div class="phase-number">1</div>
+                    <div class="phase-title">🏗️ Cluster Provisioning</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 20px;">
+                    <div class="phase-duration">⏱️ 5-10 minutes (estimated)</div>
+                    <div class="expand-arrow">▼</div>
+                </div>
+            </div>
+            <div class="phase-content">
+                <div class="step-item">
+                    <div class="step-title">1.1 Request OpenShift Cluster</div>
+                    <div class="step-description">
+                        OpenShift CI (Prow) receives webhook from GitHub PR. Reads cluster requirements from ci-operator config and requests a fresh OpenShift 4.17 cluster from AWS.
+                    </div>
+                    <div class="step-code">
+# From: openshift/release/ci-operator/config/.../infra-deployments-main.yaml
+cluster_claim:
+  architecture: amd64
+  cloud: aws
+  owner: konflux
+  product: ocp
+  version: "4.17"
+  timeout: 1h0m0s</div>
+                </div>
+                
+                <div class="step-item">
+                    <div class="step-title">1.2 Cluster Becomes Ready</div>
+                    <div class="step-description">
+                        AWS provisions EC2 instances, installs OpenShift, configures networking. Cluster reaches "Ready" state with all control plane components running.
+                    </div>
+                </div>
+                
+                <div class="step-item">
+                    <div class="step-title">1.3 Export KUBECONFIG</div>
+                    <div class="step-description">
+                        CI system exports KUBECONFIG credentials. Test runner pod can now execute kubectl/oc commands against the new cluster.
+                    </div>
+                    <div class="step-code">export KUBECONFIG=/tmp/kubeconfig
+oc get nodes  # Verify cluster access</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Phase 2: Bootstrap Konflux -->
+        <div class="phase-container">
+            <div class="phase-header phase-2" onclick="togglePhase(this)">
+                <div class="phase-title-group">
+                    <div class="phase-number">2</div>
+                    <div class="phase-title">🚀 Bootstrap Konflux Installation</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 20px;">
+                    <div class="phase-duration">⏱️ 20-25 minutes (team reported)</div>
+                    <div class="expand-arrow">▼</div>
+                </div>
+            </div>
+            <div class="phase-content">
+                <div class="step-item">
+                    <div class="step-title">2.1 Clone infra-deployments</div>
+                    <div class="step-description">
+                        Test runner clones infra-deployments repository at the PR's commit SHA (testing your changes!).
+                    </div>
+                    <div class="step-code">git clone https://github.com/redhat-appstudio/infra-deployments
+cd infra-deployments
+git checkout ${PULL_PULL_SHA}  # Your PR's commit</div>
+                </div>
+                
+                <div class="step-item">
+                    <div class="step-title">2.2 Run Bootstrap Script</div>
+                    <div class="step-description">
+                        Executes hack/bootstrap-cluster.sh which installs ArgoCD and creates all ArgoCD Application resources pointing to your PR branch.
+                    </div>
+                    <div class="step-code">./hack/bootstrap-cluster.sh preview
+# Installs:
+# - OpenShift GitOps (ArgoCD)
+# - All component ArgoCD Applications
+# - Secrets and ConfigMaps
+# - Monitoring stack</div>
+                </div>
+                
+                <div class="step-item">
+                    <div class="step-title">2.3 Wait for ArgoCD Sync</div>
+                    <div class="step-description">
+                        ArgoCD automatically syncs all applications, deploying 35 Konflux components (development overlay). Waits for all deployments to reach "Healthy" status.
+                    </div>
+                    <div class="step-code"># 35 Components deployed in development overlay:
+# - build-service, release-service, integration-service
+# - multi-platform-controller, enterprise-contract
+# - pipeline-service (Tekton)
+# - konflux-ui
+# - All monitoring and infrastructure components
+#
+# ⚠️ PROBLEM: Only 2 of 35 components use sync waves!
+# This causes race conditions and unpredictable deployment order.
+#
+# Wait command:
+./hack/wait-for-all.sh  # Polls until all healthy</div>
+                </div>
+                
+                <div class="step-item" style="border-left-color: #4299e1; background: #ebf8ff;">
+                    <div class="step-title" style="color: #1e40af;">ℹ️ Bootstrap Notes</div>
+                    <div class="step-description" style="color: #2c5282;">
+                        <strong>Key Points:</strong>
+                    </div>
+                    <ul style="margin-left: 20px; color: #2c5282;">
+                        <li><strong>35+ components deployed:</strong> All Konflux services in development overlay</li>
+                        <li><strong>ArgoCD sync waves:</strong> Control deployment ordering where needed</li>
+                        <li><strong>Deployment time:</strong> 20-25 minutes typical</li>
+                    </ul>
+                    <div class="step-code">$ ls argo-cd-apps/overlays/development/*.yaml | wc -l
+35  # Components deployed in development overlay</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Phase 3: Execute Tests -->
+        <div class="phase-container">
+            <div class="phase-header phase-3" onclick="togglePhase(this)">
+                <div class="phase-title-group">
+                    <div class="phase-number">3</div>
+                    <div class="phase-title">🧪 Execute E2E Test Suites</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 20px;">
+                    <div class="phase-duration">⏱️ 12 minutes (team reported)</div>
+                    <div class="expand-arrow">▼</div>
+                </div>
+            </div>
+            <div class="phase-content">
+                <div class="step-item">
+                    <div class="step-title">3.1 Clone e2e-tests Repository</div>
+                    <div class="step-description">
+                        Test runner clones konflux-ci/e2e-tests repo. Uses PR pairing if testing breaking changes across repos.
+                    </div>
+                    <div class="step-code">git clone https://github.com/konflux-ci/e2e-tests
+cd e2e-tests
+# If PR paired: git checkout feature-branch
+# Else: git checkout main</div>
+                </div>
+                
+                <div class="step-item">
+                    <div class="step-title">3.2 Run Ginkgo Test Suites</div>
+                    <div class="step-description">
+                        Executes test suites using Ginkgo with label filtering. Tests run in parallel using Gomega assertions.
+                    </div>
+                    <div class="step-code"># Using Mage build system
+mage test
+
+# Or directly with Ginkgo:
+ginkgo -v --label-filter="build || integration || release" \
+       --junit-report=results.xml \
+       --json-report=results.json \
+       ./tests/...</div>
+                </div>
+                
+                <h3 style="margin: 30px 0 20px 0; color: #2d3748;">Test Suites Executed</h3>
+                <div class="test-suites-grid">
+                    <div class="test-suite-card">
+                        <div class="test-suite-name">
+                            <span class="test-suite-icon">🏗️</span>
+                            Build Tests
+                        </div>
+                        <div class="test-suite-description">
+                            Validates that users can trigger container builds, multi-platform builds work correctly, and Tekton pipelines execute successfully.
+                        </div>
+                        <div class="test-suite-tests">
+                            <span class="test-tag">build templates</span>
+                            <span class="test-tag">multi-arch</span>
+                            <span class="test-tag">source builds</span>
+                            <span class="test-tag">tkn bundles</span>
+                        </div>
+                    </div>
+                    
+                    <div class="test-suite-card">
+                        <div class="test-suite-name">
+                            <span class="test-suite-icon">🔗</span>
+                            Integration Tests
+                        </div>
+                        <div class="test-suite-description">
+                            Validates integration test execution, snapshot creation, status reporting to GitHub PRs, and GitLab integration.
+                        </div>
+                        <div class="test-suite-tests">
+                            <span class="test-tag">snapshots</span>
+                            <span class="test-tag">status reporting</span>
+                            <span class="test-tag">gitlab</span>
+                            <span class="test-tag">group snapshots</span>
+                        </div>
+                    </div>
+                    
+                    <div class="test-suite-card">
+                        <div class="test-suite-name">
+                            <span class="test-suite-icon">🚀</span>
+                            Release Tests
+                        </div>
+                        <div class="test-suite-description">
+                            Validates release workflows including Quay.io pushes, GitHub releases, external registry pushes, and Red Hat advisories.
+                        </div>
+                        <div class="test-suite-tests">
+                            <span class="test-tag">quay pushes</span>
+                            <span class="test-tag">github releases</span>
+                            <span class="test-tag">advisories</span>
+                            <span class="test-tag">FBC releases</span>
+                        </div>
+                    </div>
+                    
+                    <div class="test-suite-card">
+                        <div class="test-suite-name">
+                            <span class="test-suite-icon">🛡️</span>
+                            Enterprise Contract Tests
+                        </div>
+                        <div class="test-suite-description">
+                            Validates security policy enforcement, supply chain attestation, and compliance checks for container images.
+                        </div>
+                        <div class="test-suite-tests">
+                            <span class="test-tag">policy validation</span>
+                            <span class="test-tag">SLSA</span>
+                            <span class="test-tag">attestations</span>
+                        </div>
+                    </div>
+                    
+                    <div class="test-suite-card">
+                        <div class="test-suite-name">
+                            <span class="test-suite-icon">🎭</span>
+                            Demo/Happy Path Tests
+                        </div>
+                        <div class="test-suite-description">
+                            End-to-end user journeys testing complete workflows from application creation to release.
+                        </div>
+                        <div class="test-suite-tests">
+                            <span class="test-tag">full workflows</span>
+                            <span class="test-tag">user journeys</span>
+                            <span class="test-tag">scenarios</span>
+                        </div>
+                    </div>
+                    
+                    <div class="test-suite-card">
+                        <div class="test-suite-name">
+                            <span class="test-suite-icon">⬆️</span>
+                            Upgrade Tests
+                        </div>
+                        <div class="test-suite-description">
+                            Validates that Konflux survives OpenShift cluster upgrades and component version updates.
+                        </div>
+                        <div class="test-suite-tests">
+                            <span class="test-tag">cluster upgrade</span>
+                            <span class="test-tag">component upgrade</span>
+                            <span class="test-tag">workload verification</span>
+                        </div>
+                    </div>
+                    
+                    <div class="test-suite-card">
+                        <div class="test-suite-name">
+                            <span class="test-suite-icon">📈</span>
+                            Load Tests
+                        </div>
+                        <div class="test-suite-description">
+                            Performance and scale testing with concurrent users, applications, and pipeline runs.
+                        </div>
+                        <div class="test-suite-tests">
+                            <span class="test-tag">concurrency</span>
+                            <span class="test-tag">performance</span>
+                            <span class="test-tag">scale testing</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Phase 4: Report Results -->
+        <div class="phase-container">
+            <div class="phase-header phase-4" onclick="togglePhase(this)">
+                <div class="phase-title-group">
+                    <div class="phase-number">4</div>
+                    <div class="phase-title">📊 Report Results & Cleanup</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 20px;">
+                    <div class="phase-duration">⏱️ 3-5 minutes</div>
+                    <div class="expand-arrow">▼</div>
+                </div>
+            </div>
+            <div class="phase-content">
+                <div class="step-item">
+                    <div class="step-title">4.1 Generate Test Reports</div>
+                    <div class="step-description">
+                        Ginkgo generates JUnit XML and JSON reports with detailed test results, timings, and failure information.
+                    </div>
+                    <div class="step-code"># Files generated:
+# - junit-results.xml  (for CI parsing)
+# - json-results.json  (detailed data)
+# - ginkgo-spec-output.txt (console logs)
+#
+# Example result:
+# Ran 47 specs in 35.2 minutes
+# PASS: 45 specs
+# FAIL: 2 specs</div>
+                </div>
+                
+                <div class="step-item">
+                    <div class="step-title">4.2 Post Status to GitHub</div>
+                    <div class="step-description">
+                        OpenShift CI posts test results as a status check on your PR. Shows ✅ PASS or ❌ FAIL with links to detailed logs.
+                    </div>
+                    <div class="step-code"># GitHub status check:
+# Context: ci/prow/appstudio-e2e-tests
+# Status: success or failure
+# Details URL: Link to Prow job logs
+#
+# PR comment may include:
+# - Failed test names
+# - Error messages
+# - Links to artifacts</div>
+                </div>
+                
+                <div class="step-item">
+                    <div class="step-title">4.3 Archive Artifacts</div>
+                    <div class="step-description">
+                        Test artifacts (logs, reports, screenshots) are uploaded to GCS bucket for debugging. Cluster is released back to pool.
+                    </div>
+                    <div class="step-code"># Artifacts stored:
+# - Test reports (XML/JSON)
+# - Pod logs from failed tests
+# - kubectl describe output
+# - Prometheus metrics snapshot
+#
+# Available at:
+# https://prow.ci.openshift.org/view/gs/origin-ci-test/pr-logs/...</div>
+                </div>
+                
+                <div class="step-item">
+                    <div class="step-title">4.4 Cleanup</div>
+                    <div class="step-description">
+                        OpenShift cluster is destroyed to free resources. Test runner pod exits. Total run time reported.
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Performance Summary -->
+        <div style="background: white; border-radius: 10px; padding: 40px; margin-top: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <h2 style="color: #2d3748; margin-bottom: 20px;">📊 Example Performance Metrics</h2>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px;">
+                <div style="background: #ecfdf5; padding: 25px; border-radius: 10px; border-left: 5px solid #10b981;">
+                    <div style="font-size: 2em; font-weight: bold; color: #10b981;">~40 min</div>
+                    <div style="color: #064e3b; font-size: 1.1em;">Successful Run</div>
+                    <div style="color: #065f46; margin-top: 10px;">Cluster + Bootstrap + Tests + Report</div>
+                </div>
+                
+                <div style="background: #fef3c7; padding: 25px; border-radius: 10px; border-left: 5px solid #f59e0b;">
+                    <div style="font-size: 2em; font-weight: bold; color: #f59e0b;">~106 min</div>
+                    <div style="color: #78350f; font-size: 1.1em;">Failed Run (timeout)</div>
+                    <div style="color: #92400e; margin-top: 10px;">Waits for full test timeout</div>
+                </div>
+                
+                <div style="background: #dbeafe; padding: 25px; border-radius: 10px; border-left: 5px solid #3b82f6;">
+                    <div style="font-size: 2em; font-weight: bold; color: #3b82f6;">4 Phases</div>
+                    <div style="color: #1e40af; font-size: 1.1em;">Test Pipeline</div>
+                    <div style="color: #1e3a8a; margin-top: 10px;">Cluster → Bootstrap → Test → Report</div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 20px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+                <p style="color: #4a5568; font-size: 0.95em;">
+                    <strong>Note:</strong> Actual timings may vary based on cluster availability, test selection, and infrastructure load.
+                    Check DevLake or Prow for current metrics.
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function togglePhase(header) {
+            const content = header.nextElementSibling;
+            const arrow = header.querySelector('.expand-arrow');
+            
+            content.classList.toggle('active');
+            arrow.classList.toggle('rotated');
+        }
+        
+        // Auto-expand all phases on load
+        window.addEventListener('load', () => {
+            document.querySelectorAll('.phase-header').forEach(header => {
+                const content = header.nextElementSibling;
+                const arrow = header.querySelector('.expand-arrow');
+                content.classList.add('active');
+                arrow.classList.add('rotated');
+            });
+        });
+    </script>
+</body>
+</html>
+
