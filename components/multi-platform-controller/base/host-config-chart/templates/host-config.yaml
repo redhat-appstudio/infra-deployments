@@ -1065,7 +1065,7 @@ data:
   dynamic.linux-test-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-test-arm64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
   dynamic.linux-test-arm64.disk: {{ index $config "disk" | default "200" | quote }}
-  dynamic.linux-tets-arm64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
+  dynamic.linux-test-arm64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-test-arm64.allocation-timeout: "1200"
   dynamic.linux-test-arm64.sudo-commands: {{ (index $config "sudo-commands") | default "/usr/bin/podman" | quote }}
   {{- if (index $config "iops") }}
