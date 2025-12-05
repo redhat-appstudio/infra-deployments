@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PR Workflow Timeline - Visual Guide</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 5px;
+            font-size: 1.1em;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-reset {
+            background: #f56565;
+        }
+        
+        .btn-reset:hover {
+            background: #e53e3e;
+        }
+        
+        .timeline {
+            background: white;
+            border-radius: 10px;
+            padding: 40px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        
+        .timeline:before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+            transform: translateX(-50%);
+        }
+        
+        .timeline-item {
+            position: relative;
+            margin-bottom: 60px;
+            opacity: 0.3;
+            transition: all 0.5s ease;
+        }
+        
+        .timeline-item.active {
+            opacity: 1;
+            animation: slideIn 0.5s ease;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        .timeline-item:nth-child(odd) .timeline-content {
+            margin-left: auto;
+            text-align: left;
+        }
+        
+        .timeline-item:nth-child(even) .timeline-content {
+            margin-right: auto;
+            text-align: right;
+        }
+        
+        .timeline-content {
+            width: 45%;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid;
+            position: relative;
+        }
+        
+        .timeline-item:nth-child(1) .timeline-content { border-color: #48bb78; }
+        .timeline-item:nth-child(2) .timeline-content { border-color: #4299e1; }
+        .timeline-item:nth-child(3) .timeline-content { border-color: #ed8936; }
+        .timeline-item:nth-child(4) .timeline-content { border-color: #9f7aea; }
+        .timeline-item:nth-child(5) .timeline-content { border-color: #f56565; }
+        .timeline-item:nth-child(6) .timeline-content { border-color: #38b2ac; }
+        .timeline-item:nth-child(7) .timeline-content { border-color: #ed64a6; }
+        
+        .timeline-icon {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8em;
+            border: 4px solid #667eea;
+            z-index: 1;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        
+        .timeline-item.active .timeline-icon {
+            animation: pulse 1s ease;
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                transform: translateX(-50%) scale(1);
+            }
+            50% {
+                transform: translateX(-50%) scale(1.2);
+            }
+        }
+        
+        .step-number {
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            background: #667eea;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        
+        .step-title {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+        
+        .step-time {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            margin-bottom: 10px;
+        }
+        
+        .step-description {
+            color: #4a5568;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        
+        .step-details {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-size: 0.95em;
+        }
+        
+        .step-details strong {
+            color: #2d3748;
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .step-details ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .step-details li {
+            padding: 4px 0;
+            color: #4a5568;
+        }
+        
+        .step-details li:before {
+            content: "→ ";
+            color: #667eea;
+            font-weight: bold;
+        }
+        
+        .total-time {
+            background: #48bb78;
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            margin-top: 40px;
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+        
+        @media (max-width: 768px) {
+            .timeline:before {
+                left: 30px;
+            }
+            
+            .timeline-icon {
+                left: 30px;
+            }
+            
+            .timeline-content {
+                width: calc(100% - 100px);
+                margin-left: 100px !important;
+                text-align: left !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-link">← Back to Visual Guide Index</a>
+        
+        <div class="header">
+            <h1>🔄 Complete PR Workflow Timeline</h1>
+            <p>Watch a code change journey from PR to production through the entire Konflux CI/CD pipeline</p>
+            <p style="margin-top: 10px; font-size: 0.9em;">
+                📚 <strong>Related:</strong> <a href="visual-renovate-workflow.html" style="color: white; text-decoration: underline;">Renovate/MintMaker Workflow</a> | 
+                <a href="visual-testing-flow.html" style="color: white; text-decoration: underline;">Testing Flow Details</a>
+            </p>
+        </div>
+        
+        <div class="controls">
+            <button class="btn" onclick="startAnimation()">▶️ Play Animation</button>
+            <button class="btn btn-reset" onclick="resetAnimation()">🔄 Reset</button>
+        </div>
+        
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressBar"></div>
+        </div>
+        
+        <div class="timeline" id="timeline">
+            <div class="timeline-item" data-step="1">
+                <div class="timeline-icon">👨‍💻</div>
+                <div class="timeline-content">
+                    <div class="step-number">1</div>
+                    <div class="step-title">Developer Opens PR</div>
+                    <div class="step-time">Time: 0 minutes</div>
+                    <div class="step-description">
+                        You make changes to a component (e.g., build-service) and open a Pull Request on GitHub.
+                    </div>
+                    <div class="step-details">
+                        <strong>What happens:</strong>
+                        <ul>
+                            <li>Code pushed to your branch</li>
+                            <li>PR opened with description</li>
+                            <li>CI automatically triggers</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="timeline-item" data-step="2">
+                <div class="timeline-icon">🧪</div>
+                <div class="timeline-content">
+                    <div class="step-number">2</div>
+                    <div class="step-title">Component CI Tests Run</div>
+                    <div class="step-time">Duration: 1-2 hours</div>
+                    <div class="step-description">
+                        GitHub Actions runs unit tests, integration tests, and e2e tests for your component.
+                    </div>
+                    <div class="step-details">
+                        <strong>Tests include:</strong>
+                        <ul>
+                            <li>Unit tests (5-10 min)</li>
+                            <li>Integration tests (10-20 min)</li>
+                            <li>E2E tests with paired changes (1 hour)</li>
+                            <li>Code quality checks</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="timeline-item" data-step="3">
+                <div class="timeline-icon">✅</div>
+                <div class="timeline-content">
+                    <div class="step-number">3</div>
+                    <div class="step-title">PR Approved & Merged</div>
+                    <div class="step-time">Time: Few hours to 1 day</div>
+                    <div class="step-description">
+                        After code review and approval, your PR merges to the main branch.
+                    </div>
+                    <div class="step-details">
+                        <strong>Triggers:</strong>
+                        <ul>
+                            <li>Postsubmit CI job starts</li>
+                            <li>Container image build begins</li>
+                            <li>Tests run one final time</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="timeline-item" data-step="4">
+                <div class="timeline-icon">📦</div>
+                <div class="timeline-content">
+                    <div class="step-number">4</div>
+                    <div class="step-title">Container Image Built</div>
+                    <div class="step-time">Duration: 10-15 minutes</div>
+                    <div class="step-description">
+                        New container image is built and pushed to quay.io with multiple tags.
+                    </div>
+                    <div class="step-details">
+                        <strong>Image tags created:</strong>
+                        <ul>
+                            <li>:latest</li>
+                            <li>:main-abc123d (branch-commit)</li>
+                            <li>:sha-abc123def456 (full SHA)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="timeline-item" data-step="5">
+                <div class="timeline-icon">🤖</div>
+                <div class="timeline-content">
+                    <div class="step-number">5</div>
+                    <div class="step-title">Renovate Creates PR</div>
+                    <div class="step-time">Duration: 2 hours (bot scanning interval)</div>
+                    <div class="step-description">
+                        Renovate bot detects the new image and automatically creates a PR in infra-deployments to update the image reference.
+                    </div>
+                    <div class="step-details">
+                        <strong>PR updates:</strong>
+                        <ul>
+                            <li>components/{service}/base/kustomization.yaml</li>
+                            <li>Image tag: old456e → abc123d</li>
+                            <li>Image digest for security</li>
+                            <li>Links to your original PR</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="timeline-item" data-step="6">
+                <div class="timeline-icon">🔬</div>
+                <div class="timeline-content">
+                    <div class="step-number">6</div>
+                    <div class="step-title">infra-deployments Tests</div>
+                    <div class="step-time">Duration: 1.5 hours</div>
+                    <div class="step-description">
+                        OpenShift CI provisions a fresh cluster, installs Konflux with your new image, and runs the full e2e test suite.
+                    </div>
+                    <div class="step-details">
+                        <strong>Test phases:</strong>
+                        <ul>
+                            <li>Provision cluster (5-10 min)</li>
+                            <li>Bootstrap Konflux (15-20 min)</li>
+                            <li>Run e2e tests (30-60 min)</li>
+                            <li>Report results (5 min)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="timeline-item" data-step="7">
+                <div class="timeline-icon">🚀</div>
+                <div class="timeline-content">
+                    <div class="step-number">7</div>
+                    <div class="step-title">Deployed to Development</div>
+                    <div class="step-time">Duration: 3-5 minutes</div>
+                    <div class="step-description">
+                        After the infra-deployments PR merges, ArgoCD automatically syncs and deploys your changes to the development environment.
+                    </div>
+                    <div class="step-details">
+                        <strong>Deployment steps:</strong>
+                        <ul>
+                            <li>ArgoCD detects manifest change</li>
+                            <li>Kubernetes rolling update</li>
+                            <li>Health checks pass</li>
+                            <li>Slack notification sent</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="timeline-item" data-step="8">
+                <div class="timeline-icon">🎯</div>
+                <div class="timeline-content">
+                    <div class="step-number">8</div>
+                    <div class="step-title">Staging → Production</div>
+                    <div class="step-time">Duration: 1-3 days</div>
+                    <div class="step-description">
+                        After soak time in development, changes are promoted to staging, then after approval and more soak time, to production.
+                    </div>
+                    <div class="step-details">
+                        <strong>Progression:</strong>
+                        <ul>
+                            <li>Development (immediate)</li>
+                            <li>Staging (after 6-24 hours)</li>
+                            <li>Production (manual approval)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="total-time" id="totalTime" style="opacity: 0;">
+            🎉 Total Time: Code → Production = 2-5 days (typical)
+        </div>
+    </div>
+    
+    <script>
+        let currentStep = 0;
+        let animationTimer = null;
+        const steps = document.querySelectorAll('.timeline-item');
+        const totalSteps = steps.length;
+        
+        function startAnimation() {
+            resetAnimation();
+            animationTimer = setInterval(() => {
+                if (currentStep < totalSteps) {
+                    steps[currentStep].classList.add('active');
+                    updateProgress();
+                    currentStep++;
+                    
+                    if (currentStep === totalSteps) {
+                        document.getElementById('totalTime').style.opacity = '1';
+                        clearInterval(animationTimer);
+                    }
+                }
+            }, 1500); // Show each step every 1.5 seconds
+        }
+        
+        function resetAnimation() {
+            clearInterval(animationTimer);
+            currentStep = 0;
+            steps.forEach(step => step.classList.remove('active'));
+            document.getElementById('totalTime').style.opacity = '0';
+            document.getElementById('progressBar').style.width = '0%';
+        }
+        
+        function updateProgress() {
+            const progress = (currentStep / totalSteps) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+        }
+        
+        // Auto-start animation on page load
+        window.addEventListener('load', () => {
+            setTimeout(startAnimation, 1000);
+        });
+    </script>
+</body>
+</html>
+

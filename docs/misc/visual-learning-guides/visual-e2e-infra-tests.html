@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E2E Tests for infra-deployments - Visual Guide</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .critical-box {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        
+        .critical-box h2 {
+            font-size: 2em;
+            margin-bottom: 15px;
+        }
+        
+        .section {
+            background: white;
+            border-radius: 10px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .section-title {
+            font-size: 2em;
+            color: #2d3748;
+            margin-bottom: 25px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 15px;
+        }
+        
+        .code-block {
+            background: #2d3748;
+            color: #68d391;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-size: 0.95em;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+        
+        .code-comment {
+            color: #a0aec0;
+        }
+        
+        .code-highlight {
+            color: #fbbf24;
+            font-weight: bold;
+        }
+        
+        .code-success {
+            color: #68d391;
+        }
+        
+        .rule-box {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        
+        .rule-title {
+            font-weight: bold;
+            color: #2d3748;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+        
+        .rule-condition {
+            color: #4a5568;
+            margin-bottom: 10px;
+        }
+        
+        .rule-action {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        
+        .test-suite-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .test-suite-card {
+            background: linear-gradient(135deg, #ebf8ff 0%, #bee3f8 100%);
+            border: 2px solid #4299e1;
+            border-radius: 10px;
+            padding: 20px;
+        }
+        
+        .test-suite-card h3 {
+            color: #2c5282;
+            margin-bottom: 10px;
+            font-size: 1.3em;
+        }
+        
+        .test-suite-card ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .test-suite-card li {
+            padding: 5px 0;
+            color: #2d3748;
+        }
+        
+        .test-suite-card li:before {
+            content: "✓ ";
+            color: #48bb78;
+            font-weight: bold;
+        }
+        
+        .timeline-box {
+            background: #f8f9fa;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            padding: 30px;
+            margin: 20px 0;
+        }
+        
+        .timeline-item {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 25px;
+            align-items: flex-start;
+        }
+        
+        .timeline-number {
+            flex-shrink: 0;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #667eea;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        
+        .timeline-content {
+            flex: 1;
+        }
+        
+        .timeline-title {
+            font-weight: bold;
+            color: #2d3748;
+            font-size: 1.1em;
+            margin-bottom: 5px;
+        }
+        
+        .timeline-desc {
+            color: #4a5568;
+            line-height: 1.6;
+        }
+        
+        .important-note {
+            background: #fff3cd;
+            border-left: 4px solid #fbbf24;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        
+        .important-note strong {
+            color: #d97706;
+            display: block;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        
+        .example-box {
+            background: #c6f6d5;
+            border: 2px solid #48bb78;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .example-title {
+            color: #2f855a;
+            font-weight: bold;
+            font-size: 1.2em;
+            margin-bottom: 15px;
+        }
+        
+        .link-button {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            margin-top: 10px;
+            transition: background 0.3s ease;
+        }
+        
+        .link-button:hover {
+            background: #5568d3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-link">← Back to Visual Guide Index</a>
+        
+        <div class="header">
+            <h1>🧪 E2E Tests for infra-deployments PRs</h1>
+            <p>Exactly What Tests Run and What They Validate</p>
+        </div>
+        
+        <div class="critical-box">
+            <h2>⚠️ Critical Understanding</h2>
+            <p style="line-height: 1.7;">
+                When you open a PR in <strong>infra-deployments</strong>, the E2E tests DO NOT run all 7 test suites blindly! 
+                Instead, <strong>intelligent rules</strong> detect which components changed and run <strong>only the relevant tests</strong> 
+                plus a baseline "konflux" suite. This is crucial for fast CI and avoiding unnecessary test execution.
+            </p>
+            <p style="line-height: 1.7; margin-top: 15px;">
+                📚 <strong>Related Guides:</strong> <a href="visual-testing-flow.html" style="color: white; font-weight: bold; text-decoration: underline;">Complete Testing Flow</a> | 
+                <a href="visual-kustomize-overlays.html" style="color: white; font-weight: bold; text-decoration: underline;">Understanding Overlays</a>
+            </p>
+        </div>
+        
+        <!-- The Entry Point -->
+        <div class="section">
+            <h2 class="section-title">🚪 Entry Point: How Tests Start</h2>
+            
+            <div class="timeline-box">
+                <div class="timeline-item">
+                    <div class="timeline-number">1</div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">PR Opens in infra-deployments</div>
+                        <div class="timeline-desc">GitHub webhook notifies OpenShift CI (Prow) of the new PR</div>
+                    </div>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="timeline-number">2</div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">Prow Provisions Cluster</div>
+                        <div class="timeline-desc">OpenShift 4.17 cluster is created on AWS (5-10 minutes)</div>
+                    </div>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="timeline-number">3</div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">Bootstrap Script Runs</div>
+                        <div class="timeline-desc">infra-deployments/hack/bootstrap-cluster.sh installs Konflux with YOUR PR changes (15-20 min)</div>
+                    </div>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="timeline-number">4</div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">E2E Test Script Executes</div>
+                        <div class="timeline-desc">openshift/release calls redhat-appstudio-e2e-commands.sh</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="code-block">
+<span class="code-comment"># From: openshift/release/.../redhat-appstudio-e2e-commands.sh</span>
+<span class="code-comment"># This is the EXACT script that runs!</span>
+
+<span class="code-comment"># 1. Clone e2e-tests repo</span>
+git clone --branch main \
+  "https://${GITHUB_TOKEN}@github.com/konflux-ci/e2e-tests.git" .
+
+<span class="code-comment"># 2. Prepare e2e branch (handles PR pairing if needed)</span>
+make ci/prepare/e2e-branch
+
+<span class="code-comment"># 3. Run the tests</span>
+<span class="code-highlight">make ci/test/e2e</span>
+
+<span class="code-comment"># Which calls:</span>
+./mage -v ci:teste2e
+            </div>
+        </div>
+        
+        <!-- The Magic: Intelligent Test Selection -->
+        <div class="section">
+            <h2 class="section-title">🧠 Intelligent Test Selection (The Magic!)</h2>
+            
+            <div class="important-note">
+                <strong>🎯 Key Concept: Smart Rules Engine</strong>
+                The e2e-tests repository has a built-in rules engine that analyzes which files changed in your 
+                infra-deployments PR and selects appropriate tests. This is NOT random - it's carefully designed!
+            </div>
+            
+            <div class="code-block">
+<span class="code-comment"># From: e2e-tests/magefiles/magefile.go</span>
+
+func RunE2ETests() error {
+    switch rctx.RepoName {
+    case <span class="code-highlight">"infra-deployments"</span>:
+        <span class="code-comment">// Use special infra-deployments rules!</span>
+        return engine.MageEngine.RunRules(rctx, "tests", "infra-deployments")
+    default:
+        <span class="code-comment">// For other repos, run default label filter</span>
+        labelFilter := "!upgrade-create && !upgrade-verify && !upgrade-cleanup && !release-pipelines"
+        return runTests(labelFilter, "e2e-report.xml")
+    }
+}
+            </div>
+            
+            <h3 style="margin: 30px 0 20px 0; color: #2d3748; font-size: 1.5em;">📋 The Rules (From Real Code!)</h3>
+            
+            <div class="rule-box">
+                <div class="rule-title">Rule 1: Integration Component Changed</div>
+                <div class="rule-condition">
+                    <strong>IF:</strong> Files changed in <code>components/integration/**/*</code>
+                </div>
+                <div class="rule-action">
+                    THEN run tests with label: <span class="code-highlight">integration-service</span> + <span class="code-highlight">konflux</span>
+                </div>
+            </div>
+            
+            <div class="rule-box">
+                <div class="rule-title">Rule 2: Build Service Component Changed</div>
+                <div class="rule-condition">
+                    <strong>IF:</strong> Files changed in <code>components/build-service/**/*</code><br>
+                    <strong>BUT NOT:</strong> build-pipeline-config.yaml
+                </div>
+                <div class="rule-action">
+                    THEN run tests with label: <span class="code-highlight">build-service</span> + <span class="code-highlight">konflux</span>
+                </div>
+            </div>
+            
+            <div class="rule-box">
+                <div class="rule-title">Rule 3: Build Templates Changed</div>
+                <div class="rule-condition">
+                    <strong>IF:</strong> <code>components/build-service/base/build-pipeline-config/build-pipeline-config.yaml</code> changed
+                </div>
+                <div class="rule-action">
+                    THEN run tests with label: <span class="code-highlight">build-templates</span> + <span class="code-highlight">konflux</span>
+                </div>
+            </div>
+            
+            <div class="rule-box">
+                <div class="rule-title">Rule 4: Release Service Component Changed</div>
+                <div class="rule-condition">
+                    <strong>IF:</strong> Files changed in <code>components/release/**/*</code>
+                </div>
+                <div class="rule-action">
+                    THEN run tests with label: <span class="code-highlight">release-service</span> + <span class="code-highlight">konflux</span>
+                </div>
+            </div>
+            
+            <div class="rule-box">
+                <div class="rule-title">Rule 5: Multi-Platform Controller Changed</div>
+                <div class="rule-condition">
+                    <strong>IF:</strong> Files changed in <code>components/multi-platform-controller/**/*</code>
+                </div>
+                <div class="rule-action">
+                    THEN run tests with label: <span class="code-highlight">multi-platform</span> + <span class="code-highlight">konflux</span>
+                </div>
+            </div>
+            
+            <div class="rule-box">
+                <div class="rule-title">Rule 6: Enterprise Contract Changed</div>
+                <div class="rule-condition">
+                    <strong>IF:</strong> Files changed in <code>components/enterprise-contract/**/*</code>
+                </div>
+                <div class="rule-action">
+                    THEN run tests with label: <span class="code-highlight">ec</span> + <span class="code-highlight">konflux</span>
+                </div>
+            </div>
+            
+            <div class="rule-box">
+                <div class="rule-title">Rule 7: Image Controller Changed</div>
+                <div class="rule-condition">
+                    <strong>IF:</strong> Files changed in <code>components/image-controller/**/*</code>
+                </div>
+                <div class="rule-action">
+                    THEN run tests with label: <span class="code-highlight">image-controller</span> + <span class="code-highlight">konflux</span>
+                </div>
+            </div>
+            
+            <div class="rule-box">
+                <div class="rule-title">Rule 8: Pipeline Service Changed</div>
+                <div class="rule-condition">
+                    <strong>IF:</strong> Files changed in <code>components/pipeline-service/**/*</code>
+                </div>
+                <div class="rule-action">
+                    THEN run tests with label: <span class="code-highlight">pipeline-service</span> + <span class="code-highlight">konflux</span>
+                </div>
+            </div>
+            
+            <div class="rule-box" style="border-color: #f56565; background: #fff5f5;">
+                <div class="rule-title" style="color: #c53030;">Default Rule: Other Changes</div>
+                <div class="rule-condition">
+                    <strong>IF:</strong> Changes to files NOT matched by any specific component rule above
+                </div>
+                <div class="rule-action">
+                    THEN run tests with label: <span class="code-highlight">konflux</span> only (baseline tests)
+                </div>
+            </div>
+            
+            <div class="code-block" style="margin-top: 30px;">
+<span class="code-comment"># From: e2e-tests/magefiles/rulesengine/repos/infra_deployments.go</span>
+
+var InfraDeploymentsDefaultRule = rulesengine.Rule{
+    Name: "Infra Deployments Default Test Execution",
+    Description: "Run the Konflux-demo suite tests when an Infra-deployments PR includes changes to files outside of the specified components.",
+    Condition: rulesengine.None{
+        <span class="code-comment">// NOT any of the specific component rules</span>
+    },
+    Actions: []rulesengine.Action{
+        rulesengine.ActionFunc(ExecuteInfraDeploymentsDefaultTestAction)
+    }
+}
+
+func ExecuteInfraDeploymentsDefaultTestAction(rctx *rulesengine.RuleCtx) error {
+    <span class="code-highlight">rctx.LabelFilter = "konflux"</span>  <span class="code-comment">// Only baseline tests!</span>
+    return ExecuteTestAction(rctx)
+}
+            </div>
+        </div>
+        
+        <!-- What Each Label Means -->
+        <div class="section">
+            <h2 class="section-title">🏷️ What Each Test Label Means</h2>
+            
+            <div class="test-suite-grid">
+                <div class="test-suite-card">
+                    <h3>🏗️ build-service</h3>
+                    <p style="margin-bottom: 10px; color: #2d3748;">Tests in <code>tests/build/</code></p>
+                    <ul>
+                        <li>Build pipeline creation</li>
+                        <li>Container image builds</li>
+                        <li>Build service API</li>
+                        <li>Pipeline configuration</li>
+                    </ul>
+                </div>
+                
+                <div class="test-suite-card">
+                    <h3>📋 build-templates</h3>
+                    <p style="margin-bottom: 10px; color: #2d3748;">Tests in <code>tests/build/</code></p>
+                    <ul>
+                        <li>Pipeline templates</li>
+                        <li>Tekton task validation</li>
+                        <li>Bundle references</li>
+                        <li>Template parameters</li>
+                    </ul>
+                </div>
+                
+                <div class="test-suite-card">
+                    <h3>🔗 integration-service</h3>
+                    <p style="margin-bottom: 10px; color: #2d3748;">Tests in <code>tests/integration-service/</code></p>
+                    <ul>
+                        <li>Snapshot creation</li>
+                        <li>Integration test execution</li>
+                        <li>Status reporting to PRs</li>
+                        <li>GitLab integration</li>
+                    </ul>
+                </div>
+                
+                <div class="test-suite-card">
+                    <h3>🚀 release-service</h3>
+                    <p style="margin-bottom: 10px; color: #2d3748;">Tests in <code>tests/release/</code></p>
+                    <ul>
+                        <li>Release plan creation</li>
+                        <li>Quay.io pushes</li>
+                        <li>GitHub releases</li>
+                        <li>Release pipelines</li>
+                    </ul>
+                </div>
+                
+                <div class="test-suite-card">
+                    <h3>🏗️ multi-platform</h3>
+                    <p style="margin-bottom: 10px; color: #2d3748;">Tests in <code>tests/build/</code></p>
+                    <ul>
+                        <li>Multi-arch builds</li>
+                        <li>ARM64 builds</li>
+                        <li>ppc64le/s390x builds</li>
+                        <li>Build coordination</li>
+                    </ul>
+                </div>
+                
+                <div class="test-suite-card">
+                    <h3>🛡️ ec (Enterprise Contract)</h3>
+                    <p style="margin-bottom: 10px; color: #2d3748;">Tests in <code>tests/enterprise-contract/</code></p>
+                    <ul>
+                        <li>Policy enforcement</li>
+                        <li>SLSA attestations</li>
+                        <li>Security validation</li>
+                        <li>Compliance checks</li>
+                    </ul>
+                </div>
+                
+                <div class="test-suite-card">
+                    <h3>📦 image-controller</h3>
+                    <p style="margin-bottom: 10px; color: #2d3748;">Tests in component-specific suite</p>
+                    <ul>
+                        <li>Image repository setup</li>
+                        <li>Image promotion</li>
+                        <li>Registry operations</li>
+                        <li>Image metadata</li>
+                    </ul>
+                </div>
+                
+                <div class="test-suite-card">
+                    <h3>⚙️ pipeline-service</h3>
+                    <p style="margin-bottom: 10px; color: #2d3748;">Tests in component-specific suite</p>
+                    <ul>
+                        <li>Tekton pipeline runs</li>
+                        <li>Task execution</li>
+                        <li>Pipeline results</li>
+                        <li>Resource quotas</li>
+                    </ul>
+                </div>
+                
+                <div class="test-suite-card" style="background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%); border-color: #f56565;">
+                    <h3>🎯 konflux (ALWAYS RUNS)</h3>
+                    <p style="margin-bottom: 10px; color: #2d3748;">Tests in <code>tests/konflux-demo/</code></p>
+                    <ul>
+                        <li>Basic user workflows</li>
+                        <li>Application creation</li>
+                        <li>Component onboarding</li>
+                        <li>End-to-end scenarios</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="important-note" style="margin-top: 30px;">
+                <strong>🎯 The "konflux" Label is ALWAYS Included!</strong>
+                No matter which component changed, the baseline "konflux" tests always run. This ensures basic 
+                functionality works even if you only changed a specific component. Think of it as a sanity check.
+            </div>
+        </div>
+        
+        <!-- Real Examples -->
+        <div class="section">
+            <h2 class="section-title">📚 Real-World Examples</h2>
+            
+            <div class="example-box">
+                <div class="example-title">Example 1: Renovate PR Updates build-service Image</div>
+                <div class="code-block" style="background: white; color: #2d3748; margin-top: 15px;">
+<span class="code-comment"># Files changed:</span>
+- components/build-service/development/kustomization.yaml
+- components/build-service/staging/base/kustomization.yaml
+- components/build-service/production/base/kustomization.yaml
+
+<span class="code-comment"># Rules engine detects:</span>
+✓ InfraDeploymentsBuildServiceComponentChangeRule matches!
+
+<span class="code-comment"># Tests that run:</span>
+<span class="code-highlight">ginkgo --label-filter="build-service,konflux" ./tests/...</span>
+
+<span class="code-comment"># Test suites executed:</span>
+✓ tests/build/ (build-service label)
+✓ tests/konflux-demo/ (konflux label)
+
+<span class="code-comment"># Test suites SKIPPED:</span>
+✗ tests/integration-service/
+✗ tests/release/
+✗ tests/enterprise-contract/
+✗ tests/upgrade/
+✗ tests/load-tests/
+                </div>
+            </div>
+            
+            <div class="example-box">
+                <div class="example-title">Example 2: Manual PR Updates Monitoring Configuration</div>
+                <div class="code-block" style="background: white; color: #2d3748; margin-top: 15px;">
+<span class="code-comment"># Files changed:</span>
+- components/monitoring/prometheus/servicemonitor.yaml
+- components/monitoring/grafana/dashboard.json
+
+<span class="code-comment"># Rules engine detects:</span>
+✓ NO specific component rules match!
+✓ InfraDeploymentsDefaultRule applies!
+
+<span class="code-comment"># Tests that run:</span>
+<span class="code-highlight">ginkgo --label-filter="konflux" ./tests/...</span>
+
+<span class="code-comment"># Test suites executed:</span>
+✓ tests/konflux-demo/ (konflux label ONLY)
+
+<span class="code-comment"># Why? Monitoring changes don't affect core functionality</span>
+<span class="code-comment"># so only baseline tests run!</span>
+                </div>
+            </div>
+            
+            <div class="example-box">
+                <div class="example-title">Example 3: PR Updates Multiple Components</div>
+                <div class="code-block" style="background: white; color: #2d3748; margin-top: 15px;">
+<span class="code-comment"># Files changed:</span>
+- components/build-service/base/deployment.yaml
+- components/integration/base/deployment.yaml
+- components/release/base/release-plan.yaml
+
+<span class="code-comment"># Rules engine detects:</span>
+✓ InfraDeploymentsBuildServiceComponentChangeRule matches!
+✓ InfraDeploymentsIntegrationComponentChangeRule matches!
+✓ InfraDeploymentsReleaseServiceComponentChangeRule matches!
+
+<span class="code-comment"># Tests that run:</span>
+<span class="code-highlight">ginkgo --label-filter="build-service,integration-service,release-service,konflux" ./tests/...</span>
+
+<span class="code-comment"># Test suites executed:</span>
+✓ tests/build/ (build-service label)
+✓ tests/integration-service/ (integration-service label)
+✓ tests/release/ (release-service label)
+✓ tests/konflux-demo/ (konflux label)
+
+<span class="code-comment"># This runs MORE tests because MORE components changed!</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- File Locations -->
+        <div class="section">
+            <h2 class="section-title">📂 Key File Locations</h2>
+            
+            <!-- CI Script -->
+            <div style="background: #ebf8ff; border-radius: 10px; padding: 20px; margin-bottom: 20px; border-left: 4px solid #4299e1;">
+                <h3 style="color: #2c5282; margin-bottom: 10px;">🚀 CI Entry Point</h3>
+                <p style="color: #4a5568; margin-bottom: 10px;">The script that starts everything:</p>
+                <code style="background: #2d3748; color: #68d391; padding: 10px 15px; border-radius: 5px; display: block; font-size: 0.9em;">
+                    openshift/release/.../redhat-appstudio-e2e-commands.sh
+                </code>
+            </div>
+            
+            <!-- Rules Engine -->
+            <div style="background: #f0fff4; border-radius: 10px; padding: 20px; margin-bottom: 20px; border-left: 4px solid #48bb78;">
+                <h3 style="color: #2f855a; margin-bottom: 10px;">🧠 Rules Engine Code</h3>
+                <p style="color: #4a5568; margin-bottom: 10px;">Where test selection rules are defined:</p>
+                <code style="background: #2d3748; color: #68d391; padding: 10px 15px; border-radius: 5px; display: block; font-size: 0.9em; margin-bottom: 10px;">
+                    konflux-ci/e2e-tests/magefiles/rulesengine/repos/
+                </code>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <span style="background: #c6f6d5; color: #2f855a; padding: 5px 12px; border-radius: 15px; font-size: 0.85em; font-weight: bold;">infra_deployments.go ← Main rules!</span>
+                    <span style="background: #e2e8f0; padding: 5px 12px; border-radius: 15px; font-size: 0.85em;">build_service.go</span>
+                    <span style="background: #e2e8f0; padding: 5px 12px; border-radius: 15px; font-size: 0.85em;">integration_service.go</span>
+                    <span style="background: #e2e8f0; padding: 5px 12px; border-radius: 15px; font-size: 0.85em;">release_service.go</span>
+                </div>
+            </div>
+            
+            <!-- Test Files -->
+            <div style="background: #faf5ff; border-radius: 10px; padding: 20px; margin-bottom: 20px; border-left: 4px solid #9f7aea;">
+                <h3 style="color: #6b46c1; margin-bottom: 10px;">🧪 Test Suite Directories</h3>
+                <p style="color: #4a5568; margin-bottom: 10px;">Located in <code>konflux-ci/e2e-tests/tests/</code>:</p>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+                    <div style="background: white; padding: 10px; border-radius: 5px; border-left: 3px solid #48bb78;">
+                        <strong>build/</strong><br><span style="font-size: 0.85em; color: #718096;">build-service, templates</span>
+                    </div>
+                    <div style="background: white; padding: 10px; border-radius: 5px; border-left: 3px solid #48bb78;">
+                        <strong>integration-service/</strong><br><span style="font-size: 0.85em; color: #718096;">integration tests</span>
+                    </div>
+                    <div style="background: white; padding: 10px; border-radius: 5px; border-left: 3px solid #48bb78;">
+                        <strong>release/</strong><br><span style="font-size: 0.85em; color: #718096;">release-service</span>
+                    </div>
+                    <div style="background: white; padding: 10px; border-radius: 5px; border-left: 3px solid #48bb78;">
+                        <strong>enterprise-contract/</strong><br><span style="font-size: 0.85em; color: #718096;">EC policy tests</span>
+                    </div>
+                    <div style="background: white; padding: 10px; border-radius: 5px; border-left: 3px solid #f56565;">
+                        <strong>konflux-demo/</strong><br><span style="font-size: 0.85em; color: #c53030; font-weight: bold;">ALWAYS RUNS</span>
+                    </div>
+                    <div style="background: white; padding: 10px; border-radius: 5px; border-left: 3px solid #a0aec0;">
+                        <strong>upgrade/</strong><br><span style="font-size: 0.85em; color: #718096;">Not for infra PRs</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 20px;">
+                <a href="https://github.com/konflux-ci/e2e-tests/blob/main/magefiles/rulesengine/repos/infra_deployments.go" target="_blank" class="link-button">
+                    View Rules Engine Code →
+                </a>
+                <a href="https://github.com/openshift/release/tree/master/ci-operator/step-registry/redhat-appstudio/e2e" target="_blank" class="link-button" style="background: #ed8936;">
+                    View CI Scripts →
+                </a>
+            </div>
+        </div>
+        
+        <!-- Summary -->
+        <div class="section">
+            <h2 class="section-title">📋 Summary: What You Need to Remember</h2>
+            
+            <div class="timeline-box">
+                <h3 style="margin-bottom: 20px; color: #2d3748;">The Complete Flow</h3>
+                <div class="timeline-item">
+                    <div class="timeline-number">1</div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">CI clones e2e-tests repo</div>
+                        <div class="timeline-desc">Gets the test code with built-in rules engine</div>
+                    </div>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="timeline-number">2</div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">Mage analyzes your PR</div>
+                        <div class="timeline-desc">Looks at which files changed in infra-deployments</div>
+                    </div>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="timeline-number">3</div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">Rules engine selects tests</div>
+                        <div class="timeline-desc">Matches changed files to test labels</div>
+                    </div>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="timeline-number">4</div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">Ginkgo runs selected tests</div>
+                        <div class="timeline-desc">Executes only relevant test suites + konflux baseline</div>
+                    </div>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="timeline-number">5</div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">Results reported to GitHub</div>
+                        <div class="timeline-desc">✅ or ❌ status posted to your PR</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="important-note" style="margin-top: 30px;">
+                <strong>🎯 Key Takeaways:</strong>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li style="margin: 5px 0;">✅ Tests are SMART - they only run what's relevant</li>
+                    <li style="margin: 5px 0;">✅ "konflux" baseline tests ALWAYS run</li>
+                    <li style="margin: 5px 0;">✅ Component-specific tests run only if that component changed</li>
+                    <li style="margin: 5px 0;">✅ This saves time - typical run is 30-45 min, not 2+ hours</li>
+                    <li style="margin: 5px 0;">✅ Rules are defined in e2e-tests repo, not infra-deployments</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
