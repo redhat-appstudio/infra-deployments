@@ -1,0 +1,13 @@
+---
+# Default deny all traffic in external-secrets-operator namespace
+# This provides baseline security - all other NetworkPolicies will whitelist specific traffic
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: external-secrets-operator
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
