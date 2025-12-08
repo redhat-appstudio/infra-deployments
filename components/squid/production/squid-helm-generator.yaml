@@ -45,3 +45,16 @@ valuesInline:
       - ^https://quayio-production-s3\.s3[a-z0-9.-]*\.amazonaws\.com/sha256/.+/[a-f0-9]{64}
     size: 1536
     maxObjectSize: 256
+  tlsOutgoingOptions:
+    caFile: /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
+  volumes:
+    - name: trusted-ca
+      configMap:
+        name: trusted-ca
+        items:
+          - key: ca-bundle.crt
+            path: tls-ca-bundle.pem
+  volumeMounts:
+    - name: trusted-ca
+      mountPath: /etc/pki/ca-trust/extracted/pem
+      readOnly: true
