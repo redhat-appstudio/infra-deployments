@@ -215,18 +215,14 @@ dynamicConfigs:
       # Create/overwrite authorized_keys
       sudo chmod 600 /Users/$user/.ssh/authorized_keys 2>/dev/null || true
       sudo cat /Users/$user/.ssh/id_rsa.pub | sudo tee /Users/$user/.ssh/authorized_keys > /dev/null
+      sudo cat /Users/$user/.ssh/id_rsa | sudo tee /Users/ec2-user/$user > /dev/null
 
       # Set ownership of entire home directory to ensure user has full control
       sudo chown -R $user:staff /Users/$user
 
-      # Copy private key to ec2-user's directory
-      sudo cp /Users/$user/.ssh/id_rsa /Users/ec2-user/$user
-
       # Set ownership of the copied private key to ec2-user
       sudo chown ec2-user:staff /Users/ec2-user/$user
       sudo chmod 600 /Users/ec2-user/$user
-
-      --//--
 
   linux-root-arm64:
     sudo-commands: "/usr/bin/podman"
