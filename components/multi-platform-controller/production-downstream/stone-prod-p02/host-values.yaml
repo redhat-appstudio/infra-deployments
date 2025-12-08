@@ -189,6 +189,55 @@ dynamicConfigs:
     sudo-commands: "/usr/bin/podman, /usr/bin/rm /usr/share/containers/mounts.conf"
     disk: "200"
 
+  macos-mac2metal-arm64:
+    ami: "ami-000ce2c23b96216d3"
+    host-resource-group-arn: "arn:aws:resource-groups:us-east-1:381491906438:group/macos-servers"
+    license-configuration-arn: "arn:aws:license-manager:us-east-1:381491906438:license-configuration:lic-becd775af7ca09c097f1fa94e495e148"
+    user-data: |
+      #!/bin/bash
+      set -eu
+      set -x
+      user="konflux-builder"
+      # Check if user already exists
+      if ! id "$user" &>/dev/null; then
+          # Generate random password
+          random_password=$(openssl rand -base64 32)
+          # Create user
+          sudo sysadminctl -addUser "$user" -fullName "Konflux Builder" -password "$random_password" -home /Users/$user
+          # Clear password from variable
+          unset random_password
+      else
+          echo "User $user already exists, skipping user creation"
+      fi
+      # Create home directory if it doesn't exist
+      sudo mkdir -p /Users/$user
+      # Create SSH directory
+      sudo mkdir -p /Users/$user/.ssh
+      # Remove existing SSH keys if they exist
+      sudo rm -f /Users/$user/.ssh/id_rsa /Users/$user/.ssh/id_rsa.pub
+      # Generate new SSH keys
+      sudo ssh-keygen -t rsa -b 4096 -f /Users/$user/.ssh/id_rsa -N "" -C ""
+      # Set proper permissions on .ssh directory
+      sudo chmod 700 /Users/$user/.ssh
+      # Create/overwrite authorized_keys
+      sudo chmod 600 /Users/$user/.ssh/authorized_keys 2>/dev/null || true
+      sudo cat /Users/$user/.ssh/id_rsa.pub | sudo tee /Users/$user/.ssh/authorized_keys > /dev/null
+      # Set ownership of entire home directory to ensure user has full control
+      sudo chown -R $user:staff /Users/$user
+      # Copy private key to ec2-user's directory
+      sudo cp /Users/$user/.ssh/id_rsa /Users/ec2-user/$user
+      # Set ownership of the copied private key to ec2-user
+      sudo chown ec2-user:staff /Users/ec2-user/$user
+      sudo chmod 600 /Users/ec2-user/$user
+      --//--
+
+
+  windows:
+    ami: "ami-0cf643428c5013531"
+    key-name: "konflux-prod-int-mab01"
+    security-group-id: "sg-0903aedd465be979e"
+    subnet-id: "subnet-02c476f8d2a4ae05e"
+
   linux-root-amd64:
     iops: "16000"
     throughput: "1000"
