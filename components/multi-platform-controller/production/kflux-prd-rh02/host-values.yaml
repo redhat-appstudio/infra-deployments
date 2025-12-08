@@ -2,13 +2,13 @@ environment: "prod"
 
 archDefaults:
   arm64:
-    ami: "ami-03d6a5256a46c9feb"
+    ami: "ami-06f37afe6d4f43c47"
     key-name: "kflux-prd-multi-rh02-key-pair"
     security-group-id: "sg-004ef1b7bc3ef1bca"
     subnet-id: "subnet-02ca0b0e3e0a76caf"
 
   amd64:
-    ami: "ami-026ebd4cfe2c043b2"
+    ami: "ami-01aaf1c29c7e0f0af"
     key-name: "kflux-prd-multi-rh02-key-pair"
     security-group-id: "sg-004ef1b7bc3ef1bca"
     subnet-id: "subnet-02ca0b0e3e0a76caf"
@@ -88,6 +88,7 @@ dynamicConfigs:
       # Setup bind mounts
       mount --bind /home/var-lib-containers /var/lib/containers
       mount --bind /home/var-tmp /var/tmp
+      restorecon -r /var/lib/containers /var/tmp
 
       # Configure ec2-user SSH access
       chown -R ec2-user /home/ec2-user
@@ -152,6 +153,7 @@ dynamicConfigs:
       mount --bind /home/var-lib-containers /var/lib/containers
       mount --bind /home/var-tmp /var/tmp
       chmod a+rw /var/tmp
+      restorecon -r /var/lib/containers /var/tmp
 
       # Configure ec2-user SSH access
       chown -R ec2-user /home/ec2-user
@@ -165,6 +167,7 @@ dynamicConfigs:
       mkdir -p /etc/cdi /var/run/cdi
       chmod a+rwx /etc/cdi /var/run/cdi
       setsebool container_use_devices 1 2>/dev/null || true
+      su - ec2-user
       nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml
       chmod a+rw /etc/cdi/nvidia.yaml
       --//--
@@ -211,6 +214,7 @@ dynamicConfigs:
       # Setup bind mounts
       mount --bind /home/var-lib-containers /var/lib/containers
       mount --bind /home/var-tmp /var/tmp
+      restorecon -r /var/lib/containers /var/tmp
 
       # Configure ec2-user SSH access
       chown -R ec2-user /home/ec2-user
@@ -233,56 +237,56 @@ staticHosts:
     address: "10.244.0.139"
     concurrency: "8"
     platform: "linux/ppc64le"
-    secret: "ibm-production-ppc64le-ssh-key"
+    secret: "ibm-ppc64le-ssh-key"
     user: "root"
 
   ppc64le-static-2:
     address: "10.244.0.30"
     concurrency: "8"
     platform: "linux/ppc64le"
-    secret: "ibm-production-ppc64le-ssh-key"
+    secret: "ibm-ppc64le-ssh-key"
     user: "root"
 
   ppc64le-static-3:
     address: "10.244.1.24"
     concurrency: "8"
     platform: "linux/ppc64le"
-    secret: "ibm-production-ppc64le-ssh-key"
+    secret: "ibm-ppc64le-ssh-key"
     user: "root"
 
   ppc64le-static-4:
     address: "10.244.2.169"
     concurrency: "8"
     platform: "linux/ppc64le"
-    secret: "ibm-production-ppc64le-ssh-key"
+    secret: "ibm-ppc64le-ssh-key"
     user: "root"
 
   ppc64le-static-5:
     address: "10.244.0.233"
     concurrency: "8"
     platform: "linux/ppc64le"
-    secret: "ibm-production-ppc64le-ssh-key"
+    secret: "ibm-ppc64le-ssh-key"
     user: "root"
 
   ppc64le-static-6:
     address: "10.244.2.194"
     concurrency: "8"
     platform: "linux/ppc64le"
-    secret: "ibm-production-ppc64le-ssh-key"
+    secret: "ibm-ppc64le-ssh-key"
     user: "root"
 
   ppc64le-static-7:
     address: "10.244.2.52"
     concurrency: "8"
     platform: "linux/ppc64le"
-    secret: "ibm-production-ppc64le-ssh-key"
+    secret: "ibm-ppc64le-ssh-key"
     user: "root"
 
   ppc64le-static-8:
     address: "10.244.2.99"
     concurrency: "8"
     platform: "linux/ppc64le"
-    secret: "ibm-production-ppc64le-ssh-key"
+    secret: "ibm-ppc64le-ssh-key"
     user: "root"
 
 
@@ -291,112 +295,110 @@ staticHosts:
     address: "10.250.66.15"
     concurrency: "4"
     platform: "linux/s390x"
-    secret: "ibm-s390x-static-ssh-key"
+    secret: "ibm-s390x-ssh-key"
     user: "root"
 
   s390x-static-2:
     address: "10.250.66.16"
     concurrency: "4"
     platform: "linux/s390x"
-    secret: "ibm-s390x-static-ssh-key"
+    secret: "ibm-s390x-ssh-key"
     user: "root"
 
   s390x-static-3:
     address: "10.250.66.17"
     concurrency: "4"
     platform: "linux/s390x"
-    secret: "ibm-s390x-static-ssh-key"
+    secret: "ibm-s390x-ssh-key"
     user: "root"
 
   s390x-static-4:
     address: "10.250.66.18"
     concurrency: "4"
     platform: "linux/s390x"
-    secret: "ibm-s390x-static-ssh-key"
+    secret: "ibm-s390x-ssh-key"
     user: "root"
 
   s390x-static-5:
     address: "10.250.66.19"
     concurrency: "4"
     platform: "linux/s390x"
-    secret: "ibm-s390x-static-ssh-key"
+    secret: "ibm-s390x-ssh-key"
     user: "root"
 
   s390x-static-6:
     address: "10.250.66.20"
     concurrency: "4"
     platform: "linux/s390x"
-    secret: "ibm-s390x-static-ssh-key"
+    secret: "ibm-s390x-ssh-key"
     user: "root"
 
   s390x-static-7:
     address: "10.250.66.21"
     concurrency: "4"
     platform: "linux/s390x"
-    secret: "ibm-s390x-static-ssh-key"
+    secret: "ibm-s390x-ssh-key"
     user: "root"
 
   s390x-static-8:
     address: "10.250.66.22"
     concurrency: "4"
     platform: "linux/s390x"
-    secret: "ibm-s390x-static-ssh-key"
+    secret: "ibm-s390x-ssh-key"
     user: "root"
 
   s390x-static-9:
     address: "10.250.66.23"
     concurrency: "4"
     platform: "linux/s390x"
-    secret: "ibm-s390x-static-ssh-key"
+    secret: "ibm-s390x-ssh-key"
     user: "root"
 
   s390x-static-10:
     address: "10.250.66.24"
     concurrency: "4"
     platform: "linux/s390x"
-    secret: "ibm-s390x-static-ssh-key"
+    secret: "ibm-s390x-ssh-key"
     user: "root"
 
   s390x-static-11:
     address: "10.250.67.4"
     concurrency: "4"
     platform: "linux/s390x"
-    secret: "ibm-s390x-static-ssh-key"
+    secret: "ibm-s390x-ssh-key"
     user: "root"
 
   s390x-static-12:
     address: "10.250.67.5"
     concurrency: "4"
     platform: "linux/s390x"
-    secret: "ibm-s390x-static-ssh-key"
+    secret: "ibm-s390x-ssh-key"
     user: "root"
 
   s390x-static-13:
     address: "10.250.67.6"
     concurrency: "4"
     platform: "linux/s390x"
-    secret: "ibm-s390x-static-ssh-key"
+    secret: "ibm-s390x-ssh-key"
     user: "root"
 
   s390x-static-14:
     address: "10.250.67.7"
     concurrency: "4"
     platform: "linux/s390x"
-    secret: "ibm-s390x-static-ssh-key"
+    secret: "ibm-s390x-ssh-key"
     user: "root"
 
   s390x-static-15:
     address: "10.250.67.8"
     concurrency: "4"
     platform: "linux/s390x"
-    secret: "ibm-s390x-static-ssh-key"
+    secret: "ibm-s390x-ssh-key"
     user: "root"
 
   s390x-static-16:
     address: "10.250.67.9"
     concurrency: "4"
     platform: "linux/s390x"
-    secret: "ibm-s390x-static-ssh-key"
+    secret: "ibm-s390x-ssh-key"
     user: "root"
-
-

@@ -1,13 +1,15 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - ../../base/host
   - ../../base/member
   - ../../base/all-clusters
   - ../../base/backup
   - ../../base/quality-dashboard
   - ../../base/ci-helper-app
   - ../../base/eaas
+  - ../../base/monitoring-blackbox
+  - ../../base/monitoring-registry
+
 namespace: konflux-public-staging
 patchesStrategicMerge:
   - delete-applications.yaml

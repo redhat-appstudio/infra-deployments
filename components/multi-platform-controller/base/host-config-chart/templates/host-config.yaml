@@ -40,6 +40,7 @@ data:
 
   {{- $arm := (index .Values "archDefaults" "arm64") | default (dict) }}
   {{- $amd := (index .Values "archDefaults" "amd64") | default (dict) }}
+  {{- $windows := (index .Values "archDefaults" "windows") | default (dict) }}
   {{- $environment := .Values.environment | default "prod" }}
 
   # cpu:memory (1:4)
@@ -56,6 +57,7 @@ data:
   dynamic.linux-arm64.security-group-id: {{ default (index $arm "security-group-id") ((index $config "security-group-id")) | quote }}
   dynamic.linux-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-arm64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-arm64.allocation-timeout: "1200"
   {{ end }}
 
@@ -73,6 +75,7 @@ data:
   dynamic.linux-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
   dynamic.linux-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-amd64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-amd64.allocation-timeout: "1200"
   {{ end }}
 
@@ -89,6 +92,7 @@ data:
   dynamic.linux-d160-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
   dynamic.linux-d160-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-d160-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d160-amd64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-d160-amd64.disk: "160"
   dynamic.linux-d160-amd64.allocation-timeout: "1200"
   {{ end }}
@@ -106,6 +110,7 @@ data:
   dynamic.linux-d160-arm64.security-group-id: {{ default (index $arm "security-group-id") ((index $config "security-group-id")) | quote }}
   dynamic.linux-d160-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-d160-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d160-arm64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-d160-arm64.disk: "160"
   dynamic.linux-d160-arm64.allocation-timeout: "1200"
   {{ end }}
@@ -124,6 +129,7 @@ data:
   dynamic.linux-mlarge-arm64.security-group-id: {{ default (index $arm "security-group-id") ((index $config "security-group-id")) | quote }}
   dynamic.linux-mlarge-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-mlarge-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-mlarge-arm64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-mlarge-arm64.allocation-timeout: "1200"
   {{ end }}
 
@@ -140,6 +146,7 @@ data:
   dynamic.linux-mlarge-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
   dynamic.linux-mlarge-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-mlarge-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-mlarge-amd64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-mlarge-amd64.allocation-timeout: "1200"
   {{ end }}
 
@@ -156,6 +163,7 @@ data:
   dynamic.linux-d160-mlarge-arm64.security-group-id: {{ default (index $arm "security-group-id") ((index $config "security-group-id")) | quote }}
   dynamic.linux-d160-mlarge-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-d160-mlarge-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d160-mlarge-arm64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-d160-mlarge-arm64.disk: "160"
   dynamic.linux-d160-mlarge-arm64.allocation-timeout: "1200"
   {{ end }}
@@ -173,6 +181,7 @@ data:
   dynamic.linux-d160-mlarge-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
   dynamic.linux-d160-mlarge-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-d160-mlarge-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d160-mlarge-amd64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-d160-mlarge-amd64.disk: "160"
   dynamic.linux-d160-mlarge-amd64.allocation-timeout: "1200"
   {{ end }}
@@ -190,6 +199,7 @@ data:
   dynamic.linux-mxlarge-arm64.security-group-id: {{ default (index $arm "security-group-id") ((index $config "security-group-id")) | quote }}
   dynamic.linux-mxlarge-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-mxlarge-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-mxlarge-arm64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-mxlarge-arm64.allocation-timeout: "1200"
   {{ end }}
 
@@ -206,6 +216,7 @@ data:
   dynamic.linux-mxlarge-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
   dynamic.linux-mxlarge-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-mxlarge-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-mxlarge-amd64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-mxlarge-amd64.allocation-timeout: "1200"
   {{ end }}
 
@@ -222,6 +233,7 @@ data:
   dynamic.linux-d160-mxlarge-arm64.security-group-id: {{ default (index $arm "security-group-id") ((index $config "security-group-id")) | quote }}
   dynamic.linux-d160-mxlarge-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-d160-mxlarge-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d160-mxlarge-arm64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-d160-mxlarge-arm64.disk: "160"
   dynamic.linux-d160-mxlarge-arm64.allocation-timeout: "1200"
   {{ end }}
@@ -239,6 +251,7 @@ data:
   dynamic.linux-d160-mxlarge-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
   dynamic.linux-d160-mxlarge-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-d160-mxlarge-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d160-mxlarge-amd64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-d160-mxlarge-amd64.disk: "160"
   dynamic.linux-d160-mxlarge-amd64.allocation-timeout: "1200"
   {{ end }}
@@ -256,6 +269,7 @@ data:
   dynamic.linux-m2xlarge-arm64.security-group-id: {{ default (index $arm "security-group-id") ((index $config "security-group-id")) | quote }}
   dynamic.linux-m2xlarge-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-m2xlarge-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-m2xlarge-arm64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-m2xlarge-arm64.allocation-timeout: "1200"
   {{ end }}
 
@@ -272,6 +286,7 @@ data:
   dynamic.linux-m2xlarge-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
   dynamic.linux-m2xlarge-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-m2xlarge-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-m2xlarge-amd64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-m2xlarge-amd64.allocation-timeout: "1200"
   {{ end }}
 
@@ -288,6 +303,7 @@ data:
   dynamic.linux-d160-m2xlarge-arm64.security-group-id: {{ default (index $arm "security-group-id") ((index $config "security-group-id")) | quote }}
   dynamic.linux-d160-m2xlarge-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-d160-m2xlarge-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d160-m2xlarge-arm64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-d160-m2xlarge-arm64.disk: "160"
   dynamic.linux-d160-m2xlarge-arm64.allocation-timeout: "1200"
   {{ end }}
@@ -305,6 +321,7 @@ data:
   dynamic.linux-d160-m2xlarge-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
   dynamic.linux-d160-m2xlarge-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-d160-m2xlarge-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d160-m2xlarge-amd64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-d160-m2xlarge-amd64.disk: "160"
   dynamic.linux-d160-m2xlarge-amd64.allocation-timeout: "1200"
   {{ end }}
@@ -322,6 +339,7 @@ data:
   dynamic.linux-m4xlarge-arm64.security-group-id: {{ default (index $arm "security-group-id") ((index $config "security-group-id")) | quote }}
   dynamic.linux-m4xlarge-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-m4xlarge-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-m4xlarge-arm64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-m4xlarge-arm64.allocation-timeout: "1200"
   {{ end }}
 
@@ -338,6 +356,7 @@ data:
   dynamic.linux-m4xlarge-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
   dynamic.linux-m4xlarge-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-m4xlarge-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-m4xlarge-amd64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-m4xlarge-amd64.allocation-timeout: "1200"
   {{ end }}
 
@@ -354,6 +373,7 @@ data:
   dynamic.linux-d160-m4xlarge-arm64.security-group-id: {{ default (index $arm "security-group-id") ((index $config "security-group-id")) | quote }}
   dynamic.linux-d160-m4xlarge-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-d160-m4xlarge-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d160-m4xlarge-arm64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-d160-m4xlarge-arm64.disk: "160"
   dynamic.linux-d160-m4xlarge-arm64.allocation-timeout: "1200"
   {{ end }}
@@ -371,6 +391,7 @@ data:
   dynamic.linux-d160-m4xlarge-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
   dynamic.linux-d160-m4xlarge-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-d160-m4xlarge-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d160-m4xlarge-amd64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-d160-m4xlarge-amd64.disk: "160"
   dynamic.linux-d160-m4xlarge-amd64.allocation-timeout: "1200"
   {{ end }}
@@ -388,6 +409,7 @@ data:
   dynamic.linux-m8xlarge-arm64.security-group-id: {{ default (index $arm "security-group-id") ((index $config "security-group-id")) | quote }}
   dynamic.linux-m8xlarge-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-m8xlarge-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-m8xlarge-arm64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-m8xlarge-arm64.allocation-timeout: "1200"
   {{ end }}
 
@@ -404,6 +426,7 @@ data:
   dynamic.linux-m8xlarge-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
   dynamic.linux-m8xlarge-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-m8xlarge-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-m8xlarge-amd64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-m8xlarge-amd64.allocation-timeout: "1200"
   {{ end }}
 
@@ -420,6 +443,7 @@ data:
   dynamic.linux-d160-m7-8xlarge-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
   dynamic.linux-d160-m7-8xlarge-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-d160-m7-8xlarge-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d160-m7-8xlarge-amd64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-d160-m7-8xlarge-amd64.disk: "160"
   dynamic.linux-d160-m7-8xlarge-amd64.allocation-timeout: "1200"
   {{ end }}
@@ -437,6 +461,7 @@ data:
   dynamic.linux-d160-m8-8xlarge-arm64.security-group-id: {{ default (index $arm "security-group-id") ((index $config "security-group-id")) | quote }}
   dynamic.linux-d160-m8-8xlarge-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-d160-m8-8xlarge-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d160-m8-8xlarge-arm64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-d160-m8-8xlarge-arm64.disk: "160"
   dynamic.linux-d160-m8-8xlarge-arm64.allocation-timeout: "1200"
   {{ end }}
@@ -455,6 +480,7 @@ data:
   dynamic.linux-d160-m8xlarge-arm64.security-group-id: {{ default (index $arm "security-group-id") ((index $config "security-group-id")) | quote }}
   dynamic.linux-d160-m8xlarge-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-d160-m8xlarge-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d160-m8xlarge-arm64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-d160-m8xlarge-arm64.disk: "160"
   dynamic.linux-d160-m8xlarge-arm64.allocation-timeout: "1200"
   {{ end }}
@@ -472,6 +498,7 @@ data:
   dynamic.linux-d160-m8xlarge-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
   dynamic.linux-d160-m8xlarge-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-d160-m8xlarge-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d160-m8xlarge-amd64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-d160-m8xlarge-amd64.disk: "160"
   dynamic.linux-d160-m8xlarge-amd64.allocation-timeout: "1200"
   {{ end }}
@@ -489,6 +516,7 @@ data:
   dynamic.linux-c6gd2xlarge-arm64.security-group-id: {{ default (index $arm "security-group-id") ((index $config "security-group-id")) | quote }}
   dynamic.linux-c6gd2xlarge-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-c6gd2xlarge-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-c6gd2xlarge-arm64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-c6gd2xlarge-arm64.allocation-timeout: "1200"
   {{- if (index $config "user-data") }}
   dynamic.linux-c6gd2xlarge-arm64.user-data: |
@@ -512,6 +540,7 @@ data:
   dynamic.linux-cxlarge-arm64.security-group-id: {{ default (index $arm "security-group-id") ((index $config "security-group-id")) | quote }}
   dynamic.linux-cxlarge-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-cxlarge-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-cxlarge-arm64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-cxlarge-arm64.allocation-timeout: "1200"
   {{ end }}
 
@@ -528,6 +557,7 @@ data:
   dynamic.linux-cxlarge-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
   dynamic.linux-cxlarge-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-cxlarge-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-cxlarge-amd64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-cxlarge-amd64.allocation-timeout: "1200"
   {{ end }}
 
@@ -544,6 +574,7 @@ data:
   dynamic.linux-d160-cxlarge-arm64.security-group-id: {{ default (index $arm "security-group-id") ((index $config "security-group-id")) | quote }}
   dynamic.linux-d160-cxlarge-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-d160-cxlarge-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d160-cxlarge-arm64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-d160-cxlarge-arm64.disk: "160"
   dynamic.linux-d160-cxlarge-arm64.allocation-timeout: "1200"
   {{ end }}
@@ -561,6 +592,7 @@ data:
   dynamic.linux-d160-cxlarge-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
   dynamic.linux-d160-cxlarge-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-d160-cxlarge-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d160-cxlarge-amd64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-d160-cxlarge-amd64.disk: "160"
   dynamic.linux-d160-cxlarge-amd64.allocation-timeout: "1200"
   {{ end }}
@@ -578,6 +610,7 @@ data:
   dynamic.linux-c2xlarge-arm64.security-group-id: {{ default (index $arm "security-group-id") ((index $config "security-group-id")) | quote }}
   dynamic.linux-c2xlarge-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-c2xlarge-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-c2xlarge-arm64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-c2xlarge-arm64.allocation-timeout: "1200"
   {{ end }}
 
@@ -594,6 +627,7 @@ data:
   dynamic.linux-c2xlarge-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
   dynamic.linux-c2xlarge-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-c2xlarge-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-c2xlarge-amd64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-c2xlarge-amd64.allocation-timeout: "1200"
   {{ end }}
 
@@ -610,6 +644,7 @@ data:
   dynamic.linux-d160-c2xlarge-arm64.security-group-id: {{ default (index $arm "security-group-id") ((index $config "security-group-id")) | quote }}
   dynamic.linux-d160-c2xlarge-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-d160-c2xlarge-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d160-c2xlarge-arm64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-d160-c2xlarge-arm64.disk: "160"
   dynamic.linux-d160-c2xlarge-arm64.allocation-timeout: "1200"
   {{ end }}
@@ -627,6 +662,7 @@ data:
   dynamic.linux-d160-c2xlarge-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
   dynamic.linux-d160-c2xlarge-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-d160-c2xlarge-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d160-c2xlarge-amd64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-d160-c2xlarge-amd64.disk: "160"
   dynamic.linux-d160-c2xlarge-amd64.allocation-timeout: "1200"
   {{ end }}
@@ -644,6 +680,7 @@ data:
   dynamic.linux-c4xlarge-arm64.security-group-id: {{ default (index $arm "security-group-id") ((index $config "security-group-id")) | quote }}
   dynamic.linux-c4xlarge-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-c4xlarge-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-c4xlarge-arm64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-c4xlarge-arm64.allocation-timeout: "1200"
   {{ end }}
 
@@ -660,6 +697,7 @@ data:
   dynamic.linux-c4xlarge-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
   dynamic.linux-c4xlarge-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-c4xlarge-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-c4xlarge-amd64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-c4xlarge-amd64.allocation-timeout: "1200"
   {{ end }}
 
@@ -676,6 +714,7 @@ data:
   dynamic.linux-d160-c4xlarge-arm64.security-group-id: {{ default (index $arm "security-group-id") ((index $config "security-group-id")) | quote }}
   dynamic.linux-d160-c4xlarge-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-d160-c4xlarge-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d160-c4xlarge-arm64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-d160-c4xlarge-arm64.disk: "160"
   dynamic.linux-d160-c4xlarge-arm64.allocation-timeout: "1200"
   {{ end }}
@@ -693,6 +732,7 @@ data:
   dynamic.linux-d160-c4xlarge-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
   dynamic.linux-d160-c4xlarge-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-d160-c4xlarge-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d160-c4xlarge-amd64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-d160-c4xlarge-amd64.disk: "160"
   dynamic.linux-d160-c4xlarge-amd64.allocation-timeout: "1200"
   {{ end }}
@@ -710,6 +750,7 @@ data:
   dynamic.linux-d320-c4xlarge-arm64.security-group-id: {{ default (index $arm "security-group-id") ((index $config "security-group-id")) | quote }}
   dynamic.linux-d320-c4xlarge-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-d320-c4xlarge-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d320-c4xlarge-arm64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-d320-c4xlarge-arm64.disk: "320"
   dynamic.linux-d320-c4xlarge-arm64.allocation-timeout: "1200"
   {{ end }}
@@ -727,6 +768,7 @@ data:
   dynamic.linux-d320-c4xlarge-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
   dynamic.linux-d320-c4xlarge-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-d320-c4xlarge-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d320-c4xlarge-amd64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-d320-c4xlarge-amd64.disk: "320"
   dynamic.linux-d320-c4xlarge-amd64.allocation-timeout: "1200"
   {{ end }}
@@ -744,6 +786,7 @@ data:
   dynamic.linux-d320-m8xlarge-arm64.security-group-id: {{ default (index $arm "security-group-id") ((index $config "security-group-id")) | quote }}
   dynamic.linux-d320-m8xlarge-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-d320-m8xlarge-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d320-m8xlarge-arm64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-d320-m8xlarge-arm64.disk: "320"
   dynamic.linux-d320-m8xlarge-arm64.allocation-timeout: "1200"
   {{ end }}
@@ -761,6 +804,7 @@ data:
   dynamic.linux-d320-m8xlarge-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
   dynamic.linux-d320-m8xlarge-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-d320-m8xlarge-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d320-m8xlarge-amd64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-d320-m8xlarge-amd64.disk: "320"
   dynamic.linux-d320-m8xlarge-amd64.allocation-timeout: "1200"
   {{ end }}
@@ -778,6 +822,7 @@ data:
   dynamic.linux-c8xlarge-arm64.security-group-id: {{ default (index $arm "security-group-id") ((index $config "security-group-id")) | quote }}
   dynamic.linux-c8xlarge-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-c8xlarge-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-c8xlarge-arm64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-c8xlarge-arm64.allocation-timeout: "1200"
   {{ end }}
 
@@ -794,6 +839,7 @@ data:
   dynamic.linux-c8xlarge-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
   dynamic.linux-c8xlarge-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-c8xlarge-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-c8xlarge-amd64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-c8xlarge-amd64.allocation-timeout: "1200"
   {{ end }}
 
@@ -810,6 +856,7 @@ data:
   dynamic.linux-d160-c8xlarge-arm64.security-group-id: {{ default (index $arm "security-group-id") ((index $config "security-group-id")) | quote }}
   dynamic.linux-d160-c8xlarge-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-d160-c8xlarge-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d160-c8xlarge-arm64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-d160-c8xlarge-arm64.disk: "160"
   dynamic.linux-d160-c8xlarge-arm64.allocation-timeout: "1200"
   {{ end }}
@@ -827,6 +874,7 @@ data:
   dynamic.linux-d160-c8xlarge-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
   dynamic.linux-d160-c8xlarge-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-d160-c8xlarge-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-d160-c8xlarge-amd64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-d160-c8xlarge-amd64.disk: "160"
   dynamic.linux-d160-c8xlarge-amd64.allocation-timeout: "1200"
   {{ end }}
@@ -845,6 +893,7 @@ data:
   dynamic.linux-g6xlarge-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-g6xlarge-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
   dynamic.linux-g6xlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-g6xlarge" $environment) | quote }}
+  dynamic.linux-g6xlarge-amd64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-g6xlarge-amd64.allocation-timeout: "1200"
   {{- if (index $config "user-data") }}
   dynamic.linux-g6xlarge-amd64.user-data: |
@@ -869,16 +918,16 @@ data:
   dynamic.linux-g64xlarge-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-g64xlarge-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
   dynamic.linux-g64xlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-g64xlarge" $environment) | quote }}
+  dynamic.linux-g64xlarge-amd64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-g64xlarge-amd64.allocation-timeout: "1200"
   {{- if (index $config "user-data") }}
   dynamic.linux-g64xlarge-amd64.user-data: |
   {{- $lines := splitList "\n" (index $config "user-data") }}
   {{- range $line := $lines }}
     {{ $line }}
-  {{ end }}
+  {{- end }}
   {{- end }}
   {{ end }}
-
 
 
   # Root access
@@ -897,6 +946,7 @@ data:
   dynamic.linux-root-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
   dynamic.linux-root-arm64.sudo-commands: {{ (index $config "sudo-commands") | default "/usr/bin/podman" | quote }}
   dynamic.linux-root-arm64.disk: {{ index $config "disk" | default "200" | quote }}
+  dynamic.linux-root-arm64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-root-arm64.allocation-timeout: "1200"
   {{- if (index $config "iops") }}
   dynamic.linux-root-arm64.iops: {{ index $config "iops" | quote }}
@@ -909,7 +959,7 @@ data:
   {{- $lines := splitList "\n" (index $config "user-data") }}
   {{- range $line := $lines }}
     {{ $line }}
-  {{ end }}
+  {{- end }}
   {{- end }}
   {{ end }}
 
@@ -928,6 +978,7 @@ data:
   dynamic.linux-root-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
   dynamic.linux-root-amd64.sudo-commands: {{ (index $config "sudo-commands") | default "/usr/bin/podman" | quote }}
   dynamic.linux-root-amd64.disk: {{index $config "disk" | default "200" | quote }}
+  dynamic.linux-root-amd64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-root-amd64.allocation-timeout: "1200"
   {{- if (index $config "user-data") }}
   dynamic.linux-root-amd64.user-data: |
@@ -953,6 +1004,7 @@ data:
   dynamic.linux-fast-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-fast-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
   dynamic.linux-fast-amd64.disk: {{ index $config "disk" | default "200" | quote }}
+  dynamic.linux-fast-amd64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-fast-amd64.allocation-timeout: "1200"
   {{ end }}
 
@@ -970,7 +1022,132 @@ data:
   dynamic.linux-extra-fast-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
   dynamic.linux-extra-fast-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
   dynamic.linux-extra-fast-amd64.disk: {{ index $config "disk" | default "200" | quote }}
+  dynamic.linux-extra-fast-amd64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-extra-fast-amd64.allocation-timeout: "1200"
+  {{ end }}
+
+  {{- if hasKey .Values.dynamicConfigs "macos-mac2metal-arm64" }}
+  {{- $config := index .Values.dynamicConfigs "macos-mac2metal-arm64" | default (dict) }}
+  dynamic.macos-mac2metal-arm64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.macos-mac2metal-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.macos-mac2metal-arm64.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.macos-mac2metal-arm64.instance-type: {{ (index $config "instance-type") | default "mac2.metal" | quote }}
+  dynamic.macos-mac2metal-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64-mac2metal" $environment) | quote }}
+  dynamic.macos-mac2metal-arm64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
+  dynamic.macos-mac2metal-arm64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.macos-mac2metal-arm64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.macos-mac2metal-arm64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.macos-mac2metal-arm64.max-instances: {{ (index $config "max-instances") | default "5" | quote }}
+  dynamic.macos-mac2metal-arm64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.macos-mac2metal-arm64.disk: {{ index $config "disk" | default "100" | quote }}
+  dynamic.macos-mac2metal-arm64.allocation-timeout: "1200"
+  dynamic.macos-mac2metal-arm64.tenancy: "host"
+  dynamic.macos-mac2metal-arm64.host-resource-group-arn: {{ index $config "host-resource-group-arn" | quote }}
+  dynamic.macos-mac2metal-arm64.license-configuration-arn: {{ index $config "license-configuration-arn" | quote }}
+  {{- if (index $config "iops") }}
+  dynamic.macos-mac2metal-arm64.iops: {{ index $config "iops" | quote }}
+  {{ end }}
+  {{- if (index $config "throughput") }}
+  dynamic.macos-mac2metal-arm64.throughput: {{ index $config "throughput" | quote }}
+  {{ end }}
+  {{- if (index $config "user-data") }}
+  dynamic.macos-mac2metal-arm64.user-data: |
+  {{- $lines := splitList "\n" (index $config "user-data") }}
+  {{- range $line := $lines }}
+    {{ $line }}
+  {{- end }}
+  {{- end }}
+  {{ end }}
+
+
+  {{- if hasKey .Values.dynamicConfigs "linux-test-amd64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-test-amd64" | default (dict) }}
+  dynamic.linux-test-amd64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-test-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-test-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-test-amd64.instance-type: {{ (index $config "instance-type") | default "m6a.large" | quote }}
+  dynamic.linux-test-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-test" $environment) | quote }}
+  dynamic.linux-test-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-test-amd64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-test-amd64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-test-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-test-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-test-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-test-amd64.disk: {{ index $config "disk" | default "200" | quote }}
+  dynamic.linux-test-amd64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
+  dynamic.linux-test-amd64.allocation-timeout: "1200"
+  dynamic.linux-test-amd64.sudo-commands: {{ (index $config "sudo-commands") | default "/usr/bin/podman" | quote }}
+  {{- if (index $config "user-data") }}
+  dynamic.linux-test-amd64.user-data: |
+  {{- $lines := splitList "\n" (index $config "user-data") }}
+  {{- range $line := $lines }}
+    {{ $line }}
+  {{- end }}
+  {{- end }}
+  {{ end }}
+
+  {{- if hasKey .Values.dynamicConfigs "linux-test-arm64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-test-arm64" | default (dict) }}
+  dynamic.linux-test-arm64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-test-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-test-arm64.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-test-arm64.instance-type: {{ (index $config "instance-type") | default "m6g.large" | quote }}
+  dynamic.linux-test-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64-test" $environment) | quote }}
+  dynamic.linux-test-arm64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-test-arm64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-test-arm64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-test-arm64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-test-arm64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-test-arm64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-test-arm64.disk: {{ index $config "disk" | default "200" | quote }}
+  dynamic.linux-test-arm64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
+  dynamic.linux-test-arm64.allocation-timeout: "1200"
+  dynamic.linux-test-arm64.sudo-commands: {{ (index $config "sudo-commands") | default "/usr/bin/podman" | quote }}
+  {{- if (index $config "iops") }}
+  dynamic.linux-test-arm64.iops: {{ index $config "iops" | quote }}
+  {{ end }}
+  {{- if (index $config "throughput") }}
+  dynamic.linux-test-arm64.throughput: {{ index $config "throughput" | quote }}
+  {{ end }}
+  {{- if (index $config "user-data") }}
+  dynamic.linux-test-arm64.user-data: |
+  {{- $lines := splitList "\n" (index $config "user-data") }}
+  {{- range $line := $lines }}
+    {{ $line }}
+  {{- end }}
+  {{- end }}
+  {{ end }}
+
+  # Windows platforms
+  {{- if hasKey .Values.dynamicConfigs "windows-amd64" }}
+  {{- $config := index .Values.dynamicConfigs "windows-amd64" | default (dict) }}
+  dynamic.windows-amd64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.windows-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.windows-amd64.ami: {{ default (index $windows "ami") $config.ami | quote }}
+  dynamic.windows-amd64.instance-type: {{ (index $config "instance-type") | default "c5.4xlarge" | quote }}
+  dynamic.windows-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-windows" $environment) | quote }}
+  dynamic.windows-amd64.key-name: {{ default (index $windows "key-name") ((index $config "key-name")) | quote }}
+  dynamic.windows-amd64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.windows-amd64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.windows-amd64.security-group-id: {{ default (index $windows "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.windows-amd64.max-instances: {{ (index $config "max-instances") | default "5" | quote }}
+  dynamic.windows-amd64.subnet-id: {{ default (index $windows "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.windows-amd64.disk: {{ index $config "disk" | default "100" | quote }}
+  dynamic.windows-amd64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
+  dynamic.windows-amd64.allocation-timeout: "1200"
+  {{- if (index $config "iops") }}
+  dynamic.windows-amd64.iops: {{ index $config "iops" | quote }}
+  {{ end }}
+  {{- if (index $config "throughput") }}
+  dynamic.windows-amd64.throughput: {{ index $config "throughput" | quote }}
+  {{ end }}
+  {{- if (index $config "user-data") }}
+  dynamic.windows-amd64.user-data: |
+  {{- $lines := splitList "\n" (index $config "user-data") }}
+  {{- range $line := $lines }}
+    {{ $line }}
+  {{- end }}
+  {{- end }}
   {{ end }}
 
   # Static hosts configuration

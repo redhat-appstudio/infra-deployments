@@ -82,6 +82,7 @@ dynamicConfigs:
       # Setup bind mounts
       mount --bind /home/var-lib-containers /var/lib/containers
       mount --bind /home/var-tmp /var/tmp
+      restorecon -r /var/lib/containers /var/tmp
 
       # Configure ec2-user SSH access
       chown -R ec2-user /home/ec2-user
@@ -144,6 +145,7 @@ dynamicConfigs:
       mount --bind /home/var-lib-containers /var/lib/containers
       mount --bind /home/var-tmp /var/tmp
       chmod a+rw /var/tmp
+      restorecon -r /var/lib/containers /var/tmp
 
       # Configure ec2-user SSH access
       chown -R ec2-user /home/ec2-user
@@ -157,6 +159,7 @@ dynamicConfigs:
       mkdir -p /etc/cdi /var/run/cdi
       chmod a+rwx /etc/cdi /var/run/cdi
       setsebool container_use_devices 1 2>/dev/null || true
+      su - ec2-user
       nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml
       chmod a+rw /etc/cdi/nvidia.yaml
       --//--
@@ -175,13 +178,12 @@ staticHosts:
     address: "10.244.32.34"
     concurrency: "2"
     platform: "linux/ppc64le"
-    secret: "ibm-stage-ppc-ssh-key"
+    secret: "ibm-ppc64le-ssh-key"
     user: "root"
 
   s390x-static-1:
     address: "10.241.72.6"
     concurrency: "2"
     platform: "linux/s390x"
-    secret: "ibm-stage-s390x-ssh-key"
+    secret: "ibm-s390x-ssh-key"
     user: "root"
-

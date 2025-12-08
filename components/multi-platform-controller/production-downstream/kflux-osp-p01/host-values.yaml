@@ -2,13 +2,13 @@ environment: "prod"
 
 archDefaults:
   arm64:
-    ami: "ami-03d6a5256a46c9feb"
+    ami: "ami-06f37afe6d4f43c47"
     key-name: "kflux-osp-p01-key-pair"
     security-group-id: "sg-0e1a9339d698a73e1"
     subnet-id: "subnet-0dffd53ed51b01e79"
 
   amd64:
-    ami: "ami-026ebd4cfe2c043b2"
+    ami: "ami-01aaf1c29c7e0f0af"
     key-name: "kflux-osp-p01-key-pair"
     security-group-id: "sg-0e1a9339d698a73e1"
     subnet-id: "subnet-0dffd53ed51b01e79"
@@ -76,6 +76,7 @@ dynamicConfigs:
       # Setup bind mounts
       mount --bind /home/var-lib-containers /var/lib/containers
       mount --bind /home/var-tmp /var/tmp
+      restorecon -r /var/lib/containers /var/tmp
 
       # Configure ec2-user SSH access
       chown -R ec2-user /home/ec2-user
@@ -140,6 +141,7 @@ dynamicConfigs:
       mount --bind /home/var-lib-containers /var/lib/containers
       mount --bind /home/var-tmp /var/tmp
       chmod a+rw /var/tmp
+      restorecon -r /var/lib/containers /var/tmp
 
       # Configure ec2-user SSH access
       chown -R ec2-user /home/ec2-user
@@ -153,6 +155,7 @@ dynamicConfigs:
       mkdir -p /etc/cdi /var/run/cdi
       chmod a+rwx /etc/cdi /var/run/cdi
       setsebool container_use_devices 1 2>/dev/null || true
+      su - ec2-user
       nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml
       chmod a+rw /etc/cdi/nvidia.yaml
       --//--
@@ -199,6 +202,7 @@ dynamicConfigs:
       # Setup bind mounts
       mount --bind /home/var-lib-containers /var/lib/containers
       mount --bind /home/var-tmp /var/tmp
+      restorecon -r /var/lib/containers /var/tmp
 
       # Configure ec2-user SSH access
       chown -R ec2-user /home/ec2-user

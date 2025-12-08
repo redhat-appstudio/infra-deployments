@@ -2,13 +2,13 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
 - ../base
-- https://github.com/konflux-ci/integration-service/config/default?ref=f9ffbd484a619cd397ea4f863f434d803015b954
-- https://github.com/konflux-ci/integration-service/config/snapshotgc?ref=f9ffbd484a619cd397ea4f863f434d803015b954
+- https://github.com/konflux-ci/integration-service/config/default?ref=5ef6a720156277fa04c78fae01ce3b834ce510d0
+- https://github.com/konflux-ci/integration-service/config/snapshotgc?ref=5ef6a720156277fa04c78fae01ce3b834ce510d0
 
 images:
 - name: quay.io/konflux-ci/integration-service
   newName: quay.io/konflux-ci/integration-service
-  newTag: f9ffbd484a619cd397ea4f863f434d803015b954
+  newTag: 5ef6a720156277fa04c78fae01ce3b834ce510d0
 
 configMapGenerator:
 - name: integration-config
@@ -34,11 +34,5 @@ patches:
     target:
       kind: CronJob
       name: snapshot-garbage-collector
-  - target:
-      group: apps
-      version: v1
-      kind: Deployment
-      name: integration-service-controller-manager
-    path: sealights-token-patch.yaml
 components:
   - ../rh-certs

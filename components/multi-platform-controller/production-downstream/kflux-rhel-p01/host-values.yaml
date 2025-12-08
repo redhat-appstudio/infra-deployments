@@ -14,25 +14,33 @@ archDefaults:
 
 
 dynamicConfigs:
-  linux-arm64: {}
+  linux-arm64:
+    check-interval: "70"
 
   linux-amd64:
     instance-type: "m7a.large"
+    check-interval: "70"
 
-  linux-mlarge-arm64: {}
+  linux-mlarge-arm64:
+    check-interval: "70"
 
   linux-mlarge-amd64:
     instance-type: "m7a.large"
+    check-interval: "70"
 
-  linux-d160-mlarge-arm64: {}
+  linux-d160-mlarge-arm64:
+    check-interval: "70"
 
   linux-d160-mlarge-amd64:
     instance-type: "m7a.large"
+    check-interval: "70"
 
-  linux-mxlarge-arm64: {}
+  linux-mxlarge-arm64:
+    check-interval: "70"
 
   linux-mxlarge-amd64:
     instance-type: "m7a.xlarge"
+    check-interval: "70"
 
   linux-d160-mxlarge-arm64: {}
 
@@ -106,6 +114,7 @@ dynamicConfigs:
       # Setup bind mounts
       mount --bind /home/var-lib-containers /var/lib/containers
       mount --bind /home/var-tmp /var/tmp
+      restorecon -r /var/lib/containers /var/tmp
 
       # Configure ec2-user SSH access
       chown -R ec2-user /home/ec2-user
@@ -170,6 +179,7 @@ dynamicConfigs:
       mount --bind /home/var-lib-containers /var/lib/containers
       mount --bind /home/var-tmp /var/tmp
       chmod a+rw /var/tmp
+      restorecon -r /var/lib/containers /var/tmp
 
       # Configure ec2-user SSH access
       chown -R ec2-user /home/ec2-user
@@ -183,6 +193,7 @@ dynamicConfigs:
       mkdir -p /etc/cdi /var/run/cdi
       chmod a+rwx /etc/cdi /var/run/cdi
       setsebool container_use_devices 1 2>/dev/null || true
+      su - ec2-user
       nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml
       chmod a+rw /etc/cdi/nvidia.yaml
       --//--
@@ -229,6 +240,7 @@ dynamicConfigs:
       # Setup bind mounts
       mount --bind /home/var-lib-containers /var/lib/containers
       mount --bind /home/var-tmp /var/tmp
+      restorecon -r /var/lib/containers /var/tmp
 
       # Configure ec2-user SSH access
       chown -R ec2-user /home/ec2-user
@@ -429,4 +441,3 @@ staticHosts:
     platform: "linux/s390x"
     secret: "ibm-s390x-ssh-key-regular"
     user: "root"
-

@@ -5,7 +5,7 @@ metadata:
     app.kubernetes.io/component: namespace
     app.kubernetes.io/name: kubearchive
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: watcher-problems-85e4859
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive
 ---
 apiVersion: apiextensions.k8s.io/v1
@@ -13,7 +13,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: kubearchive/kubearchive-operator-certificate
-    controller-gen.kubebuilder.io/version: v0.14.0
+    controller-gen.kubebuilder.io/version: v0.17.3
   name: clusterkubearchiveconfigs.kubearchive.org
 spec:
   conversion:
@@ -71,64 +71,30 @@ spec:
                         type: string
                       deleteWhen:
                         type: string
+                      keepLastWhen:
+                        items:
+                          properties:
+                            count:
+                              type: integer
+                            name:
+                              type: string
+                            sortBy:
+                              default: metadata.creationTimestamp
+                              type: string
+                            when:
+                              type: string
+                          required:
+                            - count
+                            - name
+                            - when
+                          type: object
+                        type: array
                       selector:
-                        description: APIVersionKindSelector is an APIVersion Kind tuple with a LabelSelector.
                         properties:
                           apiVersion:
-                            description: APIVersion - the API version of the resource to watch.
                             type: string
                           kind:
-                            description: |-
-                              Kind of the resource to watch.
-                              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
                             type: string
-                          selector:
-                            description: |-
-                              LabelSelector filters this source to objects to those resources pass the
-                              label selector.
-                              More info: http://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#label-selectors
-                            properties:
-                              matchExpressions:
-                                description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
-                                items:
-                                  description: |-
-                                    A label selector requirement is a selector that contains values, a key, and an operator that
-                                    relates the key and values.
-                                  properties:
-                                    key:
-                                      description: key is the label key that the selector applies to.
-                                      type: string
-                                    operator:
-                                      description: |-
-                                        operator represents a key's relationship to a set of values.
-                                        Valid operators are In, NotIn, Exists and DoesNotExist.
-                                      type: string
-                                    values:
-                                      description: |-
-                                        values is an array of string values. If the operator is In or NotIn,
-                                        the values array must be non-empty. If the operator is Exists or DoesNotExist,
-                                        the values array must be empty. This array is replaced during a strategic
-                                        merge patch.
-                                      items:
-                                        type: string
-                                      type: array
-                                      x-kubernetes-list-type: atomic
-                                  required:
-                                    - key
-                                    - operator
-                                  type: object
-                                type: array
-                                x-kubernetes-list-type: atomic
-                              matchLabels:
-                                additionalProperties:
-                                  type: string
-                                description: |-
-                                  matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
-                                  map is equivalent to an element of matchExpressions, whose key field is "key", the
-                                  operator is "In", and the values array contains only "value". The requirements are ANDed.
-                                type: object
-                            type: object
-                            x-kubernetes-map-type: atomic
                         required:
                           - apiVersion
                           - kind
@@ -152,7 +118,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: kubearchive/kubearchive-operator-certificate
-    controller-gen.kubebuilder.io/version: v0.14.0
+    controller-gen.kubebuilder.io/version: v0.17.3
   name: clustervacuumconfigs.kubearchive.org
 spec:
   conversion:
@@ -206,15 +172,10 @@ spec:
                     properties:
                       resources:
                         items:
-                          description: APIVersionKind is an APIVersion and Kind tuple.
                           properties:
                             apiVersion:
-                              description: APIVersion - the API version of the resource to watch.
                               type: string
                             kind:
-                              description: |-
-                                Kind of the resource to watch.
-                                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
                               type: string
                           required:
                             - apiVersion
@@ -238,7 +199,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: kubearchive/kubearchive-operator-certificate
-    controller-gen.kubebuilder.io/version: v0.14.0
+    controller-gen.kubebuilder.io/version: v0.17.3
   name: kubearchiveconfigs.kubearchive.org
 spec:
   conversion:
@@ -296,64 +257,42 @@ spec:
                         type: string
                       deleteWhen:
                         type: string
+                      keepLastWhen:
+                        properties:
+                          keep:
+                            items:
+                              properties:
+                                count:
+                                  type: integer
+                                sortBy:
+                                  default: metadata.creationTimestamp
+                                  type: string
+                                when:
+                                  type: string
+                              required:
+                                - count
+                                - when
+                              type: object
+                            type: array
+                          override:
+                            items:
+                              properties:
+                                count:
+                                  type: integer
+                                name:
+                                  type: string
+                              required:
+                                - count
+                                - name
+                              type: object
+                            type: array
+                        type: object
                       selector:
-                        description: APIVersionKindSelector is an APIVersion Kind tuple with a LabelSelector.
                         properties:
                           apiVersion:
-                            description: APIVersion - the API version of the resource to watch.
                             type: string
                           kind:
-                            description: |-
-                              Kind of the resource to watch.
-                              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
                             type: string
-                          selector:
-                            description: |-
-                              LabelSelector filters this source to objects to those resources pass the
-                              label selector.
-                              More info: http://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#label-selectors
-                            properties:
-                              matchExpressions:
-                                description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
-                                items:
-                                  description: |-
-                                    A label selector requirement is a selector that contains values, a key, and an operator that
-                                    relates the key and values.
-                                  properties:
-                                    key:
-                                      description: key is the label key that the selector applies to.
-                                      type: string
-                                    operator:
-                                      description: |-
-                                        operator represents a key's relationship to a set of values.
-                                        Valid operators are In, NotIn, Exists and DoesNotExist.
-                                      type: string
-                                    values:
-                                      description: |-
-                                        values is an array of string values. If the operator is In or NotIn,
-                                        the values array must be non-empty. If the operator is Exists or DoesNotExist,
-                                        the values array must be empty. This array is replaced during a strategic
-                                        merge patch.
-                                      items:
-                                        type: string
-                                      type: array
-                                      x-kubernetes-list-type: atomic
-                                  required:
-                                    - key
-                                    - operator
-                                  type: object
-                                type: array
-                                x-kubernetes-list-type: atomic
-                              matchLabels:
-                                additionalProperties:
-                                  type: string
-                                description: |-
-                                  matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
-                                  map is equivalent to an element of matchExpressions, whose key field is "key", the
-                                  operator is "In", and the values array contains only "value". The requirements are ANDed.
-                                type: object
-                            type: object
-                            x-kubernetes-map-type: atomic
                         required:
                           - apiVersion
                           - kind
@@ -377,7 +316,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: kubearchive/kubearchive-operator-certificate
-    controller-gen.kubebuilder.io/version: v0.14.0
+    controller-gen.kubebuilder.io/version: v0.17.3
   name: namespacevacuumconfigs.kubearchive.org
 spec:
   conversion:
@@ -428,15 +367,10 @@ spec:
               properties:
                 resources:
                   items:
-                    description: APIVersionKind is an APIVersion and Kind tuple.
                     properties:
                       apiVersion:
-                        description: APIVersion - the API version of the resource to watch.
                         type: string
                       kind:
-                        description: |-
-                          Kind of the resource to watch.
-                          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
                         type: string
                     required:
                       - apiVersion
@@ -458,7 +392,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: kubearchive/kubearchive-operator-certificate
-    controller-gen.kubebuilder.io/version: v0.14.0
+    controller-gen.kubebuilder.io/version: v0.17.3
   name: sinkfilters.kubearchive.org
 spec:
   conversion:
@@ -507,6 +441,45 @@ spec:
             spec:
               description: SinkFilterSpec defines the desired state of SinkFilter resource
               properties:
+                cluster:
+                  items:
+                    properties:
+                      archiveOnDelete:
+                        type: string
+                      archiveWhen:
+                        type: string
+                      deleteWhen:
+                        type: string
+                      keepLastWhen:
+                        items:
+                          properties:
+                            count:
+                              type: integer
+                            name:
+                              type: string
+                            sortBy:
+                              default: metadata.creationTimestamp
+                              type: string
+                            when:
+                              type: string
+                          required:
+                            - count
+                            - name
+                            - when
+                          type: object
+                        type: array
+                      selector:
+                        properties:
+                          apiVersion:
+                            type: string
+                          kind:
+                            type: string
+                        required:
+                          - apiVersion
+                          - kind
+                        type: object
+                    type: object
+                  type: array
                 namespaces:
                   additionalProperties:
                     items:
@@ -517,64 +490,42 @@ spec:
                           type: string
                         deleteWhen:
                           type: string
+                        keepLastWhen:
+                          properties:
+                            keep:
+                              items:
+                                properties:
+                                  count:
+                                    type: integer
+                                  sortBy:
+                                    default: metadata.creationTimestamp
+                                    type: string
+                                  when:
+                                    type: string
+                                required:
+                                  - count
+                                  - when
+                                type: object
+                              type: array
+                            override:
+                              items:
+                                properties:
+                                  count:
+                                    type: integer
+                                  name:
+                                    type: string
+                                required:
+                                  - count
+                                  - name
+                                type: object
+                              type: array
+                          type: object
                         selector:
-                          description: APIVersionKindSelector is an APIVersion Kind tuple with a LabelSelector.
                           properties:
                             apiVersion:
-                              description: APIVersion - the API version of the resource to watch.
                               type: string
                             kind:
-                              description: |-
-                                Kind of the resource to watch.
-                                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
                               type: string
-                            selector:
-                              description: |-
-                                LabelSelector filters this source to objects to those resources pass the
-                                label selector.
-                                More info: http://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#label-selectors
-                              properties:
-                                matchExpressions:
-                                  description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
-                                  items:
-                                    description: |-
-                                      A label selector requirement is a selector that contains values, a key, and an operator that
-                                      relates the key and values.
-                                    properties:
-                                      key:
-                                        description: key is the label key that the selector applies to.
-                                        type: string
-                                      operator:
-                                        description: |-
-                                          operator represents a key's relationship to a set of values.
-                                          Valid operators are In, NotIn, Exists and DoesNotExist.
-                                        type: string
-                                      values:
-                                        description: |-
-                                          values is an array of string values. If the operator is In or NotIn,
-                                          the values array must be non-empty. If the operator is Exists or DoesNotExist,
-                                          the values array must be empty. This array is replaced during a strategic
-                                          merge patch.
-                                        items:
-                                          type: string
-                                        type: array
-                                        x-kubernetes-list-type: atomic
-                                    required:
-                                      - key
-                                      - operator
-                                    type: object
-                                  type: array
-                                  x-kubernetes-list-type: atomic
-                                matchLabels:
-                                  additionalProperties:
-                                    type: string
-                                  description: |-
-                                    matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
-                                    map is equivalent to an element of matchExpressions, whose key field is "key", the
-                                    operator is "In", and the values array contains only "value". The requirements are ANDed.
-                                  type: object
-                              type: object
-                              x-kubernetes-map-type: atomic
                           required:
                             - apiVersion
                             - kind
@@ -601,7 +552,7 @@ metadata:
     app.kubernetes.io/component: api-server
     app.kubernetes.io/name: kubearchive-api-server
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: watcher-problems-85e4859
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-api-server
   namespace: kubearchive
 ---
@@ -612,7 +563,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-vacuum
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: watcher-problems-85e4859
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-cluster-vacuum
   namespace: kubearchive
 ---
@@ -623,7 +574,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-operator
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: watcher-problems-85e4859
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-operator
   namespace: kubearchive
 ---
@@ -634,7 +585,7 @@ metadata:
     app.kubernetes.io/component: sink
     app.kubernetes.io/name: kubearchive-sink
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: watcher-problems-85e4859
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-sink
   namespace: kubearchive
 ---
@@ -643,36 +594,9 @@ kind: Role
 metadata:
   labels:
     app.kubernetes.io/component: operator
-    app.kubernetes.io/name: kubearchive-vacuum
-    app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: watcher-problems-85e4859
-  name: kubearchive-cluster-vacuum
-  namespace: kubearchive
-rules:
-  - apiGroups:
-      - eventing.knative.dev
-    resources:
-      - brokers
-    verbs:
-      - get
-      - list
-  - apiGroups:
-      - kubearchive.org
-    resources:
-      - sinkfilters
-      - clustervacuumconfigs
-    verbs:
-      - get
-      - list
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  labels:
-    app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-operator-leader-election
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: watcher-problems-85e4859
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-operator-leader-election
   namespace: kubearchive
 rules:
@@ -712,36 +636,18 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   labels:
-    app.kubernetes.io/component: sink
-    app.kubernetes.io/name: kubearchive-sink-watch
+    app.kubernetes.io/component: operator
+    app.kubernetes.io/name: kubearchive-vacuum
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: watcher-problems-85e4859
-  name: kubearchive-sink-watch
+    app.kubernetes.io/version: v1.15.0
+  name: kubearchive-vacuum
   namespace: kubearchive
 rules:
   - apiGroups:
       - kubearchive.org
     resources:
       - sinkfilters
-    verbs:
-      - get
-      - list
-      - watch
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  labels:
-    app.kubernetes.io/component: operator
-    app.kubernetes.io/name: kubearchive-vacuum
-    app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: watcher-problems-85e4859
-  name: clusterkubearchiveconfig-read
-rules:
-  - apiGroups:
-      - kubearchive.org
-    resources:
-      - clusterkubearchiveconfigs
+      - clustervacuumconfigs
     verbs:
       - get
       - list
@@ -753,7 +659,7 @@ metadata:
     app.kubernetes.io/component: api-server
     app.kubernetes.io/name: kubearchive-api-server
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: watcher-problems-85e4859
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-api-server
 rules:
   - apiGroups:
@@ -771,14 +677,18 @@ metadata:
   labels:
     app.kubernetes.io/name: kubearchive-edit
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: watcher-problems-85e4859
+    app.kubernetes.io/version: v1.15.0
     rbac.authorization.k8s.io/aggregate-to-edit: "true"
   name: kubearchive-edit
 rules:
   - apiGroups:
       - kubearchive.org
     resources:
-      - '*'
+      - clusterkubearchiveconfigs
+      - clustervacuumconfigs
+      - kubearchiveconfigs
+      - namespacevacuumconfigs
+      - sinkfilters
     verbs:
       - create
       - update
@@ -815,34 +725,6 @@ rules:
     resources:
       - clusterkubearchiveconfigs
       - clustervacuums
-      - namespacevacuums
-      - sinkfilters
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - kubearchive.org
-    resources:
-      - clusterkubearchiveconfigs/finalizers
-    verbs:
-      - update
-  - apiGroups:
-      - kubearchive.org
-    resources:
-      - clusterkubearchiveconfigs/status
-    verbs:
-      - get
-      - patch
-      - update
-  - apiGroups:
-      - kubearchive.org
-    resources:
-      - clustervacuums
       - kubearchiveconfigs
       - namespacevacuums
       - sinkfilters
@@ -857,13 +739,17 @@ rules:
   - apiGroups:
       - kubearchive.org
     resources:
+      - clusterkubearchiveconfigs/finalizers
       - kubearchiveconfigs/finalizers
+      - sinkfilters/finalizers
     verbs:
       - update
   - apiGroups:
       - kubearchive.org
     resources:
+      - clusterkubearchiveconfigs/status
       - kubearchiveconfigs/status
+      - sinkfilters/status
     verbs:
       - get
       - patch
@@ -873,8 +759,6 @@ rules:
     resources:
       - clusterrolebindings
       - clusterroles
-      - rolebindings
-      - roles
     verbs:
       - bind
       - create
@@ -882,15 +766,19 @@ rules:
       - escalate
       - get
       - list
+      - patch
       - update
       - watch
   - apiGroups:
-      - sources.knative.dev
+      - rbac.authorization.k8s.io
     resources:
-      - apiserversources
+      - rolebindings
+      - roles
     verbs:
+      - bind
       - create
       - delete
+      - escalate
       - get
       - list
       - update
@@ -903,7 +791,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-operator-config-editor
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: watcher-problems-85e4859
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-operator-config-editor
 rules:
   - apiGroups:
@@ -932,7 +820,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-operator-config-viewer
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: watcher-problems-85e4859
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-operator-config-viewer
 rules:
   - apiGroups:
@@ -956,14 +844,18 @@ metadata:
   labels:
     app.kubernetes.io/name: kubearchive-view
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: watcher-problems-85e4859
+    app.kubernetes.io/version: v1.15.0
     rbac.authorization.k8s.io/aggregate-to-view: "true"
   name: kubearchive-view
 rules:
   - apiGroups:
       - kubearchive.org
     resources:
-      - '*'
+      - clusterkubearchiveconfigs
+      - clustervacuumconfigs
+      - kubearchiveconfigs
+      - namespacevacuumconfigs
+      - sinkfilters
     verbs:
       - get
       - list
@@ -974,28 +866,9 @@ kind: RoleBinding
 metadata:
   labels:
     app.kubernetes.io/component: operator
-    app.kubernetes.io/name: kubearchive-vacuum
-    app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: watcher-problems-85e4859
-  name: kubearchive-cluster-vacuum
-  namespace: kubearchive
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: kubearchive-cluster-vacuum
-subjects:
-  - kind: ServiceAccount
-    name: kubearchive-cluster-vacuum
-    namespace: kubearchive
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  labels:
-    app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-operator-leader-election
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: watcher-problems-85e4859
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-operator-leader-election
   namespace: kubearchive
 roleRef:
@@ -1011,34 +884,16 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   labels:
-    app.kubernetes.io/component: sink
-    app.kubernetes.io/name: kubearchive-sink-watch
+    app.kubernetes.io/component: operator
+    app.kubernetes.io/name: kubearchive-vacuum
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: watcher-problems-85e4859
-  name: kubearchive-sink-watch
+    app.kubernetes.io/version: v1.15.0
+  name: kubearchive-vacuum
   namespace: kubearchive
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: kubearchive-sink-watch
-subjects:
-  - kind: ServiceAccount
-    name: kubearchive-sink
-    namespace: kubearchive
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  labels:
-    app.kubernetes.io/component: operator
-    app.kubernetes.io/name: kubearchive-vacuum
-    app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: watcher-problems-85e4859
-  name: clusterkubearchiveconfig-read
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: clusterkubearchiveconfig-read
+  name: kubearchive-vacuum
 subjects:
   - kind: ServiceAccount
     name: kubearchive-cluster-vacuum
@@ -1051,7 +906,7 @@ metadata:
     app.kubernetes.io/component: api-server
     app.kubernetes.io/name: kubearchive-api-server
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: watcher-problems-85e4859
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-api-server
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -1069,7 +924,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-operator
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: watcher-problems-85e4859
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-operator
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -1088,8 +943,25 @@ metadata:
     app.kubernetes.io/component: logging
     app.kubernetes.io/name: kubearchive-logging
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: watcher-problems-85e4859
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-logging
+  namespace: kubearchive
+---
+apiVersion: v1
+data:
+  resources.yaml: |
+    - selector:
+        kind: "--all--"
+        apiVersion: "--all--"
+      workers: 3
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/component: operator
+    app.kubernetes.io/name: kubearchive-operator
+    app.kubernetes.io/part-of: kubearchive
+    app.kubernetes.io/version: v1.15.0
+  name: kubearchive-operator
   namespace: kubearchive
 ---
 apiVersion: v1
@@ -1106,7 +978,7 @@ metadata:
     app.kubernetes.io/component: database
     app.kubernetes.io/name: kubearchive-database-credentials
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: watcher-problems-85e4859
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-database-credentials
   namespace: kubearchive
 type: Opaque
@@ -1120,7 +992,7 @@ metadata:
     app.kubernetes.io/component: logging
     app.kubernetes.io/name: kubearchive-logging
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: watcher-problems-85e4859
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-logging
   namespace: kubearchive
 type: Opaque
@@ -1132,7 +1004,7 @@ metadata:
     app.kubernetes.io/component: api-server
     app.kubernetes.io/name: kubearchive-api-server
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: watcher-problems-85e4859
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-api-server
   namespace: kubearchive
 spec:
@@ -1151,7 +1023,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-operator-webhooks
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: watcher-problems-85e4859
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-operator-webhooks
   namespace: kubearchive
 spec:
@@ -1174,7 +1046,7 @@ metadata:
     app.kubernetes.io/component: sink
     app.kubernetes.io/name: kubearchive-sink
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: watcher-problems-85e4859
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-sink
   namespace: kubearchive
 spec:
@@ -1192,7 +1064,7 @@ metadata:
     app.kubernetes.io/component: api-server
     app.kubernetes.io/name: kubearchive-api-server
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: watcher-problems-85e4859
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-api-server
   namespace: kubearchive
 spec:
@@ -1211,6 +1083,8 @@ spec:
               value: "true"
             - name: LOG_LEVEL
               value: INFO
+            - name: KLOG_LEVEL
+              value: "0"
             - name: GIN_MODE
               value: release
             - name: KUBEARCHIVE_OTEL_MODE
@@ -1240,7 +1114,7 @@ spec:
           envFrom:
             - secretRef:
                 name: kubearchive-database-credentials
-          image: quay.io/kubearchive/api:watcher-problems-85e4859@sha256:96f98d3dd9e089b47b02b695049e5f12b0f1d8cfe023e600bd123bf1280a9cf1
+          image: quay.io/kubearchive/api:v1.15.0@sha256:71542a0c7d92addfaf7ce41fbe0413a18b6996b57919a77e31ca21d4b5ebc3f8
           livenessProbe:
             httpGet:
               path: /livez
@@ -1250,6 +1124,9 @@ spec:
           ports:
             - containerPort: 8081
               name: server
+              protocol: TCP
+            - containerPort: 8888
+              name: pprof
               protocol: TCP
           readinessProbe:
             httpGet:
@@ -1285,7 +1162,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-operator
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: watcher-problems-85e4859
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-operator
   namespace: kubearchive
 spec:
@@ -1305,12 +1182,12 @@ spec:
             - --health-probe-bind-address=:8081
             - --leader-elect
           env:
-            - name: KUBEARCHIVE_MONITOR_ALL_NAMESPACES
-              value: "false"
             - name: KUBEARCHIVE_ENABLE_PPROF
               value: "true"
             - name: LOG_LEVEL
               value: INFO
+            - name: KLOG_LEVEL
+              value: "0"
             - name: KUBEARCHIVE_NAMESPACE
               valueFrom:
                 fieldRef:
@@ -1331,7 +1208,7 @@ spec:
               valueFrom:
                 resourceFieldRef:
                   resource: limits.cpu
-          image: quay.io/kubearchive/operator:watcher-problems-85e4859@sha256:b960f0c00f131dcdc954dc47555c7a16cab9bb751922951da261cfb46cd39c0e
+          image: quay.io/kubearchive/operator:v1.15.0@sha256:7d363f268261b4b284196cb081f317fc0998c453dfe7a0cbd4888ae6706a9078
           livenessProbe:
             httpGet:
               path: /healthz
@@ -1343,7 +1220,7 @@ spec:
             - containerPort: 9443
               name: webhook-server
               protocol: TCP
-            - containerPort: 8082
+            - containerPort: 8888
               name: pprof-server
               protocol: TCP
           readinessProbe:
@@ -1368,8 +1245,12 @@ spec:
             - mountPath: /tmp/k8s-webhook-server/serving-certs
               name: cert
               readOnly: true
+            - mountPath: /etc/kubearchive/config
+              name: operator-config
+              readOnly: true
       securityContext:
         runAsNonRoot: true
+        runAsUser: 1000
       serviceAccountName: kubearchive-operator
       terminationGracePeriodSeconds: 10
       volumes:
@@ -1377,6 +1258,10 @@ spec:
           secret:
             defaultMode: 420
             secretName: kubearchive-operator-tls
+        - configMap:
+            defaultMode: 420
+            name: kubearchive-operator
+          name: operator-config
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -1385,7 +1270,7 @@ metadata:
     app.kubernetes.io/component: sink
     app.kubernetes.io/name: kubearchive-sink
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: watcher-problems-85e4859
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-sink
   namespace: kubearchive
 spec:
@@ -1406,6 +1291,8 @@ spec:
               value: release
             - name: LOG_LEVEL
               value: INFO
+            - name: KLOG_LEVEL
+              value: "0"
             - name: KUBEARCHIVE_OTEL_MODE
               value: disabled
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
@@ -1431,7 +1318,7 @@ spec:
           envFrom:
             - secretRef:
                 name: kubearchive-database-credentials
-          image: quay.io/kubearchive/sink:watcher-problems-85e4859@sha256:6ca165ea711b1f01b82d89305309a8c0d967155381168077e6e778f4ac36f8d1
+          image: quay.io/kubearchive/sink:v1.15.0@sha256:009a2ef650dd3ce84c9208cba50c20a8eea0b3c7c1699ef853af3590bf274aed
           livenessProbe:
             httpGet:
               path: /livez
@@ -1440,6 +1327,9 @@ spec:
           ports:
             - containerPort: 8080
               name: sink
+              protocol: TCP
+            - containerPort: 8888
+              name: pprof
               protocol: TCP
           readinessProbe:
             httpGet:
@@ -1469,7 +1359,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-vacuum
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: watcher-problems-85e4859
+    app.kubernetes.io/version: v1.15.0
   name: cluster-vacuum
   namespace: kubearchive
 spec:
@@ -1490,12 +1380,55 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.namespace
-              image: quay.io/kubearchive/vacuum:watcher-problems-85e4859@sha256:3d2a184a6f25df73ab486f07ff2c63b37f25ed4d65830fb50f1b8b7fa573aeb3
+              image: quay.io/kubearchive/vacuum:v1.15.0@sha256:8a8129519078542e7d45524d4e2f5c4b782bc81f384927fd72ec361e318fbf99
               name: vacuum
           restartPolicy: Never
           serviceAccount: kubearchive-cluster-vacuum
   schedule: '* */3 * * *'
   suspend: true
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  labels:
+    app.kubernetes.io/component: kubearchive
+    app.kubernetes.io/name: kubearchive-schema-migration
+    app.kubernetes.io/part-of: kubearchive
+    app.kubernetes.io/version: v1.15.0
+  name: kubearchive-schema-migration
+  namespace: kubearchive
+spec:
+  backoffLimit: 4
+  parallelism: 1
+  suspend: true
+  template:
+    spec:
+      containers:
+        - args:
+            - set -o errexit; git clone https://github.com/kubearchive/kubearchive --depth=1 --branch=${KUBEARCHIVE_VERSION} /tmp/kubearchive; cd /tmp/kubearchive; export QUOTED_PASSWORD=$(python3 -c "import urllib.parse; print(urllib.parse.quote('${DATABASE_PASSWORD}', ''))"); curl --silent -L https://github.com/golang-migrate/migrate/releases/download/${MIGRATE_VERSION}/migrate.linux-amd64.tar.gz | tar xvz migrate; ./migrate -verbose -path integrations/database/postgresql/migrations/ -database postgresql://${DATABASE_USER}:${QUOTED_PASSWORD}@${DATABASE_URL}:${DATABASE_PORT}/${DATABASE_DB} up
+          command:
+            - /bin/sh
+            - -c
+          env:
+            - name: KUBEARCHIVE_VERSION
+              value: v1.15.0
+            - name: MIGRATE_VERSION
+              value: v4.18.3
+          envFrom:
+            - secretRef:
+                name: kubearchive-database-credentials
+          image: quay.io/fedora/python-311:20240911
+          name: migration
+          resources:
+            limits:
+              cpu: 10m
+              memory: 64Mi
+            requests:
+              cpu: 10m
+              memory: 64Mi
+          securityContext:
+            runAsNonRoot: true
+      restartPolicy: Never
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
@@ -1504,7 +1437,7 @@ metadata:
     app.kubernetes.io/component: api-server
     app.kubernetes.io/name: kubearchive-api-server-certificate
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: watcher-problems-85e4859
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-api-server-certificate
   namespace: kubearchive
 spec:
@@ -1538,7 +1471,7 @@ metadata:
     app.kubernetes.io/component: certs
     app.kubernetes.io/name: kubearchive-ca
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: watcher-problems-85e4859
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-ca
   namespace: kubearchive
 spec:
@@ -1560,7 +1493,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-operator-certificate
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: watcher-problems-85e4859
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-operator-certificate
   namespace: kubearchive
 spec:
@@ -1579,7 +1512,7 @@ metadata:
     app.kubernetes.io/component: certs
     app.kubernetes.io/name: kubearchive
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: watcher-problems-85e4859
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive
   namespace: kubearchive
 spec:
@@ -1593,66 +1526,11 @@ metadata:
     app.kubernetes.io/component: certs
     app.kubernetes.io/name: kubearchive-ca
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: watcher-problems-85e4859
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-ca
   namespace: kubearchive
 spec:
   selfSigned: {}
----
-apiVersion: eventing.knative.dev/v1
-kind: Broker
-metadata:
-  labels:
-    app.kubernetes.io/component: sink
-    app.kubernetes.io/name: kubearchive-broker
-    app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: watcher-problems-85e4859
-  name: kubearchive-broker
-  namespace: kubearchive
-spec:
-  delivery:
-    backoffDelay: PT0.5S
-    backoffPolicy: linear
-    deadLetterSink:
-      ref:
-        apiVersion: eventing.knative.dev/v1
-        kind: Broker
-        name: kubearchive-dls
-    retry: 4
----
-apiVersion: eventing.knative.dev/v1
-kind: Broker
-metadata:
-  labels:
-    app.kubernetes.io/component: sink
-    app.kubernetes.io/name: kubearchive-dls
-    app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: watcher-problems-85e4859
-  name: kubearchive-dls
-  namespace: kubearchive
-spec:
-  delivery:
-    backoffDelay: PT0.5S
-    backoffPolicy: linear
-    retry: 4
----
-apiVersion: eventing.knative.dev/v1
-kind: Trigger
-metadata:
-  labels:
-    app.kubernetes.io/component: sink
-    app.kubernetes.io/name: kubearchive-sink
-    app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: watcher-problems-85e4859
-  name: kubearchive-sink
-  namespace: kubearchive
-spec:
-  broker: kubearchive-broker
-  subscriber:
-    ref:
-      apiVersion: v1
-      kind: Service
-      name: kubearchive-sink
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
@@ -1663,7 +1541,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-mutating-webhook-configuration
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: watcher-problems-85e4859
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-mutating-webhook-configuration
 webhooks:
   - admissionReviewVersions:
@@ -1776,7 +1654,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-validating-webhook-configuration
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: watcher-problems-85e4859
+    app.kubernetes.io/version: v1.15.0
   name: kubearchive-validating-webhook-configuration
 webhooks:
   - admissionReviewVersions:

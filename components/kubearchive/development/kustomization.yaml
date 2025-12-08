@@ -56,7 +56,7 @@ patches:
               spec:
                 containers:
                   - name: vacuum
-                    image: quay.io/kubearchive/vacuum:no-eventing-1a13a90
+                    image: quay.io/kubearchive/vacuum:v1.15.0
   - patch: |-
       apiVersion: batch/v1
       kind: CronJob
@@ -69,7 +69,7 @@ patches:
               spec:
                 containers:
                   - name: vacuum
-                    image: quay.io/kubearchive/vacuum:no-eventing-1a13a90
+                    image: quay.io/kubearchive/vacuum:v1.15.0
   - patch: |-
       apiVersion: batch/v1
       kind: CronJob
@@ -82,7 +82,7 @@ patches:
               spec:
                 containers:
                   - name: vacuum
-                    image: quay.io/kubearchive/vacuum:no-eventing-1a13a90
+                    image: quay.io/kubearchive/vacuum:v1.15.0
   - patch: |-
       apiVersion: batch/v1
       kind: Job
@@ -90,6 +90,8 @@ patches:
         name: kubearchive-schema-migration
         namespace: kubearchive
         annotations:
+          # Needed if just the command is changed, otherwise the job needs to be deleted manually
+          argocd.argoproj.io/sync-options: Force=true,Replace=true
           ignore-check.kube-linter.io/no-read-only-root-fs: >
             "This job needs to clone a repository to do its job, so it needs write access to the FS."
       spec:
@@ -100,7 +102,7 @@ patches:
               - name: migration
                 env:
                   - name: KUBEARCHIVE_VERSION
-                    value: v1.7.0
+                    value: v1.15.0
   # These patches add an annotation so an OpenShift service
   # creates the TLS secrets instead of Cert Manager
   - patch: |-
@@ -140,7 +142,10 @@ patches:
       metadata:
         name: kubearchive-api-server
         namespace: kubearchive
+        annotations:
+          ignore-check.kube-linter.io/no-anti-affinity: "It is not needed for now"
       spec:
+        replicas: 2
         template:
           spec:
             containers:
@@ -155,6 +160,9 @@ patches:
                 securityContext:
                   readOnlyRootFilesystem: true
                   runAsNonRoot: true
+                resources:
+                  limits:
+                    memory: 512Mi
   - patch: |-
       apiVersion: apps/v1
       kind: Deployment
@@ -164,6 +172,8 @@ patches:
       spec:
         template:
           spec:
+            securityContext:
+              runAsUser: null
             containers:
               - name: manager
                 args: [--health-probe-bind-address=:8081]

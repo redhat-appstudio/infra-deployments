@@ -2,12 +2,12 @@ environment: "prod"
 
 archDefaults:
   arm64:
-    ami: "ami-03d6a5256a46c9feb"
+    ami: "ami-06f37afe6d4f43c47"
     key-name: "konflux-prod-int-mab01"
     security-group-id: "sg-0903aedd465be979e"
     subnet-id: "subnet-02c476f8d2a4ae05e"
   amd64:
-    ami: "ami-026ebd4cfe2c043b2"
+    ami: "ami-01aaf1c29c7e0f0af"
     key-name: "konflux-prod-int-mab01"
     security-group-id: "sg-0903aedd465be979e"
     subnet-id: "subnet-02c476f8d2a4ae05e"
@@ -49,6 +49,10 @@ dynamicConfigs:
   linux-d160-m8xlarge-arm64: {}
 
   linux-d160-m8xlarge-amd64: {}
+
+  linux-d160-c4xlarge-amd64: {}
+
+  linux-d160-c4xlarge-arm64: {}
 
   linux-d320-c4xlarge-amd64: {}
 
@@ -95,6 +99,7 @@ dynamicConfigs:
       # Setup bind mounts
       mount --bind /home/var-lib-containers /var/lib/containers
       mount --bind /home/var-tmp /var/tmp
+      restorecon -r /var/lib/containers /var/tmp
 
       # Configure ec2-user SSH access
       chown -R ec2-user /home/ec2-user
@@ -159,6 +164,7 @@ dynamicConfigs:
       mount --bind /home/var-lib-containers /var/lib/containers
       mount --bind /home/var-tmp /var/tmp
       chmod a+rw /var/tmp
+      restorecon -r /var/lib/containers /var/tmp
 
       # Configure ec2-user SSH access
       chown -R ec2-user /home/ec2-user
@@ -172,6 +178,7 @@ dynamicConfigs:
       mkdir -p /etc/cdi /var/run/cdi
       chmod a+rwx /etc/cdi /var/run/cdi
       setsebool container_use_devices 1 2>/dev/null || true
+      su - ec2-user
       nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml
       chmod a+rw /etc/cdi/nvidia.yaml
       --//--
@@ -183,51 +190,10 @@ dynamicConfigs:
     disk: "200"
 
   linux-root-amd64:
-    instance-type: "m6idn.2xlarge"
+    iops: "16000"
+    throughput: "1000"
     sudo-commands: "/usr/bin/podman, /usr/bin/rm /usr/share/containers/mounts.conf"
     disk: "200"
-    user-data: |-
-      Content-Type: multipart/mixed; boundary="//"
-      MIME-Version: 1.0
-
-      --//
-      Content-Type: text/cloud-config; charset="us-ascii"
-      MIME-Version: 1.0
-      Content-Transfer-Encoding: 7bit
-      Content-Disposition: attachment; filename="cloud-config.txt"
-
-      #cloud-config
-      cloud_final_modules:
-        - [scripts-user, always]
-
-      --//
-      Content-Type: text/x-shellscript; charset="us-ascii"
-      MIME-Version: 1.0
-      Content-Transfer-Encoding: 7bit
-      Content-Disposition: attachment; filename="userdata.txt"
-
-      #!/bin/bash -ex
-
-      # Format and mount NVMe disk
-      mkfs -t xfs /dev/nvme1n1
-      mount /dev/nvme1n1 /home
-
-      # Create required directories
-      mkdir -p /home/var-lib-containers /var/lib/containers /home/var-tmp /var/tmp /home/ec2-user/.ssh
-
-      # Setup bind mounts
-      mount --bind /home/var-lib-containers /var/lib/containers
-      mount --bind /home/var-tmp /var/tmp
-
-      # Configure ec2-user SSH access
-      chown -R ec2-user /home/ec2-user
-      sed -n 's,.*\(ssh-.*\s\),\1,p' /root/.ssh/authorized_keys > /home/ec2-user/.ssh/authorized_keys
-      chown ec2-user /home/ec2-user/.ssh/authorized_keys
-      chmod 600 /home/ec2-user/.ssh/authorized_keys
-      chmod 700 /home/ec2-user/.ssh
-      restorecon -r /home/ec2-user
-
-      --//--
 
 # Static hosts configuration
 staticHosts:
@@ -254,86 +220,162 @@ staticHosts:
     user: root
 
   ppc64le-pi-static-x3:
-   address: 10.130.74.80
-   concurrency: '8'
-   platform: linux/ppc64le
-   secret: ibm-ppc64le-ssh-key
-   user: root
+    address: 10.130.74.80
+    concurrency: '8'
+    platform: linux/ppc64le
+    secret: ibm-ppc64le-ssh-key
+    user: root
 
   ppc64le-pi-static-x4:
-   address: 10.130.74.191
-   concurrency: '8'
-   platform: linux/ppc64le
-   secret: ibm-ppc64le-ssh-key
-   user: root
-
-  s390x-static-1:
-    address: 10.130.79.4
-    concurrency: '4'
-    platform: linux/s390x
-    secret: ibm-s390x-static-ssh-key
+    address: 10.130.74.191
+    concurrency: '8'
+    platform: linux/ppc64le
+    secret: ibm-ppc64le-ssh-key
     user: root
 
-  s390x-static-10:
-    address: 10.130.79.72
-    concurrency: '4'
-    platform: linux/s390x
-    secret: ibm-s390x-static-ssh-key
+  ppc64le-pi-static-x5:
+    address: 10.130.73.208
+    concurrency: '8'
+    platform: linux/ppc64le
+    secret: ibm-ppc64le-ssh-key
     user: root
 
-  s390x-static-2:
-    address: 10.130.79.5
-    concurrency: '4'
-    platform: linux/s390x
-    secret: ibm-s390x-static-ssh-key
+  ppc64le-pi-static-x6:
+    address: 10.130.74.23
+    concurrency: '8'
+    platform: linux/ppc64le
+    secret: ibm-ppc64le-ssh-key
     user: root
 
-  s390x-static-3:
-    address: 10.130.79.6
-    concurrency: '4'
-    platform: linux/s390x
-    secret: ibm-s390x-static-ssh-key
+  ppc64le-pi-static-x7:
+    address: 10.130.72.209
+    concurrency: '8'
+    platform: linux/ppc64le
+    secret: ibm-ppc64le-ssh-key
     user: root
 
-  s390x-static-4:
-    address: 10.130.79.37
+  s390x-static-x0:
+    address: 10.130.103.4
     concurrency: '4'
     platform: linux/s390x
-    secret: ibm-s390x-static-ssh-key
+    secret: ibm-s390x-ssh-key
     user: root
 
-  s390x-static-5:
-    address: 10.130.79.36
+  s390x-static-x1:
+    address: 10.130.103.36
     concurrency: '4'
     platform: linux/s390x
-    secret: ibm-s390x-static-ssh-key
+    secret: ibm-s390x-ssh-key
     user: root
 
-  s390x-static-6:
-    address: 10.130.79.68
+  s390x-static-x2:
+    address: 10.130.103.68
     concurrency: '4'
     platform: linux/s390x
-    secret: ibm-s390x-static-ssh-key
+    secret: ibm-s390x-ssh-key
     user: root
 
-  s390x-static-7:
-    address: 10.130.79.69
+  s390x-static-x3:
+    address: 10.130.103.5
     concurrency: '4'
     platform: linux/s390x
-    secret: ibm-s390x-static-ssh-key
+    secret: ibm-s390x-ssh-key
     user: root
 
-  s390x-static-8:
-    address: 10.130.79.70
+  s390x-static-x4:
+    address: 10.130.103.37
     concurrency: '4'
     platform: linux/s390x
-    secret: ibm-s390x-static-ssh-key
+    secret: ibm-s390x-ssh-key
     user: root
 
-  s390x-static-9:
-    address: 10.130.79.71
+  s390x-static-x5:
+    address: 10.130.103.69
     concurrency: '4'
     platform: linux/s390x
-    secret: ibm-s390x-static-ssh-key
+    secret: ibm-s390x-ssh-key
     user: root
 
+  s390x-static-x6:
+    address: 10.130.103.6
+    concurrency: '4'
+    platform: linux/s390x
+    secret: ibm-s390x-ssh-key
+    user: root
+
+  s390x-static-x7:
+    address: 10.130.103.38
+    concurrency: '4'
+    platform: linux/s390x
+    secret: ibm-s390x-ssh-key
+    user: root
+
+  s390x-static-x8:
+    address: 10.130.103.70
+    concurrency: '4'
+    platform: linux/s390x
+    secret: ibm-s390x-ssh-key
+    user: root
+
+  s390x-static-x9:
+    address: 10.130.103.7
+    concurrency: '4'
+    platform: linux/s390x
+    secret: ibm-s390x-ssh-key
+    user: root
+
+  s390x-static-x10:
+    address: 10.130.103.39
+    concurrency: '4'
+    platform: linux/s390x
+    secret: ibm-s390x-ssh-key
+    user: root
+
+  s390x-static-x11:
+    address: 10.130.103.71
+    concurrency: '4'
+    platform: linux/s390x
+    secret: ibm-s390x-ssh-key
+    user: root
+
+  s390x-static-x12:
+    address: 10.130.103.8
+    concurrency: '4'
+    platform: linux/s390x
+    secret: ibm-s390x-ssh-key
+    user: root
+
+  s390x-static-x13:
+    address: 10.130.103.40
+    concurrency: '4'
+    platform: linux/s390x
+    secret: ibm-s390x-ssh-key
+    user: root
+
+  s390x-static-x14:
+    address: 10.130.103.72
+    concurrency: '4'
+    platform: linux/s390x
+    secret: ibm-s390x-ssh-key
+    user: root
+
+  s390x-static-x15:
+    address: 10.130.103.9
+    concurrency: '4'
+    platform: linux/s390x
+    secret: ibm-s390x-ssh-key
+    user: root
+
+  s390x-static-x16:
+    address: 10.130.103.41
+    concurrency: '4'
+    platform: linux/s390x
+    secret: ibm-s390x-ssh-key
+    user: root
+
+  s390x-static-x17:
+    address: 10.130.103.73
+    concurrency: '4'
+    platform: linux/s390x
+    secret: ibm-s390x-ssh-key
+    user: root

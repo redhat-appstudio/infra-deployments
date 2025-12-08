@@ -47,17 +47,38 @@ patches:
 
   - patch: |-
       apiVersion: batch/v1
+      kind: CronJob
+      metadata:
+        name: releases-vacuum
+      spec:
+        jobTemplate:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: vacuum
+                    image: quay.io/kubearchive/vacuum:v1.15.0
+
+  - patch: |-
+      apiVersion: batch/v1
       kind: Job
       metadata:
         name: kubearchive-schema-migration
+        namespace: kubearchive
+        annotations:
+          # Needed if just the command is changed, otherwise the job needs to be deleted manually
+          argocd.argoproj.io/sync-options: Force=true,Replace=true
+          ignore-check.kube-linter.io/no-read-only-root-fs: >
+            "This job needs to clone a repository to do its job, so it needs write access to the FS."
       spec:
+        suspend: false
         template:
           spec:
             containers:
               - name: migration
                 env:
                   - name: KUBEARCHIVE_VERSION
-                    value: v1.6.0
+                    value: v1.15.0
   # We don't need the Secret as it will be created by the ExternalSecrets Operator
   - patch: |-
       $patch: delete
@@ -140,6 +161,8 @@ patches:
       spec:
         template:
           spec:
+            securityContext:
+              runAsUser: null
             containers:
               - name: manager
                 args: [--health-probe-bind-address=:8081]
@@ -157,11 +180,11 @@ patches:
                   - containerPort: 8081
                 resources:
                   limits:
-                    cpu: 100m
-                    memory: 512Mi
+                    cpu: 1
+                    memory: 5Gi
                   requests:
-                    cpu: 100m
-                    memory: 512Mi
+                    cpu: 1
+                    memory: 5Gi
 
   - patch: |-
       apiVersion: apps/v1

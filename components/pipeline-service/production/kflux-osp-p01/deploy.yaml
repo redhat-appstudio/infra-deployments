@@ -286,15 +286,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - ""
-  resourceNames:
-  - appstudio-pipeline
-  resources:
-  - serviceaccounts
-  verbs:
-  - get
-  - list
-- apiGroups:
   - pipelinesascode.tekton.dev
   - results.tekton.dev
   - tekton.dev
@@ -2295,7 +2286,7 @@ spec:
   - name: createCABundleConfigMaps
     value: "false"
   pipeline:
-    default-service-account: appstudio-pipeline
+    default-service-account: default
     enable-api-fields: alpha
     enable-bundles-resolver: true
     enable-cluster-resolver: true
@@ -2303,6 +2294,8 @@ spec:
     enable-hub-resolver: true
     enable-param-enum: true
     enable-step-actions: true
+    metrics.pipelinerun.level: namespace
+    metrics.taskrun.level: namespace
     options:
       configMaps:
         config-defaults:
@@ -2537,7 +2530,7 @@ metadata:
   namespace: openshift-marketplace
 spec:
   displayName: custom-operators
-  image: quay.io/openshift-pipeline/pipelines-index-4.15@sha256:ea4bd6973b821f90fa07166c83e861ef6bfdbbe29ae3539f5813973f188f06ef
+  image: quay.io/openshift-pipeline/pipelines-index-4.17@sha256:92bd402729a9985593a49ec87b658cda7639f0fbf46bfe71a75acf035012b78c
   sourceType: grpc
   updateStrategy:
     registryPoll:
@@ -2557,12 +2550,6 @@ spec:
     env:
     - name: AUTOINSTALL_COMPONENTS
       value: "false"
-    - name: IMAGE_PAC_PAC_CONTROLLER
-      value: quay.io/openshift-pipeline/pipelines-pipelines-as-code-controller-rhel9:03e2807aa027874d603600712005820a7cf0961a454344cf5e2e3b70148379de
-    - name: IMAGE_PAC_PAC_WATCHER
-      value: quay.io/openshift-pipeline/pipelines-pipelines-as-code-watcher-rhel9:5887db9658dc4f148e3c515577a365c0934ce3de39f8769dcf07e62e3fa9e2af
-    - name: IMAGE_PAC_PAC_WEBHOOK
-      value: quay.io/openshift-pipeline/pipelines-pipelines-as-code-webhook-rhel9:6d6122ec424d243e72d465e936a26c24576ee98df1da3335b59452f9275521ef
   name: openshift-pipelines-operator-rh
   source: custom-operators
   sourceNamespace: openshift-marketplace

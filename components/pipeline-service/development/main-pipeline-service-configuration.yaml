@@ -1883,7 +1883,7 @@ spec:
     - name: createCABundleConfigMaps
       value: "false"
   pipeline:
-    default-service-account: appstudio-pipeline
+    default-service-account: default
     enable-api-fields: alpha
     enable-bundles-resolver: true
     enable-cluster-resolver: true
@@ -2243,7 +2243,7 @@ metadata:
   namespace: openshift-marketplace
 spec:
   displayName: custom-operators
-  image: quay.io/openshift-pipeline/pipelines-index-4.15@sha256:ea4bd6973b821f90fa07166c83e861ef6bfdbbe29ae3539f5813973f188f06ef
+  image: quay.io/openshift-pipeline/pipelines-index-4.17@sha256:92bd402729a9985593a49ec87b658cda7639f0fbf46bfe71a75acf035012b78c
   sourceType: grpc
   updateStrategy:
     registryPoll:
@@ -2266,13 +2266,6 @@ spec:
     env:
       - name: AUTOINSTALL_COMPONENTS
         value: "false"
-      # PaC v0.37.0 - only delete when updating the index to a version which is *confirmed* to be using >= PaC v0.37.x
-      - name: IMAGE_PAC_PAC_CONTROLLER
-        value: quay.io/openshift-pipeline/pipelines-pipelines-as-code-controller-rhel9:03e2807aa027874d603600712005820a7cf0961a454344cf5e2e3b70148379de
-      - name: IMAGE_PAC_PAC_WATCHER
-        value: quay.io/openshift-pipeline/pipelines-pipelines-as-code-watcher-rhel9:5887db9658dc4f148e3c515577a365c0934ce3de39f8769dcf07e62e3fa9e2af
-      - name: IMAGE_PAC_PAC_WEBHOOK
-        value: quay.io/openshift-pipeline/pipelines-pipelines-as-code-webhook-rhel9:6d6122ec424d243e72d465e936a26c24576ee98df1da3335b59452f9275521ef
 ---
 apiVersion: route.openshift.io/v1
 kind: Route
@@ -2329,48 +2322,6 @@ runAsUser:
   type: RunAsAny
 seLinuxContext:
   type: MustRunAs
-supplementalGroups:
-  type: RunAsAny
-users: []
-volumes:
-- configMap
-- downwardAPI
-- emptyDir
-- persistentVolumeClaim
-- projected
-- secret
----
-allowHostDirVolumePlugin: false
-allowHostIPC: false
-allowHostNetwork: false
-allowHostPID: false
-allowHostPorts: false
-allowPrivilegeEscalation: false
-allowPrivilegedContainer: false
-allowedCapabilities:
-- SETFCAP
-apiVersion: security.openshift.io/v1
-defaultAddCapabilities: null
-fsGroup:
-  type: MustRunAs
-groups:
-- system:cluster-admins
-kind: SecurityContextConstraints
-metadata:
-  annotations:
-    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-    argocd.argoproj.io/sync-wave: "0"
-  name: appstudio-pipelines-nested-containerization-scc
-priority: 10
-readOnlyRootFilesystem: false
-requiredDropCapabilities:
-- MKNOD
-runAsUser:
-  type: RunAsAny
-seLinuxContext:
-  type: MustRunAs
-  seLinuxOptions:
-    type: container_runtime_t
 supplementalGroups:
   type: RunAsAny
 users: []

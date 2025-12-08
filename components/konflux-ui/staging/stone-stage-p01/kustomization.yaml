@@ -13,7 +13,9 @@ configMapGenerator:
     files:
       - kite.conf
     behavior: merge
-
+  - name: ui-runtime-env-variables
+    literals:
+      - DISABLE_CHATBOT=true
 patches:
 - path: add-service-certs-patch.yaml
   target:

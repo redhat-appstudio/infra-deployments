@@ -36,6 +36,26 @@ spec:
             runAsNonRoot: true
             runAsUser: 1001
             readOnlyRootFilesystem: true
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - redis-cli ping | grep -q PONG
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 15
+            failureThreshold: 5
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - redis-cli ping | grep -q PONG
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 10
+            failureThreshold: 5
           volumeMounts:
             - name: redis-data
               mountPath: /var/lib/redis/data
