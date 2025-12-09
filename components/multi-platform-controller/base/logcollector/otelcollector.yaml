@@ -10,9 +10,19 @@ metadata:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
     argocd.argoproj.io/sync-wave: "-1"
 spec:
-  dataFrom:
-    - extract:
+  data:
+    - secretKey: endpoint
+      remoteRef:
         key: staging/infrastructure/splunk/external_endpoint
+        property: splunk_endpoint
+    - secretKey: token
+      remoteRef:
+        key: staging/infrastructure/splunk/external_endpoint
+        property: splunk_hec_token
+    - secretKey: index
+      remoteRef:
+        key: staging/infrastructure/splunk/external_endpoint
+        property: splunk_index
   refreshInterval: 1h
   target:
     creationPolicy: Owner
@@ -23,12 +33,12 @@ spec:
     name: appsre-stonesoup-vault
   template:
     type: Opaque
-    stringData:
+    data:
       config.yaml: |
         exporters:
           splunk_hec/corp:
-            endpoint: {{ .splunk_endpoint }}
-            token: {{ .splunk_hec_token }}
+            endpoint: {{ .endpoint }}
+            token: {{ .token }}
             disable_compression: false
             sending_queue:
               storage: file_storage/otc
@@ -94,7 +104,7 @@ spec:
               - type: add
                 id: rh_rhtap_stage_mpc_idx
                 field: attributes["com.splunk.index"]
-                value: {{ .splunk_index }}
+                value: {{ .index }}
                 on_error: send
               - type: add
                 id: rh_assh-001_audit_st
@@ -110,7 +120,7 @@ spec:
               - type: add
                 id: rh_rhtap_stage_mpc_idx
                 field: attributes["com.splunk.index"]
-                value: {{ .splunk_index }}
+                value: {{ .index }}
                 on_error: send
               - type: add
                 id: rh_assh-001_messages_st
@@ -126,7 +136,7 @@ spec:
               - type: add
                 id: rh_rhtap_stage_mpc_idx
                 field: attributes["com.splunk.index"]
-                value: {{ .splunk_index }}
+                value: {{ .index }}
                 on_error: send
               - type: add
                 id: rh_assh-001_secure_st
