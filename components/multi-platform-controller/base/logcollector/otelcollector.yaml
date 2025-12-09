@@ -24,138 +24,138 @@ spec:
         key: staging/infrastructure/splunk/external_endpoint
         property: splunk_index
   refreshInterval: 1h
-  target:
-    creationPolicy: Owner
-    deletionPolicy: Delete
-    name: otelcol-config
   secretStoreRef:
     kind: ClusterSecretStore
     name: appsre-stonesoup-vault
-  template:
-    type: Opaque
-    data:
-      config.yaml: |
-        exporters:
-          splunk_hec/corp:
-            endpoint: {{ .endpoint }}
-            token: {{ .token }}
-            disable_compression: false
-            sending_queue:
-              storage: file_storage/otc
-              enabled: true
-              num_consumers: 2
-              queue_size: 10
-              sizer: items
-              batch:
-                max_size: 100
-                min_size: 1
-                flush_timeout: 1s
-            retry_on_failure:
-              enabled: true
-              initial_interval: 10s
-              max_interval: 60s
-              max_elapsed_time: 10m
-        extensions:
-          file_storage/otc:
-            directory: /tmp/otelcollector/oteltmp
-            timeout: 10s
-            create_directory: true
-        processors:
-          transform/common:
-            error_mode: ignore
-            log_statements:
-              - context: log
-                statements:
-                  - set(attributes["com.splunk.source"], attributes["log.file.path"])
-                  - set(attributes["host.name"], resource.attributes["host.name"])
-                  - set(attributes["appcode"], resource.attributes["appcode"])
-                  - keep_keys(attributes, ["com.splunk.source", "host.name", "appcode", "com.splunk.index", "com.splunk.sourcetype"])
-          resource/add_appcode:
-            attributes:
-              - action: insert
-                key: appcode
-                value: "ASSH-001"
-          resourcedetection/system:
-            attributes:
-              - host.name
-              - os.type
-            detectors:
-              - system
-            override: true
-            system:
-              hostname_sources:
-                - os
-              resource_attributes:
-                host.id:
-                  enabled: false
-                host.name:
-                  enabled: true
-                os.type:
-                  enabled: true
-        receivers:
-          filelog/rh_rhtap_stage_mpc_audit:
-            include:
-              - /var/log/audit/audit.log
-              - /var/log/messages
-              - /var/log/secure  # e.g., /var/log/nginx/access.log
-            include_file_path: true
-            exclude_older_than: 86400s
-            operators:
-              - type: add
-                id: rh_rhtap_stage_mpc_idx
-                field: attributes["com.splunk.index"]
-                value: {{ .index }}
-                on_error: send
-              - type: add
-                id: rh_assh-001_audit_st
-                field: attributes["com.splunk.sourcetype"]
-                value: audit
-                on_error: send
-          filelog/rh_rhtap_stage_mpc_messages:
-            include:
-              - /var/log/messages
-            include_file_path: true
-            exclude_older_than: 86400s
-            operators:
-              - type: add
-                id: rh_rhtap_stage_mpc_idx
-                field: attributes["com.splunk.index"]
-                value: {{ .index }}
-                on_error: send
-              - type: add
-                id: rh_assh-001_messages_st
-                field: attributes["com.splunk.sourcetype"]
-                value: messages
-                on_error: send
-          filelog/rh_rhtap_stage_mpc_secure:
-            include:
-              - /var/log/secure
-            include_file_path: true
-            exclude_older_than: 86400s
-            operators:
-              - type: add
-                id: rh_rhtap_stage_mpc_idx
-                field: attributes["com.splunk.index"]
-                value: {{ .index }}
-                on_error: send
-              - type: add
-                id: rh_assh-001_secure_st
-                field: attributes["com.splunk.sourcetype"]
-                value: secure
-                on_error: send
-        service:
+  target:
+    name: otelcol-config
+    creationPolicy: Owner
+    deletionPolicy: Delete
+    template:
+      type: Opaque
+      data:
+        config.yaml: |
+          exporters:
+            splunk_hec/corp:
+              endpoint: {{ .endpoint }}
+              token: {{ .token }}
+              disable_compression: false
+              sending_queue:
+                storage: file_storage/otc
+                enabled: true
+                num_consumers: 2
+                queue_size: 10
+                sizer: items
+                batch:
+                  max_size: 100
+                  min_size: 1
+                  flush_timeout: 1s
+              retry_on_failure:
+                enabled: true
+                initial_interval: 10s
+                max_interval: 60s
+                max_elapsed_time: 10m
           extensions:
-            - file_storage/otc
-          pipelines:
-            logs:
-              processors:
-                - resource/add_appcode
-                - resourcedetection/system
-                - transform/common
-              receivers:
-                # List all your receivers here
-                - filelog/rh_rhtap_stage_mpc_audit
-                - filelog/rh_rhtap_stage_mpc_messages
-                - filelog/rh_rhtap_stage_mpc_secure
-              exporters:
-                - splunk_hec/corp
+            file_storage/otc:
+              directory: /tmp/otelcollector/oteltmp
+              timeout: 10s
+              create_directory: true
+          processors:
+            transform/common:
+              error_mode: ignore
+              log_statements:
+                - context: log
+                  statements:
+                    - set(attributes["com.splunk.source"], attributes["log.file.path"])
+                    - set(attributes["host.name"], resource.attributes["host.name"])
+                    - set(attributes["appcode"], resource.attributes["appcode"])
+                    - keep_keys(attributes, ["com.splunk.source", "host.name", "appcode", "com.splunk.index", "com.splunk.sourcetype"])
+            resource/add_appcode:
+              attributes:
+                - action: insert
+                  key: appcode
+                  value: "ASSH-001"
+            resourcedetection/system:
+              attributes:
+                - host.name
+                - os.type
+              detectors:
+                - system
+              override: true
+              system:
+                hostname_sources:
+                  - os
+                resource_attributes:
+                  host.id:
+                    enabled: false
+                  host.name:
+                    enabled: true
+                  os.type:
+                    enabled: true
+          receivers:
+            filelog/rh_rhtap_stage_mpc_audit:
+              include:
+                - /var/log/audit/audit.log
+                - /var/log/messages
+                - /var/log/secure  # e.g., /var/log/nginx/access.log
+              include_file_path: true
+              exclude_older_than: 86400s
+              operators:
+                - type: add
+                  id: rh_rhtap_stage_mpc_idx
+                  field: attributes["com.splunk.index"]
+                  value: {{ .index }}
+                  on_error: send
+                - type: add
+                  id: rh_assh-001_audit_st
+                  field: attributes["com.splunk.sourcetype"]
+                  value: audit
+                  on_error: send
+            filelog/rh_rhtap_stage_mpc_messages:
+              include:
+                - /var/log/messages
+              include_file_path: true
+              exclude_older_than: 86400s
+              operators:
+                - type: add
+                  id: rh_rhtap_stage_mpc_idx
+                  field: attributes["com.splunk.index"]
+                  value: {{ .index }}
+                  on_error: send
+                - type: add
+                  id: rh_assh-001_messages_st
+                  field: attributes["com.splunk.sourcetype"]
+                  value: messages
+                  on_error: send
+            filelog/rh_rhtap_stage_mpc_secure:
+              include:
+                - /var/log/secure
+              include_file_path: true
+              exclude_older_than: 86400s
+              operators:
+                - type: add
+                  id: rh_rhtap_stage_mpc_idx
+                  field: attributes["com.splunk.index"]
+                  value: {{ .index }}
+                  on_error: send
+                - type: add
+                  id: rh_assh-001_secure_st
+                  field: attributes["com.splunk.sourcetype"]
+                  value: secure
+                  on_error: send
+          service:
+            extensions:
+              - file_storage/otc
+            pipelines:
+              logs:
+                processors:
+                  - resource/add_appcode
+                  - resourcedetection/system
+                  - transform/common
+                receivers:
+                  # List all your receivers here
+                  - filelog/rh_rhtap_stage_mpc_audit
+                  - filelog/rh_rhtap_stage_mpc_messages
+                  - filelog/rh_rhtap_stage_mpc_secure
+                exporters:
+                  - splunk_hec/corp
