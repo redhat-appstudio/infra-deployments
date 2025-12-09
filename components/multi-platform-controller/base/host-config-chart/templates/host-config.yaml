@@ -1121,20 +1121,20 @@ data:
   # Windows platforms
   {{- if hasKey .Values.dynamicConfigs "windows-amd64" }}
   {{- $config := index .Values.dynamicConfigs "windows-amd64" | default (dict) }}
-  dynamic.windows-amd64.type: {{ index $config "type" | default "aws" | quote }}
-  dynamic.windows-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.windows-amd64.ami: {{ default (index $windows "ami") $config.ami | quote }}
-  dynamic.windows-amd64.instance-type: {{ (index $config "instance-type") | default "c5.4xlarge" | quote }}
-  dynamic.windows-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-windows-amd64" $environment) | quote }}
-  dynamic.windows-amd64.key-name: {{ default (index $windows "key-name") ((index $config "key-name")) | quote }}
-  dynamic.windows-amd64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
-  dynamic.windows-amd64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
-  dynamic.windows-amd64.security-group-id: {{ default (index $windows "security-group-id") ((index $config "security-group-id")) | quote }}
-  dynamic.windows-amd64.max-instances: {{ (index $config "max-instances") | default "5" | quote }}
-  dynamic.windows-amd64.subnet-id: {{ default (index $windows "subnet-id") ((index $config "subnet-id")) | quote }}
-  dynamic.windows-amd64.disk: {{ index $config "disk" | default "100" | quote }}
-  dynamic.windows-amd64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
-  dynamic.windows-amd64.allocation-timeout: "1200"
+  dynamic.windows-4xlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.windows-4xlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.windows-4xlarge-amd64.ami: {{ default (index $windows "ami") $config.ami | quote }}
+  dynamic.windows-4xlarge-amd64.instance-type: {{ (index $config "instance-type") | default "c5.4xlarge" | quote }}
+  dynamic.windows-4xlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-4xlarge" $environment) | quote }}
+  dynamic.windows-4xlarge-amd64.key-name: {{ default (index $windows "key-name") ((index $config "key-name")) | quote }}
+  dynamic.windows-4xlarge-amd64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.windows-4xlarge-amd64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.windows-4xlarge-amd64.security-group-id: {{ default (index $windows "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.windows-4xlarge-amd64.max-instances: {{ (index $config "max-instances") | default "5" | quote }}
+  dynamic.windows-4xlarge-amd64.subnet-id: {{ default (index $windows "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.windows-4xlarge-amd64.disk: {{ index $config "disk" | default "100" | quote }}
+  dynamic.windows-4xlarge-amd64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
+  dynamic.windows-4xlarge-amd64.allocation-timeout: "1200"
   {{- if (index $config "iops") }}
   dynamic.windows-amd64.iops: {{ index $config "iops" | quote }}
   {{ end }}
