@@ -40,7 +40,7 @@ data:
 
   {{- $arm := (index .Values "archDefaults" "arm64") | default (dict) }}
   {{- $amd := (index .Values "archDefaults" "amd64") | default (dict) }}
-  {{- $windows := (index .Values "archDefaults" "windows") | default (dict) }}
+  {{- $windows := (index .Values "archDefaults" "windows-amd64") | default (dict) }}
   {{- $environment := .Values.environment | default "prod" }}
 
   # cpu:memory (1:4)
