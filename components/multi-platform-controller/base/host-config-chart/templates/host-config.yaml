@@ -1125,7 +1125,7 @@ data:
   dynamic.windows-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
   dynamic.windows-amd64.ami: {{ default (index $windows "ami") $config.ami | quote }}
   dynamic.windows-amd64.instance-type: {{ (index $config "instance-type") | default "c5.4xlarge" | quote }}
-  dynamic.windows-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-windows" $environment) | quote }}
+  dynamic.windows-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-windows-amd64" $environment) | quote }}
   dynamic.windows-amd64.key-name: {{ default (index $windows "key-name") ((index $config "key-name")) | quote }}
   dynamic.windows-amd64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
   dynamic.windows-amd64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
