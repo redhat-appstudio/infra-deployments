@@ -276,6 +276,7 @@ PIPELINERUN_DEFINITIONS: Dict[str, PipelineRunTestData] = {
             },
             "spec": {
                 "pipelineSpec": {
+                    "description": "foo", # a completely empty pipelineSpec is not allowed
                     "tasks": None,
                 },
                 "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
@@ -304,6 +305,7 @@ PIPELINERUN_DEFINITIONS: Dict[str, PipelineRunTestData] = {
             },
             "spec": {
                 "pipelineSpec": {
+                    "description": "foo", # a completely empty pipelineSpec is not allowed
                     "tasks": [],
                 },
                 "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
@@ -603,7 +605,6 @@ PIPELINERUN_DEFINITIONS: Dict[str, PipelineRunTestData] = {
                 }
             },
             "spec": {
-                "pipelineRef": {"name": "build-pipeline"},
                 "params": [
                     {
                         "name": "build-platforms",
