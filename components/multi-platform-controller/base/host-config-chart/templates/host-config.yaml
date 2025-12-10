@@ -1119,8 +1119,8 @@ data:
   {{ end }}
 
   # Windows platforms
-  {{- if hasKey .Values.dynamicConfigs "windows-amd64" }}
-  {{- $config := index .Values.dynamicConfigs "windows-amd64" | default (dict) }}
+  {{- if hasKey .Values.dynamicConfigs "windows-4xlarge-amd64" }}
+  {{- $config := index .Values.dynamicConfigs "windows-4xlarge-amd64" | default (dict) }}
   dynamic.windows-4xlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.windows-4xlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
   dynamic.windows-4xlarge-amd64.ami: {{ default (index $windows "ami") $config.ami | quote }}
@@ -1136,13 +1136,13 @@ data:
   dynamic.windows-4xlarge-amd64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.windows-4xlarge-amd64.allocation-timeout: "1200"
   {{- if (index $config "iops") }}
-  dynamic.windows-amd64.iops: {{ index $config "iops" | quote }}
+  dynamic.windows-4xlarge-amd64.iops: {{ index $config "iops" | quote }}
   {{ end }}
   {{- if (index $config "throughput") }}
-  dynamic.windows-amd64.throughput: {{ index $config "throughput" | quote }}
+  dynamic.windows-4xlarge-amd64.throughput: {{ index $config "throughput" | quote }}
   {{ end }}
   {{- if (index $config "user-data") }}
-  dynamic.windows-amd64.user-data: |
+  dynamic.windows-4xlarge-amd64.user-data: |
   {{- $lines := splitList "\n" (index $config "user-data") }}
   {{- range $line := $lines }}
     {{ $line }}
