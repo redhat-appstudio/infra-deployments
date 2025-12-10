@@ -13,6 +13,11 @@ namespace: product-kubearchive
 # Due to quoting limitations of generators we need to introduce the values with the |
 # See https://github.com/kubernetes-sigs/kustomize/issues/4845#issuecomment-1671570428
 configMapGenerator:
+    - name: kubearchive-api-url
+      options:
+        disableNameSuffixHash: true
+      literals:
+        - URL=https://kubearchive-api-server-product-kubearchive.apps.stone-prd-rh01.pg1f.p1.openshiftapps.com
     - name: kubearchive-logging
       literals:
           - |
