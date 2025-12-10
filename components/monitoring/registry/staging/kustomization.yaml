@@ -1,0 +1,24 @@
+resources:
+  - ../../base
+  - https://github.com/redhat-appstudio/o11y/config/exporters/monitoring/registry/base?ref=7f967e4e03b1402dc07dbea757b728a2d8ac1d36
+
+images:
+  - name: quay.io/redhat-appstudio/o11y
+    newName: quay.io/redhat-appstudio/o11y
+    newTag: 7f967e4e03b1402dc07dbea757b728a2d8ac1d36
+
+patches:
+  - patch: |-
+      apiVersion: apps/v1
+      kind: DaemonSet
+      metadata:
+        name: registry-exporter-ds
+        namespace: appstudio-registry-exporter
+      spec:
+        template:
+          spec:
+            containers:
+              - name: exporters
+                env:
+                - name: QUAY_URL
+                  value: quay.io/redhat-user-workloads-stage/appstudio-registry-exporter/appstudio-registry-exporter
