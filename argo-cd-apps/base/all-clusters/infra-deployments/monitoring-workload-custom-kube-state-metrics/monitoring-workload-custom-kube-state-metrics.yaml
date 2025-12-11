@@ -1,0 +1,75 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: monitoring-workload-custom-kube-state-metrics
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              values:
+                sourceRoot: components/monitoring/custom-kube-state-metrics
+                environment: staging
+                clusterDir: base
+          - list:
+              elements:
+                - nameNormalized: kflux-ocp-p01
+                  values.clusterDir: base
+                  values.environment: production
+                - nameNormalized: stone-stg-rh01
+                  values.clusterDir: base
+                - nameNormalized: stone-prd-rh01
+                  values.clusterDir: base
+                  values.environment: production
+                - nameNormalized: stone-stage-p01
+                  values.clusterDir: base
+                - nameNormalized: stone-prod-p01
+                  values.clusterDir: base
+                  values.environment: production
+                - nameNormalized: stone-prod-p02
+                  values.clusterDir: base
+                  values.environment: production
+                - nameNormalized: kflux-prd-rh02
+                  values.clusterDir: base
+                  values.environment: production
+                - nameNormalized: kflux-prd-rh03
+                  values.clusterDir: base
+                  values.environment: production
+                - nameNormalized: kflux-stg-es01
+                  values.clusterDir: base
+                - nameNormalized: kflux-prd-es01
+                  values.clusterDir: base
+                  values.environment: production
+                - nameNormalized: kflux-rhel-p01
+                  values.clusterDir: base
+                  values.environment: production
+                - nameNormalized: kflux-osp-p01
+                  values.clusterDir: base
+                  values.environment: production
+                - nameNormalized: pentest-p01
+                  values.clusterDir: base
+                  values.environment: production
+  template:
+    metadata:
+      name: monitoring-workload-custom-kube-state-metrics-{{nameNormalized}}
+    spec:
+      project: default
+      source:
+        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+        targetRevision: main
+      destination:
+        namespace: custom-kube-state-metrics
+        server: '{{server}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+        retry:
+          limit: 50
+          backoff:
+            duration: 15s

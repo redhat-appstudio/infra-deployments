@@ -1,0 +1,22 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: custom-kube-state-metrics
+  namespace: custom-kube-state-metrics
+  labels:
+    app.kubernetes.io/name: custom-kube-state-metrics
+    app.kubernetes.io/component: exporter
+    app.kubernetes.io/part-of: konflux-monitoring
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: custom-kube-state-metrics
+  endpoints:
+  - port: metrics
+    interval: 30s
+    path: /metrics
+    scheme: http
+  - port: telemetry
+    interval: 30s
+    path: /metrics
+    scheme: http

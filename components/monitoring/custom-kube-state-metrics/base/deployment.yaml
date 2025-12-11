@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: custom-kube-state-metrics
+  namespace: custom-kube-state-metrics
+  labels:
+    app.kubernetes.io/name: custom-kube-state-metrics
+    app.kubernetes.io/component: exporter
+    app.kubernetes.io/part-of: konflux-monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: custom-kube-state-metrics
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: custom-kube-state-metrics
+        app.kubernetes.io/component: exporter
+        app.kubernetes.io/part-of: konflux-monitoring
+    spec:
+      serviceAccountName: custom-kube-state-metrics
+      automountServiceAccountToken: true
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: kube-state-metrics
+        image: registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.11.0
+        args:
+        # CRITICAL: Only monitor custom resources to avoid duplicating platform metrics
+        - --custom-resource-state-only=true
+        - --custom-resource-state-config-file=/etc/config/custom-resource-state.yaml
+        # Enable self-monitoring
+        - --telemetry-host=0.0.0.0
+        - --telemetry-port=8081
+        ports:
+        - name: metrics
+          containerPort: 8080
+          protocol: TCP
+        - name: telemetry
+          containerPort: 8081
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 5
+          timeoutSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 5
+          timeoutSeconds: 5
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - name: config
+          mountPath: /etc/config
+          readOnly: true
+      volumes:
+      - name: config
+        configMap:
+          name: custom-kube-state-metrics-config
