@@ -20,13 +20,13 @@ commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 
 patches:
-  - path: pipelines-as-code-secret-patch.yaml
+  - path: pipelines-as-code-secret-path.yaml
     target:
       name: pipelines-as-code-secret
       kind: ExternalSecret
       group: external-secrets.io
       version: v1beta1
-  - path: manager_patch.yaml
+  - path: manager-set-resources-patch.yaml
 
 configurations:
 - kustomizeconfig.yaml
