@@ -21,7 +21,8 @@ commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 
 patches:
-  - path: manager_patch.yaml
+  - path: manager-set-resources-patch.yaml
+  - path: manager-enable-pprof-patch.yaml
 
 configurations:
 - kustomizeconfig.yaml
