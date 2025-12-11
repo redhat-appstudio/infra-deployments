@@ -1128,7 +1128,7 @@ data:
   dynamic.windows-4xlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-4xlarge" $environment) | quote }}
   dynamic.windows-4xlarge-amd64.key-name: {{ default (index $windows "key-name") ((index $config "key-name")) | quote }}
   dynamic.windows-4xlarge-amd64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
-  dynamic.windows-4xlarge-amd64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.windows-4xlarge-amd64.ssh-secret: {{ default (index $windows "ssh-secret") ((index $config "ssh-secret")) | default "aws-ssh-key" | quote }}
   dynamic.windows-4xlarge-amd64.security-group-id: {{ default (index $windows "security-group-id") ((index $config "security-group-id")) | quote }}
   dynamic.windows-4xlarge-amd64.max-instances: {{ (index $config "max-instances") | default "5" | quote }}
   dynamic.windows-4xlarge-amd64.subnet-id: {{ default (index $windows "subnet-id") ((index $config "subnet-id")) | quote }}
