@@ -1,0 +1,225 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: custom-kube-state-metrics-config
+  namespace: custom-kube-state-metrics
+data:
+  custom-resource-state.yaml: |
+    spec:
+      resources:
+        ###############################################################################
+        # Velero Backups
+        ###############################################################################
+        - groupVersionKind:
+            group: "velero.io"
+            version: "v1"
+            kind: "Backup"
+          labelsFromPath:
+            backup: [metadata, name]
+            namespace: [metadata, namespace]
+          metrics:
+            - name: "velero_backup_status"
+              help: "Current status/phase of Velero backup"
+              each:
+                type: StateSet
+                stateSet:
+                  labelName: phase
+                  path: [status, phase]
+                  list: [New, InProgress, Uploading, UploadingPartialFailure, Completed, PartiallyFailed, Failed, FailedValidation, Deleting]
+
+            - name: "velero_backup_completion_timestamp"
+              help: "Completion timestamp of Velero backup (Unix epoch)"
+              each:
+                type: Gauge
+                gauge:
+                  path: [status, completionTimestamp]
+                  nilIsZero: false
+
+            - name: "velero_backup_expiration_timestamp"
+              help: "Expiration timestamp of Velero backup (Unix epoch)"
+              each:
+                type: Gauge
+                gauge:
+                  path: [status, expiration]
+                  nilIsZero: false
+
+            - name: "velero_backup_total_items"
+              help: "Total number of items in backup"
+              each:
+                type: Gauge
+                gauge:
+                  path: [status, progress, totalItems]
+                  nilIsZero: true
+
+            - name: "velero_backup_items_backed_up"
+              help: "Number of items successfully backed up"
+              each:
+                type: Gauge
+                gauge:
+                  path: [status, progress, itemsBackedUp]
+                  nilIsZero: true
+
+        ###############################################################################
+        # Velero Restores
+        ###############################################################################
+        - groupVersionKind:
+            group: "velero.io"
+            version: "v1"
+            kind: "Restore"
+          labelsFromPath:
+            restore: [metadata, name]
+            namespace: [metadata, namespace]
+          metrics:
+            - name: "velero_restore_status"
+              help: "Current status/phase of Velero restore"
+              each:
+                type: StateSet
+                stateSet:
+                  labelName: phase
+                  path: [status, phase]
+                  list: [New, InProgress, Completed, PartiallyFailed, Failed, FailedValidation]
+
+        ###############################################################################
+        # Kueue ClusterQueues
+        ###############################################################################
+        - groupVersionKind:
+            group: "kueue.x-k8s.io"
+            version: "v1beta1"
+            kind: "ClusterQueue"
+          labelsFromPath:
+            clusterqueue: [metadata, name]
+          metrics:
+            - name: "kueue_clusterqueue_pending_workloads"
+              help: "Number of pending workloads in ClusterQueue"
+              each:
+                type: Gauge
+                gauge:
+                  path: [status, pendingWorkloads]
+                  nilIsZero: true
+
+            - name: "kueue_clusterqueue_admitted_workloads"
+              help: "Number of admitted workloads in ClusterQueue"
+              each:
+                type: Gauge
+                gauge:
+                  path: [status, admittedWorkloads]
+                  nilIsZero: true
+
+            - name: "kueue_clusterqueue_reserving_workloads"
+              help: "Number of reserving workloads in ClusterQueue"
+              each:
+                type: Gauge
+                gauge:
+                  path: [status, reservingWorkloads]
+                  nilIsZero: true
+
+        ###############################################################################
+        # Kueue LocalQueues
+        ###############################################################################
+        - groupVersionKind:
+            group: "kueue.x-k8s.io"
+            version: "v1beta1"
+            kind: "LocalQueue"
+          labelsFromPath:
+            localqueue: [metadata, name]
+            namespace: [metadata, namespace]
+          metrics:
+            - name: "kueue_localqueue_pending_workloads"
+              help: "Number of pending workloads in LocalQueue"
+              each:
+                type: Gauge
+                gauge:
+                  path: [status, pendingWorkloads]
+                  nilIsZero: true
+
+            - name: "kueue_localqueue_admitted_workloads"
+              help: "Number of admitted workloads in LocalQueue"
+              each:
+                type: Gauge
+                gauge:
+                  path: [status, admittedWorkloads]
+                  nilIsZero: true
+
+        ###############################################################################
+        # Kyverno ClusterPolicies
+        ###############################################################################
+        - groupVersionKind:
+            group: "kyverno.io"
+            version: "v1"
+            kind: "ClusterPolicy"
+          labelsFromPath:
+            policy: [metadata, name]
+          metrics:
+            - name: "kyverno_clusterpolicy_ready"
+              help: "ClusterPolicy ready status (1 = ready, 0 = not ready)"
+              each:
+                type: Gauge
+                gauge:
+                  path: [status, ready]
+                  nilIsZero: true
+
+            - name: "kyverno_clusterpolicy_rule_count"
+              help: "Number of rules in ClusterPolicy"
+              each:
+                type: Gauge
+                gauge:
+                  path: [spec, rules]
+                  nilIsZero: true
+                  valueFrom: [length]
+
+            - name: "kyverno_clusterpolicy_validation_failure_action"
+              help: "Validation failure action (1 = Enforce, 0 = Audit)"
+              each:
+                type: StateSet
+                stateSet:
+                  labelName: action
+                  path: [spec, validationFailureAction]
+                  list: [Audit, Enforce]
+
+        ###############################################################################
+        # Kyverno Policies (namespaced)
+        ###############################################################################
+        - groupVersionKind:
+            group: "kyverno.io"
+            version: "v1"
+            kind: "Policy"
+          labelsFromPath:
+            policy: [metadata, name]
+            namespace: [metadata, namespace]
+          metrics:
+            - name: "kyverno_policy_ready"
+              help: "Policy ready status (1 = ready, 0 = not ready)"
+              each:
+                type: Gauge
+                gauge:
+                  path: [status, ready]
+                  nilIsZero: true
+
+            - name: "kyverno_policy_rule_count"
+              help: "Number of rules in Policy"
+              each:
+                type: Gauge
+                gauge:
+                  path: [spec, rules]
+                  nilIsZero: true
+                  valueFrom: [length]
+
+        ###############################################################################
+        # Add your custom resources below this line
+        ###############################################################################
+        # Template:
+        # - groupVersionKind:
+        #     group: "<api-group>"
+        #     version: "<version>"
+        #     kind: "<Kind>"
+        #   labelsFromPath:
+        #     name: [metadata, name]
+        #     namespace: [metadata, namespace]  # omit for cluster-scoped
+        #   metrics:
+        #     - name: "<metric_name>"
+        #       help: "<description>"
+        #       each:
+        #         type: Gauge  # or StateSet, Info
+        #         gauge:
+        #           path: [status, someField]
+        #           nilIsZero: true
