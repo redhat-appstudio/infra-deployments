@@ -41,6 +41,7 @@ data:
   {{- $arm := (index .Values "archDefaults" "arm64") | default (dict) }}
   {{- $amd := (index .Values "archDefaults" "amd64") | default (dict) }}
   {{- $windows := (index .Values "archDefaults" "windows-amd64") | default (dict) }}
+  {{- $macos := (index .Values "archDefaults" "macos-mac2metal-arm64") | default (dict) }}
   {{- $environment := .Values.environment | default "prod" }}
 
   # cpu:memory (1:4)
@@ -1030,20 +1031,20 @@ data:
   {{- $config := index .Values.dynamicConfigs "macos-mac2metal-arm64" | default (dict) }}
   dynamic.macos-mac2metal-arm64.type: {{ index $config "type" | default "aws" | quote }}
   dynamic.macos-mac2metal-arm64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.macos-mac2metal-arm64.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.macos-mac2metal-arm64.ami: {{ default (index $macos "ami") $config.ami | quote }}
   dynamic.macos-mac2metal-arm64.instance-type: {{ (index $config "instance-type") | default "mac2.metal" | quote }}
   dynamic.macos-mac2metal-arm64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-arm64-mac2metal" $environment) | quote }}
-  dynamic.macos-mac2metal-arm64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
+  dynamic.macos-mac2metal-arm64.key-name: {{ default (index $macos "key-name") ((index $config "key-name")) | quote }}
   dynamic.macos-mac2metal-arm64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
-  dynamic.macos-mac2metal-arm64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
-  dynamic.macos-mac2metal-arm64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.macos-mac2metal-arm64.ssh-secret: {{ default (index $macos "ssh-secret") ((index $config "ssh-secret")) | default "aws-ssh-key" | quote }}
+  dynamic.macos-mac2metal-arm64.security-group-id: {{ default (index $macos "security-group-id") ((index $config "security-group-id")) | quote }}
   dynamic.macos-mac2metal-arm64.max-instances: {{ (index $config "max-instances") | default "5" | quote }}
-  dynamic.macos-mac2metal-arm64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.macos-mac2metal-arm64.subnet-id: {{ default (index $macos "subnet-id") ((index $config "subnet-id")) | quote }}
   dynamic.macos-mac2metal-arm64.disk: {{ index $config "disk" | default "100" | quote }}
   dynamic.macos-mac2metal-arm64.allocation-timeout: "1200"
   dynamic.macos-mac2metal-arm64.tenancy: "host"
-  dynamic.macos-mac2metal-arm64.host-resource-group-arn: {{ index $config "host-resource-group-arn" | quote }}
-  dynamic.macos-mac2metal-arm64.license-configuration-arn: {{ index $config "license-configuration-arn" | quote }}
+  dynamic.macos-mac2metal-arm64.host-resource-group-arn: {{ default (index $macos "host-resource-group-arn") ((index $config "host-resource-group-arn")) | quote }}
+  dynamic.macos-mac2metal-arm64.license-configuration-arn: {{ default (index $macos "license-configuration-arn") ((index $config "license-configuration-arn")) | quote }}
   {{- if (index $config "iops") }}
   dynamic.macos-mac2metal-arm64.iops: {{ index $config "iops" | quote }}
   {{ end }}
