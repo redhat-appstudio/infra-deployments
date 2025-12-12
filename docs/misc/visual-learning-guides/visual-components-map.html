@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Konflux Components Map - Visual Guide</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        .search-bar {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 15px 20px;
+            font-size: 1.1em;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .category {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .category-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid;
+        }
+        
+        .category-icon {
+            font-size: 2.5em;
+            margin-right: 15px;
+        }
+        
+        .category-title {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #2d3748;
+        }
+        
+        .category-count {
+            margin-left: auto;
+            background: #667eea;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+        
+        .core-services { border-color: #f56565; }
+        .core-services .category-icon { color: #f56565; }
+        
+        .platform-services { border-color: #4299e1; }
+        .platform-services .category-icon { color: #4299e1; }
+        
+        .developer-tools { border-color: #48bb78; }
+        .developer-tools .category-icon { color: #48bb78; }
+        
+        .infrastructure { border-color: #ed8936; }
+        .infrastructure .category-icon { color: #ed8936; }
+        
+        .monitoring-ops { border-color: #9f7aea; }
+        .monitoring-ops .category-icon { color: #9f7aea; }
+        
+        .components-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+        }
+        
+        .component-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            border-left: 4px solid;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .component-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .component-card.hidden {
+            display: none;
+        }
+        
+        .component-name {
+            font-weight: bold;
+            font-size: 1.2em;
+            color: #2d3748;
+            margin-bottom: 8px;
+        }
+        
+        .component-description {
+            color: #4a5568;
+            font-size: 0.95em;
+            line-height: 1.5;
+            margin-bottom: 10px;
+        }
+        
+        .component-tech {
+            display: inline-block;
+            background: #e2e8f0;
+            color: #4a5568;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            margin-right: 5px;
+            margin-top: 5px;
+        }
+        
+        .component-repo {
+            display: inline-block;
+            background: #2d3748;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 0.85em;
+            margin-top: 10px;
+            transition: background 0.3s ease;
+        }
+        
+        .component-repo:hover {
+            background: #000;
+        }
+        
+        .legend {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .legend-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #2d3748;
+        }
+        
+        .legend-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .legend-color {
+            width: 4px;
+            height: 30px;
+            border-radius: 2px;
+        }
+        
+        .stats {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .stat-item {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 8px;
+        }
+        
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            display: block;
+        }
+        
+        .stat-label {
+            font-size: 1em;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+        
+        @media (max-width: 768px) {
+            .components-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-link">← Back to Visual Guide Index</a>
+        
+        <div class="header">
+            <h1>🧩 Konflux Components Map</h1>
+            <p>Complete directory of all 50+ microservices and infrastructure components</p>
+        </div>
+        
+        <div class="stats">
+            <h2>Konflux Ecosystem Statistics</h2>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-number">50+</span>
+                    <span class="stat-label">Total Components</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">13+</span>
+                    <span class="stat-label">Core Service Repos</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">3</span>
+                    <span class="stat-label">Environments (dev/staging/prod)</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">100%</span>
+                    <span class="stat-label">GitOps Managed via ArgoCD</span>
+                </div>
+            </div>
+            <p style="margin-top: 20px; opacity: 0.9; font-size: 0.95em;">
+                📚 See the <a href="https://github.com/konflux-ci/architecture" style="color: white; font-weight: bold; text-decoration: underline;">Architecture Repository</a> for detailed service designs and ADRs
+            </p>
+        </div>
+        
+        <div class="search-bar">
+            <input type="text" class="search-input" id="searchInput" placeholder="🔍 Search components by name, description, or technology..." />
+        </div>
+        
+        <div class="legend">
+            <div class="legend-title">Component Categories</div>
+            <div class="legend-items">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #f56565;"></div>
+                    <span>Core CI/CD Services (Build, Release, Integration)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #4299e1;"></div>
+                    <span>Platform Services (Security, Dependencies, Multi-arch)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #48bb78;"></div>
+                    <span>Developer Tools (UI, Templates, Quality)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ed8936;"></div>
+                    <span>Infrastructure (Auth, Secrets, Networking)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #9f7aea;"></div>
+                    <span>Monitoring & Operations (Metrics, Logs, Alerts)</span>
+                </div>
+            </div>
+            <p style="margin-top: 15px; color: #4a5568;">
+                💡 <strong>Source:</strong> All components shown here are deployed from the <code>components/</code> directory in <a href="https://github.com/redhat-appstudio/infra-deployments/tree/main/components" style="color: #667eea; font-weight: bold;">infra-deployments</a>.
+            </p>
+        </div>
+        
+        <!-- Core CI/CD Services -->
+        <div class="category core-services">
+            <div class="category-header">
+                <span class="category-icon">🔴</span>
+                <h2 class="category-title">Core CI/CD Services</h2>
+                <span class="category-count">5 components</span>
+            </div>
+            <div class="components-grid">
+                <div class="component-card" style="border-color: #f56565;" data-name="build-service" data-tags="kubernetes operator pipeline tekton">
+                    <div class="component-name">build-service</div>
+                    <div class="component-description">
+                        Kubernetes operator that manages the build lifecycle for Konflux applications. Creates Component CRs that reference Tekton PipelineRuns for container image builds. Supports multi-platform builds and integration with Tekton Chains for supply chain security.
+                    </div>
+                    <span class="component-tech">Go</span>
+                    <span class="component-tech">Kubernetes Operator</span>
+                    <span class="component-tech">Tekton</span>
+                    <a href="https://github.com/redhat-appstudio/build-service" target="_blank" class="component-repo">View on GitHub →</a>
+                </div>
+                
+                <div class="component-card" style="border-color: #f56565;" data-name="release-service" data-tags="kubernetes operator release deployment">
+                    <div class="component-name">release-service</div>
+                    <div class="component-description">
+                        Kubernetes operator that manages the release lifecycle from snapshot to production. Creates Release CRs from validated Snapshots, executes ReleasePlans via Tekton pipelines to push artifacts to external registries, and creates GitHub/GitLab releases with release notes and SBOMs.
+                    </div>
+                    <span class="component-tech">Go</span>
+                    <span class="component-tech">Kubernetes Operator</span>
+                    <span class="component-tech">Tekton</span>
+                    <a href="https://github.com/konflux-ci/release-service" target="_blank" class="component-repo">View on GitHub →</a>
+                </div>
+                
+                <div class="component-card" style="border-color: #f56565;" data-name="integration-service" data-tags="kubernetes operator testing integration">
+                    <div class="component-name">integration-service</div>
+                    <div class="component-description">
+                        Kubernetes operator that orchestrates integration testing for application builds. Creates Snapshot CRs combining multiple components, triggers IntegrationTestScenarios via Tekton pipelines, and reports status back to GitHub PRs. Supports both PR-based and push-based triggers.
+                    </div>
+                    <span class="component-tech">Go</span>
+                    <span class="component-tech">Kubernetes Operator</span>
+                    <span class="component-tech">Tekton</span>
+                    <a href="https://github.com/redhat-appstudio/integration-service" target="_blank" class="component-repo">View on GitHub →</a>
+                </div>
+                
+                <div class="component-card" style="border-color: #f56565;" data-name="pipeline-service" data-tags="tekton pipelines ci execution">
+                    <div class="component-name">pipeline-service</div>
+                    <div class="component-description">
+                        Tekton Pipelines service configuration and custom tasks. Provides the execution engine for CI/CD workflows.
+                    </div>
+                    <span class="component-tech">Tekton</span>
+                    <span class="component-tech">YAML</span>
+                    <span class="component-tech">Kubernetes</span>
+                    <a href="https://github.com/konflux-ci/pipeline-service" target="_blank" class="component-repo">View on GitHub →</a>
+                </div>
+                
+                <div class="component-card" style="border-color: #f56565;" data-name="has (Hybrid Application Service)" data-tags="application management api kubernetes">
+                    <div class="component-name">has (Hybrid Application Service)</div>
+                    <div class="component-description">
+                        Application management service that provides APIs for creating and managing applications and components in Konflux.
+                    </div>
+                    <span class="component-tech">Go</span>
+                    <span class="component-tech">Kubernetes API</span>
+                    <span class="component-tech">REST</span>
+                    <a href="https://github.com/konflux-ci/application-service" target="_blank" class="component-repo">View on GitHub →</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Platform Services -->
+        <div class="category platform-services">
+            <div class="category-header">
+                <span class="category-icon">🔵</span>
+                <h2 class="category-title">Platform Services</h2>
+                <span class="category-count">8 components</span>
+            </div>
+            <div class="components-grid">
+                <div class="component-card" style="border-color: #4299e1;" data-name="multi-platform-controller" data-tags="multiarch arm x86 builds">
+                    <div class="component-name">multi-platform-controller</div>
+                    <div class="component-description">
+                        Manages multi-architecture container builds (x86_64, arm64, ppc64le, s390x). Coordinates remote builds across different architectures.
+                    </div>
+                    <span class="component-tech">Go</span>
+                    <span class="component-tech">Multi-arch</span>
+                    <span class="component-tech">AWS/Azure</span>
+                    <a href="https://github.com/konflux-ci/multi-platform-controller" target="_blank" class="component-repo">View on GitHub →</a>
+                </div>
+                
+                <div class="component-card" style="border-color: #4299e1;" data-name="enterprise-contract" data-tags="security policy compliance">
+                    <div class="component-name">enterprise-contract</div>
+                    <div class="component-description">
+                        Policy enforcement for supply chain security. Validates container images against security policies and compliance rules.
+                    </div>
+                    <span class="component-tech">Go</span>
+                    <span class="component-tech">Policy as Code</span>
+                    <span class="component-tech">Conftest</span>
+                    <a href="https://github.com/enterprise-contract/ec-cli" target="_blank" class="component-repo">View on GitHub →</a>
+                </div>
+                
+                <div class="component-card" style="border-color: #4299e1;" data-name="mintmaker" data-tags="dependencies renovate automation">
+                    <div class="component-name">mintmaker</div>
+                    <div class="component-description">
+                        Dependency update management service. Automates dependency updates similar to Renovate bot for Konflux components.
+                    </div>
+                    <span class="component-tech">Go</span>
+                    <span class="component-tech">Automation</span>
+                    <span class="component-tech">Kubernetes</span>
+                    <a href="https://github.com/konflux-ci/mintmaker" target="_blank" class="component-repo">View on GitHub →</a>
+                </div>
+                
+                <div class="component-card" style="border-color: #4299e1;" data-name="image-controller" data-tags="image registry management">
+                    <div class="component-name">image-controller</div>
+                    <div class="component-description">
+                        Manages container image metadata and repository configuration. Handles image promotion and registry operations.
+                    </div>
+                    <span class="component-tech">Go</span>
+                    <span class="component-tech">Quay.io</span>
+                    <span class="component-tech">Kubernetes Operator</span>
+                    <a href="https://github.com/konflux-ci/image-controller" target="_blank" class="component-repo">View on GitHub →</a>
+                </div>
+                
+                <div class="component-card" style="border-color: #4299e1;" data-name="caching" data-tags="cache proxy hermetic">
+                    <div class="component-name">caching</div>
+                    <div class="component-description">
+                        Caching proxy service for hermetic builds. Provides dependency caching to ensure reproducible, offline-capable builds.
+                    </div>
+                    <span class="component-tech">Go</span>
+                    <span class="component-tech">Squid Proxy</span>
+                    <span class="component-tech">Mage</span>
+                    <a href="https://github.com/konflux-ci/caching" target="_blank" class="component-repo">View on GitHub →</a>
+                </div>
+                
+                <div class="component-card" style="border-color: #4299e1;" data-name="build-templates" data-tags="tekton tasks pipelines">
+                    <div class="component-name">build-templates</div>
+                    <div class="component-description">
+                        Pre-built Tekton pipeline templates for common build scenarios. Provides reusable build configurations.
+                    </div>
+                    <span class="component-tech">Tekton</span>
+                    <span class="component-tech">YAML</span>
+                    <span class="component-tech">Templates</span>
+                    <a href="https://github.com/konflux-ci/build-definitions" target="_blank" class="component-repo">View on GitHub →</a>
+                </div>
+                
+                <div class="component-card" style="border-color: #4299e1;" data-name="repository-validator" data-tags="git validation security">
+                    <div class="component-name">repository-validator</div>
+                    <div class="component-description">
+                        Validates source code repositories for security and compliance before allowing builds.
+                    </div>
+                    <span class="component-tech">Go</span>
+                    <span class="component-tech">Security</span>
+                    <a href="https://github.com/konflux-ci/repository-validator" target="_blank" class="component-repo">View on GitHub →</a>
+                </div>
+                
+                <div class="component-card" style="border-color: #4299e1;" data-name="internal-services" data-tags="api internal tools">
+                    <div class="component-name">internal-services</div>
+                    <div class="component-description">
+                        Internal service request management. Handles internal API access and service-to-service communication.
+                    </div>
+                    <span class="component-tech">Go</span>
+                    <span class="component-tech">Kubernetes Operator</span>
+                    <a href="https://github.com/konflux-ci/internal-services" target="_blank" class="component-repo">View on GitHub →</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Developer Tools -->
+        <div class="category developer-tools">
+            <div class="category-header">
+                <span class="category-icon">🟢</span>
+                <h2 class="category-title">Developer Tools & Interfaces</h2>
+                <span class="category-count">6 components</span>
+            </div>
+            <div class="components-grid">
+                <div class="component-card" style="border-color: #48bb78;" data-name="konflux-ui" data-tags="react typescript frontend web">
+                    <div class="component-name">konflux-ui</div>
+                    <div class="component-description">
+                        Web-based user interface for Konflux. React/TypeScript application providing visual interface for managing applications and pipelines.
+                    </div>
+                    <span class="component-tech">React</span>
+                    <span class="component-tech">TypeScript</span>
+                    <span class="component-tech">PatternFly</span>
+                    <a href="https://github.com/konflux-ci/konflux-ui" target="_blank" class="component-repo">View on GitHub →</a>
+                </div>
+                
+                <div class="component-card" style="border-color: #48bb78;" data-name="quality-dashboard" data-tags="metrics dashboard quality">
+                    <div class="component-name">quality-dashboard</div>
+                    <div class="component-description">
+                        Quality metrics and analytics dashboard. Provides visibility into build success rates, test coverage, and quality trends.
+                    </div>
+                    <span class="component-tech">React</span>
+                    <span class="component-tech">Grafana</span>
+                    <span class="component-tech">Metrics</span>
+                    <a href="https://github.com/konflux-ci/quality-dashboard" target="_blank" class="component-repo">View on GitHub →</a>
+                </div>
+                
+                <div class="component-card" style="border-color: #48bb78;" data-name="ci-helper-app" data-tags="ci tools automation">
+                    <div class="component-name">ci-helper-app</div>
+                    <div class="component-description">
+                        Helper tools and utilities for CI operations. Provides automation helpers for common CI/CD tasks.
+                    </div>
+                    <span class="component-tech">Go</span>
+                    <span class="component-tech">CI/CD</span>
+                    <a href="https://github.com/konflux-ci/ci-helper-app" target="_blank" class="component-repo">View on GitHub →</a>
+                </div>
+                
+                <div class="component-card" style="border-color: #48bb78;" data-name="dora-metrics" data-tags="metrics devops analytics">
+                    <div class="component-name">dora-metrics</div>
+                    <div class="component-description">
+                        DORA (DevOps Research and Assessment) metrics collection and reporting. Tracks deployment frequency, lead time, etc.
+                    </div>
+                    <span class="component-tech">Python</span>
+                    <span class="component-tech">Metrics</span>
+                    <a href="https://github.com/konflux-ci/dora-metrics" target="_blank" class="component-repo">View on GitHub →</a>
+                </div>
+                
+                <div class="component-card" style="border-color: #48bb78;" data-name="notification-controller" data-tags="notifications alerts webhooks">
+                    <div class="component-name">notification-controller</div>
+                    <div class="component-description">
+                        Manages notifications and alerts for pipeline events. Sends notifications via Slack, email, webhooks.
+                    </div>
+                    <span class="component-tech">Go</span>
+                    <span class="component-tech">Webhooks</span>
+                    <a href="https://github.com/konflux-ci/notification-service" target="_blank" class="component-repo">View on GitHub →</a>
+                </div>
+                
+                <div class="component-card" style="border-color: #48bb78;" data-name="smee-client" data-tags="webhooks proxy github">
+                    <div class="component-name">smee-client</div>
+                    <div class="component-description">
+                        Webhook proxy client for development environments. Forwards GitHub webhooks to local Konflux instances.
+                    </div>
+                    <span class="component-tech">Node.js</span>
+                    <span class="component-tech">Webhooks</span>
+                    <a href="https://github.com/konflux-ci/smee-sidecar" target="_blank" class="component-repo">View on GitHub →</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Infrastructure -->
+        <div class="category infrastructure">
+            <div class="category-header">
+                <span class="category-icon">🟠</span>
+                <h2 class="category-title">Infrastructure & Platform</h2>
+                <span class="category-count">15+ components</span>
+            </div>
+            <div class="components-grid">
+                <div class="component-card" style="border-color: #ed8936;" data-name="authentication" data-tags="auth rbac security">
+                    <div class="component-name">authentication</div>
+                    <div class="component-description">
+                        Authentication and authorization configuration. Manages RBAC, SSO, and access control for Konflux.
+                    </div>
+                    <span class="component-tech">Kubernetes RBAC</span>
+                    <span class="component-tech">OAuth</span>
+                    <a href="https://github.com/redhat-appstudio/infra-deployments/tree/main/components/authentication" target="_blank" class="component-repo">View Config →</a>
+                </div>
+                
+                <div class="component-card" style="border-color: #ed8936;" data-name="external-secrets-operator" data-tags="secrets vault aws">
+                    <div class="component-name">external-secrets-operator</div>
+                    <div class="component-description">
+                        Integrates external secret management systems (AWS Secrets Manager, Vault). Syncs secrets into Kubernetes.
+                    </div>
+                    <span class="component-tech">Kubernetes Operator</span>
+                    <span class="component-tech">Vault</span>
+                    <span class="component-tech">AWS</span>
+                    <a href="https://github.com/external-secrets/external-secrets" target="_blank" class="component-repo">View on GitHub →</a>
+                </div>
+                
+                <div class="component-card" style="border-color: #ed8936;" data-name="cluster-secret-store" data-tags="secrets management kubernetes">
+                    <div class="component-name">cluster-secret-store</div>
+                    <div class="component-description">
+                        Cluster-wide secret store configuration. Provides centralized secret management across namespaces.
+                    </div>
+                    <span class="component-tech">Kubernetes</span>
+                    <span class="component-tech">Secrets</span>
+                    <a href="https://github.com/redhat-appstudio/infra-deployments/tree/main/components/cluster-secret-store" target="_blank" class="component-repo">View Config →</a>
+                </div>
+                
+                <div class="component-card" style="border-color: #ed8936;" data-name="cert-manager" data-tags="certificates tls ssl">
+                    <div class="component-name">cert-manager</div>
+                    <div class="component-description">
+                        Automatic TLS certificate management. Handles certificate issuance, renewal, and distribution.
+                    </div>
+                    <span class="component-tech">Kubernetes</span>
+                    <span class="component-tech">TLS/SSL</span>
+                    <span class="component-tech">Let's Encrypt</span>
+                    <a href="https://github.com/cert-manager/cert-manager" target="_blank" class="component-repo">View on GitHub →</a>
+                </div>
+                
+                <div class="component-card" style="border-color: #ed8936;" data-name="openshift-gitops (ArgoCD)" data-tags="gitops argocd deployment">
+                    <div class="component-name">openshift-gitops (ArgoCD)</div>
+                    <div class="component-description">
+                        GitOps continuous delivery tool. Automatically syncs Git repository state to Kubernetes clusters.
+                    </div>
+                    <span class="component-tech">ArgoCD</span>
+                    <span class="component-tech">GitOps</span>
+                    <span class="component-tech">Kubernetes</span>
+                    <a href="https://github.com/argoproj/argo-cd" target="_blank" class="component-repo">View on GitHub →</a>
+                </div>
+                
+                <div class="component-card" style="border-color: #ed8936;" data-name="kyverno" data-tags="policy security governance">
+                    <div class="component-name">kyverno</div>
+                    <div class="component-description">
+                        Kubernetes-native policy management. Validates, mutates, and generates Kubernetes resources based on policies.
+                    </div>
+                    <span class="component-tech">Policy Engine</span>
+                    <span class="component-tech">Kubernetes</span>
+                    <a href="https://github.com/kyverno/kyverno" target="_blank" class="component-repo">View on GitHub →</a>
+                </div>
+                
+                <div class="component-card" style="border-color: #ed8936;" data-name="knative-eventing" data-tags="events serverless messaging">
+                    <div class="component-name">knative-eventing</div>
+                    <div class="component-description">
+                        Event-driven architecture components. Provides event sources, channels, and subscriptions for async communication.
+                    </div>
+                    <span class="component-tech">Knative</span>
+                    <span class="component-tech">Events</span>
+                    <a href="https://github.com/knative/eventing" target="_blank" class="component-repo">View on GitHub →</a>
+                </div>
+                
+                <div class="component-card" style="border-color: #ed8936;" data-name="kueue" data-tags="batch scheduling workloads">
+                    <div class="component-name">kueue</div>
+                    <div class="component-description">
+                        Job queueing and resource management for batch workloads. Manages fair sharing of cluster resources.
+                    </div>
+                    <span class="component-tech">Kubernetes</span>
+                    <span class="component-tech">Batch Processing</span>
+                    <a href="https://github.com/kubernetes-sigs/kueue" target="_blank" class="component-repo">View on GitHub →</a>
+                </div>
+                
+                <div class="component-card" style="border-color: #ed8936;" data-name="crossplane" data-tags="infrastructure cloud provisioning">
+                    <div class="component-name">crossplane-control-plane</div>
+                    <div class="component-description">
+                        Infrastructure as code using Kubernetes. Manages cloud resources (AWS, Azure, GCP) via Kubernetes APIs.
+                    </div>
+                    <span class="component-tech">Crossplane</span>
+                    <span class="component-tech">IaC</span>
+                    <span class="component-tech">Multi-cloud</span>
+                    <a href="https://github.com/crossplane/crossplane" target="_blank" class="component-repo">View on GitHub →</a>
+                </div>
+                
+                <div class="component-card" style="border-color: #ed8936;" data-name="backup" data-tags="backup disaster-recovery velero">
+                    <div class="component-name">backup</div>
+                    <div class="component-description">
+                        Backup and disaster recovery using Velero. Handles cluster backup, migration, and restore operations.
+                    </div>
+                    <span class="component-tech">Velero</span>
+                    <span class="component-tech">S3</span>
+                    <a href="https://github.com/vmware-tanzu/velero" target="_blank" class="component-repo">View on GitHub →</a>
+                </div>
+                
+                <div class="component-card" style="border-color: #ed8936;" data-name="squid" data-tags="proxy cache networking">
+                    <div class="component-name">squid</div>
+                    <div class="component-description">
+                        HTTP caching proxy for hermetic builds. Provides network-level caching for build dependencies.
+                    </div>
+                    <span class="component-tech">Squid Proxy</span>
+                    <span class="component-tech">Caching</span>
+                    <a href="https://github.com/redhat-appstudio/infra-deployments/tree/main/components/squid" target="_blank" class="component-repo">View Config →</a>
+                </div>
+                
+                <div class="component-card" style="border-color: #ed8936;" data-name="project-controller" data-tags="multitenancy namespaces projects">
+                    <div class="component-name">project-controller</div>
+                    <div class="component-description">
+                        Multi-tenancy and project management. Creates and manages isolated project namespaces with quotas and RBAC.
+                    </div>
+                    <span class="component-tech">Go</span>
+                    <span class="component-tech">Kubernetes Operator</span>
+                    <a href="https://github.com/konflux-ci/project-controller" target="_blank" class="component-repo">View on GitHub →</a>
+                </div>
+                
+                <div class="component-card" style="border-color: #ed8936;" data-name="namespace-lister" data-tags="api namespaces discovery">
+                    <div class="component-name">namespace-lister</div>
+                    <div class="component-description">
+                        Provides API for listing and discovering project namespaces. Used by UI and CLI tools.
+                    </div>
+                    <span class="component-tech">Go</span>
+                    <span class="component-tech">REST API</span>
+                    <a href="https://github.com/konflux-ci/namespace-lister" target="_blank" class="component-repo">View on GitHub →</a>
+                </div>
+                
+                <div class="component-card" style="border-color: #ed8936;" data-name="konflux-rbac" data-tags="rbac permissions security">
+                    <div class="component-name">konflux-rbac</div>
+                    <div class="component-description">
+                        Role-based access control configuration for Konflux. Defines roles, permissions, and access policies.
+                    </div>
+                    <span class="component-tech">Kubernetes RBAC</span>
+                    <span class="component-tech">YAML</span>
+                    <a href="https://github.com/redhat-appstudio/infra-deployments/tree/main/components/konflux-rbac" target="_blank" class="component-repo">View Config →</a>
+                </div>
+                
+                <div class="component-card" style="border-color: #ed8936;" data-name="policies" data-tags="policy compliance gatekeeper">
+                    <div class="component-name">policies</div>
+                    <div class="component-description">
+                        Centralized policy definitions for Konflux. Includes security policies, compliance rules, and governance.
+                    </div>
+                    <span class="component-tech">OPA</span>
+                    <span class="component-tech">Policy as Code</span>
+                    <a href="https://github.com/redhat-appstudio/infra-deployments/tree/main/components/policies" target="_blank" class="component-repo">View Config →</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Monitoring & Operations -->
+        <div class="category monitoring-ops">
+            <div class="category-header">
+                <span class="category-icon">🟣</span>
+                <h2 class="category-title">Monitoring, Observability & Operations</h2>
+                <span class="category-count">10+ components</span>
+            </div>
+            <div class="components-grid">
+                <div class="component-card" style="border-color: #9f7aea;" data-name="monitoring/prometheus" data-tags="metrics prometheus monitoring">
+                    <div class="component-name">monitoring/prometheus</div>
+                    <div class="component-description">
+                        Prometheus metric collection and alerting. Scrapes metrics from all Konflux components and triggers alerts.
+                    </div>
+                    <span class="component-tech">Prometheus</span>
+                    <span class="component-tech">PromQL</span>
+                    <span class="component-tech">Alerts</span>
+                    <a href="https://github.com/redhat-appstudio/infra-deployments/tree/main/components/monitoring/prometheus" target="_blank" class="component-repo">View Config →</a>
+                </div>
+                
+                <div class="component-card" style="border-color: #9f7aea;" data-name="monitoring/grafana" data-tags="dashboards visualization metrics">
+                    <div class="component-name">monitoring/grafana</div>
+                    <div class="component-description">
+                        Grafana dashboards for Konflux metrics. Provides visual dashboards for monitoring system health and performance.
+                    </div>
+                    <span class="component-tech">Grafana</span>
+                    <span class="component-tech">Dashboards</span>
+                    <a href="https://github.com/redhat-appstudio/infra-deployments/tree/main/components/monitoring/grafana" target="_blank" class="component-repo">View Config →</a>
+                </div>
+                
+                <div class="component-card" style="border-color: #9f7aea;" data-name="o11y (Observability)" data-tags="observability tracing logs">
+                    <div class="component-name">o11y (Observability)</div>
+                    <div class="component-description">
+                        Observability stack configuration. Integrates metrics, logs, and traces for complete system visibility.
+                    </div>
+                    <span class="component-tech">OpenTelemetry</span>
+                    <span class="component-tech">Jaeger</span>
+                    <span class="component-tech">Loki</span>
+                    <a href="https://github.com/konflux-ci/o11y" target="_blank" class="component-repo">View on GitHub →</a>
+                </div>
+                
+                <div class="component-card" style="border-color: #9f7aea;" data-name="tracing" data-tags="distributed-tracing opentelemetry jaeger">
+                    <div class="component-name">tracing</div>
+                    <div class="component-description">
+                        Distributed tracing infrastructure. Tracks requests across microservices for debugging and performance analysis.
+                    </div>
+                    <span class="component-tech">Jaeger</span>
+                    <span class="component-tech">OpenTelemetry</span>
+                    <a href="https://github.com/redhat-appstudio/infra-deployments/tree/main/components/tracing" target="_blank" class="component-repo">View Config →</a>
+                </div>
+                
+                <div class="component-card" style="border-color: #9f7aea;" data-name="monitoring/logging" data-tags="logs loki aggregation">
+                    <div class="component-name">monitoring/logging</div>
+                    <div class="component-description">
+                        Centralized log aggregation and querying using Loki. Collects logs from all Konflux components.
+                    </div>
+                    <span class="component-tech">Loki</span>
+                    <span class="component-tech">Promtail</span>
+                    <a href="https://github.com/redhat-appstudio/infra-deployments/tree/main/components/monitoring" target="_blank" class="component-repo">View Config →</a>
+                </div>
+                
+                <div class="component-card" style="border-color: #9f7aea;" data-name="kubearchive" data-tags="audit history kubernetes">
+                    <div class="component-name">kubearchive</div>
+                    <div class="component-description">
+                        Kubernetes resource history and audit trail. Archives all Kubernetes resource changes for compliance and debugging.
+                    </div>
+                    <span class="component-tech">Go</span>
+                    <span class="component-tech">PostgreSQL</span>
+                    <a href="https://github.com/kubearchive/kubearchive" target="_blank" class="component-repo">View on GitHub →</a>
+                </div>
+                
+                <div class="component-card" style="border-color: #9f7aea;" data-name="vector-tekton-logs-collector" data-tags="logs vector tekton">
+                    <div class="component-name">vector-tekton-logs-collector</div>
+                    <div class="component-description">
+                        Collects and forwards Tekton pipeline logs. Uses Vector for efficient log processing and routing.
+                    </div>
+                    <span class="component-tech">Vector</span>
+                    <span class="component-tech">Tekton</span>
+                    <a href="https://github.com/redhat-appstudio/infra-deployments/tree/main/components/vector-tekton-logs-collector" target="_blank" class="component-repo">View Config →</a>
+                </div>
+                
+                <div class="component-card" style="border-color: #9f7aea;" data-name="monitoring/blackbox" data-tags="synthetic-monitoring uptime probes">
+                    <div class="component-name">monitoring/blackbox</div>
+                    <div class="component-description">
+                        Blackbox monitoring and synthetic checks. Probes external endpoints to verify system availability.
+                    </div>
+                    <span class="component-tech">Prometheus Blackbox</span>
+                    <span class="component-tech">HTTP/TCP Probes</span>
+                    <a href="https://github.com/redhat-appstudio/infra-deployments/tree/main/components/monitoring" target="_blank" class="component-repo">View Config →</a>
+                </div>
+                
+                <div class="component-card" style="border-color: #9f7aea;" data-name="cost-management" data-tags="cost finops optimization">
+                    <div class="component-name">cost-management</div>
+                    <div class="component-description">
+                        Cloud cost tracking and optimization. Monitors and reports on infrastructure spending across environments.
+                    </div>
+                    <span class="component-tech">FinOps</span>
+                    <span class="component-tech">Cost Tracking</span>
+                    <a href="https://github.com/redhat-appstudio/infra-deployments/tree/main/components/cost-management" target="_blank" class="component-repo">View Config →</a>
+                </div>
+                
+                <div class="component-card" style="border-color: #9f7aea;" data-name="etcd-shield" data-tags="etcd backup kubernetes">
+                    <div class="component-name">etcd-shield</div>
+                    <div class="component-description">
+                        etcd backup and protection service. Ensures Kubernetes cluster state can be recovered in disaster scenarios.
+                    </div>
+                    <span class="component-tech">etcd</span>
+                    <span class="component-tech">Backup</span>
+                    <a href="https://github.com/redhat-appstudio/infra-deployments/tree/main/components/etcd-shield" target="_blank" class="component-repo">View Config →</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Search functionality
+        const searchInput = document.getElementById('searchInput');
+        const componentCards = document.querySelectorAll('.component-card');
+        
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            
+            componentCards.forEach(card => {
+                const name = card.getAttribute('data-name').toLowerCase();
+                const tags = card.getAttribute('data-tags').toLowerCase();
+                const description = card.querySelector('.component-description').textContent.toLowerCase();
+                const techs = Array.from(card.querySelectorAll('.component-tech'))
+                    .map(t => t.textContent.toLowerCase())
+                    .join(' ');
+                
+                const searchableText = `${name} ${tags} ${description} ${techs}`;
+                
+                if (searchableText.includes(searchTerm)) {
+                    card.classList.remove('hidden');
+                } else {
+                    card.classList.add('hidden');
+                }
+            });
+            
+            // Update category counts
+            document.querySelectorAll('.category').forEach(category => {
+                const visibleCards = category.querySelectorAll('.component-card:not(.hidden)').length;
+                const totalCards = category.querySelectorAll('.component-card').length;
+                const countSpan = category.querySelector('.category-count');
+                countSpan.textContent = `${visibleCards} of ${totalCards} components`;
+            });
+        });
+    </script>
+</body>
+</html>
+

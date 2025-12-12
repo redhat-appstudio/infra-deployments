@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PR Pairing Explained - Visual Guide</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .scenario-section {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .scenario-title {
+            font-size: 2em;
+            color: #2d3748;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .problem-box {
+            background: #fed7d7;
+            border-left: 4px solid #f56565;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        
+        .problem-box h3 {
+            color: #c53030;
+            margin-bottom: 10px;
+        }
+        
+        .solution-box {
+            background: #c6f6d5;
+            border-left: 4px solid #48bb78;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        
+        .solution-box h3 {
+            color: #2f855a;
+            margin-bottom: 10px;
+        }
+        
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 30px 0;
+        }
+        
+        .comparison-column {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+        }
+        
+        .comparison-column.without-pairing {
+            border: 3px solid #f56565;
+        }
+        
+        .comparison-column.with-pairing {
+            border: 3px solid #48bb78;
+        }
+        
+        .comparison-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .comparison-column.without-pairing .comparison-title {
+            color: #c53030;
+        }
+        
+        .comparison-column.with-pairing .comparison-title {
+            color: #2f855a;
+        }
+        
+        .step-flow {
+            margin: 15px 0;
+        }
+        
+        .flow-step {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid;
+            position: relative;
+        }
+        
+        .without-pairing .flow-step {
+            border-color: #fc8181;
+        }
+        
+        .with-pairing .flow-step {
+            border-color: #68d391;
+        }
+        
+        .flow-step-number {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        
+        .flow-result {
+            background: #fff5f5;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        
+        .without-pairing .flow-result {
+            background: #fff5f5;
+            color: #c53030;
+        }
+        
+        .with-pairing .flow-result {
+            background: #f0fff4;
+            color: #2f855a;
+        }
+        
+        .syntax-box {
+            background: #2d3748;
+            color: #68d391;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            margin: 20px 0;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+        
+        .syntax-title {
+            color: #a0aec0;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .highlight {
+            color: #fbbf24;
+            font-weight: bold;
+        }
+        
+        .info-card {
+            background: linear-gradient(135deg, #ebf8ff 0%, #bee3f8 100%);
+            border-left: 4px solid #4299e1;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .info-card h3 {
+            color: #2c5282;
+            margin-bottom: 10px;
+        }
+        
+        .info-card ul {
+            margin-left: 20px;
+            color: #2d3748;
+        }
+        
+        .info-card li {
+            margin: 8px 0;
+        }
+        
+        .example-pr {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+        
+        .pr-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e2e8f0;
+            margin-bottom: 15px;
+        }
+        
+        .pr-icon {
+            font-size: 2em;
+        }
+        
+        .pr-title {
+            font-weight: bold;
+            font-size: 1.2em;
+            color: #2d3748;
+        }
+        
+        .pr-body {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        
+        @media (max-width: 968px) {
+            .comparison-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-link">← Back to Visual Guide Index</a>
+        
+        <div class="header">
+            <h1>🤝 PR Pairing Explained</h1>
+            <p>How to coordinate breaking changes across multiple repositories in the Konflux ecosystem</p>
+            <p style="margin-top: 10px; font-size: 0.9em;">
+                📚 <strong>See Also:</strong> <a href="visual-testing-flow.html" style="color: white; text-decoration: underline;">E2E Testing Flow</a> | 
+                <a href="visual-e2e-infra-tests.html" style="color: white; text-decoration: underline;">E2E Tests for infra-deployments</a>
+            </p>
+        </div>
+        
+        <!-- What is PR Pairing -->
+        <div class="scenario-section">
+            <h2 class="scenario-title">❓ What is PR Pairing?</h2>
+            
+            <p style="font-size: 1.1em; line-height: 1.6; margin-bottom: 20px;">
+                PR Pairing is a mechanism that allows you to <strong>test coordinated changes across multiple repositories</strong> 
+                in the same CI run. This is crucial when making breaking changes that require updates to both a component 
+                repository and its deployment manifests (or test code).
+            </p>
+            
+            <div style="background: #e2e8f0; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <strong>ℹ️ Note:</strong> This feature is specific to <strong>Prow / OpenShift CI</strong>. 
+                The "Depends on" syntax is parsed by the CI system to checkout paired PR branches during test execution.
+            </div>
+            
+            <div class="info-card">
+                <h3>🎯 When Do You Need PR Pairing?</h3>
+                <ul>
+                    <li><strong>API Breaking Changes:</strong> Changing API endpoints in integration-service requires updating e2e-tests</li>
+                    <li><strong>Configuration Changes:</strong> New environment variable in build-service needs manifest updates</li>
+                    <li><strong>New Features:</strong> Adding new functionality that needs new Kubernetes resources</li>
+                    <li><strong>Test Updates:</strong> Updating test code to match component behavior changes</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- The Problem -->
+        <div class="scenario-section">
+            <h2 class="scenario-title">🔴 The Problem: Breaking Changes</h2>
+            
+            <div class="problem-box">
+                <h3>❌ Scenario: You're adding a new required field to an API</h3>
+                <p>You're working on integration-service and need to add a new required field to the Integration API. This requires:</p>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li>Code changes in <code>integration-service</code></li>
+                    <li>Updated manifest in <code>infra-deployments</code></li>
+                    <li>Updated tests in <code>e2e-tests</code></li>
+                </ul>
+            </div>
+            
+            <div class="comparison-grid">
+                <!-- Without Pairing -->
+                <div class="comparison-column without-pairing">
+                    <div class="comparison-title">❌ WITHOUT PR Pairing</div>
+                    <div class="step-flow">
+                        <div class="flow-step">
+                            <span class="flow-step-number">1</span>
+                            Open PR in integration-service with API changes
+                        </div>
+                        <div class="flow-step">
+                            <span class="flow-step-number">2</span>
+                            CI runs tests against OLD manifests and OLD test code
+                        </div>
+                        <div class="flow-step">
+                            <span class="flow-step-number">3</span>
+                            Tests FAIL because they don't know about new field
+                        </div>
+                        <div class="flow-step">
+                            <span class="flow-step-number">4</span>
+                            You can't merge because tests are red ❌
+                        </div>
+                        <div class="flow-step">
+                            <span class="flow-step-number">5</span>
+                            Stuck! Need to merge component first, but can't because tests fail
+                        </div>
+                    </div>
+                    <div class="flow-result">
+                        😫 Deadlock! Can't merge component until tests pass, tests can't pass until component merges
+                    </div>
+                </div>
+                
+                <!-- With Pairing -->
+                <div class="comparison-column with-pairing">
+                    <div class="comparison-title">✅ WITH PR Pairing</div>
+                    <div class="step-flow">
+                        <div class="flow-step">
+                            <span class="flow-step-number">1</span>
+                            Open PR in integration-service with API changes
+                        </div>
+                        <div class="flow-step">
+                            <span class="flow-step-number">2</span>
+                            Open paired PR in e2e-tests with updated tests
+                        </div>
+                        <div class="flow-step">
+                            <span class="flow-step-number">3</span>
+                            CI automatically detects pairing via PR description
+                        </div>
+                        <div class="flow-step">
+                            <span class="flow-step-number">4</span>
+                            CI tests integration-service PR with e2e-tests PR code
+                        </div>
+                        <div class="flow-step">
+                            <span class="flow-step-number">5</span>
+                            Tests PASS! ✅ Both PRs can merge
+                        </div>
+                    </div>
+                    <div class="flow-result">
+                        ✅ Success! Both PRs tested together, both can merge safely
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- How to Pair PRs -->
+        <div class="scenario-section">
+            <h2 class="scenario-title">📝 How to Pair PRs: Step-by-Step</h2>
+            
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin: 20px 0;">
+                <h3 style="color: #2d3748; margin-bottom: 15px;">Step 1: Create Your Component PR</h3>
+                <div class="example-pr">
+                    <div class="pr-header">
+                        <span class="pr-icon">🔧</span>
+                        <div>
+                            <div class="pr-title">PR #1234 in integration-service</div>
+                            <div style="color: #4a5568; font-size: 0.9em;">Add new required field to Integration API</div>
+                        </div>
+                    </div>
+                    <p style="margin-bottom: 10px;">Your normal PR description...</p>
+                </div>
+            </div>
+            
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin: 20px 0;">
+                <h3 style="color: #2d3748; margin-bottom: 15px;">Step 2: Create Paired PR with Special Syntax</h3>
+                <div class="example-pr">
+                    <div class="pr-header">
+                        <span class="pr-icon">🧪</span>
+                        <div>
+                            <div class="pr-title">PR #5678 in e2e-tests</div>
+                            <div style="color: #4a5568; font-size: 0.9em;">Update tests for new Integration API field</div>
+                        </div>
+                    </div>
+                    <div class="pr-body">
+Update tests to handle new required field in Integration API<br>
+<br>
+<span class="highlight">Depends on konflux-ci/integration-service#1234</span><br>
+<br>
+Changes:<br>
+- Add new field to test fixtures<br>
+- Update assertions<br>
+- Add validation tests
+                    </div>
+                </div>
+                
+                <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin-top: 15px; border-radius: 5px;">
+                    <strong>🔑 The Magic Syntax:</strong><br>
+                    <code style="background: white; padding: 5px 10px; border-radius: 3px; display: inline-block; margin-top: 8px;">
+                        Depends on {org}/{repo}#{pr-number}
+                    </code>
+                </div>
+            </div>
+            
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin: 20px 0;">
+                <h3 style="color: #2d3748; margin-bottom: 15px;">Step 3: CI Detects and Pairs Automatically</h3>
+                <div class="syntax-box">
+<span class="syntax-title"># What happens in CI:</span>
+
+1. OpenShift CI webhook receives e2e-tests PR #5678
+2. Parses PR description looking for "Depends on" pattern
+3. Finds: <span class="highlight">konflux-ci/integration-service#1234</span>
+4. Clones integration-service at PR #1234's branch
+5. Clones e2e-tests at PR #5678's branch  
+6. Runs tests with BOTH changes applied
+
+✅ Tests pass with both PRs' changes!
+                </div>
+            </div>
+        </div>
+        
+        <!-- Real-World Examples -->
+        <div class="scenario-section">
+            <h2 class="scenario-title">🌍 Real-World Pairing Examples</h2>
+            
+            <div class="example-pr" style="margin: 20px 0;">
+                <div class="pr-header">
+                    <span class="pr-icon">📦</span>
+                    <div>
+                        <div class="pr-title">Example 1: Component + infra-deployments</div>
+                    </div>
+                </div>
+                <div style="padding: 15px;">
+                    <strong>Scenario:</strong> build-service needs new environment variable<br><br>
+                    <strong>PR #1:</strong> konflux-ci/build-service#789 - Add code using NEW_FEATURE env var<br>
+                    <strong>PR #2:</strong> redhat-appstudio/infra-deployments#456<br>
+                    <div class="syntax-box" style="margin-top: 10px;">
+Update build-service deployment with new env var
+
+<span class="highlight">Depends on konflux-ci/build-service#789</span>
+
+Changes:
+- Add NEW_FEATURE env var to deployment
+- Update configuration docs
+                    </div>
+                </div>
+            </div>
+            
+            <div class="example-pr" style="margin: 20px 0;">
+                <div class="pr-header">
+                    <span class="pr-icon">🧪</span>
+                    <div>
+                        <div class="pr-title">Example 2: infra-deployments + e2e-tests</div>
+                    </div>
+                </div>
+                <div style="padding: 15px;">
+                    <strong>Scenario:</strong> Changing how ArgoCD apps are structured<br><br>
+                    <strong>PR #1:</strong> redhat-appstudio/infra-deployments#123 - Restructure argo-cd-apps/<br>
+                    <strong>PR #2:</strong> konflux-ci/e2e-tests#321<br>
+                    <div class="syntax-box" style="margin-top: 10px;">
+Update tests for new ArgoCD app structure
+
+<span class="highlight">Depends on redhat-appstudio/infra-deployments#123</span>
+
+Changes:
+- Update app discovery logic
+- Fix namespace expectations
+- Update bootstrap verification
+                    </div>
+                </div>
+            </div>
+            
+            <div class="example-pr" style="margin: 20px 0;">
+                <div class="pr-header">
+                    <span class="pr-icon">🔗</span>
+                    <div>
+                        <div class="pr-title">Example 3: Triple Pairing (Component + Manifests + Tests)</div>
+                    </div>
+                </div>
+                <div style="padding: 15px;">
+                    <strong>Scenario:</strong> Major API version bump<br><br>
+                    <strong>PR #1:</strong> konflux-ci/release-service#555 - Bump to v2 API<br>
+                    <strong>PR #2:</strong> redhat-appstudio/infra-deployments#666<br>
+                    <strong>PR #3:</strong> konflux-ci/e2e-tests#777<br>
+                    <div class="syntax-box" style="margin-top: 10px;">
+<span class="syntax-title"># In infra-deployments PR #666:</span>
+Update release-service manifests for v2 API
+
+<span class="highlight">Depends on konflux-ci/release-service#555</span>
+
+<span class="syntax-title"># In e2e-tests PR #777:</span>
+Update release tests for v2 API
+
+<span class="highlight">Depends on konflux-ci/release-service#555</span>
+<span class="highlight">Depends on redhat-appstudio/infra-deployments#666</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Important Notes -->
+        <div class="scenario-section">
+            <h2 class="scenario-title">⚠️ Important Notes & Best Practices</h2>
+            
+            <div class="info-card">
+                <h3>✅ Best Practices</h3>
+                <ul>
+                    <li><strong>Merge Order:</strong> Merge component PR first, then infra-deployments, then e2e-tests</li>
+                    <li><strong>Keep PRs Small:</strong> Smaller paired PRs are easier to review and less risky</li>
+                    <li><strong>Clear Documentation:</strong> Explain WHY pairing is needed in PR description</li>
+                    <li><strong>Test Locally First:</strong> Use paired branches locally before creating PRs</li>
+                    <li><strong>Coordinate Merges:</strong> Don't merge one without the other ready to merge</li>
+                </ul>
+            </div>
+            
+            <div style="background: #fff5f5; border-left: 4px solid #f56565; padding: 20px; border-radius: 10px; margin-top: 20px;">
+                <h3 style="color: #c53030; margin-bottom: 10px;">⚠️ Common Pitfalls</h3>
+                <ul style="color: #2d3748;">
+                    <li><strong>Typos in "Depends on" syntax:</strong> Must be exact format: <code>org/repo#number</code></li>
+                    <li><strong>Merging out of order:</strong> Component changes must merge before manifest updates</li>
+                    <li><strong>Forgetting to update all repos:</strong> Breaking change might need 3+ PRs paired</li>
+                    <li><strong>PR gets abandoned:</strong> If one PR closes, the other becomes unpaired and may fail</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Syntax Reference -->
+        <div class="scenario-section">
+            <h2 class="scenario-title">📚 Complete Syntax Reference</h2>
+            
+            <div class="syntax-box">
+<span class="syntax-title"># Basic Pairing (single dependency):</span>
+Depends on {org}/{repo}#{pr-number}
+
+<span class="syntax-title"># Examples:</span>
+Depends on konflux-ci/integration-service#1234
+Depends on redhat-appstudio/infra-deployments#5678
+Depends on openshift/release#91011
+
+<span class="syntax-title"># Multiple Dependencies:</span>
+Depends on konflux-ci/build-service#111
+Depends on redhat-appstudio/infra-deployments#222
+
+<span class="syntax-title"># Case Insensitive:</span>
+depends on konflux-ci/release-service#333
+DEPENDS ON konflux-ci/e2e-tests#444
+
+<span class="syntax-title"># Works in PR body or PR comments:</span>
+- Can be anywhere in the PR description
+- Can be added later via comment
+- Multiple "Depends on" statements supported
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
