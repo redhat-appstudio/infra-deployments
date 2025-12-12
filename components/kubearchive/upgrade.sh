@@ -8,7 +8,6 @@ cp components/kubearchive/development/kubearchive.yaml components/kubearchive/pr
 cp components/kubearchive/development/kubearchive.yaml components/kubearchive/production/kflux-prd-rh02/kubearchive.yaml
 cp components/kubearchive/development/kubearchive.yaml components/kubearchive/production/kflux-prd-rh03/kubearchive.yaml
 cp components/kubearchive/development/kubearchive.yaml components/kubearchive/production/kflux-rhel-p01/kubearchive.yaml
-cp components/kubearchive/development/kubearchive.yaml components/kubearchive/production/pentest-p01/kubearchive.yaml
 cp components/kubearchive/development/kubearchive.yaml components/kubearchive/production/stone-prd-rh01/kubearchive.yaml
 cp components/kubearchive/development/kubearchive.yaml components/kubearchive/production/stone-prod-p01/kubearchive.yaml
 cp components/kubearchive/development/kubearchive.yaml components/kubearchive/production/stone-prod-p02/kubearchive.yaml
