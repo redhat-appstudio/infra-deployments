@@ -5,6 +5,10 @@ namespace: external-secrets-operator
 
 resources:
 - custom-resources.yaml
+- networkpolicy-default-deny.yaml
+- networkpolicy-allow-egress.yaml
+- networkpolicy-allow-ingress.yaml
+- networkpolicy-allow-same-ns.yaml
 
 helmGlobals:
   chartHome: .
