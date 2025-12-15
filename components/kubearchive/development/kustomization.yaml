@@ -56,7 +56,7 @@ patches:
               spec:
                 containers:
                   - name: vacuum
-                    image: quay.io/kubearchive/vacuum:v1.15.0
+                    image: quay.io/kubearchive/vacuum:v1.16.0
   - patch: |-
       apiVersion: batch/v1
       kind: CronJob
@@ -69,7 +69,7 @@ patches:
               spec:
                 containers:
                   - name: vacuum
-                    image: quay.io/kubearchive/vacuum:v1.15.0
+                    image: quay.io/kubearchive/vacuum:v1.16.0
   - patch: |-
       apiVersion: batch/v1
       kind: CronJob
@@ -82,7 +82,7 @@ patches:
               spec:
                 containers:
                   - name: vacuum
-                    image: quay.io/kubearchive/vacuum:v1.15.0
+                    image: quay.io/kubearchive/vacuum:v1.16.0
   - patch: |-
       apiVersion: batch/v1
       kind: Job
@@ -96,13 +96,6 @@ patches:
             "This job needs to clone a repository to do its job, so it needs write access to the FS."
       spec:
         suspend: false
-        template:
-          spec:
-            containers:
-              - name: migration
-                env:
-                  - name: KUBEARCHIVE_VERSION
-                    value: v1.15.0
   # These patches add an annotation so an OpenShift service
   # creates the TLS secrets instead of Cert Manager
   - patch: |-
