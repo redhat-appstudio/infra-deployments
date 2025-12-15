@@ -1,0 +1,27 @@
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: image-rbac-proxy
+  namespace: image-rbac-proxy
+spec:
+  to:
+    kind: Service
+    name: image-rbac-proxy
+  tls:
+    insecureEdgeTerminationPolicy: Redirect
+    termination: reencrypt
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: dex
+  namespace: image-rbac-proxy
+spec:
+  path: /idp
+  to:
+    kind: Service
+    name: dex
+  tls:
+    insecureEdgeTerminationPolicy: Redirect
+    termination: reencrypt
