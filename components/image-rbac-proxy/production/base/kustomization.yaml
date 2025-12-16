@@ -10,3 +10,10 @@ images:
 - name: quay.io/konflux-ci/image-rbac-proxy
   newName: quay.io/konflux-ci/image-rbac-proxy
   newTag: 85f9ca9d66f306dc1128bf369391a9e8e7f2a3ef
+
+patches:
+- path: external-secret-patch.yaml
+  target:
+    kind: ExternalSecret
+    group: external-secrets.io
+    version: v1beta1
