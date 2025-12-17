@@ -27,6 +27,11 @@ configMapGenerator:
               LOG_URL=http://loki-gateway.product-kubearchive-logging.svc.cluster.local:80/loki/api/v1/query_range?query=%7Bstream%3D%22{NAMESPACE}%22%7D%20%7C%20pod_id%20%3D%20%60{POD_ID}%60%20%7C%20container%20%3D%20%60{CONTAINER_NAME}%60&start={START}&end={END}&direction=forward
           - |
               LOG_URL_JSONPATH=$.data.result[*].values[*][1]
+    - name: otel-collector-conf
+      behavior: replace
+      namespace: product-kubearchive
+      files:
+        - otel-collector-config.yaml
 
 patches:
   - patch: |-

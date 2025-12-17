@@ -1,0 +1,31 @@
+---
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+
+exporters:
+  prometheus:
+    endpoint: 127.0.0.1:9090
+    send_timestamps: true
+    add_metric_suffixes: false
+  otlp:  # otlp collector that sends traces to signalfx
+    endpoint: open-telemetry-opentelemetry-collector.konflux-otel.svc.cluster.local:4317
+    tls:
+      insecure: true
+  debug:
+
+service:
+  pipelines:
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [prometheus]
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp]
