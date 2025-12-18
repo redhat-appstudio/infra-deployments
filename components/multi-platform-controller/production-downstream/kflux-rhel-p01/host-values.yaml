@@ -14,25 +14,33 @@ archDefaults:
 
 
 dynamicConfigs:
-  linux-arm64: {}
+  linux-arm64:
+    check-interval: "70"
 
   linux-amd64:
     instance-type: "m7a.large"
+    check-interval: "70"
 
-  linux-mlarge-arm64: {}
+  linux-mlarge-arm64:
+    check-interval: "70"
 
   linux-mlarge-amd64:
     instance-type: "m7a.large"
+    check-interval: "70"
 
-  linux-d160-mlarge-arm64: {}
+  linux-d160-mlarge-arm64:
+    check-interval: "70"
 
   linux-d160-mlarge-amd64:
     instance-type: "m7a.large"
+    check-interval: "70"
 
-  linux-mxlarge-arm64: {}
+  linux-mxlarge-arm64:
+    check-interval: "70"
 
   linux-mxlarge-amd64:
     instance-type: "m7a.xlarge"
+    check-interval: "70"
 
   linux-d160-mxlarge-arm64: {}
 
@@ -251,57 +259,57 @@ dynamicConfigs:
 # Static hosts configuration
 staticHosts:
   # PPC
-  ppc64le-static-1:
-    address: "10.130.78.85"
+  ppc64le-static-x0:
+    address: "10.130.76.24"
     concurrency: "8"
     platform: "linux/ppc64le"
     secret: "ibm-ppc64le-ssh-key-wdc06"
     user: "root"
 
-  ppc64le-static-2:
-    address: "10.130.78.88"
+  ppc64le-static-x1:
+    address: "10.130.76.3"
     concurrency: "8"
     platform: "linux/ppc64le"
     secret: "ibm-ppc64le-ssh-key-wdc06"
     user: "root"
 
-  ppc64le-static-3:
-    address: "10.130.78.84"
+  ppc64le-static-x2:
+    address: "10.130.76.7"
     concurrency: "8"
     platform: "linux/ppc64le"
     secret: "ibm-ppc64le-ssh-key-wdc06"
     user: "root"
 
-  ppc64le-static-4:
-    address: "10.130.78.94"
+  ppc64le-static-x3:
+    address: "10.130.76.8"
     concurrency: "8"
     platform: "linux/ppc64le"
     secret: "ibm-ppc64le-ssh-key-wdc06"
     user: "root"
 
-  ppc64le-static-5:
-    address: "10.130.78.86"
+  ppc64le-static-x4:
+    address: "10.130.76.10"
     concurrency: "8"
     platform: "linux/ppc64le"
     secret: "ibm-ppc64le-ssh-key-wdc06"
     user: "root"
 
-  ppc64le-static-6:
-    address: "10.130.78.90"
+  ppc64le-static-x5:
+    address: "10.130.76.28"
     concurrency: "8"
     platform: "linux/ppc64le"
     secret: "ibm-ppc64le-ssh-key-wdc06"
     user: "root"
 
-  ppc64le-static-7:
-    address: "10.130.78.89"
+  ppc64le-static-x6:
+    address: "10.130.76.9"
     concurrency: "8"
     platform: "linux/ppc64le"
     secret: "ibm-ppc64le-ssh-key-wdc06"
     user: "root"
 
-  ppc64le-static-8:
-    address: "10.130.78.92"
+  ppc64le-static-x7:
+    address: "10.130.76.23"
     concurrency: "8"
     platform: "linux/ppc64le"
     secret: "ibm-ppc64le-ssh-key-wdc06"
@@ -310,21 +318,21 @@ staticHosts:
    # s390
   s390x-large-static-0:
     address: "10.130.130.12"
-    concurrency: "4"
+    concurrency: "1"
     platform: "linux-large/s390x"
     secret: "ibm-s390x-ssh-key-large-builder"
     user: "root"
 
   s390x-large-static-1:
     address: "10.130.130.26"
-    concurrency: "4"
+    concurrency: "1"
     platform: "linux-large/s390x"
     secret: "ibm-s390x-ssh-key-large-builder"
     user: "root"
 
   s390x-large-static-2:
     address: "10.130.130.42"
-    concurrency: "4"
+    concurrency: "1"
     platform: "linux-large/s390x"
     secret: "ibm-s390x-ssh-key-large-builder"
     user: "root"

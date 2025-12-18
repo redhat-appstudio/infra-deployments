@@ -8,6 +8,18 @@ resources:
 
 namespace: product-kubearchive
 
+configMapGenerator:
+  - name: kubearchive-api-url
+    options:
+      disableNameSuffixHash: true
+    literals:
+      - URL=https://kubearchive-api-server-product-kubearchive.apps.stone-stage-p01.hpmt.p1.openshiftapps.com
+  - name: otel-collector-conf
+    behavior: replace
+    namespace: product-kubearchive
+    files:
+      - otel-collector-config.yaml
+
 patches:
   - patch: |-
       $patch: delete
@@ -80,10 +92,3 @@ patches:
                 env:
                 - name: KUBEARCHIVE_OTEL_MODE
                   value: delegated
-
-configMapGenerator:
-  - name: otel-collector-conf
-    behavior: replace
-    namespace: product-kubearchive
-    files:
-      - otel-collector-config.yaml

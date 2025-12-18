@@ -5,7 +5,7 @@ resources:
   - ../../base
   - ../base
   - external-secret.yaml
-  - https://github.com/kubearchive/kubearchive/releases/download/v1.12.0/kubearchive.yaml?timeout=90
+  - kubearchive.yaml
 
 namespace: product-kubearchive
 
@@ -13,6 +13,11 @@ namespace: product-kubearchive
 # Due to quoting limitations of generators we need to introduce the values with the |
 # See https://github.com/kubernetes-sigs/kustomize/issues/4845#issuecomment-1671570428
 configMapGenerator:
+    - name: kubearchive-api-url
+      options:
+        disableNameSuffixHash: true
+      literals:
+        - URL=https://kubearchive-api-server-product-kubearchive.apps.stone-prd-rh01.pg1f.p1.openshiftapps.com
     - name: kubearchive-logging
       literals:
           - |
@@ -27,6 +32,11 @@ configMapGenerator:
               LOG_URL=http://loki-gateway.product-kubearchive-logging.svc.cluster.local:80/loki/api/v1/query_range?query=%7Bstream%3D%22{NAMESPACE}%22%7D%20%7C%20pod_id%20%3D%20%60{POD_ID}%60%20%7C%20container%20%3D%20%60{CONTAINER_NAME}%60&start={START}&end={END}&direction=forward
           - |
               LOG_URL_JSONPATH=$.data.result[*].values[*][1]
+    - name: otel-collector-conf
+      behavior: replace
+      namespace: product-kubearchive
+      files:
+        - otel-collector-config.yaml
 
 patches:
   - patch: |-
@@ -57,7 +67,7 @@ patches:
               spec:
                 containers:
                   - name: vacuum
-                    image: quay.io/kubearchive/vacuum:v1.12.0
+                    image: quay.io/kubearchive/vacuum:v1.15.0
 
   - patch: |-
       apiVersion: batch/v1
@@ -78,7 +88,7 @@ patches:
               - name: migration
                 env:
                   - name: KUBEARCHIVE_VERSION
-                    value: v1.12.0
+                    value: v1.15.0
   # We don't need the Secret as it will be created by the ExternalSecrets Operator
   - patch: |-
       $patch: delete
@@ -159,6 +169,8 @@ patches:
       spec:
         template:
           spec:
+            securityContext:
+              runAsUser: null
             containers:
               - name: manager
                 args: [--health-probe-bind-address=:8081]

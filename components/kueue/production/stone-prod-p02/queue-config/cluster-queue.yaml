@@ -149,6 +149,8 @@ spec:
     - linux-x86-64
     - local
     - localhost
+    - macos-mac2metal-arm64
+    - windows-4xlarge-amd64
     flavors:
     - name: platform-group-3
       resources:
@@ -167,13 +169,17 @@ spec:
       - name: linux-root-arm64
         nominalQuota: '250'
       - name: linux-s390x
-        nominalQuota: '64'
+        nominalQuota: '72'
       - name: linux-x86-64
         nominalQuota: '1000'
       - name: local
         nominalQuota: '1000'
       - name: localhost
         nominalQuota: '1000'
+      - name: macos-mac2metal-arm64
+        nominalQuota: '5'
+      - name: windows-4xlarge-amd64
+        nominalQuota: '5'
   stopPolicy: None
 ---
 apiVersion: kueue.x-k8s.io/v1beta1
