@@ -22,6 +22,7 @@ spec:
         kind: PipelineRun
       archiveWhen: has(status.completionTime)
       deleteWhen: has(status.completionTime) && timestamp(metadata.completionTime) < now() - duration("5m")
+      archiveOnDelete: 'true'
     - selector:
         apiVersion: tekton.dev/v1
         kind: TaskRun
