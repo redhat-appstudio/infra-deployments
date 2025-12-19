@@ -96,8 +96,6 @@ spec:
             filelog/{{ .index }}_audit:
               include:
                 - /var/log/audit/audit.log
-                - /var/log/messages
-                - /var/log/secure  # e.g., /var/log/nginx/access.log
               include_file_path: true
               exclude_older_than: 86400s
               operators:
