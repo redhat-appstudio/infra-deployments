@@ -119,10 +119,10 @@ ingester:
   resources:
     requests:
       cpu: 500m
-      memory: 1Gi
+      memory: 2Gi
     limits:
       cpu: 2000m
-      memory: 2Gi
+      memory: 4Gi
   persistence:
     enabled: true
     size: 10Gi
@@ -139,9 +139,9 @@ querier:
   resources:
     requests:
       cpu: 300m
-      memory: 512Mi
-    limits:
       memory: 1Gi
+    limits:
+      memory: 1.5Gi
   affinity: {}
 
 queryFrontend:
