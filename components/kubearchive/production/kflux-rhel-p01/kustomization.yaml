@@ -62,7 +62,7 @@ patches:
               spec:
                 containers:
                   - name: vacuum
-                    image: quay.io/kubearchive/vacuum:v1.15.0
+                    image: quay.io/kubearchive/vacuum:v1.17.1
 
   - patch: |-
       apiVersion: batch/v1
@@ -81,9 +81,8 @@ patches:
           spec:
             containers:
               - name: migration
-                env:
-                  - name: KUBEARCHIVE_VERSION
-                    value: v1.15.0
+                securityContext:
+                  runAsUser: null
   # We don't need the Secret as it will be created by the ExternalSecrets Operator
   - patch: |-
       $patch: delete
