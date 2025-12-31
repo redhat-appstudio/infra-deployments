@@ -1,0 +1,11 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: validate-cost-management-labels
+spec:
+  policyName: validate-cost-management-labels
+  validationActions: [Deny]
+  matchResources:
+    objectSelector:
+      matchLabels:
+        konflux-ci.dev/type: tenant
