@@ -34,3 +34,30 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: admin
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: konflux-kite-authorizer
+rules:
+  - apiGroups:
+      - authorization.k8s.io
+      - authentication.k8s.io
+    resources:
+      - subjectaccessreviews
+      - tokenreviews
+    verbs:
+      - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: konflux-kite-authorizer
+subjects:
+- kind: ServiceAccount
+  name: konflux-kite
+  namespace: konflux-kite
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: konflux-kite-authorizer
