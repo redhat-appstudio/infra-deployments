@@ -2243,7 +2243,7 @@ metadata:
   namespace: openshift-marketplace
 spec:
   displayName: custom-operators
-  image: quay.io/openshift-pipeline/pipelines-index-4.17@sha256:92bd402729a9985593a49ec87b658cda7639f0fbf46bfe71a75acf035012b78c
+  image: quay.io/openshift-pipeline/pipelines-index-4.17@sha256:da69014f19f4d6f07564659b7233b9359065df6d090457b6c36d3e699a059b79
   sourceType: grpc
   updateStrategy:
     registryPoll:
@@ -2266,15 +2266,6 @@ spec:
     env:
       - name: AUTOINSTALL_COMPONENTS
         value: "false"
-      # TODO: remove these once Pipelines as Code v0.40.0+ is being deployed
-      - name: IMAGE_PAC_PAC_CONTROLLER
-        value: "quay.io/openshift-pipeline/pipelines-pipelines-as-code-controller-rhel9@sha256:9e74abe961113c6801ea5a2b6cc35d3fc701f69d7e26c6f84fc7f274fb8b21bb"
-      - name: IMAGE_PAC_PAC_WEBHOOK
-        value: "quay.io/openshift-pipeline/pipelines-pipelines-as-code-webhook-rhel9@sha256:31ea365f60073c74f3f4d5ab3b5863ced25cf27bb02fdbbad710da88dd14ed19"
-      - name: IMAGE_PAC_PAC_WATCHER
-        value: "quay.io/openshift-pipeline/pipelines-pipelines-as-code-watcher-rhel9@sha256:553cdf0a28c83afef171b6c06741a451be5dfb8275cd2195b993bbc7e86f143a"
-      - name: IMAGE_PAC_PAC_CLI
-        value: "quay.io/openshift-pipeline/pipelines-pipelines-as-code-cli-rhel9@sha256:363623a9d95a632d174c87e8190a805930ac8cf88fc102605ecb09076fc045f4"
 ---
 apiVersion: route.openshift.io/v1
 kind: Route
