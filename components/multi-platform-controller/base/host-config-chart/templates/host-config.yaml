@@ -519,11 +519,15 @@ data:
   dynamic.linux-c6gd2xlarge-arm64.subnet-id: {{ default (index $arm "subnet-id") ((index $config "subnet-id")) | quote }}
   dynamic.linux-c6gd2xlarge-arm64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-c6gd2xlarge-arm64.allocation-timeout: "1200"
-  {{- if (index $config "user-data") }}
+  {{- if or (index $config "user-data") (.Files.Get "files/linux-c6gd2xlarge-arm64-init.sh") }}
   dynamic.linux-c6gd2xlarge-arm64.user-data: |
+  {{- if (index $config "user-data") }}
   {{- $lines := splitList "\n" (index $config "user-data") }}
   {{- range $line := $lines }}
     {{ $line }}
+  {{- end }}
+  {{- else }}
+{{ .Files.Get "files/linux-c6gd2xlarge-arm64-init.sh" | indent 4 }}
   {{- end }}
   {{- end }}
   {{ end }}
@@ -921,11 +925,15 @@ data:
   dynamic.linux-g64xlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-g64xlarge" $environment) | quote }}
   dynamic.linux-g64xlarge-amd64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-g64xlarge-amd64.allocation-timeout: "1200"
-  {{- if (index $config "user-data") }}
+  {{- if or (index $config "user-data") (.Files.Get "files/linux-g64xlarge-amd64-init.sh") }}
   dynamic.linux-g64xlarge-amd64.user-data: |
+  {{- if (index $config "user-data") }}
   {{- $lines := splitList "\n" (index $config "user-data") }}
   {{- range $line := $lines }}
     {{ $line }}
+  {{- end }}
+  {{- else }}
+{{ .Files.Get "files/linux-g64xlarge-amd64-init.sh" | indent 4 }}
   {{- end }}
   {{- end }}
   {{ end }}
@@ -1051,11 +1059,15 @@ data:
   {{- if (index $config "throughput") }}
   dynamic.macos-mac2metal-arm64.throughput: {{ index $config "throughput" | quote }}
   {{ end }}
-  {{- if (index $config "user-data") }}
+  {{- if or (index $config "user-data") (.Files.Get "files/macos-mac2metal-arm64-init.sh") }}
   dynamic.macos-mac2metal-arm64.user-data: |
+  {{- if (index $config "user-data") }}
   {{- $lines := splitList "\n" (index $config "user-data") }}
   {{- range $line := $lines }}
     {{ $line }}
+  {{- end }}
+  {{- else }}
+{{ .Files.Get "files/macos-mac2metal-arm64-init.sh" | indent 4 }}
   {{- end }}
   {{- end }}
   {{ end }}
@@ -1142,11 +1154,15 @@ data:
   {{- if (index $config "throughput") }}
   dynamic.windows-4xlarge-amd64.throughput: {{ index $config "throughput" | quote }}
   {{ end }}
-  {{- if (index $config "user-data") }}
+  {{- if or (index $config "user-data") (.Files.Get "files/windows-init.ps1") }}
   dynamic.windows-4xlarge-amd64.user-data: |
+  {{- if (index $config "user-data") }}
   {{- $lines := splitList "\n" (index $config "user-data") }}
   {{- range $line := $lines }}
     {{ $line }}
+  {{- end }}
+  {{- else }}
+{{ .Files.Get "files/windows-init.ps1" | indent 4 }}
   {{- end }}
   {{- end }}
   {{ end }}
