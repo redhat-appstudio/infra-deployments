@@ -16,9 +16,10 @@ spec:
       archiveWhen: has(status.completionTime)
       # CEL duration only supports h, m, s, ms, us, ns suffixes, so we convert days to hours
       # Uses gracePeriodDays from Release spec if present (capped at 30 days max), otherwise defaults to 5 days (120h)
-      # deleteWhen: 'timestamp(metadata.creationTimestamp) < now() - duration(string(has(spec.gracePeriodDays) ? (spec.gracePeriodDays > 30 ? 720 : spec.gracePeriodDays * 24) : 120) + "h")'
-      # Workaround until https://github.com/kubearchive/kubearchive/issues/1562 is fixed
-      deleteWhen: 'timestamp(metadata.creationTimestamp) < now() - (has(spec.gracePeriodDays) && spec.gracePeriodDays > 30 ? duration("720h") : duration("120h") )'
+      keepLastWhen:
+        - name: cleanup
+          when: 'timestamp(metadata.creationTimestamp) < now() - duration(string(has(spec.gracePeriodDays) ? (spec.gracePeriodDays > 30 ? 720 : spec.gracePeriodDays * 24) : 120) + "h")'
+          count: 0
     - selector:
         apiVersion: tekton.dev/v1
         kind: PipelineRun
