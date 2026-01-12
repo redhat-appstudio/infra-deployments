@@ -39,3 +39,31 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: admin
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: kubearchive-api-url-reader
+  namespace: kubearchive
+rules:
+  - apiGroups: [""]
+    resources:
+      - configmaps
+    verbs:
+      - get
+    resourceNames:
+      - kubearchive-api-url
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: kubearchive-api-url-reader
+  namespace: kubearchive
+subjects:
+- kind: Group
+  apiGroup: rbac.authorization.k8s.io
+  name: system:authenticated
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: kubearchive-api-url-reader

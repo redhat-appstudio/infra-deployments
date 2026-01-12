@@ -1,0 +1,61 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kyverno-admission:read-groups
+  labels:
+    rbac.kyverno.io/aggregate-to-admission-controller: "true"
+rules:
+- apiGroups:
+  - user.openshift.io
+  resources:
+  - groups
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kyverno-background:manage-support-clusterrolebindings
+  labels:
+    rbac.kyverno.io/aggregate-to-background-controller: "true"
+rules:
+- apiGroups:
+  - user.openshift.io
+  resources:
+  - groups
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - clusterrolebindings
+  verbs:
+  - create
+  - get
+  - list
+  - delete
+  - update
+  - patch
+---
+# To allow kyverno to create the ClusterRoleBinding,
+# the kyverno-background-controller's ServiceAccount
+# needs to have the same permissions it wants to assign
+# to someone else (the 'konflux-viewer-user-actions' ClusterRole)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kyverno-background:konflux-viewer-user-actions-for-nslister
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: konflux-viewer-user-actions
+subjects:
+- kind: ServiceAccount
+  namespace: konflux-kyverno
+  name: kyverno-background-controller
+

@@ -57,7 +57,7 @@ spec:
                 max_elapsed_time: 10m
           extensions:
             file_storage/otc:
-              directory: /tmp/otelcollector/oteltmp
+              directory: /var/lib/otelcol-contrib/queue
               timeout: 10s
               create_directory: true
           processors:
@@ -93,16 +93,14 @@ spec:
                   os.type:
                     enabled: true
           receivers:
-            filelog/rh_rhtap_stage_mpc_audit:
+            filelog/{{ .index }}_audit:
               include:
                 - /var/log/audit/audit.log
-                - /var/log/messages
-                - /var/log/secure  # e.g., /var/log/nginx/access.log
               include_file_path: true
               exclude_older_than: 86400s
               operators:
                 - type: add
-                  id: rh_rhtap_stage_mpc_idx
+                  id: {{ .index }}_idx
                   field: attributes["com.splunk.index"]
                   value: {{ .index }}
                   on_error: send
@@ -111,14 +109,14 @@ spec:
                   field: attributes["com.splunk.sourcetype"]
                   value: audit
                   on_error: send
-            filelog/rh_rhtap_stage_mpc_messages:
+            filelog/{{ .index }}_messages:
               include:
                 - /var/log/messages
               include_file_path: true
               exclude_older_than: 86400s
               operators:
                 - type: add
-                  id: rh_rhtap_stage_mpc_idx
+                  id: {{ .index }}_idx
                   field: attributes["com.splunk.index"]
                   value: {{ .index }}
                   on_error: send
@@ -127,7 +125,7 @@ spec:
                   field: attributes["com.splunk.sourcetype"]
                   value: messages
                   on_error: send
-            filelog/rh_rhtap_stage_mpc_secure:
+            filelog/{{ .index }}_secure:
               include:
                 - /var/log/secure
               include_file_path: true
@@ -154,8 +152,8 @@ spec:
                   - transform/common
                 receivers:
                   # List all your receivers here
-                  - filelog/rh_rhtap_stage_mpc_audit
-                  - filelog/rh_rhtap_stage_mpc_messages
-                  - filelog/rh_rhtap_stage_mpc_secure
+                  - filelog/{{ .index }}_audit
+                  - filelog/{{ .index }}_messages
+                  - filelog/{{ .index }}_secure
                 exporters:
                   - splunk_hec/corp

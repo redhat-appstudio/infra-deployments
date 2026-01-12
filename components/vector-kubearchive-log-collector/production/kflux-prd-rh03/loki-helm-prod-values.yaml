@@ -150,9 +150,9 @@ queryFrontend:
   resources:
     requests:
       cpu: 200m
-      memory: 256Mi
-    limits:
       memory: 512Mi
+    limits:
+      memory: 1Gi
 
 queryScheduler:
   replicas: 2
@@ -200,42 +200,50 @@ indexGateway:
       memory: 1Gi
   affinity: {}
 
-# Enable Memcached caches for performance
+# Cache configuration - Helm chart automatically generates query_range and chunk_store_config
+# from chunksCache and resultsCache settings
+# Increased maxItemMemory to prevent "object too large for cache" errors
 chunksCache:
   enabled: true
   replicas: 1
-  maxItemMemory: 10  # MB
+  batchSize: 256  # Batch size for sending/receiving chunks from cache
+  parallelism: 10  # Parallel threads for cache operations
+  maxItemMemory: 30  # MB - Increased from 10MB to handle chunks (3MB target + compression overhead + metadata)
+  defaultValidity: 12h  # How long cached chunks are stored
 
 resultsCache:
   enabled: true
   replicas: 1
-  maxItemMemory: 10  # MB
+  maxItemMemory: 100  # MB - Increased from 10MB to handle large query results (can be much larger than chunks)
+  defaultValidity: 12h  # How long cached query results are stored
 
 memcached:
   enabled: true
-  maxItemMemory: 10  # MB
+  maxItemMemory: 30  # MB - Shared default for general memcached instances
 
+# Shared memcached configuration (used as defaults for all memcached instances)
+# These don't deploy separate instances - they configure shared settings
 memcachedResults:
   enabled: true
-  maxItemMemory: 10  # MB
+  maxItemMemory: 100  # MB - For query result caching
 
 memcachedChunks:
   enabled: true
-  maxItemMemory: 10  # MB
+  maxItemMemory: 30  # MB - For chunk caching
 
 memcachedFrontend:
   enabled: true
-  maxItemMemory: 10  # MB
+  maxItemMemory: 100  # MB - Frontend cache can handle large query results
 
 memcachedIndexQueries:
   enabled: true
-  maxItemMemory: 10  # MB
+  maxItemMemory: 50  # MB - Index queries can be large
 
 memcachedIndexWrites:
   enabled: true
-  maxItemMemory: 10  # MB
+  maxItemMemory: 30  # MB - Index write operations
 
-# Disable Minio - staging uses S3 with IAM role
+# Disable Minio
 minio:
   enabled: false
 
