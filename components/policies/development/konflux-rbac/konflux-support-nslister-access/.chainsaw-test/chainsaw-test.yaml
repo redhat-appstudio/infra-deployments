@@ -52,7 +52,7 @@ metadata:
 spec:
   concurrent: false
   description: |
-    Tests that when a konflux-support Group is created with users,
+    Tests that when an ai-konflux-user-support Group is created with users,
     a ClusterRoleBinding is generated with individual User subjects,
     the correct label, and the konflux-viewer-user-actions ClusterRole.
   steps:
@@ -91,7 +91,7 @@ spec:
             file: ../generate-support-nslister-clusterrolebinding-clusterpolicy.yaml
         - assert:
             file: chainsaw-assert-clusterpolicy.yaml
-    - name: Create konflux-support Group with users
+    - name: Create ai-konflux-user-support Group with users
       try:
         - create:
             file: ./resources/group-with-users.yaml
@@ -127,7 +127,7 @@ metadata:
 spec:
   concurrent: false
   description: |
-    Tests that when users are added to the konflux-support Group,
+    Tests that when users are added to the ai-konflux-user-support Group,
     the ClusterRoleBinding subjects are updated to include the new users.
   steps:
     - name: given-kyverno-has-permission-on-resources
@@ -165,7 +165,7 @@ spec:
             file: ../generate-support-nslister-clusterrolebinding-clusterpolicy.yaml
         - assert:
             file: chainsaw-assert-clusterpolicy.yaml
-    - name: Create konflux-support Group with initial users
+    - name: Create ai-konflux-user-support Group with initial users
       try:
         - create:
             file: ./resources/group-with-users.yaml
@@ -219,7 +219,7 @@ metadata:
 spec:
   concurrent: false
   description: |
-    Tests that when users are removed from the konflux-support Group,
+    Tests that when users are removed from the ai-konflux-user-support Group,
     the ClusterRoleBinding subjects are updated to remove those users.
   steps:
     - name: given-kyverno-has-permission-on-resources
@@ -257,7 +257,7 @@ spec:
             file: ../generate-support-nslister-clusterrolebinding-clusterpolicy.yaml
         - assert:
             file: chainsaw-assert-clusterpolicy.yaml
-    - name: Create konflux-support Group with multiple users
+    - name: Create ai-konflux-user-support Group with multiple users
       try:
         - create:
             file: ./resources/group-with-users.yaml
@@ -299,7 +299,7 @@ metadata:
 spec:
   concurrent: false
   description: |
-    Tests that when the konflux-support Group has no users,
+    Tests that when the ai-konflux-user-support Group has no users,
     the ClusterRoleBinding is still created but with empty subjects.
   steps:
     - name: given-kyverno-has-permission-on-resources
@@ -337,7 +337,7 @@ spec:
             file: ../generate-support-nslister-clusterrolebinding-clusterpolicy.yaml
         - assert:
             file: chainsaw-assert-clusterpolicy.yaml
-    - name: Create konflux-support Group with no users
+    - name: Create ai-konflux-user-support Group with no users
       try:
         - create:
             file: ./resources/group-empty.yaml
