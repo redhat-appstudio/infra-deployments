@@ -12,7 +12,14 @@ spec:
   name: deployment-validation-operator
   source: community-operators
   sourceNamespace: openshift-marketplace
-
+  config:
+    resources:
+      requests:
+        memory: "600Mi"
+        cpu: "100m"
+      limits:
+        memory: "600Mi"
+        cpu: "100m"
 ---
 apiVersion: operators.coreos.com/v1
 kind: OperatorGroup
