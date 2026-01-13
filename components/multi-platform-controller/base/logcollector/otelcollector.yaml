@@ -57,7 +57,7 @@ spec:
                 max_elapsed_time: 10m
           extensions:
             file_storage/otc:
-              directory: /var/lib/otelcol-contrib/queue
+              directory: /tmp/otelcollector/oteltmp
               timeout: 10s
               create_directory: true
           processors:
@@ -109,12 +109,11 @@ spec:
                   field: attributes["com.splunk.sourcetype"]
                   value: audit
                   on_error: send
-            filelog/{{ .index }}_messages:
-              include:
-                - /var/log/messages
-              include_file_path: true
-              exclude_older_than: 86400s
+            journald/{{ .index }}_messages:
               operators:
+                - type: filter
+                  id: messages_filter
+                  expr: 'attributes["SYSLOG_IDENTIFIER"] != nil'
                 - type: add
                   id: {{ .index }}_idx
                   field: attributes["com.splunk.index"]
@@ -125,14 +124,16 @@ spec:
                   field: attributes["com.splunk.sourcetype"]
                   value: messages
                   on_error: send
-            filelog/{{ .index }}_secure:
-              include:
-                - /var/log/secure
-              include_file_path: true
-              exclude_older_than: 86400s
+            journald/{{ .index }}_secure:
               operators:
+                - type: filter
+                  id: secure_filter
+                  expr: |
+                    attributes["SYSLOG_IDENTIFIER"] == "sshd" ||
+                    attributes["SYSLOG_IDENTIFIER"] == "sudo" ||
+                    attributes["SYSLOG_FACILITY"] == "auth"
                 - type: add
-                  id: rh_rhtap_stage_mpc_idx
+                  id: {{ .index }}_idx
                   field: attributes["com.splunk.index"]
                   value: {{ .index }}
                   on_error: send
@@ -153,7 +154,7 @@ spec:
                 receivers:
                   # List all your receivers here
                   - filelog/{{ .index }}_audit
-                  - filelog/{{ .index }}_messages
-                  - filelog/{{ .index }}_secure
+                  - journald/{{ .index }}_messages
+                  - journald/{{ .index }}_secure
                 exporters:
                   - splunk_hec/corp
