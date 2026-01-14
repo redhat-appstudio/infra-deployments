@@ -2,10 +2,12 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namePrefix: konflux-rbac-
 resources:
-- bootstrap-tenant-namespace-np-ocpconsole-clusterpolicy.yaml
-- bootstrap-tenant-namespace-np-ocpingress-clusterpolicy.yaml
-- bootstrap-tenant-namespace-np-ocpmonitoring-clusterpolicy.yaml
-- bootstrap-tenant-namespace-np-olm-clusterpolicy.yaml
-- bootstrap-tenant-namespace-np-samenamespace-clusterpolicy.yaml
-- bootstrap-tenant-namespace-rbcm-clusterpolicy.yaml
-- kyverno_rbac.yaml
+  - bootstrap-tenant-namespace-np-ocpconsole-clusterpolicy.yaml
+  - bootstrap-tenant-namespace-np-ocpingress-clusterpolicy.yaml
+  - bootstrap-tenant-namespace-np-ocpmonitoring-clusterpolicy.yaml
+  - bootstrap-tenant-namespace-np-olm-clusterpolicy.yaml
+  - bootstrap-tenant-namespace-np-samenamespace-clusterpolicy.yaml
+  - bootstrap-tenant-namespace-rbcm-clusterpolicy.yaml
+  - kyverno_rbac.yaml
+commonAnnotations:
+  argocd.argoproj.io/sync-options: Prune=false
