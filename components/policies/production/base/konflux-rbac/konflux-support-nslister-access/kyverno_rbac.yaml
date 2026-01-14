@@ -42,8 +42,10 @@ rules:
   - update
   - patch
 ---
-# ClusterRoleBinding: Grants Kyverno background controller the konflux-viewer-user-actions
-# role so it can validate and manage ClusterRoleBindings that reference this role
+# To allow kyverno to create the ClusterRoleBinding,
+# the kyverno-background-controller's ServiceAccount
+# needs to have the same permissions it wants to assign
+# to someone else (the 'konflux-viewer-user-actions' ClusterRole)
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:

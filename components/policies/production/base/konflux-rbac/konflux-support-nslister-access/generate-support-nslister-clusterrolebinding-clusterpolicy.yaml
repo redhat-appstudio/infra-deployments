@@ -46,8 +46,9 @@ spec:
           metadata:
             labels:
               namespace-lister.konflux-ci.dev/use-for-access: 'true'
-        subjects: "{{ userSubjects }}"
-        roleRef:
-          kind: ClusterRole
-          name: konflux-viewer-user-actions
-          apiGroup: rbac.authorization.k8s.io
+          subjects: "{{ userSubjects }}"
+          roleRef:
+            kind: ClusterRole
+            name: konflux-viewer-user-actions
+            apiGroup: rbac.authorization.k8s.io
+
