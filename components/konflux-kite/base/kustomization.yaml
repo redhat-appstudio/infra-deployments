@@ -12,10 +12,10 @@ namespace: konflux-kite
 
 images:
   - name: quay.io/konflux-ci/kite-prod
-    newTag: cf89c466d8244b4c0e0ddb3acb7e3578784ccedb
+    newTag: a8f90611b6e50cd7fa53287cf409e5f7940d2de9
 
   - name: quay.io/konflux-ci/kite-init
-    newTag: cf89c466d8244b4c0e0ddb3acb7e3578784ccedb
+    newTag: a8f90611b6e50cd7fa53287cf409e5f7940d2de9
 
 configMapGenerator:
   - name: kite-config
@@ -23,7 +23,7 @@ configMapGenerator:
     literals:
       - KITE_PROJECT_ENV=production
       - KITE_HOST=0.0.0.0
-      - KITE_PORT=8080
+      - KITE_PORT=8443
       - KITE_DB_SSL_MODE=require
       - KITE_LOG_LEVEL=info
       - KITE_LOG_FORMAT=json

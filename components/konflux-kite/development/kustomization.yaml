@@ -51,3 +51,32 @@ patches:
                   requests:
                     cpu: 50m
                     memory: 128Mi
+  - patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/startupProbe/httpGet/scheme
+        value: "HTTP"
+      - op: replace
+        path: /spec/template/spec/containers/0/livenessProbe/httpGet/scheme
+        value: "HTTP"
+      - op: replace
+        path: /spec/template/spec/containers/0/readinessProbe/httpGet/scheme
+        value: "HTTP"
+      - op: replace
+        path: /spec/template/spec/containers/0/ports/0/containerPort
+        value: 8080
+    target:
+      version: v1
+      kind: Deployment
+      name: konflux-kite
+
+  - patch: |-
+      - op: replace
+        path: /spec/ports/0/port
+        value: 80
+      - op: replace
+        path: /spec/ports/0/targetPort
+        value: 8080
+    target:
+      version: v1
+      kind: Service
+      name: konflux-kite
