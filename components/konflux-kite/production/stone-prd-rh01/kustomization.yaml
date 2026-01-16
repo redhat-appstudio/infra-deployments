@@ -19,22 +19,12 @@ patches:
         name: kite-database-credentials
         namespace: konflux-kite
 
-  # Turn off kite until we solve DB conectivity issues
-  - patch: |-
-      - op: replace
-        path: /spec/replicas
-        value: 0
-    target:
-      version: v1
-      kind: Deployment
-      name: konflux-kite
-
 # Only update some parts of the generated development configmap
 configMapGenerator:
   - name: kite-config
     namespace: konflux-kite
     literals:
-      - KITE_PROJECT_ENV=staging
+      - KITE_PROJECT_ENV=production
       - KITE_DB_SSL_MODE=require
       - KITE_LOG_LEVEL=info
       - KITE_LOG_FORMAT=json
