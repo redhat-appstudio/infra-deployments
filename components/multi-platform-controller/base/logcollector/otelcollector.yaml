@@ -93,12 +93,15 @@ spec:
                   os.type:
                     enabled: true
           receivers:
-            filelog/{{ .index }}_audit:
-              include:
-                - /var/log/audit/audit.log
-              include_file_path: true
-              exclude_older_than: 86400s
+            journald/{{ .index }}_audit:
+              start_at: end
               operators:
+                - type: filter
+                  id: audit_filter
+                  expr: |
+                    attributes["SYSLOG_IDENTIFIER"] == "audit" ||
+                    attributes["SYSLOG_IDENTIFIER"] == "auditd" ||
+                    attributes["MESSAGE"] matches "^type="
                 - type: add
                   id: {{ .index }}_idx
                   field: attributes["com.splunk.index"]
@@ -153,7 +156,7 @@ spec:
                   - transform/common
                 receivers:
                   # List all your receivers here
-                  - filelog/{{ .index }}_audit
+                  - journald/{{ .index }}_audit
                   - journald/{{ .index }}_messages
                   - journald/{{ .index }}_secure
                 exporters:
