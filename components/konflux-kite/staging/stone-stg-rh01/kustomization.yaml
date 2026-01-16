@@ -1,8 +1,7 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - ../../base
-  - ../../base/external-secrets
+  - ../base
 
 patches:
   - path: database-secret-path.yaml
@@ -30,4 +29,5 @@ configMapGenerator:
       - KITE_LOG_LEVEL=info
       - KITE_LOG_FORMAT=json
       - KITE_FEATURE_NAMESPACE_CHECKING=true
+      - AUTH_IMPERSONATE=true
     behavior: merge
