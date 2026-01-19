@@ -25,6 +25,11 @@ spec:
       defaultPlugins:
         - openshift
         - aws
+      resourceTimeout: 30m
+      client-qps: 300
+      client-burst: 500
+      args:
+        client-page-size: 100
     nodeAgent:
       enable: true
       uploaderType: kopia

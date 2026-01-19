@@ -3,3 +3,5 @@ kind: Kustomization
 resources:
 - invalid-subjects.yaml
 - kyverno_rbac.yaml
+commonAnnotations:
+  argocd.argoproj.io/sync-options: Prune=false

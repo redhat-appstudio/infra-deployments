@@ -2,11 +2,11 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - configmap.yaml
-  - https://github.com/hacbs-release/release-service-monitor/config/default?ref=73e63a3db71ab5084150b31277710aabff613b03
+  - https://github.com/hacbs-release/release-service-monitor/config/default?ref=d69c564debaef8c0d9260a406ca8de9ee5ed8be7
 
 images:
   - name: quay.io/konflux-ci/release-service-monitor
     newName: quay.io/konflux-ci/release-service-monitor
-    newTag: 73e63a3db71ab5084150b31277710aabff613b03
+    newTag: d69c564debaef8c0d9260a406ca8de9ee5ed8be7
 
 namespace: release-service

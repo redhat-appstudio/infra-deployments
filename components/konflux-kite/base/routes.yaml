@@ -16,8 +16,8 @@ spec:
     name: konflux-kite
     weight: 100
   port:
-    targetPort: http
+    targetPort: kite-port
   tls:
-    termination: edge
-    destinationCACertificate: ""
+    termination: reencrypt
+    insecureEdgeTerminationPolicy: Redirect
   wildcardPolicy: None
