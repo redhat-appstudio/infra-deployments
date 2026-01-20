@@ -10,6 +10,8 @@ ARGOCD_NAMESPACE="openshift-gitops"
 PIPELINES_NAMESPACE="openshift-pipelines"
 SYNC_INTERVAL=10
 MAX_TEKTON_CRD_RETRIES=5
+MAX_SYNC_TIMEOUT=2700       # 45 minutes max for all apps to sync
+DETAILED_STATUS_INTERVAL=120 # Show detailed status every 2 minutes
 
 # =============================================================================
 # Logging Functions
@@ -56,6 +58,100 @@ log_progress() {
 
 log_debug() {
     echo "[$(timestamp)] [DEBUG] $*"
+}
+
+# Show detailed status for an ArgoCD application (for debugging failures)
+show_app_details() {
+    local app_name=$1
+    local app_json
+    
+    app_json=$(oc get -n $ARGOCD_NAMESPACE applications.argoproj.io "$app_name" -o json 2>/dev/null || echo '{}')
+    
+    local sync_status health_status message resources_summary
+    sync_status=$(echo "$app_json" | jq -r '.status.sync.status // "Unknown"')
+    health_status=$(echo "$app_json" | jq -r '.status.health.status // "Unknown"')
+    message=$(echo "$app_json" | jq -r '.status.conditions[0].message // "No message"' | head -c 200)
+    
+    log_info "  ├─ App: $app_name"
+    log_info "  │  ├─ Sync Status: $sync_status"
+    log_info "  │  ├─ Health Status: $health_status"
+    
+    # Show resource sync status summary
+    local out_of_sync degraded_resources
+    out_of_sync=$(echo "$app_json" | jq -r '[.status.resources[]? | select(.status != "Synced")] | length // 0')
+    degraded_resources=$(echo "$app_json" | jq -r '[.status.resources[]? | select(.health.status == "Degraded" or .health.status == "Missing")] | .[0:3] | .[] | "\(.kind)/\(.name): \(.health.status // .status)"' 2>/dev/null || echo "")
+    
+    if [ "$out_of_sync" -gt 0 ]; then
+        log_info "  │  ├─ Out-of-sync resources: $out_of_sync"
+    fi
+    
+    if [ -n "$degraded_resources" ]; then
+        log_warn "  │  ├─ Degraded/Missing resources:"
+        echo "$degraded_resources" | while IFS= read -r line; do
+            log_warn "  │  │  └─ $line"
+        done
+    fi
+    
+    # Show conditions/errors
+    local conditions
+    conditions=$(echo "$app_json" | jq -r '.status.conditions[]? | "[\(.type)] \(.message // "No message")"' 2>/dev/null | head -3)
+    if [ -n "$conditions" ]; then
+        log_warn "  │  └─ Conditions:"
+        echo "$conditions" | while IFS= read -r line; do
+            log_warn "  │     └─ $line"
+        done
+    else
+        log_info "  │  └─ Message: ${message:0:150}"
+    fi
+}
+
+# Dump full details for all pending apps (used on timeout)
+dump_pending_apps_details() {
+    local pending_apps="$1"
+    
+    log_error "============================================================================="
+    log_error "DETAILED STATUS OF ALL PENDING APPLICATIONS"
+    log_error "============================================================================="
+    
+    for app in $pending_apps; do
+        log_error ""
+        log_error "Application: $app"
+        log_error "-----------------------------------------------------------------------------"
+        
+        local app_yaml
+        app_yaml=$(oc get -n $ARGOCD_NAMESPACE applications.argoproj.io "$app" -o yaml 2>/dev/null || echo "Failed to get app details")
+        
+        # Extract key fields
+        local sync_status health_status repo_url target_revision
+        sync_status=$(oc get -n $ARGOCD_NAMESPACE applications.argoproj.io "$app" -o jsonpath='{.status.sync.status}' 2>/dev/null || echo "Unknown")
+        health_status=$(oc get -n $ARGOCD_NAMESPACE applications.argoproj.io "$app" -o jsonpath='{.status.health.status}' 2>/dev/null || echo "Unknown")
+        repo_url=$(oc get -n $ARGOCD_NAMESPACE applications.argoproj.io "$app" -o jsonpath='{.spec.source.repoURL}' 2>/dev/null || echo "Unknown")
+        target_revision=$(oc get -n $ARGOCD_NAMESPACE applications.argoproj.io "$app" -o jsonpath='{.spec.source.targetRevision}' 2>/dev/null || echo "Unknown")
+        
+        log_error "  Sync Status: $sync_status"
+        log_error "  Health Status: $health_status"
+        log_error "  Repository: $repo_url"
+        log_error "  Target Revision: $target_revision"
+        
+        # Show all conditions
+        log_error "  Conditions:"
+        oc get -n $ARGOCD_NAMESPACE applications.argoproj.io "$app" -o json 2>/dev/null | \
+            jq -r '.status.conditions[]? | "    - [\(.type)] \(.message)"' 2>/dev/null || log_error "    (none)"
+        
+        # Show degraded/failed resources
+        log_error "  Unhealthy Resources:"
+        oc get -n $ARGOCD_NAMESPACE applications.argoproj.io "$app" -o json 2>/dev/null | \
+            jq -r '.status.resources[]? | select(.health.status != "Healthy" and .health.status != null) | "    - \(.kind)/\(.name): \(.health.status) - \(.health.message // "no message")"' 2>/dev/null | head -10 || log_error "    (none)"
+        
+        # Show operation state if any
+        local operation_state
+        operation_state=$(oc get -n $ARGOCD_NAMESPACE applications.argoproj.io "$app" -o json 2>/dev/null | jq -r '.status.operationState.message // empty' 2>/dev/null)
+        if [ -n "$operation_state" ]; then
+            log_error "  Operation Message: ${operation_state:0:300}"
+        fi
+    done
+    
+    log_error "============================================================================="
 }
 
 # =============================================================================
@@ -309,11 +405,11 @@ deploy_and_wait_for_argocd() {
     while true; do
         local root_status
         root_status=$(oc get applications.argoproj.io all-application-sets -n $ARGOCD_NAMESPACE -o jsonpath='{.status.health.status} {.status.sync.status}')
-        
+
         if [ "$root_status" == "Healthy Synced" ]; then
             break
         fi
-        
+
         root_wait=$((root_wait + 5))
         log_wait "Root application status: '$root_status' (target: 'Healthy Synced') - ${root_wait}s elapsed"
         sleep 5
@@ -338,11 +434,11 @@ deploy_and_wait_for_argocd() {
     while true; do
         local refresh_pending
         refresh_pending=$(oc get applications.argoproj.io -n $ARGOCD_NAMESPACE -o json 2>/dev/null | jq '[.items[] | select(.metadata.annotations["argocd.argoproj.io/refresh"] != null)] | length' 2>/dev/null || echo "0")
-        
+
         if [ "$refresh_pending" -eq 0 ] || [ -z "$refresh_pending" ]; then
             break
         fi
-        
+
         refresh_wait=$((refresh_wait + 5))
         local refresh_done=$((total_apps - refresh_pending))
         log_progress "Refresh: $refresh_done/$total_apps complete | $refresh_pending still refreshing (${refresh_wait}s elapsed)"
@@ -352,19 +448,43 @@ deploy_and_wait_for_argocd() {
 
     # Wait for all applications to sync and become healthy
     log_step "Waiting for all ArgoCD applications to sync and become healthy"
+    log_info "Timeout: $MAX_SYNC_TIMEOUT seconds ($((MAX_SYNC_TIMEOUT / 60)) minutes)"
+
+    local sync_start_time last_detailed_status_time elapsed_time
+    sync_start_time=$(date +%s)
+    last_detailed_status_time=$sync_start_time
 
     while :; do
         iteration=$((iteration + 1))
-        state=$(oc get apps -n $ARGOCD_NAMESPACE --no-headers)
-        total_apps=$(echo "$state" | wc -l | tr -d ' ')
+        local current_time=$(date +%s)
+        elapsed_time=$((current_time - sync_start_time))
+        local time_since_detailed=$((current_time - last_detailed_status_time))
+
+        # Check for timeout
+        if [ "$elapsed_time" -ge "$MAX_SYNC_TIMEOUT" ]; then
+            log_error "============================================================================="
+            log_error "TIMEOUT: Applications failed to sync within $((MAX_SYNC_TIMEOUT / 60)) minutes"
+            log_error "============================================================================="
+
+            local pending_app_names
+            pending_app_names=$(echo "$not_done" | awk '{print $1}')
+            dump_pending_apps_details "$pending_app_names"
+
+            exit 1
+        fi
+
+        state=$(oc get apps -n $ARGOCD_NAMESPACE --no-headers 2>/dev/null || echo "")
+        total_apps=$(echo "$state" | grep -c "." || echo "0")
         synced_apps=$(echo "$state" | grep -c "Synced[[:blank:]]*Healthy" || echo "0")
         pending_apps=$((total_apps - synced_apps))
         not_done=$(echo "$state" | grep -v "Synced[[:blank:]]*Healthy" || true)
 
-        log_progress "Applications: $synced_apps/$total_apps ready | $pending_apps pending"
+        local elapsed_min=$((elapsed_time / 60))
+        local elapsed_sec=$((elapsed_time % 60))
+        log_progress "Applications: $synced_apps/$total_apps ready | $pending_apps pending (${elapsed_min}m ${elapsed_sec}s elapsed)"
 
         if [ -z "$not_done" ]; then
-            log_success "All $total_apps ArgoCD applications are Synced and Healthy"
+            log_success "All $total_apps ArgoCD applications are Synced and Healthy in ${elapsed_min}m ${elapsed_sec}s"
             break
         fi
 
@@ -373,36 +493,43 @@ deploy_and_wait_for_argocd() {
         pending_names=$(echo "$not_done" | awk '{print $1}' | tr '\n' ', ' | sed 's/,$//')
         log_info "Pending: $pending_names"
 
+        # Show detailed status every DETAILED_STATUS_INTERVAL seconds
+        if [ "$time_since_detailed" -ge "$DETAILED_STATUS_INTERVAL" ]; then
+            log_substep "Detailed status of pending applications:"
+            for app in $(echo "$not_done" | awk '{print $1}'); do
+                show_app_details "$app"
+            done
+            last_detailed_status_time=$current_time
+        fi
+
         unknown=$(echo "$not_done" | grep Unknown | grep -v Progressing | cut -f1 -d ' ') || :
         if [ -n "$unknown" ]; then
             log_warn "Found applications in Unknown state (not Progressing), investigating..."
 
             for app in $unknown; do
-                error=$(oc get -n $ARGOCD_NAMESPACE applications.argoproj.io $app -o jsonpath='{.status.conditions}')
+                error=$(oc get -n $ARGOCD_NAMESPACE applications.argoproj.io $app -o jsonpath='{.status.conditions}' 2>/dev/null || echo "")
 
                 if echo "$error" | grep -q 'context deadline exceeded'; then
                     log_warn "Application '$app' hit context deadline, attempting soft refresh"
-                    oc patch applications.argoproj.io $app -n $ARGOCD_NAMESPACE --type merge -p='{"metadata": {"annotations":{"argocd.argoproj.io/refresh": "soft"}}}'
+                    oc patch applications.argoproj.io $app -n $ARGOCD_NAMESPACE --type merge -p='{"metadata": {"annotations":{"argocd.argoproj.io/refresh": "soft"}}}' 2>/dev/null || true
 
-                    while [ -n "$(oc get applications.argoproj.io -n $ARGOCD_NAMESPACE $app -o jsonpath='{.metadata.annotations.argocd\.argoproj\.io/refresh}')" ]; do
+                    local refresh_wait=0
+                    while [ -n "$(oc get applications.argoproj.io -n $ARGOCD_NAMESPACE $app -o jsonpath='{.metadata.annotations.argocd\.argoproj\.io/refresh}' 2>/dev/null)" ]; do
+                        refresh_wait=$((refresh_wait + 5))
+                        if [ "$refresh_wait" -gt 60 ]; then
+                            log_warn "Soft refresh of '$app' timed out after 60s, continuing anyway"
+                            break
+                        fi
                         sleep 5
                     done
                     log_success "Soft refresh of '$app' completed, continuing sync check"
                     continue 2
                 fi
 
-                log_error "Application '$app' failed with unrecoverable error"
-                log_error "============ ERROR DETAILS FOR '$app' ============"
-                if [ -n "$error" ]; then
-                    log_error "Conditions: $error"
-                else
-                    log_error "Full application state:"
-                    oc get -n $ARGOCD_NAMESPACE applications.argoproj.io $app -o yaml >&2
-                fi
-                log_error "=================================================="
+                # Show detailed error for this app
+                log_error "Application '$app' is in Unknown state without 'context deadline exceeded'"
+                show_app_details "$app"
             done
-            log_error "One or more applications failed to sync. See error details above."
-            exit 1
         fi
 
         log_wait "Waiting $SYNC_INTERVAL seconds before next sync check..."
