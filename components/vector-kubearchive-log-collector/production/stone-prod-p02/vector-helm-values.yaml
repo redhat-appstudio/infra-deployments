@@ -126,7 +126,11 @@ tolerations:
   - effect: NoExecute
     key: node.kubernetes.io/unreachable
     operator: Exists
+<<<<<<< HEAD
     tolerationSeconds: 300
+=======
+    tolerationSeconds: 300  
+>>>>>>> 04b196874 (chore(KAR-770): update vector image version)
   - effect: NoSchedule
     key: node.kubernetes.io/memory-pressure
     operator: Exists
@@ -138,7 +142,7 @@ tolerations:
     operator: Exists
 image:
   repository: quay.io/kubearchive/vector
-  tag: 0.46.1-distroless-libc
+  tag: 0.52.0-distroless-libc
 serviceAccount:
   create: true
   name: vector
