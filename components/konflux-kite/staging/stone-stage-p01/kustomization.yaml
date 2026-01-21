@@ -8,7 +8,7 @@ patches:
     target:
       name: database-secret
       group: external-secrets.io
-      version: v1
+      version: v1beta1
       kind: ExternalSecret
   # Delete the base secret since we're using External Secret
   - patch: |-
@@ -18,16 +18,6 @@ patches:
       metadata:
         name: kite-database-credentials
         namespace: konflux-kite
-
-  # Turn off kite until we solve DB conectivity issues
-  - patch: |-
-      - op: replace
-        path: /spec/replicas
-        value: 0
-    target:
-      version: v1
-      kind: Deployment
-      name: konflux-kite
 
 # Only update some parts of the generated development configmap
 configMapGenerator:
