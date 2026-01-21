@@ -1,0 +1,15 @@
+apiVersion: apps
+kind: Deployment
+metadata:
+  name: namespace-lister
+  namespace: namespace-lister
+spec:
+  template:
+    spec:
+      containers:
+      - name: namespace-lister
+        resources:
+          limits:
+            memory: 7GiB
+          requests:
+            memory: 7GiB
