@@ -2,7 +2,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: kyverno-admission:read-groups
+  name: kyverno-admission:read-groups-support
   labels:
     rbac.kyverno.io/aggregate-to-admission-controller: "true"
 rules:
@@ -18,7 +18,7 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: kyverno-background:manage-support-clusterrolebindings
+  name: kyverno-background:manage-support-crb
   labels:
     rbac.kyverno.io/aggregate-to-background-controller: "true"
 rules:
@@ -49,7 +49,7 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: kyverno-background:konflux-viewer-user-actions-for-nslister
+  name: kyverno-background:konflux-viewer-user-actions-support
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
