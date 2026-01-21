@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: image-rbac-proxy
+  namespace: image-rbac-proxy
+data:
+  backend-namespace: redhat-user-workloads
+  cluster-url: https://api.stone-prd-rh01.pg1f.p1.openshiftapps.com:6443
+  proxy-url: https://image-rbac-proxy.apps.stone-prd-rh01.pg1f.p1.openshiftapps.com
+  dex-url: https://image-rbac-proxy.apps.stone-prd-rh01.pg1f.p1.openshiftapps.com/idp
