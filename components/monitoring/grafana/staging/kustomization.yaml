@@ -8,3 +8,20 @@ images:
 - name: quay.io/redhat-appstudio/o11y
   newName: quay.io/redhat-appstudio/o11y
   newTag: 0d3c45516968bffb24196952c3273cebd6df5d4f
+
+patches:
+  - target:
+      name: grafana-oauth
+      kind: Grafana
+    patch: |-
+      - op: add
+        path: /spec/deployment/spec/template/spec/containers/0
+        value:
+          name: grafana
+          resources:
+            requests:
+              cpu: "1"
+              memory: "2Gi"
+            limits:
+              cpu: "1"
+              memory: "2Gi"
