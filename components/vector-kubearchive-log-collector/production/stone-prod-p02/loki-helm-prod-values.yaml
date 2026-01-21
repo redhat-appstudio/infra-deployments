@@ -20,29 +20,19 @@ loki:
   memberlist:
     join_members: []
     # How long to wait before reclaiming a dead node's tokens
-    # Reduced to 2 minutes for development (faster cleanup with single replica)
-    # This helps remove stale ring instances quickly when pods are restarted
-    dead_node_reclaim_time: 2m
+    # Set to 5 minutes to allow graceful shutdowns but remove stale instances quickly
+    dead_node_reclaim_time: 5m
     # How often to gossip with other nodes (lower = faster detection of failures)
-    # Keep at 2s for quick failure detection
     gossip_interval: 2s
     # How often to do full state sync with other nodes
-    # Reduced for development to sync faster
-    push_pull_interval: 5s
+    push_pull_interval: 10s
     # Number of random nodes to gossip with per interval
-    # Set to 1 for development (only 1 ingester replica)
-    gossip_nodes: 1
+    gossip_nodes: 3
     # How long to continue gossiping to dead nodes (helps propagate death info)
-    # Reduced for development to propagate death info faster
-    gossip_to_dead_nodes_time: 10s
+    gossip_to_dead_nodes_time: 15s
     # How long to wait for an ingester to gracefully leave before considering it dead
     # This should be longer than terminationGracePeriodSeconds to allow graceful shutdown
-    # Reduced to 60s for development (faster cleanup)
-    left_ingesters_timeout: 60s
-    max_join_backoff: 1m
-    max_join_retries: 10
-    min_join_backoff: 1s
-    rejoin_interval: 90s
+    left_ingesters_timeout: 90s
   # Required storage configuration for Helm chart
   storage:
     type: s3
@@ -75,16 +65,12 @@ loki:
     max_entries_limit_per_query: 100000
     increment_duplicate_timestamp: true
     allow_structured_metadata: true
-    # Query timeout configuration to prevent context canceled errors
-    max_query_length: 721h      # Maximum time range for queries (30 days)
-    max_query_parallelism: 32  # Maximum number of parallel queries
-    query_timeout: 10m         # Timeout for individual queries (10 minutes)
   runtimeConfig:
     configs:
       kubearchive:
         log_push_request: true
         log_push_request_streams: true
-        log_stream_creation: false
+        log_stream_creation: true
         log_duplicate_stream_info: true
   ingester:
     autoforget_unhealthy: true
@@ -109,25 +95,24 @@ loki:
   querier:
     max_concurrent: 8
   query_range:
-    # Query range configuration for better query performance
-    parallelise_shardable_queries: true  # Enable parallel query execution
-    align_queries_with_step: true         # Align queries with step for better caching
+    # split_queries_by_interval deprecated in Loki 3.x - removed
+    parallelise_shardable_queries: false
 
 # Distributed components configuration
 ingester:
   replicas: 3
   autoscaling:
-    enabled: false  # Disable HPA to avoid conflicts with fixed replicas
+    enabled: true
   zoneAwareReplication:
     enabled: true
   maxUnavailable: 1
   resources:
     requests:
       cpu: 500m
-      memory: 2Gi
+      memory: 4Gi
     limits:
       cpu: 2000m
-      memory: 4Gi
+      memory: 6Gi
   persistence:
     enabled: true
     size: 10Gi
@@ -135,6 +120,18 @@ ingester:
   podAntiAffinity:
     soft: {}
     hard: {}
+  # Graceful shutdown configuration to prevent stale ring instances
+  # Give Loki time to flush chunks and leave the ring gracefully
+  terminationGracePeriodSeconds: 120  # 2 minutes - longer than left_ingesters_timeout
+  lifecycle:
+    preStop:
+      exec:
+        # Sleep to allow readiness probe to fail, removing pod from service endpoints
+        # This gives distributor time to stop sending new requests before shutdown
+        command:
+          - /bin/sh
+          - -c
+          - sleep 10
 
 querier:
   replicas: 3
@@ -143,10 +140,10 @@ querier:
   maxUnavailable: 1
   resources:
     requests:
-      cpu: 300m
-      memory: 1Gi
+      cpu: 500m
+      memory: 2Gi
     limits:
-      memory: 1.5Gi
+      memory: 4Gi
   affinity: {}
 
 queryFrontend:
@@ -208,40 +205,48 @@ indexGateway:
       memory: 1Gi
   affinity: {}
 
-# Enable Memcached caches for performance
+# Cache configuration - Helm chart automatically generates query_range and chunk_store_config
+# from chunksCache and resultsCache settings
+# Increased maxItemMemory to prevent "object too large for cache" errors
 chunksCache:
   enabled: true
   replicas: 1
-  maxItemMemory: 10  # MB
+  batchSize: 256  # Batch size for sending/receiving chunks from cache
+  parallelism: 10  # Parallel threads for cache operations
+  maxItemMemory: 30  # MB - Increased from 10MB to handle chunks (3MB target + compression overhead + metadata)
+  defaultValidity: 12h  # How long cached chunks are stored
 
 resultsCache:
   enabled: true
   replicas: 1
-  maxItemMemory: 10  # MB
+  maxItemMemory: 100  # MB - Increased from 10MB to handle large query results (can be much larger than chunks)
+  defaultValidity: 12h  # How long cached query results are stored
 
 memcached:
   enabled: true
-  maxItemMemory: 10  # MB
+  maxItemMemory: 30  # MB - Shared default for general memcached instances
 
+# Shared memcached configuration (used as defaults for all memcached instances)
+# These don't deploy separate instances - they configure shared settings
 memcachedResults:
   enabled: true
-  maxItemMemory: 10  # MB
+  maxItemMemory: 100  # MB - For query result caching
 
 memcachedChunks:
   enabled: true
-  maxItemMemory: 10  # MB
+  maxItemMemory: 30  # MB - For chunk caching
 
 memcachedFrontend:
   enabled: true
-  maxItemMemory: 10  # MB
+  maxItemMemory: 100  # MB - Frontend cache can handle large query results
 
 memcachedIndexQueries:
   enabled: true
-  maxItemMemory: 10  # MB
+  maxItemMemory: 50  # MB - Index queries can be large
 
 memcachedIndexWrites:
   enabled: true
-  maxItemMemory: 10  # MB
+  maxItemMemory: 30  # MB - Index write operations
 
 # Disable Minio
 minio:
