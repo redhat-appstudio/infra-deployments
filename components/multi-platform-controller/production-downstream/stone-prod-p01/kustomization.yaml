@@ -7,6 +7,22 @@ resources:
 - ../base
 - external-secrets.yaml
 
+patches:
+  - target:
+      kind: Deployment
+      name: multi-platform-controller
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/image
+        value: quay.io/konflux-ci/multi-platform-controller:c293fd7e455e77fbda770fa83f6c1efe2120c745
+  - target:
+      kind: Deployment
+      name: multi-platform-otp-server
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/image
+        value: quay.io/konflux-ci/multi-platform-controller-otp-service:c293fd7e455e77fbda770fa83f6c1efe2120c745
+
 helmGlobals:
   chartHome: ../../base
 
