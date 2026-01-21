@@ -9,6 +9,20 @@ resources:
 
 patches:
   - path: manager_resources_patch.yaml
+  - target:
+      kind: Deployment
+      name: multi-platform-controller
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/image
+        value: quay.io/konflux-ci/multi-platform-controller:8aa28b0b1b6bfda3acd99465c62b273125f92818
+  - target:
+      kind: Deployment
+      name: multi-platform-otp-server
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/image
+        value: quay.io/konflux-ci/multi-platform-controller-otp-service:8aa28b0b1b6bfda3acd99465c62b273125f92818
 
 helmGlobals:
   chartHome: ../../base
