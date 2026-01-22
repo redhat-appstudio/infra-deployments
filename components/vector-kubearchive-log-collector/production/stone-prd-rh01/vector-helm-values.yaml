@@ -126,11 +126,11 @@ tolerations:
   - effect: NoExecute
     key: node.kubernetes.io/not-ready
     operator: Exists
-    tolerationSeconds: 300  # Wait 5 minutes before evicting from not-ready nodes
+    tolerationSeconds: 300 # Wait 5 minutes before evicting from not-ready nodes
   - effect: NoExecute
     key: node.kubernetes.io/unreachable
     operator: Exists
-    tolerationSeconds: 300  # Wait 5 minutes before evicting from unreachable nodes
+    tolerationSeconds: 300 # Wait 5 minutes before evicting from unreachable nodes
   # Tolerate node pressure conditions to prevent eviction during temporary resource pressure
   # These allow pods to stay on nodes during brief pressure events
   - effect: NoSchedule
