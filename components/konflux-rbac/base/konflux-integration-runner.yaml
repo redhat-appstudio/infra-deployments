@@ -52,6 +52,17 @@ rules:
       - pipelineruns
       - taskruns
   - verbs:
+      - get
+      - list
+      - create
+      - watch
+      - update
+      - patch
+    apiGroups:
+      - appstudio.redhat.com
+    resources:
+      - snapshots
+  - verbs:
       - "*"
     apiGroups:
       - ci.openshift.org
