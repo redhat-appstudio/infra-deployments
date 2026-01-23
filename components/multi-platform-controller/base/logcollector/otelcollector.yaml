@@ -111,6 +111,10 @@ spec:
                   on_error: send
             journald/{{ .index }}_messages:
               operators:
+                  # Prevent logs feedback loop
+                - type: filter
+                  id: drop_otelcol
+                  expr: 'attributes["SYSLOG_IDENTIFIER"] != "otelcol-contrib"'
                 - type: filter
                   id: messages_filter
                   expr: 'attributes["SYSLOG_IDENTIFIER"] != nil'
@@ -145,6 +149,10 @@ spec:
           service:
             extensions:
               - file_storage/otc
+            telemetry:
+              logs:
+                level: error
+                disable_stacktrace: true
             pipelines:
               logs:
                 processors:
