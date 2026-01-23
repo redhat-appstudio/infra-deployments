@@ -2,6 +2,7 @@
 global:
   extraArgs:
     - "-log.level=debug"
+
 gateway:
   service:
     type: LoadBalancer
@@ -16,8 +17,6 @@ gateway:
 loki:
   commonConfig:
     replication_factor: 3
-  # Memberlist configuration to prevent stale ring instances
-  # This ensures unhealthy/dead ingesters are automatically removed from the ring
   memberlist:
     join_members: []
     # How long to wait before reclaiming a dead node's tokens
@@ -50,13 +49,13 @@ loki:
     shard_streams:
       enabled: false
     retention_period: 744h  # 31 days retention
-    ingestion_rate_mb: 50
-    ingestion_burst_size_mb: 100
+    ingestion_rate_mb: 100
+    ingestion_burst_size_mb: 300
     ingestion_rate_strategy: "local"
     max_streams_per_user: 0
     max_line_size: 2097152
-    per_stream_rate_limit: 50M
-    per_stream_rate_limit_burst: 200M
+    per_stream_rate_limit: 100M
+    per_stream_rate_limit_burst: 400M
     reject_old_samples: false
     reject_old_samples_max_age: 168h
     discover_service_name: []
@@ -71,7 +70,7 @@ loki:
       kubearchive:
         log_push_request: true
         log_push_request_streams: true
-        log_stream_creation: false
+        log_stream_creation: true
         log_duplicate_stream_info: true
   ingester:
     autoforget_unhealthy: true
@@ -110,10 +109,10 @@ ingester:
   resources:
     requests:
       cpu: 500m
-      memory: 1Gi
+      memory: 4Gi
     limits:
       cpu: 2000m
-      memory: 2Gi
+      memory: 6Gi
   persistence:
     enabled: true
     size: 10Gi
@@ -141,10 +140,10 @@ querier:
   maxUnavailable: 1
   resources:
     requests:
-      cpu: 300m
-      memory: 512Mi
+      cpu: 500m
+      memory: 2Gi
     limits:
-      memory: 1Gi
+      memory: 4Gi
   affinity: {}
 
 queryFrontend:
@@ -153,9 +152,9 @@ queryFrontend:
   resources:
     requests:
       cpu: 200m
-      memory: 256Mi
-    limits:
       memory: 512Mi
+    limits:
+      memory: 1Gi
 
 queryScheduler:
   replicas: 2
@@ -168,16 +167,19 @@ queryScheduler:
       memory: 512Mi
 
 distributor:
-  replicas: 3
+  replicas: 5
   autoscaling:
     enabled: true
+    minReplicas: 5
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
   maxUnavailable: 1
   resources:
     requests:
-      cpu: 300m
-      memory: 512Mi
-    limits:
+      cpu: 500m
       memory: 1Gi
+    limits:
+      memory: 2Gi
   affinity: {}
 
 compactor:
@@ -203,44 +205,54 @@ indexGateway:
       memory: 1Gi
   affinity: {}
 
-# Enable Memcached caches for performance
+# Cache configuration - Helm chart automatically generates query_range and chunk_store_config
+# from chunksCache and resultsCache settings
+# Increased maxItemMemory to prevent "object too large for cache" errors
 chunksCache:
   enabled: true
   replicas: 1
-  maxItemMemory: 10  # MB
+  batchSize: 256  # Batch size for sending/receiving chunks from cache
+  parallelism: 10  # Parallel threads for cache operations
+  maxItemMemory: 30  # MB - Increased from 10MB to handle chunks (3MB target + compression overhead + metadata)
+  defaultValidity: 12h  # How long cached chunks are stored
 
 resultsCache:
   enabled: true
   replicas: 1
-  maxItemMemory: 10  # MB
+  maxItemMemory: 100  # MB - Increased from 10MB to handle large query results (can be much larger than chunks)
+  defaultValidity: 12h  # How long cached query results are stored
 
 memcached:
   enabled: true
-  maxItemMemory: 10  # MB
+  maxItemMemory: 30  # MB - Shared default for general memcached instances
 
+# Shared memcached configuration (used as defaults for all memcached instances)
+# These don't deploy separate instances - they configure shared settings
 memcachedResults:
   enabled: true
-  maxItemMemory: 10  # MB
+  maxItemMemory: 100  # MB - For query result caching
 
 memcachedChunks:
   enabled: true
-  maxItemMemory: 10  # MB
+  maxItemMemory: 30  # MB - For chunk caching
 
 memcachedFrontend:
   enabled: true
-  maxItemMemory: 10  # MB
+  maxItemMemory: 100  # MB - Frontend cache can handle large query results
 
 memcachedIndexQueries:
   enabled: true
-  maxItemMemory: 10  # MB
+  maxItemMemory: 50  # MB - Index queries can be large
 
 memcachedIndexWrites:
   enabled: true
-  maxItemMemory: 10  # MB
+  maxItemMemory: 30  # MB - Index write operations
 
+# Disable Minio
 minio:
   enabled: false
 
+# Resources for memcached exporter to satisfy linter
 memcachedExporter:
   resources:
     requests:
