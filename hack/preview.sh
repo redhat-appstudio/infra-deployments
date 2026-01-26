@@ -10,8 +10,15 @@ ARGOCD_NAMESPACE="openshift-gitops"
 PIPELINES_NAMESPACE="openshift-pipelines"
 SYNC_INTERVAL=10
 MAX_TEKTON_CRD_RETRIES=5
-MAX_SYNC_TIMEOUT=2700       # 45 minutes max for all apps to sync
-DETAILED_STATUS_INTERVAL=120 # Show detailed status every 2 minutes
+MAX_SYNC_TIMEOUT=2700           # 45 minutes max for all apps to sync
+MAX_TEKTON_READY_TIMEOUT=900    # 15 minutes max for Tekton to become ready
+DETAILED_STATUS_INTERVAL=120    # Show detailed status every 2 minutes
+
+# Track execution timing for summary
+SCRIPT_START_TIME=$(date +%s)
+SCRIPT_STATUS="in_progress"
+TOTAL_APPS_DEPLOYED=0
+FAILED_APPS=""
 
 # =============================================================================
 # Logging Functions
@@ -58,6 +65,96 @@ log_progress() {
 
 log_debug() {
     echo "[$(timestamp)] [DEBUG] $*"
+}
+
+# Print cluster context information for LLM understanding
+print_cluster_context() {
+    log_step "Cluster Context Information"
+    
+    local ocp_version cluster_url node_count api_server cluster_id
+    
+    # Get OCP version
+    ocp_version=$(oc get clusterversion version -o jsonpath='{.status.desired.version}' 2>/dev/null || echo "Unknown")
+    
+    # Get cluster API server URL
+    api_server=$(oc whoami --show-server 2>/dev/null || echo "Unknown")
+    
+    # Get cluster ID
+    cluster_id=$(oc get clusterversion version -o jsonpath='{.spec.clusterID}' 2>/dev/null || echo "Unknown")
+    
+    # Get node count and info
+    node_count=$(oc get nodes --no-headers 2>/dev/null | wc -l | tr -d ' ' || echo "0")
+    
+    # Get cluster domain
+    cluster_url=$(oc get ingresses.config.openshift.io cluster --template={{.spec.domain}} 2>/dev/null || echo "Unknown")
+    
+    log_info "OpenShift Version: $ocp_version"
+    log_info "API Server: $api_server"
+    log_info "Cluster ID: $cluster_id"
+    log_info "Cluster Domain: $cluster_url"
+    log_info "Total Nodes: $node_count"
+    
+    # Show node details (master/worker breakdown)
+    local master_nodes worker_nodes
+    master_nodes=$(oc get nodes -l node-role.kubernetes.io/master --no-headers 2>/dev/null | wc -l | tr -d ' ' || echo "0")
+    worker_nodes=$(oc get nodes -l node-role.kubernetes.io/worker --no-headers 2>/dev/null | wc -l | tr -d ' ' || echo "0")
+    log_info "  - Master nodes: $master_nodes"
+    log_info "  - Worker nodes: $worker_nodes"
+    
+    # Check cluster health
+    local cluster_operators_degraded
+    cluster_operators_degraded=$(oc get clusteroperators -o json 2>/dev/null | jq '[.items[] | select(.status.conditions[] | select(.type=="Degraded" and .status=="True"))] | length' 2>/dev/null || echo "Unknown")
+    
+    if [ "$cluster_operators_degraded" = "0" ]; then
+        log_success "Cluster operators: All healthy"
+    else
+        log_warn "Cluster operators: $cluster_operators_degraded degraded"
+    fi
+    
+    # Output JSON context for LLM parsing
+    echo ""
+    echo "[CLUSTER_CONTEXT_JSON] {\"ocp_version\":\"$ocp_version\",\"api_server\":\"$api_server\",\"cluster_id\":\"$cluster_id\",\"cluster_domain\":\"$cluster_url\",\"total_nodes\":$node_count,\"master_nodes\":$master_nodes,\"worker_nodes\":$worker_nodes,\"degraded_operators\":$cluster_operators_degraded}"
+}
+
+# Print execution summary in JSON format for LLM parsing
+print_execution_summary() {
+    local status=$1
+    local failure_reason=${2:-""}
+    
+    local end_time total_time_seconds total_time_min total_time_sec
+    end_time=$(date +%s)
+    total_time_seconds=$((end_time - SCRIPT_START_TIME))
+    total_time_min=$((total_time_seconds / 60))
+    total_time_sec=$((total_time_seconds % 60))
+    
+    log_step "Execution Summary"
+    
+    if [ "$status" = "success" ]; then
+        log_success "Status: SUCCESS"
+    else
+        log_error "Status: FAILED"
+        [ -n "$failure_reason" ] && log_error "Failure Reason: $failure_reason"
+    fi
+    
+    log_info "Total Execution Time: ${total_time_min}m ${total_time_sec}s ($total_time_seconds seconds)"
+    log_info "Applications Deployed: $TOTAL_APPS_DEPLOYED"
+    
+    if [ -n "$FAILED_APPS" ]; then
+        log_error "Failed Applications: $FAILED_APPS"
+    fi
+    
+    # Build JSON summary
+    local json_summary
+    if [ "$status" = "success" ]; then
+        json_summary="{\"status\":\"success\",\"total_time_seconds\":$total_time_seconds,\"apps_deployed\":$TOTAL_APPS_DEPLOYED,\"ocp_version\":\"${OCP_VERSION:-unknown}\",\"preview_branch\":\"${PREVIEW_BRANCH:-unknown}\",\"git_repo\":\"${MY_GIT_REPO_URL:-unknown}\"}"
+    else
+        local failed_apps_json
+        failed_apps_json=$(echo "$FAILED_APPS" | tr ' ' ',' | sed 's/,$//')
+        json_summary="{\"status\":\"failed\",\"total_time_seconds\":$total_time_seconds,\"apps_deployed\":$TOTAL_APPS_DEPLOYED,\"failure_reason\":\"$failure_reason\",\"failed_apps\":\"$failed_apps_json\",\"ocp_version\":\"${OCP_VERSION:-unknown}\",\"preview_branch\":\"${PREVIEW_BRANCH:-unknown}\"}"
+    fi
+    
+    echo ""
+    echo "[EXECUTION_SUMMARY_JSON] $json_summary"
 }
 
 # Show detailed status for an ArgoCD application (for debugging failures)
@@ -470,6 +567,9 @@ deploy_and_wait_for_argocd() {
             pending_app_names=$(echo "$not_done" | awk '{print $1}')
             dump_pending_apps_details "$pending_app_names"
 
+            TOTAL_APPS_DEPLOYED=$synced_apps
+            FAILED_APPS=$pending_app_names
+            print_execution_summary "failed" "ARGOCD_SYNC_TIMEOUT: $pending_apps apps failed to sync"
             exit 1
         fi
 
@@ -485,6 +585,7 @@ deploy_and_wait_for_argocd() {
 
         if [ -z "$not_done" ]; then
             log_success "All $total_apps ArgoCD applications are Synced and Healthy in ${elapsed_min}m ${elapsed_sec}s"
+            TOTAL_APPS_DEPLOYED=$total_apps
             break
         fi
 
@@ -541,22 +642,53 @@ deploy_and_wait_for_argocd() {
 wait_for_tekton_ready() {
     log_step "Waiting for Tekton components to be ready"
     log_info "Reference: https://tekton.dev/docs/operator/tektonconfig/#tekton-config"
+    log_info "Timeout: $MAX_TEKTON_READY_TIMEOUT seconds ($((MAX_TEKTON_READY_TIMEOUT / 60)) minutes)"
 
     local state msg iteration=0
+    local tekton_start_time elapsed_time
+    tekton_start_time=$(date +%s)
 
     while :; do
         iteration=$((iteration + 1))
-        state=$(oc get tektonconfig config -o json | jq -r '.status.conditions[] | select(.type == "Ready")')
-        status_value=$(jq -r '.status' <<< "$state")
+        local current_time=$(date +%s)
+        elapsed_time=$((current_time - tekton_start_time))
+        local elapsed_min=$((elapsed_time / 60))
+        local elapsed_sec=$((elapsed_time % 60))
 
-        log_progress "Tekton readiness check iteration $iteration: status=$status_value"
+        # Check for timeout
+        if [ "$elapsed_time" -ge "$MAX_TEKTON_READY_TIMEOUT" ]; then
+            log_error "============================================================================="
+            log_error "TIMEOUT: Tekton components failed to become ready within $((MAX_TEKTON_READY_TIMEOUT / 60)) minutes"
+            log_error "============================================================================="
+            
+            # Dump Tekton status for debugging
+            log_error "TektonConfig status:"
+            oc get tektonconfig config -o yaml 2>/dev/null | head -100 || log_error "  (failed to get tektonconfig)"
+            
+            log_error ""
+            log_error "Tekton operator pods status:"
+            oc get pods -n openshift-operators -l app=openshift-pipelines-operator 2>/dev/null || log_error "  (failed to get operator pods)"
+            
+            log_error ""
+            log_error "Tekton namespace pods status:"
+            oc get pods -n $PIPELINES_NAMESPACE 2>/dev/null || log_error "  (failed to get pipelines namespace pods)"
+            
+            FAILED_APPS="tekton-operator"
+            print_execution_summary "failed" "TEKTON_READY_TIMEOUT"
+            exit 1
+        fi
+
+        state=$(oc get tektonconfig config -o json 2>/dev/null | jq -r '.status.conditions[] | select(.type == "Ready")' 2>/dev/null || echo "{}")
+        status_value=$(jq -r '.status // "Unknown"' <<< "$state")
+
+        log_progress "Tekton readiness check iteration $iteration: status=$status_value (${elapsed_min}m ${elapsed_sec}s elapsed)"
 
         if [ "$status_value" == "True" ]; then
-            log_success "All Tekton components are installed and ready"
+            log_success "All Tekton components are installed and ready in ${elapsed_min}m ${elapsed_sec}s"
             break
         fi
 
-        msg=$(jq -r '.message' <<< "$state")
+        msg=$(jq -r '.message // "No message available"' <<< "$state")
         log_warn "Tekton not ready: $msg"
 
         # Workaround for https://issues.redhat.com/browse/SRVKP-3245
@@ -613,6 +745,8 @@ wait_for_tekton_crds() {
             log_error "Tekton CRDs are not available after $MAX_TEKTON_CRD_RETRIES attempts"
             log_error "Required CRDs: ${required_crds[*]}"
             log_error "This may indicate that the Tekton operator failed to install properly"
+            FAILED_APPS="tekton-crds"
+            print_execution_summary "failed" "TEKTON_CRD_UNAVAILABLE: Required CRDs not found after $MAX_TEKTON_CRD_RETRIES attempts"
             exit 1
         fi
 
@@ -662,6 +796,15 @@ done
 log_step "Starting Konflux Preview Environment Setup"
 log_info "Script: $0"
 log_info "Options: OBO=$OBO, EAAS=$EAAS"
+log_info "Start time: $(date '+%Y-%m-%d %H:%M:%S %Z')"
+
+# =============================================================================
+# Cluster Context (for LLM understanding)
+# =============================================================================
+print_cluster_context
+
+# Store OCP version globally for summary
+OCP_VERSION=$(oc get clusterversion version -o jsonpath='{.status.desired.version}' 2>/dev/null || echo "Unknown")
 
 # =============================================================================
 # Git Setup - INLINE (not in function) as per original script
@@ -671,7 +814,8 @@ if [ -f $ROOT/hack/preview.env ]; then
 fi
 
 if [ -z "$MY_GIT_FORK_REMOTE" ]; then
-    echo "Set MY_GIT_FORK_REMOTE environment to name of your fork remote"
+    log_error "MY_GIT_FORK_REMOTE environment variable is not set"
+    log_error "ACTION REQUIRED: Set MY_GIT_FORK_REMOTE to the name of your fork remote (e.g., 'origin' or 'fork')"
     exit 1
 fi
 
@@ -681,18 +825,25 @@ trap "git checkout $MY_GIT_BRANCH" EXIT
 
 
 if echo "$MY_GIT_REPO_URL" | grep -q redhat-appstudio/infra-deployments; then
-    echo "Use your fork repository for preview"
+    log_error "Cannot use the upstream repository (redhat-appstudio/infra-deployments) for preview"
+    log_error "ACTION REQUIRED: Fork the repository and use your fork's remote"
+    log_error "Current MY_GIT_REPO_URL: $MY_GIT_REPO_URL"
     exit 1
 fi
 
 # Do not allow to use default github org
 if [ -z "$MY_GITHUB_ORG" ] || [ "$MY_GITHUB_ORG" == "redhat-appstudio-appdata" ]; then
-    echo "Set MY_GITHUB_ORG environment variable"
+    log_error "MY_GITHUB_ORG environment variable is not set or is using the default value"
+    log_error "ACTION REQUIRED: Set MY_GITHUB_ORG to your GitHub organization name"
+    log_error "Current value: '${MY_GITHUB_ORG:-<not set>}'"
+    log_error "Cannot use 'redhat-appstudio-appdata' (reserved for production)"
     exit 1
 fi
 
 if ! git diff --exit-code --quiet; then
-    echo "Changes in working Git working tree, commit them or stash them"
+    log_error "Uncommitted changes detected in Git working tree"
+    log_error "ACTION REQUIRED: Commit or stash your changes before running preview"
+    log_error "Run 'git status' to see pending changes"
     exit 1
 fi
 
@@ -811,3 +962,8 @@ log_success "Konflux preview environment is ready!"
 log_info "  - Fork: $MY_GIT_REPO_URL"
 log_info "  - Branch: $PREVIEW_BRANCH"
 log_info "  - GitHub Org: $MY_GITHUB_ORG"
+log_info "  - OpenShift Version: $OCP_VERSION"
+log_info "  - End time: $(date '+%Y-%m-%d %H:%M:%S %Z')"
+
+# Print execution summary for LLM parsing
+print_execution_summary "success"
