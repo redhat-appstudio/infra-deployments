@@ -4,30 +4,8 @@ kind: Kustomization
 namespace: multi-platform-controller
 
 resources:
-- ../../base/common
-- ../../base/rbac
+- ../base
 - external-secrets.yaml
-- https://github.com/konflux-ci/multi-platform-controller/deploy/operator?ref=6347caa2deb2dce08f4f3a100cb96f23ae7f14c6
-- https://github.com/konflux-ci/multi-platform-controller/deploy/otp?ref=6347caa2deb2dce08f4f3a100cb96f23ae7f14c6
-
-components:
-  - ../../k-components/manager-resources
-
-patches:
-  - target:
-      kind: Deployment
-      name: multi-platform-controller
-    patch: |-
-      - op: replace
-        path: /spec/template/spec/containers/0/image
-        value: quay.io/konflux-ci/multi-platform-controller:c293fd7e455e77fbda770fa83f6c1efe2120c745
-  - target:
-      kind: Deployment
-      name: multi-platform-otp-server
-    patch: |-
-      - op: replace
-        path: /spec/template/spec/containers/0/image
-        value: quay.io/konflux-ci/multi-platform-controller-otp-service:c293fd7e455e77fbda770fa83f6c1efe2120c745
 
 helmGlobals:
   chartHome: ../../base
@@ -37,11 +15,3 @@ helmCharts:
   releaseName: host-config
   namespace: multi-platform-controller
   valuesFile: host-values.yaml
-
-images:
-  - name: multi-platform-controller
-    newName: quay.io/konflux-ci/multi-platform-controller
-    newTag: 6347caa2deb2dce08f4f3a100cb96f23ae7f14c6
-  - name: multi-platform-otp-server
-    newName: quay.io/konflux-ci/multi-platform-controller-otp-service
-    newTag: 6347caa2deb2dce08f4f3a100cb96f23ae7f14c6
