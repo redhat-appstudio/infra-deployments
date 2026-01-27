@@ -15,7 +15,12 @@ configMapGenerator:
     behavior: merge
   - name: ui-runtime-env-variables
     literals:
-      - DISABLE_CHATBOT=true
+      - CHAT_BOT_ENABLED=false
+      - MONITORING_ENABLED=true
+      - MONITORING_DSN=https://2d1bbbd05a2ff473d916df439cfc363e@o490301.ingest.us.sentry.io/4510260965408768
+      - MONITORING_ENVIRONMENT=staging
+      - MONITORING_CLUSTER=stone-stage-p01
+      - MONITORING_SAMPLE_RATE_ERRORS=1.0
 patches:
 - path: add-service-certs-patch.yaml
   target:
