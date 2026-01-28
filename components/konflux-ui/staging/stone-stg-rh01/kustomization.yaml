@@ -11,9 +11,15 @@ configMapGenerator:
   name: dex
 - name: ui-runtime-env-variables
   literals:
+  - CHAT_BOT_ENABLED=true
   - CHAT_BOT_ASSISTANT_ID=e9f66a4f-5554-480f-9993-96212b0ecb41
   - CHAT_BOT_ENVIRONMENT_ID=ce429131-2a37-4560-ad69-963d16a0a5c7
   - CHAT_BOT_VERSION=2021-06-14
+  - MONITORING_ENABLED=true
+  - MONITORING_DSN=https://2d1bbbd05a2ff473d916df439cfc363e@o490301.ingest.us.sentry.io/4510260965408768
+  - MONITORING_ENVIRONMENT=staging
+  - MONITORING_CLUSTER=stone-stg-rh01
+  - MONITORING_SAMPLE_RATE_ERRORS=1.0
 patches:
 - path: add-service-certs-patch.yaml
   target:
