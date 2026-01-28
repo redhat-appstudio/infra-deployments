@@ -43,7 +43,7 @@ rules:
       - '*'
   # Grant READ-ONLY access (plus delete) to API groups that can create pods
   # These can be used to create pods which could access secrets
-  # Delete is allowed for cleanup, but create/update/patch are blocked
+  # Delete/patch is allowed for cleanup, but create/update are blocked
   - apiGroups:
       - apps
       - apps.openshift.io
@@ -58,6 +58,7 @@ rules:
       - list
       - watch
       - delete
+      - patch
   # Grant all permissions on ALL other non-core API groups
   # These API groups cannot be used to create pods or access secrets
   - apiGroups:
