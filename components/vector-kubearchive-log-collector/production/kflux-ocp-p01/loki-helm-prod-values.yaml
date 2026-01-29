@@ -32,7 +32,7 @@ loki:
     gossip_to_dead_nodes_time: 15s
     # How long to wait for an ingester to gracefully leave before considering it dead
     # This should be longer than terminationGracePeriodSeconds to allow graceful shutdown
-    left_ingesters_timeout: 90s
+    left_ingesters_timeout: 150s  # 30s buffer after terminationGracePeriodSeconds (120s)
   # Required storage configuration for Helm chart
   storage:
     type: s3
@@ -75,11 +75,20 @@ loki:
   ingester:
     autoforget_unhealthy: true
     chunk_target_size: 8388608        # 8MB
-    chunk_idle_period: 5m
+    chunk_idle_period: 1h
     max_chunk_age: 2h
     chunk_encoding: snappy            # Compress data (reduces S3 transfer size)
     chunk_retain_period: 1h           # Keep chunks in memory after flush
     flush_op_timeout: 10m             # Add timeout for S3 operations
+    lifecycler:
+      ring:
+        heartbeat_timeout: 10m        # Prevent premature unhealthy marking
+    wal:
+      enabled: true
+      dir: /var/loki/wal
+      checkpoint_duration: 5m          # Create checkpoints every 5 minutes
+      flush_on_shutdown: true          # Ensure data is flushed before shutdown
+      replay_memory_ceiling: 4GB       # 75% of 6Gi limit - PREVENTS OOM during replay
   server:
     grpc_server_max_recv_msg_size: 15728640  # 15MB
     grpc_server_max_send_msg_size: 15728640
@@ -109,10 +118,10 @@ ingester:
   resources:
     requests:
       cpu: 500m
-      memory: 4Gi
+      memory: 6Gi
     limits:
       cpu: 2000m
-      memory: 6Gi
+      memory: 8Gi
   persistence:
     enabled: true
     size: 10Gi
