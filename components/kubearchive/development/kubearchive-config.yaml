@@ -24,7 +24,10 @@ spec:
         apiVersion: tekton.dev/v1
         kind: PipelineRun
       archiveWhen: has(status.completionTime)
-      deleteWhen: has(status.completionTime) && timestamp(metadata.completionTime) < now() - duration("5m")
+      keepLastWhen:
+        - name: cleanup
+          when: 'has(status.completionTime) && timestamp(metadata.completionTime) < now() - duration("5m")'
+          count: 0
       archiveOnDelete: 'true'
     - selector:
         apiVersion: tekton.dev/v1
