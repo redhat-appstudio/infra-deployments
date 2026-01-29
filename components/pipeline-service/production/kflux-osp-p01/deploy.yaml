@@ -2004,7 +2004,7 @@ spec:
         secret:
           secretName: tekton-results-for-watcher-tls
 ---
-apiVersion: external-secrets.io/v1beta1
+apiVersion: external-secrets.io/v1
 kind: ExternalSecret
 metadata:
   annotations:
@@ -2025,7 +2025,7 @@ spec:
     deletionPolicy: Delete
     name: pipelines-as-code-secret
 ---
-apiVersion: external-secrets.io/v1beta1
+apiVersion: external-secrets.io/v1
 kind: ExternalSecret
 metadata:
   annotations:
@@ -2051,7 +2051,7 @@ spec:
         annotations:
           argocd.argoproj.io/sync-options: Prune=false
 ---
-apiVersion: external-secrets.io/v1beta1
+apiVersion: external-secrets.io/v1
 kind: ExternalSecret
 metadata:
   annotations:
@@ -2075,7 +2075,7 @@ spec:
         annotations:
           argocd.argoproj.io/sync-options: Prune=false
 ---
-apiVersion: external-secrets.io/v1beta1
+apiVersion: external-secrets.io/v1
 kind: ExternalSecret
 metadata:
   annotations:
@@ -2104,7 +2104,7 @@ spec:
         endpoint: https://{{ .endpoint }}
         s3_url: s3://{{ .bucket }}
 ---
-apiVersion: external-secrets.io/v1beta1
+apiVersion: external-secrets.io/v1
 kind: ExternalSecret
 metadata:
   annotations:
@@ -2125,7 +2125,7 @@ spec:
     deletionPolicy: Delete
     name: tekton-results-database
 ---
-apiVersion: external-secrets.io/v1beta1
+apiVersion: external-secrets.io/v1
 kind: ExternalSecret
 metadata:
   annotations:
