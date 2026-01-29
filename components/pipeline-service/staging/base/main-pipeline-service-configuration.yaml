@@ -963,7 +963,8 @@ spec:
         resources:
           limits:
             cpu: 500m
-            memory: 1Gi
+            # The metrics exporter is expected to have memory spikes
+            memory: 2Gi
           requests:
             cpu: 250m
             memory: 1Gi
