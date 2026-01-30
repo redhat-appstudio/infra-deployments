@@ -475,6 +475,32 @@ PIPELINERUN_DEFINITIONS: Dict[str, PipelineRunTestData] = {
         }
     },
 
+    "internal_pipelinerun_child": {
+        "name": "Internal-pipelinerun child pipeline (e.g., signing pipeline)",
+        "pipelinerun": {
+            "apiVersion": "tekton.dev/v1",
+            "kind": "PipelineRun",
+            "metadata": {
+                "name": "test-internal-pipelinerun-child",
+                "namespace": "default",
+                "labels": {
+                    "internal-services.appstudio.openshift.io/pipelinerun-uid": "12345678-1234-1234-1234-123456789012"
+                }
+            },
+            "spec": {
+                "pipelineRef": {"name": "signing-pipeline"},
+                "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
+            }
+        },
+        "expected": {
+            "annotations": {},
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-release"
+            }
+        }
+    },
+
     "aws_platforms_only": {
         "name": "Multi-platform pipeline with AWS platforms only (new style)",
         "pipelinerun": {
@@ -712,6 +738,10 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
         "pipelinerun_key": "default_priority",
         "config_key": "development"
     },
+    "internal_pipelinerun_child_dev": {
+        "pipelinerun_key": "internal_pipelinerun_child",
+        "config_key": "development"
+    },
     "aws_platforms_only_dev": {
         "pipelinerun_key": "aws_platforms_only",
         "config_key": "development"
@@ -752,6 +782,10 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
         "pipelinerun_key": "mintmaker",
         "config_key": "staging"
     },
+    "internal_pipelinerun_child_staging": {
+        "pipelinerun_key": "internal_pipelinerun_child",
+        "config_key": "staging"
+    },
     "prefer_new_parameters_staging": {
         "pipelinerun_key": "prefer-new-parameters",
         "config_key": "staging"
@@ -778,6 +812,10 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
     # Example: Test the same PipelineRun with different configs to show reusability
     "user-specific-priority_and_mixed_platforms_production-kflux-ocp-p01": {
         "pipelinerun_key": "user-specific-priority",
+        "config_key": "production-kflux-ocp-p01"
+    },
+    "internal_pipelinerun_child_production-kflux-ocp-p01": {
+        "pipelinerun_key": "internal_pipelinerun_child",
         "config_key": "production-kflux-ocp-p01"
     }
 }
