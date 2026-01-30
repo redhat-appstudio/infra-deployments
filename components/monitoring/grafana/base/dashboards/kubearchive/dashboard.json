@@ -3,10 +3,6 @@
     "list": [
       {
         "builtIn": 1,
-        "datasource": {
-          "type": "grafana",
-          "uid": "-- Grafana --"
-        },
         "enable": true,
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
@@ -35,10 +31,6 @@
       "type": "row"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "670c6fa5-9e7b-4d4e-87f6-906465c2a13b"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -90,10 +82,6 @@
       "pluginVersion": "12.1.0",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_RHTAP-OBSERVATORIUM-STAGE}"
-          },
           "editorMode": "code",
           "exemplar": false,
           "expr": "sum by (source_cluster) (increase(kube_pod_container_status_restarts_total{namespace=\"product-kubearchive\",pod=~\"kubearchive-operator-.*\"}[24h]))",
@@ -106,10 +94,6 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "670c6fa5-9e7b-4d4e-87f6-906465c2a13b"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -157,10 +141,6 @@
       "pluginVersion": "12.1.0",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_RHTAP-OBSERVATORIUM-STAGE}"
-          },
           "editorMode": "code",
           "exemplar": false,
           "expr": "count(kube_namespace_labels{label_konflux_ci_dev_type=\"tenant\", label_konflux_ci_type=\"user\"})",
@@ -173,10 +153,6 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "670c6fa5-9e7b-4d4e-87f6-906465c2a13b"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -227,10 +203,6 @@
       "pluginVersion": "12.1.0",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_RHTAP-OBSERVATORIUM-STAGE}"
-          },
           "editorMode": "code",
           "exemplar": false,
           "expr": "sum by (source_cluster) (namespace:container_memory_usage_bytes:sum{namespace=\"product-kubearchive\"}) / sum by (source_cluster) (namespace_memory:kube_pod_container_resource_limits:sum{namespace=\"product-kubearchive\"})",
@@ -243,10 +215,6 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "670c6fa5-9e7b-4d4e-87f6-906465c2a13b"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -310,10 +278,6 @@
       "pluginVersion": "12.1.0",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_RHTAP-OBSERVATORIUM-STAGE}"
-          },
           "editorMode": "code",
           "exemplar": false,
           "expr": "konflux_up{source_cluster=~\"$cluster\", service=~\"kubearchive-.*\"}",
@@ -328,10 +292,6 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "670c6fa5-9e7b-4d4e-87f6-906465c2a13b"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -475,10 +435,6 @@
       "pluginVersion": "12.1.0",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_RHTAP-OBSERVATORIUM-STAGE}"
-          },
           "editorMode": "code",
           "expr": "go_memory_used{exported_job=~\"kubearchive.*\"}",
           "legendFormat": "{{ source_cluster }} - {{ exported_job }}",
@@ -486,10 +442,6 @@
           "refId": "A"
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${Datasource}"
-          },
           "editorMode": "code",
           "expr": "go_memory_limit{exported_job=~\"kubearchive.*\"}",
           "hide": false,
@@ -503,10 +455,6 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "670c6fa5-9e7b-4d4e-87f6-906465c2a13b"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -659,10 +607,6 @@
       "pluginVersion": "12.1.0",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${Datasource}"
-          },
           "editorMode": "code",
           "expr": "avg_over_time(namespace_memory:kube_pod_container_resource_limits:sum{namespace=\"product-kubearchive\"}[4h])",
           "legendFormat": "Memory Limits",
@@ -670,10 +614,6 @@
           "refId": "A"
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_RHTAP-OBSERVATORIUM-STAGE}"
-          },
           "editorMode": "code",
           "expr": "avg_over_time(namespace_memory:kube_pod_container_resource_requests:sum{namespace=\"product-kubearchive\"}[4h])",
           "hide": false,
@@ -683,10 +623,6 @@
           "refId": "B"
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${Datasource}"
-          },
           "editorMode": "code",
           "expr": "namespace:container_memory_usage_bytes:sum{namespace=\"product-kubearchive\"}",
           "hide": false,
@@ -696,10 +632,6 @@
           "refId": "C"
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_RHTAP-OBSERVATORIUM-STAGE}"
-          },
           "editorMode": "code",
           "expr": "avg_over_time(namespace_cpu:kube_pod_container_resource_limits:sum{namespace=\"product-kubearchive\"}[4h])",
           "hide": false,
@@ -709,10 +641,6 @@
           "refId": "D"
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${Datasource}"
-          },
           "editorMode": "code",
           "expr": "avg_over_time(namespace_cpu:kube_pod_container_resource_requests:sum{namespace=\"product-kubearchive\"}[4h])",
           "hide": false,
@@ -722,10 +650,6 @@
           "refId": "E"
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_RHTAP-OBSERVATORIUM-STAGE}"
-          },
           "editorMode": "code",
           "expr": "namespace:container_cpu_usage:sum{namespace=\"product-kubearchive\"}",
           "hide": false,
@@ -739,10 +663,6 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "670c6fa5-9e7b-4d4e-87f6-906465c2a13b"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -821,10 +741,6 @@
       "pluginVersion": "12.1.0",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_RHTAP-OBSERVATORIUM-STAGE}"
-          },
           "editorMode": "code",
           "expr": "sum by (queue) (increase(workqueue_adds{exported_job=\"kubearchive.operator\"}[1h]))",
           "interval": "",
@@ -850,10 +766,6 @@
       "type": "row"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "670c6fa5-9e7b-4d4e-87f6-906465c2a13b"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -904,10 +816,6 @@
       "pluginVersion": "12.1.0",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "670c6fa5-9e7b-4d4e-87f6-906465c2a13b"
-          },
           "editorMode": "code",
           "expr": "sum(workqueue_depth{})",
           "instant": false,
@@ -920,10 +828,6 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "670c6fa5-9e7b-4d4e-87f6-906465c2a13b"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -973,10 +877,6 @@
       "pluginVersion": "12.1.0",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_RHTAP-OBSERVATORIUM-STAGE}"
-          },
           "editorMode": "code",
           "exemplar": false,
           "expr": "sum by (queue) (workqueue_depth{})",
@@ -991,10 +891,6 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "670c6fa5-9e7b-4d4e-87f6-906465c2a13b"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1041,10 +937,6 @@
       "pluginVersion": "12.1.0",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_RHTAP-OBSERVATORIUM-STAGE}"
-          },
           "editorMode": "code",
           "expr": "increase(workqueue_retries{}[$__range])",
           "legendFormat": "{{ queue }}",
@@ -1056,10 +948,6 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "670c6fa5-9e7b-4d4e-87f6-906465c2a13b"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1106,10 +994,6 @@
       "pluginVersion": "12.1.0",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_RHTAP-OBSERVATORIUM-STAGE}"
-          },
           "editorMode": "code",
           "exemplar": false,
           "expr": "sum(increase(workqueue_adds{}[$__range]))",
@@ -1122,10 +1006,6 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "670c6fa5-9e7b-4d4e-87f6-906465c2a13b"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1172,10 +1052,6 @@
       "pluginVersion": "12.1.0",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_RHTAP-OBSERVATORIUM-STAGE}"
-          },
           "editorMode": "code",
           "exemplar": false,
           "expr": "sum(increase(http_server_request_duration_count{http_route=\"/\", exported_job=\"kubearchive.sink\"}[$__range]))",
@@ -1188,10 +1064,6 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "670c6fa5-9e7b-4d4e-87f6-906465c2a13b"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1242,10 +1114,6 @@
       "pluginVersion": "12.1.0",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_RHTAP-OBSERVATORIUM-STAGE}"
-          },
           "editorMode": "code",
           "exemplar": false,
           "expr": "avg(kubearchive:sink:latency{http_route!~\"(/livez|/readyz)\"} > 0)",
@@ -1258,10 +1126,6 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "670c6fa5-9e7b-4d4e-87f6-906465c2a13b"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1341,10 +1205,6 @@
       "pluginVersion": "12.1.0",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_RHTAP-OBSERVATORIUM-STAGE}"
-          },
           "editorMode": "code",
           "expr": "avg by (http_status_code) (kubearchive:sink:latency{http_route!~\"(/livez|/readyz)\"} > 0)",
           "legendFormat": "{{ http_status_code }}",
@@ -1356,10 +1216,6 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "670c6fa5-9e7b-4d4e-87f6-906465c2a13b"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1439,10 +1295,6 @@
       "pluginVersion": "12.1.0",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_RHTAP-OBSERVATORIUM-STAGE}"
-          },
           "editorMode": "code",
           "expr": "avg by (method) (kubearchive:sink:db_latency{method!=\"sql.conn.ping\"} > 0)",
           "legendFormat": "{{ method }}",
@@ -1467,10 +1319,6 @@
       "type": "row"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "670c6fa5-9e7b-4d4e-87f6-906465c2a13b"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1517,10 +1365,6 @@
       "pluginVersion": "12.1.0",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_RHTAP-OBSERVATORIUM-STAGE}"
-          },
           "editorMode": "code",
           "exemplar": false,
           "expr": "sum(increase(http_server_request_duration_count{http_route!~\"(/livez|/readyz)\", exported_job=\"kubearchive.api\"}[$__range]))",
@@ -1534,10 +1378,6 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "670c6fa5-9e7b-4d4e-87f6-906465c2a13b"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1588,10 +1428,6 @@
       "pluginVersion": "12.1.0",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_RHTAP-OBSERVATORIUM-STAGE}"
-          },
           "editorMode": "code",
           "exemplar": false,
           "expr": "sum(increase(http_server_request_duration_count{http_route!~\"(/livez|/readyz)\", exported_job=\"kubearchive.api\", http_status_code=\"500\"}[$__range])) / sum(increase(http_server_request_duration_count{http_route!~\"(/livez|/readyz)\", exported_job=\"kubearchive.api\"}[$__range]))",
@@ -1605,10 +1441,6 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "670c6fa5-9e7b-4d4e-87f6-906465c2a13b"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1659,10 +1491,6 @@
       "pluginVersion": "12.1.0",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_RHTAP-OBSERVATORIUM-STAGE}"
-          },
           "editorMode": "code",
           "exemplar": false,
           "expr": "avg(kubearchive:api:latency{http_route!~\"(/livez|/readyz)\", http_status_code=\"500\"} > 0)",
@@ -1675,10 +1503,6 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "670c6fa5-9e7b-4d4e-87f6-906465c2a13b"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1729,10 +1553,6 @@
       "pluginVersion": "12.1.0",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_RHTAP-OBSERVATORIUM-STAGE}"
-          },
           "editorMode": "code",
           "exemplar": false,
           "expr": "sum(increase(http_server_request_duration_count{http_route!~\"(/livez|/readyz)\", exported_job=\"kubearchive.api\", http_status_code=\"500\"}[$__range]))",
@@ -1746,10 +1566,6 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "670c6fa5-9e7b-4d4e-87f6-906465c2a13b"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1800,10 +1616,6 @@
       "pluginVersion": "12.1.0",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_RHTAP-OBSERVATORIUM-STAGE}"
-          },
           "editorMode": "code",
           "exemplar": false,
           "expr": "avg(kubearchive:api:latency{http_route!~\"(/livez|/readyz)\", http_status_code!=\"500\"} > 0)",
@@ -1816,10 +1628,6 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "670c6fa5-9e7b-4d4e-87f6-906465c2a13b"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1899,10 +1707,6 @@
       "pluginVersion": "12.1.0",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_RHTAP-OBSERVATORIUM-STAGE}"
-          },
           "editorMode": "code",
           "expr": "avg by (http_status_code) (kubearchive:api:latency{http_route!~\"(/livez|/readyz)\"} > 0)",
           "legendFormat": "__auto",
@@ -1914,10 +1718,6 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "670c6fa5-9e7b-4d4e-87f6-906465c2a13b"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1997,10 +1797,6 @@
       "pluginVersion": "12.1.0",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_RHTAP-OBSERVATORIUM-STAGE}"
-          },
           "editorMode": "code",
           "expr": "avg by (method) (kubearchive:api:db_latency{method!=\"sql.conn.ping\"} > 0)",
           "legendFormat": "{{ method }}",
