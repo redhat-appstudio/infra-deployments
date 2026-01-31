@@ -1,0 +1,33 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../base
+
+patches:
+  - path: database-secret-path.yaml
+    target:
+      name: database-secret
+      group: external-secrets.io
+      version: v1beta1
+      kind: ExternalSecret
+  # Delete the base secret since we're using External Secret
+  - patch: |-
+      $patch: delete
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: kite-database-credentials
+        namespace: konflux-kite
+
+# Only update some parts of the generated development configmap
+configMapGenerator:
+  - name: kite-config
+    namespace: konflux-kite
+    literals:
+      - KITE_PROJECT_ENV=production
+      - KITE_DB_SSL_MODE=require
+      - KITE_LOG_LEVEL=info
+      - KITE_LOG_FORMAT=json
+      - KITE_FEATURE_NAMESPACE_CHECKING=true
+      - AUTH_IMPERSONATE=true
+    behavior: merge
