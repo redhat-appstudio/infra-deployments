@@ -20,7 +20,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 7,
+  "id": 26,
   "links": [],
   "panels": [
     {
@@ -872,7 +872,7 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "max(increase(kueue_admitted_workloads_total[$__range]))",
+          "expr": "sum(increase(kueue_admitted_workloads_total[$__range]))",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
@@ -952,6 +952,134 @@
       "type": "stat"
     },
     {
+      "description": "The total number of admitted workloads,  by priority class , in the selected range",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 14,
+        "w": 11,
+        "x": 0,
+        "y": 68
+      },
+      "id": 29,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.3.0",
+      "targets": [
+        {
+          "editorMode": "code",
+          "expr": "sum by (priority_class) (increase(kueue_admitted_workloads_total[$__range]))",
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Admitted Workloads Increase By Priority Class",
+      "type": "stat"
+    },
+    {
+      "description": "99% of the workloads waited in the queue less time from the shown value. Broke into Priority Classes.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 300
+              },
+              {
+                "color": "orange",
+                "value": 600
+              },
+              {
+                "color": "red",
+                "value": 900
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 14,
+        "w": 12,
+        "x": 12,
+        "y": 68
+      },
+      "id": 30,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.3.0",
+      "targets": [
+        {
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.99, sum(increase(kueue_admission_wait_time_seconds_bucket{cluster_queue=\"cluster-pipeline-queue\"}[$__range])) by (le, priority_class))",
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Admission Wait Time 99th Percentile By Priority Class",
+      "type": "stat"
+    },
+    {
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -982,7 +1110,7 @@
         "h": 56,
         "w": 11,
         "x": 0,
-        "y": 68
+        "y": 82
       },
       "id": 7,
       "options": {
@@ -1056,7 +1184,7 @@
         "h": 56,
         "w": 12,
         "x": 12,
-        "y": 68
+        "y": 82
       },
       "id": 8,
       "options": {
@@ -1110,7 +1238,7 @@
         "h": 15,
         "w": 14,
         "x": 0,
-        "y": 124
+        "y": 138
       },
       "id": 12,
       "options": {
@@ -1184,7 +1312,7 @@
         "h": 13,
         "w": 14,
         "x": 0,
-        "y": 139
+        "y": 153
       },
       "id": 14,
       "options": {
@@ -1257,7 +1385,7 @@
         "h": 13,
         "w": 14,
         "x": 0,
-        "y": 152
+        "y": 166
       },
       "id": 13,
       "options": {
@@ -1315,7 +1443,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 165
+        "y": 179
       },
       "id": 4,
       "panels": [],
@@ -1333,8 +1461,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           }
@@ -1345,7 +1472,7 @@
         "h": 7,
         "w": 7,
         "x": 0,
-        "y": 166
+        "y": 180
       },
       "id": 2,
       "options": {
@@ -1422,8 +1549,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1455,7 +1581,7 @@
         "h": 14,
         "w": 14,
         "x": 0,
-        "y": 173
+        "y": 187
       },
       "id": 15,
       "options": {
@@ -1538,8 +1664,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1586,7 +1711,7 @@
         "h": 14,
         "w": 14,
         "x": 0,
-        "y": 187
+        "y": 201
       },
       "id": 20,
       "options": {
@@ -1635,8 +1760,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -1648,7 +1772,7 @@
         "h": 6,
         "w": 14,
         "x": 0,
-        "y": 201
+        "y": 215
       },
       "id": 26,
       "options": {
@@ -1702,7 +1826,7 @@
         "h": 13,
         "w": 14,
         "x": 0,
-        "y": 207
+        "y": 221
       },
       "id": 21,
       "options": {
