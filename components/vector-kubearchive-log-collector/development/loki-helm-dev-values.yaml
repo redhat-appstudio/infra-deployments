@@ -151,10 +151,11 @@ ingester:
     enabled: false
   resources:
     requests:
-      cpu: 50m  # Reduce from 100m
-      memory: 256Mi  # Increase from 128Mi to prevent OOM
+      cpu: 500m
+      memory: 4Gi
     limits:
-      memory: 512Mi  # Increase from 256Mi to prevent OOM
+      cpu: 2000m
+      memory: 6Gi
   persistence:
     enabled: false  # Disable persistence for dev to avoid storage class issues
     size: 10Gi
