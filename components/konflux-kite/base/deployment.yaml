@@ -100,8 +100,8 @@ spec:
         image: quay.io/konflux-ci/kite-prod:0.1
         imagePullPolicy: Always
         ports:
-        - containerPort: 8080
-          name: http
+        - containerPort: 8443
+          name: kite-port
           protocol: TCP
         envFrom:
         - configMapRef:
@@ -137,7 +137,8 @@ spec:
         startupProbe:
           httpGet:
             path: /api/v1/health/
-            port: http
+            port: kite-port
+            scheme: HTTPS
           initialDelaySeconds: 10
           periodSeconds: 5
           timeoutSeconds: 3
@@ -146,7 +147,8 @@ spec:
         readinessProbe:
           httpGet:
             path: /api/v1/health/
-            port: http
+            port: kite-port
+            scheme: HTTPS
           initialDelaySeconds: 10
           periodSeconds: 10
           timeoutSeconds: 3
@@ -154,7 +156,8 @@ spec:
         livenessProbe:
           httpGet:
             path: /api/v1/health/
-            port: http
+            port: kite-port
+            scheme: HTTPS
           initialDelaySeconds: 30
           periodSeconds: 30
           timeoutSeconds: 5

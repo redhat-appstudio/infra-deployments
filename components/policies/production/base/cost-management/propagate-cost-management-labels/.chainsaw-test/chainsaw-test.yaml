@@ -1,3 +1,4 @@
+---
 apiVersion: chainsaw.kyverno.io/v1alpha1
 kind: Test
 metadata:
@@ -8,6 +9,10 @@ spec:
     tests that the labels are correctly set on pods in tenant namespace
     that have the `cost-center` label
   steps:
+    - name: Apply GlobalContextEntry
+      try:
+        - apply:
+            file: ../globalcontextentry_namespaces.yaml
     - name: Create namespaces for testing
       try:
         - create:
@@ -17,7 +22,7 @@ spec:
               - name: namespace
                 value: tenant
               - name: cost_center
-                value: "670"
+                value: '670'
     - name: Apply RBAC
       try:
         - apply:
@@ -49,7 +54,7 @@ spec:
               - name: namespace
                 value: tenant
               - name: cost_center
-                value: "670"
+                value: '670'
 ---
 apiVersion: chainsaw.kyverno.io/v1alpha1
 kind: Test
@@ -60,6 +65,10 @@ spec:
   description: |
     tests that the label is not applied to pods in a non-tenant namespace
   steps:
+    - name: Apply GlobalContextEntry
+      try:
+        - apply:
+            file: ../globalcontextentry_namespaces.yaml
     - name: Create namespaces for testing
       try:
         - create:
@@ -104,6 +113,10 @@ spec:
   description: |
     Tests that the Kyverno policy does not apply to pods in managed tenant namespaces.
   steps:
+    - name: Apply GlobalContextEntry
+      try:
+        - apply:
+            file: ../globalcontextentry_namespaces.yaml
     - name: Create a managed namespace
       try:
         - create:
@@ -155,6 +168,10 @@ spec:
     Tests that it is possible to create a pod in an existing tenant namespace
     that does not have the `cost-center` label.
   steps:
+    - name: Apply GlobalContextEntry
+      try:
+        - apply:
+            file: ../globalcontextentry_namespaces.yaml
     - name: Create a tenant namespace without cost-center label
       try:
         - create:

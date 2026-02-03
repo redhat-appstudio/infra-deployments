@@ -12,15 +12,18 @@ spec:
               values:
                 sourceRoot: configs/proactive-scaler
                 environment: staging
+                clusterDir: ""
           - list:
-              elements: []
+              elements:
+                - nameNormalized: stone-prod-p02
+                  values.clusterDir: stone-prod-p02
   template:
     metadata:
       name: proactive-scaler-{{nameNormalized}}
     spec:
       project: default
       source:
-        path: '{{values.sourceRoot}}/{{values.environment}}'
+        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
         repoURL: https://github.com/redhat-appstudio/infra-deployments.git
         targetRevision: main
       destination:

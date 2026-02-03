@@ -16,12 +16,19 @@ spec:
       archiveWhen: has(status.completionTime)
       # CEL duration only supports h, m, s, ms, us, ns suffixes, so we convert days to hours
       # Uses gracePeriodDays from Release spec if present (capped at 30 days max), otherwise defaults to 5 days (120h)
-      deleteWhen: 'timestamp(metadata.creationTimestamp) < now() - duration(string(has(spec.gracePeriodDays) ? (spec.gracePeriodDays > 30 ? 720 : spec.gracePeriodDays * 24) : 120) + "h")'
+      keepLastWhen:
+        - name: cleanup
+          when: 'timestamp(metadata.creationTimestamp) < now() - duration(string(has(spec.gracePeriodDays) ? (spec.gracePeriodDays > 30 ? 720 : spec.gracePeriodDays * 24) : 120) + "h")'
+          count: 0
     - selector:
         apiVersion: tekton.dev/v1
         kind: PipelineRun
       archiveWhen: has(status.completionTime)
-      deleteWhen: has(status.completionTime) && timestamp(metadata.completionTime) < now() - duration("5m")
+      keepLastWhen:
+        - name: cleanup
+          when: 'has(status.completionTime) && timestamp(metadata.completionTime) < now() - duration("5m")'
+          count: 0
+      archiveOnDelete: 'true'
     - selector:
         apiVersion: tekton.dev/v1
         kind: TaskRun

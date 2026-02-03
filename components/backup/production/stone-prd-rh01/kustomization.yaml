@@ -5,7 +5,7 @@ resources:
 patches:
   - target:
       group: external-secrets.io
-      version: v1beta1
+      version: v1
       kind: ExternalSecret
       name: backup-s3-credentials
     path: backup-s3-credentials-patch.yaml
@@ -21,9 +21,3 @@ patches:
       kind: DataProtectionApplication
       name: velero-aws
     path: dpa-kmskeyid-patch.yaml
-  - target:
-      group: oadp.openshift.io
-      version: v1alpha1
-      kind: DataProtectionApplication
-      name: velero-aws
-    path: dpa-velero-args-patch.yaml

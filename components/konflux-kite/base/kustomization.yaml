@@ -10,20 +10,13 @@ resources:
 
 namespace: konflux-kite
 
-images:
-  - name: quay.io/konflux-ci/kite-prod
-    newTag: 3e176005a76321318dd97f83eb3aa455bd4bce9f
-
-  - name: quay.io/konflux-ci/kite-init
-    newTag: 3e176005a76321318dd97f83eb3aa455bd4bce9f
-
 configMapGenerator:
   - name: kite-config
     namespace: konflux-kite
     literals:
       - KITE_PROJECT_ENV=production
       - KITE_HOST=0.0.0.0
-      - KITE_PORT=8080
+      - KITE_PORT=8443
       - KITE_DB_SSL_MODE=require
       - KITE_LOG_LEVEL=info
       - KITE_LOG_FORMAT=json
@@ -35,6 +28,7 @@ configMapGenerator:
       - KITE_WRITE_TIMEOUT=30s
       - KITE_IDLE_TIMEOUT=60s
       - KITE_SHUTDOWN_TIMEOUT=10s
+      - AUTH_IMPERSONATE=true
 
 # Not using external secrets here for development env.
 secretGenerator:

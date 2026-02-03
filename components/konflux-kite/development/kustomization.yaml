@@ -7,6 +7,13 @@ resources:
 
 namespace: konflux-kite
 
+images:
+  - name: quay.io/konflux-ci/kite-prod
+    newTag: a8f90611b6e50cd7fa53287cf409e5f7940d2de9
+
+  - name: quay.io/konflux-ci/kite-init
+    newTag: a8f90611b6e50cd7fa53287cf409e5f7940d2de9
+
 # Override config for development
 configMapGenerator:
   - name: kite-config
@@ -28,6 +35,7 @@ configMapGenerator:
       - KITE_WRITE_TIMEOUT=30s
       - KITE_IDLE_TIMEOUT=60s
       - KITE_SHUTDOWN_TIMEOUT=10s
+      - AUTH_IMPERSONATE=true
     behavior: replace
 
 patches:
@@ -51,3 +59,32 @@ patches:
                   requests:
                     cpu: 50m
                     memory: 128Mi
+  - patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/startupProbe/httpGet/scheme
+        value: "HTTP"
+      - op: replace
+        path: /spec/template/spec/containers/0/livenessProbe/httpGet/scheme
+        value: "HTTP"
+      - op: replace
+        path: /spec/template/spec/containers/0/readinessProbe/httpGet/scheme
+        value: "HTTP"
+      - op: replace
+        path: /spec/template/spec/containers/0/ports/0/containerPort
+        value: 8080
+    target:
+      version: v1
+      kind: Deployment
+      name: konflux-kite
+
+  - patch: |-
+      - op: replace
+        path: /spec/ports/0/port
+        value: 80
+      - op: replace
+        path: /spec/ports/0/targetPort
+        value: 8080
+    target:
+      version: v1
+      kind: Service
+      name: konflux-kite

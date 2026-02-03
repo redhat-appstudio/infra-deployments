@@ -963,10 +963,11 @@ spec:
         resources:
           limits:
             cpu: 500m
-            memory: 512Mi
+            # The metrics exporter is expected to have memory spikes
+            memory: 2Gi
           requests:
             cpu: 250m
-            memory: 128Mi
+            memory: 1Gi
         securityContext:
           readOnlyRootFilesystem: true
           runAsNonRoot: true
@@ -2072,7 +2073,7 @@ metadata:
   namespace: openshift-marketplace
 spec:
   displayName: custom-operators
-  image: quay.io/openshift-pipeline/pipelines-index-4.17@sha256:92bd402729a9985593a49ec87b658cda7639f0fbf46bfe71a75acf035012b78c
+  image: quay.io/openshift-pipeline/pipelines-index-4.17@sha256:da69014f19f4d6f07564659b7233b9359065df6d090457b6c36d3e699a059b79
   sourceType: grpc
   updateStrategy:
     registryPoll:

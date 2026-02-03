@@ -3,18 +3,18 @@ kind: Kustomization
 resources:
   - ../../base
   - ../../base/external-secrets
-  - https://github.com/konflux-ci/mintmaker/config/default?ref=fc5c9899e3778a3ba25decc179e2044426abf13b
-  - https://github.com/konflux-ci/mintmaker/config/renovate?ref=fc5c9899e3778a3ba25decc179e2044426abf13b
+  - https://github.com/konflux-ci/mintmaker/config/default?ref=8d2f2af2b25c408d6617745641c81b0a5e090d12
+  - https://github.com/konflux-ci/mintmaker/config/renovate?ref=8d2f2af2b25c408d6617745641c81b0a5e090d12
 
 namespace: mintmaker
 
 images:
   - name: quay.io/konflux-ci/mintmaker
     newName: quay.io/konflux-ci/mintmaker
-    newTag: fc5c9899e3778a3ba25decc179e2044426abf13b
+    newTag: 8d2f2af2b25c408d6617745641c81b0a5e090d12
   - name: quay.io/konflux-ci/mintmaker-renovate-image
     newName: quay.io/konflux-ci/mintmaker-renovate-image
-    newTag: d626233abbe78bbd7a2abd1e51592d3d1a667f49
+    newTag: 94577cc23a2cf6583c90a7f0d1feed13a2006d38
 
 commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
@@ -25,7 +25,7 @@ patches:
       name: pipelines-as-code-secret
       kind: ExternalSecret
       group: external-secrets.io
-      version: v1beta1
+      version: v1
   - path: manager-set-resources-patch.yaml
 
 configurations:

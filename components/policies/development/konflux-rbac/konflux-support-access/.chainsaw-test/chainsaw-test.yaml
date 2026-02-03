@@ -1,0 +1,387 @@
+---
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: verify-clusterpolicy-is-ready
+spec:
+  concurrent: false
+  description: |
+    Tests that the ClusterPolicy for generating konflux-support-ai-konflux-user-support
+    ClusterRoleBinding is applied successfully and becomes Ready.
+  steps:
+    - name: given-kyverno-has-permission-on-resources
+      try:
+        - apply:
+            file: ../kyverno_rbac.yaml
+    - name: given-viewer-clusterrole-exists
+      try:
+        - apply:
+            resource:
+              apiVersion: rbac.authorization.k8s.io/v1
+              kind: ClusterRole
+              metadata:
+                name: konflux-viewer-user-actions
+              rules: []
+    - name: given-group-crd-exists
+      try:
+        - apply:
+            file: resources/group-crd.yaml
+        - assert:
+            resource:
+              apiVersion: apiextensions.k8s.io/v1
+              kind: CustomResourceDefinition
+              metadata:
+                name: groups.user.openshift.io
+              status:
+                conditions:
+                - type: NamesAccepted
+                  status: "True"
+                - type: Established
+                  status: "True"
+    - name: Apply Kyverno ClusterPolicy and assert it exists
+      try:
+        - apply:
+            file: ../generate-support-clusterrolebinding-clusterpolicy.yaml
+        - assert:
+            file: chainsaw-assert-clusterpolicy.yaml
+---
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: clusterrolebinding-created-with-users
+spec:
+  concurrent: false
+  description: |
+    Tests that when an ai-konflux-user-support and konflux-sre Groups
+    are created with users, a ClusterRoleBinding for each group is generated.
+    The ClusterRoleBindings have Group's User subjects, the correct label,
+    and they reference the konflux-viewer-user-actions ClusterRole.
+  steps:
+    - name: given-kyverno-has-permission-on-resources
+      try:
+        - apply:
+            file: ../kyverno_rbac.yaml
+    - name: given-viewer-clusterrole-exists
+      try:
+        - apply:
+            resource:
+              apiVersion: rbac.authorization.k8s.io/v1
+              kind: ClusterRole
+              metadata:
+                name: konflux-viewer-user-actions
+              rules: []
+    - name: given-group-crd-exists
+      try:
+        - apply:
+            file: resources/group-crd.yaml
+        - assert:
+            resource:
+              apiVersion: apiextensions.k8s.io/v1
+              kind: CustomResourceDefinition
+              metadata:
+                name: groups.user.openshift.io
+              status:
+                conditions:
+                - type: NamesAccepted
+                  status: "True"
+                - type: Established
+                  status: "True"
+    - name: Apply Kyverno ClusterPolicy
+      try:
+        - apply:
+            file: ../generate-support-clusterrolebinding-clusterpolicy.yaml
+        - assert:
+            file: chainsaw-assert-clusterpolicy.yaml
+    - name: Create ai-konflux-user-support Group with users
+      try:
+        - create:
+            file: ./resources/group-with-users-ai-konflux-user-support.yaml
+    - name: Assert ai-konflux-user-support's support ClusterRoleBinding is created correctly
+      try:
+        - assert:
+            resource:
+              apiVersion: rbac.authorization.k8s.io/v1
+              kind: ClusterRoleBinding
+              metadata:
+                name: konflux-support-ai-konflux-user-support
+                labels:
+                  namespace-lister.konflux-ci.dev/use-for-access: 'true'
+              roleRef:
+                apiGroup: rbac.authorization.k8s.io
+                kind: ClusterRole
+                name: konflux-viewer-user-actions
+              subjects:
+                - apiGroup: rbac.authorization.k8s.io
+                  kind: User
+                  name: alice
+                - apiGroup: rbac.authorization.k8s.io
+                  kind: User
+                  name: bob
+                - apiGroup: rbac.authorization.k8s.io
+                  kind: User
+                  name: charlie
+    - name: Create konflux-sre Group with users
+      try:
+        - create:
+            file: ./resources/group-with-users-konflux-sre.yaml
+    - name: Assert konflux-sre's support ClusterRoleBinding is created correctly
+      try:
+        - assert:
+            resource:
+              apiVersion: rbac.authorization.k8s.io/v1
+              kind: ClusterRoleBinding
+              metadata:
+                name: konflux-support-konflux-sre
+                labels:
+                  namespace-lister.konflux-ci.dev/use-for-access: 'true'
+              roleRef:
+                apiGroup: rbac.authorization.k8s.io
+                kind: ClusterRole
+                name: konflux-viewer-user-actions
+              subjects:
+                - apiGroup: rbac.authorization.k8s.io
+                  kind: User
+                  name: dan
+                - apiGroup: rbac.authorization.k8s.io
+                  kind: User
+                  name: frank
+                - apiGroup: rbac.authorization.k8s.io
+                  kind: User
+                  name: john
+---
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: clusterrolebinding-updated-when-users-added
+spec:
+  concurrent: false
+  description: |
+    Tests that when users are added to the ai-konflux-user-support Group,
+    the ClusterRoleBinding subjects are updated to include the new users.
+  steps:
+    - name: given-kyverno-has-permission-on-resources
+      try:
+        - apply:
+            file: ../kyverno_rbac.yaml
+    - name: given-viewer-clusterrole-exists
+      try:
+        - apply:
+            resource:
+              apiVersion: rbac.authorization.k8s.io/v1
+              kind: ClusterRole
+              metadata:
+                name: konflux-viewer-user-actions
+              rules: []
+    - name: given-group-crd-exists
+      try:
+        - apply:
+            file: resources/group-crd.yaml
+        - assert:
+            resource:
+              apiVersion: apiextensions.k8s.io/v1
+              kind: CustomResourceDefinition
+              metadata:
+                name: groups.user.openshift.io
+              status:
+                conditions:
+                - type: NamesAccepted
+                  status: "True"
+                - type: Established
+                  status: "True"
+    - name: Apply Kyverno ClusterPolicy
+      try:
+        - apply:
+            file: ../generate-support-clusterrolebinding-clusterpolicy.yaml
+        - assert:
+            file: chainsaw-assert-clusterpolicy.yaml
+    - name: Create ai-konflux-user-support Group with initial users
+      try:
+        - create:
+            file: ./resources/group-with-users-ai-konflux-user-support.yaml
+    - name: Verify initial ClusterRoleBinding
+      try:
+        - assert:
+            resource:
+              apiVersion: rbac.authorization.k8s.io/v1
+              kind: ClusterRoleBinding
+              metadata:
+                name: konflux-support-ai-konflux-user-support
+    - name: Update Group with more users
+      try:
+        - apply:
+            file: ./resources/group-with-more-users.yaml
+    - name: Assert ClusterRoleBinding is updated with new users
+      try:
+        - assert:
+            resource:
+              apiVersion: rbac.authorization.k8s.io/v1
+              kind: ClusterRoleBinding
+              metadata:
+                name: konflux-support-ai-konflux-user-support
+                labels:
+                  namespace-lister.konflux-ci.dev/use-for-access: 'true'
+              roleRef:
+                apiGroup: rbac.authorization.k8s.io
+                kind: ClusterRole
+                name: konflux-viewer-user-actions
+              subjects:
+                - apiGroup: rbac.authorization.k8s.io
+                  kind: User
+                  name: alice
+                - apiGroup: rbac.authorization.k8s.io
+                  kind: User
+                  name: bob
+                - apiGroup: rbac.authorization.k8s.io
+                  kind: User
+                  name: charlie
+                - apiGroup: rbac.authorization.k8s.io
+                  kind: User
+                  name: david
+                - apiGroup: rbac.authorization.k8s.io
+                  kind: User
+                  name: eve
+---
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: clusterrolebinding-updated-when-users-removed
+spec:
+  concurrent: false
+  description: |
+    Tests that when users are removed from the ai-konflux-user-support Group,
+    the ClusterRoleBinding subjects are updated to remove those users.
+  steps:
+    - name: given-kyverno-has-permission-on-resources
+      try:
+        - apply:
+            file: ../kyverno_rbac.yaml
+    - name: given-viewer-clusterrole-exists
+      try:
+        - apply:
+            resource:
+              apiVersion: rbac.authorization.k8s.io/v1
+              kind: ClusterRole
+              metadata:
+                name: konflux-viewer-user-actions
+              rules: []
+    - name: given-group-crd-exists
+      try:
+        - apply:
+            file: resources/group-crd.yaml
+        - assert:
+            resource:
+              apiVersion: apiextensions.k8s.io/v1
+              kind: CustomResourceDefinition
+              metadata:
+                name: groups.user.openshift.io
+              status:
+                conditions:
+                - type: NamesAccepted
+                  status: "True"
+                - type: Established
+                  status: "True"
+    - name: Apply Kyverno ClusterPolicy
+      try:
+        - apply:
+            file: ../generate-support-clusterrolebinding-clusterpolicy.yaml
+        - assert:
+            file: chainsaw-assert-clusterpolicy.yaml
+    - name: Create ai-konflux-user-support Group with multiple users
+      try:
+        - create:
+            file: ./resources/group-with-users-ai-konflux-user-support.yaml
+    - name: Verify initial ClusterRoleBinding
+      try:
+        - assert:
+            resource:
+              apiVersion: rbac.authorization.k8s.io/v1
+              kind: ClusterRoleBinding
+              metadata:
+                name: konflux-support-ai-konflux-user-support
+    - name: Update Group with fewer users
+      try:
+        - apply:
+            file: ./resources/group-with-fewer-users.yaml
+    - name: Assert ClusterRoleBinding is updated with fewer users
+      try:
+        - assert:
+            resource:
+              apiVersion: rbac.authorization.k8s.io/v1
+              kind: ClusterRoleBinding
+              metadata:
+                name: konflux-support-ai-konflux-user-support
+                labels:
+                  namespace-lister.konflux-ci.dev/use-for-access: 'true'
+              roleRef:
+                apiGroup: rbac.authorization.k8s.io
+                kind: ClusterRole
+                name: konflux-viewer-user-actions
+              subjects:
+                - apiGroup: rbac.authorization.k8s.io
+                  kind: User
+                  name: alice
+---
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: clusterrolebinding-with-empty-group
+spec:
+  concurrent: false
+  description: |
+    Tests that when the ai-konflux-user-support Group has no users,
+    the ClusterRoleBinding is still created but with empty subjects.
+  steps:
+    - name: given-kyverno-has-permission-on-resources
+      try:
+        - apply:
+            file: ../kyverno_rbac.yaml
+    - name: given-viewer-clusterrole-exists
+      try:
+        - apply:
+            resource:
+              apiVersion: rbac.authorization.k8s.io/v1
+              kind: ClusterRole
+              metadata:
+                name: konflux-viewer-user-actions
+              rules: []
+    - name: given-group-crd-exists
+      try:
+        - apply:
+            file: resources/group-crd.yaml
+        - assert:
+            resource:
+              apiVersion: apiextensions.k8s.io/v1
+              kind: CustomResourceDefinition
+              metadata:
+                name: groups.user.openshift.io
+              status:
+                conditions:
+                - type: NamesAccepted
+                  status: "True"
+                - type: Established
+                  status: "True"
+    - name: Apply Kyverno ClusterPolicy
+      try:
+        - apply:
+            file: ../generate-support-clusterrolebinding-clusterpolicy.yaml
+        - assert:
+            file: chainsaw-assert-clusterpolicy.yaml
+    - name: Create ai-konflux-user-support Group with no users
+      try:
+        - create:
+            file: ./resources/group-empty.yaml
+    - name: Assert ClusterRoleBinding exists with correct metadata
+      try:
+        - assert:
+            resource:
+              apiVersion: rbac.authorization.k8s.io/v1
+              kind: ClusterRoleBinding
+              metadata:
+                name: konflux-support-ai-konflux-user-support
+                labels:
+                  namespace-lister.konflux-ci.dev/use-for-access: 'true'
+              roleRef:
+                apiGroup: rbac.authorization.k8s.io
+                kind: ClusterRole
+                name: konflux-viewer-user-actions
+

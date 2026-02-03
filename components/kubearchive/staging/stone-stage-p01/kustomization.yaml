@@ -8,6 +8,18 @@ resources:
 
 namespace: product-kubearchive
 
+configMapGenerator:
+  - name: kubearchive-api-url
+    options:
+      disableNameSuffixHash: true
+    literals:
+      - URL=https://kubearchive-api-server-product-kubearchive.apps.stone-stage-p01.hpmt.p1.openshiftapps.com
+  - name: otel-collector-conf
+    behavior: replace
+    namespace: product-kubearchive
+    files:
+      - otel-collector-config.yaml
+
 patches:
   - patch: |-
       $patch: delete
@@ -72,18 +84,14 @@ patches:
               - name: manager
                 resources:
                   limits:
-                    cpu: 200m
-                    memory: 1024Mi
+                    cpu: 1
+                    memory: 15Gi
                   requests:
                     cpu: 200m
-                    memory: 1024Mi
+                    memory: 15Gi
                 env:
+                - name: GOMEMLIMIT
+                  value: 10GiB
+                  valueFrom: null # required because valueFrom comes from the original
                 - name: KUBEARCHIVE_OTEL_MODE
                   value: delegated
-
-configMapGenerator:
-  - name: otel-collector-conf
-    behavior: replace
-    namespace: product-kubearchive
-    files:
-      - otel-collector-config.yaml

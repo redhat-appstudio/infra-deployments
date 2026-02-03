@@ -1,5 +1,5 @@
 ---
-apiVersion: external-secrets.io/v1beta1
+apiVersion: external-secrets.io/v1
 kind: ExternalSecret
 metadata:
   name: otelcol-config
@@ -93,16 +93,14 @@ spec:
                   os.type:
                     enabled: true
           receivers:
-            filelog/rh_rhtap_stage_mpc_audit:
+            filelog/{{ .index }}_audit:
               include:
                 - /var/log/audit/audit.log
-                - /var/log/messages
-                - /var/log/secure  # e.g., /var/log/nginx/access.log
               include_file_path: true
               exclude_older_than: 86400s
               operators:
                 - type: add
-                  id: rh_rhtap_stage_mpc_idx
+                  id: {{ .index }}_idx
                   field: attributes["com.splunk.index"]
                   value: {{ .index }}
                   on_error: send
@@ -111,14 +109,17 @@ spec:
                   field: attributes["com.splunk.sourcetype"]
                   value: audit
                   on_error: send
-            filelog/rh_rhtap_stage_mpc_messages:
-              include:
-                - /var/log/messages
-              include_file_path: true
-              exclude_older_than: 86400s
+            journald/{{ .index }}_messages:
               operators:
+                  # Prevent logs feedback loop
+                - type: filter
+                  id: drop_otelcol
+                  expr: 'attributes["SYSLOG_IDENTIFIER"] != "otelcol-contrib"'
+                - type: filter
+                  id: messages_filter
+                  expr: 'attributes["SYSLOG_IDENTIFIER"] != nil'
                 - type: add
-                  id: rh_rhtap_stage_mpc_idx
+                  id: {{ .index }}_idx
                   field: attributes["com.splunk.index"]
                   value: {{ .index }}
                   on_error: send
@@ -127,14 +128,16 @@ spec:
                   field: attributes["com.splunk.sourcetype"]
                   value: messages
                   on_error: send
-            filelog/rh_rhtap_stage_mpc_secure:
-              include:
-                - /var/log/secure
-              include_file_path: true
-              exclude_older_than: 86400s
+            journald/{{ .index }}_secure:
               operators:
+                - type: filter
+                  id: secure_filter
+                  expr: |
+                    attributes["SYSLOG_IDENTIFIER"] == "sshd" ||
+                    attributes["SYSLOG_IDENTIFIER"] == "sudo" ||
+                    attributes["SYSLOG_FACILITY"] == "auth"
                 - type: add
-                  id: rh_rhtap_stage_mpc_idx
+                  id: {{ .index }}_idx
                   field: attributes["com.splunk.index"]
                   value: {{ .index }}
                   on_error: send
@@ -146,6 +149,10 @@ spec:
           service:
             extensions:
               - file_storage/otc
+            telemetry:
+              logs:
+                level: error
+                disable_stacktrace: true
             pipelines:
               logs:
                 processors:
@@ -154,8 +161,8 @@ spec:
                   - transform/common
                 receivers:
                   # List all your receivers here
-                  - filelog/rh_rhtap_stage_mpc_audit
-                  - filelog/rh_rhtap_stage_mpc_messages
-                  - filelog/rh_rhtap_stage_mpc_secure
+                  - filelog/{{ .index }}_audit
+                  - journald/{{ .index }}_messages
+                  - journald/{{ .index }}_secure
                 exporters:
                   - splunk_hec/corp

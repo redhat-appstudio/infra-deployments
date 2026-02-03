@@ -13,6 +13,11 @@ namespace: product-kubearchive
 # Due to quoting limitations of generators we need to introduce the values with the |
 # See https://github.com/kubernetes-sigs/kustomize/issues/4845#issuecomment-1671570428
 configMapGenerator:
+    - name: kubearchive-api-url
+      options:
+        disableNameSuffixHash: true
+      literals:
+        - URL=https://kubearchive-api-server-product-kubearchive.apps.stone-prod-p02.hjvn.p1.openshiftapps.com
     - name: kubearchive-logging
       literals:
           - |
@@ -57,7 +62,7 @@ patches:
               spec:
                 containers:
                   - name: vacuum
-                    image: quay.io/kubearchive/vacuum:v1.15.0
+                    image: quay.io/kubearchive/vacuum:v1.17.2
 
   - patch: |-
       apiVersion: batch/v1
@@ -76,9 +81,8 @@ patches:
           spec:
             containers:
               - name: migration
-                env:
-                  - name: KUBEARCHIVE_VERSION
-                    value: v1.15.0
+                securityContext:
+                  runAsUser: null
   # We don't need the Secret as it will be created by the ExternalSecrets Operator
   - patch: |-
       $patch: delete
@@ -88,7 +92,7 @@ patches:
         name: kubearchive-database-credentials
         namespace: kubearchive
   - patch: |-
-      apiVersion: external-secrets.io/v1beta1
+      apiVersion: external-secrets.io/v1
       kind: ExternalSecret
       metadata:
         name: database-secret
@@ -169,7 +173,7 @@ patches:
                 args: [--health-probe-bind-address=:8081]
                 env:
                 - name: GOMEMLIMIT
-                  value: 4GiB
+                  value: 10GiB
                   valueFrom: null # required because valueFrom comes from the original
                 - name: KUBEARCHIVE_OTEL_MODE
                   value: enabled
@@ -182,11 +186,11 @@ patches:
                   - containerPort: 8081
                 resources:
                   limits:
-                    cpu: 500m
-                    memory: 5Gi
+                    cpu: 1
+                    memory: 15Gi
                   requests:
-                    cpu: 500m
-                    memory: 5Gi
+                    cpu: 1
+                    memory: 15Gi
 
   - patch: |-
       apiVersion: apps/v1
