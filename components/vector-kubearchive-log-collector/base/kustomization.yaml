@@ -9,3 +9,10 @@ resources:
 - sa.yaml
 - scc.yaml
 - ka-logging-service-monitor.yaml
+
+patches:
+  # Set PVC retention policy to Delete for ingester StatefulSet
+  - path: base/ingester-pvc-retention-patch.yaml
+    target:
+      kind: StatefulSet
+      name: loki-ingester
