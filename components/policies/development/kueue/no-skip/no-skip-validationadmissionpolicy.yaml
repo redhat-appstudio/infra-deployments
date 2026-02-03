@@ -1,0 +1,22 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: no-skip.kueue.konflux-ci.dev
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+    - apiGroups: ["tekton.dev"]
+      apiVersions: ["v1", "v1beta1"]
+      operations: ["CREATE"]
+      resources: ["taskruns"]
+      scope: "Namespaced"
+  variables:
+  - name: hasPlatformParam
+    expression: "has(object.spec.params) && object.spec.params.exists(p, p.name == 'PLATFORM')"
+  - name: platformValue
+    expression: "has(object.spec.params) && object.spec.params.filter(p, p.name == 'PLATFORM').size() > 0 ? object.spec.params.filter(p, p.name == 'PLATFORM')[0].value : ''"
+  validations:
+  - expression: "!variables.hasPlatformParam || (has(object.metadata.annotations) && ('kueue.konflux-ci.dev/resource-' + variables.platformValue in object.metadata.annotations))"
+    message: "TaskRun with PLATFORM param must have annotation kueue.konflux-ci.dev/resource-<PLATFORM_VALUE>"
