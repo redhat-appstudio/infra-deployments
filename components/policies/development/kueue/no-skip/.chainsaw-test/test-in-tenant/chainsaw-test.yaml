@@ -110,11 +110,8 @@ spec:
         file: ../chainsaw-assert-policy.yaml
   - name: then-ivalid-taskrun-can-not-be-created
     try:
-    - create:
+    - error:
         file: ../resources/taskrun_invalid_wrong_annotation.yaml
-        expect:
-        - check:
-            ($error != null): true
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
 apiVersion: chainsaw.kyverno.io/v1alpha1
@@ -151,8 +148,5 @@ spec:
         file: ../chainsaw-assert-policy.yaml
   - name: then-invalid-taskrun-can-not-be-created
     try:
-    - create:
+    - error:
         file: ../resources/taskrun_invalid_no_annotation.yaml
-        expect:
-        - check:
-            ($error != null): true

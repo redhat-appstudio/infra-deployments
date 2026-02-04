@@ -19,4 +19,13 @@ spec:
     expression: "has(object.spec.params) && object.spec.params.filter(p, p.name == 'PLATFORM').size() > 0 ? object.spec.params.filter(p, p.name == 'PLATFORM')[0].value : ''"
   validations:
   - expression: "!variables.hasPlatformParam || (has(object.metadata.annotations) && ('kueue.konflux-ci.dev/resource-' + variables.platformValue in object.metadata.annotations))"
-    message: "TaskRun with PLATFORM param must have annotation kueue.konflux-ci.dev/resource-<PLATFORM_VALUE>"
+    reason: Invalid
+    message: >
+      TaskRun with PLATFORM param must have the annotation 'kueue.konflux-ci.dev/resource-<PLATFORM_VALUE>'.
+      Make sure the PipelineRun was configured properly and that's listing all the required architectures in
+      the `build-platforms` parameter.
+    messageExpression: |
+      "TaskRun with PLATFORM param set to "+string(variables.platformValue)+
+      " must have the annotation 'kueue.konflux-ci.dev/resource-"+string(variables.platformValue)+
+      "'. Make sure the PipelineRun was configured properly and that's listing all the required"+
+      " architectures in the `build-platforms` parameter."
