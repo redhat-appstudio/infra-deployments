@@ -40,7 +40,7 @@ patches:
       kind: PodDisruptionBudget
       labelSelector: app.kubernetes.io/name=loki
   # Set PVC retention policy to Delete for ingester StatefulSet
-  - path: base/ingester-pvc-retention-patch.yaml
+  - path: ingester-pvc-retention-patch.yaml
     target:
       kind: StatefulSet
       name: loki-ingester
