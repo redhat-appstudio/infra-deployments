@@ -8,7 +8,7 @@ spec:
   description: |
     creates a TaskRun with a PLATFORM parameter and a corresponding
     tekton-kueue's annotation
-  concurrent: true
+  concurrent: false
   steps:
   - name: given-taskruns-crd-exists
     try:
@@ -46,7 +46,7 @@ spec:
   description: |
     creates a TaskRun with no PLATFORM parameter and no corresponding
     tekton-kueue's annotation
-  concurrent: true
+  concurrent: false
   steps:
   - name: given-taskruns-crd-exists
     try:
@@ -84,7 +84,7 @@ spec:
   description: |
     fails to create a TaskRun with a PLATFORM parameter and
     a wrong corresponding tekton-kueue's annotation
-  concurrent: true
+  concurrent: false
   steps:
   - name: given-taskruns-crd-exists
     try:
@@ -122,7 +122,7 @@ spec:
   description: |
     fails to create a TaskRun with a PLATFORM parameter
     and no corresponding tekton-kueue's annotation
-  concurrent: true
+  concurrent: false
   steps:
   - name: given-taskruns-crd-exists
     try:
