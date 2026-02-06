@@ -13,5 +13,9 @@ patches:
     target:
       kind: ConfigMap
       name: integration-config
+  - path: snapshotgc_inputs_patch.yaml
+    target:
+      kind: CronJob
+      name: snapshot-garbage-collector
 components:
   - ../../rh-certs
