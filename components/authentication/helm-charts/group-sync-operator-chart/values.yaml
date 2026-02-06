@@ -13,7 +13,6 @@ image:
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
-env: []
 podAnnotations: {}
 
 podLabels: {}
@@ -24,6 +23,9 @@ resources:
   requests:
     cpu: 300m
     memory: 200Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
 
 nodeSelector: {}
 
@@ -44,5 +46,8 @@ kube_rbac_proxy:
     requests:
       cpu: 100m
       memory: 20Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
 
 enableMonitoring: true

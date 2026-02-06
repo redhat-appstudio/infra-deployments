@@ -36,6 +36,10 @@ spec:
           - --tls-private-key-file=/etc/certs/tls/tls.key
           image: "{{ template "group-sync-operator.image" .Values.kube_rbac_proxy.image }}"
           name: kube-rbac-proxy
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
           ports:
           - containerPort: 8443
             name: https
@@ -58,6 +62,10 @@ spec:
           image: "{{ template "group-sync-operator.image" .Values.image }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           name: {{ .Chart.Name }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
           env:
             {{- if eq (include "group-sync-operator.checkWatchNamespace" .) ""  }}
             - name: WATCH_NAMESPACE
