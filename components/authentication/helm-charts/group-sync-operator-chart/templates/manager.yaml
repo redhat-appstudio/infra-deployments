@@ -76,6 +76,9 @@ spec:
             {{- with .Values.env }}
               {{- toYaml . | nindent 12 }}
             {{- end }}
+          volumeMounts:
+          - mountPath: /tmp
+            name: tmp-dir
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           livenessProbe:
@@ -107,3 +110,5 @@ spec:
           secret:
             defaultMode: 420
             secretName: group-sync-operator-certs
+        - name: tmp-dir
+          emptyDir: {}
