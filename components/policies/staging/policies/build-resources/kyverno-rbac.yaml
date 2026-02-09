@@ -1,0 +1,18 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kyverno-admission:read-multi-platform-host-config
+  labels:
+    rbac.kyverno.io/aggregate-to-admission-controller: "true"
+rules:
+- apiGroups:
+   - ""
+  resources:
+   - "configmaps"
+  resourceNames:
+   - "host-config"
+  verbs:
+    - "get"
+    - "list"
+    - "watch"
