@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: group-sync-operator
+
+resources:
+  - crd.yaml
+
+helmGlobals:
+  chartHome: .
+
+helmCharts:
+  - name: group-sync-operator-chart
+    releaseName: group-sync-operator
+    namespace: group-sync-operator
+    valuesFile: group-sync-operator-chart/values.yaml
