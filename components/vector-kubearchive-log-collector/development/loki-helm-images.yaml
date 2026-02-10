@@ -1,38 +1,47 @@
+# Looks like global.imageRegistry is not always honored
+# so I'm introducing registry at each image.
 global:
   imageRegistry: quay.io
 
 loki:
   image:
+    registry: quay.io
     repository: kubearchive/loki
     tag: 3.6.3
 
 lokiCanary:
   image:
+    registry: quay.io
     repository: kubearchive/loki-canary
     tag: 3.6.3
 
 test:
   image:
+    registry: quay.io
     repository: kubearchive/loki-helm-test
     tag: latest
 
 memcached:
   image:
+    registry: quay.io
     repository: kubearchive/memcached
     tag: 1.6.39-alpine
 
 memcachedExporter:
   image:
+    registry: quay.io
     repository: kubearchive/memcached-exporter
     tag: v0.15.4
 
 sidecar:
   image:
+    registry: quay.io
     repository: kubearchive/k8s-sidecar
     tag: 1.30.9
 
 gateway:
   image:
+    registry: quay.io
     repository: nginx/nginx-unprivileged
     tag: 1.24-alpine
 
