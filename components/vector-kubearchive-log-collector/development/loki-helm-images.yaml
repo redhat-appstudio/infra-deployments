@@ -1,0 +1,38 @@
+global:
+  imageRegistry: quay.io
+
+loki:
+  image:
+    repository: kubearchive/loki
+    tag: 3.6.3
+
+lokiCanary:
+  image:
+    repository: kubearchive/loki-canary
+    tag: 3.6.3
+
+test:
+  image:
+    repository: kubearchive/loki-helm-test
+    tag: latest
+
+memcached:
+  image:
+    repository: kubearchive/memcached
+    tag: 1.6.39-alpine
+
+memcachedExporter:
+  image:
+    repository: kubearchive/memcached-exporter
+    tag: v0.15.4
+
+sidecar:
+  image:
+    repository: kubearchive/k8s-sidecar
+    tag: 1.30.9
+
+gateway:
+  image:
+    repository: nginx/nginx-unprivileged
+    tag: 1.24-alpine
+
