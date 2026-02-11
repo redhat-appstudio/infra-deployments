@@ -384,6 +384,10 @@ apply_service_image_overrides() {
     [ -n "${BUILD_SERVICE_IMAGE_TAG}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/konflux-ci/build-service\")) |=.newTag=\"${BUILD_SERVICE_IMAGE_TAG}\"" $ROOT/components/build-service/development/kustomization.yaml
     [ -n "${BUILD_SERVICE_IMAGE_TAG_EXPIRATION}" ] && yq -i e "(.spec.template.spec.containers[].env[] | select(.name==\"IMAGE_TAG_ON_PR_EXPIRATION\") | .value) |= \"${BUILD_SERVICE_IMAGE_TAG_EXPIRATION}\"" $ROOT/components/build-service/development/image-expiration-patch.yaml
     [[ -n "${BUILD_SERVICE_PR_OWNER}" && "${BUILD_SERVICE_PR_SHA}" ]] && yq -i e "(.resources[] | select(. ==\"*github.com/konflux-ci/build-service*\")) |= \"https://github.com/${BUILD_SERVICE_PR_OWNER}/build-service/config/default?ref=${BUILD_SERVICE_PR_SHA}\"" $ROOT/components/build-service/development/kustomization.yaml
+    # Configure smee.io channel URL for webhook forwarding (used for Forgejo/Codeberg testing)
+    [ -n "${SMEE_CHANNEL}" ] && yq -i e ".[].value = \"${SMEE_CHANNEL}\"" $ROOT/components/smee-client/development/sever-url-patch.yaml
+    # Configure build-service PAC_WEBHOOK_URL to use the smee channel (for Forgejo/Codeberg/GitLab)
+    [ -n "${SMEE_CHANNEL}" ] && yq -i e "(.spec.template.spec.containers[0].env[] | select(.name == \"PAC_WEBHOOK_URL\")).value = \"${SMEE_CHANNEL}\"" $ROOT/components/build-service/development/pac-webhook-url-patch.yaml
 
     # Application Service (HAS)
     if [ -n "${HAS_IMAGE_REPO}" ] || [ -n "${HAS_IMAGE_TAG}" ] || [ -n "${HAS_PR_OWNER}" ]; then
@@ -660,19 +664,19 @@ wait_for_tekton_ready() {
             log_error "============================================================================="
             log_error "TIMEOUT: Tekton components failed to become ready within $((MAX_TEKTON_READY_TIMEOUT / 60)) minutes"
             log_error "============================================================================="
-            
+
             # Dump Tekton status for debugging
             log_error "TektonConfig status:"
             oc get tektonconfig config -o yaml 2>/dev/null | head -100 || log_error "  (failed to get tektonconfig)"
-            
+
             log_error ""
             log_error "Tekton operator pods status:"
             oc get pods -n openshift-operators -l app=openshift-pipelines-operator 2>/dev/null || log_error "  (failed to get operator pods)"
-            
+
             log_error ""
             log_error "Tekton namespace pods status:"
             oc get pods -n $PIPELINES_NAMESPACE 2>/dev/null || log_error "  (failed to get pipelines namespace pods)"
-            
+
             FAILED_APPS="tekton-operator"
             print_execution_summary "failed" "TEKTON_READY_TIMEOUT"
             exit 1
