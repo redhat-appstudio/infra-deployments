@@ -15,11 +15,15 @@ metadata:
       since the actual build happens on a remote host.
 spec:
   background: false
+  failurePolicy: Ignore
   rules:
     - name: patch-when-platform-not-local
       match:
         resources:
           kinds: ["Pod"]
+          namespaceSelector:
+            matchLabels:
+              konflux-ci.dev/type: tenant
           selector:
             matchLabels:
               tekton.dev/task: buildah-remote-oci-ta

@@ -9,6 +9,11 @@ spec:
     local-platforms) gets its build step resources adjusted to cpu=1, memory=2Gi.
   concurrent: false
   steps:
+  - name: given-test-namespace-is-tenant-labeled
+    try:
+    - apply:
+        file: resources/namespace-tenant-labeled.yaml
+        template: true
   - name: given-multi-platform-controller-namespace-exists
     try:
     - apply:
@@ -47,6 +52,11 @@ spec:
     local-platforms) does NOT get its build step resources adjusted.
   concurrent: false
   steps:
+  - name: given-test-namespace-is-tenant-labeled
+    try:
+    - apply:
+        file: resources/namespace-tenant-labeled.yaml
+        template: true
   - name: given-multi-platform-controller-namespace-exists
     try:
     - apply:
@@ -85,6 +95,11 @@ spec:
     variable does NOT get its build step resources adjusted.
   concurrent: false
   steps:
+  - name: given-test-namespace-is-tenant-labeled
+    try:
+    - apply:
+        file: resources/namespace-tenant-labeled.yaml
+        template: true
   - name: given-multi-platform-controller-namespace-exists
     try:
     - apply:
@@ -124,6 +139,11 @@ spec:
     is remote.
   concurrent: false
   steps:
+  - name: given-test-namespace-is-tenant-labeled
+    try:
+    - apply:
+        file: resources/namespace-tenant-labeled.yaml
+        template: true
   - name: given-multi-platform-controller-namespace-exists
     try:
     - apply:
