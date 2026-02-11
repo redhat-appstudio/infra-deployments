@@ -12,7 +12,13 @@ spec:
   - name: given-test-namespace-is-tenant-labeled
     try:
     - apply:
-        file: resources/namespace-tenant-labeled.yaml
+        resource:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: ($namespace)
+            labels:
+              konflux-ci.dev/type: tenant
         template: true
   - name: given-multi-platform-controller-namespace-exists
     try:
@@ -55,7 +61,13 @@ spec:
   - name: given-test-namespace-is-tenant-labeled
     try:
     - apply:
-        file: resources/namespace-tenant-labeled.yaml
+        resource:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: ($namespace)
+            labels:
+              konflux-ci.dev/type: tenant
         template: true
   - name: given-multi-platform-controller-namespace-exists
     try:
@@ -98,7 +110,13 @@ spec:
   - name: given-test-namespace-is-tenant-labeled
     try:
     - apply:
-        file: resources/namespace-tenant-labeled.yaml
+        resource:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: ($namespace)
+            labels:
+              konflux-ci.dev/type: tenant
         template: true
   - name: given-multi-platform-controller-namespace-exists
     try:
@@ -142,7 +160,13 @@ spec:
   - name: given-test-namespace-is-tenant-labeled
     try:
     - apply:
-        file: resources/namespace-tenant-labeled.yaml
+        resource:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: ($namespace)
+            labels:
+              konflux-ci.dev/type: tenant
         template: true
   - name: given-multi-platform-controller-namespace-exists
     try:
