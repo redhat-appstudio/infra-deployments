@@ -2,11 +2,15 @@ apiVersion: kyverno.io/v1
 kind: ClusterPolicy
 metadata:
   annotations:
-    policies.kyverno.io/description: This policy applies to pods created for the build and EC
-      pipelines running for the e2e tests. It will apply a small set value for CPU
-      requests whenever memory is defined and vice versa (the underlying assumption
-      is that either both are defined or neither are).
-  name: reduce-tekton-pr-taskrun-resource-requests
+    policies.kyverno.io/description: |
+      This policy applies resource requests and limits to specific Tekton task pods:
+      - buildah-oci-ta (build-container)
+      - verify-enterprise-contract
+      - prefetch-dependencies
+      - clamav-scan
+      - clair-scan
+      Resources are only set when the container already has resources defined.
+  name: tekton-taskrun-resource-policy
 spec:
   background: false
   rules:
@@ -21,7 +25,7 @@ spec:
           - CREATE
           selector:
             matchLabels:
-              pipelines.appstudio.openshift.io/type: build
+              tekton.dev/task: buildah-oci-ta
       - resources:
           kinds:
           - Pod
@@ -32,6 +36,36 @@ spec:
           selector:
             matchLabels:
               tekton.dev/task: verify-enterprise-contract
+      - resources:
+          kinds:
+          - Pod
+          names:
+          - '*-pod'
+          operations:
+          - CREATE
+          selector:
+            matchLabels:
+              tekton.dev/task: prefetch-dependencies
+      - resources:
+          kinds:
+          - Pod
+          names:
+          - '*-pod'
+          operations:
+          - CREATE
+          selector:
+            matchLabels:
+              tekton.dev/task: clamav-scan
+      - resources:
+          kinds:
+          - Pod
+          names:
+          - '*-pod'
+          operations:
+          - CREATE
+          selector:
+            matchLabels:
+              tekton.dev/task: clair-scan
     mutate:
       foreach:
       - list: request.object.spec.containers
@@ -39,8 +73,13 @@ spec:
           - op: add
             path: /spec/containers/{{elementIndex}}/resources/requests
             value:
-              memory: 256Mi
-              cpu: 100m
+              memory: 2Gi
+              cpu: 500m
+          - op: add
+            path: /spec/containers/{{elementIndex}}/resources/limits
+            value:
+              memory: 4Gi
+              cpu: 2
         preconditions:
           any:
           - key: '{{ element.resources.requests.memory || '''' }}'
@@ -56,5 +95,5 @@ spec:
           - op: add
             path: /spec/containers/{{elementIndex}}/imagePullPolicy
             value: IfNotPresent
-    name: reduce-tekton-pr-taskrun-resource-requests
+    name: set-task-resources
     skipBackgroundRequests: true

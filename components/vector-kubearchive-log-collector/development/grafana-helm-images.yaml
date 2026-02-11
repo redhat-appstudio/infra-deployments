@@ -1,0 +1,37 @@
+global:
+  imageRegistry: quay.io
+
+image:
+  registry: quay.io
+  repository: kubearchive/grafana
+  tag: 10.4.0
+
+testFramework:
+  image:
+    registry: quay.io
+    repository: kubearchive/bats
+    tag: v1.4.1
+
+downloadDashboardsImage:
+  registry: quay.io
+  repository: kubearchive/curl
+  tag: 8.9.1
+
+initChownData:
+  image:
+    registry: quay.io
+    repository: kubearchive/busybox
+    tag: 1.31.1
+
+sidecar:
+  image:
+    registry: quay.io
+    repository: kubearchive/k8s-sidecar
+    tag: 2.1.2
+
+imageRenderer:
+  image:
+    registry: quay.io
+    repository: kubearchive/grafana-image-renderer
+    tag: latest
+
