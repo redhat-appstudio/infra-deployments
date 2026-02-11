@@ -113,6 +113,16 @@ cel:
         pipelineRun.metadata.labels['pipelines.appstudio.openshift.io/type'] == 'tenant' ?
         priority('konflux-tenant-release') :
 
+        has(pipelineRun.metadata.labels) &&
+        'release.appstudio.openshift.io/name' in pipelineRun.metadata.labels &&
+        pipelineRun.metadata.labels['release.appstudio.openshift.io/name'].contains('-prod-') ?
+        priority('konflux-prod-release') :
+
+        has(pipelineRun.metadata.labels) &&
+        'release.appstudio.openshift.io/name' in pipelineRun.metadata.labels &&
+        pipelineRun.metadata.labels['release.appstudio.openshift.io/name'].contains('-stage-') ?
+        priority('konflux-stage-release') :
+
         plrNamespace == 'mintmaker' ? priority('konflux-dependency-update') :
 
         has(pipelineRun.metadata.labels) &&

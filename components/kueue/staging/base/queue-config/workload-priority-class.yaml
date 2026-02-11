@@ -9,6 +9,20 @@ description: "Highest priority for release pipelines"
 apiVersion: kueue.x-k8s.io/v1beta1
 kind: WorkloadPriorityClass
 metadata:
+  name: konflux-prod-release
+value: 950
+description: "High priority for OCP prod release pipelines which should supersede all releases"
+---
+apiVersion: kueue.x-k8s.io/v1beta1
+kind: WorkloadPriorityClass
+metadata:
+  name: konflux-stage-release
+value: 925
+description: "High priority for OCP stage release pipelines which should supersede all other stage auto releases"
+---
+apiVersion: kueue.x-k8s.io/v1beta1
+kind: WorkloadPriorityClass
+metadata:
   name: konflux-tenant-release
 value: 900
 description: "High priority for tenant release pipelines"
