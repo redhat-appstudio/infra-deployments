@@ -1,0 +1,24 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: group-sync-operator-metrics
+  namespace: group-sync-operator
+  labels:
+    control-plane: group-sync-operator
+spec:
+  endpoints:
+  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    interval: 30s
+    port: https
+    scheme: https
+    tlsConfig:
+      ca:
+        secret:
+          key: tls.crt
+          name: group-sync-operator-certs
+          optional: false
+      serverName: controller-manager-metrics-service.group-sync-operator.svc
+  selector:
+    matchLabels:
+      control-plane: group-sync-operator
