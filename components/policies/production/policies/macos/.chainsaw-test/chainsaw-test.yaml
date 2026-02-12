@@ -1,0 +1,207 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+---
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: deny-macos-in-non-allowed-namespace
+spec:
+  description: |
+    Ensure that pipelineruns requesting macos VMs are not admitted to non-allowed namespaces
+  concurrent: false
+  namespaceTemplate:
+    metadata:
+      labels:
+        konflux-ci.dev/type: tenant
+  steps:
+  - name: given-pipelineruns-exist
+    try:
+    - apply:
+        file: ./resources/pipelineruns.tekton.dev.yaml
+  - name: given-configmap-exists
+    bindings:
+    - name: allowedNamespace
+      value: (join('-', [$namespace, 'foo']))
+    try:
+    - apply:
+        resource:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: konflux-policies
+    - apply:
+        file: ./resources/macos-config.yaml
+        template: true
+    - assert:
+        resource:
+          apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: macos-allowlist
+            namespace: konflux-policies
+          data:
+            namespaces: ($allowedNamespace)
+  - name: given-admission-policy-exists
+    try:
+    - apply:
+        file: ../restrict-macos-runners.yaml
+  - name: then-pipelinerun-is-not-created
+    try:
+    - create:
+        file: ./resources/macos-pipelinerun.yaml
+        template: true
+        bindings:
+        - name: destNamespace
+          value: ($namespace)
+        expect:
+        - check:
+            ($error != null): true
+---
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: allow-macos-in-valid-namespace
+spec:
+  description: |
+    Ensure that pipelineruns requesting macos VMs are admitted to macos-allowed namespaces.
+  concurrent: false
+  namespaceTemplate:
+    metadata:
+      labels:
+        konflux-ci.dev/type: tenant
+  bindings:
+  - name: suffix
+    value: konfluxcidev
+  steps:
+  - name: given-pipelineruns-exist
+    try:
+    - apply:
+        file: ./resources/pipelineruns.tekton.dev.yaml
+    cleanup:
+    - delete:
+        file: ./resources/pipelineruns.tekton.dev.yaml
+  - name: given-configmap-exists
+    bindings:
+    - name: allowedNamespace
+      value: ($namespace)
+    try:
+    - apply:
+        resource:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: konflux-policies
+    - apply:
+        file: ./resources/macos-config.yaml
+        template: true
+    - assert:
+        resource:
+          apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: macos-allowlist
+            namespace: konflux-policies
+          data:
+            namespaces: ($allowedNamespace)
+  - name: given-admission-policy-exists
+    try:
+    - apply:
+        file: ../restrict-macos-runners.yaml
+  - name: then-pipelinerun-is-created
+    try:
+    - create:
+        resource:
+          apiVersion: tekton.dev/v1
+          kind: PipelineRun
+          metadata:
+            annotations:
+              kueue.konflux-ci.dev/requests-macos-mac2metal-arm64: "1"
+            name: foo
+        expect:
+        - check:
+            ($error == null): true
+---
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: multiple-namespaces
+spec:
+  description: |
+    Multiple namespaces can be alloed, and they should all be allowed to acquire macos runners
+  concurrent: false
+  namespaceTemplate:
+    metadata:
+      labels:
+        konflux-ci.dev/type: tenant
+  bindings:
+  - name: secondNamespace
+    value: (join('-', [$namespace, 'foo']))
+  steps:
+  - name: given-pipelineruns-exist
+    try:
+    - apply:
+        file: ./resources/pipelineruns.tekton.dev.yaml
+  - name: given-second-namespace-exists
+    try:
+    - apply:
+        resource:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: ($secondNamespace)
+    cleanup:
+    - delete:
+        ref:
+          apiVersion: v1
+          kind: Namespace
+          name: ($secondNamespace)
+  - name: given-configmap-exists
+    bindings:
+    - name: allowedNamespace
+      value: (join(`"\u000a"`, [$namespace, $secondNamespace]))
+    try:
+    - apply:
+        resource:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: konflux-policies
+    - apply:
+        file: ./resources/macos-config.yaml
+        template: true
+    - assert:
+        resource:
+          apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: macos-allowlist
+            namespace: konflux-policies
+          data:
+            namespaces: ($allowedNamespace)
+  - name: given-admission-policy-exists
+    try:
+    - apply:
+        file: ../restrict-macos-runners.yaml
+  - name: then-pipelinerun-is-created-in-first-namespace
+    try:
+    - create:
+        resource:
+          apiVersion: tekton.dev/v1
+          kind: PipelineRun
+          metadata:
+            annotations:
+              kueue.konflux-ci.dev/requests-macos-mac2metal-arm64: "1"
+            name: foo
+        expect:
+        - check:
+            ($error == null): true
+  - name: then-pipelinerun-is-created-in-second-namespace
+    try:
+    - create:
+        file: ./resources/macos-pipelinerun.yaml
+        template: true
+        bindings:
+        - name: destNamespace
+          value: ($secondNamespace)
+        expect:
+        - check:
+            ($error == null): true
