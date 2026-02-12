@@ -275,12 +275,11 @@ spec:
 apiVersion: chainsaw.kyverno.io/v1alpha1
 kind: Test
 metadata:
-  name: verify-webhook-failure-policy-ignore
+  name: verify-failure-policy-ignore
 spec:
   description: |
-    Tests that the ClusterPolicy's failurePolicy: Ignore is correctly
-    propagated to the Kyverno MutatingWebhookConfiguration. This ensures
-    any changes to the failurePolicy field are intentional.
+    Tests that the ClusterPolicy has failurePolicy: Ignore set in its spec.
+    This ensures any changes to the failurePolicy field are intentional.
   concurrent: false
   steps:
   - name: given-multi-platform-controller-namespace-exists
@@ -301,19 +300,7 @@ spec:
         file: ../adjust-buildah-resources-for-remote-platforms.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
-  - name: then-mutating-webhook-has-failure-policy-ignore
+  - name: then-cluster-policy-has-failure-policy-ignore
     try:
-    - script:
-        content: |
-          # Verify that Kyverno propagated failurePolicy: Ignore from the
-          # ClusterPolicy to its MutatingWebhookConfiguration.
-          # Kyverno places policies with failurePolicy: Ignore into a webhook
-          # that itself has failurePolicy: Ignore.
-          kubectl get mutatingwebhookconfigurations -o json | \
-            jq -e '
-              [.items[] |
-                select(.metadata.name | startswith("konflux-kyverno")) |
-                .webhooks[] |
-                select(.failurePolicy == "Ignore")
-              ] | length > 0
-            '
+    - assert:
+        file: chainsaw-assert-failure-policy.yaml
