@@ -98,6 +98,20 @@ spec:
         value: "false"
       - name: shmVolume.enabled
         value: "false"
+      - name: volumePermissions.image.registry
+        value: quay.io
+      - name: volumePermissions.image.repository
+        value: openshift-pipeline/os-shell
+      - name: volumePermissions.image.tag
+        value: latest
+      - name: image.registry
+        value: quay.io
+      - name: image.repository
+        value: openshift-pipeline/postgresql
+      - name: image.tag
+        value: latest
+      - name: global.security.allowInsecureImages
+        value: "true"
       releaseName: postgres
     repoURL: registry-1.docker.io/bitnamichartssecure
     targetRevision: 17.0.2

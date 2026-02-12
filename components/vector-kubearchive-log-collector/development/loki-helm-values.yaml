@@ -3,10 +3,6 @@ deploymentMode: Distributed
 
  # This exposes the Loki gateway so it can be written to and queried externally
 gateway:
-  image:
-    registry: quay.io # Use Quay.io registry to prevent docker hub rate limit
-    repository: nginx/nginx-unprivileged
-    tag: 1.24-alpine
   nginxConfig:
     resolver: "dns-default.openshift-dns.svc.cluster.local."
 
