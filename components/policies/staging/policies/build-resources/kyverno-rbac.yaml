@@ -1,10 +1,9 @@
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
+kind: Role
 metadata:
   name: kyverno-admission:read-multi-platform-host-config
-  labels:
-    rbac.kyverno.io/aggregate-to-admission-controller: "true"
+  namespace: multi-platform-controller
 rules:
 - apiGroups:
    - ""
@@ -13,6 +12,20 @@ rules:
   resourceNames:
    - "host-config"
   verbs:
-    - "get"
-    - "list"
-    - "watch"
+   - "get"
+   - "list"
+   - "watch"
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kyverno-admission:read-multi-platform-host-config
+  namespace: multi-platform-controller
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: kyverno-admission:read-multi-platform-host-config
+subjects:
+- kind: ServiceAccount
+  name: kyverno-admission-controller
+  namespace: konflux-kyverno

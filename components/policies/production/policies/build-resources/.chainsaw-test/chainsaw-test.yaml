@@ -194,3 +194,126 @@ spec:
     try:
     - assert:
         file: resources/expected-pod-no-matching-label.yaml
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: skip-mutation-matching-pod-non-tenant-namespace
+spec:
+  description: |
+    Tests that a buildah-remote-oci-ta Pod with a remote platform does NOT
+    get mutated when the namespace is not labeled as a tenant namespace.
+  concurrent: false
+  steps:
+  - name: given-multi-platform-controller-namespace-exists
+    try:
+    - apply:
+        file: resources/namespace-multi-platform-controller.yaml
+  - name: given-host-config-configmap-exists
+    try:
+    - apply:
+        file: resources/configmap-host-config.yaml
+  - name: given-kyverno-has-permission-on-resources
+    try:
+    - apply:
+        file: ../kyverno-rbac.yaml
+  - name: given-cluster-policy-is-ready
+    try:
+    - apply:
+        file: ../adjust-buildah-resources-for-remote-platforms.yaml
+    - assert:
+        file: chainsaw-assert-clusterpolicy.yaml
+  - name: when-matching-pod-is-created-in-non-tenant-namespace
+    try:
+    - apply:
+        file: resources/pod-remote-platform.yaml
+  - name: then-build-step-resources-are-not-adjusted
+    try:
+    - assert:
+        file: resources/expected-pod-remote-platform-not-mutated.yaml
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: skip-mutation-non-matching-pod-non-tenant-namespace
+spec:
+  description: |
+    Tests that a Pod without the buildah-remote-oci-ta label does NOT get
+    mutated when the namespace is not labeled as a tenant namespace.
+  concurrent: false
+  steps:
+  - name: given-multi-platform-controller-namespace-exists
+    try:
+    - apply:
+        file: resources/namespace-multi-platform-controller.yaml
+  - name: given-host-config-configmap-exists
+    try:
+    - apply:
+        file: resources/configmap-host-config.yaml
+  - name: given-kyverno-has-permission-on-resources
+    try:
+    - apply:
+        file: ../kyverno-rbac.yaml
+  - name: given-cluster-policy-is-ready
+    try:
+    - apply:
+        file: ../adjust-buildah-resources-for-remote-platforms.yaml
+    - assert:
+        file: chainsaw-assert-clusterpolicy.yaml
+  - name: when-non-matching-pod-is-created-in-non-tenant-namespace
+    try:
+    - apply:
+        file: resources/pod-no-matching-label.yaml
+  - name: then-build-step-resources-are-not-adjusted
+    try:
+    - assert:
+        file: resources/expected-pod-no-matching-label.yaml
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: verify-webhook-failure-policy-ignore
+spec:
+  description: |
+    Tests that the ClusterPolicy's failurePolicy: Ignore is correctly
+    propagated to the Kyverno MutatingWebhookConfiguration. This ensures
+    any changes to the failurePolicy field are intentional.
+  concurrent: false
+  steps:
+  - name: given-multi-platform-controller-namespace-exists
+    try:
+    - apply:
+        file: resources/namespace-multi-platform-controller.yaml
+  - name: given-host-config-configmap-exists
+    try:
+    - apply:
+        file: resources/configmap-host-config.yaml
+  - name: given-kyverno-has-permission-on-resources
+    try:
+    - apply:
+        file: ../kyverno-rbac.yaml
+  - name: given-cluster-policy-is-ready
+    try:
+    - apply:
+        file: ../adjust-buildah-resources-for-remote-platforms.yaml
+    - assert:
+        file: chainsaw-assert-clusterpolicy.yaml
+  - name: then-mutating-webhook-has-failure-policy-ignore
+    try:
+    - script:
+        content: |
+          # Verify that Kyverno propagated failurePolicy: Ignore from the
+          # ClusterPolicy to its MutatingWebhookConfiguration.
+          # Kyverno places policies with failurePolicy: Ignore into a webhook
+          # that itself has failurePolicy: Ignore.
+          kubectl get mutatingwebhookconfigurations -o json | \
+            jq -e '
+              [.items[] |
+                select(.metadata.name | startswith("konflux-kyverno")) |
+                .webhooks[] |
+                select(.failurePolicy == "Ignore")
+              ] | length > 0
+            '
