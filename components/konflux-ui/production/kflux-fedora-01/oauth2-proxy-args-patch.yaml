@@ -1,0 +1,28 @@
+---
+- op: replace
+  path: /spec/template/spec/containers/2/args
+  value:
+    - --provider
+    - oidc
+    - --provider-display-name
+    - "Dex"
+    - --client-id
+    - oauth2-proxy
+    - --http-address
+    - "127.0.0.1:6000"
+    - --redirect-url
+    - https://konflux-ui.apps.kflux-fedora-01.84db.p1.openshiftapps.com/oauth2/callback
+    - --oidc-issuer-url
+    - https://konflux-ui.apps.kflux-fedora-01.84db.p1.openshiftapps.com/idp
+    - "true"
+    - --cookie-name
+    - __Host-konflux-ci-cookie
+    - --email-domain
+    - "*"
+    - --insecure-oidc-allow-unverified-email
+    - "true"
+    - --set-xauthrequest
+    - "true"
+    - --whitelist-domain
+    - konflux-ui.apps.kflux-fedora-01.84db.p1.openshiftapps.com
+    - --skip-provider-button
