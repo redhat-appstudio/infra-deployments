@@ -804,6 +804,10 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
         "pipelinerun_key": "mintmaker",
         "config_key": "production"
     },
+    "internal_pipelinerun_child_production": {
+        "pipelinerun_key": "internal_pipelinerun_child",
+        "config_key": "production"
+    },
     "prefer_new_parameters_staging": {
         "pipelinerun_key": "prefer-new-parameters",
         "config_key": "production"
