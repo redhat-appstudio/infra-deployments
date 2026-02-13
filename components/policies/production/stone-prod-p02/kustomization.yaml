@@ -1,7 +1,10 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+namespace: konflux-policies
 resources:
 - ../base
 - ../base/cost-management
 - ../policies/kubearchive/
 - ../policies/kueue/
+- ../policies/macos/
+- ./macos-config.yaml
