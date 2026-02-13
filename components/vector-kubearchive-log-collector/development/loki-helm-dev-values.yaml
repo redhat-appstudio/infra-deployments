@@ -107,10 +107,20 @@ loki:
     autoforget_unhealthy: true
     chunk_encoding: snappy
     chunk_target_size: 3145728
-    chunk_idle_period: 5m
+    chunk_idle_period: 1h
     max_chunk_age: 2h
     chunk_retain_period: 1h
     flush_op_timeout: 10m
+    lifecycler:
+      ring:
+        heartbeat_timeout: 10m
+    # WAL Configuration - for preventing OOM
+    wal:
+      enabled: true
+      dir: /var/loki/wal
+      checkpoint_duration: 5m          # Create checkpoints every 5 minutes
+      flush_on_shutdown: true          # Ensure data is flushed before shutdown
+      replay_memory_ceiling: 4GB       # 75% of 6Gi limit - PREVENTS OOM during replay
   server:
     grpc_server_max_recv_msg_size: 15728640  # 15MB
     grpc_server_max_send_msg_size: 15728640
@@ -141,12 +151,12 @@ ingester:
     enabled: false
   resources:
     requests:
-      cpu: 50m  # Reduce from 100m
-      memory: 256Mi  # Increase from 128Mi to prevent OOM
+      cpu: 500m  # Reduce from 100m
+      memory: 4Gi  # Increase from 128Mi to prevent OOM
     limits:
-      memory: 512Mi  # Increase from 256Mi to prevent OOM
+      memory: 6Gi  # Increase from 256Mi to prevent OOM
   persistence:
-    enabled: false  # Disable persistence for dev to avoid storage class issues
+    enabled: true  # Disable persistence for dev to avoid storage class issues
     size: 10Gi
   affinity: {}
   podAntiAffinity:
