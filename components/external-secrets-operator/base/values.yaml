@@ -44,6 +44,11 @@ certController:
     limits:
       memory: 128Mi
       cpu: 200m
+  # Enable metrics Service for cert-controller
+  metrics:
+    service:
+      enabled: true
+      port: 8080
 
 # Webhook resources (matching OperatorConfig spec.webhook.resources)
 webhook:
@@ -55,6 +60,11 @@ webhook:
     limits:
       memory: 128Mi
       cpu: 200m
+  # Enable metrics port on webhook Service
+  metrics:
+    service:
+      enabled: true
+      port: 8080
 
 # Prometheus configuration (matching OperatorConfig spec.prometheus)
 prometheus:
@@ -62,20 +72,15 @@ prometheus:
   service:
     port: 8080
 
+# Metrics Service - enables the metrics Service from helm chart
+# This creates external-secrets-operator-metrics Service with correct selectors
+metrics:
+  service:
+    enabled: true
+    port: 8080
+
 # Logging
 logLevel: info
-
-# ServiceMonitor configuration
-serviceMonitor:
-  enabled: true
-  namespace: external-secrets-operator
-  labels:
-    app.kubernetes.io/name: external-secrets
-    app.kubernetes.io/instance: cluster
-  endpoints:
-    - port: metrics
-      scheme: http
-      interval: 30s
 
 bitwarden-sdk-server:
   enabled: false
