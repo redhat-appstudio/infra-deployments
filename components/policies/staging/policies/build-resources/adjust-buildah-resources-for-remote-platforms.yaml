@@ -1,0 +1,57 @@
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: adjust-buildah-resources-for-remote-platforms
+  annotations:
+    policies.kyverno.io/title: Adjust resources for remote buildah builds
+    policies.kyverno.io/category: Build Resources
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/subject: Pod
+    policies.kyverno.io/description: >-
+      This policy adjusts resource requests and limits for the build step
+      container in buildah-remote-oci-ta task Pods when the target platform
+      is not a local platform. Remote builds require fewer local resources
+      since the actual build happens on a remote host.
+spec:
+  background: false
+  failurePolicy: Ignore
+  rules:
+    - name: patch-when-platform-not-local
+      match:
+        resources:
+          kinds: ["Pod"]
+          namespaceSelector:
+            matchLabels:
+              konflux-ci.dev/type: tenant
+          selector:
+            matchLabels:
+              tekton.dev/task: buildah-remote-oci-ta
+      context:
+        - name: hostcfg
+          configMap:
+            name: host-config
+            namespace: multi-platform-controller
+        - name: platform
+          variable:
+            jmesPath: "request.object.spec.containers[?name=='step-build'] | [0].env[?name=='PLATFORM'] | [0].value || ''"
+      preconditions:
+        all:
+          - key: "{{ platform }}"
+            operator: NotEquals
+            value: ""
+          - key: "{{ platform }}"
+            operator: AnyNotIn
+            value: "{{ split(hostcfg.data.\"local-platforms\" || '', ',') }}"
+      mutate:
+        patchStrategicMerge:
+          spec:
+            containers:
+              - (name): step-build
+                resources:
+                  requests:
+                    cpu: "1"
+                    memory: 2Gi
+                  limits:
+                    cpu: "1"
+                    memory: 2Gi
