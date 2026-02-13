@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../base
+
+patches:
+  - path: cost-management-config-source-patch.yaml
+    target:
+      name: costmanagementmetricsconfig
+      group: costmanagement-metrics-cfg.openshift.io
+      version: v1
+      kind: CostManagementMetricsConfig
