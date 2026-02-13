@@ -1,0 +1,76 @@
+# ServiceMonitor resources for External Secrets Operator
+#
+# NOTE: The metrics Service is created by the helm chart (via metrics.service.enabled: true in values.yaml)
+# These ServiceMonitors are patched here because kustomize --enable-helm doesn't support
+# the Capabilities.APIVersions check in the helm chart templates, so ServiceMonitors
+# can't be enabled via values.yaml when using kustomize.
+
+---
+# ServiceMonitor for main controller
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: external-secrets-operator-metrics
+  namespace: external-secrets-operator
+  labels:
+    app.kubernetes.io/name: external-secrets
+    app.kubernetes.io/instance: external-secrets-operator
+spec:
+  endpoints:
+  - port: metrics
+    scheme: http
+    interval: 30s
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: external-secrets
+      app.kubernetes.io/instance: external-secrets-operator
+  namespaceSelector:
+    matchNames:
+    - external-secrets-operator
+
+---
+# ServiceMonitor for webhook
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: external-secrets-operator-webhook-metrics
+  namespace: external-secrets-operator
+  labels:
+    app.kubernetes.io/name: external-secrets-webhook
+    app.kubernetes.io/instance: external-secrets-operator
+spec:
+  endpoints:
+  - port: metrics
+    scheme: http
+    interval: 30s
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: external-secrets-webhook
+      app.kubernetes.io/instance: external-secrets-operator
+  namespaceSelector:
+    matchNames:
+    - external-secrets-operator
+
+---
+# ServiceMonitor for cert-controller
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: external-secrets-operator-cert-controller-metrics
+  namespace: external-secrets-operator
+  labels:
+    app.kubernetes.io/name: external-secrets-cert-controller
+    app.kubernetes.io/instance: external-secrets-operator
+spec:
+  endpoints:
+  - port: metrics
+    scheme: http
+    interval: 30s
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: external-secrets-cert-controller
+      app.kubernetes.io/instance: external-secrets-operator
+  namespaceSelector:
+    matchNames:
+    - external-secrets-operator
+
