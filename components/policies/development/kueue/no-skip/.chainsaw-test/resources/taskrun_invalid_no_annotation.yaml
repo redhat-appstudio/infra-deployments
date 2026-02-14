@@ -1,0 +1,19 @@
+apiVersion: tekton.dev/v1
+kind: TaskRun
+metadata:
+  name: invalid-no-annotation-task
+spec:
+  taskSpec:
+    steps:
+    - name: no-op
+      image: registry.access.redhat.com/ubi10-micro:10.1
+      script: |-
+        #!/bin/bash
+        echo "no-op"
+    params:
+    - description: The platform to build on
+      name: PLATFORM
+      type: string
+  params:
+  - name: PLATFORM
+    value: test-platform

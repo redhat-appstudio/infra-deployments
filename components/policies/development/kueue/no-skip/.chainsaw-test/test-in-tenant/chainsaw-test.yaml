@@ -1,0 +1,152 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: in-tenant-create-valid-taskrun
+spec:
+  description: |
+    creates a TaskRun with a PLATFORM parameter and a corresponding
+    tekton-kueue's annotation
+  concurrent: false
+  steps:
+  - name: given-taskruns-crd-exists
+    try:
+    - apply:
+        file: ../resources/taksruns.tekton.dev_clusterresourcedefinition.yaml
+  - name: ensure-namespace-is-labeled
+    try:
+    - apply:
+        resource:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: ($namespace)
+            labels:
+              konflux-ci.dev/type: tenant
+  - name: given-validatingadmissionpolicy-is-installed
+    try:
+    - apply:
+        file: ../../no-skip-validationadmissionpolicy.yaml
+    - apply:
+        file: ../../no-skip-validationadmissionpolicybinding.yaml
+    - assert:
+        file: ../chainsaw-assert-policy.yaml
+  - name: then-valid-taskrun-can-be-created
+    try:
+    - create:
+        file: ../resources/taskrun_valid.yaml
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: in-tenant-create-skipped-taskrun
+spec:
+  description: |
+    creates a TaskRun with no PLATFORM parameter and no corresponding
+    tekton-kueue's annotation
+  concurrent: false
+  steps:
+  - name: given-taskruns-crd-exists
+    try:
+    - apply:
+        file: ../resources/taksruns.tekton.dev_clusterresourcedefinition.yaml
+  - name: ensure-namespace-is-labeled
+    try:
+    - apply:
+        resource:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: ($namespace)
+            labels:
+              konflux-ci.dev/type: tenant
+  - name: given-validatingadmissionpolicy-is-installed
+    try:
+    - apply:
+        file: ../../no-skip-validationadmissionpolicy.yaml
+    - apply:
+        file: ../../no-skip-validationadmissionpolicybinding.yaml
+    - assert:
+        file: ../chainsaw-assert-policy.yaml
+  - name: then-skipped-taskrun-can-be-created
+    try:
+    - create:
+        file: ../resources/taskrun_skipped.yaml
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: in-tenant-create-invalid-wrong-annotation-taskrun
+spec:
+  description: |
+    fails to create a TaskRun with a PLATFORM parameter and
+    a wrong corresponding tekton-kueue's annotation
+  concurrent: false
+  steps:
+  - name: given-taskruns-crd-exists
+    try:
+    - apply:
+        file: ../resources/taksruns.tekton.dev_clusterresourcedefinition.yaml
+  - name: ensure-namespace-is-labeled
+    try:
+    - apply:
+        resource:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: ($namespace)
+            labels:
+              konflux-ci.dev/type: tenant
+  - name: given-validatingadmissionpolicy-is-installed
+    try:
+    - apply:
+        file: ../../no-skip-validationadmissionpolicy.yaml
+    - apply:
+        file: ../../no-skip-validationadmissionpolicybinding.yaml
+    - assert:
+        file: ../chainsaw-assert-policy.yaml
+  - name: then-ivalid-taskrun-can-not-be-created
+    try:
+    - error:
+        file: ../resources/taskrun_invalid_wrong_annotation.yaml
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: in-tenant-create-invalid-no-annotations-taskrun
+spec:
+  description: |
+    fails to create a TaskRun with a PLATFORM parameter
+    and no corresponding tekton-kueue's annotation
+  concurrent: false
+  steps:
+  - name: given-taskruns-crd-exists
+    try:
+    - apply:
+        file: ../resources/taksruns.tekton.dev_clusterresourcedefinition.yaml
+  - name: ensure-namespace-is-labeled
+    try:
+    - apply:
+        resource:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: ($namespace)
+            labels:
+              konflux-ci.dev/type: tenant
+  - name: given-validatingadmissionpolicy-is-installed
+    try:
+    - apply:
+        file: ../../no-skip-validationadmissionpolicy.yaml
+    - apply:
+        file: ../../no-skip-validationadmissionpolicybinding.yaml
+    - assert:
+        file: ../chainsaw-assert-policy.yaml
+  - name: then-invalid-taskrun-can-not-be-created
+    try:
+    - error:
+        file: ../resources/taskrun_invalid_no_annotation.yaml
