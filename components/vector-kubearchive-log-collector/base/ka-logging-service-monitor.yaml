@@ -52,5 +52,9 @@ spec:
     tlsConfig:
       insecureSkipVerify: true
   selector:
-    matchLabels:
-      app.kubernetes.io/name: "loki,vector"
+    matchExpressions:
+    - key: app.kubernetes.io/name
+      operator: In
+      values:
+      - loki
+      - vector
