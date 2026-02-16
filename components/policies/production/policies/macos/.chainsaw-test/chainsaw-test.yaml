@@ -126,7 +126,7 @@ metadata:
   name: multiple-namespaces
 spec:
   description: |
-    Multiple namespaces can be alloed, and they should all be allowed to acquire macos runners
+    Multiple namespaces can be in the allowlist, and they should all be allowed to acquire macos runners
   concurrent: false
   namespaceTemplate:
     metadata:
@@ -202,6 +202,130 @@ spec:
         bindings:
         - name: destNamespace
           value: ($secondNamespace)
+        expect:
+        - check:
+            ($error == null): true
+---
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: allow-non-macos-pipelineruns-in-allowed-namespaces
+spec:
+  description: |
+    Ensure that pipelineruns not requesting macos VMs are admitted to the cluster.
+  concurrent: false
+  namespaceTemplate:
+    metadata:
+      labels:
+        konflux-ci.dev/type: tenant
+  bindings:
+  - name: suffix
+    value: konfluxcidev
+  steps:
+  - name: given-pipelineruns-exist
+    try:
+    - apply:
+        file: ./resources/pipelineruns.tekton.dev.yaml
+    cleanup:
+    - delete:
+        file: ./resources/pipelineruns.tekton.dev.yaml
+  - name: given-configmap-exists
+    bindings:
+    - name: allowedNamespace
+      value: ($namespace)
+    try:
+    - apply:
+        resource:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: konflux-policies
+    - apply:
+        file: ./resources/macos-config.yaml
+        template: true
+    - assert:
+        resource:
+          apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: macos-allowlist
+            namespace: konflux-policies
+          data:
+            namespaces: ($allowedNamespace)
+  - name: given-admission-policy-exists
+    try:
+    - apply:
+        file: ../restrict-macos-runners.yaml
+  - name: then-pipelinerun-is-created
+    try:
+    - create:
+        resource:
+          apiVersion: tekton.dev/v1
+          kind: PipelineRun
+          metadata:
+            name: foo
+        expect:
+        - check:
+            ($error == null): true
+---
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: allow-non-macos-pipelineruns-in-disallowed-namespaces
+spec:
+  description: |
+    Ensure that pipelineruns not requesting macos VMs in disallowed namespaces are admitted to the cluster.
+  concurrent: false
+  namespaceTemplate:
+    metadata:
+      labels:
+        konflux-ci.dev/type: tenant
+  bindings:
+  - name: suffix
+    value: konfluxcidev
+  steps:
+  - name: given-pipelineruns-exist
+    try:
+    - apply:
+        file: ./resources/pipelineruns.tekton.dev.yaml
+    cleanup:
+    - delete:
+        file: ./resources/pipelineruns.tekton.dev.yaml
+  - name: given-configmap-exists
+    bindings:
+    - name: allowedNamespace
+      value: (join('-', [$namespace, 'foo']))
+    try:
+    - apply:
+        resource:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: konflux-policies
+    - apply:
+        file: ./resources/macos-config.yaml
+        template: true
+    - assert:
+        resource:
+          apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: macos-allowlist
+            namespace: konflux-policies
+          data:
+            namespaces: ($allowedNamespace)
+  - name: given-admission-policy-exists
+    try:
+    - apply:
+        file: ../restrict-macos-runners.yaml
+  - name: then-pipelinerun-is-created
+    try:
+    - create:
+        resource:
+          apiVersion: tekton.dev/v1
+          kind: PipelineRun
+          metadata:
+            name: foo
         expect:
         - check:
             ($error == null): true

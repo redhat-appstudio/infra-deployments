@@ -17,12 +17,16 @@ spec:
       matchLabels:
         konflux-ci.dev/type: tenant
   variables:
+    - name: annotationName
+      expression: '"kueue.konflux-ci.dev/requests-macos-mac2metal-arm64"'
     - name: isRestrictedNamespace
       expression: |
         resource.Get("v1", "configmaps", "konflux-policies", "macos-allowlist").data.namespaces.split('\n').all(n, n != object.metadata.namespace)
     - name: isRestrictedPlatform
       expression: |
-        uint(object.metadata.annotations["kueue.konflux-ci.dev/requests-macos-mac2metal-arm64"]) > 0
+        has(object.metadata.annotations) &&
+          object.metadata.annotations.exists(k, k == variables.annotationName) ?
+          int(object.metadata.annotations[variables.annotationName]) > 0 : false
   validations:
     - messageExpression: "'namespace ' + object.metadata.namespace + ' is not allowed to acquire macos runners'"
       expression: |
