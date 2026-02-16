@@ -15,12 +15,12 @@ resources:
 - ../base
 
 patches:
-    - patch: |
-        - op: replace
-          path: /spec/persistentVolumeReclaimPolicy/whenDeleted
-          value: Delete
-          path: /spec/persistentVolumeReclaimPolicy/whenScaled
-          value: Delete
+  - patch: |
+      - op: add
+        path: /spec/persistentVolumeReclaimPolicy
+        value:
+          whenDeleted: Delete
+          whenScaled: Delete
       target:
         group: apps
         version: v1

@@ -40,11 +40,11 @@ patches:
       kind: PodDisruptionBudget
       labelSelector: app.kubernetes.io/name=loki
   - patch: |
-        - op: replace
-          path: /spec/persistentVolumeReclaimPolicy/whenDeleted
-          value: Delete
-          path: /spec/persistentVolumeReclaimPolicy/whenScaled
-          value: Delete
+      - op: add
+        path: /spec/persistentVolumeReclaimPolicy
+        value:
+          whenDeleted: Delete
+          whenScaled: Delete
     target:
       group: apps
       version: v1
