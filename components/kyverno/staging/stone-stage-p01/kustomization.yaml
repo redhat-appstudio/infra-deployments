@@ -6,6 +6,23 @@ namespace: konflux-kyverno
 generators:
 - kyverno-helm-generator.yaml
 
+images:
+  - name: reg.kyverno.io/kyverno/kyverno
+    newName: quay.io/konflux-ci/kyverno/kyverno
+    digest: sha256:45a97fd367090307f586293d3f668fb8605c049a262e96339e0cccb26735cc09
+  - name: reg.kyverno.io/kyverno/kyvernopre
+    newName: quay.io/konflux-ci/kyverno/kyverno-init
+    digest: sha256:791f0e58f54278bf393633b58147aef50849fc16fae431af4014d3b1fd9a02cf
+  - name: reg.kyverno.io/kyverno/background-controller
+    newName: quay.io/konflux-ci/kyverno/kyverno-background
+    digest: sha256:2ff5ea98af848173b3deec5b810a7de5bed67d3dbf2d2a41ce025f54bd5975b9
+  - name: reg.kyverno.io/kyverno/cleanup-controller
+    newName: quay.io/konflux-ci/kyverno/kyverno-cleanup
+    digest: sha256:99443b828643147ddef6fec9a262205902c422824743bc7e47b5310ab53dec99
+  - name: reg.kyverno.io/kyverno/kyverno-cli
+    newName: quay.io/konflux-ci/kyverno/kyverno-cli
+    digest: sha256:8d17e2c935ed6ffb983be5cca54eec2f3f61727fa2e5257264fea7e513158672
+
 # set resources to jobs
 patches:
 - path: job_resources.yaml
