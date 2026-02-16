@@ -1,0 +1,11 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: openshift-pipelines-monitor
+  namespace: openshift-pipelines
+spec:
+  endpoints:
+  - metricRelabelings:
+    - sourceLabels: [__name__]
+      regex: 'tekton_pipelines_controller_taskruns_pod_latency_milliseconds'
+      action: drop

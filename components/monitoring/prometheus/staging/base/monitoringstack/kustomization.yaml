@@ -31,6 +31,11 @@ patches:
     target:
       name: prometheus-recording-rules-uwm-namespace
       kind: PrometheusRule
+  - path: openshift-pipelines-monitor-drop-metric.yaml
+    target:
+      name: openshift-pipelines-monitor
+      kind: ServiceMonitor
+      namespace: openshift-pipelines
 
 commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
