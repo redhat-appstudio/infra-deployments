@@ -386,8 +386,8 @@ apply_service_image_overrides() {
     [[ -n "${BUILD_SERVICE_PR_OWNER}" && "${BUILD_SERVICE_PR_SHA}" ]] && yq -i e "(.resources[] | select(. ==\"*github.com/konflux-ci/build-service*\")) |= \"https://github.com/${BUILD_SERVICE_PR_OWNER}/build-service/config/default?ref=${BUILD_SERVICE_PR_SHA}\"" $ROOT/components/build-service/development/kustomization.yaml
     # Configure smee.io channel URL for webhook forwarding (used for Forgejo/Codeberg testing)
     [ -n "${SMEE_CHANNEL}" ] && yq -i e ".[].value = \"${SMEE_CHANNEL}\"" $ROOT/components/smee-client/development/sever-url-patch.yaml
-    # Configure build-service PAC_WEBHOOK_URL to use the smee channel (for Forgejo/Codeberg/GitLab)
-    [ -n "${SMEE_CHANNEL}" ] && yq -i e "(.spec.template.spec.containers[0].env[] | select(.name == \"PAC_WEBHOOK_URL\")).value = \"${SMEE_CHANNEL}\"" $ROOT/components/build-service/development/pac-webhook-url-patch.yaml
+    # Configure build-service webhook-config for Codeberg to use the smee channel
+    [ -n "${SMEE_CHANNEL}" ] && sed -i.bak "s|SMEE_CHANNEL_PLACEHOLDER|${SMEE_CHANNEL}|g" $ROOT/components/build-service/development/webhook-config.json && rm -f $ROOT/components/build-service/development/webhook-config.json.bak
 
     # Application Service (HAS)
     if [ -n "${HAS_IMAGE_REPO}" ] || [ -n "${HAS_IMAGE_TAG}" ] || [ -n "${HAS_PR_OWNER}" ]; then

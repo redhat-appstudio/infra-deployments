@@ -33,11 +33,12 @@ patches:
       kind: Deployment
       name: build-service-controller-manager
     path: pac-webhook-insecure-ssl-patch.yaml
-  - target:
-      group: apps
-      version: v1
-      kind: Deployment
-      name: build-service-controller-manager
-    path: pac-webhook-url-patch.yaml
+
+configMapGenerator:
+  - name: webhook-config
+    files:
+      - webhook-config.json
+
 components:
   - ../components/rh-certs
+  - ../components/webhook-config
