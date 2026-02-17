@@ -3,6 +3,8 @@ kind: ServiceMonitor
 metadata:
   name: openshift-pipelines-monitor
   namespace: openshift-pipelines
+  annotations:
+    argocd.argoproj.io/sync-options: ServerSideApply=true
 spec:
   endpoints:
   - metricRelabelings:

@@ -2,6 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ../../../base/monitoringstack
+  - openshift-pipelines-monitor-drop-metric.yaml
 patches:
   - path: cluster-type-patch.yaml
     target:
@@ -31,11 +32,6 @@ patches:
     target:
       name: prometheus-recording-rules-uwm-namespace
       kind: PrometheusRule
-  - path: openshift-pipelines-monitor-drop-metric.yaml
-    target:
-      name: openshift-pipelines-monitor
-      kind: ServiceMonitor
-      namespace: openshift-pipelines
 
 commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
