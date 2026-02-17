@@ -97,9 +97,6 @@
       - 'stonesoup/{{ env }}/platform/terraform/generated/{{ shortname }}/tekton-bucket'
       - 'stonesoup/{{ env }}/platform/terraform/generated/{{ shortname }}/aws-ssh-key'
       - 'stonesoup/{{ env }}/platform/terraform/generated/{{ shortname }}/aws-account'
-      - 'stonesoup/{{ env }}/platform/terraform/generated/{{ shortname }}/ibm-api-key'
-      - 'stonesoup/{{ env }}/platform/terraform/generated/{{ shortname }}/ibm-s390x-ssh-key'
-      - 'stonesoup/{{ env }}/platform/terraform/generated/{{ shortname }}/ibm-ppc64le-ssh-key'
 
     github_commit_vars:
       - slug: openshift-pipelines/tektoncd-results-for-konflux
@@ -143,7 +140,7 @@
       loop_control:
         loop_var: filename
 
-    - name: Patch ApplicationSet files to include new cluster reference, only applicable to private network clusters
+    - name: Patch private network cluster ApplicationSet files to include new cluster reference
       tags: [applicationsets]
       include_tasks: tasks/applicationsets.yaml
       loop: "{{ argo_cd_private_network_app_files }}"
