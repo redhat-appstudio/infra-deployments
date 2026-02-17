@@ -1,0 +1,15 @@
+# Configures build-service PAC_WEBHOOK_URL
+# Default: empty (falls back to PaC route)
+# Override: set SMEE_CHANNEL env var in preview.sh for Forgejo/Codeberg/GitLab webhook support
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: build-service-controller-manager
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        env:
+          - name: PAC_WEBHOOK_URL
+            value: ""
