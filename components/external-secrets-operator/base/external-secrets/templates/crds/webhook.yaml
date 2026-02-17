@@ -9,7 +9,7 @@ metadata:
     {{- if and .Values.crds.conversion.enabled .Values.webhook.certManager.enabled .Values.webhook.certManager.addInjectorAnnotations }}
     cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ include "external-secrets.fullname" . }}-webhook
     {{- end }}
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     external-secrets.io/component: controller
   name: webhooks.generators.external-secrets.io
@@ -64,7 +64,7 @@ spec:
                       properties:
                         passwordSecret:
                           description: |-
-                            A reference to a specific 'key' within a Secret resource.
+                            SecretKeySelector is a reference to a specific 'key' within a Secret resource.
                             In some instances, `key` is a required field.
                           properties:
                             key:
@@ -92,7 +92,7 @@ spec:
                           type: object
                         usernameSecret:
                           description: |-
-                            A reference to a specific 'key' within a Secret resource.
+                            SecretKeySelector is a reference to a specific 'key' within a Secret resource.
                             In some instances, `key` is a required field.
                           properties:
                             key:
@@ -185,6 +185,7 @@ spec:
                     Secrets to fill in templates
                     These secrets will be passed to the templating function as key value pairs under the given name
                   items:
+                    description: WebhookSecret defines a secret reference that will be used in webhook templates.
                     properties:
                       name:
                         description: Name of this secret in templates
