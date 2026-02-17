@@ -10,7 +10,7 @@ spec:
   - honorLabels: true
     interval: 10s
     port: http-metrics
-  - metricRelabelings:
-    - sourceLabels: [__name__]
+    metricRelabelings:
+    - action: drop
+      sourceLabels: [__name__]
       regex: 'tekton_pipelines_controller_taskruns_pod_latency_milliseconds'
-      action: drop
