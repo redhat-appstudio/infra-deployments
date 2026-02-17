@@ -127,14 +127,15 @@
 
     ## Container Metrics
     - '{__name__="kube_pod_container_status_waiting_reason", namespace!~".*-tenant|openshift-.*|kube-.*"}'
-    - '{__name__="kube_pod_container_resource_limits", namespace="release-service"}'
+    - '{__name__="kube_pod_container_resource_limits", namespace=~"release-service|rhtap-relang-tenant"}'
     - '{__name__="kube_pod_container_status_terminated_reason", namespace=~"release-service|openshift-etcd|openshift-kube-apiserver|build-service|image-controller|integration-service|konflux-ui|konflux-kite|product-kubearchive|product-kubearchive-logging|openshift-kueue-operator|tekton-kueue|kueue-external-admission|mintmaker|multi-platform-controller|namespace-lister|openshift-pipelines|tekton-results|project-controller|smee|smee-client"}'
     - '{__name__="kube_pod_container_status_terminated_reason", namespace=~".*-tenant", reason="OOMKilled"}'
     - '{__name__="kube_pod_container_status_last_terminated_reason", reason="OOMKilled"}'
     - '{__name__="kube_pod_container_status_last_terminated_reason", namespace="release-service"}'
     - '{__name__="kube_pod_container_status_ready", namespace=~"release-service"}'
     - '{__name__="container_cpu_usage_seconds_total", namespace=~"release-service|openshift-etcd"}'
-    - '{__name__="container_memory_usage_bytes", namespace=~"release-service|openshift-etcd"}'
+    - '{__name__="container_memory_usage_bytes", namespace=~"release-service|openshift-etcd|rhtap-relang-tenant"}'
+    - '{__name__="container_memory_working_set_bytes", namespace="rhtap-relang-tenant"}'
     - '{__name__="kube_pod_container_status_restarts_total", namespace!~".*-tenant"}'
     - '{__name__="namespace:container_memory_usage_bytes:sum", namespace=~"release-service|openshift-etcd|openshift-kube-apiserver|build-service|image-controller|integration-service|konflux-ui|konflux-kite|product-kubearchive|product-kubearchive-logging|openshift-kueue-operator|tekton-kueue|kueue-external-admission|mintmaker|multi-platform-controller|namespace-lister|openshift-pipelines|tekton-results|project-controller|smee|smee-client"}'
     - '{__name__="namespace:container_cpu_usage:sum", namespace=~"release-service|openshift-etcd|openshift-kube-apiserver|build-service|image-controller|integration-service|konflux-ui|konflux-kite|product-kubearchive|product-kubearchive-logging|openshift-kueue-operator|tekton-kueue|kueue-external-admission|mintmaker|multi-platform-controller|namespace-lister|openshift-pipelines|tekton-results|project-controller|smee|smee-client"}'
@@ -160,6 +161,7 @@
     - '{__name__="kube_pod_container_info", namespace!~".*-tenant|openshift-.*|kube-.*"}'
     - '{__name__="kube_pod_container_info", namespace="openshift-pipelines"}'
     - '{__name__="kube_pod_container_info", namespace=~".*-tenant", image=~"quay\\.io/konflux-ci/.*|quay\\.io/conforma/.*|quay\\.io/enterprise-contract/.*"}'
+    - '{__name__="kube_pod_container_info", namespace="rhtap-relang-tenant"}'
     - '{__name__="container_runtime_crio_image_pulls_failure_total"}'
     - '{__name__="worker_node:container_memory_working_set_bytes_tenant:sum"}'
     - '{__name__="worker_node:container_memory_working_set_bytes_non_tenant:sum"}'
@@ -183,6 +185,7 @@
     - '{__name__="kube_running_pods_ready", namespace="konflux-ui"}'
     - '{__name__="kube_running_pods_ready", namespace="konflux-kite"}'
     - '{__name__="node_namespace_pod:kube_pod_info:", namespace=~"release-service|openshift-etcd|openshift-kube-apiserver|build-service|image-controller|integration-service|konflux-ui|konflux-kite|product-kubearchive|product-kubearchive-logging|openshift-kueue-operator|tekton-kueue|kueue-external-admission|mintmaker|multi-platform-controller|namespace-lister|openshift-pipelines|tekton-results|project-controller|smee|smee-client"}'
+    - '{__name__="kube_pod_info", namespace="rhtap-relang-tenant"}'
 
     ## Tekton & Pipeline Metrics
     - '{__name__="pipeline_service_schedule_overhead_percentage_sum"}'
