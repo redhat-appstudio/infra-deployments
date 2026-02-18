@@ -1,11 +1,11 @@
 # External Secrets Operator Helm Chart Values
-# Version: 0.19.0
+# Version: 1.2.0
 # Configuration matches the OLM deployment OperatorConfig
 
-# Image configuration - matches OLM CSV version 0.19.0
+# Image configuration - matches OLM CSV version 1.2.0
 image:
   repository: ghcr.io/external-secrets/external-secrets
-  tag: "v0.19.0"
+  tag: "v1.2.0"
 
 # Replica count
 replicaCount: 1
@@ -44,11 +44,6 @@ certController:
     limits:
       memory: 128Mi
       cpu: 200m
-  # Enable metrics Service for cert-controller
-  metrics:
-    service:
-      enabled: true
-      port: 8080
 
 # Webhook resources (matching OperatorConfig spec.webhook.resources)
 webhook:
@@ -60,11 +55,6 @@ webhook:
     limits:
       memory: 128Mi
       cpu: 200m
-  # Enable metrics port on webhook Service
-  metrics:
-    service:
-      enabled: true
-      port: 8080
 
 # Prometheus configuration (matching OperatorConfig spec.prometheus)
 prometheus:
@@ -73,11 +63,19 @@ prometheus:
     port: 8080
 
 # Metrics Service - enables the metrics Service from helm chart
-# This creates external-secrets-operator-metrics Service with correct selectors
 metrics:
   service:
     enabled: true
     port: 8080
+
+# ServiceMonitor configuration
+# Using renderMode: alwaysRender to bypass the kustomize .Capabilities.APIVersions limitation
+serviceMonitor:
+  enabled: true
+  renderMode: alwaysRender
+  namespace: external-secrets-operator
+  interval: 30s
+  scrapeTimeout: 25s
 
 # Logging
 logLevel: info
