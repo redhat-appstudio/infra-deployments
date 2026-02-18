@@ -1,11 +1,11 @@
 # External Secrets Operator Helm Chart Values
-# Version: 0.11.0
+# Version: 1.2.0
 # Configuration matches the OLM deployment OperatorConfig
 
-# Image configuration - matches OLM CSV version 0.11.0
+# Image configuration - matches OLM CSV version 1.2.0
 image:
   repository: ghcr.io/external-secrets/external-secrets
-  tag: "v0.16.2"
+  tag: "v1.2.0"
 
 # Replica count
 replicaCount: 1
@@ -62,20 +62,23 @@ prometheus:
   service:
     port: 8080
 
-# Logging
-logLevel: info
+# Metrics Service - enables the metrics Service from helm chart
+metrics:
+  service:
+    enabled: true
+    port: 8080
 
 # ServiceMonitor configuration
+# Using renderMode: alwaysRender to bypass the kustomize .Capabilities.APIVersions limitation
 serviceMonitor:
   enabled: true
+  renderMode: alwaysRender
   namespace: external-secrets-operator
-  labels:
-    app.kubernetes.io/name: external-secrets
-    app.kubernetes.io/instance: cluster
-  endpoints:
-    - port: metrics
-      scheme: http
-      interval: 30s
+  interval: 30s
+  scrapeTimeout: 25s
+
+# Logging
+logLevel: info
 
 bitwarden-sdk-server:
   enabled: false
