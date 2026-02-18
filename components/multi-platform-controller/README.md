@@ -52,3 +52,4 @@ helm template ../../base/host-config-chart/ \
 - `--namespace multi-platform-controller` - Sets the namespace for the generated resources
 - `-f host-values.yaml` - Specifies the values file for this cluster
 - `> out.yaml` - Redirects output to a file for review
+
