@@ -1,0 +1,13 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: no-skip.kueue.konflux-ci.dev
+spec:
+  policyName: "no-skip.kueue.konflux-ci.dev"
+  validationActions: [Deny]
+  matchResources:
+    namespaceSelector:
+      matchLabels:
+        konflux-ci.dev/type: tenant
+
