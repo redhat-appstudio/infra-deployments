@@ -1,0 +1,39 @@
+name: PR Environment Labels
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: infra-tools/go.mod
+
+      - name: Detect and label
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        working-directory: infra-tools
+        run: |
+          go run ./cmd/env-detector \
+            --repo-root=.. \
+            --base-ref=origin/${{ github.event.pull_request.base.ref }} \
+            --pr-number=${{ github.event.pull_request.number }} \
+            --github-token=$GITHUB_TOKEN \
+            --repo=${{ github.repository }} \
+            --log-file=../debug.log
+
+      - name: Upload debug log
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-log
+          path: debug.log
