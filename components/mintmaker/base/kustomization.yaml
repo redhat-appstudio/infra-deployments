@@ -8,3 +8,11 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 namespace: mintmaker
+
+configMapGenerator:
+  - name: controller-config
+    files:
+    - config.json
+
+patches:
+  - path: manager-mount-config-patch.yaml
