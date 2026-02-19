@@ -1,0 +1,44 @@
+---
+# Network Policy: Intra-namespace Communication
+#
+# Purpose: Allow all ESO components to communicate with each other
+# within the same namespace, including localhost communication
+#
+# Applies to: Main controller, webhook, and cert-controller
+# Note: This provides a fallback for any internal coordination between ESO components
+# that is not explicitly covered by more specific policies
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-same-namespace
+  namespace: external-secrets-operator
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: external-secrets-operator
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/instance: external-secrets-operator
+  # Allow pods to communicate with themselves (localhost)
+  # This is needed for health checks and internal probe endpoints
+  - from:
+    - podSelector: {}
+    ports:
+    - protocol: TCP
+      port: 8081  # Health check port
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/instance: external-secrets-operator
+  # Allow pods to reach their own localhost
+  - to:
+    - podSelector: {}
+    ports:
+    - protocol: TCP
+      port: 8081  # Health check port
