@@ -163,6 +163,37 @@ func resolve(repoRoot, absDir string, deps, visited map[string]bool) error {
 		addGeneratorSources(repoRoot, absDir, &k.SecretGenerator[i].GeneratorArgs, deps)
 	}
 
+	// Generators — kustomize exec/container plugin config files.
+	// Changing a generator definition (e.g. HelmChartInflationGenerator YAML)
+	// changes the output of the build.
+	for _, g := range k.Generators {
+		if isRemoteURL(g) {
+			continue
+		}
+		addFile(repoRoot, absDir, g, deps)
+	}
+
+	// Transformers — kustomize transformer plugin config files.
+	for _, t := range k.Transformers {
+		if isRemoteURL(t) {
+			continue
+		}
+		addFile(repoRoot, absDir, t, deps)
+	}
+
+	// Validators — kustomize validator plugin config files.
+	for _, v := range k.Validators {
+		if isRemoteURL(v) {
+			continue
+		}
+		addFile(repoRoot, absDir, v, deps)
+	}
+
+	// Configurations — transformer configuration files.
+	for _, c := range k.Configurations {
+		addFile(repoRoot, absDir, c, deps)
+	}
+
 	// CRDs
 	for _, crd := range k.Crds {
 		addFile(repoRoot, absDir, crd, deps)

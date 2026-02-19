@@ -26,7 +26,7 @@ func main() {
 	var (
 		repoRoot      = flag.String("repo-root", ".", "Path to the repository root")
 		baseRef       = flag.String("base-ref", "main", "Base git ref to compare against")
-		overlaysDir = flag.String("overlays-dir", "argo-cd-apps/overlays", "Path to overlays directory relative to repo root")
+		overlaysDir   = flag.String("overlays-dir", "argo-cd-apps/overlays", "Path to overlays directory relative to repo root")
 		dryRun        = flag.Bool("dry-run", false, "Print results without calling GitHub API")
 		prNumber      = flag.Int("pr-number", 0, "PR number to label (required if not --dry-run)")
 		githubToken   = flag.String("github-token", "", "GitHub token (required if not --dry-run)")
