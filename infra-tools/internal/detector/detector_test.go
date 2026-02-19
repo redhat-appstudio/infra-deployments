@@ -263,17 +263,17 @@ func TestBuildAppSetOverlays_MultipleOverlays(t *testing.T) {
 		dirs: map[string][]string{"overlays": {"development", "konflux-public-production"}},
 		yamls: map[string][]byte{
 			"overlays/development":               []byte("dev-yaml"),
-			"overlays/konflux-public-production":  []byte("prod-yaml"),
+			"overlays/konflux-public-production": []byte("prod-yaml"),
 		},
 	}
 	base := &fakeRepo{
 		dirs: map[string][]string{"overlays": {"development", "konflux-public-production"}},
 		yamls: map[string][]byte{
 			"overlays/development":               []byte("dev-yaml"),
-			"overlays/konflux-public-production":  []byte("prod-yaml"),
+			"overlays/konflux-public-production": []byte("prod-yaml"),
 		},
 		exist: map[string]bool{
-			"overlays/development":              true,
+			"overlays/development":               true,
 			"overlays/konflux-public-production": true,
 		},
 	}
