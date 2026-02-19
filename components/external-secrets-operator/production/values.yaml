@@ -1,0 +1,84 @@
+# External Secrets Operator Helm Chart Values
+# Version: 1.2.0
+# Configuration matches the OLM deployment OperatorConfig
+
+# Image configuration - matches OLM CSV version 1.2.0
+image:
+  repository: ghcr.io/external-secrets/external-secrets
+  tag: "v1.2.0"
+
+# Replica count
+replicaCount: 1
+
+# Install CRDs - CRITICAL: Must be true to install CustomResourceDefinitions
+installCRDs: true
+
+# Service Account
+serviceAccount:
+  create: true
+  name: external-secrets-operator
+
+# Security context
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 65534
+  fsGroup: 65534
+
+# Controller resources - Production values (higher memory/cpu for production workloads)
+# Note: The helm chart uses .Values.resources directly, not controller.resources
+resources:
+  requests:
+    cpu: 500m
+    memory: 1024Mi
+  limits:
+    memory: 1024Mi
+    cpu: 500m
+
+# Cert Controller resources (matching OperatorConfig spec.certController.resources)
+certController:
+  enabled: true
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      memory: 128Mi
+      cpu: 200m
+
+# Webhook resources (matching OperatorConfig spec.webhook.resources)
+webhook:
+  enabled: true
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      memory: 128Mi
+      cpu: 200m
+
+# Prometheus configuration (matching OperatorConfig spec.prometheus)
+prometheus:
+  enabled: true
+  service:
+    port: 8080
+
+# Metrics Service - enables the metrics Service from helm chart
+metrics:
+  service:
+    enabled: true
+    port: 8080
+
+# ServiceMonitor configuration
+# Using renderMode: alwaysRender to bypass the kustomize .Capabilities.APIVersions limitation
+serviceMonitor:
+  enabled: true
+  renderMode: alwaysRender
+  namespace: external-secrets-operator
+  interval: 30s
+  scrapeTimeout: 25s
+
+# Logging
+logLevel: info
+
+bitwarden-sdk-server:
+  enabled: false
