@@ -1,0 +1,55 @@
+name: PR Environment Labels
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+    steps:
+      # Check out the BASE branch (trusted code) so we never execute fork code.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: infra-tools/go.mod
+
+      # Build the detector binary from the trusted base branch before
+      # switching to the PR head. This ensures a malicious fork cannot
+      # inject code that runs with the elevated GITHUB_TOKEN.
+      - name: Build detector (from base branch)
+        working-directory: infra-tools
+        run: go build -o bin/env-detector ./cmd/env-detector
+
+      # Fetch the PR head ref (works for both fork and same-repo PRs)
+      # and switch to it so the tool can analyse the PR's file changes.
+      - name: Checkout PR head
+        run: |
+          git fetch origin pull/${{ github.event.pull_request.number }}/head:pr-head
+          git checkout pr-head
+
+      - name: Detect and label
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        working-directory: infra-tools
+        run: |
+          ./bin/env-detector \
+            --repo-root=.. \
+            --base-ref=origin/${{ github.event.pull_request.base.ref }} \
+            --pr-number=${{ github.event.pull_request.number }} \
+            --github-token=$GITHUB_TOKEN \
+            --repo=${{ github.repository }} \
+            --log-file=../debug.log
+
+      - name: Upload debug log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-log
+          path: debug.log

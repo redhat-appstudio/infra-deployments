@@ -1,0 +1,22 @@
+---
+# Network Policy: Default Deny All
+#
+# Purpose: Implements a "deny all / permit by exception" security model
+#
+# Behavior:
+#   - Blocks ALL ingress traffic by default
+#   - Blocks ALL egress traffic by default
+#   - Other NetworkPolicies selectively allow specific traffic patterns
+#
+# Security: Aligns with ESO threat model recommendations
+# Reference: https://external-secrets.io/latest/guides/threat-model/
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: external-secrets-operator
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
