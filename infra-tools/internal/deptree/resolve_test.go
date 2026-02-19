@@ -160,6 +160,61 @@ configMapGenerator:
 	g.Expect(deps).To(HaveKey("component/env.properties"))
 }
 
+func TestResolve_Generators(t *testing.T) {
+	g := NewWithT(t)
+	tmpDir := t.TempDir()
+
+	dir := filepath.Join(tmpDir, "component", "development")
+	g.Expect(os.MkdirAll(dir, 0o755)).To(Succeed())
+	writeFile(t, filepath.Join(dir, "kustomization.yaml"), `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+generators:
+  - helm-generator.yaml
+`)
+	writeFile(t, filepath.Join(dir, "helm-generator.yaml"), `
+apiVersion: builtin
+kind: HelmChartInflationGenerator
+metadata:
+  name: my-chart
+`)
+
+	deps, err := Resolve(tmpDir, "component/development")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	g.Expect(deps).To(HaveKey("component/development/kustomization.yaml"))
+	g.Expect(deps).To(HaveKey("component/development/helm-generator.yaml"))
+}
+
+func TestResolve_TransformersAndValidators(t *testing.T) {
+	g := NewWithT(t)
+	tmpDir := t.TempDir()
+
+	dir := filepath.Join(tmpDir, "component")
+	g.Expect(os.MkdirAll(dir, 0o755)).To(Succeed())
+	writeFile(t, filepath.Join(dir, "kustomization.yaml"), `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+transformers:
+  - my-transformer.yaml
+validators:
+  - my-validator.yaml
+configurations:
+  - my-config.yaml
+`)
+	writeFile(t, filepath.Join(dir, "my-transformer.yaml"), "kind: Transformer")
+	writeFile(t, filepath.Join(dir, "my-validator.yaml"), "kind: Validator")
+	writeFile(t, filepath.Join(dir, "my-config.yaml"), "kind: Config")
+
+	deps, err := Resolve(tmpDir, "component")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	g.Expect(deps).To(HaveKey("component/kustomization.yaml"))
+	g.Expect(deps).To(HaveKey("component/my-transformer.yaml"))
+	g.Expect(deps).To(HaveKey("component/my-validator.yaml"))
+	g.Expect(deps).To(HaveKey("component/my-config.yaml"))
+}
+
 func TestResolve_CircularReference(t *testing.T) {
 	g := NewWithT(t)
 	tmpDir := t.TempDir()
