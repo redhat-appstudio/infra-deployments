@@ -718,7 +718,7 @@ data:
               "targets": [
                 {
                   "exemplar": true,
-                  "expr": "sum by (status) (rate(tekton_pipelines_controller_taskrun_count[1h]))* 3600",
+                  "expr": "sum by (status) (rate(tekton_pipelines_controller_taskrun_total[1h]))* 3600",
                   "interval": "",
                   "legendFormat": "",
                   "refId": "A"
@@ -806,7 +806,7 @@ data:
               "targets": [
                 {
                   "exemplar": true,
-                  "expr": "sum (rate(tekton_pipelines_controller_taskrun_count{status=\"success\"}[1h])) / sum (rate(tekton_pipelines_controller_taskrun_count[1h]))",
+                  "expr": "sum (rate(tekton_pipelines_controller_taskrun_total{status=\"success\"}[1h])) / sum (rate(tekton_pipelines_controller_taskrun_total[1h]))",
                   "format": "table",
                   "hide": false,
                   "instant": false,
@@ -1078,7 +1078,7 @@ data:
               "targets": [
                 {
                   "exemplar": true,
-                  "expr": "tekton_pipelines_controller_running_pipelineruns_count",
+                  "expr": "tekton_pipelines_controller_running_pipelineruns",
                   "interval": "",
                   "legendFormat": "",
                   "refId": "A"
@@ -1136,7 +1136,7 @@ data:
               "targets": [
                 {
                   "exemplar": true,
-                  "expr": "tekton_pipelines_controller_running_taskruns_total",
+                  "expr": "tekton_pipelines_controller_running_taskruns",
                   "interval": "",
                   "legendFormat": "",
                   "refId": "A"
