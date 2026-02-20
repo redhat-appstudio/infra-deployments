@@ -1,0 +1,61 @@
+name: PR Render Diff
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  render-diff:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+    steps:
+      # Check out the BASE branch (trusted code) so we never execute fork code.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: infra-tools/go.mod
+
+      # Build the render-diff binary from the trusted base branch before
+      # switching to the PR head. This ensures a malicious fork cannot
+      # inject code that runs with the elevated GITHUB_TOKEN.
+      - name: Build render-diff (from base branch)
+        working-directory: infra-tools
+        run: go build -o bin/render-diff ./cmd/render-diff
+
+      # Fetch the PR head ref and switch to it for analysis.
+      - name: Checkout PR head
+        run: |
+          git fetch origin pull/${{ github.event.pull_request.number }}/head:pr-head
+          git checkout pr-head
+
+      - name: Create output directory
+        run: mkdir -p render-diff-output
+
+      - name: Run render-diff
+        continue-on-error: true
+        working-directory: infra-tools
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          ./bin/render-diff \
+            --repo-root=.. \
+            --base-ref=origin/${{ github.event.pull_request.base.ref }} \
+            --output-mode=ci-summary,ci-comment,ci-artifact-dir \
+            --output-dir=../render-diff-output \
+            --log-file=../render-diff-debug.log
+
+      - name: Upload diff artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: render-diff-output
+          path: |
+            render-diff-output/
+            render-diff-debug.log
