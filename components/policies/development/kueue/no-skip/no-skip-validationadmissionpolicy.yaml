@@ -16,7 +16,7 @@ spec:
   - name: hasPlatformParam
     expression: "has(object.spec.params) && object.spec.params.exists(p, p.name == 'PLATFORM')"
   - name: platformValue
-    expression: "has(object.spec.params) && object.spec.params.filter(p, p.name == 'PLATFORM').size() > 0 ? object.spec.params.filter(p, p.name == 'PLATFORM')[0].value : ''"
+    expression: "has(object.spec.params) && object.spec.params.filter(p, p.name == 'PLATFORM').size() > 0 ? object.spec.params.filter(p, p.name == 'PLATFORM')[0].value.replace('/', '-').replace('_', '-'): ''"
   validations:
   - expression: "!variables.hasPlatformParam || (has(object.metadata.annotations) && ('kueue.konflux-ci.dev/resource-' + variables.platformValue in object.metadata.annotations))"
     reason: Invalid
