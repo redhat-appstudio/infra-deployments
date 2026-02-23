@@ -1,0 +1,80 @@
+# External Secrets Operator Helm Chart Values
+# Version: 2.0.0
+# Configuration matches the OLM deployment OperatorConfig
+
+# Image configuration - matches OLM CSV version 2.0.0
+image:
+  repository: ghcr.io/external-secrets/external-secrets
+  tag: "v2.0.0"
+
+# Replica count
+replicaCount: 1
+
+# Install CRDs - CRITICAL: Must be true to install CustomResourceDefinitions
+installCRDs: true
+
+# Service Account
+serviceAccount:
+  create: true
+  name: external-secrets-operator
+
+# Security context
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 65534
+  fsGroup: 65534
+
+# Controller resources (matching OperatorConfig spec.resources)
+resources:
+  requests:
+    cpu: 100m
+    memory: 512Mi
+  limits:
+    memory: 512Mi
+    cpu: 500m
+
+# Cert Controller resources (matching OperatorConfig spec.certController.resources)
+certController:
+  create: true
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      memory: 128Mi
+      cpu: 200m
+
+# Webhook resources (matching OperatorConfig spec.webhook.resources)
+webhook:
+  create: true
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      memory: 128Mi
+      cpu: 200m
+
+# Metrics configuration
+metrics:
+  listen:
+    port: 8080
+  service:
+    enabled: true
+    port: 8080
+
+# ServiceMonitor configuration
+# Using renderMode: alwaysRender to bypass the kustomize .Capabilities.APIVersions limitation
+serviceMonitor:
+  enabled: true
+  renderMode: alwaysRender
+  namespace: external-secrets-operator
+  interval: 30s
+  scrapeTimeout: 25s
+
+# Logging
+logLevel: info
+
+bitwarden-sdk-server:
+  enabled: false
+

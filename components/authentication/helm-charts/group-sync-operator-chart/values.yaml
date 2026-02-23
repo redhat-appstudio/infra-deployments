@@ -1,0 +1,53 @@
+# Default values for group-sync-operator
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: quay.io/konflux-ci/group-sync-operator
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  version: sha256:9bfebf0f27a393dc7254ba8e7b88278ce1f7b31a8470267da5a3489c64f8d64a
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+podAnnotations: {}
+
+podLabels: {}
+
+commonLabels: {}
+
+resources:
+  requests:
+    cpu: 300m
+    memory: 200Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+env:
+  # - name: VAR_NAME
+  #   value: var-value
+
+kube_rbac_proxy:
+  image:
+    repository: registry.redhat.io/openshift4/ose-kube-rbac-proxy
+    pullPolicy: IfNotPresent
+    version: sha256:c8336efb1269a7f40113aa9767c6dc9affe4fd830a1ca6004206bcef1d0274a3
+  resources:
+    requests:
+      cpu: 100m
+      memory: 20Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+enableMonitoring: true

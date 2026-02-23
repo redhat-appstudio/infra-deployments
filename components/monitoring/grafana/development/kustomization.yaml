@@ -14,3 +14,12 @@ patches:
     target:
       name: grafana-oauth
       kind: Grafana
+  # Add a 'version' to avoid using the docker image
+  - patch: |
+      apiVersion: grafana.integreatly.org/v1beta1
+      kind: Grafana
+      metadata:
+        name: grafana-oauth
+        namespace: appstudio-grafana
+      spec:
+        version: quay.io/kubearchive/grafana:12.1.0

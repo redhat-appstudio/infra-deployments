@@ -2,5 +2,63 @@
 
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/..
 
-echo "Changing AppStudio Gitlab Org to \"$1\""
-yq e -i "(.configMapGenerator[].literals[] | select(. == \"*GITHUB*\")) = \"GITHUB_ORG=$1\"" $ROOT/components/has/base/kustomization.yaml
+# =============================================================================
+# Logging Functions (consistent with preview.sh)
+# =============================================================================
+timestamp() {
+    date '+%Y-%m-%d %H:%M:%S'
+}
+
+log_info() {
+    echo "[$(timestamp)] [INFO] $*"
+}
+
+log_success() {
+    echo "[$(timestamp)] [SUCCESS] $*"
+}
+
+log_error() {
+    echo "[$(timestamp)] [ERROR] $*" >&2
+}
+
+# =============================================================================
+# Main
+# =============================================================================
+GITHUB_ORG="${1:-}"
+
+if [ -z "$GITHUB_ORG" ]; then
+    log_error "GitHub organization not provided"
+    log_error "Usage: $0 <github-org>"
+    log_error "ACTION REQUIRED: Provide the GitHub organization name as the first argument"
+    exit 1
+fi
+
+KUSTOMIZATION_FILE="$ROOT/components/has/base/kustomization.yaml"
+
+if [ ! -f "$KUSTOMIZATION_FILE" ]; then
+    log_error "Kustomization file not found: $KUSTOMIZATION_FILE"
+    log_error "ACTION REQUIRED: Ensure you are running this script from the infra-deployments repository"
+    exit 1
+fi
+
+log_info "Configuring GitHub organization for Application Service (HAS)"
+log_info "  - Target org: $GITHUB_ORG"
+log_info "  - Config file: $KUSTOMIZATION_FILE"
+
+# Update the GITHUB_ORG in kustomization.yaml
+if yq e -i "(.configMapGenerator[].literals[] | select(. == \"*GITHUB*\")) = \"GITHUB_ORG=$GITHUB_ORG\"" "$KUSTOMIZATION_FILE"; then
+    log_success "GitHub organization set to '$GITHUB_ORG'"
+    
+    # Verify the change
+    current_value=$(yq e '.configMapGenerator[].literals[] | select(. == "*GITHUB*")' "$KUSTOMIZATION_FILE" 2>/dev/null || echo "")
+    if [ "$current_value" = "GITHUB_ORG=$GITHUB_ORG" ]; then
+        log_success "Verified: Configuration updated correctly"
+    else
+        log_error "Verification failed: Expected 'GITHUB_ORG=$GITHUB_ORG', got '$current_value'"
+        exit 1
+    fi
+else
+    log_error "Failed to update GitHub organization in $KUSTOMIZATION_FILE"
+    log_error "ACTION REQUIRED: Check if yq is installed and the file format is correct"
+    exit 1
+fi

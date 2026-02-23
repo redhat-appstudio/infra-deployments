@@ -52,5 +52,9 @@ spec:
     tlsConfig:
       insecureSkipVerify: true
   selector:
-    matchLabels:
-      app: kube-rbac-proxy
+    matchExpressions:
+    - key: app.kubernetes.io/name
+      operator: In
+      values:
+      - loki
+      - vector

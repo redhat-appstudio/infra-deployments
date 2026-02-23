@@ -1,0 +1,20 @@
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: otelcol-config
+  namespace: multi-platform-controller
+spec:
+  data:
+    - secretKey: endpoint
+      remoteRef:
+        key: staging/infrastructure/splunk/external_endpoint
+        property: splunk_endpoint
+    - secretKey: token
+      remoteRef:
+        key: staging/infrastructure/splunk/external_endpoint
+        property: splunk_hec_token
+    - secretKey: index
+      remoteRef:
+        key: staging/infrastructure/splunk/external_endpoint
+        property: splunk_index
