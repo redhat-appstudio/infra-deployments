@@ -1,0 +1,25 @@
+# Prometheus Monitor Service (Metrics)
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    control-plane: group-sync-operator
+    {{- include "group-sync-operator.labels" . | nindent 4 }}
+  name: controller-manager-metrics-monitor
+  namespace: {{ .Release.Namespace }}
+spec:
+  endpoints:
+    - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+      interval: 30s
+      port: https
+      scheme: https
+      tlsConfig:
+        ca:
+          secret:
+            key: 'tls.crt'
+            name: group-sync-operator-certs
+            optional: false
+        serverName: controller-manager-metrics-service.{{ .Release.Namespace }}.svc
+  selector:
+    matchLabels:
+      control-plane: group-sync-operator

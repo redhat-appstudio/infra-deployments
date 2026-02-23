@@ -1,0 +1,306 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: mutate-pod-remote-platform
+spec:
+  description: |
+    Tests that a buildah-remote-oci-ta Pod with a remote platform (not in
+    local-platforms) gets its build step resources adjusted to cpu=1, memory=2Gi.
+  concurrent: false
+  steps:
+  - name: given-test-namespace-is-tenant-labeled
+    try:
+    - apply:
+        resource:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: ($namespace)
+            labels:
+              konflux-ci.dev/type: tenant
+        template: true
+  - name: given-multi-platform-controller-namespace-exists
+    try:
+    - apply:
+        file: resources/namespace-multi-platform-controller.yaml
+  - name: given-host-config-configmap-exists
+    try:
+    - apply:
+        file: resources/configmap-host-config.yaml
+  - name: given-kyverno-has-permission-on-resources
+    try:
+    - apply:
+        file: ../kyverno-rbac.yaml
+  - name: given-cluster-policy-is-ready
+    try:
+    - apply:
+        file: ../adjust-buildah-resources-for-remote-platforms.yaml
+    - assert:
+        file: chainsaw-assert-clusterpolicy.yaml
+  - name: when-pod-with-remote-platform-is-created
+    try:
+    - apply:
+        file: resources/pod-remote-platform.yaml
+  - name: then-build-step-resources-are-adjusted
+    try:
+    - assert:
+        file: resources/expected-pod-remote-platform.yaml
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: skip-mutation-local-platform
+spec:
+  description: |
+    Tests that a buildah-remote-oci-ta Pod with a local platform (listed in
+    local-platforms) does NOT get its build step resources adjusted.
+  concurrent: false
+  steps:
+  - name: given-test-namespace-is-tenant-labeled
+    try:
+    - apply:
+        resource:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: ($namespace)
+            labels:
+              konflux-ci.dev/type: tenant
+        template: true
+  - name: given-multi-platform-controller-namespace-exists
+    try:
+    - apply:
+        file: resources/namespace-multi-platform-controller.yaml
+  - name: given-host-config-configmap-exists
+    try:
+    - apply:
+        file: resources/configmap-host-config.yaml
+  - name: given-kyverno-has-permission-on-resources
+    try:
+    - apply:
+        file: ../kyverno-rbac.yaml
+  - name: given-cluster-policy-is-ready
+    try:
+    - apply:
+        file: ../adjust-buildah-resources-for-remote-platforms.yaml
+    - assert:
+        file: chainsaw-assert-clusterpolicy.yaml
+  - name: when-pod-with-local-platform-is-created
+    try:
+    - apply:
+        file: resources/pod-local-platform.yaml
+  - name: then-build-step-resources-are-not-adjusted
+    try:
+    - assert:
+        file: resources/expected-pod-local-platform.yaml
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: skip-mutation-no-platform
+spec:
+  description: |
+    Tests that a buildah-remote-oci-ta Pod without a PLATFORM environment
+    variable does NOT get its build step resources adjusted.
+  concurrent: false
+  steps:
+  - name: given-test-namespace-is-tenant-labeled
+    try:
+    - apply:
+        resource:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: ($namespace)
+            labels:
+              konflux-ci.dev/type: tenant
+        template: true
+  - name: given-multi-platform-controller-namespace-exists
+    try:
+    - apply:
+        file: resources/namespace-multi-platform-controller.yaml
+  - name: given-host-config-configmap-exists
+    try:
+    - apply:
+        file: resources/configmap-host-config.yaml
+  - name: given-kyverno-has-permission-on-resources
+    try:
+    - apply:
+        file: ../kyverno-rbac.yaml
+  - name: given-cluster-policy-is-ready
+    try:
+    - apply:
+        file: ../adjust-buildah-resources-for-remote-platforms.yaml
+    - assert:
+        file: chainsaw-assert-clusterpolicy.yaml
+  - name: when-pod-without-platform-env-is-created
+    try:
+    - apply:
+        file: resources/pod-no-platform.yaml
+  - name: then-build-step-resources-are-not-adjusted
+    try:
+    - assert:
+        file: resources/expected-pod-no-platform.yaml
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: skip-mutation-no-matching-label
+spec:
+  description: |
+    Tests that a Pod without the tekton.dev/task=buildah-remote-oci-ta label
+    does NOT get its build step resources adjusted, even when the platform
+    is remote.
+  concurrent: false
+  steps:
+  - name: given-test-namespace-is-tenant-labeled
+    try:
+    - apply:
+        resource:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: ($namespace)
+            labels:
+              konflux-ci.dev/type: tenant
+        template: true
+  - name: given-multi-platform-controller-namespace-exists
+    try:
+    - apply:
+        file: resources/namespace-multi-platform-controller.yaml
+  - name: given-host-config-configmap-exists
+    try:
+    - apply:
+        file: resources/configmap-host-config.yaml
+  - name: given-kyverno-has-permission-on-resources
+    try:
+    - apply:
+        file: ../kyverno-rbac.yaml
+  - name: given-cluster-policy-is-ready
+    try:
+    - apply:
+        file: ../adjust-buildah-resources-for-remote-platforms.yaml
+    - assert:
+        file: chainsaw-assert-clusterpolicy.yaml
+  - name: when-pod-without-matching-label-is-created
+    try:
+    - apply:
+        file: resources/pod-no-matching-label.yaml
+  - name: then-build-step-resources-are-not-adjusted
+    try:
+    - assert:
+        file: resources/expected-pod-no-matching-label.yaml
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: skip-mutation-matching-pod-non-tenant-namespace
+spec:
+  description: |
+    Tests that a buildah-remote-oci-ta Pod with a remote platform does NOT
+    get mutated when the namespace is not labeled as a tenant namespace.
+  concurrent: false
+  steps:
+  - name: given-multi-platform-controller-namespace-exists
+    try:
+    - apply:
+        file: resources/namespace-multi-platform-controller.yaml
+  - name: given-host-config-configmap-exists
+    try:
+    - apply:
+        file: resources/configmap-host-config.yaml
+  - name: given-kyverno-has-permission-on-resources
+    try:
+    - apply:
+        file: ../kyverno-rbac.yaml
+  - name: given-cluster-policy-is-ready
+    try:
+    - apply:
+        file: ../adjust-buildah-resources-for-remote-platforms.yaml
+    - assert:
+        file: chainsaw-assert-clusterpolicy.yaml
+  - name: when-matching-pod-is-created-in-non-tenant-namespace
+    try:
+    - apply:
+        file: resources/pod-remote-platform.yaml
+  - name: then-build-step-resources-are-not-adjusted
+    try:
+    - assert:
+        file: resources/expected-pod-remote-platform-not-mutated.yaml
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: skip-mutation-non-matching-pod-non-tenant-namespace
+spec:
+  description: |
+    Tests that a Pod without the buildah-remote-oci-ta label does NOT get
+    mutated when the namespace is not labeled as a tenant namespace.
+  concurrent: false
+  steps:
+  - name: given-multi-platform-controller-namespace-exists
+    try:
+    - apply:
+        file: resources/namespace-multi-platform-controller.yaml
+  - name: given-host-config-configmap-exists
+    try:
+    - apply:
+        file: resources/configmap-host-config.yaml
+  - name: given-kyverno-has-permission-on-resources
+    try:
+    - apply:
+        file: ../kyverno-rbac.yaml
+  - name: given-cluster-policy-is-ready
+    try:
+    - apply:
+        file: ../adjust-buildah-resources-for-remote-platforms.yaml
+    - assert:
+        file: chainsaw-assert-clusterpolicy.yaml
+  - name: when-non-matching-pod-is-created-in-non-tenant-namespace
+    try:
+    - apply:
+        file: resources/pod-no-matching-label.yaml
+  - name: then-build-step-resources-are-not-adjusted
+    try:
+    - assert:
+        file: resources/expected-pod-no-matching-label.yaml
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: verify-failure-policy-ignore
+spec:
+  description: |
+    Tests that the ClusterPolicy has failurePolicy: Ignore set in its spec.
+    This ensures any changes to the failurePolicy field are intentional.
+  concurrent: false
+  steps:
+  - name: given-multi-platform-controller-namespace-exists
+    try:
+    - apply:
+        file: resources/namespace-multi-platform-controller.yaml
+  - name: given-host-config-configmap-exists
+    try:
+    - apply:
+        file: resources/configmap-host-config.yaml
+  - name: given-kyverno-has-permission-on-resources
+    try:
+    - apply:
+        file: ../kyverno-rbac.yaml
+  - name: given-cluster-policy-is-ready
+    try:
+    - apply:
+        file: ../adjust-buildah-resources-for-remote-platforms.yaml
+    - assert:
+        file: chainsaw-assert-clusterpolicy.yaml
+  - name: then-cluster-policy-has-failure-policy-ignore
+    try:
+    - assert:
+        file: chainsaw-assert-failure-policy.yaml

@@ -676,6 +676,58 @@ PIPELINERUN_DEFINITIONS: Dict[str, PipelineRunTestData] = {
         }
     },
 
+    "ocp_prod_release": {
+        "name": "OCP production release pipeline",
+        "pipelinerun": {
+            "apiVersion": "tekton.dev/v1",
+            "kind": "PipelineRun",
+            "metadata": {
+                "name": "test-ocp-prod-release",
+                "namespace": "default",
+                "labels": {
+                    "release.appstudio.openshift.io/name": "ocp-prod-4-13-63-extras-20260122082117"
+                }
+            },
+            "spec": {
+                "pipelineRef": {"name": "ocp-release-pipeline"},
+                "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
+            }
+        },
+        "expected": {
+            "annotations": {},
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-prod-release"
+            }
+        }
+    },
+
+    "ocp_stage_release": {
+        "name": "OCP staging release pipeline",
+        "pipelinerun": {
+            "apiVersion": "tekton.dev/v1",
+            "kind": "PipelineRun",
+            "metadata": {
+                "name": "test-ocp-stage-release",
+                "namespace": "default",
+                "labels": {
+                    "release.appstudio.openshift.io/name": "ocp-stage-4-20-14-fbc-20260206215351"
+                }
+            },
+            "spec": {
+                "pipelineRef": {"name": "ocp-release-pipeline"},
+                "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
+            }
+        },
+        "expected": {
+            "annotations": {},
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-stage-release"
+            }
+        }
+    },
+
 }
 
 # Configuration combinations that can be applied to any PipelineRun
@@ -804,6 +856,10 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
         "pipelinerun_key": "mintmaker",
         "config_key": "production"
     },
+    "internal_pipelinerun_child_production": {
+        "pipelinerun_key": "internal_pipelinerun_child",
+        "config_key": "production"
+    },
     "prefer_new_parameters_staging": {
         "pipelinerun_key": "prefer-new-parameters",
         "config_key": "production"
@@ -816,6 +872,16 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
     },
     "internal_pipelinerun_child_production-kflux-ocp-p01": {
         "pipelinerun_key": "internal_pipelinerun_child",
+        "config_key": "production-kflux-ocp-p01"
+    },
+
+    # Test OCP stage/prod priority assignment (only on OCP cluster)
+    "ocp_prod_release_production-kflux-ocp-p01": {
+        "pipelinerun_key": "ocp_prod_release",
+        "config_key": "production-kflux-ocp-p01"
+    },
+    "ocp_stage_release_production-kflux-ocp-p01": {
+        "pipelinerun_key": "ocp_stage_release",
         "config_key": "production-kflux-ocp-p01"
     }
 }
