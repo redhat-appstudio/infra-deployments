@@ -82,13 +82,13 @@ loki:
     flush_op_timeout: 10m             # Add timeout for S3 operations
     lifecycler:
       ring:
-        heartbeat_timeout: 10m        
+        heartbeat_timeout: 10m
     wal:
       enabled: true
       dir: /var/loki/wal
-      checkpoint_duration: 5m         
-      flush_on_shutdown: true         
-      replay_memory_ceiling: 4GB      
+      checkpoint_duration: 5m
+      flush_on_shutdown: true
+      replay_memory_ceiling: 4GB
   server:
     grpc_server_max_recv_msg_size: 15728640  # 15MB
     grpc_server_max_send_msg_size: 15728640
