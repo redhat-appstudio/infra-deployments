@@ -9,40 +9,16 @@ kind: ClusterRole
 metadata:
   name: custom-kube-state-metrics
 rules:
-  # Velero resources
   - apiGroups: ["velero.io"]
-    resources:
-      - backups
-      - restores
-      - schedules
-      - backupstoragelocations
-      - volumesnapshotlocations
-    verbs: ["list", "watch"]
-
-  # Kueue resources
+    resources: ["backups", "restores"]
+    verbs: ["list", "watch", "get"]
   - apiGroups: ["kueue.x-k8s.io"]
-    resources:
-      - clusterqueues
-      - localqueues
-      - workloads
-      - resourceflavors
-    verbs: ["list", "watch"]
-
-  # Kyverno resources
+    resources: ["clusterqueues", "localqueues"]
+    verbs: ["list", "watch", "get"]
   - apiGroups: ["kyverno.io"]
-    resources:
-      - clusterpolicies
-      - policies
-      - generaterequests
-      - updaterequests
-    verbs: ["list", "watch"]
+    resources: ["clusterpolicies", "policies"]
+    verbs: ["list", "watch", "get"]
 
-  # Add more custom resources here as needed
-  # Example template:
-  # - apiGroups: ["<api-group>"]
-  #   resources:
-  #     - <resource-type>
-  #   verbs: ["list", "watch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
