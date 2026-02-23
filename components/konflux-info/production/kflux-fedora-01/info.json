@@ -1,0 +1,55 @@
+{
+    "environment": "production",
+    "integrations": {
+        "github": {
+            "application_url": "https://github.com/apps/red-hat-konflux-kflux-fedora-01"
+        },
+        "sbom_server": {
+            "url": "https://atlas.build.devshift.net/sbom/content/<PLACEHOLDER>",
+            "sbom_sha": "https://atlas.build.devshift.net/sboms/<PLACEHOLDER>"
+        },
+        "image_controller": {
+            "enabled": true,
+            "notifications": [
+                {
+                    "title": "SBOM-event-to-Bombino",
+                    "event": "repo_push",
+                    "method": "webhook",
+                    "config": {
+                        "url": "https://bombino.api.redhat.com/v1/sbom/quay/push"
+                    }
+                }
+            ]
+        }
+    },
+    "rbac": [
+        {
+            "displayName": "admin",
+            "description": "Full access to Konflux resources including secrets",
+            "roleRef": {
+                "apiGroup": "rbac.authorization.k8s.io",
+                "kind": "ClusterRole",
+                "name": "konflux-admin-user-actions"
+            }
+        },
+        {
+            "displayName": "maintainer",
+            "description": "Partial access to Konflux resources without access to secrets",
+            "roleRef": {
+                "apiGroup": "rbac.authorization.k8s.io",
+                "kind": "ClusterRole",
+                "name": "konflux-maintainer-user-actions"
+            }
+        },
+        {
+            "displayName": "contributor",
+            "description": "View access to Konflux resources without access to secrets",
+            "roleRef": {
+                "apiGroup": "rbac.authorization.k8s.io",
+                "kind": "ClusterRole",
+                "name": "konflux-contributor-user-actions"
+            }
+        }
+    ],
+    "visibility": "public"
+}
