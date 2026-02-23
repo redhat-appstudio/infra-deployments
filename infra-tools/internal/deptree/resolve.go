@@ -194,6 +194,27 @@ func resolve(repoRoot, absDir string, deps, visited map[string]bool) error {
 		addFile(repoRoot, absDir, c, deps)
 	}
 
+	// HelmCharts — the chart directory and any values files are dependencies.
+	// chartHome defaults to "charts" per kustomize convention.
+	chartHome := types.HelmDefaultHome
+	if k.HelmGlobals != nil && k.HelmGlobals.ChartHome != "" {
+		chartHome = k.HelmGlobals.ChartHome
+	}
+	for _, hc := range k.HelmCharts {
+		if hc.Name != "" {
+			chartDir := filepath.Join(absDir, chartHome, hc.Name)
+			if err := addDirTree(repoRoot, chartDir, deps); err != nil {
+				return fmt.Errorf("walking helm chart %s: %w", hc.Name, err)
+			}
+		}
+		if hc.ValuesFile != "" {
+			addFile(repoRoot, absDir, hc.ValuesFile, deps)
+		}
+		for _, vf := range hc.AdditionalValuesFiles {
+			addFile(repoRoot, absDir, vf, deps)
+		}
+	}
+
 	// CRDs
 	for _, crd := range k.Crds {
 		addFile(repoRoot, absDir, crd, deps)
@@ -225,6 +246,27 @@ func addGeneratorSources(repoRoot, absDir string, gen *types.GeneratorArgs, deps
 	if gen.EnvSource != "" {
 		addFile(repoRoot, absDir, gen.EnvSource, deps)
 	}
+}
+
+// addDirTree recursively walks a directory tree and adds every file it
+// contains to the dependency set. This is used for Helm chart directories
+// where any file change (templates, helpers, Chart.yaml, etc.) affects the
+// build output.
+func addDirTree(repoRoot, absDir string, deps map[string]bool) error {
+	return filepath.Walk(absDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			return nil
+		}
+		rel, relErr := filepath.Rel(repoRoot, path)
+		if relErr != nil {
+			return fmt.Errorf("computing relative path for %s: %w", path, relErr)
+		}
+		deps[rel] = true
+		return nil
+	})
 }
 
 // addFile resolves a relative file path and adds it to the dependency set.
