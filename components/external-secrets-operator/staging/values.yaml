@@ -1,11 +1,11 @@
 # External Secrets Operator Helm Chart Values
-# Version: 1.2.0
+# Version: 2.0.0
 # Configuration matches the OLM deployment OperatorConfig
 
-# Image configuration - matches OLM CSV version 1.2.0
+# Image configuration - matches OLM CSV version 2.0.0
 image:
   repository: ghcr.io/external-secrets/external-secrets
-  tag: "v1.2.0"
+  tag: "v2.0.0"
 
 # Replica count
 replicaCount: 1
@@ -25,7 +25,6 @@ securityContext:
   fsGroup: 65534
 
 # Controller resources (matching OperatorConfig spec.resources)
-# Note: The helm chart uses .Values.resources directly, not controller.resources
 resources:
   requests:
     cpu: 100m
@@ -36,7 +35,7 @@ resources:
 
 # Cert Controller resources (matching OperatorConfig spec.certController.resources)
 certController:
-  enabled: true
+  create: true
   resources:
     requests:
       cpu: 100m
@@ -47,7 +46,7 @@ certController:
 
 # Webhook resources (matching OperatorConfig spec.webhook.resources)
 webhook:
-  enabled: true
+  create: true
   resources:
     requests:
       cpu: 100m
@@ -56,14 +55,10 @@ webhook:
       memory: 128Mi
       cpu: 200m
 
-# Prometheus configuration (matching OperatorConfig spec.prometheus)
-prometheus:
-  enabled: true
-  service:
-    port: 8080
-
-# Metrics Service - enables the metrics Service from helm chart
+# Metrics configuration
 metrics:
+  listen:
+    port: 8080
   service:
     enabled: true
     port: 8080
@@ -82,3 +77,4 @@ logLevel: info
 
 bitwarden-sdk-server:
   enabled: false
+
