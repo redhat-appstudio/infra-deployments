@@ -15,42 +15,42 @@ spec:
                 clusterDir: base
           - list:
               elements:
-                - nameNormalized: kflux-ocp-p01
-                  values.clusterDir: base
-                  values.environment: production
                 - nameNormalized: stone-stg-rh01
                   values.clusterDir: base
-                - nameNormalized: stone-prd-rh01
-                  values.clusterDir: base
-                  values.environment: production
-                - nameNormalized: stone-stage-p01
-                  values.clusterDir: base
-                - nameNormalized: stone-prod-p01
-                  values.clusterDir: base
-                  values.environment: production
-                - nameNormalized: stone-prod-p02
-                  values.clusterDir: base
-                  values.environment: production
-                - nameNormalized: kflux-prd-rh02
-                  values.clusterDir: base
-                  values.environment: production
-                - nameNormalized: kflux-prd-rh03
-                  values.clusterDir: base
-                  values.environment: production
                 - nameNormalized: kflux-stg-es01
                   values.clusterDir: base
-                - nameNormalized: kflux-prd-es01
+                - nameNormalized: stone-stage-p01
                   values.clusterDir: base
-                  values.environment: production
-                - nameNormalized: kflux-rhel-p01
-                  values.clusterDir: base
-                  values.environment: production
-                - nameNormalized: kflux-osp-p01
-                  values.clusterDir: base
-                  values.environment: production
-                - nameNormalized: pentest-p01
-                  values.clusterDir: base
-                  values.environment: production
+                # - nameNormalized: kflux-ocp-p01
+                #   values.clusterDir: base
+                #   values.environment: production
+                # - nameNormalized: stone-prd-rh01
+                #   values.clusterDir: base
+                #   values.environment: production
+                # - nameNormalized: stone-prod-p01
+                #   values.clusterDir: base
+                #   values.environment: production
+                # - nameNormalized: stone-prod-p02
+                #   values.clusterDir: base
+                #   values.environment: production
+                # - nameNormalized: kflux-prd-rh02
+                #   values.clusterDir: base
+                #   values.environment: production
+                # - nameNormalized: kflux-prd-rh03
+                #   values.clusterDir: base
+                #   values.environment: production
+                # - nameNormalized: kflux-prd-es01
+                #   values.clusterDir: base
+                #   values.environment: production
+                # - nameNormalized: kflux-rhel-p01
+                #   values.clusterDir: base
+                #   values.environment: production
+                # - nameNormalized: kflux-osp-p01
+                #   values.clusterDir: base
+                #   values.environment: production
+                # - nameNormalized: pentest-p01
+                #   values.clusterDir: base
+                #   values.environment: production
   template:
     metadata:
       name: monitoring-workload-custom-kube-state-metrics-{{nameNormalized}}
@@ -61,7 +61,7 @@ spec:
         repoURL: https://github.com/redhat-appstudio/infra-deployments.git
         targetRevision: main
       destination:
-        namespace: custom-kube-state-metrics
+        namespace: appstudio-monitoring
         server: '{{server}}'
       syncPolicy:
         automated:
