@@ -20,7 +20,15 @@ images:
 commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 
+configMapGenerator:
+  - name: controller-config
+    options:
+      disableNameSuffixHash: true
+    files:
+    - config.json
+
 patches:
+  - path: manager-mount-config-patch.yaml
   - path: manager-set-resources-patch.yaml
   - path: manager-enable-pprof-patch.yaml
 

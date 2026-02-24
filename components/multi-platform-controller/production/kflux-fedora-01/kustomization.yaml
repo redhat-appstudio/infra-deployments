@@ -1,0 +1,21 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: multi-platform-controller
+
+resources:
+- ../base
+- external-secrets.yaml
+
+patches:
+  - path: manager_resources_patch.yaml
+
+helmGlobals:
+  chartHome: ../../base
+
+helmCharts:
+  - name: host-config-chart
+    releaseName: host-config
+    namespace: multi-platform-controller
+    repo: ../../base
+    valuesFile: host-values.yaml
