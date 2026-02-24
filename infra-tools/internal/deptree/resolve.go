@@ -171,6 +171,11 @@ func resolve(repoRoot, absDir string, deps, visited map[string]bool) error {
 			continue
 		}
 		addFile(repoRoot, absDir, g, deps)
+		// If the generator is a HelmChartInflationGenerator, its valuesFile
+		// and additionalValuesFiles are also dependencies.
+		if err := addHelmGeneratorDeps(repoRoot, absDir, g, deps); err != nil {
+			return err
+		}
 	}
 
 	// Transformers — kustomize transformer plugin config files.
@@ -227,6 +232,51 @@ func resolve(repoRoot, absDir string, deps, visited map[string]bool) error {
 		}
 	}
 
+	return nil
+}
+
+// helmGeneratorConfig captures the fields we need from a
+// HelmChartInflationGenerator YAML file to resolve its file dependencies.
+type helmGeneratorConfig struct {
+	Kind                  string   `yaml:"kind"`
+	Name                  string   `yaml:"name"`
+	ValuesFile            string   `yaml:"valuesFile"`
+	AdditionalValuesFiles []string `yaml:"additionalValuesFiles"`
+}
+
+// addHelmGeneratorDeps reads a generator YAML file and, if it is a
+// HelmChartInflationGenerator, adds its valuesFile, additionalValuesFiles,
+// and local chart directory (charts/<name>) as dependencies.
+// Non-HelmChartInflationGenerator files are silently skipped.
+func addHelmGeneratorDeps(repoRoot, absDir, generatorPath string, deps map[string]bool) error {
+	absPath := filepath.Join(absDir, generatorPath)
+	data, err := os.ReadFile(absPath)
+	if err != nil {
+		return fmt.Errorf("reading generator %s: %w", generatorPath, err)
+	}
+
+	var cfg helmGeneratorConfig
+	if err := yaml.Unmarshal(data, &cfg); err != nil {
+		return fmt.Errorf("parsing generator %s: %w", generatorPath, err)
+	}
+	if cfg.Kind != "HelmChartInflationGenerator" {
+		return nil
+	}
+	if cfg.ValuesFile != "" {
+		addFile(repoRoot, absDir, cfg.ValuesFile, deps)
+	}
+	for _, vf := range cfg.AdditionalValuesFiles {
+		addFile(repoRoot, absDir, vf, deps)
+	}
+	// If a local chart directory exists (charts/<name>), track it.
+	if cfg.Name != "" {
+		chartDir := filepath.Join(absDir, types.HelmDefaultHome, cfg.Name)
+		if info, err := os.Stat(chartDir); err == nil && info.IsDir() {
+			if err := addDirTree(repoRoot, chartDir, deps); err != nil {
+				return fmt.Errorf("walking local chart %s: %w", cfg.Name, err)
+			}
+		}
+	}
 	return nil
 }
 
