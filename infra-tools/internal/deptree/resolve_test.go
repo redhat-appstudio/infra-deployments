@@ -186,6 +186,112 @@ metadata:
 	g.Expect(deps).To(HaveKey("component/development/helm-generator.yaml"))
 }
 
+func TestResolve_HelmChartInflationGenerator_ValuesFiles(t *testing.T) {
+	g := NewWithT(t)
+	tmpDir := t.TempDir()
+
+	dir := filepath.Join(tmpDir, "component", "staging", "cluster1")
+	g.Expect(os.MkdirAll(dir, 0o755)).To(Succeed())
+
+	writeFile(t, filepath.Join(dir, "kustomization.yaml"), `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+generators:
+  - loki-helm-generator.yaml
+`)
+	writeFile(t, filepath.Join(dir, "loki-helm-generator.yaml"), `
+apiVersion: builtin
+kind: HelmChartInflationGenerator
+metadata:
+  name: loki
+name: loki
+repo: https://grafana.github.io/helm-charts
+version: 6.49.0
+releaseName: loki
+namespace: logging
+valuesFile: loki-helm-values.yaml
+additionalValuesFiles:
+  - loki-helm-stg-values.yaml
+`)
+	writeFile(t, filepath.Join(dir, "loki-helm-values.yaml"), "key: base")
+	writeFile(t, filepath.Join(dir, "loki-helm-stg-values.yaml"), "key: staging")
+
+	deps, err := Resolve(tmpDir, "component/staging/cluster1")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	g.Expect(deps).To(HaveKey("component/staging/cluster1/kustomization.yaml"))
+	g.Expect(deps).To(HaveKey("component/staging/cluster1/loki-helm-generator.yaml"))
+	g.Expect(deps).To(HaveKey("component/staging/cluster1/loki-helm-values.yaml"))
+	g.Expect(deps).To(HaveKey("component/staging/cluster1/loki-helm-stg-values.yaml"))
+}
+
+func TestResolve_HelmChartInflationGenerator_LocalChartDir(t *testing.T) {
+	g := NewWithT(t)
+	tmpDir := t.TempDir()
+
+	dir := filepath.Join(tmpDir, "component", "staging", "cluster1")
+	chartDir := filepath.Join(dir, "charts", "my-chart")
+	g.Expect(os.MkdirAll(filepath.Join(chartDir, "templates"), 0o755)).To(Succeed())
+
+	writeFile(t, filepath.Join(dir, "kustomization.yaml"), `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+generators:
+  - my-chart-generator.yaml
+`)
+	writeFile(t, filepath.Join(dir, "my-chart-generator.yaml"), `
+apiVersion: builtin
+kind: HelmChartInflationGenerator
+metadata:
+  name: my-chart
+name: my-chart
+valuesFile: my-values.yaml
+`)
+	writeFile(t, filepath.Join(dir, "my-values.yaml"), "key: val")
+	writeFile(t, filepath.Join(chartDir, "Chart.yaml"), "apiVersion: v2\nname: my-chart")
+	writeFile(t, filepath.Join(chartDir, "templates", "deployment.yaml"), "kind: Deployment")
+
+	deps, err := Resolve(tmpDir, "component/staging/cluster1")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	g.Expect(deps).To(HaveKey("component/staging/cluster1/kustomization.yaml"))
+	g.Expect(deps).To(HaveKey("component/staging/cluster1/my-chart-generator.yaml"))
+	g.Expect(deps).To(HaveKey("component/staging/cluster1/my-values.yaml"))
+	g.Expect(deps).To(HaveKey("component/staging/cluster1/charts/my-chart/Chart.yaml"))
+	g.Expect(deps).To(HaveKey("component/staging/cluster1/charts/my-chart/templates/deployment.yaml"))
+}
+
+func TestResolve_NonHelmGenerator(t *testing.T) {
+	g := NewWithT(t)
+	tmpDir := t.TempDir()
+
+	dir := filepath.Join(tmpDir, "component", "development")
+	g.Expect(os.MkdirAll(dir, 0o755)).To(Succeed())
+	writeFile(t, filepath.Join(dir, "kustomization.yaml"), `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+generators:
+  - secret-generator.yaml
+`)
+	// A non-Helm generator — should be tracked as a dep itself,
+	// but should NOT cause addHelmGeneratorDeps to add extra files.
+	writeFile(t, filepath.Join(dir, "secret-generator.yaml"), `
+apiVersion: builtin
+kind: SecretGenerator
+metadata:
+  name: my-secret
+name: my-secret
+`)
+
+	deps, err := Resolve(tmpDir, "component/development")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	g.Expect(deps).To(HaveKey("component/development/kustomization.yaml"))
+	g.Expect(deps).To(HaveKey("component/development/secret-generator.yaml"))
+	// Only the two files above — no spurious values files or chart dirs.
+	g.Expect(deps).To(HaveLen(2))
+}
+
 func TestResolve_TransformersAndValidators(t *testing.T) {
 	g := NewWithT(t)
 	tmpDir := t.TempDir()
@@ -213,6 +319,105 @@ configurations:
 	g.Expect(deps).To(HaveKey("component/my-transformer.yaml"))
 	g.Expect(deps).To(HaveKey("component/my-validator.yaml"))
 	g.Expect(deps).To(HaveKey("component/my-config.yaml"))
+}
+
+func TestResolve_HelmCharts(t *testing.T) {
+	g := NewWithT(t)
+	tmpDir := t.TempDir()
+
+	// Create base/host-config-chart/ (Helm chart directory)
+	chartDir := filepath.Join(tmpDir, "component", "base", "host-config-chart")
+	g.Expect(os.MkdirAll(filepath.Join(chartDir, "templates"), 0o755)).To(Succeed())
+	g.Expect(os.MkdirAll(filepath.Join(chartDir, "files"), 0o755)).To(Succeed())
+	writeFile(t, filepath.Join(chartDir, "Chart.yaml"), "apiVersion: v2\nname: host-config-chart")
+	writeFile(t, filepath.Join(chartDir, "templates", "host-config.yaml"), "kind: ConfigMap")
+	writeFile(t, filepath.Join(chartDir, "files", "init.sh"), "#!/bin/bash\necho hello")
+
+	// Create production/cluster1/kustomization.yaml that references the helm chart
+	clusterDir := filepath.Join(tmpDir, "component", "production", "cluster1")
+	g.Expect(os.MkdirAll(clusterDir, 0o755)).To(Succeed())
+	writeFile(t, filepath.Join(clusterDir, "kustomization.yaml"), `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+helmGlobals:
+  chartHome: ../../base
+helmCharts:
+  - name: host-config-chart
+    releaseName: host-config
+    namespace: test-ns
+    valuesFile: host-values.yaml
+`)
+	writeFile(t, filepath.Join(clusterDir, "host-values.yaml"), "key: value")
+
+	deps, err := Resolve(tmpDir, "component/production/cluster1")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	// kustomization.yaml itself
+	g.Expect(deps).To(HaveKey("component/production/cluster1/kustomization.yaml"))
+	// values file
+	g.Expect(deps).To(HaveKey("component/production/cluster1/host-values.yaml"))
+	// chart directory files
+	g.Expect(deps).To(HaveKey("component/base/host-config-chart/Chart.yaml"))
+	g.Expect(deps).To(HaveKey("component/base/host-config-chart/templates/host-config.yaml"))
+	g.Expect(deps).To(HaveKey("component/base/host-config-chart/files/init.sh"))
+}
+
+func TestResolve_HelmCharts_DefaultChartHome(t *testing.T) {
+	g := NewWithT(t)
+	tmpDir := t.TempDir()
+
+	// Create charts/my-chart/ (default chartHome is "charts")
+	chartDir := filepath.Join(tmpDir, "component", "charts", "my-chart")
+	g.Expect(os.MkdirAll(chartDir, 0o755)).To(Succeed())
+	writeFile(t, filepath.Join(chartDir, "Chart.yaml"), "apiVersion: v2\nname: my-chart")
+	writeFile(t, filepath.Join(chartDir, "values.yaml"), "key: default")
+
+	// kustomization with helmCharts but no helmGlobals (uses default chartHome="charts")
+	dir := filepath.Join(tmpDir, "component")
+	writeFile(t, filepath.Join(dir, "kustomization.yaml"), `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+helmCharts:
+  - name: my-chart
+    releaseName: my-release
+`)
+
+	deps, err := Resolve(tmpDir, "component")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	g.Expect(deps).To(HaveKey("component/kustomization.yaml"))
+	g.Expect(deps).To(HaveKey("component/charts/my-chart/Chart.yaml"))
+	g.Expect(deps).To(HaveKey("component/charts/my-chart/values.yaml"))
+}
+
+func TestResolve_HelmCharts_AdditionalValuesFiles(t *testing.T) {
+	g := NewWithT(t)
+	tmpDir := t.TempDir()
+
+	chartDir := filepath.Join(tmpDir, "component", "charts", "my-chart")
+	g.Expect(os.MkdirAll(chartDir, 0o755)).To(Succeed())
+	writeFile(t, filepath.Join(chartDir, "Chart.yaml"), "apiVersion: v2\nname: my-chart")
+
+	dir := filepath.Join(tmpDir, "component")
+	writeFile(t, filepath.Join(dir, "kustomization.yaml"), `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+helmCharts:
+  - name: my-chart
+    valuesFile: values-override.yaml
+    additionalValuesFiles:
+      - values-extra.yaml
+`)
+	writeFile(t, filepath.Join(dir, "values-override.yaml"), "key: override")
+	writeFile(t, filepath.Join(dir, "values-extra.yaml"), "key: extra")
+
+	deps, err := Resolve(tmpDir, "component")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	g.Expect(deps).To(HaveKey("component/kustomization.yaml"))
+	g.Expect(deps).To(HaveKey("component/values-override.yaml"))
+	g.Expect(deps).To(HaveKey("component/values-extra.yaml"))
+	g.Expect(deps).To(HaveKey("component/charts/my-chart/Chart.yaml"))
 }
 
 func TestResolve_CircularReference(t *testing.T) {

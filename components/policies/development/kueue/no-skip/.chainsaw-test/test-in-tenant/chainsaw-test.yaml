@@ -41,6 +41,44 @@ spec:
 apiVersion: chainsaw.kyverno.io/v1alpha1
 kind: Test
 metadata:
+  name: in-tenant-create-valid-taskrun-complex-platform
+spec:
+  description: |
+    creates a TaskRun with a complex PLATFORM parameter and a corresponding
+    tekton-kueue's annotation
+  concurrent: false
+  steps:
+  - name: given-taskruns-crd-exists
+    try:
+    - apply:
+        file: ../resources/taksruns.tekton.dev_clusterresourcedefinition.yaml
+  - name: ensure-namespace-is-labeled
+    try:
+    - apply:
+        resource:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: ($namespace)
+            labels:
+              konflux-ci.dev/type: tenant
+  - name: given-validatingadmissionpolicy-is-installed
+    try:
+    - apply:
+        file: ../../no-skip-validationadmissionpolicy.yaml
+    - apply:
+        file: ../../no-skip-validationadmissionpolicybinding.yaml
+    - assert:
+        file: ../chainsaw-assert-policy.yaml
+  - name: then-valid-taskrun-can-be-created
+    try:
+    - create:
+        file: ../resources/taskrun_valid_complex.yaml
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
   name: in-tenant-create-skipped-taskrun
 spec:
   description: |

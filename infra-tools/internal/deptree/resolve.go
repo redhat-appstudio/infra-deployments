@@ -171,6 +171,11 @@ func resolve(repoRoot, absDir string, deps, visited map[string]bool) error {
 			continue
 		}
 		addFile(repoRoot, absDir, g, deps)
+		// If the generator is a HelmChartInflationGenerator, its valuesFile
+		// and additionalValuesFiles are also dependencies.
+		if err := addHelmGeneratorDeps(repoRoot, absDir, g, deps); err != nil {
+			return err
+		}
 	}
 
 	// Transformers — kustomize transformer plugin config files.
@@ -194,6 +199,27 @@ func resolve(repoRoot, absDir string, deps, visited map[string]bool) error {
 		addFile(repoRoot, absDir, c, deps)
 	}
 
+	// HelmCharts — the chart directory and any values files are dependencies.
+	// chartHome defaults to "charts" per kustomize convention.
+	chartHome := types.HelmDefaultHome
+	if k.HelmGlobals != nil && k.HelmGlobals.ChartHome != "" {
+		chartHome = k.HelmGlobals.ChartHome
+	}
+	for _, hc := range k.HelmCharts {
+		if hc.Name != "" {
+			chartDir := filepath.Join(absDir, chartHome, hc.Name)
+			if err := addDirTree(repoRoot, chartDir, deps); err != nil {
+				return fmt.Errorf("walking helm chart %s: %w", hc.Name, err)
+			}
+		}
+		if hc.ValuesFile != "" {
+			addFile(repoRoot, absDir, hc.ValuesFile, deps)
+		}
+		for _, vf := range hc.AdditionalValuesFiles {
+			addFile(repoRoot, absDir, vf, deps)
+		}
+	}
+
 	// CRDs
 	for _, crd := range k.Crds {
 		addFile(repoRoot, absDir, crd, deps)
@@ -206,6 +232,51 @@ func resolve(repoRoot, absDir string, deps, visited map[string]bool) error {
 		}
 	}
 
+	return nil
+}
+
+// helmGeneratorConfig captures the fields we need from a
+// HelmChartInflationGenerator YAML file to resolve its file dependencies.
+type helmGeneratorConfig struct {
+	Kind                  string   `yaml:"kind"`
+	Name                  string   `yaml:"name"`
+	ValuesFile            string   `yaml:"valuesFile"`
+	AdditionalValuesFiles []string `yaml:"additionalValuesFiles"`
+}
+
+// addHelmGeneratorDeps reads a generator YAML file and, if it is a
+// HelmChartInflationGenerator, adds its valuesFile, additionalValuesFiles,
+// and local chart directory (charts/<name>) as dependencies.
+// Non-HelmChartInflationGenerator files are silently skipped.
+func addHelmGeneratorDeps(repoRoot, absDir, generatorPath string, deps map[string]bool) error {
+	absPath := filepath.Join(absDir, generatorPath)
+	data, err := os.ReadFile(absPath)
+	if err != nil {
+		return fmt.Errorf("reading generator %s: %w", generatorPath, err)
+	}
+
+	var cfg helmGeneratorConfig
+	if err := yaml.Unmarshal(data, &cfg); err != nil {
+		return fmt.Errorf("parsing generator %s: %w", generatorPath, err)
+	}
+	if cfg.Kind != "HelmChartInflationGenerator" {
+		return nil
+	}
+	if cfg.ValuesFile != "" {
+		addFile(repoRoot, absDir, cfg.ValuesFile, deps)
+	}
+	for _, vf := range cfg.AdditionalValuesFiles {
+		addFile(repoRoot, absDir, vf, deps)
+	}
+	// If a local chart directory exists (charts/<name>), track it.
+	if cfg.Name != "" {
+		chartDir := filepath.Join(absDir, types.HelmDefaultHome, cfg.Name)
+		if info, err := os.Stat(chartDir); err == nil && info.IsDir() {
+			if err := addDirTree(repoRoot, chartDir, deps); err != nil {
+				return fmt.Errorf("walking local chart %s: %w", cfg.Name, err)
+			}
+		}
+	}
 	return nil
 }
 
@@ -225,6 +296,27 @@ func addGeneratorSources(repoRoot, absDir string, gen *types.GeneratorArgs, deps
 	if gen.EnvSource != "" {
 		addFile(repoRoot, absDir, gen.EnvSource, deps)
 	}
+}
+
+// addDirTree recursively walks a directory tree and adds every file it
+// contains to the dependency set. This is used for Helm chart directories
+// where any file change (templates, helpers, Chart.yaml, etc.) affects the
+// build output.
+func addDirTree(repoRoot, absDir string, deps map[string]bool) error {
+	return filepath.Walk(absDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			return nil
+		}
+		rel, relErr := filepath.Rel(repoRoot, path)
+		if relErr != nil {
+			return fmt.Errorf("computing relative path for %s: %w", path, relErr)
+		}
+		deps[rel] = true
+		return nil
+	})
 }
 
 // addFile resolves a relative file path and adds it to the dependency set.
