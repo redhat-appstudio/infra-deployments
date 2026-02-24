@@ -1,0 +1,10 @@
+---
+# Development smee.io channel for Forgejo/Codeberg webhook testing
+# The URL can be configured via SMEE_CHANNEL environment variable in preview.sh
+# To use this, configure your Codeberg webhook to point to this smee.io URL
+- op: replace
+  path: /spec/template/spec/containers/0/args/3
+  value: "https://smee.io/REPLACE_ME"
+- op: replace
+  path: /spec/template/spec/containers/1/env/1/value
+  value: "https://smee.io/REPLACE_ME"

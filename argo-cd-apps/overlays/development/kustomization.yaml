@@ -7,6 +7,7 @@ resources:
   - ../../base/ca-bundle
   - ../../base/repository-validator
   - ../../base/eaas
+  - ../../base/smee-client
 
 patchesStrategicMerge:
   - delete-applications.yaml
@@ -194,3 +195,8 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: image-rbac-proxy
+  - path: development-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: smee-client
