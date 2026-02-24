@@ -97,3 +97,27 @@ spec:
             value: IfNotPresent
     name: set-task-resources
     skipBackgroundRequests: true
+  - match:
+      any:
+      - resources:
+          kinds:
+          - Pod
+          operations:
+          - CREATE
+    name: restrict-docker-io-images
+    skipBackgroundRequests: true
+    validate:
+      foreach:
+      - deny:
+          conditions:
+            any:
+            - key: '{{ regex_match(''^(docker\.io|index\.docker\.io)/'', ''{{element.image}}'') }}'
+              operator: Equals
+              value: true
+            - key: '{{ regex_match(''^[^/]+\.[^/]+/'', ''{{element.image}}'') }}'
+              operator: NotEquals
+              value: true
+        list: request.object.spec.[initContainers, containers][]
+      message: 'Images from docker.io are not allowed. This includes images without
+        an explicit registry (e.g. ubuntu:latest). Use a fully qualified reference
+        from an allowed registry.'
