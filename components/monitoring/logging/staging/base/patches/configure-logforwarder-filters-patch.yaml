@@ -1,0 +1,29 @@
+---
+# Drop empty lines
+- op: add
+  path: /spec/filters/-
+  value:
+    name: drop-empty-lines
+    type: drop
+    drop:
+      - test:
+          - field: .message
+            matches: '^\\s*$'
+- op: add
+  path: /spec/pipelines/0/filterRefs/-
+  value: drop-empty-lines
+- op: add
+  path: /spec/pipelines/1/filterRefs/-
+  value: drop-empty-lines
+# Enable multi-line exception detection
+- op: add
+  path: /spec/filters/-
+  value:
+    name: multiline-exception
+    type: detectMultilineException
+- op: add
+  path: /spec/pipelines/0/filterRefs/-
+  value: multiline-exception
+- op: add
+  path: /spec/pipelines/1/filterRefs/-
+  value: multiline-exception
