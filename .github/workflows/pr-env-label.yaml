@@ -1,5 +1,23 @@
 name: PR Environment Labels
 
+# Known limitation: labels are computed at PR-event time and are NOT
+# refreshed when the base branch (main) changes.  Any structural change
+# to main that alters the dependency graph between files and overlays can
+# make labels on open PRs stale until the next push to those PRs.
+#
+# Examples:
+#   - A new production cluster overlay is added to main that references
+#     a component modified by an already-open PR.
+#   - A kustomization in main gains a new resource/helmChart/generator
+#     that pulls in a directory the PR modifies.
+#   - An ApplicationSet in main changes its source path, shifting which
+#     files map to which environment.
+#   - An overlay is removed from main, but open PRs still carry its label.
+#
+# In practice this is rare — it requires the dependency structure to
+# change in main while an open PR touches the affected component, and
+# the PR to merge without any subsequent push.
+
 on:
   pull_request_target:
     types: [opened, synchronize, reopened]
@@ -27,12 +45,14 @@ jobs:
         working-directory: infra-tools
         run: go build -o bin/env-detector ./cmd/env-detector
 
-      # Fetch the PR head ref (works for both fork and same-repo PRs)
-      # and switch to it so the tool can analyse the PR's file changes.
-      - name: Checkout PR head
+      # Fetch the GitHub-synthesized merge commit (main + PR merged) so the
+      # tool analyses the post-merge state.  This ensures overlay builds
+      # reflect what will actually be deployed after the PR lands, and the
+      # two-point diff against origin/main shows only the PR's own changes.
+      - name: Checkout PR merge ref
         run: |
-          git fetch origin pull/${{ github.event.pull_request.number }}/head:pr-head
-          git checkout pr-head
+          git fetch origin pull/${{ github.event.pull_request.number }}/merge:pr-merge
+          git checkout pr-merge
 
       - name: Detect and label
         env:
