@@ -4,23 +4,31 @@ resources:
 - ../../base
 - ../../base/external-secrets
 - ../blackbox
-- https://github.com/konflux-ci/mintmaker/config/default?ref=8d2f2af2b25c408d6617745641c81b0a5e090d12
-- https://github.com/konflux-ci/mintmaker/config/renovate?ref=8d2f2af2b25c408d6617745641c81b0a5e090d12
+- https://github.com/konflux-ci/mintmaker/config/default?ref=e91d2efa6f2b9b733fbe9ae7421e2a6314a793e4
+- https://github.com/konflux-ci/mintmaker/config/renovate?ref=e91d2efa6f2b9b733fbe9ae7421e2a6314a793e4
 
 namespace: mintmaker
 
 images:
 - name: quay.io/konflux-ci/mintmaker
   newName: quay.io/konflux-ci/mintmaker
-  newTag: 8d2f2af2b25c408d6617745641c81b0a5e090d12
+  newTag: e91d2efa6f2b9b733fbe9ae7421e2a6314a793e4
 - name: quay.io/konflux-ci/mintmaker-renovate-image
   newName: quay.io/konflux-ci/mintmaker-renovate-image
-  newTag: 8d03a22871e4f3cca0c814495bd5c9c3f806d73e
+  newTag: bf7377716d065f64f47177cd7565c48747edc72b
 
 commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 
+configMapGenerator:
+  - name: controller-config
+    options:
+      disableNameSuffixHash: true
+    files:
+    - config.json
+
 patches:
+  - path: manager-mount-config-patch.yaml
   - path: manager-set-resources-patch.yaml
   - path: manager-enable-pprof-patch.yaml
 

@@ -1,0 +1,12 @@
+apiVersion: tekton.dev/v1
+kind: TaskRun
+metadata:
+  name: skipped-task
+spec:
+  taskSpec:
+    steps:
+    - name: no-op
+      image: registry.access.redhat.com/ubi10-micro:10.1
+      script: |-
+        #!/bin/bash
+        echo "no-op"
