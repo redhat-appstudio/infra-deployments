@@ -26,6 +26,14 @@
   - "templates/{{ component }}/"
   when: "item['state'] == 'directory'"
 
+- name: "Create the configs/etcd-defrag/{{ subdir }}/{{ shortname }} directory if it does not exist"
+  tags: [components]
+  file:
+    path: "{{ dst }}/configs/{{ component }}/{{ subdir }}/{{ shortname }}"
+    state: directory
+    mode: '0755'
+  when: component == 'etcd-defrag'
+
 - name: "Create files from template for components/{{ component }}/{{ subdir }}/{{ shortname }}"
   tags: [components]
   template:
@@ -34,6 +42,15 @@
   with_filetree:
   - "templates/{{ component }}/"
   when: "item['state'] == 'file'"
+
+- name: "Create files from template for configs/etcd-defrag{{ subdir }}/{{ shortname }}"
+  tags: [components]
+  template:
+    src: "{{ item['src'] }}"
+    dest: "{{ dst }}/configs/{{ component }}/{{ subdir }}/{{ shortname }}/{{item['path'] }}"
+  with_filetree:
+  - "templates/{{ component }}/"
+  when: "item['state'] == 'file' and component == 'etcd-defrag'"
 
 - name: "Create private-network-only files from template for components/{{ component }}/{{ subdir }}/{{ shortname }}"
   tags: [components]

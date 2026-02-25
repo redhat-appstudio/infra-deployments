@@ -16,18 +16,6 @@
   fail:
     msg: "Variable network must be one of {{allowed_networks}}, not {{network}}"
   when: "vars['network'] not in vars['allowed_networks']"
-- name: Setup cute variants of the environment name (for prod)
-  tags: [always]
-  set_fact:
-    cuteenv: prod
-    cutestenv: prd
-  when: "vars['env'] == 'production'"
-- name: Setup cute variants of the environment name (for staging)
-  tags: [always]
-  set_fact:
-    cuteenv: stage
-    cutestenv: stg
-  when: "vars['env'] == 'staging'"
 - name: Determine the latest github commits
   tags: [always]
   include_tasks: tasks/github/find-latest-commits.yaml
