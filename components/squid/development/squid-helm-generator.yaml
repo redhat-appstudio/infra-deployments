@@ -4,11 +4,29 @@ metadata:
   name: squid-helm
 name: squid-helm
 repo: oci://quay.io/konflux-ci/caching
-version: 0.1.1236+4b6bb7c
+version: 0.1.1238+063c9f7
 valuesInline:
   installCertManagerComponents: false
   mirrord:
     enabled: false
+  nginx:
+    enabled: true
+    name: artifact-registry-proxy
+    tls:
+      enabled: true
+      secretName: artifact-registry-proxy-tls
+    service:
+      annotations:
+        service.beta.openshift.io/serving-cert-secret-name: artifact-registry-proxy-tls
+      trafficDistribution: PreferClose
+    upstream:
+      # No nexus instance in development, use standard Go module proxy
+      url: https://proxy.golang.org
+    cache:
+      allowList:
+        - ^/.+/@v/.* # <module>/@v/<version>.info|.mod|.zip and <module>/@v/list
+        - ^/sumdb/.* # checksum database (e.g. sum.golang.org)
+      size: 1024
   test:
     enabled: false
   cert-manager:
