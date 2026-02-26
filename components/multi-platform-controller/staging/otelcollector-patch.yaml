@@ -18,3 +18,145 @@ spec:
       remoteRef:
         key: staging/infrastructure/splunk/external_endpoint
         property: splunk_index
+  target:
+    template:
+      data:
+        config.yaml: |
+          exporters:
+            splunk_hec/corp:
+              endpoint: {{ .endpoint }}
+              token: {{ .token }}
+              disable_compression: false
+              sending_queue:
+                storage: file_storage/otc
+                enabled: true
+                num_consumers: 2
+                queue_size: 10
+                sizer: items
+                batch:
+                  max_size: 100
+                  min_size: 1
+                  flush_timeout: 1s
+              retry_on_failure:
+                enabled: true
+                initial_interval: 10s
+                max_interval: 60s
+                max_elapsed_time: 10m
+          extensions:
+            file_storage/otc:
+              directory: /tmp/otelcollector/oteltmp
+              timeout: 10s
+              create_directory: true
+          processors:
+            transform/common:
+              error_mode: ignore
+              log_statements:
+                - context: log
+                  statements:
+                    - set(attributes["com.splunk.source"], attributes["log.file.path"])
+                    - set(attributes["host.name"], resource.attributes["host.name"])
+                    - set(attributes["appcode"], resource.attributes["appcode"])
+                    - set(attributes["instance.tag"], resource.attributes["instance.tag"])
+                    - keep_keys(attributes, ["com.splunk.source", "host.name", "appcode", "instance.tag", "com.splunk.index", "com.splunk.sourcetype"])
+            resource/add_appcode:
+              attributes:
+                - action: insert
+                  key: appcode
+                  value: "ASSH-001"
+            resource/add_instance_tag:
+              attributes:
+                - action: insert
+                  key: instance.tag
+                  value: ${env:INST_TAG:-default}
+            resourcedetection/system:
+              attributes:
+                - host.name
+                - os.type
+              detectors:
+                - system
+              override: true
+              system:
+                hostname_sources:
+                  - os
+                resource_attributes:
+                  host.id:
+                    enabled: false
+                  host.name:
+                    enabled: true
+                  os.type:
+                    enabled: true
+          receivers:
+            filelog/{{ .index }}_audit:
+              include:
+                - /var/log/audit/audit.log
+              include_file_path: true
+              exclude_older_than: 86400s
+              operators:
+                - type: add
+                  id: {{ .index }}_idx
+                  field: attributes["com.splunk.index"]
+                  value: {{ .index }}
+                  on_error: send
+                - type: add
+                  id: rh_assh-001_audit_st
+                  field: attributes["com.splunk.sourcetype"]
+                  value: audit
+                  on_error: send
+            journald/{{ .index }}_messages:
+              operators:
+                  # Prevent logs feedback loop
+                - type: filter
+                  id: drop_otelcol
+                  expr: 'attributes["SYSLOG_IDENTIFIER"] != "otelcol-contrib"'
+                - type: filter
+                  id: messages_filter
+                  expr: 'attributes["SYSLOG_IDENTIFIER"] != nil'
+                - type: add
+                  id: {{ .index }}_idx
+                  field: attributes["com.splunk.index"]
+                  value: {{ .index }}
+                  on_error: send
+                - type: add
+                  id: rh_assh-001_messages_st
+                  field: attributes["com.splunk.sourcetype"]
+                  value: messages
+                  on_error: send
+            journald/{{ .index }}_secure:
+              operators:
+                - type: filter
+                  id: secure_filter
+                  expr: |
+                    attributes["SYSLOG_IDENTIFIER"] == "sshd" ||
+                    attributes["SYSLOG_IDENTIFIER"] == "sudo" ||
+                    attributes["SYSLOG_FACILITY"] == "auth"
+                - type: add
+                  id: {{ .index }}_idx
+                  field: attributes["com.splunk.index"]
+                  value: {{ .index }}
+                  on_error: send
+                - type: add
+                  id: rh_assh-001_secure_st
+                  field: attributes["com.splunk.sourcetype"]
+                  value: secure
+                  on_error: send
+          service:
+            extensions:
+              - file_storage/otc
+            telemetry:
+              logs:
+                level: error
+                disable_stacktrace: true
+            pipelines:
+              logs:
+                processors:
+                  - resource/add_appcode
+                  - resource/add_instance_tag
+                  - resourcedetection/system
+                  - transform/common
+                receivers:
+                  # List all your receivers here
+                  - filelog/{{ .index }}_audit
+                  - journald/{{ .index }}_messages
+                  - journald/{{ .index }}_secure
+                exporters:
+                  - splunk_hec/corp
