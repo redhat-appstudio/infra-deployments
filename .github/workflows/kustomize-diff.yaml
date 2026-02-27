@@ -1,0 +1,294 @@
+name: Kustomize Diff
+
+# Using pull_request_target to have write access for posting comments
+# This is safe because we only run kustomize build (declarative YAML rendering)
+# and explicitly checkout the PR SHA (not a potentially-modified branch ref)
+on:
+  pull_request_target:
+    branches: [main]
+    paths:
+      - 'argo-cd-apps/**'
+      - 'components/**'
+      - 'configs/**'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  kustomize-diff:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR branch with history
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          path: pr
+
+      - name: Find merge base and checkout
+        id: merge-base
+        run: |
+          cd pr
+          git fetch origin main
+          MERGE_BASE=$(git merge-base origin/main HEAD)
+          echo "merge_base=$MERGE_BASE" >> $GITHUB_OUTPUT
+          echo "Merge base: $MERGE_BASE"
+
+          # Checkout merge base to separate directory
+          cd ..
+          git clone pr base --no-checkout
+          cd base
+          git checkout $MERGE_BASE
+
+      - name: Setup Kustomize
+        uses: multani/action-setup-kustomize@v1
+        with:
+          version: 5.6.0
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.14.0
+
+      - name: Install yq for YAML processing
+        run: |
+          curl -sL https://github.com/mikefarah/yq/releases/download/v4.44.1/yq_linux_amd64 -o yq
+          chmod +x yq
+          sudo mv yq /usr/local/bin/
+
+      - name: Install dyff for better YAML diffs
+        run: |
+          curl -sL https://github.com/homeport/dyff/releases/download/v1.9.2/dyff_1.9.2_linux_amd64.tar.gz | tar xz
+          sudo mv dyff /usr/local/bin/
+
+      - name: Build kustomize manifests from merge base
+        id: build-base
+        run: |
+          mkdir -p base-manifests
+          cd base
+
+          # Find all kustomization files and build concurrently (using same approach as kube-linter)
+          find argo-cd-apps components configs -name 'kustomization.yaml' \
+            ! -path '*/k-components/*' \
+            ! -path 'components/repository-validator/staging/*' \
+            ! -path 'components/repository-validator/production/*' \
+            ! -path 'components/monitoring/blackbox/staging/*' \
+            ! -path 'components/monitoring/blackbox/production/*' \
+            ! -path 'components/*/chainsaw/*' \
+            2>/dev/null | \
+            xargs -I {} -n1 -P8 bash -c 'dir=$(dirname "{}"); output_file=$(echo $dir | tr / -).yaml; kustomize build --enable-helm "$dir" -o "../base-manifests/$output_file" 2>/dev/null || true'
+
+      - name: Build kustomize manifests from PR
+        id: build-pr
+        run: |
+          mkdir -p pr-manifests
+          cd pr
+
+          # Find all kustomization files and build concurrently (using same approach as kube-linter)
+          find argo-cd-apps components configs -name 'kustomization.yaml' \
+            ! -path '*/k-components/*' \
+            ! -path 'components/repository-validator/staging/*' \
+            ! -path 'components/repository-validator/production/*' \
+            ! -path 'components/monitoring/blackbox/staging/*' \
+            ! -path 'components/monitoring/blackbox/production/*' \
+            ! -path 'components/*/chainsaw/*' \
+            2>/dev/null | \
+            xargs -I {} -n1 -P8 bash -c 'dir=$(dirname "{}"); output_file=$(echo $dir | tr / -).yaml; kustomize build --enable-helm "$dir" -o "../pr-manifests/$output_file" 2>/dev/null || true'
+
+      - name: Normalize manifest order
+        run: |
+          # Sort YAML documents by kind/namespace/name to avoid false positives from reordering
+          echo "Normalizing base manifests..."
+          for manifest in base-manifests/*.yaml; do
+            [ -f "$manifest" ] || continue
+            yq eval-all '[.] | sort_by(.kind + "/" + (.metadata.namespace // "") + "/" + (.metadata.name // "")) | .[]' "$manifest" > "$manifest.sorted" 2>/dev/null && mv "$manifest.sorted" "$manifest" || rm -f "$manifest.sorted"
+          done
+
+          echo "Normalizing PR manifests..."
+          for manifest in pr-manifests/*.yaml; do
+            [ -f "$manifest" ] || continue
+            yq eval-all '[.] | sort_by(.kind + "/" + (.metadata.namespace // "") + "/" + (.metadata.name // "")) | .[]' "$manifest" > "$manifest.sorted" 2>/dev/null && mv "$manifest.sorted" "$manifest" || rm -f "$manifest.sorted"
+          done
+
+      - name: Generate diff
+        id: diff
+        run: |
+          mkdir -p diff-output
+
+          # Create a summary of changes (include marker for sticky comment updates)
+          echo "<!-- kustomize-diff -->" > diff-output/summary.md
+          echo "# Kustomize Manifest Diff Summary" >> diff-output/summary.md
+          echo "" >> diff-output/summary.md
+          echo "This shows the effective changes to rendered Kubernetes manifests." >> diff-output/summary.md
+          echo "" >> diff-output/summary.md
+
+          # Track if there are any changes
+          has_changes=false
+          changed_files=""
+          new_files=""
+          deleted_files=""
+
+          # Get all unique manifest files from both directories
+          (ls base-manifests/ 2>/dev/null; ls pr-manifests/ 2>/dev/null) | sort -u > all-manifests.txt
+
+          while IFS= read -r manifest; do
+            base_file="base-manifests/$manifest"
+            pr_file="pr-manifests/$manifest"
+
+            if [ ! -f "$base_file" ] && [ -f "$pr_file" ]; then
+              # New file in PR
+              new_files="$new_files\n- \`$manifest\`"
+              has_changes=true
+              cp "$pr_file" "diff-output/NEW-$manifest"
+            elif [ -f "$base_file" ] && [ ! -f "$pr_file" ]; then
+              # File deleted in PR
+              deleted_files="$deleted_files\n- \`$manifest\`"
+              has_changes=true
+              cp "$base_file" "diff-output/DELETED-$manifest"
+            elif [ -f "$base_file" ] && [ -f "$pr_file" ]; then
+              # Both exist, check for changes
+              if ! diff -q "$base_file" "$pr_file" > /dev/null 2>&1; then
+                changed_files="$changed_files\n- \`$manifest\`"
+                has_changes=true
+
+                # Generate dyff diff (YAML-aware diff)
+                dyff between --color=off "$base_file" "$pr_file" > "diff-output/CHANGED-$manifest.diff" 2>/dev/null || \
+                  diff -u "$base_file" "$pr_file" > "diff-output/CHANGED-$manifest.diff" || true
+              fi
+            fi
+          done < all-manifests.txt
+
+          # Build summary
+          if [ "$has_changes" = true ]; then
+            echo "## Changes Detected" >> diff-output/summary.md
+            echo "" >> diff-output/summary.md
+
+            if [ -n "$new_files" ]; then
+              echo "### 🆕 New Manifests" >> diff-output/summary.md
+              echo -e "$new_files" >> diff-output/summary.md
+              echo "" >> diff-output/summary.md
+            fi
+
+            if [ -n "$deleted_files" ]; then
+              echo "### 🗑️ Deleted Manifests" >> diff-output/summary.md
+              echo -e "$deleted_files" >> diff-output/summary.md
+              echo "" >> diff-output/summary.md
+            fi
+
+            if [ -n "$changed_files" ]; then
+              echo "### 📝 Modified Manifests" >> diff-output/summary.md
+              echo -e "$changed_files" >> diff-output/summary.md
+              echo "" >> diff-output/summary.md
+            fi
+
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "## ✅ No Changes" >> diff-output/summary.md
+            echo "" >> diff-output/summary.md
+            echo "The rendered Kubernetes manifests are identical between the merge base and this PR." >> diff-output/summary.md
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create detailed diff report
+        if: steps.diff.outputs.has_changes == 'true'
+        run: |
+          echo "" >> diff-output/summary.md
+          echo "---" >> diff-output/summary.md
+          echo "" >> diff-output/summary.md
+          echo "## Detailed Changes" >> diff-output/summary.md
+          echo "" >> diff-output/summary.md
+
+          # Add diff details (truncate if too large for PR comment)
+          total_size=0
+          max_size=60000  # GitHub comment limit is ~65536 chars
+
+          for diff_file in diff-output/CHANGED-*.diff; do
+            [ -f "$diff_file" ] || continue
+
+            manifest_name=$(basename "$diff_file" .diff | sed 's/^CHANGED-//')
+            diff_content=$(cat "$diff_file")
+            diff_size=${#diff_content}
+
+            if [ $((total_size + diff_size)) -lt $max_size ]; then
+              echo "<details>" >> diff-output/summary.md
+              echo "<summary>📄 $manifest_name</summary>" >> diff-output/summary.md
+              echo "" >> diff-output/summary.md
+              echo '```diff' >> diff-output/summary.md
+              cat "$diff_file" >> diff-output/summary.md
+              echo '```' >> diff-output/summary.md
+              echo "</details>" >> diff-output/summary.md
+              echo "" >> diff-output/summary.md
+              total_size=$((total_size + diff_size))
+            else
+              echo "" >> diff-output/summary.md
+              echo "> ⚠️ **Diff truncated**: Output too large for PR comment. Download the full diff from the workflow artifacts below." >> diff-output/summary.md
+              break
+            fi
+          done
+
+          echo "" >> diff-output/summary.md
+          echo "---" >> diff-output/summary.md
+          echo "" >> diff-output/summary.md
+          echo "📦 **Full diff available in workflow artifacts**: [View Artifacts](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> diff-output/summary.md
+
+      - name: Upload diff artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: kustomize-diff
+          path: diff-output/
+          retention-days: 30
+
+      - name: Upload base manifests
+        uses: actions/upload-artifact@v4
+        with:
+          name: base-manifests
+          path: base-manifests/
+          retention-days: 7
+
+      - name: Upload PR manifests
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-manifests
+          path: pr-manifests/
+          retention-days: 7
+
+      - name: Post diff as PR comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const prNumber = context.payload.pull_request.number;
+            const body = fs.readFileSync('diff-output/summary.md', 'utf8');
+            const marker = '<!-- kustomize-diff -->';
+
+            // Find existing comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+            });
+
+            const existingComment = comments.find(c =>
+              c.user.type === 'Bot' && c.body.includes(marker)
+            );
+
+            if (existingComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existingComment.id,
+                body: body,
+              });
+              console.log('Updated existing comment');
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body: body,
+              });
+              console.log('Created new comment');
+            }
