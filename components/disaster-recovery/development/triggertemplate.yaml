@@ -1,0 +1,22 @@
+---
+# https://github.com/tektoncd/triggers/blob/main/examples/v1beta1/triggertemplates/triggertemplate.yaml
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: run-disaster-recovery-pipeline
+spec:
+  params:
+  - name: duration
+    description: The amount of time to sleep
+    default: 10s
+  resourcetemplates:
+  - apiVersion: tekton.dev/v1beta1
+    kind: PipelineRun
+    metadata:
+      generateName: sleep-pipeline-run-
+    spec:
+      pipelineRef:
+        name: sleep-pipeline
+      params:
+      - name: duration
+        value: $(tt.params.duration)
