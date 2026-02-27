@@ -38,6 +38,7 @@
     smee_webhook_server_slug: "{{ (env == 'staging') | ternary('kflux-c-stg-e01.3zdg.p3', 'kflux-c-prd-e01.yo5u.p3') }}"
     smee_webhook_server: "https://smee-smee.apps.rosa.{{ smee_webhook_server_slug }}.openshiftapps.com"
     smee_webhook_url: "{{ smee_webhook_server }}/redhathook{{cutename}}"
+    smee_ip_allow_list_file: "{{ dst }}/components/smee/{{ env }}/ip-allow-list.yaml"
 
     required_vars:
       - shortname
@@ -142,6 +143,36 @@
       loop: "{{ argo_cd_app_files }}"
       loop_control:
         loop_var: filename
+        
+    - name: Get NAT Gateway Public IPs for smee
+      tags: [smee-ips]
+      include_tasks: tasks/aws/smee-ips.yaml
+    
+    - name: Get current content of {{ env }} smee IP allow list
+      # If the path does not exist, yq will return an empty string to stdout.
+      command: yq '.[0].value' {{ smee_ip_allow_list_file }}
+      register: current_ip_allow_list
+      changed_when: false # This task only reads data, it doesn't change anything.
+
+    - name: Add the NAT Gateway Public IPs to the {{ env }} IP allow list
+      # This task executes only if the current content in the file
+      # does not contain ALL of the desired 'ips' list content.
+      # It will modify the file in place and pass the multi-line IP list via
+      # an environment variable.
+      vars:
+        ips_to_add: "{{ hostvars['localhost']['nat_gateway_ips'] }}"
+        current_ips: " {{ current_ip_allow_list.stdout.strip().split('\n')}} "
+
+      command: |
+          yq -i eval '.[0].value = strenv(IP_LIST_VAR)' {{ smee_ip_allow_list_file }}
+      environment:
+        # Pass the collected IPs (now a host fact) as a joined multi-line string
+        IP_LIST_VAR: "{{ ips_to_add | join('\n') }}"
+      when: >- 
+        ({{ ips_to_add }} | unique | difference( current_ips | unique)) | length > 0
+      # This task is considered changed when its 'when' condition is met,
+      # indicating that 'yq' has modified the file.
+      changed_when: true
 
     - name: Patch ApplicationSet files to include new cluster reference, only applicable to private network clusters
       tags: [applicationsets]
