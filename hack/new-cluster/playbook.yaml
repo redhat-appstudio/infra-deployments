@@ -55,31 +55,33 @@
       - authentication
       - backup
       - build-service
+      - cert-manager
       - cost-management
       - etcd-shield
+      - etcd-defrag
       - integration
       - knative-eventing
       - konflux-info
       - konflux-rbac
       - konflux-ui
+      - kueue
       - kyverno
       - mintmaker
-      - monitoring/logging
-      - monitoring/prometheus
       - multi-platform-controller
       - namespace-lister
       - pipeline-service
       - smee-client
 
     argo_cd_app_files:
-      - "{{ dst }}/argo-cd-apps/base/all-clusters/infra-deployments/monitoring-workload-logging/monitoring-workload-logging.yaml"
-      - "{{ dst }}/argo-cd-apps/base/all-clusters/infra-deployments/monitoring-workload-prometheus/monitoring-workload-prometheus.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/build-service/build-service.yaml"
+      - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/cert-manager/cert-manager.yaml"
+      - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/etcd-defrag/etcd-defrag.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/etcd-shield/etcd-shield.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/integration/integration.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/konflux-info/konflux-info.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/konflux-rbac/konflux-rbac.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/konflux-ui/konflux-ui.yaml"
+      - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/kueue/kueue.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/kyverno/kyverno.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/mintmaker/mintmaker.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/multi-platform-controller/multi-platform-controller.yaml"
@@ -97,9 +99,6 @@
       - 'stonesoup/{{ env }}/platform/terraform/generated/{{ shortname }}/tekton-bucket'
       - 'stonesoup/{{ env }}/platform/terraform/generated/{{ shortname }}/aws-ssh-key'
       - 'stonesoup/{{ env }}/platform/terraform/generated/{{ shortname }}/aws-account'
-      - 'stonesoup/{{ env }}/platform/terraform/generated/{{ shortname }}/ibm-api-key'
-      - 'stonesoup/{{ env }}/platform/terraform/generated/{{ shortname }}/ibm-s390x-ssh-key'
-      - 'stonesoup/{{ env }}/platform/terraform/generated/{{ shortname }}/ibm-ppc64le-ssh-key'
 
     github_commit_vars:
       - slug: openshift-pipelines/tektoncd-results-for-konflux
@@ -143,7 +142,7 @@
       loop_control:
         loop_var: filename
 
-    - name: Patch ApplicationSet files to include new cluster reference, only applicable to private network clusters
+    - name: Patch private network cluster ApplicationSet files to include new cluster reference
       tags: [applicationsets]
       include_tasks: tasks/applicationsets.yaml
       loop: "{{ argo_cd_private_network_app_files }}"
@@ -157,3 +156,7 @@
       loop: "{{ templated_components }}"
       loop_control:
         loop_var: component
+
+    - name: Generate pipeline-service deploy config (special requirement)
+      tags: [components]
+      shell: "{{ dst }}/hack/generate-deploy-config.sh -c {{ dst }}/components/pipeline-service"
