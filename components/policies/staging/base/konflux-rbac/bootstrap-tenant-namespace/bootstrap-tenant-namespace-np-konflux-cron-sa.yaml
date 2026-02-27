@@ -1,0 +1,46 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: init-ns-cron-sa
+spec:
+  generateExisting: true
+  rules:
+    - name: generate-serviceaccount
+      match:
+        any:
+        - resources:
+            kinds:
+            - Namespace
+            selector:
+              matchLabels:
+                konflux-ci.dev/type: tenant
+      generate:
+        kind: ServiceAccount
+        apiVersion: v1
+        name: konflux-cron-sa
+        namespace: '{{request.object.metadata.name}}'
+        synchronize: true
+    - name: generate-snapshot-rolebinding
+      match:
+        any:
+        - resources:
+            kinds:
+            - Namespace
+            selector:
+              matchLabels:
+                konflux-ci.dev/type: tenant
+      generate:
+        kind: RoleBinding
+        apiVersion: rbac.authorization.k8s.io/v1
+        name: snapshot-access-binding
+        namespace: '{{request.object.metadata.name}}'
+        synchronize: true
+        data:
+          roleRef:
+            kind: ClusterRole
+            name: konflux-cron-sa-actions
+            apiGroup: rbac.authorization.k8s.io
+          subjects:
+            - kind: ServiceAccount
+              name: konflux-cron-sa
+              namespace: '{{request.object.metadata.name}}'

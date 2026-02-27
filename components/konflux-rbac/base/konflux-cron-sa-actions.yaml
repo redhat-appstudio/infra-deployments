@@ -1,0 +1,17 @@
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: konflux-cron-sa-actions
+  labels:
+    konflux-cluster-role: "true"
+rules:
+  - verbs:
+      - get
+      - list
+      - watch
+      - patch
+    apiGroups:
+      - appstudio.redhat.com
+    resources:
+      - snapshots 
