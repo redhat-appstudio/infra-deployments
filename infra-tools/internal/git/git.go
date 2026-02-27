@@ -10,6 +10,17 @@ import (
 	"strings"
 )
 
+// TopLevel returns the root directory of the git repository that contains
+// the current working directory.
+func TopLevel(ctx context.Context) (string, error) {
+	cmd := exec.CommandContext(ctx, "git", "rev-parse", "--show-toplevel")
+	out, err := cmd.Output()
+	if err != nil {
+		return "", fmt.Errorf("git rev-parse --show-toplevel: %w", err)
+	}
+	return strings.TrimSpace(string(out)), nil
+}
+
 // ResolveRef resolves a git ref (branch, tag, symbolic name, etc.) to its
 // short commit SHA.
 func ResolveRef(ctx context.Context, repoRoot, ref string) (string, error) {
@@ -43,6 +54,17 @@ func ChangedFiles(ctx context.Context, repoRoot, baseRef string) ([]string, erro
 		}
 	}
 	return files, nil
+}
+
+// MergeBase returns the merge-base commit between HEAD and the given ref.
+func MergeBase(ctx context.Context, repoRoot, ref string) (string, error) {
+	cmd := exec.CommandContext(ctx, "git", "merge-base", "HEAD", ref)
+	cmd.Dir = repoRoot
+	out, err := cmd.Output()
+	if err != nil {
+		return "", fmt.Errorf("git merge-base HEAD %s: %w", ref, err)
+	}
+	return strings.TrimSpace(string(out)), nil
 }
 
 // CreateWorktree creates a temporary git worktree checked out at the given ref.

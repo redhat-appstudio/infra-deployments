@@ -6,7 +6,9 @@ require (
 	github.com/charmbracelet/log v0.4.2
 	github.com/google/go-github/v68 v68.0.0
 	github.com/onsi/gomega v1.39.1
+	github.com/pmezard/go-difflib v1.0.0
 	golang.org/x/sync v0.19.0
+	golang.org/x/term v0.39.0
 	gopkg.in/yaml.v3 v3.0.1
 	sigs.k8s.io/kustomize/api v0.21.1
 	sigs.k8s.io/kustomize/kyaml v0.21.1

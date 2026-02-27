@@ -107,6 +107,31 @@ type overlayBuild struct {
 	baseYAML []byte
 }
 
+// AffectedComponents builds ArgoCD overlays, parses ApplicationSets, resolves
+// kustomize dependency trees, and matches changedFiles to determine which
+// component paths are affected, grouped by environment.  Unlike Detect, it does
+// not diff overlays or apply static rules — it only returns the component-level
+// mapping needed by tools like render-diff.
+func (d *Detector) AffectedComponents(changedFiles []string) (map[Environment][]appset.ComponentPath, error) {
+	// Phase 1: Build ArgoCD ApplicationSet overlays on HEAD and base-ref
+	builds, err := d.buildAppSetOverlays()
+	if err != nil {
+		return nil, err
+	}
+
+	// Phase 3: Extract component paths from ApplicationSets
+	envPaths, allClusters, err := extractPathsFromOverlays(builds)
+	if err != nil {
+		return nil, err
+	}
+
+	// Phase 4: Resolve dependency trees for component paths
+	resolved := d.resolveComponentDeps(envPaths)
+
+	// Phase 5: Match changed files against resolved dependencies
+	return matchAffectedComponents(changedFiles, resolved, allClusters), nil
+}
+
 // Detect runs the full detection pipeline:
 //  1. Build ArgoCD overlays on both refs
 //  2. Detect overlay diffs (ArgoCD config changes)
@@ -346,6 +371,33 @@ func applyStaticRules(changedFiles []string, result *Result) {
 			return
 		}
 	}
+}
+
+// matchAffectedComponents returns the component paths that are affected by
+// changedFiles, grouped by environment.  It uses the same matching logic as
+// matchChangedFiles (dep tree or prefix fallback) but returns the matched
+// ComponentPath values instead of mutating a Result.
+func matchAffectedComponents(changedFiles []string, resolved []componentDeps, allClusters map[string][]string) map[Environment][]appset.ComponentPath {
+	changedSet := make(map[string]bool, len(changedFiles))
+	for _, f := range changedFiles {
+		changedSet[f] = true
+	}
+
+	affected := make(map[Environment][]appset.ComponentPath)
+	for _, cd := range resolved {
+		var matched bool
+		if cd.deps != nil {
+			matched = matchDepTree(changedSet, cd.deps)
+		} else {
+			matched = matchByPrefix(changedSet, cd.cp.Path)
+		}
+
+		if matched {
+			affected[cd.env] = append(affected[cd.env], cd.cp)
+			slog.Info("Changed files match component", "path", cd.cp.Path, "env", cd.env)
+		}
+	}
+	return affected
 }
 
 // --- helper functions --------------------------------------------------------
