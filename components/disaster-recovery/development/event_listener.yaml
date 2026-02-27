@@ -1,0 +1,15 @@
+---
+# https://github.com/tektoncd/triggers/blob/main/examples/v1beta1/cron/eventlistener.yaml
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: cron-listener
+  namespace: konflux-disaster-recovery
+spec:
+  serviceAccountName: cron-trigger
+  triggers:
+    - name: cron-trig
+      bindings:
+      - ref: cron-binding
+      template:
+        ref: run-disaster-recovery-pipeline
