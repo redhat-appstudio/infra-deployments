@@ -40,6 +40,20 @@ patches:
       kind: PodDisruptionBudget
       labelSelector: app.kubernetes.io/name=loki
 
+  - patch: |
+      - op: add
+        path: /spec/persistentVolumeReclaimPolicy
+        value:
+          whenDeleted: Delete
+          whenScaled: Delete
+    target:
+      group: apps
+      version: v1
+      kind: StatefulSet
+      name: loki-ingester
+      namespace: product-kubearchive-logging
+      labelSelector: app.kubernetes.io/name=loki,app.kubernetes.io/component=ingester
+
 generators:
 - vector-helm-generator.yaml
 - loki-helm-generator.yaml
