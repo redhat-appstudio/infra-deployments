@@ -1,6 +1,6 @@
 # Disaster Recovery
 
-This component contains automations to test that Disaster Recovery processes works as expected.
+This component contains automations to test that Disaster Recovery processes work as expected.
 
 ## Install Locally
 
