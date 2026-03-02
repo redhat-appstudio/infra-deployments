@@ -25,4 +25,18 @@ spec:
               valueFrom:
                 fieldRef: 
                   fieldPath: metadata.namespace
+            resources:
+              limits:
+                cpu: 100m
+                memory: 128Gi
+              requests:
+                cpu: 100m
+                memory: 128Gi
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              runAsNonRoot: true
+              capabilities:
+                drop:
+                - "ALL"
           restartPolicy: Never
