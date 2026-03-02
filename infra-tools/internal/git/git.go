@@ -10,6 +10,17 @@ import (
 	"strings"
 )
 
+// TopLevel returns the root directory of the git repository that contains
+// the current working directory.
+func TopLevel(ctx context.Context) (string, error) {
+	cmd := exec.CommandContext(ctx, "git", "rev-parse", "--show-toplevel")
+	out, err := cmd.Output()
+	if err != nil {
+		return "", fmt.Errorf("git rev-parse --show-toplevel: %w", err)
+	}
+	return strings.TrimSpace(string(out)), nil
+}
+
 // ResolveRef resolves a git ref (branch, tag, symbolic name, etc.) to its
 // short commit SHA.
 func ResolveRef(ctx context.Context, repoRoot, ref string) (string, error) {
@@ -23,9 +34,10 @@ func ResolveRef(ctx context.Context, repoRoot, ref string) (string, error) {
 }
 
 // ChangedFiles returns the list of files changed between baseRef and HEAD.
-// It uses a two-point diff (content diff between trees) rather than three-dot
-// (merge-base diff) to capture ALL differences, including changes that exist
-// in baseRef but not yet in HEAD.
+// It uses a two-point diff (baseRef HEAD) which compares the full trees.
+// For accurate results the caller should ensure HEAD is a merge commit that
+// incorporates baseRef (e.g. GitHub's refs/pull/N/merge), so the diff
+// naturally contains only the PR's own changes.
 func ChangedFiles(ctx context.Context, repoRoot, baseRef string) ([]string, error) {
 	cmd := exec.CommandContext(ctx, "git", "diff", "--name-only", baseRef, "HEAD")
 	cmd.Dir = repoRoot
@@ -42,6 +54,17 @@ func ChangedFiles(ctx context.Context, repoRoot, baseRef string) ([]string, erro
 		}
 	}
 	return files, nil
+}
+
+// MergeBase returns the merge-base commit between HEAD and the given ref.
+func MergeBase(ctx context.Context, repoRoot, ref string) (string, error) {
+	cmd := exec.CommandContext(ctx, "git", "merge-base", "HEAD", ref)
+	cmd.Dir = repoRoot
+	out, err := cmd.Output()
+	if err != nil {
+		return "", fmt.Errorf("git merge-base HEAD %s: %w", ref, err)
+	}
+	return strings.TrimSpace(string(out)), nil
 }
 
 // CreateWorktree creates a temporary git worktree checked out at the given ref.
