@@ -75,6 +75,11 @@ spec:
                 - action: insert
                   key: appcode
                   value: "ASSH-001"
+            resource/add_instance_tag:
+              attributes:
+                - action: insert
+                  key: instance.tag
+                  value: ${env:INST_TAG:-default}
             resourcedetection/system:
               attributes:
                 - host.name
@@ -114,7 +119,7 @@ spec:
                   # Prevent logs feedback loop
                 - type: filter
                   id: drop_otelcol
-                  expr: 'attributes["SYSLOG_IDENTIFIER"] != "otelcol-contrib"'
+                  expr: 'attributes["_SYSTEMD_UNIT"] != "otelcol-contrib.service" && attributes["SYSLOG_IDENTIFIER"] != "otelcol-contrib"'
                 - type: filter
                   id: messages_filter
                   expr: 'attributes["SYSLOG_IDENTIFIER"] != nil'
@@ -135,7 +140,8 @@ spec:
                   expr: |
                     attributes["SYSLOG_IDENTIFIER"] == "sshd" ||
                     attributes["SYSLOG_IDENTIFIER"] == "sudo" ||
-                    attributes["SYSLOG_FACILITY"] == "auth"
+                    attributes["SYSLOG_FACILITY"] == 4 ||
+                    attributes["SYSLOG_FACILITY"] == 10
                 - type: add
                   id: {{ .index }}_idx
                   field: attributes["com.splunk.index"]
@@ -157,6 +163,7 @@ spec:
               logs:
                 processors:
                   - resource/add_appcode
+                  - resource/add_instance_tag
                   - resourcedetection/system
                   - transform/common
                 receivers:
