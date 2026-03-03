@@ -1,0 +1,22 @@
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: sleep
+spec:
+  steps:
+  - name: sleep
+    image: bash
+    command: ["bash", "-c"]
+    args:
+      - 'sleep 5'
+---
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: sleep-pipeline
+spec:
+  tasks:
+  - name: sleep
+    taskRef:
+      name: sleep
