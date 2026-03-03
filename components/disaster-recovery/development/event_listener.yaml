@@ -10,6 +10,7 @@ spec:
   triggers:
     - name: cron-trig
       bindings:
-      - ref: cron-binding
+      - kind: TriggerBinding
+        ref: cron-binding
       template:
         ref: run-disaster-recovery-pipeline
