@@ -9,13 +9,14 @@ metadata:
 spec:
   schedule: "0 * * * *"  # every hour
   concurrencyPolicy: Forbid
+  suspend: true
   jobTemplate:
     spec:
       template:
         spec:
           containers:
           - name: cron-event-producer
-            image: quay.io/konflux-ci/appstudio-utils@sha256:e9a0e1c262b9d4202ff91e4882e4f7b27e44ad1e30c33695a68bd82d610dc0aa
+            image: quay.io/konflux-ci/tools@sha256:b846eb68ab06f4c61c987bd1053e0e2dda13e18ecd5a75c945a18f7d78743bd8
             command:
               - "/bin/sh"
               - "-c"
@@ -28,14 +29,15 @@ spec:
             resources:
               limits:
                 cpu: 100m
-                memory: 128Gi
+                memory: 128Mi
               requests:
                 cpu: 100m
-                memory: 128Gi
+                memory: 128Mi
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
               runAsNonRoot: true
+              runAsUser: 65534 # run as nobody
               capabilities:
                 drop:
                 - "ALL"
