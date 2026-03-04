@@ -119,7 +119,7 @@ spec:
                   # Prevent logs feedback loop
                 - type: filter
                   id: drop_otelcol
-                  expr: 'attributes["_SYSTEMD_UNIT"] != "otelcol-contrib.service" && attributes["SYSLOG_IDENTIFIER"] != "otelcol-contrib"'
+                  expr: 'attributes["_SYSTEMD_UNIT"] == nil || attributes["_SYSTEMD_UNIT"] != "otelcol-contrib.service"'
                 - type: filter
                   id: messages_filter
                   expr: 'attributes["SYSLOG_IDENTIFIER"] != nil'
