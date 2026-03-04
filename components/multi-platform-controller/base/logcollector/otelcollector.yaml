@@ -69,7 +69,8 @@ spec:
                     - set(attributes["com.splunk.source"], attributes["log.file.path"])
                     - set(attributes["host.name"], resource.attributes["host.name"])
                     - set(attributes["appcode"], resource.attributes["appcode"])
-                    - keep_keys(attributes, ["com.splunk.source", "host.name", "appcode", "com.splunk.index", "com.splunk.sourcetype"])
+                    - set(attributes["instance.tag"], resource.attributes["instance.tag"])
+                    - keep_keys(attributes, ["com.splunk.source", "host.name", "appcode", "instance.tag", "com.splunk.index", "com.splunk.sourcetype"])
             resource/add_appcode:
               attributes:
                 - action: insert
