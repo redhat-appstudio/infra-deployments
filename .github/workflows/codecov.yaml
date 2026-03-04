@@ -1,0 +1,76 @@
+name: Generate Codecov Report
+on:
+  pull_request:
+    branches: [ main ]
+jobs:
+  go-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@main
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          cache-dependency-path: '**/go.sum'
+      - name: Find and test Go modules
+        run: |
+          # Find all directories with go.mod files
+          find . -name 'go.mod' -execdir sh -c 'echo "Running tests in $(pwd)" && go mod download && go test -coverprofile=coverage.txt -covermode=atomic ./...' \;
+          # Merge coverage files if multiple exist
+          if [ $(find . -name 'coverage.txt' | wc -l) -gt 1 ]; then
+            find . -name 'coverage.txt' -exec cat {} \; > go-coverage.txt
+          elif [ -f coverage.txt ]; then
+            mv coverage.txt go-coverage.txt
+          fi
+
+      - name: Upload Go coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: go
+          files: ./go-coverage.txt,./coverage.txt
+
+  python-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@main
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      - name: Install Python requirements
+        run: pip install pytest pytest-cov
+      - name: Run pytest
+        run: |
+          # Find Python packages (directories with __init__.py)
+          packages=$(find . -name "__init__.py" -not -path "*/venv/*" -not -path "*/.venv/*" -not -path "*/node_modules/*" -not -path "*/.git/*" | xargs -I {} dirname {} | sort -u)
+
+          if [ -n "$packages" ]; then
+            echo "Found Python packages:"
+            echo "$packages"
+
+            # Install requirements if they exist
+            find . -name "requirements*.txt" -not -path "*/venv/*" -not -path "*/.venv/*" | while read req; do
+              echo "Installing $req"
+              pip install -r "$req" || true
+            done
+
+            # Build --cov arguments for each package
+            cov_args=""
+            for pkg in $packages; do
+              cov_args="$cov_args --cov=$pkg"
+            done
+
+            pytest $cov_args --cov-branch --cov-report=xml --cov-report=term
+          else
+            echo "No Python packages found, running pytest with default discovery"
+            pytest --cov --cov-branch --cov-report=xml --cov-report=term || true
+          fi
+
+      - name: Upload Python coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: python
+          files: ./coverage.xml
