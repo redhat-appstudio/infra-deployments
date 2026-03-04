@@ -12,45 +12,9 @@ spec:
               values:
                 sourceRoot: components/monitoring/custom-kube-state-metrics
                 environment: staging
-                clusterDir: base
+                clusterDir: ""
           - list:
-              elements:
-                - nameNormalized: stone-stg-rh01
-                  values.clusterDir: base
-                - nameNormalized: kflux-stg-es01
-                  values.clusterDir: base
-                - nameNormalized: stone-stage-p01
-                  values.clusterDir: base
-                # - nameNormalized: kflux-ocp-p01
-                #   values.clusterDir: base
-                #   values.environment: production
-                # - nameNormalized: stone-prd-rh01
-                #   values.clusterDir: base
-                #   values.environment: production
-                # - nameNormalized: stone-prod-p01
-                #   values.clusterDir: base
-                #   values.environment: production
-                # - nameNormalized: stone-prod-p02
-                #   values.clusterDir: base
-                #   values.environment: production
-                # - nameNormalized: kflux-prd-rh02
-                #   values.clusterDir: base
-                #   values.environment: production
-                # - nameNormalized: kflux-prd-rh03
-                #   values.clusterDir: base
-                #   values.environment: production
-                # - nameNormalized: kflux-prd-es01
-                #   values.clusterDir: base
-                #   values.environment: production
-                # - nameNormalized: kflux-rhel-p01
-                #   values.clusterDir: base
-                #   values.environment: production
-                # - nameNormalized: kflux-osp-p01
-                #   values.clusterDir: base
-                #   values.environment: production
-                # - nameNormalized: pentest-p01
-                #   values.clusterDir: base
-                #   values.environment: production
+              elements: []
   template:
     metadata:
       name: monitoring-workload-custom-kube-state-metrics-{{nameNormalized}}
