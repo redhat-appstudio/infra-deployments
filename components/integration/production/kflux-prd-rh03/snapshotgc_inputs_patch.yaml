@@ -1,0 +1,18 @@
+- op: add
+  path: /spec/jobTemplate/spec/template/spec/containers/0/env
+  value:
+    - name: PR_SNAPSHOTS_TO_KEEP
+      value: "256"
+    - name: NON_PR_SNAPSHOTS_TO_KEEP
+      value: "2048"
+    - name: MIN_SNAPSHOTS_TO_KEEP_PER_COMPONENT
+      value: "5"
+- op: replace
+  path: /spec/jobTemplate/spec/template/spec/containers/0/resources
+  value:
+    requests:
+      cpu: 1000m
+      memory: 4000Mi
+    limits:
+      cpu: 1000m
+      memory: 4000Mi
