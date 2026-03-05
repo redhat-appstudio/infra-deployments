@@ -19,6 +19,10 @@ func Build(dir string) ([]byte, error) {
 	// Allow loading files from outside the kustomization root since overlays
 	// reference ../../base/ paths.
 	opts.LoadRestrictions = 0
+	// Enable Helm chart inflation so components using
+	// HelmChartInflationGenerator can be built.
+	opts.PluginConfig.HelmConfig.Enabled = true
+	opts.PluginConfig.HelmConfig.Command = "helm"
 	k := krusty.MakeKustomizer(opts)
 
 	// Silence kustomize deprecation warnings (patchesStrategicMerge,
