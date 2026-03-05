@@ -19,15 +19,6 @@ patches:
         name: kite-database-credentials
         namespace: konflux-kite
 
-  - patch: |-
-      - op: replace
-        path: /spec/replicas
-        value: 1
-    target:
-      version: v1
-      kind: Deployment
-      name: konflux-kite
-
 # Only update some parts of the generated development configmap
 configMapGenerator:
   - name: kite-config
