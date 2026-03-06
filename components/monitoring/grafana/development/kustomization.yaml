@@ -14,6 +14,16 @@ patches:
     target:
       name: grafana-oauth
       kind: Grafana
+  - path: grafana-dev-resources-patch.yaml
+    target:
+      name: grafana-oauth
+      kind: Grafana
+  - path: grafana-operator-dev-resources-patch.yaml
+    target:
+      name: grafana-operator
+      kind: Subscription
+      group: operators.coreos.com
+      version: v1alpha1
   # Add a 'version' to avoid using the docker image
   - patch: |
       apiVersion: grafana.integreatly.org/v1beta1

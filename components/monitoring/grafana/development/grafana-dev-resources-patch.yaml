@@ -1,0 +1,16 @@
+# Development: single replica Grafana and smaller resource requests/limits.
+# Use with components/monitoring/grafana/development (e.g. via development overlay).
+# Sets deployment replicas to 1 and resources for the first container (grafana-proxy in base; grafana when operator merges).
+---
+- op: add
+  path: /spec/deployment/spec/replicas
+  value: 1
+- op: replace
+  path: /spec/deployment/spec/template/spec/containers/0/resources
+  value:
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
