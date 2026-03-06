@@ -1,0 +1,70 @@
+---
+- name: Get NAT Gateway Public IPs for ROSA VPC
+  hosts: localhost # This task runs on the Ansible control machine
+  connection: local # Use local connection as we are interacting with AWS API directly
+  gather_facts: false
+
+  # Ensure the community.aws collection is installed:
+  # ansible-galaxy collection install community.aws
+
+  vars:
+    aws_region: us-east-1
+    nat_gateway_ips: []
+
+  tasks:
+    - name: Get all VPCs in the specified region
+      community.aws.ec2_vpc_info:
+        region: "{{ aws_region }}"
+      register: vpcs_info
+      tags: [ 'smee-ips' ]
+
+    - name: Find the VPC named '{{ shortname }}-rosa'
+      set_fact:
+        target_vpc_id: "{{ item.id }}"
+      loop: "{{ vpcs_info.vpcs }}"
+      when:
+        - item.tags is defined
+        - item.tags.Name is defined
+        - item.tags.Name | lower == (shortname | lower) + '-rosa'
+      # This task will set target_vpc_id to the ID of the first matching VPC found.
+      # If multiple VPCs match the exact name, only the first one will be used.
+      tags: [ 'smee-ips' ]
+
+    - name: Fail if no VPC named '{{ shortname }}-rosa' was found
+      ansible.builtin.fail:
+        msg: "No VPC found with the name '{{ shortname }}-rosa' in region {{ aws_region }}."
+      when: target_vpc_id is not defined
+      tags: [ 'smee-ips' ]
+
+    - name: Debug - Found VPC ID
+      ansible.builtin.debug:
+        msg: "Found target VPC ID: {{ target_vpc_id }} (matching name '{{ shortname }}-rosa')"
+      when: target_vpc_id is defined
+      tags: [ 'smee-ips' ]
+
+    - name: Get all NAT Gateways for the target VPC
+      community.aws.ec2_vpc_nat_gateway_info:
+        region: "{{ aws_region }}"
+        filters:
+          vpc-id: "{{ target_vpc_id }}"
+      register: nat_gateways_info
+      tags: [ 'smee-ips' ]
+
+    - name: Extract public IPs for each NAT Gateway
+      set_fact:
+        nat_gateway_ips: "{{ nat_gateway_ips + [item.nat_gateway_addresses[0].public_ip] }}"
+      loop: "{{ nat_gateways_info.nat_gateways }}"
+      when:
+        - item.state == 'available' # Only consider available NAT Gateways
+        - item.nat_gateway_addresses is defined
+        - item.nat_gateway_addresses | length > 0
+        - item.nat_gateway_addresses[0].public_ip is defined
+      tags: [ 'smee-ips' ]
+
+    - name: Debug - Collected NAT Gateway IPs and check count
+      ansible.builtin.debug:
+        msg:
+          - "Collected NAT Gateway Public IPs: {{ nat_gateway_ips }}"
+          - "{{ 'WARNING: Expected 3 NAT Gateways, but found ' + (nat_gateway_ips | length | string) + '.' if nat_gateway_ips | length != 3 else '' }}"
+      when: nat_gateway_ips is defined # Ensure the variable is defined before attempting to access its length
+      tags: [ 'smee-ips' ]
