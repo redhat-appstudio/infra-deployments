@@ -27,6 +27,8 @@
     - name: network
       prompt: "What network (one of {{allowed_networks}})"
       private: false
+    - name: awsaccount
+      prompt: "AWS account number of the cluster (like 123456789000)"
 
   vars:
     vault_addr: "https://vault.devshift.net"
@@ -43,6 +45,7 @@
       - shortname
       - longname
       - env
+      - awsaccount
     controlplane_cluster: appsrep09ue1
     allowed_envs:
       - production
@@ -55,19 +58,26 @@
       - authentication
       - backup
       - build-service
+      - cert-manager
       - cost-management
       - etcd-shield
       - integration
+      - image-rbac-proxy
       - knative-eventing
       - konflux-info
+      - konflux-kite
       - konflux-rbac
       - konflux-ui
+      - kubearchive
+      - kueue
       - kyverno
       - mintmaker
       - multi-platform-controller
       - namespace-lister
       - pipeline-service
+      - policies
       - smee-client
+      - vector-kubearchive-log-collector
 
     templated_configs:
     - etcd-defrag
@@ -75,18 +85,25 @@
 
     argo_cd_app_files:
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/build-service/build-service.yaml"
+      - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/cert-manager/cert-manager.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/etcd-defrag/etcd-defrag.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/etcd-shield/etcd-shield.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/integration/integration.yaml"
+      - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/image-rbac-proxy/image-rbac-proxy.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/konflux-info/konflux-info.yaml"
+      - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/konflux-kite/konflux-kite.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/konflux-rbac/konflux-rbac.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/konflux-ui/konflux-ui.yaml"
+      - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/kubearchive/kubearchive.yaml"
+      - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/kueue/kueue.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/kyverno/kyverno.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/mintmaker/mintmaker.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/multi-platform-controller/multi-platform-controller.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/namespace-lister/namespace-lister.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/pipeline-service/pipeline-service.yaml"
+      - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/policies/policies.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/proactive-scaler/proactive-scaler.yaml"
+      - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/vector-kubearchive-log-collector/vector-kubearchive-log-collector.yaml"
 
     argo_cd_private_network_app_files:
       - "{{ dst }}/argo-cd-apps/base/smee-client/smee-client.yaml"
