@@ -74,40 +74,45 @@ create_db_cert_secret_and_configmap() {
         echo "Postgres DB cert secret already exists, skipping creation"
         return
     fi
-    mkdir -p .tmp/tekton-results
-    openssl req -new -nodes -text \
-        -keyout ".tmp/tekton-results/ca.key" \
-        -out ".tmp/tekton-results/ca.csr" \
+
+    local cert_dir=".tmp/tekton-results"
+    local pg_cn="postgres-postgresql.tekton-results.svc.cluster.local"
+    mkdir -p "$cert_dir"
+
+    # CA: self-signed cert (works on both macOS and Linux; avoids v3_ca / extfile issues)
+    openssl req -new -x509 -nodes -days 9999 \
+        -keyout "$cert_dir/ca.key" \
+        -out "$cert_dir/ca.crt" \
         -subj "/CN=cluster.local" \
-        > /dev/null
-    chmod og-rwx ".tmp/tekton-results/ca.key"
-    openssl x509 -req -days 9999 -text -extensions v3_ca \
-        -signkey ".tmp/tekton-results/ca.key" \
-        -in ".tmp/tekton-results/ca.csr" \
-        -extfile "/etc/ssl/openssl.cnf" \
-        -out ".tmp/tekton-results/ca.crt" \
-        > /dev/null
-    openssl req -new -nodes -text \
-        -subj "/CN=postgres-postgresql.tekton-results.svc.cluster.local" \
-        -addext "subjectAltName=DNS:postgres-postgresql.tekton-results.svc.cluster.local" \
-        -out ".tmp/tekton-results/tls.csr" \
-        -keyout ".tmp/tekton-results/tls.key" \
-        > /dev/null
-    chmod og-rwx ".tmp/tekton-results/tls.key"
-    openssl x509 -req -text -days 9999 -CAcreateserial \
-        -extfile <(printf "subjectAltName=DNS:postgres-postgresql.tekton-results.svc.cluster.local") \
-        -in ".tmp/tekton-results/tls.csr" \
-        -CA ".tmp/tekton-results/ca.crt" \
-        -CAkey ".tmp/tekton-results/ca.key" \
-        -out ".tmp/tekton-results/tls.crt" \
-        > /dev/null
-    cat ".tmp/tekton-results/ca.crt" > ".tmp/tekton-results/tekton-results-db-ca.pem"
+        2>/dev/null
+    chmod og-rwx "$cert_dir/ca.key"
+
+    # Server CSR
+    openssl req -new -nodes \
+        -subj "/CN=$pg_cn" \
+        -addext "subjectAltName=DNS:$pg_cn" \
+        -keyout "$cert_dir/tls.key" \
+        -out "$cert_dir/tls.csr" \
+        2>/dev/null
+    chmod og-rwx "$cert_dir/tls.key"
+
+    # Sign server cert with CA
+    openssl x509 -req -days 9999 -CAcreateserial \
+        -extfile <(printf "subjectAltName=DNS:%s" "$pg_cn") \
+        -in "$cert_dir/tls.csr" \
+        -CA "$cert_dir/ca.crt" \
+        -CAkey "$cert_dir/ca.key" \
+        -out "$cert_dir/tls.crt" \
+        2>/dev/null
+
+    cp "$cert_dir/ca.crt" "$cert_dir/tekton-results-db-ca.pem"
+
     kubectl create secret generic -n tekton-results postgresql-tls \
-        --from-file=.tmp/tekton-results/ca.crt \
-        --from-file=.tmp/tekton-results/tls.crt \
-        --from-file=.tmp/tekton-results/tls.key
+        --from-file="$cert_dir/ca.crt" \
+        --from-file="$cert_dir/tls.crt" \
+        --from-file="$cert_dir/tls.key"
     kubectl create configmap -n tekton-results rds-root-crt \
-        --from-file=.tmp/tekton-results/tekton-results-db-ca.pem
+        --from-file="$cert_dir/tekton-results-db-ca.pem"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
