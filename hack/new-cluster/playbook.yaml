@@ -64,8 +64,6 @@
       - konflux-ui
       - kyverno
       - mintmaker
-      - monitoring/logging
-      - monitoring/prometheus
       - multi-platform-controller
       - namespace-lister
       - pipeline-service
@@ -76,8 +74,6 @@
     - proactive-scaler
 
     argo_cd_app_files:
-      - "{{ dst }}/argo-cd-apps/base/all-clusters/infra-deployments/monitoring-workload-logging/monitoring-workload-logging.yaml"
-      - "{{ dst }}/argo-cd-apps/base/all-clusters/infra-deployments/monitoring-workload-prometheus/monitoring-workload-prometheus.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/build-service/build-service.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/etcd-defrag/etcd-defrag.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/etcd-shield/etcd-shield.yaml"
@@ -173,3 +169,7 @@
       loop: "{{ templated_configs }}"
       loop_control:
         loop_var: config
+
+    - name: Generate pipeline-service deploy config (special requirement)
+      tags: [components]
+      shell: "{{ dst }}/hack/generate-deploy-config.sh -c {{ dst }}/components/pipeline-service"

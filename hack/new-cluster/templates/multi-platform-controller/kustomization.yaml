@@ -4,22 +4,18 @@ kind: Kustomization
 namespace: multi-platform-controller
 
 resources:
-- ../../base/common
-- host-config.yaml
+- ../base
 - external-secrets.yaml
-- https://github.com/konflux-ci/multi-platform-controller/deploy/operator?ref={{ commit_id_multi_platform_controller }}
-- https://github.com/konflux-ci/multi-platform-controller/deploy/otp?ref={{ commit_id_multi_platform_controller }}
-
-components:
-  - ../../k-components/manager-resources
-
-images:
-- name: multi-platform-controller
-  newName: quay.io/konflux-ci/multi-platform-controller
-  newTag: {{ commit_id_multi_platform_controller }}
-- name: multi-platform-otp-server
-  newName: quay.io/konflux-ci/multi-platform-controller-otp-service
-  newTag: {{ commit_id_multi_platform_controller }}
 
 patches:
   - path: manager_resources_patch.yaml
+
+helmGlobals:
+  chartHome: ../../base
+
+helmCharts:
+  - name: host-config-chart
+    releaseName: host-config
+    namespace: multi-platform-controller
+    repo: ../../base
+    valuesFile: host-values.yaml
