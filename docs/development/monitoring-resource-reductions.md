@@ -23,8 +23,5 @@ All of these apply only when the corresponding ApplicationSet is deployed from t
 ## What is not reduced (in this repo)
 
 - **Logging** (`components/monitoring/logging`): `ClusterLogForwarder` collector is 1 CPU / 4Gi. **monitoring-workload-logging** is deleted in the dev overlay, so it is not deployed in dev unless you re-enable it.
-- **Blackbox** (`components/monitoring/blackbox`): Workload comes from the o11y repo; no resource overrides in infra-deployments. If you deploy monitoring-blackbox in dev, consider reducing resources in the o11y config or via a local patch.
-- **Kanary** (`components/monitoring/kanary`): Deployed from o11y repo; no dev-specific resource patches here.
-- **Registry** (`components/monitoring/registry`): RBAC/config only in this repo; no deployable workload with resources to reduce.
 
-If you need to reduce logging/blackbox/kanary further, add development overlays or patches in the appropriate component (or in the o11y repo for blackbox/kanary).
+Note: If you need to reduce logging/blackbox/kanary further, add development overlays or patches in the appropriate component (or in the o11y repo for blackbox/kanary).
