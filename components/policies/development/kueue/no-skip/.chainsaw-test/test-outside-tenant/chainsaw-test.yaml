@@ -7,7 +7,7 @@ metadata:
 spec:
   description: |
     creates a TaskRun with a PLATFORM parameter and a corresponding
-    tekton-kueue's annotation
+    tekton-kueue's annotation in a non-tenant namespace
   concurrent: false
   steps:
   - name: given-taskruns-crd-exists
@@ -35,7 +35,7 @@ metadata:
 spec:
   description: |
     creates a TaskRun with a complex PLATFORM parameter and a corresponding
-    tekton-kueue's annotation
+    tekton-kueue's annotation in a non-tenant namespace
   concurrent: false
   steps:
   - name: given-taskruns-crd-exists
@@ -63,7 +63,7 @@ metadata:
 spec:
   description: |
     creates a TaskRun with no PLATFORM parameter and no corresponding
-    tekton-kueue's annotation
+    tekton-kueue's annotation in a non-tenant namespace
   concurrent: false
   steps:
   - name: given-taskruns-crd-exists
@@ -92,6 +92,7 @@ spec:
   description: |
     creates a TaskRun with a PLATFORM parameter and
     a wrong corresponding tekton-kueue's annotation
+    in a non-tenant namespace
   concurrent: false
   steps:
   - name: given-taskruns-crd-exists
@@ -106,7 +107,7 @@ spec:
         file: ../../no-skip-validationadmissionpolicybinding.yaml
     - assert:
         file: ../chainsaw-assert-policy.yaml
-  - name: then-invalid-taskrun-can-not-be-created
+  - name: then-invalid-taskrun-can-be-created
     try:
     - create:
         file: ../resources/taskrun_invalid_wrong_annotation.yaml
@@ -119,7 +120,8 @@ metadata:
 spec:
   description: |
     creates a TaskRun with a PLATFORM parameter and no
-    corresponding tekton-kueue's annotation
+    corresponding tekton-kueue's annotation in a
+    non-tenant namespace
   concurrent: false
   steps:
   - name: given-taskruns-crd-exists
