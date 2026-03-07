@@ -23,7 +23,7 @@ func TestBuildCommentBody_WithBuildError(t *testing.T) {
 		},
 	}
 
-	body := buildCommentBody(result, "abc123", "def456")
+	body := buildCommentBody(result, "abc123", "def456", "")
 
 	g.Expect(body).To(ContainSubstring("build error"))
 	g.Expect(body).To(ContainSubstring("`components/broken/staging`"))
@@ -52,7 +52,7 @@ func TestBuildCommentBody_SkipsNonKustomizationError(t *testing.T) {
 		TotalRemoved: 2,
 	}
 
-	body := buildCommentBody(result, "abc123", "def456")
+	body := buildCommentBody(result, "abc123", "def456", "")
 
 	g.Expect(body).NotTo(ContainSubstring("components/plain/staging"))
 	g.Expect(body).To(ContainSubstring("`components/foo/staging`"))
@@ -63,7 +63,7 @@ func TestBuildCommentBody_NoDiffs(t *testing.T) {
 
 	result := &renderdiff.DiffResult{}
 
-	body := buildCommentBody(result, "abc123", "def456")
+	body := buildCommentBody(result, "abc123", "def456", "")
 
 	g.Expect(body).To(ContainSubstring("No render differences detected."))
 }
@@ -89,10 +89,54 @@ func TestBuildCommentBody_MixedDiffsAndErrors(t *testing.T) {
 		TotalRemoved: 1,
 	}
 
-	body := buildCommentBody(result, "abc123", "def456")
+	body := buildCommentBody(result, "abc123", "def456", "")
 
 	g.Expect(body).To(ContainSubstring("| `components/broken/staging` | staging | build error |"))
 	g.Expect(body).To(ContainSubstring("| `components/foo/staging` | staging | +3 -1 |"))
+}
+
+func TestBuildCommentBody_WithRunURL(t *testing.T) {
+	g := NewWithT(t)
+
+	result := &renderdiff.DiffResult{
+		Diffs: []renderdiff.ComponentDiff{
+			{Path: "components/foo/staging", Env: "staging", Added: 3, Removed: 1, Diff: "some diff"},
+		},
+		TotalAdded:   3,
+		TotalRemoved: 1,
+	}
+
+	body := buildCommentBody(result, "abc123", "def456", "https://github.com/owner/repo/actions/runs/99999")
+
+	g.Expect(body).To(ContainSubstring("[workflow summary](https://github.com/owner/repo/actions/runs/99999)"))
+	g.Expect(body).NotTo(ContainSubstring("../actions"))
+}
+
+func TestBuildCommentBody_WithoutRunURL(t *testing.T) {
+	g := NewWithT(t)
+
+	result := &renderdiff.DiffResult{
+		Diffs: []renderdiff.ComponentDiff{
+			{Path: "components/foo/staging", Env: "staging", Added: 3, Removed: 1, Diff: "some diff"},
+		},
+		TotalAdded:   3,
+		TotalRemoved: 1,
+	}
+
+	body := buildCommentBody(result, "abc123", "def456", "")
+
+	g.Expect(body).To(ContainSubstring("[workflow summary](../actions)"))
+}
+
+func TestBuildRunURL(t *testing.T) {
+	g := NewWithT(t)
+
+	g.Expect(buildRunURL("https://github.com", "owner/repo", "12345")).
+		To(Equal("https://github.com/owner/repo/actions/runs/12345"))
+
+	g.Expect(buildRunURL("", "owner/repo", "12345")).To(BeEmpty())
+	g.Expect(buildRunURL("https://github.com", "", "12345")).To(BeEmpty())
+	g.Expect(buildRunURL("https://github.com", "owner/repo", "")).To(BeEmpty())
 }
 
 // writeCISummaryToString is a helper that captures writeCISummary output to a string

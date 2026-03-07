@@ -115,10 +115,18 @@ func writeCISummary(result *renderdiff.DiffResult) error {
 //   - GITHUB_TOKEN: API token for authentication
 //   - GITHUB_REPOSITORY: repository in "owner/repo" format
 //   - PR_NUMBER: pull request number to comment on
+//   - GITHUB_SERVER_URL: GitHub server URL (e.g., https://github.com)
+//   - GITHUB_RUN_ID: current workflow run ID
 //
-// If any of these are missing, the comment body is printed to stdout instead.
+// If any of the required vars (token, repo, PR) are missing, the comment body
+// is printed to stdout instead.
 func postCIComment(ctx context.Context, result *renderdiff.DiffResult, headSHA, baseSHA string) error {
-	body := buildCommentBody(result, headSHA, baseSHA)
+	runURL := buildRunURL(
+		os.Getenv("GITHUB_SERVER_URL"),
+		os.Getenv("GITHUB_REPOSITORY"),
+		os.Getenv("GITHUB_RUN_ID"),
+	)
+	body := buildCommentBody(result, headSHA, baseSHA, runURL)
 
 	token := os.Getenv("GITHUB_TOKEN")
 	repo := os.Getenv("GITHUB_REPOSITORY")
@@ -146,8 +154,19 @@ func postCIComment(ctx context.Context, result *renderdiff.DiffResult, headSHA, 
 	return nil
 }
 
+// buildRunURL constructs a direct link to the GitHub Actions workflow run.
+// Returns empty string if any component is missing.
+func buildRunURL(serverURL, repo, runID string) string {
+	if serverURL == "" || repo == "" || runID == "" {
+		return ""
+	}
+	return fmt.Sprintf("%s/%s/actions/runs/%s", serverURL, repo, runID)
+}
+
 // buildCommentBody generates the markdown for a PR comment.
-func buildCommentBody(result *renderdiff.DiffResult, headSHA, baseSHA string) string {
+// When runURL is non-empty, the workflow summary link points directly to the
+// specific run; otherwise it falls back to the relative ../actions link.
+func buildCommentBody(result *renderdiff.DiffResult, headSHA, baseSHA, runURL string) string {
 	var b strings.Builder
 
 	fmt.Fprintln(&b, "<!-- render-diff-comment -->")
@@ -176,6 +195,10 @@ func buildCommentBody(result *renderdiff.DiffResult, headSHA, baseSHA string) st
 	}
 	fmt.Fprintln(&b)
 	fmt.Fprintf(&b, "**Total:** %d components, +%d -%d lines\n\n", len(result.Diffs), result.TotalAdded, result.TotalRemoved)
-	fmt.Fprintln(&b, "📋 Full diff available in the [workflow summary](../actions) and as a downloadable artifact.")
+	link := "../actions"
+	if runURL != "" {
+		link = runURL
+	}
+	fmt.Fprintf(&b, "📋 Full diff available in the [workflow summary](%s) and as a downloadable artifact.\n", link)
 	return b.String()
 }
