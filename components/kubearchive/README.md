@@ -54,24 +54,11 @@ index 98bf1d721..ee330ff5a 100644
                    - name: vacuum
 -                    image: quay.io/kubearchive/vacuum:v1.14.0
 +                    image: quay.io/kubearchive/vacuum:v1.15.0
-   - patch: |-
-       apiVersion: batch/v1
-       kind: Job
-@@ -102,7 +102,7 @@ patches:
-               - name: migration
-                 env:
-                   - name: KUBEARCHIVE_VERSION
--                    value: v1.14.0
-+                    value: v1.15.0
-   # These patches add an annotation so an OpenShift service
-   # creates the TLS secrets instead of Cert Manager
-   - patch: |-
 ```
 
 So the version should change at:
 
 * Patches that change the KubeArchive vacuum image for vacuum CronJobs.
-* Environment variable that is used to pull the KubeArchive repository on the database migration Job.
 
 Then after the upgrade is successful, you can start upgrading production clusters.
 Make sure to review the changes inside the KubeArchive YAML pulled from GitHub. Some
