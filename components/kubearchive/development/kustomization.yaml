@@ -83,6 +83,29 @@ patches:
                 containers:
                   - name: vacuum
                     image: quay.io/kubearchive/vacuum:v1.18.0
+  # Ensure database is ready before schema-migration job runs
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: postgresql
+        annotations:
+          argocd.argoproj.io/sync-wave: "-2"
+  - patch: |-
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: postgresql
+        annotations:
+          argocd.argoproj.io/sync-wave: "-2"
+  - patch: |-
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: kubearchive-database-credentials
+        namespace: kubearchive
+        annotations:
+          argocd.argoproj.io/sync-wave: "-2"
   - patch: |-
       apiVersion: batch/v1
       kind: Job
@@ -92,6 +115,7 @@ patches:
         annotations:
           # Needed if just the command is changed, otherwise the job needs to be deleted manually
           argocd.argoproj.io/sync-options: Force=true,Replace=true
+          argocd.argoproj.io/sync-wave: "-1"
           ignore-check.kube-linter.io/no-read-only-root-fs: >
             "This job needs to clone a repository to do its job, so it needs write access to the FS."
       spec:
