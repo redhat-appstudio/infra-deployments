@@ -1,0 +1,17 @@
+# Development: smaller resource requests/limits for the Grafana operator pod.
+# Use with components/monitoring/grafana/development.
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: grafana-operator
+  namespace: appstudio-grafana
+spec:
+  config:
+    resources:
+      requests:
+        cpu: "50m"
+        memory: "128Mi"
+      limits:
+        cpu: "200m"
+        memory: "512Mi"

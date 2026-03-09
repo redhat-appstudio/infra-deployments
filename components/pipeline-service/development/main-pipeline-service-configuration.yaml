@@ -1927,8 +1927,8 @@ spec:
             default-container-resource-requirements: |
               default:
                 requests:
-                  memory: "256Mi"
-                  cpu: "100m"
+                  memory: "128Mi"
+                  cpu: "50m"
             default-pod-template: |
               nodeSelector:
                 konflux-ci.dev/workload: konflux-tenants
@@ -1948,11 +1948,11 @@ spec:
                   - name: proxy
                     resources:
                       limits:
-                        cpu: 500m
-                        memory: 500Mi
+                        cpu: 250m
+                        memory: 256Mi
                       requests:
-                        cpu: 100m
-                        memory: 100Mi
+                        cpu: 50m
+                        memory: 64Mi
         tekton-pipelines-webhook:
           spec:
             template:
@@ -1961,11 +1961,11 @@ spec:
                   - name: webhook
                     resources:
                       limits:
-                        cpu: "1"
-                        memory: 1Gi
+                        cpu: 500m
+                        memory: 512Mi
                       requests:
-                        cpu: 200m
-                        memory: 200Mi
+                        cpu: 100m
+                        memory: 128Mi
         pipelines-as-code-controller:
           spec:
             template:
@@ -1974,11 +1974,11 @@ spec:
                   - name: pac-controller
                     resources:
                       limits:
-                        cpu: 400m
-                        memory: 250Mi
+                        cpu: 300m
+                        memory: 256Mi
                       requests:
-                        cpu: 200m
-                        memory: 200Mi
+                        cpu: 100m
+                        memory: 128Mi
         pipelines-as-code-watcher:
           spec:
             template:
@@ -1987,11 +1987,11 @@ spec:
                   - name: pac-watcher
                     resources:
                       limits:
-                        cpu: 500m
-                        memory: 1Gi
+                        cpu: 300m
+                        memory: 512Mi
                       requests:
-                        cpu: 200m
-                        memory: 200Mi
+                        cpu: 100m
+                        memory: 128Mi
         pipelines-as-code-webhook:
           spec:
             template:
@@ -2000,11 +2000,11 @@ spec:
                   - name: pac-webhook
                     resources:
                       limits:
-                        cpu: 400m
-                        memory: 250Mi
+                        cpu: 300m
+                        memory: 256Mi
                       requests:
-                        cpu: 200m
-                        memory: 200Mi
+                        cpu: 100m
+                        memory: 128Mi
         pipelines-console-plugin:
           spec:
             template:
@@ -2013,11 +2013,11 @@ spec:
                   - name: pipelines-console-plugin
                     resources:
                       limits:
-                        cpu: 200m
+                        cpu: 100m
                         memory: 100Mi
                       requests:
-                        cpu: 200m
-                        memory: 100Mi
+                        cpu: 50m
+                        memory: 64Mi
         tekton-chains-controller:
           spec:
             template:
@@ -2026,11 +2026,11 @@ spec:
                   - name: tekton-chains-controller
                     resources:
                       limits:
-                        cpu: 500m
-                        memory: 1Gi
+                        cpu: 300m
+                        memory: 512Mi
                       requests:
-                        cpu: 200m
-                        memory: 200Mi
+                        cpu: 100m
+                        memory: 128Mi
         tekton-events-controller:
           spec:
             template:
@@ -2039,11 +2039,11 @@ spec:
                   - name: tekton-events-controller
                     resources:
                       limits:
-                        cpu: 200m
+                        cpu: 100m
                         memory: 100Mi
                       requests:
-                        cpu: 200m
-                        memory: 100Mi
+                        cpu: 50m
+                        memory: 64Mi
         tekton-triggers-controller:
           spec:
             template:
@@ -2052,11 +2052,11 @@ spec:
                   - name: tekton-triggers-controller
                     resources:
                       limits:
-                        cpu: 400m
-                        memory: 250Mi
+                        cpu: 300m
+                        memory: 256Mi
                       requests:
-                        cpu: 200m
-                        memory: 200Mi
+                        cpu: 100m
+                        memory: 128Mi
         tekton-triggers-webhook:
           spec:
             template:
@@ -2065,11 +2065,11 @@ spec:
                   - name: webhook
                     resources:
                       limits:
-                        cpu: 250m
-                        memory: 100Mi
-                      requests:
                         cpu: 200m
                         memory: 100Mi
+                      requests:
+                        cpu: 50m
+                        memory: 64Mi
         tekton-triggers-core-interceptors:
           spec:
             template:
@@ -2078,11 +2078,11 @@ spec:
                   - name: tekton-triggers-core-interceptors
                     resources:
                       limits:
-                        cpu: 500m
-                        memory: 1Gi
+                        cpu: 300m
+                        memory: 512Mi
                       requests:
-                        cpu: 200m
-                        memory: 200Mi
+                        cpu: 100m
+                        memory: 128Mi
         tkn-cli-serve:
           spec:
             replicas: 0
@@ -2092,11 +2092,11 @@ spec:
                   - name: tkn-cli-serve
                     resources:
                       limits:
-                        cpu: 250m
-                        memory: 100Mi
-                      requests:
                         cpu: 200m
                         memory: 100Mi
+                      requests:
+                        cpu: 50m
+                        memory: 64Mi
       statefulSets:
         tekton-pipelines-controller:
           spec:
@@ -2106,11 +2106,11 @@ spec:
                   - name: tekton-pipelines-controller
                     resources:
                       limits:
-                        memory: 2Gi
-                        cpu: "1"
-                      requests:
-                        cpu: 500m
                         memory: 1Gi
+                        cpu: 500m
+                      requests:
+                        cpu: 200m
+                        memory: 512Mi
                 topologySpreadConstraints:
                   - maxSkew: 1
                     topologyKey: topology.kubernetes.io/zone
@@ -2130,11 +2130,11 @@ spec:
                         value: /tekton-custom-certs/ca-bundle.crt
                     resources:
                       limits:
-                        memory: 1Gi
-                        cpu: 500m
+                        memory: 512Mi
+                        cpu: 300m
                       requests:
-                        cpu: 200m
-                        memory: 500Mi
+                        cpu: 100m
+                        memory: 256Mi
       disabled: false
       horizontalPodAutoscalers:
         tekton-operator-proxy-webhook:

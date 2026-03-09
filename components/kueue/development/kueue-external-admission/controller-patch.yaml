@@ -1,3 +1,7 @@
+# Development: 1 replica so sync does not revert scale-down.
+- op: replace
+  path: /spec/replicas
+  value: 1
 - op: replace
   path: /spec/template/spec/containers/0/resources/requests
   value:

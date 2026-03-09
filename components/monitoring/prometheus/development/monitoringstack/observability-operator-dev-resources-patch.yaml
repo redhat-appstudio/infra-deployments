@@ -1,0 +1,17 @@
+# Development: smaller resource limits for the Cluster Observability operator pod.
+# Use with components/monitoring/prometheus/development (monitoringstack).
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: cluster-observability-operator
+  namespace: appstudio-monitoring
+spec:
+  config:
+    resources:
+      requests:
+        cpu: "50m"
+        memory: "256Mi"
+      limits:
+        cpu: "200m"
+        memory: "1Gi"

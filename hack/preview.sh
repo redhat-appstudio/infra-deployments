@@ -256,12 +256,13 @@ dump_pending_apps_details() {
 # =============================================================================
 
 print_help() {
-    echo "Usage: $0 MODE [--obo] [--eaas] [-h|--help]"
+    echo "Usage: $0 MODE [--obo] [--grafana] [--eaas] [-h|--help]"
     echo "  MODE             upstream/preview (default: upstream)"
     echo "  --obo        (only in preview mode) Install Observability operator and Prometheus instance for federation"
+    echo "  --grafana    (only in preview mode) Enable Grafana dashboard (removed by default in dev)"
     echo "  --eaas       (only in preview mode) Install environment as a service components"
     echo
-    echo "Example usage: \`$0 --obo --eaas"
+    echo "Example usage: \`$0 --obo --grafana --eaas"
 }
 
 # Patch ArgoCD application files to point to fork
@@ -771,6 +772,7 @@ wait_for_tekton_crds() {
 # =============================================================================
 OBO=false
 EAAS=false
+GRAFANA=false
 
 while [[ $# -gt 0 ]]; do
     key=$1
@@ -781,6 +783,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --eaas)
             EAAS=true
+            shift
+            ;;
+        --grafana)
+            GRAFANA=true
             shift
             ;;
         -h|--help)
@@ -799,7 +805,7 @@ done
 
 log_step "Starting Konflux Preview Environment Setup"
 log_info "Script: $0"
-log_info "Options: OBO=$OBO, EAAS=$EAAS"
+log_info "Options: OBO=$OBO, GRAFANA=$GRAFANA, EAAS=$EAAS"
 log_info "Start time: $(date '+%Y-%m-%d %H:%M:%S %Z')"
 
 # =============================================================================
@@ -890,6 +896,14 @@ if $OBO; then
     log_info "Adding Observability operator and Prometheus for federation"
     yq -i '.resources += ["monitoringstack/"]' $ROOT/components/monitoring/prometheus/development/kustomization.yaml
     log_success "Observability components enabled"
+fi
+
+if $GRAFANA; then
+    log_step "Enabling Grafana dashboard"
+    log_info "Removing monitoring-workload-grafana from delete-applications.yaml"
+    local delete_file="$ROOT/argo-cd-apps/overlays/development/delete-applications.yaml"
+    yq -i 'select(.metadata.name != "monitoring-workload-grafana")' "$delete_file"
+    log_success "Grafana enabled: monitoring-workload-grafana will be deployed"
 fi
 
 if $EAAS; then

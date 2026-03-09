@@ -1,3 +1,5 @@
+# Dev-only storage: PostgreSQL + MinIO (S3) for Tekton Results. MinIO runs with reduced resources.
+---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -144,6 +146,32 @@ data:
   type: aGVsbQ==
   url: cmVnaXN0cnktMS5kb2NrZXIuaW8vYml0bmFtaWNoYXJ0c3NlY3VyZQ==
 ---
+# MinIO Tenant root credentials. Same credentials are used in tekton-results-s3 for Tekton Results API.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: minio-storage-configuration
+  namespace: tekton-results
+type: Opaque
+stringData:
+  config.env: |
+    export MINIO_ROOT_USER=minioadmin
+    export MINIO_ROOT_PASSWORD=minioadmin
+---
+# S3 credentials for Tekton Results (API and watcher). Points at in-cluster MinIO tenant "storage".
+apiVersion: v1
+kind: Secret
+metadata:
+  name: tekton-results-s3
+  namespace: tekton-results
+type: Opaque
+stringData:
+  aws_access_key_id: minioadmin
+  aws_secret_access_key: minioadmin
+  aws_region: us-east-1
+  bucket: tekton-results
+  endpoint: https://minio.tekton-results.svc.cluster.local
+---
 apiVersion: minio.min.io/v2
 kind: Tenant
 metadata:
@@ -182,7 +210,13 @@ spec:
     containerSecurityContext: {}
     name: pool-0
     nodeSelector: {}
-    resources: {}
+    resources:
+      requests:
+        cpu: 50m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
     securityContext: {}
     servers: 1
     tolerations: []

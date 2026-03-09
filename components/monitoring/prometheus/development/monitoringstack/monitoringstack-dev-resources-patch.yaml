@@ -1,0 +1,14 @@
+# Development: single replica Prometheus and smaller resource requests/limits.
+# Use with components/monitoring/prometheus/development (e.g. via development overlay).
+---
+- op: replace
+  path: /spec/prometheusConfig/replicas
+  value: 1
+- op: replace
+  path: /spec/resources
+  value:
+    requests:
+      cpu: 200m
+      memory: 2Gi
+    limits:
+      memory: 2Gi

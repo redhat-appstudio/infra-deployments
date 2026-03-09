@@ -2,11 +2,11 @@
 role: Agent
 resources:
   requests:
-    cpu: 512m
-    memory: 4096Mi
+    cpu: 100m
+    memory: 512Mi
   limits:
-    cpu: 2000m
-    memory: 4096Mi
+    cpu: 500m
+    memory: 512Mi
 customConfig:
   data_dir: /vector-data-dir
   api:
@@ -57,51 +57,14 @@ customConfig:
         .container = del(.tmp.kubernetes.container_name)
         .message = del(.tmp.message)
         del(.tmp)
+  # Dev: no S3, no Loki. Send Tekton logs to stdout (collectable by cluster logging / kubectl logs).
   sinks:
-    aws_s3:
-      type: "aws_s3"
-      bucket: ${BUCKET}
-      buffer:
-        type: "memory"
-        max_events: 10000
-        when_full: "block"
-      batch:
-        max_bytes: 10485760
-        timeout_secs: 300  # default
+    console:
+      type: console
       inputs: ["remap_app_logs"]
-      compression: "none"
-      endpoint: ${ENDPOINT}
       encoding:
         codec: "text"
-      key_prefix: "/logs/{{ `{{ .namespace }}` }}/{{`{{ .result }}`}}/{{`{{ .taskRunUID }}`}}/{{`{{ .container }}`}}"
-      filename_time_format: "-%s"
-      filename_append_uuid: false
-env:
-  - name: AWS_ACCESS_KEY_ID
-    valueFrom:
-      secretKeyRef:
-        name: tekton-results-s3
-        key: aws_access_key_id
-  - name: AWS_SECRET_ACCESS_KEY
-    valueFrom:
-      secretKeyRef:
-        name: tekton-results-s3
-        key: aws_secret_access_key
-  - name: AWS_DEFAULT_REGION
-    valueFrom:
-      secretKeyRef:
-        name: tekton-results-s3
-        key: aws_region
-  - name: BUCKET
-    valueFrom:
-      secretKeyRef:
-        name: tekton-results-s3
-        key: bucket
-  - name: ENDPOINT
-    valueFrom:
-      secretKeyRef:
-        name: tekton-results-s3
-        key: endpoint
+env: []
 nodeSelector:
   konflux-ci.dev/workload: konflux-tenants
 tolerations:
