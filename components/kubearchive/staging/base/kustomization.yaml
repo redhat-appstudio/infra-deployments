@@ -7,6 +7,16 @@ resources:
   - prometheusrule.yaml
 
 patches:
+  # Ensure schema-migration job runs after ExternalSecrets (wave -2) but before Deployments (wave 0)
+  - patch: |-
+      apiVersion: batch/v1
+      kind: Job
+      metadata:
+        name: kubearchive-schema-migration
+        namespace: kubearchive
+        annotations:
+          argocd.argoproj.io/sync-wave: "-1"
+
   - patch: |-
       $patch: delete
       apiVersion: v1
