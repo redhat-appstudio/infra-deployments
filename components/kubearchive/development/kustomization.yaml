@@ -24,11 +24,11 @@ secretGenerator:
     namespace: kubearchive
     type: Opaque
 
-# Generate kubearchive-logging ConfigMap with hash for automatic restarts
+# Generate kubearchive-logging ConfigMaps with hash for automatic restarts
 # Due to quoting limitations of generators we need to introduce the values with the |
 # See https://github.com/kubernetes-sigs/kustomize/issues/4845#issuecomment-1671570428
 configMapGenerator:
-  - name: kubearchive-logging
+  - name: kubearchive-logging-writer
     literals:
       - |
         POD_ID=cel:metadata.uid
@@ -37,11 +37,36 @@ configMapGenerator:
       - |
         START=cel:status.?startTime == optional.none() ? int(now()-duration('1h'))*1000000000: status.startTime
       - |
-        END=cel:status.?startTime == optional.none() ? int(now()+duration('1h'))*1000000000: int(timestamp(status.startTime)+duration('6h'))*1000000000
+        QUERY={stream="{NAMESPACE}"} | pod_id = `{POD_ID}` | container = `{CONTAINER_NAME}`
       - |
-        LOG_URL=http://loki-gateway.product-kubearchive-logging.svc.cluster.local:80/loki/api/v1/query_range?query=%7Bstream%3D%22{NAMESPACE}%22%7D%20%7C%20pod_id%20%3D%20%60{POD_ID}%60%20%7C%20container%20%3D%20%60{CONTAINER_NAME}%60&start={START}&end={END}&direction=forward
+        LOG_URL=http://loki-gateway.product-kubearchive-logging.svc.cluster.local:80
       - |
         LOG_URL_JSONPATH=$.data.result[*].values[*][1]
+  - name: kubearchive-logging-reader
+    literals:
+      - |
+        LOG_PROVIDERS=
+        http://loki-gateway.product-kubearchive-logging.svc.cluster.local:80:
+          tail:
+            reverse: true
+            path: /loki/api/v1/query_range
+            method: GET
+            params:
+              query: ${QUERY}
+              start: ${START}
+              limit: ${TAIL_LINES}
+              direction: backward
+            json-path: "$.data.result[*].values[*][1]"
+          full:
+            reverse: false
+            path: /loki/api/v1/query_range
+            method: GET
+            params:
+              query: ${QUERY}
+              start: ${START}
+              limit: 10000
+              direction: forward
+            json-path: "$.data.result[*].values[*][1]"
 
 patches:
   - patch: |-
@@ -56,7 +81,7 @@ patches:
               spec:
                 containers:
                   - name: vacuum
-                    image: quay.io/kubearchive/vacuum:v1.18.0
+                    image: quay.io/kubearchive/vacuum:v1.19.0
   - patch: |-
       apiVersion: batch/v1
       kind: CronJob
@@ -69,7 +94,7 @@ patches:
               spec:
                 containers:
                   - name: vacuum
-                    image: quay.io/kubearchive/vacuum:v1.18.0
+                    image: quay.io/kubearchive/vacuum:v1.19.0
   - patch: |-
       apiVersion: batch/v1
       kind: CronJob
@@ -82,7 +107,7 @@ patches:
               spec:
                 containers:
                   - name: vacuum
-                    image: quay.io/kubearchive/vacuum:v1.18.0
+                    image: quay.io/kubearchive/vacuum:v1.19.0
   # Ensure database is ready before schema-migration job runs
   - patch: |-
       apiVersion: apps/v1
@@ -124,6 +149,9 @@ patches:
           spec:
             containers:
               - name: migration
+                env:
+                  - name: MIGRATION_VERSION
+                    value: "5"
                 securityContext:
                   runAsUser: null
   # These patches add an annotation so an OpenShift service
@@ -290,11 +318,18 @@ patches:
       metadata:
         name: "kubearchive-operator-certificate"
         namespace: kubearchive
-  # Delete the original ConfigMap since we're generating it with configMapGenerator
+  # Delete the original ConfigMaps since we're generating them with configMapGenerator
   - patch: |-
       $patch: delete
       apiVersion: v1
       kind: ConfigMap
       metadata:
-        name: kubearchive-logging
+        name: kubearchive-logging-writer
+        namespace: kubearchive
+  - patch: |-
+      $patch: delete
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: kubearchive-logging-reader
         namespace: kubearchive
