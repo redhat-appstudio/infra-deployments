@@ -16,6 +16,16 @@ patches:
     target:
       name: appstudio-federate-ms
       kind: MonitoringStack
+  - path: monitoringstack-dev-resources-patch.yaml
+    target:
+      name: appstudio-federate-ms
+      kind: MonitoringStack
+  - path: observability-operator-dev-resources-patch.yaml
+    target:
+      name: cluster-observability-operator
+      kind: Subscription
+      group: operators.coreos.com
+      version: v1alpha1
 
 commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
