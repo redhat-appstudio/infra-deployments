@@ -19,8 +19,11 @@ spec:
       containers:
         - name: prometheus-cardinality-exporter
           imagePullPolicy: Always
-          image: quay.io/jmicanek/cardinality-exporter:latest
+          image: quay.io/redhat-appstudio/cardinality-exporter:placeholder
           command: ["/home/app/prometheus-cardinality-exporter"]
+          securityContext:
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
           args:
             - "--service_discovery"
             - "--freq=1"
