@@ -957,6 +957,35 @@ PIPELINERUN_DEFINITIONS: Dict[str, PipelineRunTestData] = {
         }
     },
 
+    "nudge_pipelinerun": {
+        "name": "Multi-platform pipeline with user-specific priority (new style)",
+        "pipelinerun": {
+            "apiVersion": "tekton.dev/v1",
+            "kind": "PipelineRun",
+            "metadata": {
+                "name": "nudging-pipelinerun",
+                "namespace": "default",
+                "labels": {
+                    "build.appstudio.openshift.io/type": "nudge",
+                    # make sure the nudge type overrides this
+                    "pipelinesascode.tekton.dev/event-type": "push"
+                }
+            },
+            "spec": {
+                "pipelineRef": {"name": "renovate"},
+                "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
+            }
+        },
+        "expected": {
+            "annotations": {},
+            "labels": {
+                "build.appstudio.openshift.io/type": "nudge",
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-nudge"
+            }
+        }
+    },
+
     "ocp_prod_release": {
         "name": "OCP production release pipeline",
         "pipelinerun": {
@@ -1203,6 +1232,10 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
         "pipelinerun_key": "build-ok-to-test-comment",
         "config_key": "staging"
     },
+    "nudging_dev": {
+        "pipelinerun_key": "nudge_pipelinerun",
+        "config_key": "development"
+    },
 
     # Test key PipelineRuns with production config
     "multiplatform_new_production": {
@@ -1232,6 +1265,10 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
     "gitlab_merge_request_test_production": {
         "pipelinerun_key": "gitlab_merge_request_test",
         "config_key": "production"
+    },
+    "nudging_staging": {
+        "pipelinerun_key": "nudge_pipelinerun",
+        "config_key": "staging"
     },
 
     # Test key PipelineRuns with production kflux-ocp-p01 config
