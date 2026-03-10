@@ -11,3 +11,10 @@ kind: ApplicationSet
 metadata:
   name: nvme-storage-configurator
 $patch: delete
+---
+# Cardinality exporter is staging-only
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: monitoring-cardinality
+$patch: delete
