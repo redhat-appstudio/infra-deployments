@@ -14,15 +14,15 @@ timestamp() {
 }
 
 log_info() {
-    echo "[$(timestamp)] [INFO] $*"
+    echo "[$(timestamp)] [INFO] $*" >&2
 }
 
 log_success() {
-    echo "[$(timestamp)] [SUCCESS] $*"
+    echo "[$(timestamp)] [SUCCESS] $*" >&2
 }
 
 log_warn() {
-    echo "[$(timestamp)] [WARN] $*"
+    echo "[$(timestamp)] [WARN] $*" >&2
 }
 
 log_error() {
@@ -30,15 +30,15 @@ log_error() {
 }
 
 log_substep() {
-    echo "[$(timestamp)] [SUBSTEP] $*"
+    echo "[$(timestamp)] [SUBSTEP] $*" >&2
 }
 
 log_wait() {
-    echo "[$(timestamp)] [WAITING] $*"
+    echo "[$(timestamp)] [WAITING] $*" >&2
 }
 
 log_debug() {
-    echo "[$(timestamp)] [DEBUG] $*"
+    echo "[$(timestamp)] [DEBUG] $*" >&2
 }
 
 # =============================================================================
