@@ -49,6 +49,12 @@ spec:
           name: clusterkubearchiveconfig-read
           jsonPointers:
             - /subjects
+        # ignore RoleBinding that gets modified by KubeArchive operator
+        - kind: RoleBinding
+          group: rbac.authorization.k8s.io
+          name: kubearchive-vacuum
+          jsonPointers:
+            - /subjects
       project: default
       source:
         path: "{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}"
