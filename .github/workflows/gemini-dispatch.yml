@@ -111,7 +111,7 @@ jobs:
             }
 
       - name: 'Add Gemini helper comment'
-        if: '${{ github.event_name }}.${{ github.event.action }} == "pull_request.opened"'
+        if: ${{ github.event_name == 'pull_request' && github.event.action == 'opened' }}
         env:
           GITHUB_TOKEN: '${{ steps.mint_identity_token.outputs.token || secrets.GITHUB_TOKEN || github.token }}'
           PR_NUMBER: '${{ github.event.pull_request.number }}'
