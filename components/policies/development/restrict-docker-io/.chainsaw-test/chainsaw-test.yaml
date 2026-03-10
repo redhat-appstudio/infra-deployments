@@ -1,0 +1,94 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: deny-docker-io-image
+spec:
+  description: |
+    Tests that a Pod with an explicit docker.io image is denied.
+  concurrent: false
+  steps:
+  - name: given-cluster-policy-is-ready
+    try:
+    - apply:
+        file: ../restrict-docker-io-cluster-policy.yaml
+    - assert:
+        file: chainsaw-assert-clusterpolicy.yaml
+  - name: then-docker-io-pod-is-denied
+    try:
+    - create:
+        file: resources/pod-bad-docker-io.yaml
+        expect:
+        - check:
+            ($error != null): true
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: deny-index-docker-io-image
+spec:
+  description: |
+    Tests that a Pod with an explicit index.docker.io image is denied.
+  concurrent: false
+  steps:
+  - name: given-cluster-policy-is-ready
+    try:
+    - apply:
+        file: ../restrict-docker-io-cluster-policy.yaml
+    - assert:
+        file: chainsaw-assert-clusterpolicy.yaml
+  - name: then-index-docker-io-pod-is-denied
+    try:
+    - create:
+        file: resources/pod-bad-index-docker-io.yaml
+        expect:
+        - check:
+            ($error != null): true
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: deny-unqualified-image
+spec:
+  description: |
+    Tests that a Pod with an unqualified image (no registry, e.g. nginx:latest)
+    is denied, since it defaults to docker.io.
+  concurrent: false
+  steps:
+  - name: given-cluster-policy-is-ready
+    try:
+    - apply:
+        file: ../restrict-docker-io-cluster-policy.yaml
+    - assert:
+        file: chainsaw-assert-clusterpolicy.yaml
+  - name: then-unqualified-image-pod-is-denied
+    try:
+    - create:
+        file: resources/pod-bad-unqualified.yaml
+        expect:
+        - check:
+            ($error != null): true
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: allow-non-docker-registry
+spec:
+  description: |
+    Tests that a Pod with a fully qualified image from an allowed
+    registry (registry.access.redhat.com) is accepted.
+  concurrent: false
+  steps:
+  - name: given-cluster-policy-is-ready
+    try:
+    - apply:
+        file: ../restrict-docker-io-cluster-policy.yaml
+    - assert:
+        file: chainsaw-assert-clusterpolicy.yaml
+  - name: then-allowed-registry-pod-is-created
+    try:
+    - create:
+        file: resources/pod-good-registry.yaml
