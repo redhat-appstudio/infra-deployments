@@ -1,0 +1,19 @@
+---
+resources:
+  requests:
+    cpu: 256m
+    memory: 2048Mi
+    ephemeral-storage: 2Gi
+  limits:
+    cpu: 2000m
+    memory: 4096Mi
+    ephemeral-storage: 5Gi
+
+customConfig:
+  sources:
+    k8s_logs:
+      extra_label_selector: "app.kubernetes.io/managed-by in (tekton-pipelines,pipelinesascode.tekton.dev)"
+      extra_field_selector: "metadata.namespace!=product-kubearchive-logging"
+
+podLabels:
+  vector.dev/exclude: "false"
