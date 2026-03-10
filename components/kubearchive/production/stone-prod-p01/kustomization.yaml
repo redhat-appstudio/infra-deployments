@@ -73,6 +73,7 @@ patches:
         annotations:
           # Needed if just the command is changed, otherwise the job needs to be deleted manually
           argocd.argoproj.io/sync-options: Force=true,Replace=true
+          argocd.argoproj.io/sync-wave: "-1"
           ignore-check.kube-linter.io/no-read-only-root-fs: >
             "This job needs to clone a repository to do its job, so it needs write access to the FS."
       spec:
