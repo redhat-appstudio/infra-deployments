@@ -34,9 +34,6 @@ spec:
             - name: auth-config
               mountPath: /etc/cardinality-exporter
               readOnly: true
-            - name: serving-ca
-              mountPath: /etc/cardinality-exporter/tls
-              readOnly: true
           ports:
             - containerPort: 9090
               name: http
@@ -62,6 +59,3 @@ spec:
         - name: auth-config
           configMap:
             name: cardinality-exporter-auth
-        - name: serving-ca
-          configMap:
-            name: cardinality-exporter-serving-ca
