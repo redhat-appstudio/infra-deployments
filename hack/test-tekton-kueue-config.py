@@ -940,6 +940,28 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
         "config_key": "production"
     },
 
+    # Test key PipelineRuns with production kflux-ocp-p01 config
+    "multiplatform_new_production-kflux-ocp-p01": {
+        "pipelinerun_key": "multiplatform_new",
+        "config_key": "production-kflux-ocp-p01"
+    },
+    "release_managed_production-kflux-ocp-p01": {
+        "pipelinerun_key": "release_managed",
+        "config_key": "production-kflux-ocp-p01"
+    },
+    "mintmaker_production-kflux-ocp-p01": {
+        "pipelinerun_key": "mintmaker",
+        "config_key": "production-kflux-ocp-p01"
+    },
+    "internal_pipelinerun_child_production-kflux-ocp-p01": {
+        "pipelinerun_key": "internal_pipelinerun_child",
+        "config_key": "production-kflux-ocp-p01"
+    },
+    "prefer_new_parameters_production-kflux-ocp-p01": {
+        "pipelinerun_key": "prefer-new-parameters",
+        "config_key": "production-kflux-ocp-p01"
+    },
+
     # Example: Test the same PipelineRun with different configs to show reusability
     "user-specific-priority_and_mixed_platforms_production-kflux-ocp-p01": {
         "pipelinerun_key": "user-specific-priority",
