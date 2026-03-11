@@ -15,7 +15,7 @@ spec:
       default: container-single-arch
   steps:
     - name: push-metrics
-      image: python:3.12-ubi9
+      image: registry.redhat.io/ubi9/python-312:latest
       env:
         - name: OTEL_ENDPOINT
           value: $(params.otel-endpoint)
