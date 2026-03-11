@@ -11,7 +11,9 @@ metadata:
   namespace: appstudio-grafana
 spec:
   channel: v5
-  installPlanApproval: Automatic
+  # Workaround for the bug in the operator: https://github.com/grafana/grafana-operator/issues/2552
+  installPlanApproval: Manual
+  startingCSV: grafana-operator.v5.21.2
   name: grafana-operator
   source: community-operators
   sourceNamespace: openshift-marketplace
