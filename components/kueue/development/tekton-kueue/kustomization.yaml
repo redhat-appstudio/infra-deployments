@@ -24,6 +24,19 @@ generatorOptions:
   disableNameSuffixHash: true
 
 patches:
+  # Development: 1 replica so sync/operator does not revert scale-down (staging/prod use 2+).
+  - path: controller-patch.yaml
+    target:
+      group: apps
+      kind: Deployment
+      name: tekton-kueue-controller-manager
+      version: v1
+  - path: webhook-patch.yaml
+    target:
+      group: apps
+      kind: Deployment
+      name: tekton-kueue-webhook
+      version: v1
   - target:
       kind: Namespace
       name: tekton-kueue

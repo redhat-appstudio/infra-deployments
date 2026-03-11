@@ -31,6 +31,11 @@ patches:
         path: /metadata/annotations/ignore-check.kube-linter.io~1no-read-only-root-fs
         value: The operator needs to be able to write to /tmp
       - op: add
+        path: /spec/template/spec/containers/0/resources/requests
+        value:
+          cpu: 50m
+          memory: 128Mi
+      - op: add
         path: /spec/template/spec/containers/0/resources/limits
         value:
           cpu: 200m
