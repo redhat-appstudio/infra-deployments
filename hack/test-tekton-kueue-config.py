@@ -1101,35 +1101,35 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
         "pipelinerun_key": "gitlab_merge_request_test",
         "config_key": "development"
     },
-    "test-test-comment": {
+    "test_test_comment_development": {
         "pipelinerun_key": "test-test-comment",
         "config_key": "development"
     },
-    "test-retest-comment": {
+    "test_retest_comment_development": {
         "pipelinerun_key": "test-retest-comment",
         "config_key": "development"
     },
-    "test-retest-all-comment": {
+    "test_retest_all_comment_development": {
         "pipelinerun_key": "test-retest-all-comment",
         "config_key": "development"
     },
-    "test-ok-to-test-comment": {
+    "test_ok_to_test_comment_development": {
         "pipelinerun_key": "test-ok-to-test-comment",
         "config_key": "development"
     },
-    "build-test-comment": {
+    "build_test_comment_development": {
         "pipelinerun_key": "build-test-comment",
         "config_key": "development"
     },
-    "build-retest-comment": {
+    "build_retest_comment_development": {
         "pipelinerun_key": "build-retest-comment",
         "config_key": "development"
     },
-    "build-retest-all-comment": {
+    "build_retest_all_comment_development": {
         "pipelinerun_key": "build-retest-all-comment",
         "config_key": "development"
     },
-    "build-ok-to-test-comment": {
+    "build_ok_to_test_comment_development": {
         "pipelinerun_key": "build-ok-to-test-comment",
         "config_key": "development"
     },
@@ -1177,35 +1177,35 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
         "pipelinerun_key": "gitlab_merge_request_test",
         "config_key": "staging"
     },
-    "test-test-comment": {
+    "test_test_comment_staging": {
         "pipelinerun_key": "test-test-comment",
         "config_key": "staging"
     },
-    "test-retest-comment": {
+    "test_retest_comment_staging": {
         "pipelinerun_key": "test-retest-comment",
         "config_key": "staging"
     },
-    "test-retest-all-comment": {
+    "test_retest_all_comment_staging": {
         "pipelinerun_key": "test-retest-all-comment",
         "config_key": "staging"
     },
-    "test-ok-to-test-comment": {
+    "test_ok_to_test_comment_staging": {
         "pipelinerun_key": "test-ok-to-test-comment",
         "config_key": "staging"
     },
-    "build-test-comment": {
+    "build_test_comment_staging": {
         "pipelinerun_key": "build-test-comment",
         "config_key": "staging"
     },
-    "build-retest-comment": {
+    "build_retest_comment_staging": {
         "pipelinerun_key": "build-retest-comment",
         "config_key": "staging"
     },
-    "build-retest-all-comment": {
+    "build_retest_all_comment_staging": {
         "pipelinerun_key": "build-retest-all-comment",
         "config_key": "staging"
     },
-    "build-ok-to-test-comment": {
+    "build_ok_to_test_comment_staging": {
         "pipelinerun_key": "build-ok-to-test-comment",
         "config_key": "staging"
     },
