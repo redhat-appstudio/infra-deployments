@@ -321,6 +321,65 @@ PIPELINERUN_DEFINITIONS: Dict[str, PipelineRunTestData] = {
         }
     },
 
+    "gitlab_merge_request_build": {
+        "name": "Build pipeline triggered by gitlab merge request",
+        "pipelinerun": {
+            "apiVersion": "tekton.dev/v1",
+            "kind": "PipelineRun",
+            "metadata": {
+                "name": "gitlab_merge_request_build",
+                "namespace": "default",
+                "labels": {
+                    "pipelinesascode.tekton.dev/event-type": "Merge_Request"
+                }
+            },
+            "spec": {
+                "pipelineSpec": {
+                    "description": "foo", # a completely empty pipelineSpec is not allowed
+                    "tasks": [],
+                },
+                "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
+            }
+        },
+        "expected": {
+            "annotations": {},
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-pre-merge-build",
+                "pipelinesascode.tekton.dev/event-type": "Merge_Request"
+            }
+        }
+    },
+    "gitlab_merge_request_test": {
+        "name": "Testing pipeline triggered by gitlab merge request",
+        "pipelinerun": {
+            "apiVersion": "tekton.dev/v1",
+            "kind": "PipelineRun",
+            "metadata": {
+                "name": "gitlab_merge_request_test",
+                "namespace": "default",
+                "labels": {
+                    "pac.test.appstudio.openshift.io/event-type": "Merge_Request"
+                }
+            },
+            "spec": {
+                "pipelineSpec": {
+                    "description": "foo", # a completely empty pipelineSpec is not allowed
+                    "tasks": [],
+                },
+                "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
+            }
+        },
+        "expected": {
+            "annotations": {},
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-pre-merge-test",
+                "pac.test.appstudio.openshift.io/event-type": "Merge_Request"
+            }
+        }
+    },
+
     "release_managed": {
         "name": "Release managed pipeline",
         "pipelinerun": {
@@ -806,6 +865,14 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
         "pipelinerun_key": "prefer-new-parameters",
         "config_key": "development"
     },
+    "gitlab_merge_request_build_dev": {
+        "pipelinerun_key": "gitlab_merge_request_build",
+        "config_key": "development"
+    },
+    "gitlab_merge_request_test_dev": {
+        "pipelinerun_key": "gitlab_merge_request_test",
+        "config_key": "development"
+    },
 
     # multiplatform_old edge cases
     "multiplatform_old_no_pipelineSpecTasks": {
@@ -842,6 +909,14 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
         "pipelinerun_key": "prefer-new-parameters",
         "config_key": "staging"
     },
+    "gitlab_merge_request_staging": {
+        "pipelinerun_key": "gitlab_merge_request_build",
+        "config_key": "staging"
+    },
+    "gitlab_merge_request_test_staging": {
+        "pipelinerun_key": "gitlab_merge_request_test",
+        "config_key": "staging"
+    },
 
     # Test key PipelineRuns with production config
     "multiplatform_new_production": {
@@ -863,6 +938,28 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
     "prefer_new_parameters_staging": {
         "pipelinerun_key": "prefer-new-parameters",
         "config_key": "production"
+    },
+
+    # Test key PipelineRuns with production kflux-ocp-p01 config
+    "multiplatform_new_production-kflux-ocp-p01": {
+        "pipelinerun_key": "multiplatform_new",
+        "config_key": "production-kflux-ocp-p01"
+    },
+    "release_managed_production-kflux-ocp-p01": {
+        "pipelinerun_key": "release_managed",
+        "config_key": "production-kflux-ocp-p01"
+    },
+    "mintmaker_production-kflux-ocp-p01": {
+        "pipelinerun_key": "mintmaker",
+        "config_key": "production-kflux-ocp-p01"
+    },
+    "internal_pipelinerun_child_production-kflux-ocp-p01": {
+        "pipelinerun_key": "internal_pipelinerun_child",
+        "config_key": "production-kflux-ocp-p01"
+    },
+    "prefer_new_parameters_production-kflux-ocp-p01": {
+        "pipelinerun_key": "prefer-new-parameters",
+        "config_key": "production-kflux-ocp-p01"
     },
 
     # Example: Test the same PipelineRun with different configs to show reusability

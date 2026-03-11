@@ -85,6 +85,9 @@ func writeCISummary(result *renderdiff.DiffResult) error {
 
 	const truncateThreshold = 50 * 1024 // 50KB
 	for _, d := range result.Diffs {
+		if d.SkipOutput {
+			continue
+		}
 		if d.Error != "" {
 			summary := fmt.Sprintf("%s (%s) — build error", d.Path, d.Env)
 			_, _ = fmt.Fprintf(w, "<details>\n<summary>%s</summary>\n\n", summary)
@@ -162,6 +165,9 @@ func buildCommentBody(result *renderdiff.DiffResult, headSHA, baseSHA string) st
 	fmt.Fprintln(&b, "| Component | Environment | Changes |")
 	fmt.Fprintln(&b, "|-----------|-------------|---------|")
 	for _, d := range result.Diffs {
+		if d.SkipOutput {
+			continue
+		}
 		if d.Error != "" {
 			fmt.Fprintf(&b, "| `%s` | %s | build error |\n", d.Path, d.Env)
 		} else {
