@@ -15,6 +15,7 @@ import (
 type fakeBuilder struct {
 	exist map[string]bool
 	yamls map[string][]byte
+	errs  map[string]error // optional per-path errors
 }
 
 func (f *fakeBuilder) DirExists(rel string) bool {
@@ -22,6 +23,11 @@ func (f *fakeBuilder) DirExists(rel string) bool {
 }
 
 func (f *fakeBuilder) BuildKustomization(rel string) ([]byte, error) {
+	if f.errs != nil {
+		if err, ok := f.errs[rel]; ok {
+			return nil, err
+		}
+	}
 	if y, ok := f.yamls[rel]; ok {
 		return y, nil
 	}
@@ -111,7 +117,7 @@ func TestEngine_BuildFailure_ReportsError(t *testing.T) {
 
 	head := &fakeBuilder{
 		exist: map[string]bool{"components/broken/staging": true},
-		yamls: map[string][]byte{}, // BuildKustomization will fail
+		yamls: map[string][]byte{}, // BuildKustomization will fail with generic error
 	}
 	base := &fakeBuilder{
 		exist: map[string]bool{"components/broken/staging": true},
@@ -127,7 +133,74 @@ func TestEngine_BuildFailure_ReportsError(t *testing.T) {
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(result.Diffs).To(HaveLen(1))
 	g.Expect(result.Diffs[0].Error).NotTo(BeEmpty())
+	g.Expect(result.Diffs[0].SkipOutput).To(BeFalse())
 	g.Expect(result.Diffs[0].Path).To(Equal("components/broken/staging"))
+}
+
+func TestEngine_NonKustomizationError_ExcludedFromDiffs(t *testing.T) {
+	g := NewWithT(t)
+
+	head := &fakeBuilder{
+		exist: map[string]bool{"components/plain/staging": true},
+		errs: map[string]error{
+			"components/plain/staging": fmt.Errorf("unable to find one of 'kustomization.yaml', 'kustomization.yml' or 'Kustomization' in directory '/tmp/plain'"),
+		},
+	}
+	base := &fakeBuilder{
+		exist: map[string]bool{"components/plain/staging": true},
+		errs: map[string]error{
+			"components/plain/staging": fmt.Errorf("unable to find one of 'kustomization.yaml', 'kustomization.yml' or 'Kustomization' in directory '/tmp/plain'"),
+		},
+	}
+
+	engine := NewEngine(head, base, 1)
+	affected := map[detector.Environment][]appset.ComponentPath{
+		detector.Staging: {{Path: "components/plain/staging"}},
+	}
+
+	result, err := engine.Run(context.Background(), affected)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.Diffs).To(BeEmpty(), "non-kustomization errors should be excluded from Diffs")
+}
+
+func TestEngine_MixedErrors_OnlyGenuineInDiffs(t *testing.T) {
+	g := NewWithT(t)
+
+	head := &fakeBuilder{
+		exist: map[string]bool{
+			"components/plain/staging":  true,
+			"components/broken/staging": true,
+		},
+		errs: map[string]error{
+			"components/plain/staging": fmt.Errorf("unable to find one of 'kustomization.yaml', 'kustomization.yml' or 'Kustomization' in directory '/tmp/plain'"),
+		},
+		yamls: map[string][]byte{}, // broken will get generic error
+	}
+	base := &fakeBuilder{
+		exist: map[string]bool{
+			"components/plain/staging":  true,
+			"components/broken/staging": true,
+		},
+		errs: map[string]error{
+			"components/plain/staging": fmt.Errorf("unable to find one of 'kustomization.yaml', 'kustomization.yml' or 'Kustomization' in directory '/tmp/plain'"),
+		},
+		yamls: map[string][]byte{"components/broken/staging": []byte("valid: yaml\n")},
+	}
+
+	engine := NewEngine(head, base, 2)
+	affected := map[detector.Environment][]appset.ComponentPath{
+		detector.Staging: {
+			{Path: "components/plain/staging"},
+			{Path: "components/broken/staging"},
+		},
+	}
+
+	result, err := engine.Run(context.Background(), affected)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.Diffs).To(HaveLen(1), "only genuine build error should be in Diffs")
+	g.Expect(result.Diffs[0].Path).To(Equal("components/broken/staging"))
+	g.Expect(result.Diffs[0].Error).NotTo(BeEmpty())
+	g.Expect(result.Diffs[0].SkipOutput).To(BeFalse())
 }
 
 func TestEngine_NoEffectiveChange(t *testing.T) {

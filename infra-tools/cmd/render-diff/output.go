@@ -60,6 +60,9 @@ func runLocal(ctx context.Context, engine *renderdiff.Engine, affected map[detec
 
 // printComponentDiff prints a single component's diff to stdout.
 func printComponentDiff(cd renderdiff.ComponentDiff, useColor bool) {
+	if cd.SkipOutput {
+		return
+	}
 	if cd.Error != "" {
 		header := fmt.Sprintf("=== %s (%s) === BUILD ERROR", cd.Path, cd.Env)
 		if useColor {
@@ -115,6 +118,9 @@ func printSummary(result *renderdiff.DiffResult) {
 	fmt.Println("\n--- Summary ---")
 	sortDiffs(result.Diffs)
 	for _, d := range result.Diffs {
+		if d.SkipOutput {
+			continue
+		}
 		if d.Error != "" {
 			fmt.Printf("  %s (%s): BUILD ERROR\n", d.Path, d.Env)
 		} else {

@@ -97,9 +97,15 @@ func (e *Engine) RunProgressive(ctx context.Context, affected map[detector.Envir
 				cd := FromComponentPath(cp, env)
 
 				if err := e.buildPair(cd); err != nil {
+					cd.Error = err.Error()
+					if IsNotKustomizationError(cd.Error) {
+						slog.Warn("skipping non-kustomization directory",
+							"path", cp.Path, "env", env, "err", err)
+						cd.SkipOutput = true
+						return nil
+					}
 					slog.Warn("build error for component",
 						"path", cp.Path, "env", env, "err", err)
-					cd.Error = err.Error()
 					results <- *cd
 					return nil
 				}
