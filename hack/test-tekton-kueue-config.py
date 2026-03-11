@@ -334,10 +334,7 @@ PIPELINERUN_DEFINITIONS: Dict[str, PipelineRunTestData] = {
                 }
             },
             "spec": {
-                "pipelineSpec": {
-                    "description": "foo", # a completely empty pipelineSpec is not allowed
-                    "tasks": [],
-                },
+                "pipelineRef": {"name": "merge-request-build-pipeline"},
                 "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
             }
         },
@@ -363,10 +360,7 @@ PIPELINERUN_DEFINITIONS: Dict[str, PipelineRunTestData] = {
                 }
             },
             "spec": {
-                "pipelineSpec": {
-                    "description": "foo", # a completely empty pipelineSpec is not allowed
-                    "tasks": [],
-                },
+                "pipelineRef": {"name": "merge-request-test-pipeline"},
                 "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
             }
         },
@@ -987,6 +981,15 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
     },
     "ocp_stage_release_production-kflux-ocp-p01": {
         "pipelinerun_key": "ocp_stage_release",
+        "config_key": "production-kflux-ocp-p01"
+    },
+
+    "gitlab_merge_request_production-kflux-ocp-p01": {
+        "pipelinerun_key": "gitlab_merge_request_build",
+        "config_key": "production-kflux-ocp-p01"
+    },
+    "gitlab_merge_request_test_production-kflux-ocp-p01": {
+        "pipelinerun_key": "gitlab_merge_request_test",
         "config_key": "production-kflux-ocp-p01"
     }
 }
