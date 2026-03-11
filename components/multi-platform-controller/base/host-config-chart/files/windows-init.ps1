@@ -31,59 +31,9 @@ Invoke-WebRequest -UseBasicParsing "https://raw.githubusercontent.com/microsoft/
 .\install-docker-ce.ps1
 
 # ---------------------------------------------------
-# OpenSSH Installation & Administrator Configuration
+# OpenSSH Installation (service started at end of script)
 # ---------------------------------------------------
 Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
-Start-Service sshd
-Set-Service -Name sshd -StartupType 'Automatic'
-
-Remove-NetFirewallRule -Name 'OpenSSH-Server-In-TCP' -ErrorAction SilentlyContinue
-New-NetFirewallRule -Name 'OpenSSH-Server-In-TCP' `
-    -DisplayName 'OpenSSH Server (sshd)' `
-    -Enabled True `
-    -Direction Inbound `
-    -Protocol TCP `
-    -Action Allow `
-    -LocalPort 22 `
-    -RemoteAddress any | Out-Null
-
-# Get public key from AWS Instance Metadata Service (IMDSv2)
-$MAGIC_IP = "169.254.169.254"
-$IMDS_TOKEN = Invoke-RestMethod -Uri "http://${MAGIC_IP}/latest/api/token" `
-    -Method 'PUT' `
-    -Headers @{'X-aws-ec2-metadata-token-ttl-seconds' = '21600'}
-$PUBKEY = Invoke-RestMethod -Uri "http://${MAGIC_IP}/latest/meta-data/public-keys/0/openssh-key" `
-    -Headers @{'X-aws-ec2-metadata-token' = $IMDS_TOKEN}
-
-Start-Sleep 5
-
-# Configure SSH authorized_keys for Administrator
-$SSH_PATH = "C:\ProgramData\ssh"
-Write-Host "Waiting for SSH Folder '${SSH_PATH}'"
-if (-not (Wait-Folder -FolderPath ${SSH_PATH})) {
-    Write-Warning "SSH folder not found, creating it manually"
-    New-Item -ItemType Directory -Path $SSH_PATH | Out-Null
-}
-Write-Host "SSH Folder '${SSH_PATH}' found"
-
-$PUBKEY | Out-File -FilePath "$SSH_PATH\administrators_authorized_keys" -Encoding ascii
-
-$ACL = Get-Acl "$SSH_PATH\administrators_authorized_keys"
-$Ar = New-Object System.Security.AccessControl.FileSystemAccessRule(
-    "NT AUTHORITY\SYSTEM",
-    "FullControl",
-    "Allow"
-)
-$ACL.SetAccessRule($Ar)
-$Ar = New-Object System.Security.AccessControl.FileSystemAccessRule(
-    "BUILTIN\Administrators",
-    "FullControl",
-    "Allow"
-)
-$ACL.SetAccessRule($Ar)
-Set-Acl "$SSH_PATH\administrators_authorized_keys" $ACL
-
-Restart-Service sshd
 
 # -------------------------------
 # User Creation & Profile Setup
@@ -377,5 +327,57 @@ Write-Host "Scoop installed successfully!"
     $scriptAcl.SetOwner($userSidObj)
     Set-Acl $scoopScriptPath $scriptAcl
 }
+
+# ---------------------------------------------------
+# OpenSSH Administrator Configuration & Service Start
+# ---------------------------------------------------
+Remove-NetFirewallRule -Name 'OpenSSH-Server-In-TCP' -ErrorAction SilentlyContinue
+New-NetFirewallRule -Name 'OpenSSH-Server-In-TCP' `
+    -DisplayName 'OpenSSH Server (sshd)' `
+    -Enabled True `
+    -Direction Inbound `
+    -Protocol TCP `
+    -Action Allow `
+    -LocalPort 22 `
+    -RemoteAddress any | Out-Null
+
+# Get public key from AWS Instance Metadata Service (IMDSv2)
+$MAGIC_IP = "169.254.169.254"
+$IMDS_TOKEN = Invoke-RestMethod -Uri "http://${MAGIC_IP}/latest/api/token" `
+    -Method 'PUT' `
+    -Headers @{'X-aws-ec2-metadata-token-ttl-seconds' = '21600'}
+$PUBKEY = Invoke-RestMethod -Uri "http://${MAGIC_IP}/latest/meta-data/public-keys/0/openssh-key" `
+    -Headers @{'X-aws-ec2-metadata-token' = $IMDS_TOKEN}
+
+Start-Sleep 5
+
+# Configure SSH authorized_keys for Administrator
+$SSH_PATH = "C:\ProgramData\ssh"
+Write-Host "Waiting for SSH Folder '${SSH_PATH}'"
+if (-not (Wait-Folder -FolderPath ${SSH_PATH})) {
+    Write-Warning "SSH folder not found, creating it manually"
+    New-Item -ItemType Directory -Path $SSH_PATH | Out-Null
+}
+Write-Host "SSH Folder '${SSH_PATH}' found"
+
+$PUBKEY | Out-File -FilePath "$SSH_PATH\administrators_authorized_keys" -Encoding ascii
+
+$ACL = Get-Acl "$SSH_PATH\administrators_authorized_keys"
+$Ar = New-Object System.Security.AccessControl.FileSystemAccessRule(
+    "NT AUTHORITY\SYSTEM",
+    "FullControl",
+    "Allow"
+)
+$ACL.SetAccessRule($Ar)
+$Ar = New-Object System.Security.AccessControl.FileSystemAccessRule(
+    "BUILTIN\Administrators",
+    "FullControl",
+    "Allow"
+)
+$ACL.SetAccessRule($Ar)
+Set-Acl "$SSH_PATH\administrators_authorized_keys" $ACL
+
+Start-Service sshd
+Set-Service -Name sshd -StartupType 'Automatic'
 </powershell>
 <persist>true</persist>
