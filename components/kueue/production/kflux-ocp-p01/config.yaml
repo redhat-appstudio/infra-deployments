@@ -86,6 +86,12 @@ cel:
         resource('aws-ip', 1)
       ) : []
 
+    # Set mintmaker resource requests.
+    # Necessary since mintmaker refreshes can overload clusters without a
+    # bottleneck on the number of pipelineruns running.
+    - |
+        plrNamespace == 'mintmaker' ? [resource('mintmaker', 1)] : []
+
     # Set the pipeline priority
     # First condition is to check if the priority class is already set and keep it if it is
     # We allow this since the cluster is dedicated to the OCP team.
