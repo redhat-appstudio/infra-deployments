@@ -1,0 +1,61 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus-cardinality-exporter
+  labels:
+    app: prometheus-cardinality-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus-cardinality-exporter
+  template:
+    metadata:
+      labels:
+        app: prometheus-cardinality-exporter
+    spec:
+      serviceAccountName: prometheus-cardinality-exporter
+      containers:
+        - name: prometheus-cardinality-exporter
+          imagePullPolicy: Always
+          image: quay.io/redhat-appstudio/cardinality-exporter:placeholder
+          command: ["/home/app/prometheus-cardinality-exporter"]
+          securityContext:
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+          args:
+            - "--service_discovery"
+            - "--freq=1"
+            - "--selector=app.kubernetes.io/component=prometheus"
+            - "--regex=prometheus[a-zA-Z0-9_-]*"
+            - "--auth=/etc/cardinality-exporter/auth.yaml"
+          volumeMounts:
+            - name: auth-config
+              mountPath: /etc/cardinality-exporter
+              readOnly: true
+          ports:
+            - containerPort: 9090
+              name: http
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 3
+          resources:
+            requests:
+              memory: 200Mi
+              cpu: 100m
+            limits:
+              memory: 400Mi
+      volumes:
+        - name: auth-config
+          configMap:
+            name: cardinality-exporter-auth
