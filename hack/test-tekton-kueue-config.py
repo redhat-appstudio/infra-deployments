@@ -472,10 +472,7 @@ PIPELINERUN_DEFINITIONS: Dict[str, PipelineRunTestData] = {
                 }
             },
             "spec": {
-                "pipelineSpec": {
-                    "description": "foo", # a completely empty pipelineSpec is not allowed
-                    "tasks": [],
-                },
+                "pipelineRef": {"name": "build-test-comment-pipeline"},
                 "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
             }
         },
@@ -502,10 +499,7 @@ PIPELINERUN_DEFINITIONS: Dict[str, PipelineRunTestData] = {
                 }
             },
             "spec": {
-                "pipelineSpec": {
-                    "description": "foo", # a completely empty pipelineSpec is not allowed
-                    "tasks": [],
-                },
+                "pipelineRef": {"name": "build-retest-comment-pipeline"},
                 "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
             }
         },
@@ -532,10 +526,7 @@ PIPELINERUN_DEFINITIONS: Dict[str, PipelineRunTestData] = {
                 }
             },
             "spec": {
-                "pipelineSpec": {
-                    "description": "foo", # a completely empty pipelineSpec is not allowed
-                    "tasks": [],
-                },
+                "pipelineRef": {"name": "build-retest-all-comment-pipeline"},
                 "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
             }
         },
@@ -562,10 +553,7 @@ PIPELINERUN_DEFINITIONS: Dict[str, PipelineRunTestData] = {
                 }
             },
             "spec": {
-                "pipelineSpec": {
-                    "description": "foo", # a completely empty pipelineSpec is not allowed
-                    "tasks": [],
-                },
+                "pipelineRef": {"name": "build-ok-to-test-comment-pipeline"},
                 "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
             }
         },
