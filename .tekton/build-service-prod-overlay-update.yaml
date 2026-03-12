@@ -29,3 +29,22 @@ spec:
               sed -i "s/$OLD_PROD_SHA/$STAGE_SHA/g" components/monitoring/grafana/base/dashboards/build-service/kustomization.yaml
         taskRef:
           name: promote-component
+    finally:
+      - name: slack-webhook-notification
+        taskRef:
+          params:
+          - name: bundle
+            value: quay.io/konflux-ci/tekton-catalog/task-slack-webhook-notification:0.1
+          - name: name
+            value: slack-webhook-notification
+          - name: kind
+            value: Task
+        when:
+        - input: $(tasks.status)
+          operator: in
+          values: ["Failed"]
+        params:
+        - name: message
+          value: ":x: Stage to production component upgrade pipelineRun for build-service failed"
+        - name: key-name
+          value: "build"
