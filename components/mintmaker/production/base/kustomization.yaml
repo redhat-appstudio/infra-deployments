@@ -19,7 +19,13 @@ images:
 commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 
+configMapGenerator:
+  - name: controller-config
+    files:
+    - config.json
+
 patches:
+  - path: manager-mount-config-patch.yaml
   - path: pipelines-as-code-secret-path.yaml
     target:
       name: pipelines-as-code-secret
