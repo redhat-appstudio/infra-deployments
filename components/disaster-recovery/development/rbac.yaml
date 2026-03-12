@@ -1,0 +1,31 @@
+---
+# https://github.com/tektoncd/triggers/blob/main/examples/rbac.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cron-trigger
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: triggers-cron-eventlistener-binding-r
+subjects:
+- kind: ServiceAccount
+  name: cron-trigger
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: tekton-triggers-eventlistener-roles
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: triggers-cron-eventlistener-binding-cr
+subjects:
+- kind: ServiceAccount
+  name: cron-trigger
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: tekton-triggers-eventlistener-clusterroles
