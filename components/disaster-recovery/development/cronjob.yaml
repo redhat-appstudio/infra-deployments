@@ -1,0 +1,44 @@
+---
+# https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/
+# https://github.com/tektoncd/triggers/blob/main/examples/v1beta1/cron/cronjob.yaml
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: run-disaster-recovery-pipelinerun
+  namespace: konflux-disaster-recovery
+spec:
+  schedule: "0 * * * *"  # every hour
+  concurrencyPolicy: Forbid
+  suspend: true
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: cron-event-producer
+            image: quay.io/konflux-ci/tools@sha256:b846eb68ab06f4c61c987bd1053e0e2dda13e18ecd5a75c945a18f7d78743bd8
+            command:
+              - "/bin/sh"
+              - "-c"
+            args: ["curl -X POST --data {} el-cron-listener.${NAMESPACE}.svc.cluster.local:8080"]
+            env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            resources:
+              limits:
+                cpu: 100m
+                memory: 128Mi
+              requests:
+                cpu: 100m
+                memory: 128Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              runAsNonRoot: true
+              runAsUser: 65534 # run as nobody
+              capabilities:
+                drop:
+                - "ALL"
+          restartPolicy: Never
