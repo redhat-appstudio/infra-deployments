@@ -459,6 +459,234 @@ PIPELINERUN_DEFINITIONS: Dict[str, PipelineRunTestData] = {
         }
     },
 
+    "build-test-comment": {
+        "name": "build pipeline triggered via /test comment",
+        "pipelinerun": {
+            "apiVersion": "tekton.dev/v1",
+            "kind": "PipelineRun",
+            "metadata": {
+                "name": "build-test-comment",
+                "namespace": "default",
+                "labels": {
+                    "pipelinesascode.tekton.dev/event-type": "test-comment"
+                }
+            },
+            "spec": {
+                "pipelineRef": {"name": "build-test-comment-pipeline"},
+                "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
+            }
+        },
+        "expected": {
+            "annotations": {},
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-pre-merge-build",
+                "pipelinesascode.tekton.dev/event-type": "test-comment"
+            }
+        }
+    },
+
+    "build-retest-comment": {
+        "name": "build pipeline triggered via /retest check comment",
+        "pipelinerun": {
+            "apiVersion": "tekton.dev/v1",
+            "kind": "PipelineRun",
+            "metadata": {
+                "name": "build-retest-comment",
+                "namespace": "default",
+                "labels": {
+                    "pipelinesascode.tekton.dev/event-type": "retest-comment"
+                }
+            },
+            "spec": {
+                "pipelineRef": {"name": "build-retest-comment-pipeline"},
+                "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
+            }
+        },
+        "expected": {
+            "annotations": {},
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-pre-merge-build",
+                "pipelinesascode.tekton.dev/event-type": "retest-comment"
+            }
+        }
+    },
+
+    "build-retest-all-comment": {
+        "name": "build pipeline triggered via /retest comment",
+        "pipelinerun": {
+            "apiVersion": "tekton.dev/v1",
+            "kind": "PipelineRun",
+            "metadata": {
+                "name": "build-retest-all-comment",
+                "namespace": "default",
+                "labels": {
+                    "pipelinesascode.tekton.dev/event-type": "retest-all-comment"
+                }
+            },
+            "spec": {
+                "pipelineRef": {"name": "build-retest-all-comment-pipeline"},
+                "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
+            }
+        },
+        "expected": {
+            "annotations": {},
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-pre-merge-build",
+                "pipelinesascode.tekton.dev/event-type": "retest-all-comment"
+            }
+        }
+    },
+
+    "build-ok-to-test-comment": {
+        "name": "build pipeline triggered via /ok-to-test comment",
+        "pipelinerun": {
+            "apiVersion": "tekton.dev/v1",
+            "kind": "PipelineRun",
+            "metadata": {
+                "name": "build-ok-to-test-comment",
+                "namespace": "default",
+                "labels": {
+                    "pipelinesascode.tekton.dev/event-type": "ok-to-test-comment"
+                }
+            },
+            "spec": {
+                "pipelineRef": {"name": "build-ok-to-test-comment-pipeline"},
+                "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
+            }
+        },
+        "expected": {
+            "annotations": {},
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-pre-merge-build",
+                "pipelinesascode.tekton.dev/event-type": "ok-to-test-comment"
+            }
+        }
+    },
+
+    "test-test-comment": {
+        "name": "pipeline triggered via /test comment",
+        "pipelinerun": {
+            "apiVersion": "tekton.dev/v1",
+            "kind": "PipelineRun",
+            "metadata": {
+                "name": "test-comment",
+                "namespace": "default",
+                "labels": {
+                    "pac.test.appstudio.openshift.io/event-type": "test-comment"
+                }
+            },
+            "spec": {
+                "pipelineSpec": {
+                    "description": "foo", # a completely empty pipelineSpec is not allowed
+                    "tasks": [],
+                },
+                "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
+            }
+        },
+        "expected": {
+            "annotations": {},
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-pre-merge-test",
+                "pac.test.appstudio.openshift.io/event-type": "test-comment"
+            }
+        }
+    },
+
+    "test-retest-comment": {
+        "name": "pipeline triggered via /retest check comment",
+        "pipelinerun": {
+            "apiVersion": "tekton.dev/v1",
+            "kind": "PipelineRun",
+            "metadata": {
+                "name": "retest-comment",
+                "namespace": "default",
+                "labels": {
+                    "pac.test.appstudio.openshift.io/event-type": "retest-comment"
+                }
+            },
+            "spec": {
+                "pipelineSpec": {
+                    "description": "foo", # a completely empty pipelineSpec is not allowed
+                    "tasks": [],
+                },
+                "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
+            }
+        },
+        "expected": {
+            "annotations": {},
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-pre-merge-test",
+                "pac.test.appstudio.openshift.io/event-type": "retest-comment"
+            }
+        }
+    },
+
+    "test-retest-all-comment": {
+        "name": "pipeline triggered via /retest comment",
+        "pipelinerun": {
+            "apiVersion": "tekton.dev/v1",
+            "kind": "PipelineRun",
+            "metadata": {
+                "name": "retest-all-comment",
+                "namespace": "default",
+                "labels": {
+                    "pac.test.appstudio.openshift.io/event-type": "retest-all-comment"
+                }
+            },
+            "spec": {
+                "pipelineSpec": {
+                    "description": "foo", # a completely empty pipelineSpec is not allowed
+                    "tasks": [],
+                },
+                "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
+            }
+        },
+        "expected": {
+            "annotations": {},
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-pre-merge-test",
+                "pac.test.appstudio.openshift.io/event-type": "retest-all-comment"
+            }
+        }
+    },
+
+    "test-ok-to-test-comment": {
+        "name": "pipeline triggered via /ok-to-test comment",
+        "pipelinerun": {
+            "apiVersion": "tekton.dev/v1",
+            "kind": "PipelineRun",
+            "metadata": {
+                "name": "ok-to-test-comment",
+                "namespace": "default",
+                "labels": {
+                    "pac.test.appstudio.openshift.io/event-type": "ok-to-test-comment"
+                }
+            },
+            "spec": {
+                "pipelineSpec": {
+                    "description": "foo", # a completely empty pipelineSpec is not allowed
+                    "tasks": [],
+                },
+                "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
+            }
+        },
+        "expected": {
+            "annotations": {},
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-pre-merge-test",
+                "pac.test.appstudio.openshift.io/event-type": "ok-to-test-comment"
+            }
+        }
+    },
+
     "integration_test_push": {
         "name": "Integration test pipeline (push event)",
         "pipelinerun": {
@@ -873,6 +1101,38 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
         "pipelinerun_key": "gitlab_merge_request_test",
         "config_key": "development"
     },
+    "test_test_comment_development": {
+        "pipelinerun_key": "test-test-comment",
+        "config_key": "development"
+    },
+    "test_retest_comment_development": {
+        "pipelinerun_key": "test-retest-comment",
+        "config_key": "development"
+    },
+    "test_retest_all_comment_development": {
+        "pipelinerun_key": "test-retest-all-comment",
+        "config_key": "development"
+    },
+    "test_ok_to_test_comment_development": {
+        "pipelinerun_key": "test-ok-to-test-comment",
+        "config_key": "development"
+    },
+    "build_test_comment_development": {
+        "pipelinerun_key": "build-test-comment",
+        "config_key": "development"
+    },
+    "build_retest_comment_development": {
+        "pipelinerun_key": "build-retest-comment",
+        "config_key": "development"
+    },
+    "build_retest_all_comment_development": {
+        "pipelinerun_key": "build-retest-all-comment",
+        "config_key": "development"
+    },
+    "build_ok_to_test_comment_development": {
+        "pipelinerun_key": "build-ok-to-test-comment",
+        "config_key": "development"
+    },
 
     # multiplatform_old edge cases
     "multiplatform_old_no_pipelineSpecTasks": {
@@ -915,6 +1175,38 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
     },
     "gitlab_merge_request_test_staging": {
         "pipelinerun_key": "gitlab_merge_request_test",
+        "config_key": "staging"
+    },
+    "test_test_comment_staging": {
+        "pipelinerun_key": "test-test-comment",
+        "config_key": "staging"
+    },
+    "test_retest_comment_staging": {
+        "pipelinerun_key": "test-retest-comment",
+        "config_key": "staging"
+    },
+    "test_retest_all_comment_staging": {
+        "pipelinerun_key": "test-retest-all-comment",
+        "config_key": "staging"
+    },
+    "test_ok_to_test_comment_staging": {
+        "pipelinerun_key": "test-ok-to-test-comment",
+        "config_key": "staging"
+    },
+    "build_test_comment_staging": {
+        "pipelinerun_key": "build-test-comment",
+        "config_key": "staging"
+    },
+    "build_retest_comment_staging": {
+        "pipelinerun_key": "build-retest-comment",
+        "config_key": "staging"
+    },
+    "build_retest_all_comment_staging": {
+        "pipelinerun_key": "build-retest-all-comment",
+        "config_key": "staging"
+    },
+    "build_ok_to_test_comment_staging": {
+        "pipelinerun_key": "build-ok-to-test-comment",
         "config_key": "staging"
     },
 
