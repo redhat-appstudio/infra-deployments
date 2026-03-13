@@ -2,14 +2,14 @@
 apiVersion: kyverno.io/v1
 kind: ClusterPolicy
 metadata:
-  name: adjust-buildah-resources-for-remote-platforms
+  name: fix-buildah-resources-for-remote-platforms
   annotations:
-    policies.kyverno.io/title: Adjust resources for remote buildah builds
+    policies.kyverno.io/title: Fix resources for remote buildah builds
     policies.kyverno.io/category: Build Resources
     policies.kyverno.io/severity: medium
     policies.kyverno.io/subject: Pod
     policies.kyverno.io/description: >-
-      This policy adjusts resource requests and limits for the build step
+      This policy fixes resource requests and limits for the build step
       container in buildah-remote-oci-ta task Pods when the target platform
       is not a local platform. Remote builds require fewer local resources
       since the actual build happens on a remote host.
@@ -51,7 +51,7 @@ spec:
                 resources:
                   requests:
                     cpu: "1"
-                    memory: 2Gi
+                    memory: 4Gi
                   limits:
                     cpu: "1"
-                    memory: 2Gi
+                    memory: 4Gi
