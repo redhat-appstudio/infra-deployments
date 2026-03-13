@@ -10,7 +10,6 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
-	"strings"
 	"syscall"
 
 	"github.com/redhat-appstudio/infra-deployments/infra-tools/internal/detector"
@@ -21,16 +20,6 @@ import (
 
 // version is set via -ldflags at build time.
 var version = "dev"
-
-// OutputMode controls how render-diff formats and delivers its output.
-type OutputMode string
-
-const (
-	OutputModeLocal      OutputMode = "local"
-	OutputModeCISummary  OutputMode = "ci-summary"
-	OutputModeCIComment  OutputMode = "ci-comment"
-	OutputModeCIArtifact OutputMode = "ci-artifact-dir"
-)
 
 func main() {
 	var (
@@ -120,6 +109,9 @@ func main() {
 	}
 	if len(changedFiles) == 0 {
 		fmt.Println("No changed files detected — nothing to diff.")
+		// Best-effort: update CI comment/summary so they don't stay stale.
+		// Failures here are non-fatal since there is nothing to report.
+		_ = runAllOutputModes(ctx, modes, &renderdiff.DiffResult{}, *color, *openDiff, *outputDir, headSHA, baseSHA)
 		return
 	}
 	slog.Info("Changed files detected", "count", len(changedFiles))
@@ -152,6 +144,9 @@ func main() {
 	}
 	if totalJobs == 0 {
 		fmt.Println("No affected components detected — nothing to diff.")
+		// Best-effort: update CI comment/summary so they don't stay stale.
+		// Failures here are non-fatal since there is nothing to report.
+		_ = runAllOutputModes(ctx, modes, &renderdiff.DiffResult{}, *color, *openDiff, *outputDir, headSHA, baseSHA)
 		return
 	}
 	slog.Info("Affected component paths detected", "count", totalJobs)
@@ -171,38 +166,7 @@ func main() {
 		logging.Fatal("render-diff failed", "err", err)
 	}
 
-	var hadError bool
-	for _, m := range modes {
-		if err := runOutputMode(ctx, m, result, *color, *openDiff, *outputDir, headSHA, baseSHA); err != nil {
-			slog.Error("output mode failed, continuing with remaining modes", "mode", m, "err", err)
-			hadError = true
-		}
-	}
-	if hadError {
+	if hadError := runAllOutputModes(ctx, modes, result, *color, *openDiff, *outputDir, headSHA, baseSHA); hadError {
 		os.Exit(1)
 	}
-}
-
-// parseOutputModes splits a comma-separated output-mode string, validates each
-// value, and returns the deduplicated list. Returns nil if any value is invalid.
-func parseOutputModes(raw string) []OutputMode {
-	seen := make(map[OutputMode]bool)
-	var modes []OutputMode
-	for s := range strings.SplitSeq(raw, ",") {
-		s = strings.TrimSpace(s)
-		if s == "" {
-			continue
-		}
-		m := OutputMode(s)
-		switch m {
-		case OutputModeLocal, OutputModeCISummary, OutputModeCIComment, OutputModeCIArtifact:
-			if !seen[m] {
-				seen[m] = true
-				modes = append(modes, m)
-			}
-		default:
-			return nil
-		}
-	}
-	return modes
 }
