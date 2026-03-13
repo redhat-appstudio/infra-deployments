@@ -965,6 +965,7 @@ metadata:
   namespace: kubearchive
 ---
 # '# notsecret' added to exclude these fake credentials from rh-pre-commit
+# They get deleted in the kustomization.yaml as well.
 apiVersion: v1
 data:
   DATABASE_DB: a3ViZWFyY2hpdmU= # notsecret
@@ -984,9 +985,11 @@ metadata:
   namespace: kubearchive
 type: Opaque
 ---
+# '# notsecret' added to exclude this fake credential from rh-pre-commit
+# It gets deleted in the kustomization.yaml as well.
 apiVersion: v1
 data:
-  Authorization: QmFzaWMgWVdSdGFXNDZjR0Z6YzNkdmNtUT0=
+  Authorization: QmFzaWMgWVdSdGFXNDZjR0Z6YzNkdmNtUT0= # notasecret
 kind: Secret
 metadata:
   labels:
