@@ -334,10 +334,7 @@ PIPELINERUN_DEFINITIONS: Dict[str, PipelineRunTestData] = {
                 }
             },
             "spec": {
-                "pipelineSpec": {
-                    "description": "foo", # a completely empty pipelineSpec is not allowed
-                    "tasks": [],
-                },
+                "pipelineRef": {"name": "merge-request-build-pipeline"},
                 "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
             }
         },
@@ -363,10 +360,7 @@ PIPELINERUN_DEFINITIONS: Dict[str, PipelineRunTestData] = {
                 }
             },
             "spec": {
-                "pipelineSpec": {
-                    "description": "foo", # a completely empty pipelineSpec is not allowed
-                    "tasks": [],
-                },
+                "pipelineRef": {"name": "merge-request-test-pipeline"},
                 "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
             }
         },
@@ -1227,8 +1221,16 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
         "pipelinerun_key": "internal_pipelinerun_child",
         "config_key": "production"
     },
-    "prefer_new_parameters_staging": {
+    "prefer_new_parameters_production": {
         "pipelinerun_key": "prefer-new-parameters",
+        "config_key": "production"
+    },
+    "gitlab_merge_request_production": {
+        "pipelinerun_key": "gitlab_merge_request_build",
+        "config_key": "production"
+    },
+    "gitlab_merge_request_test_production": {
+        "pipelinerun_key": "gitlab_merge_request_test",
         "config_key": "production"
     },
 
@@ -1271,6 +1273,15 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
     },
     "ocp_stage_release_production-kflux-ocp-p01": {
         "pipelinerun_key": "ocp_stage_release",
+        "config_key": "production-kflux-ocp-p01"
+    },
+
+    "gitlab_merge_request_production-kflux-ocp-p01": {
+        "pipelinerun_key": "gitlab_merge_request_build",
+        "config_key": "production-kflux-ocp-p01"
+    },
+    "gitlab_merge_request_test_production-kflux-ocp-p01": {
+        "pipelinerun_key": "gitlab_merge_request_test",
         "config_key": "production-kflux-ocp-p01"
     }
 }
