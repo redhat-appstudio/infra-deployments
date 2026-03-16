@@ -1,5 +1,7 @@
 environment: "prod"
 
+instanceTag: "stone-prod-p02"
+
 archDefaults:
   arm64:
     ami: "ami-06f37afe6d4f43c47"
@@ -127,6 +129,7 @@ dynamicConfigs:
     sudo-commands: "/usr/bin/podman, /usr/bin/rm /usr/share/containers/mounts.conf"
     disk: "200"
     instance-type: "m5.4xlarge"
+    # user-data loaded from base/host-config-chart/files/linux-root-amd64-init.sh
 
 # Static hosts configuration
 staticHosts:

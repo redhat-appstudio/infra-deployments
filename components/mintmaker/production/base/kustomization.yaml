@@ -3,23 +3,29 @@ kind: Kustomization
 resources:
   - ../../base
   - ../../base/external-secrets
-  - https://github.com/konflux-ci/mintmaker/config/default?ref=9d6e9ba5c7f9c335d19d5b0d637572b66861b92e
-  - https://github.com/konflux-ci/mintmaker/config/renovate?ref=9d6e9ba5c7f9c335d19d5b0d637572b66861b92e
+  - https://github.com/konflux-ci/mintmaker/config/default?ref=79c8d6d9771f7fc4f2a2eb001a776ae2c0c886aa
+  - https://github.com/konflux-ci/mintmaker/config/renovate?ref=79c8d6d9771f7fc4f2a2eb001a776ae2c0c886aa
 
 namespace: mintmaker
 
 images:
   - name: quay.io/konflux-ci/mintmaker
     newName: quay.io/konflux-ci/mintmaker
-    newTag: 9d6e9ba5c7f9c335d19d5b0d637572b66861b92e
+    newTag: 79c8d6d9771f7fc4f2a2eb001a776ae2c0c886aa
   - name: quay.io/konflux-ci/mintmaker-renovate-image
     newName: quay.io/konflux-ci/mintmaker-renovate-image
-    newTag: 9c14adf5a3da8a763a62ca818ccb93a27a0a7455
+    newTag: 6594d878b30d888336c170d9ded76e05ed965510
 
 commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 
+configMapGenerator:
+  - name: controller-config
+    files:
+    - config.json
+
 patches:
+  - path: manager-mount-config-patch.yaml
   - path: pipelines-as-code-secret-path.yaml
     target:
       name: pipelines-as-code-secret

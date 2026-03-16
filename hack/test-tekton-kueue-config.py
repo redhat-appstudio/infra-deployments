@@ -321,6 +321,59 @@ PIPELINERUN_DEFINITIONS: Dict[str, PipelineRunTestData] = {
         }
     },
 
+    "gitlab_merge_request_build": {
+        "name": "Build pipeline triggered by gitlab merge request",
+        "pipelinerun": {
+            "apiVersion": "tekton.dev/v1",
+            "kind": "PipelineRun",
+            "metadata": {
+                "name": "gitlab_merge_request_build",
+                "namespace": "default",
+                "labels": {
+                    "pipelinesascode.tekton.dev/event-type": "Merge_Request"
+                }
+            },
+            "spec": {
+                "pipelineRef": {"name": "merge-request-build-pipeline"},
+                "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
+            }
+        },
+        "expected": {
+            "annotations": {},
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-pre-merge-build",
+                "pipelinesascode.tekton.dev/event-type": "Merge_Request"
+            }
+        }
+    },
+    "gitlab_merge_request_test": {
+        "name": "Testing pipeline triggered by gitlab merge request",
+        "pipelinerun": {
+            "apiVersion": "tekton.dev/v1",
+            "kind": "PipelineRun",
+            "metadata": {
+                "name": "gitlab_merge_request_test",
+                "namespace": "default",
+                "labels": {
+                    "pac.test.appstudio.openshift.io/event-type": "Merge_Request"
+                }
+            },
+            "spec": {
+                "pipelineRef": {"name": "merge-request-test-pipeline"},
+                "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
+            }
+        },
+        "expected": {
+            "annotations": {},
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-pre-merge-test",
+                "pac.test.appstudio.openshift.io/event-type": "Merge_Request"
+            }
+        }
+    },
+
     "release_managed": {
         "name": "Release managed pipeline",
         "pipelinerun": {
@@ -396,6 +449,234 @@ PIPELINERUN_DEFINITIONS: Dict[str, PipelineRunTestData] = {
             "labels": {
                 "kueue.x-k8s.io/queue-name": "pipelines-queue",
                 "kueue.x-k8s.io/priority-class": "konflux-dependency-update"
+            }
+        }
+    },
+
+    "build-test-comment": {
+        "name": "build pipeline triggered via /test comment",
+        "pipelinerun": {
+            "apiVersion": "tekton.dev/v1",
+            "kind": "PipelineRun",
+            "metadata": {
+                "name": "build-test-comment",
+                "namespace": "default",
+                "labels": {
+                    "pipelinesascode.tekton.dev/event-type": "test-comment"
+                }
+            },
+            "spec": {
+                "pipelineRef": {"name": "build-test-comment-pipeline"},
+                "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
+            }
+        },
+        "expected": {
+            "annotations": {},
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-pre-merge-build",
+                "pipelinesascode.tekton.dev/event-type": "test-comment"
+            }
+        }
+    },
+
+    "build-retest-comment": {
+        "name": "build pipeline triggered via /retest check comment",
+        "pipelinerun": {
+            "apiVersion": "tekton.dev/v1",
+            "kind": "PipelineRun",
+            "metadata": {
+                "name": "build-retest-comment",
+                "namespace": "default",
+                "labels": {
+                    "pipelinesascode.tekton.dev/event-type": "retest-comment"
+                }
+            },
+            "spec": {
+                "pipelineRef": {"name": "build-retest-comment-pipeline"},
+                "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
+            }
+        },
+        "expected": {
+            "annotations": {},
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-pre-merge-build",
+                "pipelinesascode.tekton.dev/event-type": "retest-comment"
+            }
+        }
+    },
+
+    "build-retest-all-comment": {
+        "name": "build pipeline triggered via /retest comment",
+        "pipelinerun": {
+            "apiVersion": "tekton.dev/v1",
+            "kind": "PipelineRun",
+            "metadata": {
+                "name": "build-retest-all-comment",
+                "namespace": "default",
+                "labels": {
+                    "pipelinesascode.tekton.dev/event-type": "retest-all-comment"
+                }
+            },
+            "spec": {
+                "pipelineRef": {"name": "build-retest-all-comment-pipeline"},
+                "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
+            }
+        },
+        "expected": {
+            "annotations": {},
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-pre-merge-build",
+                "pipelinesascode.tekton.dev/event-type": "retest-all-comment"
+            }
+        }
+    },
+
+    "build-ok-to-test-comment": {
+        "name": "build pipeline triggered via /ok-to-test comment",
+        "pipelinerun": {
+            "apiVersion": "tekton.dev/v1",
+            "kind": "PipelineRun",
+            "metadata": {
+                "name": "build-ok-to-test-comment",
+                "namespace": "default",
+                "labels": {
+                    "pipelinesascode.tekton.dev/event-type": "ok-to-test-comment"
+                }
+            },
+            "spec": {
+                "pipelineRef": {"name": "build-ok-to-test-comment-pipeline"},
+                "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
+            }
+        },
+        "expected": {
+            "annotations": {},
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-pre-merge-build",
+                "pipelinesascode.tekton.dev/event-type": "ok-to-test-comment"
+            }
+        }
+    },
+
+    "test-test-comment": {
+        "name": "pipeline triggered via /test comment",
+        "pipelinerun": {
+            "apiVersion": "tekton.dev/v1",
+            "kind": "PipelineRun",
+            "metadata": {
+                "name": "test-comment",
+                "namespace": "default",
+                "labels": {
+                    "pac.test.appstudio.openshift.io/event-type": "test-comment"
+                }
+            },
+            "spec": {
+                "pipelineSpec": {
+                    "description": "foo", # a completely empty pipelineSpec is not allowed
+                    "tasks": [],
+                },
+                "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
+            }
+        },
+        "expected": {
+            "annotations": {},
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-pre-merge-test",
+                "pac.test.appstudio.openshift.io/event-type": "test-comment"
+            }
+        }
+    },
+
+    "test-retest-comment": {
+        "name": "pipeline triggered via /retest check comment",
+        "pipelinerun": {
+            "apiVersion": "tekton.dev/v1",
+            "kind": "PipelineRun",
+            "metadata": {
+                "name": "retest-comment",
+                "namespace": "default",
+                "labels": {
+                    "pac.test.appstudio.openshift.io/event-type": "retest-comment"
+                }
+            },
+            "spec": {
+                "pipelineSpec": {
+                    "description": "foo", # a completely empty pipelineSpec is not allowed
+                    "tasks": [],
+                },
+                "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
+            }
+        },
+        "expected": {
+            "annotations": {},
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-pre-merge-test",
+                "pac.test.appstudio.openshift.io/event-type": "retest-comment"
+            }
+        }
+    },
+
+    "test-retest-all-comment": {
+        "name": "pipeline triggered via /retest comment",
+        "pipelinerun": {
+            "apiVersion": "tekton.dev/v1",
+            "kind": "PipelineRun",
+            "metadata": {
+                "name": "retest-all-comment",
+                "namespace": "default",
+                "labels": {
+                    "pac.test.appstudio.openshift.io/event-type": "retest-all-comment"
+                }
+            },
+            "spec": {
+                "pipelineSpec": {
+                    "description": "foo", # a completely empty pipelineSpec is not allowed
+                    "tasks": [],
+                },
+                "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
+            }
+        },
+        "expected": {
+            "annotations": {},
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-pre-merge-test",
+                "pac.test.appstudio.openshift.io/event-type": "retest-all-comment"
+            }
+        }
+    },
+
+    "test-ok-to-test-comment": {
+        "name": "pipeline triggered via /ok-to-test comment",
+        "pipelinerun": {
+            "apiVersion": "tekton.dev/v1",
+            "kind": "PipelineRun",
+            "metadata": {
+                "name": "ok-to-test-comment",
+                "namespace": "default",
+                "labels": {
+                    "pac.test.appstudio.openshift.io/event-type": "ok-to-test-comment"
+                }
+            },
+            "spec": {
+                "pipelineSpec": {
+                    "description": "foo", # a completely empty pipelineSpec is not allowed
+                    "tasks": [],
+                },
+                "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
+            }
+        },
+        "expected": {
+            "annotations": {},
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-pre-merge-test",
+                "pac.test.appstudio.openshift.io/event-type": "ok-to-test-comment"
             }
         }
     },
@@ -806,6 +1087,46 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
         "pipelinerun_key": "prefer-new-parameters",
         "config_key": "development"
     },
+    "gitlab_merge_request_build_dev": {
+        "pipelinerun_key": "gitlab_merge_request_build",
+        "config_key": "development"
+    },
+    "gitlab_merge_request_test_dev": {
+        "pipelinerun_key": "gitlab_merge_request_test",
+        "config_key": "development"
+    },
+    "test_test_comment_development": {
+        "pipelinerun_key": "test-test-comment",
+        "config_key": "development"
+    },
+    "test_retest_comment_development": {
+        "pipelinerun_key": "test-retest-comment",
+        "config_key": "development"
+    },
+    "test_retest_all_comment_development": {
+        "pipelinerun_key": "test-retest-all-comment",
+        "config_key": "development"
+    },
+    "test_ok_to_test_comment_development": {
+        "pipelinerun_key": "test-ok-to-test-comment",
+        "config_key": "development"
+    },
+    "build_test_comment_development": {
+        "pipelinerun_key": "build-test-comment",
+        "config_key": "development"
+    },
+    "build_retest_comment_development": {
+        "pipelinerun_key": "build-retest-comment",
+        "config_key": "development"
+    },
+    "build_retest_all_comment_development": {
+        "pipelinerun_key": "build-retest-all-comment",
+        "config_key": "development"
+    },
+    "build_ok_to_test_comment_development": {
+        "pipelinerun_key": "build-ok-to-test-comment",
+        "config_key": "development"
+    },
 
     # multiplatform_old edge cases
     "multiplatform_old_no_pipelineSpecTasks": {
@@ -842,6 +1163,46 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
         "pipelinerun_key": "prefer-new-parameters",
         "config_key": "staging"
     },
+    "gitlab_merge_request_staging": {
+        "pipelinerun_key": "gitlab_merge_request_build",
+        "config_key": "staging"
+    },
+    "gitlab_merge_request_test_staging": {
+        "pipelinerun_key": "gitlab_merge_request_test",
+        "config_key": "staging"
+    },
+    "test_test_comment_staging": {
+        "pipelinerun_key": "test-test-comment",
+        "config_key": "staging"
+    },
+    "test_retest_comment_staging": {
+        "pipelinerun_key": "test-retest-comment",
+        "config_key": "staging"
+    },
+    "test_retest_all_comment_staging": {
+        "pipelinerun_key": "test-retest-all-comment",
+        "config_key": "staging"
+    },
+    "test_ok_to_test_comment_staging": {
+        "pipelinerun_key": "test-ok-to-test-comment",
+        "config_key": "staging"
+    },
+    "build_test_comment_staging": {
+        "pipelinerun_key": "build-test-comment",
+        "config_key": "staging"
+    },
+    "build_retest_comment_staging": {
+        "pipelinerun_key": "build-retest-comment",
+        "config_key": "staging"
+    },
+    "build_retest_all_comment_staging": {
+        "pipelinerun_key": "build-retest-all-comment",
+        "config_key": "staging"
+    },
+    "build_ok_to_test_comment_staging": {
+        "pipelinerun_key": "build-ok-to-test-comment",
+        "config_key": "staging"
+    },
 
     # Test key PipelineRuns with production config
     "multiplatform_new_production": {
@@ -860,9 +1221,39 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
         "pipelinerun_key": "internal_pipelinerun_child",
         "config_key": "production"
     },
-    "prefer_new_parameters_staging": {
+    "prefer_new_parameters_production": {
         "pipelinerun_key": "prefer-new-parameters",
         "config_key": "production"
+    },
+    "gitlab_merge_request_production": {
+        "pipelinerun_key": "gitlab_merge_request_build",
+        "config_key": "production"
+    },
+    "gitlab_merge_request_test_production": {
+        "pipelinerun_key": "gitlab_merge_request_test",
+        "config_key": "production"
+    },
+
+    # Test key PipelineRuns with production kflux-ocp-p01 config
+    "multiplatform_new_production-kflux-ocp-p01": {
+        "pipelinerun_key": "multiplatform_new",
+        "config_key": "production-kflux-ocp-p01"
+    },
+    "release_managed_production-kflux-ocp-p01": {
+        "pipelinerun_key": "release_managed",
+        "config_key": "production-kflux-ocp-p01"
+    },
+    "mintmaker_production-kflux-ocp-p01": {
+        "pipelinerun_key": "mintmaker",
+        "config_key": "production-kflux-ocp-p01"
+    },
+    "internal_pipelinerun_child_production-kflux-ocp-p01": {
+        "pipelinerun_key": "internal_pipelinerun_child",
+        "config_key": "production-kflux-ocp-p01"
+    },
+    "prefer_new_parameters_production-kflux-ocp-p01": {
+        "pipelinerun_key": "prefer-new-parameters",
+        "config_key": "production-kflux-ocp-p01"
     },
 
     # Example: Test the same PipelineRun with different configs to show reusability
@@ -882,6 +1273,15 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
     },
     "ocp_stage_release_production-kflux-ocp-p01": {
         "pipelinerun_key": "ocp_stage_release",
+        "config_key": "production-kflux-ocp-p01"
+    },
+
+    "gitlab_merge_request_production-kflux-ocp-p01": {
+        "pipelinerun_key": "gitlab_merge_request_build",
+        "config_key": "production-kflux-ocp-p01"
+    },
+    "gitlab_merge_request_test_production-kflux-ocp-p01": {
+        "pipelinerun_key": "gitlab_merge_request_test",
         "config_key": "production-kflux-ocp-p01"
     }
 }

@@ -32,6 +32,9 @@ type ComponentDiff struct {
 	// Error is non-empty when the kustomize build failed for this component.
 	// The component is still included in results so formatters can report it.
 	Error string
+	// SkipOutput is true when the build error is a non-kustomization directory
+	// error. These components are logged but excluded from user-facing output.
+	SkipOutput bool
 }
 
 // computeDiff populates the Diff, Added, and Removed fields from BaseYAML and HeadYAML.

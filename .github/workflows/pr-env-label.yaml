@@ -37,6 +37,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: infra-tools/go.mod
+          cache-dependency-path: infra-tools/go.sum
 
       # Build the detector binary from the trusted base branch before
       # switching to the PR head. This ensures a malicious fork cannot
