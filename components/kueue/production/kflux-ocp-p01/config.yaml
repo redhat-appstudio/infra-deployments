@@ -38,7 +38,12 @@ cel:
 
     # Set resource requests for multi platform pipelines which doesn't use the build-platforms parameter (old style)
     - |
+      !(
+        has(pipelineRun.spec.params) &&
+        pipelineRun.spec.params.exists(p, p.name == 'build-platforms')
+      ) &&
       has(pipelineRun.spec.pipelineSpec) &&
+      has(pipelineRun.spec.pipelineSpec.tasks) &&
       pipelineRun.spec.pipelineSpec.tasks.size() > 0 ?
       pipelineRun.spec.pipelineSpec.tasks.map(
         task,
@@ -52,7 +57,12 @@ cel:
 
     # Request AWS IP for AWS-based platforms which doesn't use the build-platforms parameter (old style)
     - |
+      !(
+        has(pipelineRun.spec.params) &&
+        pipelineRun.spec.params.exists(p, p.name == 'build-platforms')
+      ) &&
       has(pipelineRun.spec.pipelineSpec) &&
+      has(pipelineRun.spec.pipelineSpec.tasks) &&
       pipelineRun.spec.pipelineSpec.tasks.size() > 0 ?
       pipelineRun.spec.pipelineSpec.tasks.map(
         task,
@@ -76,6 +86,12 @@ cel:
         resource('aws-ip', 1)
       ) : []
 
+    # Set mintmaker resource requests.
+    # Necessary since mintmaker refreshes can overload clusters without a
+    # bottleneck on the number of pipelineruns running.
+    - |
+        plrNamespace == 'mintmaker' ? [resource('mintmaker', 1)] : []
+
     # Set the pipeline priority
     # First condition is to check if the priority class is already set and keep it if it is
     # We allow this since the cluster is dedicated to the OCP team.
@@ -85,9 +101,13 @@ cel:
         priority(pipelineRun.metadata.labels['kueue.x-k8s.io/priority-class']) :
 
         pacEventType == 'push' ? priority('konflux-post-merge-build') :
-        pacEventType == 'pull_request' ? priority('konflux-pre-merge-build') :
+        pacEventType == 'pull_request'
+          || pacEventType == "Merge_Request"
+          ? priority('konflux-pre-merge-build') :
         pacTestEventType == 'push' ? priority('konflux-post-merge-test') :
-        pacTestEventType == 'pull_request' ? priority('konflux-pre-merge-test') :
+        pacTestEventType == 'pull_request'
+          || pacTestEventType == "Merge_Request"
+          ? priority('konflux-pre-merge-test') :
 
         has(pipelineRun.metadata.labels) &&
         'appstudio.openshift.io/service' in pipelineRun.metadata.labels &&
