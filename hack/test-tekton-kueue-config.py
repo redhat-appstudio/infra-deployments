@@ -408,10 +408,10 @@ PIPELINERUN_DEFINITIONS: Dict[str, PipelineRunTestData] = {
             "kind": "PipelineRun",
             "metadata": {
                 "name": "test-release-tenant",
-                "namespace": "default",
+                "namespace": "default-tenant",
                 "labels": {
                     "appstudio.openshift.io/service": "release",
-                    "pipelines.appstudio.openshift.io/type": "tenant"
+                    "release.appstudio.openshift.io/namespace": "default-tenant"
                 }
             },
             "spec": {
