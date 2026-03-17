@@ -4,13 +4,14 @@ metadata:
   name: squid-helm
 name: squid-helm
 repo: oci://quay.io/konflux-ci/caching
-version: 0.1.1304+0594863
+version: 0.1.1330+66719b0
 valuesInline:
   installCertManagerComponents: false
   mirrord:
     enabled: false
   nginx:
     enabled: true
+    replicaCount: 3
     name: artifact-registry-proxy
     tls:
       enabled: true
