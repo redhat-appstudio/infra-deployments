@@ -5,7 +5,7 @@ metadata:
     app.kubernetes.io/component: namespace
     app.kubernetes.io/name: kubearchive
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.18.0
+    app.kubernetes.io/version: v1.19.0
   name: kubearchive
 ---
 apiVersion: apiextensions.k8s.io/v1
@@ -552,7 +552,7 @@ metadata:
     app.kubernetes.io/component: api-server
     app.kubernetes.io/name: kubearchive-api-server
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.18.0
+    app.kubernetes.io/version: v1.19.0
   name: kubearchive-api-server
   namespace: kubearchive
 ---
@@ -563,7 +563,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-vacuum
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.18.0
+    app.kubernetes.io/version: v1.19.0
   name: kubearchive-cluster-vacuum
   namespace: kubearchive
 ---
@@ -574,7 +574,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-operator
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.18.0
+    app.kubernetes.io/version: v1.19.0
   name: kubearchive-operator
   namespace: kubearchive
 ---
@@ -585,7 +585,7 @@ metadata:
     app.kubernetes.io/component: sink
     app.kubernetes.io/name: kubearchive-sink
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.18.0
+    app.kubernetes.io/version: v1.19.0
   name: kubearchive-sink
   namespace: kubearchive
 ---
@@ -596,7 +596,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-operator-leader-election
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.18.0
+    app.kubernetes.io/version: v1.19.0
   name: kubearchive-operator-leader-election
   namespace: kubearchive
 rules:
@@ -639,7 +639,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-vacuum
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.18.0
+    app.kubernetes.io/version: v1.19.0
   name: kubearchive-vacuum
   namespace: kubearchive
 rules:
@@ -659,7 +659,7 @@ metadata:
     app.kubernetes.io/component: api-server
     app.kubernetes.io/name: kubearchive-api-server
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.18.0
+    app.kubernetes.io/version: v1.19.0
   name: kubearchive-api-server
 rules:
   - apiGroups:
@@ -677,7 +677,7 @@ metadata:
   labels:
     app.kubernetes.io/name: kubearchive-edit
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.18.0
+    app.kubernetes.io/version: v1.19.0
     rbac.authorization.k8s.io/aggregate-to-edit: "true"
   name: kubearchive-edit
 rules:
@@ -791,7 +791,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-operator-config-editor
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.18.0
+    app.kubernetes.io/version: v1.19.0
   name: kubearchive-operator-config-editor
 rules:
   - apiGroups:
@@ -820,7 +820,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-operator-config-viewer
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.18.0
+    app.kubernetes.io/version: v1.19.0
   name: kubearchive-operator-config-viewer
 rules:
   - apiGroups:
@@ -844,7 +844,7 @@ metadata:
   labels:
     app.kubernetes.io/name: kubearchive-view
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.18.0
+    app.kubernetes.io/version: v1.19.0
     rbac.authorization.k8s.io/aggregate-to-view: "true"
   name: kubearchive-view
 rules:
@@ -868,7 +868,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-operator-leader-election
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.18.0
+    app.kubernetes.io/version: v1.19.0
   name: kubearchive-operator-leader-election
   namespace: kubearchive
 roleRef:
@@ -887,7 +887,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-vacuum
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.18.0
+    app.kubernetes.io/version: v1.19.0
   name: kubearchive-vacuum
   namespace: kubearchive
 roleRef:
@@ -906,7 +906,7 @@ metadata:
     app.kubernetes.io/component: api-server
     app.kubernetes.io/name: kubearchive-api-server
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.18.0
+    app.kubernetes.io/version: v1.19.0
   name: kubearchive-api-server
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -924,7 +924,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-operator
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.18.0
+    app.kubernetes.io/version: v1.19.0
   name: kubearchive-operator
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -941,10 +941,22 @@ kind: ConfigMap
 metadata:
   labels:
     app.kubernetes.io/component: logging
-    app.kubernetes.io/name: kubearchive-logging
+    app.kubernetes.io/name: kubearchive-logging-reader
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.18.0
-  name: kubearchive-logging
+    app.kubernetes.io/version: v1.19.0
+  name: kubearchive-logging-reader
+  namespace: kubearchive
+---
+apiVersion: v1
+data: null
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/component: logging
+    app.kubernetes.io/name: kubearchive-logging-writer
+    app.kubernetes.io/part-of: kubearchive
+    app.kubernetes.io/version: v1.19.0
+  name: kubearchive-logging-writer
   namespace: kubearchive
 ---
 apiVersion: v1
@@ -960,11 +972,12 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-operator
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.18.0
+    app.kubernetes.io/version: v1.19.0
   name: kubearchive-operator
   namespace: kubearchive
 ---
 # '# notsecret' added to exclude these fake credentials from rh-pre-commit
+# They get deleted in the kustomization.yaml as well.
 apiVersion: v1
 data:
   DATABASE_DB: a3ViZWFyY2hpdmU= # notsecret
@@ -979,11 +992,13 @@ metadata:
     app.kubernetes.io/component: database
     app.kubernetes.io/name: kubearchive-database-credentials
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.18.0
+    app.kubernetes.io/version: v1.19.0
   name: kubearchive-database-credentials
   namespace: kubearchive
 type: Opaque
 ---
+# '# notsecret' added to exclude this fake credential from rh-pre-commit
+# It gets deleted in the kustomization.yaml as well.
 apiVersion: v1
 data:
   Authorization: QmFzaWMgWVdSdGFXNDZjR0Z6YzNkdmNtUT0=
@@ -993,9 +1008,11 @@ metadata:
     app.kubernetes.io/component: logging
     app.kubernetes.io/name: kubearchive-logging
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.18.0
+    app.kubernetes.io/version: v1.19.0
   name: kubearchive-logging
   namespace: kubearchive
+stringData:
+  HEADERS: ""
 type: Opaque
 ---
 apiVersion: v1
@@ -1005,7 +1022,7 @@ metadata:
     app.kubernetes.io/component: api-server
     app.kubernetes.io/name: kubearchive-api-server
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.18.0
+    app.kubernetes.io/version: v1.19.0
   name: kubearchive-api-server
   namespace: kubearchive
 spec:
@@ -1024,7 +1041,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-operator-webhooks
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.18.0
+    app.kubernetes.io/version: v1.19.0
   name: kubearchive-operator-webhooks
   namespace: kubearchive
 spec:
@@ -1047,7 +1064,7 @@ metadata:
     app.kubernetes.io/component: sink
     app.kubernetes.io/name: kubearchive-sink
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.18.0
+    app.kubernetes.io/version: v1.19.0
   name: kubearchive-sink
   namespace: kubearchive
 spec:
@@ -1065,7 +1082,7 @@ metadata:
     app.kubernetes.io/component: api-server
     app.kubernetes.io/name: kubearchive-api-server
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.18.0
+    app.kubernetes.io/version: v1.19.0
   name: kubearchive-api-server
   namespace: kubearchive
 spec:
@@ -1119,7 +1136,7 @@ spec:
           envFrom:
             - secretRef:
                 name: kubearchive-database-credentials
-          image: quay.io/kubearchive/api:v1.18.0@sha256:9c0007efb8855531b0e9488db00cb8cace0c9d87b8b7b0e6bb1aad2babc7d12f
+          image: quay.io/kubearchive/api:v1.19.0@sha256:6ea3ef14d34af3905aeaf052ecc821681c2116f37ba1732320083e0e72b54dae
           livenessProbe:
             httpGet:
               path: /livez
@@ -1150,15 +1167,19 @@ spec:
               name: tls-secret
               readOnly: true
             - mountPath: /data/logging
-              name: logging-secret
+              name: logging-config
       serviceAccountName: kubearchive-api-server
       volumes:
         - name: tls-secret
           secret:
             secretName: kubearchive-api-server-tls
-        - name: logging-secret
-          secret:
-            secretName: kubearchive-logging
+        - name: logging-config
+          projected:
+            sources:
+              - configMap:
+                  name: kubearchive-logging-reader
+              - secret:
+                  name: kubearchive-logging
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -1167,7 +1188,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-operator
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.18.0
+    app.kubernetes.io/version: v1.19.0
   name: kubearchive-operator
   namespace: kubearchive
 spec:
@@ -1217,7 +1238,7 @@ spec:
               valueFrom:
                 resourceFieldRef:
                   resource: limits.cpu
-          image: quay.io/kubearchive/operator:v1.18.0@sha256:4900da38082303ace223439cf2199b150045e158382e2b5864c7b97b7d0ff800
+          image: quay.io/kubearchive/operator:v1.19.0@sha256:0bf98da6931e7b5dabeb477dd1cfac6db3425975a5d0d7340397f46f451e36f8
           livenessProbe:
             httpGet:
               path: /healthz
@@ -1279,7 +1300,7 @@ metadata:
     app.kubernetes.io/component: sink
     app.kubernetes.io/name: kubearchive-sink
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.18.0
+    app.kubernetes.io/version: v1.19.0
   name: kubearchive-sink
   namespace: kubearchive
 spec:
@@ -1331,7 +1352,7 @@ spec:
           envFrom:
             - secretRef:
                 name: kubearchive-database-credentials
-          image: quay.io/kubearchive/sink:v1.18.0@sha256:c016aa2974f56a04956344a5c881c1b621581734532a0e728ea9cf6c460b7b13
+          image: quay.io/kubearchive/sink:v1.19.0@sha256:b515df61052c992b6139aa2ca90696083b01b3b42fe05e465c26c894241f14f6
           livenessProbe:
             httpGet:
               path: /livez
@@ -1362,7 +1383,7 @@ spec:
       serviceAccountName: kubearchive-sink
       volumes:
         - configMap:
-            name: kubearchive-logging
+            name: kubearchive-logging-writer
           name: logging-config
 ---
 apiVersion: batch/v1
@@ -1372,7 +1393,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-vacuum
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.18.0
+    app.kubernetes.io/version: v1.19.0
   name: cluster-vacuum
   namespace: kubearchive
 spec:
@@ -1393,7 +1414,7 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.namespace
-              image: quay.io/kubearchive/vacuum:v1.18.0@sha256:247483fb74b715c8337a9c1b4eabadcca03ba7c9b4ea5edc5b4097e0285f62c0
+              image: quay.io/kubearchive/vacuum:v1.19.0@sha256:3c998b4e38a801587968406856b333e2d21d6d816a486c46b20154ec19a4124f
               name: vacuum
           restartPolicy: Never
           serviceAccount: kubearchive-cluster-vacuum
@@ -1407,7 +1428,7 @@ metadata:
     app.kubernetes.io/component: kubearchive
     app.kubernetes.io/name: kubearchive-schema-migration
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.18.0
+    app.kubernetes.io/version: v1.19.0
   name: kubearchive-schema-migration
   namespace: kubearchive
 spec:
@@ -1417,10 +1438,13 @@ spec:
   template:
     spec:
       containers:
-        - envFrom:
+        - env:
+            - name: MIGRATION_VERSION
+              value: ""
+          envFrom:
             - secretRef:
                 name: kubearchive-database-credentials
-          image: quay.io/kubearchive/postgresql:v1.18.0@sha256:fa1dcec9509c8937322f2b9213115746a90cd975204da5c2dd96a20eb6ef54f5
+          image: quay.io/kubearchive/postgresql:v1.19.0@sha256:9faff6cef983e429808acd3a5c9ec55cc05f0955ed97e3750cfdf8d51999ede0
           name: migration
           resources:
             limits:
@@ -1441,7 +1465,7 @@ metadata:
     app.kubernetes.io/component: api-server
     app.kubernetes.io/name: kubearchive-api-server-certificate
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.18.0
+    app.kubernetes.io/version: v1.19.0
   name: kubearchive-api-server-certificate
   namespace: kubearchive
 spec:
@@ -1475,7 +1499,7 @@ metadata:
     app.kubernetes.io/component: certs
     app.kubernetes.io/name: kubearchive-ca
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.18.0
+    app.kubernetes.io/version: v1.19.0
   name: kubearchive-ca
   namespace: kubearchive
 spec:
@@ -1497,7 +1521,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-operator-certificate
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.18.0
+    app.kubernetes.io/version: v1.19.0
   name: kubearchive-operator-certificate
   namespace: kubearchive
 spec:
@@ -1516,7 +1540,7 @@ metadata:
     app.kubernetes.io/component: certs
     app.kubernetes.io/name: kubearchive
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.18.0
+    app.kubernetes.io/version: v1.19.0
   name: kubearchive
   namespace: kubearchive
 spec:
@@ -1530,7 +1554,7 @@ metadata:
     app.kubernetes.io/component: certs
     app.kubernetes.io/name: kubearchive-ca
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.18.0
+    app.kubernetes.io/version: v1.19.0
   name: kubearchive-ca
   namespace: kubearchive
 spec:
@@ -1545,7 +1569,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-mutating-webhook-configuration
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.18.0
+    app.kubernetes.io/version: v1.19.0
   name: kubearchive-mutating-webhook-configuration
 webhooks:
   - admissionReviewVersions:
@@ -1658,7 +1682,7 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: kubearchive-validating-webhook-configuration
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v1.18.0
+    app.kubernetes.io/version: v1.19.0
   name: kubearchive-validating-webhook-configuration
 webhooks:
   - admissionReviewVersions:

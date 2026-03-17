@@ -1,0 +1,24 @@
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: sleep
+spec:
+  steps:
+  - name: sleep
+    image: quay.io/konflux-ci/tools@sha256:b846eb68ab06f4c61c987bd1053e0e2dda13e18ecd5a75c945a18f7d78743bd8
+    command: ["bash", "-c"]
+    args:
+      - 'sleep 5'
+    computeResources: {}
+---
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: sleep-pipeline
+spec:
+  tasks:
+  - name: sleep
+    taskRef:
+      kind: Task
+      name: sleep
