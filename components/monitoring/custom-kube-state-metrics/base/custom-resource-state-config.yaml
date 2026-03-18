@@ -34,7 +34,7 @@ data:
                 type: Gauge
                 gauge:
                   path: [status, completionTimestamp]
-                  nilIsZero: false
+                  nilIsZero: true
 
             - name: "velero_backup_expiration_timestamp"
               help: "Expiration timestamp of Velero backup (Unix epoch)"
@@ -42,7 +42,7 @@ data:
                 type: Gauge
                 gauge:
                   path: [status, expiration]
-                  nilIsZero: false
+                  nilIsZero: true
 
             - name: "velero_backup_total_items"
               help: "Total number of items in backup"
