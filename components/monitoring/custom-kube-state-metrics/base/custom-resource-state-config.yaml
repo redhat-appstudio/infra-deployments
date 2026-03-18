@@ -115,33 +115,6 @@ data:
                   nilIsZero: true
 
         ###############################################################################
-        # Kueue LocalQueues
-        ###############################################################################
-        - groupVersionKind:
-            group: "kueue.x-k8s.io"
-            version: "v1beta1"
-            kind: "LocalQueue"
-          labelsFromPath:
-            localqueue: [metadata, name]
-            namespace: [metadata, namespace]
-          metrics:
-            - name: "kueue_localqueue_pending_workloads"
-              help: "Number of pending workloads in LocalQueue"
-              each:
-                type: Gauge
-                gauge:
-                  path: [status, pendingWorkloads]
-                  nilIsZero: true
-
-            - name: "kueue_localqueue_admitted_workloads"
-              help: "Number of admitted workloads in LocalQueue"
-              each:
-                type: Gauge
-                gauge:
-                  path: [status, admittedWorkloads]
-                  nilIsZero: true
-
-        ###############################################################################
         # Kyverno ClusterPolicies
         ###############################################################################
         - groupVersionKind:
