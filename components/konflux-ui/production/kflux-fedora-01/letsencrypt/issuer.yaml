@@ -1,0 +1,15 @@
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: letsencrypt-acme
+  namespace: konflux-ui
+spec:
+  acme:
+    email: konflux-infra@redhat.com
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: letsencrypt-acme-account-key
+    solvers:
+      - http01:
+          ingress:
+            ingressClassName: openshift-default

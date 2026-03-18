@@ -3,6 +3,8 @@ kind: Kustomization
 resources:
   - ../base
   - configure-oauth-proxy-secret.yaml
+  - letsencrypt
+  - custom-domain-routes.yaml
 
 configMapGenerator:
   - name: dex
@@ -45,5 +47,6 @@ patches:
     target:
       kind: Route
       version: v1
+      name: "^konflux(-idp)?$"
 
 namespace: konflux-ui

@@ -1,0 +1,15 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: konflux-ci-route-cert
+  namespace: konflux-ui
+spec:
+  commonName: konflux-ci.fedoraproject.org
+  dnsNames:
+    - konflux-ci.fedoraproject.org
+  usages:
+    - server auth
+  issuerRef:
+    kind: Issuer
+    name: letsencrypt-acme
+  secretName: konflux-ci-certificate

@@ -1,0 +1,42 @@
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: konflux-nice
+  annotations:
+    haproxy.router.openshift.io/set-forwarded-headers: replace
+spec:
+  host: konflux-ci.fedoraproject.org
+  path: /
+  port:
+    targetPort: web-tls
+  tls:
+    insecureEdgeTerminationPolicy: Redirect
+    termination: reencrypt
+    externalCertificate:
+      name: konflux-ci-certificate
+  to:
+    kind: Service
+    name: proxy
+    weight: 100
+  wildcardPolicy: None
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: konflux-nice-idp
+spec:
+  host: konflux-ci.fedoraproject.org
+  path: /idp
+  port:
+    targetPort: dex
+  tls:
+    insecureEdgeTerminationPolicy: Redirect
+    termination: reencrypt
+    externalCertificate:
+      name: konflux-ci-certificate
+  to:
+    kind: Service
+    name: dex
+    weight: 100
+  wildcardPolicy: None
