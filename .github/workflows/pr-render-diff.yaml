@@ -28,11 +28,20 @@ jobs:
         working-directory: infra-tools
         run: go build -o bin/render-diff ./cmd/render-diff
 
-      # Fetch the PR head ref and switch to it for analysis.
-      - name: Checkout PR head
+      # Fetch the PR merge ref and switch to it for analysis.
+      - name: Checkout PR merge ref
+        continue-on-error: true
+        id: fetch-merge
         run: |
-          git fetch origin pull/${{ github.event.pull_request.number }}/head:pr-head
-          git checkout pr-head
+          git fetch origin pull/${{ github.event.pull_request.number }}/merge:pr-merge
+          git checkout pr-merge
+
+      # if refs/pull/N/merge doesn't exist, warn about it in our logs and continue to fail
+      - name: Warn about required PR rebase
+        if: ${{ always() && steps.fetch-merge.outcome == 'failure' }}
+        run: |
+          echo "ERROR: This PR has merge conflicts and needs to be rebased before render-diff can run."
+          exit 1
 
       - name: Create output directory
         run: mkdir -p render-diff-output
@@ -44,6 +53,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_SERVER_URL: ${{ github.server_url }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
         run: |
           ./bin/render-diff \
             --repo-root=.. \
@@ -53,7 +64,7 @@ jobs:
             --log-file=../render-diff-debug.log
 
       - name: Upload diff artifacts
-        if: always()
+        if: ${{ always() && steps.fetch-merge.outcome == 'success' }}
         uses: actions/upload-artifact@v4
         with:
           name: render-diff-output

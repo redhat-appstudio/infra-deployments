@@ -28,6 +28,12 @@ secretGenerator:
 # Due to quoting limitations of generators we need to introduce the values with the |
 # See https://github.com/kubernetes-sigs/kustomize/issues/4845#issuecomment-1671570428
 configMapGenerator:
+  - name: kubearchive-schema-version
+    options:
+      annotations:
+        argocd.argoproj.io/sync-wave: "-2"
+    literals:
+      - MIGRATION_VERSION=6
   - name: kubearchive-logging-writer
     literals:
       - |
@@ -36,6 +42,8 @@ configMapGenerator:
         NAMESPACE=cel:metadata.namespace
       - |
         START=cel:status.?startTime == optional.none() ? int(now()-duration('1h'))*1000000000: status.startTime
+      - |
+        END=cel:status.?startTime == optional.none() ? int(now()+duration('1h'))*1000000000: int(timestamp(status.startTime)+duration('6h'))*1000000000
       - |
         QUERY={stream="{NAMESPACE}"} | pod_id = `{POD_ID}` | container = `{CONTAINER_NAME}`
       - |
@@ -54,6 +62,7 @@ configMapGenerator:
             params:
               query: ${QUERY}
               start: ${START}
+              end: ${END}
               limit: ${TAIL_LINES}
               direction: backward
             json-path: "$.data.result[*].values[*][1]"
@@ -61,12 +70,18 @@ configMapGenerator:
             reverse: false
             path: /loki/api/v1/query_range
             method: GET
+            timeout: 1m
             params:
               query: ${QUERY}
               start: ${START}
-              limit: 10000
+              end: ${END}
+              limit: 300
               direction: forward
             json-path: "$.data.result[*].values[*][1]"
+            pagination:
+              next-cursor: "$.data.result[*].values[*][0]"
+              param: start
+              cursor-increment: 1
 
 patches:
   - patch: |-
@@ -81,7 +96,7 @@ patches:
               spec:
                 containers:
                   - name: vacuum
-                    image: quay.io/kubearchive/vacuum:v1.19.0
+                    image: quay.io/kubearchive/vacuum:v1.20.0
   - patch: |-
       apiVersion: batch/v1
       kind: CronJob
@@ -94,7 +109,7 @@ patches:
               spec:
                 containers:
                   - name: vacuum
-                    image: quay.io/kubearchive/vacuum:v1.19.0
+                    image: quay.io/kubearchive/vacuum:v1.20.0
   - patch: |-
       apiVersion: batch/v1
       kind: CronJob
@@ -107,7 +122,7 @@ patches:
               spec:
                 containers:
                   - name: vacuum
-                    image: quay.io/kubearchive/vacuum:v1.19.0
+                    image: quay.io/kubearchive/vacuum:v1.20.0
   # Ensure database is ready before schema-migration job runs
   - patch: |-
       apiVersion: apps/v1
@@ -151,7 +166,10 @@ patches:
               - name: migration
                 env:
                   - name: MIGRATION_VERSION
-                    value: "6"
+                    valueFrom:
+                      configMapKeyRef:
+                        name: kubearchive-schema-version
+                        key: MIGRATION_VERSION
                 securityContext:
                   runAsUser: null
   # These patches add an annotation so an OpenShift service
@@ -208,6 +226,11 @@ patches:
                   value: http://otel-collector:4318
                 - name: AUTH_IMPERSONATE
                   value: "true"
+                - name: MIGRATION_VERSION
+                  valueFrom:
+                    configMapKeyRef:
+                      name: kubearchive-schema-version
+                      key: MIGRATION_VERSION
                 securityContext:
                   readOnlyRootFilesystem: true
                   runAsNonRoot: true
@@ -262,6 +285,11 @@ patches:
                   value: enabled
                 - name: OTEL_EXPORTER_OTLP_ENDPOINT
                   value: http://otel-collector:4318
+                - name: MIGRATION_VERSION
+                  valueFrom:
+                    configMapKeyRef:
+                      name: kubearchive-schema-version
+                      key: MIGRATION_VERSION
                 securityContext:
                   readOnlyRootFilesystem: true
                   runAsNonRoot: true

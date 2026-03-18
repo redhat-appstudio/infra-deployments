@@ -18,6 +18,12 @@ configMapGenerator:
         disableNameSuffixHash: true
       literals:
         - URL=https://kubearchive-api-server-product-kubearchive.apps.kflux-rhel-p01.fc38.p1.openshiftapps.com
+    - name: kubearchive-schema-version
+      options:
+        annotations:
+          argocd.argoproj.io/sync-wave: "-2"
+      literals:
+        - MIGRATION_VERSION=6
     - name: kubearchive-logging-writer
       literals:
           - |
@@ -26,6 +32,8 @@ configMapGenerator:
               NAMESPACE=cel:metadata.namespace
           - |
               START=cel:status.?startTime == optional.none() ? int(now()-duration('1h'))*1000000000: status.startTime
+          - |
+              END=cel:status.?startTime == optional.none() ? int(now()+duration('1h'))*1000000000: int(timestamp(status.startTime)+duration('6h'))*1000000000
           - |
               QUERY={stream="{NAMESPACE}"} | pod_id = `{POD_ID}` | container = `{CONTAINER_NAME}`
           - |
@@ -44,6 +52,7 @@ configMapGenerator:
                   params:
                     query: ${QUERY}
                     start: ${START}
+                    end: ${END}
                     limit: ${TAIL_LINES}
                     direction: backward
                   json-path: "$.data.result[*].values[*][1]"
@@ -54,6 +63,7 @@ configMapGenerator:
                   params:
                     query: ${QUERY}
                     start: ${START}
+                    end: ${END}
                     limit: 300
                     direction: forward
                   json-path: "$.data.result[*].values[*][1]"
@@ -118,7 +128,10 @@ patches:
               - name: migration
                 env:
                   - name: MIGRATION_VERSION
-                    value: "5"
+                    valueFrom:
+                      configMapKeyRef:
+                        name: kubearchive-schema-version
+                        key: MIGRATION_VERSION
                 securityContext:
                   runAsUser: null
   # We don't need the Secret as it will be created by the ExternalSecrets Operator
@@ -191,6 +204,11 @@ patches:
                   value: http://otel-collector:4318
                 - name: AUTH_IMPERSONATE
                   value: "true"
+                - name: MIGRATION_VERSION
+                  valueFrom:
+                    configMapKeyRef:
+                      name: kubearchive-schema-version
+                      key: MIGRATION_VERSION
                 securityContext:
                   readOnlyRootFilesystem: true
                   runAsNonRoot: true
@@ -245,6 +263,11 @@ patches:
                   value: enabled
                 - name: OTEL_EXPORTER_OTLP_ENDPOINT
                   value: http://otel-collector:4318
+                - name: MIGRATION_VERSION
+                  valueFrom:
+                    configMapKeyRef:
+                      name: kubearchive-schema-version
+                      key: MIGRATION_VERSION
                 securityContext:
                   readOnlyRootFilesystem: true
                   runAsNonRoot: true

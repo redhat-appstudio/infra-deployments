@@ -15,15 +15,13 @@ images:
   newTag: 79c8d6d9771f7fc4f2a2eb001a776ae2c0c886aa
 - name: quay.io/konflux-ci/mintmaker-renovate-image
   newName: quay.io/konflux-ci/mintmaker-renovate-image
-  newTag: 6594d878b30d888336c170d9ded76e05ed965510
+  newTag: 8c0ce00debe0fb128eaa579d69f7a3eeba81861c
 
 commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 
 configMapGenerator:
   - name: controller-config
-    options:
-      disableNameSuffixHash: true
     files:
     - config.json
 
