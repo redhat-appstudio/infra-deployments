@@ -6,3 +6,9 @@ resources:
 
 commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+
+patches:
+  - path: resource-patch.yaml
+    target:
+      name: custom-kube-state-metrics
+      kind: Deployment
