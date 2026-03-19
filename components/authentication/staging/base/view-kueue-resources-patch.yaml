@@ -1,0 +1,13 @@
+---
+- op: add
+  path: /rules/-
+  value:
+    apiGroups:
+    - visibility.kueue.x-k8s.io
+    resources:
+    - clusterqueues/pendingworkloads
+    - localqueues/pendingworkloads
+    verbs:
+    - get
+    - list
+    - watch
