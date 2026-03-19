@@ -34,7 +34,7 @@ data:
                 type: Gauge
                 gauge:
                   path: [status, completionTimestamp]
-                  nilIsZero: false
+                  nilIsZero: true
 
             - name: "velero_backup_expiration_timestamp"
               help: "Expiration timestamp of Velero backup (Unix epoch)"
@@ -42,7 +42,7 @@ data:
                 type: Gauge
                 gauge:
                   path: [status, expiration]
-                  nilIsZero: false
+                  nilIsZero: true
 
             - name: "velero_backup_total_items"
               help: "Total number of items in backup"
@@ -112,33 +112,6 @@ data:
                 type: Gauge
                 gauge:
                   path: [status, reservingWorkloads]
-                  nilIsZero: true
-
-        ###############################################################################
-        # Kueue LocalQueues
-        ###############################################################################
-        - groupVersionKind:
-            group: "kueue.x-k8s.io"
-            version: "v1beta1"
-            kind: "LocalQueue"
-          labelsFromPath:
-            localqueue: [metadata, name]
-            namespace: [metadata, namespace]
-          metrics:
-            - name: "kueue_localqueue_pending_workloads"
-              help: "Number of pending workloads in LocalQueue"
-              each:
-                type: Gauge
-                gauge:
-                  path: [status, pendingWorkloads]
-                  nilIsZero: true
-
-            - name: "kueue_localqueue_admitted_workloads"
-              help: "Number of admitted workloads in LocalQueue"
-              each:
-                type: Gauge
-                gauge:
-                  path: [status, admittedWorkloads]
                   nilIsZero: true
 
         ###############################################################################
