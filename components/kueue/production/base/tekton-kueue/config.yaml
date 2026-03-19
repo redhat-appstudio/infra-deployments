@@ -95,13 +95,19 @@ cel:
     # Set the pipeline priority
     - |
         pacEventType == 'push' ? priority('konflux-post-merge-build') :
-        pacEventType == 'pull_request'
-          || pacEventType == "Merge_Request"
-          ? priority('konflux-pre-merge-build') :
+        pacEventType == 'pull_request' ||
+          pacEventType == "Merge_Request" ||
+          pacEventType == 'test-comment' ||
+          pacEventType == 'retest-comment' ||
+          pacEventType == 'retest-all-comment' ||
+          pacEventType == 'ok-to-test-comment'  ? priority('konflux-pre-merge-build') :
         pacTestEventType == 'push' ? priority('konflux-post-merge-test') :
-        pacTestEventType == 'pull_request'
-          || pacTestEventType == "Merge_Request"
-          ? priority('konflux-pre-merge-test') :
+        pacTestEventType == 'pull_request' ||
+          pacTestEventType == "Merge_Request" ||
+          pacTestEventType == 'test-comment' ||
+          pacTestEventType == 'retest-comment' ||
+          pacTestEventType == 'retest-all-comment' ||
+          pacTestEventType == 'ok-to-test-comment' ? priority('konflux-pre-merge-test') :
 
         has(pipelineRun.metadata.labels) &&
         'appstudio.openshift.io/service' in pipelineRun.metadata.labels &&
