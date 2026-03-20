@@ -2,11 +2,162 @@
 apiVersion: chainsaw.kyverno.io/v1alpha1
 kind: Test
 metadata:
+  name: not-mutate-pod-remote-platform-small
+spec:
+  description: |
+    Tests that a buildah-remote-oci-ta Pod with a remote platform (not in
+    local-platforms) doesn't get its build step resources adjusted if it's
+    asking less than maximum allowed.
+  concurrent: false
+  steps:
+  - name: given-test-namespace-is-tenant-labeled
+    try:
+    - apply:
+        resource:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: ($namespace)
+            labels:
+              konflux-ci.dev/type: tenant
+        template: true
+  - name: given-multi-platform-controller-namespace-exists
+    try:
+    - apply:
+        file: resources/namespace-multi-platform-controller.yaml
+  - name: given-host-config-configmap-exists
+    try:
+    - apply:
+        file: resources/configmap-host-config.yaml
+  - name: given-kyverno-has-permission-on-resources
+    try:
+    - apply:
+        file: ../kyverno-rbac.yaml
+  - name: given-cluster-policy-is-ready
+    try:
+    - apply:
+        file: ../adjust-buildah-resources-for-remote-platforms.yaml
+    - assert:
+        file: chainsaw-assert-clusterpolicy.yaml
+  - name: when-pod-with-remote-platform-small-resources-is-created
+    try:
+    - apply:
+        file: resources/pod-remote-platform-small.yaml
+  - name: then-build-step-resources-are-not-adjusted
+    try:
+    - assert:
+        file: resources/pod-remote-platform-small.yaml
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: mutate-pod-remote-platform-big-requests
+spec:
+  description: |
+    Tests that a buildah-remote-oci-ta Pod with a remote platform (not in
+    local-platforms) that's requesting too many resource gets adjusted to
+    the maximum allowed.
+  concurrent: false
+  steps:
+  - name: given-test-namespace-is-tenant-labeled
+    try:
+    - apply:
+        resource:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: ($namespace)
+            labels:
+              konflux-ci.dev/type: tenant
+        template: true
+  - name: given-multi-platform-controller-namespace-exists
+    try:
+    - apply:
+        file: resources/namespace-multi-platform-controller.yaml
+  - name: given-host-config-configmap-exists
+    try:
+    - apply:
+        file: resources/configmap-host-config.yaml
+  - name: given-kyverno-has-permission-on-resources
+    try:
+    - apply:
+        file: ../kyverno-rbac.yaml
+  - name: given-cluster-policy-is-ready
+    try:
+    - apply:
+        file: ../adjust-buildah-resources-for-remote-platforms.yaml
+    - assert:
+        file: chainsaw-assert-clusterpolicy.yaml
+  - name: when-pod-with-remote-platform-is-created
+    try:
+    - apply:
+        file: resources/pod-remote-platform-big-requests.yaml
+  - name: then-build-step-resources-are-adjusted
+    try:
+    - assert:
+        file: resources/expected-pod-remote-platform-big-requests.yaml
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: mutate-pod-remote-platform-big-limits
+spec:
+  description: |
+    Tests that a buildah-remote-oci-ta Pod with a remote platform (not in
+    local-platforms) that's requesting a limit too high for its resources
+    gets adjusted to the maximum allowed.
+  concurrent: false
+  steps:
+  - name: given-test-namespace-is-tenant-labeled
+    try:
+    - apply:
+        resource:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: ($namespace)
+            labels:
+              konflux-ci.dev/type: tenant
+        template: true
+  - name: given-multi-platform-controller-namespace-exists
+    try:
+    - apply:
+        file: resources/namespace-multi-platform-controller.yaml
+  - name: given-host-config-configmap-exists
+    try:
+    - apply:
+        file: resources/configmap-host-config.yaml
+  - name: given-kyverno-has-permission-on-resources
+    try:
+    - apply:
+        file: ../kyverno-rbac.yaml
+  - name: given-cluster-policy-is-ready
+    try:
+    - apply:
+        file: ../adjust-buildah-resources-for-remote-platforms.yaml
+    - assert:
+        file: chainsaw-assert-clusterpolicy.yaml
+  - name: when-pod-with-remote-platform-is-created
+    try:
+    - apply:
+        file: resources/pod-remote-platform-big-limits.yaml
+  - name: then-build-step-resources-are-adjusted
+    try:
+    - assert:
+        file: resources/expected-pod-remote-platform-big-limits.yaml
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
   name: mutate-pod-remote-platform
 spec:
   description: |
     Tests that a buildah-remote-oci-ta Pod with a remote platform (not in
-    local-platforms) gets its build step resources adjusted to cpu=1, memory=2Gi.
+    local-platforms) gets its build step resources adjusted to the
+    maximum allowed.
   concurrent: false
   steps:
   - name: given-test-namespace-is-tenant-labeled
