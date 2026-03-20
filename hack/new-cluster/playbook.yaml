@@ -27,6 +27,8 @@
     - name: network
       prompt: "What network (one of {{allowed_networks}})"
       private: false
+    - name: awsaccount
+      prompt: "AWS account number of the cluster (like 123456789000)"
 
   vars:
     vault_addr: "https://vault.devshift.net"
@@ -43,6 +45,7 @@
       - shortname
       - longname
       - env
+      - awsaccount
     controlplane_cluster: appsrep09ue1
     allowed_envs:
       - production
@@ -55,36 +58,52 @@
       - authentication
       - backup
       - build-service
+      - cert-manager
       - cost-management
       - etcd-shield
       - integration
+      - image-rbac-proxy
       - knative-eventing
       - konflux-info
+      - konflux-kite
       - konflux-rbac
       - konflux-ui
+      - kubearchive
+      - kueue
       - kyverno
       - mintmaker
-      - monitoring/logging
-      - monitoring/prometheus
       - multi-platform-controller
       - namespace-lister
       - pipeline-service
+      - policies
       - smee-client
+      - vector-kubearchive-log-collector
+
+    templated_configs:
+    - etcd-defrag
+    - proactive-scaler
 
     argo_cd_app_files:
-      - "{{ dst }}/argo-cd-apps/base/all-clusters/infra-deployments/monitoring-workload-logging/monitoring-workload-logging.yaml"
-      - "{{ dst }}/argo-cd-apps/base/all-clusters/infra-deployments/monitoring-workload-prometheus/monitoring-workload-prometheus.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/build-service/build-service.yaml"
+      - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/cert-manager/cert-manager.yaml"
+      - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/etcd-defrag/etcd-defrag.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/etcd-shield/etcd-shield.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/integration/integration.yaml"
+      - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/image-rbac-proxy/image-rbac-proxy.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/konflux-info/konflux-info.yaml"
+      - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/konflux-kite/konflux-kite.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/konflux-rbac/konflux-rbac.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/konflux-ui/konflux-ui.yaml"
+      - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/kubearchive/kubearchive.yaml"
+      - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/kueue/kueue.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/kyverno/kyverno.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/mintmaker/mintmaker.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/multi-platform-controller/multi-platform-controller.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/namespace-lister/namespace-lister.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/pipeline-service/pipeline-service.yaml"
+      - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/policies/policies.yaml"
+      - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/proactive-scaler/proactive-scaler.yaml"
+      - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/vector-kubearchive-log-collector/vector-kubearchive-log-collector.yaml"
 
     argo_cd_private_network_app_files:
       - "{{ dst }}/argo-cd-apps/base/smee-client/smee-client.yaml"
@@ -97,9 +116,6 @@
       - 'stonesoup/{{ env }}/platform/terraform/generated/{{ shortname }}/tekton-bucket'
       - 'stonesoup/{{ env }}/platform/terraform/generated/{{ shortname }}/aws-ssh-key'
       - 'stonesoup/{{ env }}/platform/terraform/generated/{{ shortname }}/aws-account'
-      - 'stonesoup/{{ env }}/platform/terraform/generated/{{ shortname }}/ibm-api-key'
-      - 'stonesoup/{{ env }}/platform/terraform/generated/{{ shortname }}/ibm-s390x-ssh-key'
-      - 'stonesoup/{{ env }}/platform/terraform/generated/{{ shortname }}/ibm-ppc64le-ssh-key'
 
     github_commit_vars:
       - slug: openshift-pipelines/tektoncd-results-for-konflux
@@ -112,6 +128,12 @@
         varname: commit_id_multi_platform_controller
 
   pre_tasks:
+    - name: Load variable values from file if provided
+      tags: [always]
+      include_vars:
+        file: "{{ varfile }}"
+      when: varfile is defined and varfile != ""
+
     - name: Validate and initialize variables
       tags: [always]
       include_tasks: tasks/variables.yaml
@@ -143,7 +165,7 @@
       loop_control:
         loop_var: filename
 
-    - name: Patch ApplicationSet files to include new cluster reference, only applicable to private network clusters
+    - name: Patch private network cluster ApplicationSet files to include new cluster reference
       tags: [applicationsets]
       include_tasks: tasks/applicationsets.yaml
       loop: "{{ argo_cd_private_network_app_files }}"
@@ -157,3 +179,14 @@
       loop: "{{ templated_components }}"
       loop_control:
         loop_var: component
+
+    - name: Copy cluster-specific config manifests
+      tags: [configs]
+      include_tasks: tasks/configs.yaml
+      loop: "{{ templated_configs }}"
+      loop_control:
+        loop_var: config
+
+    - name: Generate pipeline-service deploy config (special requirement)
+      tags: [components]
+      shell: "{{ dst }}/hack/generate-deploy-config.sh -c {{ dst }}/components/pipeline-service"
