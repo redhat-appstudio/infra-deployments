@@ -35,7 +35,7 @@ This automation creates yaml files in the infra-deployments repo locally.
 
 When the playbook completes, consult the output by inspecting `git diff`.
 
-If satisifed, commit the results, push, and post a pull-request for review by your peers.
+If satisfied, commit the results, push, and post a pull-request for review by your peers.
 
 Include a description of steps you took to run and verify the automation in the description of your pull request to expedite review.
 

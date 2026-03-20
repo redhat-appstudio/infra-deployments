@@ -3,31 +3,24 @@
 - name: Ensure required variables are defined
   tags: [always]
   fail:
-    msg: "Required variable {{ item }} has not been provided"
+    msg: "Required variable '{{ item }}' has not been provided via prompt or variable file"
   when: "vars[item] is undefined or vars[item] == ''"
   loop: "{{ required_vars }}"
+- name: Make sure awsaccount is a string of numbers
+  tags: [always]
+  fail:
+    msg: "Variable 'awsaccount' must contain only digits, got: {{awsaccount}}"
+  when: "awsaccount is defined and awsaccount != '' and not (awsaccount | string | regex_search('^[0-9]+$'))"
 - name: Make sure env is sane
   tags: [always]
   fail:
-    msg: "Variable env must be one of {{allowed_envs}}, not {{env}}"
+    msg: "Variable 'env' must be one of {{allowed_envs}}, not {{env}}"
   when: "vars['env'] not in vars['allowed_envs']"
 - name: Make sure network is sane
   tags: [always]
   fail:
-    msg: "Variable network must be one of {{allowed_networks}}, not {{network}}"
+    msg: "Variable 'network' must be one of {{allowed_networks}}, not {{network}}"
   when: "vars['network'] not in vars['allowed_networks']"
-- name: Setup cute variants of the environment name (for prod)
-  tags: [always]
-  set_fact:
-    cuteenv: prod
-    cutestenv: prd
-  when: "vars['env'] == 'production'"
-- name: Setup cute variants of the environment name (for staging)
-  tags: [always]
-  set_fact:
-    cuteenv: stage
-    cutestenv: stg
-  when: "vars['env'] == 'staging'"
 - name: Determine the latest github commits
   tags: [always]
   include_tasks: tasks/github/find-latest-commits.yaml
