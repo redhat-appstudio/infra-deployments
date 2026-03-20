@@ -52,10 +52,20 @@ spec:
           echo "[ERROR] failed to patch imagerepository for token refresh"
         fi
 
-        sleep 5
-
-        current_generation_time=$(oc get imagerepository "${SAMPLE_IMAGE_REPOSITORY_NAME}" -n "${NAMESPACE}" -o jsonpath='{.status.credentials.generationTimestamp}')
-
-        if [ "$previous_generation_time" == "$current_generation_time" ]; then
-          echo "[ERROR] failed to regenerate token for the imagerepository"
-        fi
+        # Check the token refresh is succeeded
+        timeout_in_seconds=120
+        total_wait_in_seconds=0
+        delay_in_seconds=5
+        while true; do
+          current_generation_time=$(oc get imagerepository "${SAMPLE_IMAGE_REPOSITORY_NAME}" -n "${NAMESPACE}" -o jsonpath='{.status.credentials.generationTimestamp}')
+          if [ "$previous_generation_time" != "$current_generation_time" ]; then
+            break
+          fi
+          if [ "$total_wait_in_seconds" -gt "$timeout_in_seconds" ]; then
+            echo "timeout waiting for generation timestamp to be updated"
+            exit 1
+          fi
+          total_wait_in_seconds=$((total_wait_in_seconds + delay_in_seconds))
+          echo "[INFO] Waiting for generation timestamp to be updated - ${total_wait_in_seconds}s elapsed"
+          sleep "$delay_in_seconds"
+        done

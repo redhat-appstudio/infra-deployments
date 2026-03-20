@@ -58,18 +58,19 @@ spec:
         echo "[INFO] found pipelinerun: ${prun_name}"
 
         # Check the pipelinerun is Succeeded/Completed
-        timeout=1200
-        total_wait=0
+        timeout_in_seconds=1200
+        total_wait_in_seconds=0
+        delay_in_seconds=5
         while true; do
           prun_status=$(oc get ${prun_name} -n "${NAMESPACE}" -o=jsonpath='{.status.conditions[0].status}')
           if [ "$prun_status" == "True" ]; then
             break
           fi
-          if [ "$total_wait" -gt "$timeout" ]; then
+          if [ "$total_wait_in_seconds" -gt "$timeout_in_seconds" ]; then
             echo "[ERROR] Pipelinerun is taking longer than expected, timing out..."
             exit 1
           fi
-          total_wait=$((total_wait + 5))
-          echo "[INFO] Current pipelinerun status: '$prun_status' - ${total_wait}s elapsed"
-          sleep 5
+          total_wait_in_seconds=$((total_wait_in_seconds + delay_in_seconds))
+          echo "[INFO] Current pipelinerun status: '$prun_status' - ${total_wait_in_seconds}s elapsed"
+          sleep "$delay_in_seconds"
         done
