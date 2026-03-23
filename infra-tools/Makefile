@@ -46,7 +46,7 @@ test: fmt vet ## Run unit tests.
 
 .PHONY: lint
 lint: golangci-lint ## Run golangci-lint linter.
-	$(GOLANGCI_LINT) run ./...
+	$(GOLANGCI_LINT) run $(LINT_ARGS) ./...
 
 .PHONY: lint-fix
 lint-fix: golangci-lint ## Run golangci-lint linter and perform fixes.
