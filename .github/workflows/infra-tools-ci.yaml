@@ -22,6 +22,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-go@v5
         with:
@@ -31,8 +33,12 @@ jobs:
       - name: Check go.mod and go.sum are tidy
         run: go mod tidy -diff
 
-      - name: Run lint
+      - name: Lint (all issues)
         run: make lint
+        continue-on-error: true
+
+      - name: Lint (new issues only)
+        run: make lint LINT_ARGS="--new-from-rev=origin/main"
 
       - name: Run tests
         run: make test
