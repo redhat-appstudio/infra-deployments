@@ -60,6 +60,7 @@ configMapGenerator:
                   reverse: false
                   path: /loki/api/v1/query_range
                   method: GET
+                  timeout: 1m
                   params:
                     query: ${QUERY}
                     start: ${START}
@@ -67,6 +68,10 @@ configMapGenerator:
                     limit: 300
                     direction: forward
                   json-path: "$.data.result[*].values[*][1]"
+                  pagination:
+                    next-cursor: "$.data.result[*].values[*][0]"
+                    param: start
+                    cursor-increment: 1
     - name: otel-collector-conf
       behavior: replace
       namespace: product-kubearchive
@@ -111,7 +116,7 @@ patches:
               spec:
                 containers:
                   - name: vacuum
-                    image: quay.io/kubearchive/vacuum:v1.19.0
+                    image: quay.io/kubearchive/vacuum:v1.20.0
 
   - patch: |-
       apiVersion: batch/v1
@@ -196,8 +201,18 @@ patches:
         name: kubearchive-api-server
         namespace: kubearchive
       spec:
+        replicas: 2
         template:
           spec:
+            affinity:
+              podAntiAffinity:
+                preferredDuringSchedulingIgnoredDuringExecution:
+                  - weight: 50
+                    podAffinityTerm:
+                      labelSelector:
+                        matchLabels:
+                          app: kubearchive-api-server
+                      topologyKey: kubernetes.io/hostname
             containers:
               - name: kubearchive-api-server
                 env:

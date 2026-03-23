@@ -3,6 +3,7 @@
 echo "Upgrading KubeArchive from $1 to $2..."
 
 curl -Lo components/kubearchive/development/kubearchive.yaml https://github.com/kubearchive/kubearchive/releases/download/$2/kubearchive.yaml
+cp components/kubearchive/development/kubearchive.yaml components/kubearchive/production/kflux-fedora-01/kubearchive.yaml
 cp components/kubearchive/development/kubearchive.yaml components/kubearchive/production/kflux-ocp-p01/kubearchive.yaml
 cp components/kubearchive/development/kubearchive.yaml components/kubearchive/production/kflux-osp-p01/kubearchive.yaml
 cp components/kubearchive/development/kubearchive.yaml components/kubearchive/production/kflux-prd-rh02/kubearchive.yaml
