@@ -33,7 +33,7 @@ configMapGenerator:
       annotations:
         argocd.argoproj.io/sync-wave: "-2"
     literals:
-      - MIGRATION_VERSION=6
+      - MIGRATION_VERSION=10
   - name: kubearchive-logging-writer
     literals:
       - |
@@ -96,7 +96,7 @@ patches:
               spec:
                 containers:
                   - name: vacuum
-                    image: quay.io/kubearchive/vacuum:v1.20.0
+                    image: quay.io/kubearchive/vacuum:v1.21.0
   - patch: |-
       apiVersion: batch/v1
       kind: CronJob
@@ -109,7 +109,7 @@ patches:
               spec:
                 containers:
                   - name: vacuum
-                    image: quay.io/kubearchive/vacuum:v1.20.0
+                    image: quay.io/kubearchive/vacuum:v1.21.0
   - patch: |-
       apiVersion: batch/v1
       kind: CronJob
@@ -122,7 +122,7 @@ patches:
               spec:
                 containers:
                   - name: vacuum
-                    image: quay.io/kubearchive/vacuum:v1.20.0
+                    image: quay.io/kubearchive/vacuum:v1.21.0
   # Ensure database is ready before schema-migration job runs
   - patch: |-
       apiVersion: apps/v1
