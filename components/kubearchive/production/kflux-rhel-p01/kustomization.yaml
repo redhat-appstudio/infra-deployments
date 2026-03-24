@@ -60,12 +60,12 @@ configMapGenerator:
                   reverse: false
                   path: /loki/api/v1/query_range
                   method: GET
-                  timeout: 1m
+                  timeout: 10m
                   params:
                     query: ${QUERY}
                     start: ${START}
                     end: ${END}
-                    limit: 300
+                    limit: 200
                     direction: forward
                   json-path: "$.data.result[*].values[*][1]"
                   pagination:
