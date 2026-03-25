@@ -1,4 +1,10 @@
 ---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: disaster-recovery-cron-event-producer
+  namespace: kubearchive
+---
 # https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/
 # https://github.com/tektoncd/triggers/blob/main/examples/v1beta1/cron/cronjob.yaml
 apiVersion: batch/v1
@@ -34,3 +40,4 @@ spec:
                 cpu: 100m
                 memory: 128Mi
           restartPolicy: Never
+          serviceAccountName: disaster-recovery-cron-event-producer
