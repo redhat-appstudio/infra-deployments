@@ -1,0 +1,98 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: kanary-otel-poc
+spec:
+  params:
+    - name: otel-endpoint
+      type: string
+      default: http://open-telemetry-opentelemetry-collector.konflux-otel.svc.cluster.local:4318
+    - name: tested-cluster
+      type: string
+      default: stone-stage-p01
+    - name: test-type
+      type: string
+      default: container-single-arch
+    - name: component-repo
+      type: string
+      default: "https://gitlab.cee.redhat.com/jhutar/nodejs-devfile-sample4"
+    - name: user-prefix
+      type: string
+      default: "stagep01cs"
+    - name: quay-repo
+      type: string
+      default: "redhat-user-workloads-stage"
+    - name: pipeline-repo-templating-source
+      type: string
+      default: "https://github.com/rhtap-perf-test/konflux-probe-test-templates"
+    - name: pipeline-repo-templating-source-dir
+      type: string
+      default: "nodejs-devfile-sample-SingleArch/"
+    - name: release-pipeline-service-account
+      type: string
+      default: "loadtest-probe-serviceaccount"
+    # Private clusters only (GitLab-based repos). Leave empty for public clusters.
+    - name: fork-target
+      type: string
+      default: "jhutar"
+    - name: gitlab-api-url
+      type: string
+      default: "https://gitlab.cee.redhat.com/api/v4"
+    - name: member-cluster
+      type: string
+    # RPM test type only. Leave empty for container test types.
+    - name: component-repo-revision
+      type: string
+      default: ""
+    - name: pipeline-image-pull-secrets
+      type: string
+      default: ""
+    - name: test-scenario-git-url
+      type: string
+      default: ""
+  tasks:
+    - name: run-kanary-tests
+      taskRef:
+        name: run-kanary-tests
+      params:
+        - name: tested-cluster
+          value: $(params.tested-cluster)
+        - name: test-type
+          value: $(params.test-type)
+        - name: component-repo
+          value: $(params.component-repo)
+        - name: user-prefix
+          value: $(params.user-prefix)
+        - name: quay-repo
+          value: $(params.quay-repo)
+        - name: pipeline-repo-templating-source
+          value: $(params.pipeline-repo-templating-source)
+        - name: pipeline-repo-templating-source-dir
+          value: $(params.pipeline-repo-templating-source-dir)
+        - name: release-pipeline-service-account
+          value: $(params.release-pipeline-service-account)
+        - name: fork-target
+          value: $(params.fork-target)
+        - name: gitlab-api-url
+          value: $(params.gitlab-api-url)
+        - name: member-cluster
+          value: $(params.member-cluster)
+        - name: component-repo-revision
+          value: $(params.component-repo-revision)
+        - name: pipeline-image-pull-secrets
+          value: $(params.pipeline-image-pull-secrets)
+        - name: test-scenario-git-url
+          value: $(params.test-scenario-git-url)
+  finally:
+    - name: push-kanary-metrics
+      taskRef:
+        name: push-kanary-metrics
+      params:
+        - name: otel-endpoint
+          value: $(params.otel-endpoint)
+        - name: tested-cluster
+          value: $(params.tested-cluster)
+        - name: test-type
+          value: $(params.test-type)
+        - name: test-outcome
+          value: $(tasks.run-kanary-tests.results.test-outcome)
