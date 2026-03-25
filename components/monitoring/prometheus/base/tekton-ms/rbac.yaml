@@ -10,6 +10,38 @@ roleRef:
   name: cluster-monitoring-view
 subjects:
 - kind: ServiceAccount
-  # SA name follows <monitoringstack-name>-prometheus convention
+  name: appstudio-tekton-ms-prometheus
+  namespace: appstudio-tekton
+---
+# Grant Prometheus SA permission to discover Services/Endpoints only in
+# openshift-pipelines for cross-namespace scraping.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: appstudio-tekton-ms-discovery
+  labels:
+    monitoring.rhobs/stack: appstudio-tekton-ms
+rules:
+- apiGroups: [""]
+  resources: [services, endpoints, pods]
+  verbs: [get, list, watch]
+- apiGroups: [discovery.k8s.io]
+  resources: [endpointslices]
+  verbs: [get, list, watch]
+---
+# RoleBinding (not ClusterRoleBinding) scopes discovery to openshift-pipelines only.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: appstudio-tekton-ms-discovery
+  namespace: openshift-pipelines
+  labels:
+    monitoring.rhobs/stack: appstudio-tekton-ms
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: appstudio-tekton-ms-discovery
+subjects:
+- kind: ServiceAccount
   name: appstudio-tekton-ms-prometheus
   namespace: appstudio-tekton
