@@ -55,6 +55,8 @@ spec:
             path: /healthz/ready
             port: telemetry
         env:
+        - name: GODEBUG
+          value: "http2server=0"
         - name: OPENSHIFT_OAUTH_CLIENT_SECRET
           valueFrom:
             secretKeyRef:
