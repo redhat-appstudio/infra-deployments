@@ -14,6 +14,20 @@ commonAnnotations:
 resources:
 - ../base
 
+patches:
+  - patch: |-
+      - op: add
+        path: /spec/persistentVolumeClaimRetentionPolicy
+        value:
+          whenDeleted: Delete
+          whenScaled: Delete
+    target:
+      group: apps
+      version: v1
+      kind: StatefulSet
+      namespace: product-kubearchive-logging
+      labelSelector: app.kubernetes.io/name=loki,app.kubernetes.io/component=ingester
+
 generators:
 - vector-helm-generator.yaml
 - loki-helm-generator.yaml
