@@ -1,0 +1,15 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: appstudio-tekton-ms-view
+  labels:
+    monitoring.rhobs/stack: appstudio-tekton-ms
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-monitoring-view
+subjects:
+- kind: ServiceAccount
+  # SA name follows <monitoringstack-name>-prometheus convention
+  name: appstudio-tekton-ms-prometheus
+  namespace: appstudio-tekton
