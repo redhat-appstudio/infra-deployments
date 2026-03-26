@@ -33,13 +33,7 @@ spec:
       enabled: true
     config:
       OIDCIssuers:
-        # Audience "sigstore" — used by rh-sign-image-cosign task (projected SA token)
         - ClientID: "sigstore"
-          Issuer: "https://rh-oidc.s3.us-east-1.amazonaws.com/223ugc1f8i6vv1n26c82nut3264t8lvk"
-          IssuerURL: "https://rh-oidc.s3.us-east-1.amazonaws.com/223ugc1f8i6vv1n26c82nut3264t8lvk"
-          Type: kubernetes
-        # Audience "https://kubernetes.default.svc" — used by Tekton Chains default SA token
-        - ClientID: "https://kubernetes.default.svc"
           Issuer: "https://rh-oidc.s3.us-east-1.amazonaws.com/223ugc1f8i6vv1n26c82nut3264t8lvk"
           IssuerURL: "https://rh-oidc.s3.us-east-1.amazonaws.com/223ugc1f8i6vv1n26c82nut3264t8lvk"
           Type: kubernetes
