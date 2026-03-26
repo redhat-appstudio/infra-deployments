@@ -1,0 +1,76 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  labels:
+    app.kubernetes.io/version: "0.1"
+  annotations:
+    tekton.dev/pipelines.minVersion: "0.12.1"
+  name: validate-build-service-upgrade
+spec:
+  description: |
+    This task validates the user component upgrade is successful.
+  params:
+    - name: CLUSTER_API_URL
+      description: Cluster api url of the test cluster
+      type: string
+      default: "https://api.stone-stg-rh01.l2vh.p1.openshiftapps.com:6443"
+  steps:
+    - name: validate
+      image: quay.io/konflux-ci/task-runner:1.4.1@sha256:d9feec6f2ce9b10cfb76b45ea14f83b5ed9f231de7d6083291550aebe8eb09ea
+      env:
+      - name: CLUSTER_API_URL
+        value: $(params.CLUSTER_API_URL)
+      - name: SA_TOKEN
+        valueFrom:
+          secretKeyRef:
+            name: upgrade-sa-token
+            key: token
+      script: |
+        #!/usr/bin/env sh
+        set -e
+
+        NAMESPACE="build-samples-tenant"
+        SAMPLE_COMPONENT_NAME="sample-component-golang"
+
+        # Login to the cluster
+        if ! oc login --token="${SA_TOKEN}" --server="${CLUSTER_API_URL}"; then
+          echo "[ERROR] Failed to login to the cluster."
+          exit 1
+        fi
+
+        # Check if the component exists
+        if ! oc get component "${SAMPLE_COMPONENT_NAME}" -n "${NAMESPACE}"; then
+          echo "[ERROR] failed to get component from the cluster"
+          exit 1
+        fi
+
+        # Run the push pipeline
+        if ! oc annotate component "${SAMPLE_COMPONENT_NAME}" build.appstudio.openshift.io/request=trigger-pac-build -n "${NAMESPACE}"; then
+          echo "[ERROR] failed to annotate the component"
+          exit 1
+        fi
+
+        # Wait for 10 sec to trigger the pipelinerun
+        sleep 10
+
+        #Fetch the pipelinerun name for the component
+        prun_name=$(oc get pipelineruns -o name -l appstudio.openshift.io/component="${SAMPLE_COMPONENT_NAME}" -n "${NAMESPACE}")
+        echo "[INFO] found pipelinerun: ${prun_name}"
+
+        # Check the pipelinerun is Succeeded/Completed
+        timeout_in_seconds=1200
+        total_wait_in_seconds=0
+        delay_in_seconds=5
+        while true; do
+          prun_status=$(oc get ${prun_name} -n "${NAMESPACE}" -o=jsonpath='{.status.conditions[0].status}')
+          if [ "$prun_status" == "True" ]; then
+            break
+          fi
+          if [ "$total_wait_in_seconds" -gt "$timeout_in_seconds" ]; then
+            echo "[ERROR] Pipelinerun is taking longer than expected, timing out..."
+            exit 1
+          fi
+          total_wait_in_seconds=$((total_wait_in_seconds + delay_in_seconds))
+          echo "[INFO] Current pipelinerun status: '$prun_status' - ${total_wait_in_seconds}s elapsed"
+          sleep "$delay_in_seconds"
+        done
