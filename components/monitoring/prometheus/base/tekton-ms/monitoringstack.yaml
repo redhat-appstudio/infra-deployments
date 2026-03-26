@@ -1,0 +1,22 @@
+apiVersion: monitoring.rhobs/v1alpha1
+kind: MonitoringStack
+metadata:
+  name: appstudio-tekton-ms
+  namespace: appstudio-tekton
+spec:
+  resourceSelector:
+    matchLabels:
+      monitoring.rhobs/stack: appstudio-tekton-ms
+  logLevel: info
+  retention: 3h
+  alertmanagerConfig:
+    disabled: true
+  resources:
+    requests:
+      cpu: 200m
+      memory: 4Gi
+    limits:
+      memory: 4Gi
+  prometheusConfig:
+    externalLabels: {} # added by overlays (source_cluster, source_environment)
+    replicas: 1 # single replica for staging validation; bump to 2 for production HA
