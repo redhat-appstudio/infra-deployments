@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: minio-storage-configuration
+  namespace: openshift-adp
+type: Opaque
+stringData:
+  config.env: |
+    export MINIO_ROOT_USER=minioadmin
+    export MINIO_ROOT_PASSWORD=minioadmin

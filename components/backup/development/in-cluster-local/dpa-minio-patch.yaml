@@ -1,0 +1,17 @@
+- op: replace
+  path: /spec/backupLocations/0/velero/objectStorage/bucket
+  value: velero
+- op: remove
+  path: /spec/backupLocations/0/velero/config/kmsKeyId
+- op: add
+  path: /spec/backupLocations/0/velero/config/s3Url
+  value: https://minio.openshift-adp.svc.cluster.local
+- op: add
+  path: /spec/backupLocations/0/velero/config/s3ForcePathStyle
+  value: "true"
+- op: add
+  path: /spec/backupLocations/0/velero/config/insecureSkipTLSVerify
+  value: "true"
+- op: replace
+  path: /metadata/annotations/argocd.argoproj.io~1sync-wave
+  value: "2"
