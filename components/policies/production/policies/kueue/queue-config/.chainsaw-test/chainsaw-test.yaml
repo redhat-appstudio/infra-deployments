@@ -14,25 +14,35 @@ spec:
     value: labeled
   steps:
   - name: given-localqueue-crd-exists
+    description: |
+      Install the Kueue LocalQueue CRD so the API server accepts LocalQueue objects in the test cluster.
     try:
     - apply:
         file: ./resources/localqueue-crd.yaml
   - name: given-kyverno-has-permission-on-resources
+    description: |
+      Apply Kyverno RBAC so the policy engine can generate and reconcile LocalQueue resources.
     try:
     - apply:
         file: ../kyverno-rbac.yaml
   - name: given-cluster-policy-is-ready
+    description: |
+      Apply the queue bootstrap ClusterPolicy and assert Kyverno reports the policy as ready before exercising generation.
     try:
     - apply:
         file: ../cluster-policy.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: when-tenant-labeled-namespace-is-created
+    description: |
+      Create a namespace labeled konflux-ci.dev/type=tenant so the policy should generate a LocalQueue.
     try:
     - apply:
         file: resources/namespace-tenant.yaml
         template: true
   - name: then-localqueue-is-created
+    description: |
+      Assert the expected pipelines-queue LocalQueue exists and matches the fixture (name and spec).
     try:
     - assert:
         file: resources/expected-localqueue.yaml
@@ -54,26 +64,35 @@ spec:
     value: unlabeled
   steps:
   - name: given-localqueue-crd-exists
+    description: |
+      Install the Kueue LocalQueue CRD so the API server accepts LocalQueue objects in the test cluster.
     try:
     - apply:
         file: ./resources/localqueue-crd.yaml
   - name: given-kyverno-has-permission-on-resources
+    description: |
+      Apply Kyverno RBAC so the policy engine can generate and reconcile LocalQueue resources.
     try:
     - apply:
         file: ../kyverno-rbac.yaml
   - name: given-cluster-policy-is-ready
+    description: |
+      Apply the queue bootstrap ClusterPolicy and assert Kyverno reports the policy as ready before exercising generation.
     try:
     - apply:
         file: ../cluster-policy.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: when-unlabeled-namespace-is-created
+    description: |
+      Create a namespace without the tenant label and without a special name so generation must not run.
     try:
     - apply:
         file: resources/namespace-unlabeled.yaml
         template: true
   - name: then-localqueue-is-not-created
-    description: check that the script is consistently not created in some time
+    description: |
+      Confirm pipelines-queue LocalQueue is absent (NotFound) and stays absent after a short wait.
     try:
     - script:
         content: kubectl get localqueues.kueue.x-k8s.io pipelines-queue
@@ -106,30 +125,42 @@ spec:
     value: updated-labeled
   steps:
   - name: given-localqueue-crd-exists
+    description: |
+      Install the Kueue LocalQueue CRD so the API server accepts LocalQueue objects in the test cluster.
     try:
     - apply:
         file: ./resources/localqueue-crd.yaml
   - name: given-kyverno-has-permission-on-resources
+    description: |
+      Apply Kyverno RBAC so the policy engine can generate and reconcile LocalQueue resources.
     try:
     - apply:
         file: ../kyverno-rbac.yaml
   - name: given-cluster-policy-is-ready
+    description: |
+      Apply the queue bootstrap ClusterPolicy and assert Kyverno reports the policy as ready before exercising generation.
     try:
     - apply:
         file: ../cluster-policy.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: given-unlabeled-namespace-exists
+    description: |
+      Create an unlabeled namespace first so a later label update can trigger the policy on change.
     try:
     - apply:
         file: resources/namespace-unlabeled.yaml
         template: true
   - name: when-tenant-label-is-added
+    description: |
+      Apply the tenant-labeled namespace manifest so konflux-ci.dev/type=tenant is set on the existing namespace.
     try:
     - apply:
         file: resources/namespace-tenant.yaml
         template: true
   - name: then-localqueue-is-created
+    description: |
+      Assert the expected pipelines-queue LocalQueue exists and matches the fixture (name and spec).
     try:
     - assert:
         file: resources/expected-localqueue.yaml
@@ -151,25 +182,35 @@ spec:
     value: labeled
   steps:
   - name: given-localqueue-crd-exists
+    description: |
+      Install the Kueue LocalQueue CRD so the API server accepts LocalQueue objects in the test cluster.
     try:
     - apply:
         file: ./resources/localqueue-crd.yaml
   - name: given-tenant-labeled-namespace-exists
+    description: |
+      Create the tenant-labeled namespace before the ClusterPolicy exists to exercise generateExisting on policy install.
     try:
     - apply:
         file: resources/namespace-tenant.yaml
         template: true
   - name: given-kyverno-has-permission-on-resources
+    description: |
+      Apply Kyverno RBAC so the policy engine can generate and reconcile LocalQueue resources.
     try:
     - apply:
         file: ../kyverno-rbac.yaml
   - name: when-cluster-policy-is-ready
+    description: |
+      Apply the ClusterPolicy after the target namespace exists so generateExisting can backfill the LocalQueue.
     try:
     - apply:
         file: ../cluster-policy.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: then-localqueue-is-created
+    description: |
+      Assert the expected pipelines-queue LocalQueue exists and matches the fixture (name and spec).
     try:
     - assert:
         file: resources/expected-localqueue.yaml
@@ -189,24 +230,34 @@ spec:
   namespace: kueue-queue-mintmaker-existing
   steps:
   - name: given-localqueue-crd-exists
+    description: |
+      Install the Kueue LocalQueue CRD so the API server accepts LocalQueue objects in the test cluster.
     try:
     - apply:
         file: ./resources/localqueue-crd.yaml
   - name: given-mintmaker-namespace-exists
+    description: |
+      Create the mintmaker namespace before policy install so name-based matching is satisfied for generateExisting.
     try:
     - apply:
         file: resources/namespace-mintmaker.yaml
   - name: given-kyverno-has-permission-on-resources
+    description: |
+      Apply Kyverno RBAC so the policy engine can generate and reconcile LocalQueue resources.
     try:
     - apply:
         file: ../kyverno-rbac.yaml
   - name: when-cluster-policy-is-ready
+    description: |
+      Apply the ClusterPolicy after the target namespace exists so generateExisting can backfill the LocalQueue.
     try:
     - apply:
         file: ../cluster-policy.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: then-localqueue-is-created
+    description: |
+      Assert the expected pipelines-queue LocalQueue exists and matches the fixture (name and spec).
     try:
     - assert:
         file: resources/expected-localqueue-mintmaker.yaml
@@ -224,24 +275,34 @@ spec:
   namespace: kueue-queue-mintmaker-test
   steps:
   - name: given-localqueue-crd-exists
+    description: |
+      Install the Kueue LocalQueue CRD so the API server accepts LocalQueue objects in the test cluster.
     try:
     - apply:
         file: ./resources/localqueue-crd.yaml
   - name: given-kyverno-has-permission-on-resources
+    description: |
+      Apply Kyverno RBAC so the policy engine can generate and reconcile LocalQueue resources.
     try:
     - apply:
         file: ../kyverno-rbac.yaml
   - name: given-cluster-policy-is-ready
+    description: |
+      Apply the queue bootstrap ClusterPolicy and assert Kyverno reports the policy as ready before exercising generation.
     try:
     - apply:
         file: ../cluster-policy.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: when-mintmaker-namespace-is-created
+    description: |
+      Create the mintmaker namespace after the policy is ready to verify name-based generation without the tenant label.
     try:
     - apply:
         file: resources/namespace-mintmaker.yaml
   - name: then-localqueue-is-created
+    description: |
+      Assert the expected pipelines-queue LocalQueue exists and matches the fixture (name and spec).
     try:
     - assert:
         file: resources/expected-localqueue-mintmaker.yaml

@@ -22,7 +22,8 @@ Tests that a LocalQueue is created in a namespace labeled with
 
 ### Step: `given-localqueue-crd-exists`
 
-*No description*
+Install the Kueue LocalQueue CRD so the API server accepts LocalQueue objects in the test cluster.
+
 
 #### Try
 
@@ -32,7 +33,8 @@ Tests that a LocalQueue is created in a namespace labeled with
 
 ### Step: `given-kyverno-has-permission-on-resources`
 
-*No description*
+Apply Kyverno RBAC so the policy engine can generate and reconcile LocalQueue resources.
+
 
 #### Try
 
@@ -42,7 +44,8 @@ Tests that a LocalQueue is created in a namespace labeled with
 
 ### Step: `given-cluster-policy-is-ready`
 
-*No description*
+Apply the queue bootstrap ClusterPolicy and assert Kyverno reports the policy as ready before exercising generation.
+
 
 #### Try
 
@@ -53,7 +56,8 @@ Tests that a LocalQueue is created in a namespace labeled with
 
 ### Step: `when-tenant-labeled-namespace-is-created`
 
-*No description*
+Create a namespace labeled konflux-ci.dev/type=tenant so the policy should generate a LocalQueue.
+
 
 #### Try
 
@@ -63,7 +67,8 @@ Tests that a LocalQueue is created in a namespace labeled with
 
 ### Step: `then-localqueue-is-created`
 
-*No description*
+Assert the expected pipelines-queue LocalQueue exists and matches the fixture (name and spec).
+
 
 #### Try
 
@@ -97,7 +102,8 @@ that does not match the special names.
 
 ### Step: `given-localqueue-crd-exists`
 
-*No description*
+Install the Kueue LocalQueue CRD so the API server accepts LocalQueue objects in the test cluster.
+
 
 #### Try
 
@@ -107,7 +113,8 @@ that does not match the special names.
 
 ### Step: `given-kyverno-has-permission-on-resources`
 
-*No description*
+Apply Kyverno RBAC so the policy engine can generate and reconcile LocalQueue resources.
+
 
 #### Try
 
@@ -117,7 +124,8 @@ that does not match the special names.
 
 ### Step: `given-cluster-policy-is-ready`
 
-*No description*
+Apply the queue bootstrap ClusterPolicy and assert Kyverno reports the policy as ready before exercising generation.
+
 
 #### Try
 
@@ -128,7 +136,8 @@ that does not match the special names.
 
 ### Step: `when-unlabeled-namespace-is-created`
 
-*No description*
+Create a namespace without the tenant label and without a special name so generation must not run.
+
 
 #### Try
 
@@ -138,7 +147,8 @@ that does not match the special names.
 
 ### Step: `then-localqueue-is-not-created`
 
-check that the script is consistently not created in some time
+Confirm pipelines-queue LocalQueue is absent (NotFound) and stays absent after a short wait.
+
 
 #### Try
 
@@ -175,7 +185,8 @@ updated to have the label `konflux-ci.dev/type=tenant`.
 
 ### Step: `given-localqueue-crd-exists`
 
-*No description*
+Install the Kueue LocalQueue CRD so the API server accepts LocalQueue objects in the test cluster.
+
 
 #### Try
 
@@ -185,7 +196,8 @@ updated to have the label `konflux-ci.dev/type=tenant`.
 
 ### Step: `given-kyverno-has-permission-on-resources`
 
-*No description*
+Apply Kyverno RBAC so the policy engine can generate and reconcile LocalQueue resources.
+
 
 #### Try
 
@@ -195,7 +207,8 @@ updated to have the label `konflux-ci.dev/type=tenant`.
 
 ### Step: `given-cluster-policy-is-ready`
 
-*No description*
+Apply the queue bootstrap ClusterPolicy and assert Kyverno reports the policy as ready before exercising generation.
+
 
 #### Try
 
@@ -206,7 +219,8 @@ updated to have the label `konflux-ci.dev/type=tenant`.
 
 ### Step: `given-unlabeled-namespace-exists`
 
-*No description*
+Create an unlabeled namespace first so a later label update can trigger the policy on change.
+
 
 #### Try
 
@@ -216,7 +230,8 @@ updated to have the label `konflux-ci.dev/type=tenant`.
 
 ### Step: `when-tenant-label-is-added`
 
-*No description*
+Apply the tenant-labeled namespace manifest so konflux-ci.dev/type=tenant is set on the existing namespace.
+
 
 #### Try
 
@@ -226,7 +241,8 @@ updated to have the label `konflux-ci.dev/type=tenant`.
 
 ### Step: `then-localqueue-is-created`
 
-*No description*
+Assert the expected pipelines-queue LocalQueue exists and matches the fixture (name and spec).
+
 
 #### Try
 
@@ -260,7 +276,8 @@ namespace when the ClusterPolicy is applied (generateExisting).
 
 ### Step: `given-localqueue-crd-exists`
 
-*No description*
+Install the Kueue LocalQueue CRD so the API server accepts LocalQueue objects in the test cluster.
+
 
 #### Try
 
@@ -270,7 +287,8 @@ namespace when the ClusterPolicy is applied (generateExisting).
 
 ### Step: `given-tenant-labeled-namespace-exists`
 
-*No description*
+Create the tenant-labeled namespace before the ClusterPolicy exists to exercise generateExisting on policy install.
+
 
 #### Try
 
@@ -280,7 +298,8 @@ namespace when the ClusterPolicy is applied (generateExisting).
 
 ### Step: `given-kyverno-has-permission-on-resources`
 
-*No description*
+Apply Kyverno RBAC so the policy engine can generate and reconcile LocalQueue resources.
+
 
 #### Try
 
@@ -290,7 +309,8 @@ namespace when the ClusterPolicy is applied (generateExisting).
 
 ### Step: `when-cluster-policy-is-ready`
 
-*No description*
+Apply the ClusterPolicy after the target namespace exists so generateExisting can backfill the LocalQueue.
+
 
 #### Try
 
@@ -301,7 +321,8 @@ namespace when the ClusterPolicy is applied (generateExisting).
 
 ### Step: `then-localqueue-is-created`
 
-*No description*
+Assert the expected pipelines-queue LocalQueue exists and matches the fixture (name and spec).
+
 
 #### Try
 
@@ -330,7 +351,8 @@ name-based match).
 
 ### Step: `given-localqueue-crd-exists`
 
-*No description*
+Install the Kueue LocalQueue CRD so the API server accepts LocalQueue objects in the test cluster.
+
 
 #### Try
 
@@ -340,7 +362,8 @@ name-based match).
 
 ### Step: `given-mintmaker-namespace-exists`
 
-*No description*
+Create the mintmaker namespace before policy install so name-based matching is satisfied for generateExisting.
+
 
 #### Try
 
@@ -350,7 +373,8 @@ name-based match).
 
 ### Step: `given-kyverno-has-permission-on-resources`
 
-*No description*
+Apply Kyverno RBAC so the policy engine can generate and reconcile LocalQueue resources.
+
 
 #### Try
 
@@ -360,7 +384,8 @@ name-based match).
 
 ### Step: `when-cluster-policy-is-ready`
 
-*No description*
+Apply the ClusterPolicy after the target namespace exists so generateExisting can backfill the LocalQueue.
+
 
 #### Try
 
@@ -371,7 +396,8 @@ name-based match).
 
 ### Step: `then-localqueue-is-created`
 
-*No description*
+Assert the expected pipelines-queue LocalQueue exists and matches the fixture (name and spec).
+
 
 #### Try
 
@@ -399,7 +425,8 @@ without the tenant label (name-based match).
 
 ### Step: `given-localqueue-crd-exists`
 
-*No description*
+Install the Kueue LocalQueue CRD so the API server accepts LocalQueue objects in the test cluster.
+
 
 #### Try
 
@@ -409,7 +436,8 @@ without the tenant label (name-based match).
 
 ### Step: `given-kyverno-has-permission-on-resources`
 
-*No description*
+Apply Kyverno RBAC so the policy engine can generate and reconcile LocalQueue resources.
+
 
 #### Try
 
@@ -419,7 +447,8 @@ without the tenant label (name-based match).
 
 ### Step: `given-cluster-policy-is-ready`
 
-*No description*
+Apply the queue bootstrap ClusterPolicy and assert Kyverno reports the policy as ready before exercising generation.
+
 
 #### Try
 
@@ -430,7 +459,8 @@ without the tenant label (name-based match).
 
 ### Step: `when-mintmaker-namespace-is-created`
 
-*No description*
+Create the mintmaker namespace after the policy is ready to verify name-based generation without the tenant label.
+
 
 #### Try
 
@@ -440,7 +470,8 @@ without the tenant label (name-based match).
 
 ### Step: `then-localqueue-is-created`
 
-*No description*
+Assert the expected pipelines-queue LocalQueue exists and matches the fixture (name and spec).
+
 
 #### Try
 
