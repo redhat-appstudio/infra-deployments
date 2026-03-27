@@ -2,7 +2,7 @@ apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
 metadata:
   name: mintmaker-prod-overlay-update
-  namespace: tekton-ci
+  namespace: konflux-ci
   annotations:
     pipelinesascode.tekton.dev/on-cel-expression: |
       event == "push" && target_branch == "main" && "components/mintmaker/staging/base/kustomization.yaml".pathChanged()
