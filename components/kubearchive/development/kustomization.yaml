@@ -170,6 +170,8 @@ patches:
                       configMapKeyRef:
                         name: kubearchive-schema-version
                         key: MIGRATION_VERSION
+                  - name: BATCH_SIZE
+                    value: "1000"
                 securityContext:
                   runAsUser: null
   # These patches add an annotation so an OpenShift service
