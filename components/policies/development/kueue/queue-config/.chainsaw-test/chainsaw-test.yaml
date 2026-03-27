@@ -73,13 +73,22 @@ spec:
         file: resources/namespace-unlabeled.yaml
         template: true
   - name: then-localqueue-is-not-created
+    description: check that the script is consistently not created in some time
     try:
-    - delete:
-        file: resources/expected-localqueue.yaml
-        template: true
-        expect:
-        - check:
-            ($error != null): true
+    - script:
+        content: kubectl get localqueues.kueue.x-k8s.io pipelines-queue
+        check:
+          ($error != null): true
+          ($stderr): |
+            Error from server (NotFound): localqueues.kueue.x-k8s.io "pipelines-queue" not found
+    - sleep: 
+        duration: 5s
+    - script:
+        content: kubectl get localqueues.kueue.x-k8s.io pipelines-queue
+        check:
+          ($error != null): true
+          ($stderr): |
+            Error from server (NotFound): localqueues.kueue.x-k8s.io "pipelines-queue" not found
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
 apiVersion: chainsaw.kyverno.io/v1alpha1
