@@ -23,6 +23,10 @@ var LabelPrefixes = []string{
 // carry this label, ensuring a human explicitly removes it after review.
 const HoldProductionLabel = "infra/hold-production"
 
+// NeedsApprovalProductionLabel is applied when the PR affects the production
+// environment, signalling that explicit approval is required before merging.
+const NeedsApprovalProductionLabel = "prod/needs-approval"
+
 // IssuesService is the subset of the GitHub Issues API used by this package.
 type IssuesService interface {
 	ListLabelsByIssue(ctx context.Context, owner, repo string, number int, opts *gh.ListOptions) ([]*gh.Label, *gh.Response, error)
