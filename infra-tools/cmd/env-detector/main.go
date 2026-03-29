@@ -131,6 +131,7 @@ func main() {
 	// block merging until a human explicitly removes it after review.
 	if result.AffectedEnvironments[detector.Production] {
 		labels = append(labels, ghclient.HoldProductionLabel)
+		labels = append(labels, ghclient.NeedsApprovalProductionLabel)
 	}
 
 	printSummary(result, labels, headSHA, baseSHA)
