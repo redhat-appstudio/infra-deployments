@@ -33,7 +33,7 @@ configMapGenerator:
       annotations:
         argocd.argoproj.io/sync-wave: "-2"
     literals:
-      - MIGRATION_VERSION=10
+      - MIGRATION_VERSION=13
   - name: kubearchive-logging-writer
     literals:
       - |
@@ -96,7 +96,7 @@ patches:
               spec:
                 containers:
                   - name: vacuum
-                    image: quay.io/kubearchive/vacuum:v1.21.0
+                    image: quay.io/kubearchive/vacuum:v1.21.3
   - patch: |-
       apiVersion: batch/v1
       kind: CronJob
@@ -109,7 +109,7 @@ patches:
               spec:
                 containers:
                   - name: vacuum
-                    image: quay.io/kubearchive/vacuum:v1.21.0
+                    image: quay.io/kubearchive/vacuum:v1.21.3
   - patch: |-
       apiVersion: batch/v1
       kind: CronJob
@@ -122,7 +122,7 @@ patches:
               spec:
                 containers:
                   - name: vacuum
-                    image: quay.io/kubearchive/vacuum:v1.21.0
+                    image: quay.io/kubearchive/vacuum:v1.21.3
   # Ensure database is ready before schema-migration job runs
   - patch: |-
       apiVersion: apps/v1
@@ -170,6 +170,8 @@ patches:
                       configMapKeyRef:
                         name: kubearchive-schema-version
                         key: MIGRATION_VERSION
+                  - name: BATCH_SIZE
+                    value: "1000"
                 securityContext:
                   runAsUser: null
   # These patches add an annotation so an OpenShift service

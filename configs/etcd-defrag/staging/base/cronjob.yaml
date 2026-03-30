@@ -19,22 +19,19 @@ spec:
               imagePullPolicy: IfNotPresent
               env:
               - name: IMAGE
-                value: quay.io/konflux-ci/etcd-defrag@sha256:7539e569f085540b65759f70fe07f399c9d06511349087f8ae559be3ccd484dc
-              - name: FRAGMENTATION_THRESHOLD
-                value: "30"
-              - name: DISK_USAGE_THRESHOLD
-                value: "60"
-              - name: RECLAIM_SPACE_THRESHOLD
-                value: "1024"
+                value: quay.io/konflux-ci/etcd-defrag@sha256:825638235a85f80f9161b03bfe24666d57d8521ec154a673617ea7b08b07d379
+              - name: MAX_FRAGMENTED_PERCENTAGE
+                value: "50"
+              - name: MIN_DEFRAG_MB
+                value: "120"
               command:
                 - /bin/sh
                 - -c
                 - |
                   etcd_pod=$(oc get pod -l app=etcd -oname -n openshift-etcd | awk -F"/" 'NR==1{ print $2 }')
                   oc -n openshift-etcd debug pod/${etcd_pod} \
-                    fragmentationThreshold="${FRAGMENTATION_THRESHOLD}"\
-                    diskUsageThreshold="${DISK_USAGE_THRESHOLD}" \
-                    reclaimSpaceThreshold="${RECLAIM_SPACE_THRESHOLD}" \
+                    maxFragmentedPercentage="${MAX_FRAGMENTED_PERCENTAGE}" \
+                    minDefragMB="${MIN_DEFRAG_MB}" \
                     --image="${IMAGE}" \
                     --one-container=true \
                     -- /bin/sh -c "chmod +x /opt/defrag.sh && /opt/defrag.sh"
