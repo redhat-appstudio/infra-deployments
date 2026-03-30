@@ -1,0 +1,22 @@
+- op: replace
+  path: /spec/jobTemplate/spec/template/spec/containers/0/env
+  value:
+  - name: IMAGE
+    value: "quay.io/konflux-ci/etcd-defrag@sha256:825638235a85f80f9161b03bfe24666d57d8521ec154a673617ea7b08b07d379"
+  - name: MAX_FRAGMENTED_PERCENTAGE
+    value: "50"
+  - name: MIN_DEFRAG_MB
+    value: "120"
+- op: replace
+  path: /spec/jobTemplate/spec/template/spec/containers/0/command
+  value:
+  - /bin/sh
+  - -c
+  - |
+    etcd_pod=$(oc get pod -l app=etcd -oname -n openshift-etcd | awk -F"/" 'NR==1{ print $2 }')
+    oc -n openshift-etcd debug pod/${etcd_pod} \
+      maxFragmentedPercentage="${MAX_FRAGMENTED_PERCENTAGE}" \
+      minDefragMB="${MIN_DEFRAG_MB}" \
+      --image="${IMAGE}" \
+      --one-container=true \
+      -- /bin/sh -c "chmod +x /opt/defrag.sh && /opt/defrag.sh"
