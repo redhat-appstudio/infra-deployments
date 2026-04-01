@@ -1,0 +1,46 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: kanary-trigger-multi-arch
+spec:
+  schedule: "0 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 3000
+      template:
+        spec:
+          serviceAccountName: kanary-cronjob
+          restartPolicy: Never
+          containers:
+            - name: trigger
+              image: quay.io/openshift-pipeline/openshift-pipelines-cli-tkn:1.15
+              securityContext:
+                readOnlyRootFilesystem: true
+                runAsNonRoot: true
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 10Mi
+                limits:
+                  cpu: 100m
+                  memory: 100Mi
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  tkn pipeline start kanary-otel-poc --use-param-defaults \
+                    --param tested-cluster=stone-stage-p01 \
+                    --param test-type=container-multi-arch \
+                    --param component-repo=https://gitlab.cee.redhat.com/jhutar/nodejs-devfile-sample4 \
+                    --param user-prefix=stagep01cm \
+                    --param quay-repo=redhat-user-workloads-stage \
+                    --param pipeline-repo-templating-source=https://github.com/rhtap-perf-test/konflux-probe-test-templates \
+                    --param pipeline-repo-templating-source-dir=nodejs-devfile-sample-MultiArch/ \
+                    --param release-pipeline-service-account=loadtest-probe-serviceaccount \
+                    --param fork-target=jhutar \
+                    --param gitlab-api-url=https://gitlab.cee.redhat.com/api/v4 \
+                    --param member-cluster=https://api.stone-stage-p01.hpmt.p1.openshiftapps.com:6443 \
+                    --prefix-name kanary-stone-stage-p01-multi-arch-

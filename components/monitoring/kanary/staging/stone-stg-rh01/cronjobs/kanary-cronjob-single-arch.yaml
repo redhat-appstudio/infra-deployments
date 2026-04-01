@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: kanary-trigger-stone-stg-rh01
+  name: kanary-trigger-single-arch
 spec:
   schedule: "0 * * * *"
   concurrencyPolicy: Forbid
@@ -31,7 +31,7 @@ spec:
                 - /bin/bash
                 - -c
                 - |
-                  tkn pipeline start kanary-otel-poc \
+                  tkn pipeline start kanary-otel-poc --use-param-defaults \
                     --param tested-cluster=stone-stg-rh01 \
                     --param test-type=container-single-arch \
                     --param component-repo=https://github.com/rhtap-perf-test/nodejs-devfile-sample \
