@@ -1158,7 +1158,6 @@ data:
   {{- if (index $config "throughput") }}
   dynamic.windows-4xlarge-amd64.throughput: {{ index $config "throughput" | quote }}
   {{ end }}
-  {{- if or (index $config "user-data") (.Files.Get "files/windows-init.ps1") }}
   dynamic.windows-4xlarge-amd64.user-data: |
   {{- if (index $config "user-data") }}
   {{- $lines := splitList "\n" (index $config "user-data") }}
@@ -1166,8 +1165,7 @@ data:
     {{ $line }}
   {{- end }}
   {{- else }}
-{{ .Files.Get "files/windows-init.ps1" | indent 4 }}
-  {{- end }}
+{{ include "multi-platform-controller.windows-init" $config | indent 4 }}
   {{- end }}
   {{ end }}
 
