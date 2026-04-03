@@ -61,7 +61,7 @@ spec:
         - name: artifacts
           mountPath: /tmp/artifacts
       env:
-        - name: ARTIFACT_DIR
+        - name: OUTPUT_DIR
           value: /tmp/artifacts
         - name: CONCURRENCY
           value: "1"
@@ -127,6 +127,7 @@ spec:
         echo -n "unknown" > $(results.test-outcome.path)
         echo "$USERS" > users.json
         ./run-stage.sh
+        cp -f started ended /tmp/artifacts/
     - name: collect-results
       image: quay.io/redhat-user-workloads/konflux-perfscale-tenant/loadtest
       volumeMounts:
@@ -134,6 +135,8 @@ spec:
           mountPath: /tmp/artifacts
       env:
         - name: ARTIFACT_DIR
+          value: /tmp/artifacts
+        - name: SOURCE_DIR
           value: /tmp/artifacts
         - name: MEMBER_CLUSTER
           value: $(params.member-cluster)
