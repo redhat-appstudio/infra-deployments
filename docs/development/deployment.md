@@ -15,12 +15,17 @@ deploy StoneSoup.
 
 Steps:
 
-1. Run `./hack/bootstrap-cluster.sh [preview]` which will bootstrap Argo CD (using OpenShift GitOps) and setup the Argo CD `Application` Custom Resources (CRs) for each component. This command will output the Argo CD Web UI route when it's finished. `preview` will enable preview mode used for development and testing on non-production clusters, described in section [Preview mode for your clusters](#preview-mode-for-your-clusters).
+1. **Important:** If you plan to use preview mode, configure `hack/preview.env` **before** running the
+   bootstrap script. The bootstrap script reads these values to create secrets (e.g. the Quay token
+   for the image controller). If `preview.env` is not configured, secrets will be created with
+   placeholder values and you will need to recreate them manually. See [Setting Preview mode](#setting-preview-mode).
 
-2. Open the Argo CD Web UI to see the status of your deployments. You can use the route from the previous step and login using your OpenShift credentials (using the 'Login with OpenShift' button), or login to the OpenShift Console and navigate to Argo CD using the OpenShift Gitops menu in the Applications pulldown.
+2. Run `./hack/bootstrap-cluster.sh [preview]` which will bootstrap Argo CD (using OpenShift GitOps) and setup the Argo CD `Application` Custom Resources (CRs) for each component. This command will output the Argo CD Web UI route when it's finished. `preview` will enable preview mode used for development and testing on non-production clusters, described in section [Preview mode for your clusters](#preview-mode-for-your-clusters).
+
+3. Open the Argo CD Web UI to see the status of your deployments. You can use the route from the previous step and login using your OpenShift credentials (using the 'Login with OpenShift' button), or login to the OpenShift Console and navigate to Argo CD using the OpenShift Gitops menu in the Applications pulldown.
 ![OpenShift Gitops menu with Cluster Argo CD menu option](./argo-cd-login.png?raw=true "OpenShift Gitops menu")
 
-3. If your deployment was successful, you should see several applications running.
+4. If your deployment was successful, you should see several applications running.
 
 ## Preview mode for your clusters
 
@@ -179,6 +184,12 @@ Finally, install the application for your organization. See the [GitHub docs: In
 GitHub App][github-install-app]. Select `All repositories` when installing to make sure it will have
 access to all the repos you're going to create/fork into your org in the future.
 
+**Note:** If you created the GitHub App under your personal account (not the organization), it will
+be private by default and only visible to your account. To install it on your organization, you need
+to make it public first: go to your app's settings page, scroll to the bottom, and click
+**Make public**. Then visit `https://github.com/apps/<your-app-name>/installations/new` to install
+it on your organization.
+
 ### Verifying your setup
 
 **Simple build:**
@@ -219,7 +230,96 @@ Build-service should create a new pull request in your forked devfile-sample-pyt
 
 If your cluster is accessible on the public internet, commenting `/ok-to-test` on the pull request
 will trigger the on-pull-request PipelineRun. Merging the pull request will trigger the on-push PipelineRun.
-If your cluster is hidden behind a VPN, this won't work.
+If your cluster is hidden behind a VPN, this won't work — see [Webhook forwarding for
+non-public clusters](#webhook-forwarding-for-non-public-clusters) below.
+
+**Note on Kueue:** Pipeline runs are managed by [Kueue](https://kueue.sigs.k8s.io/). If your
+PipelineRun stays in `PipelineRunPending` state, verify that a `LocalQueue` exists in the namespace
+where you created the component. If it doesn't, create one:
+
+```shell
+cat <<EOF | oc apply -f -
+apiVersion: kueue.x-k8s.io/v1beta1
+kind: LocalQueue
+metadata:
+  name: pipelines-queue
+  namespace: <your-namespace>
+spec:
+  clusterQueue: cluster-pipeline-queue
+EOF
+```
+
+### Webhook forwarding for non-public clusters
+
+If your cluster is not accessible from the public internet (e.g. behind a VPN or firewall), GitHub
+cannot deliver webhooks directly. You can use [smee.io](https://smee.io) to forward webhooks to
+your cluster.
+
+1. Create a new smee.io channel at <https://smee.io/new> and note the URL.
+
+2. Update the webhook URL in your GitHub App settings (under
+   `https://github.com/settings/apps/<your-app-name>`) to your smee.io channel URL.
+
+3. Deploy [gosmee](https://github.com/chmouel/gosmee) on your cluster to forward events from
+   smee.io to the Pipelines as Code controller:
+
+   ```shell
+   cat <<EOF | oc apply -f -
+   apiVersion: apps/v1
+   kind: Deployment
+   metadata:
+     name: gosmee-client
+     namespace: openshift-pipelines
+   spec:
+     replicas: 1
+     selector:
+       matchLabels:
+         app: gosmee-client
+     template:
+       metadata:
+         labels:
+           app: gosmee-client
+       spec:
+         containers:
+         - name: gosmee
+           image: ghcr.io/chmouel/gosmee:latest
+           args:
+             - client
+             - "<your-smee-url>"
+             - "http://pipelines-as-code-controller.openshift-pipelines.svc.cluster.local:8080"
+   EOF
+   ```
+
+4. **Important:** When `preview.sh` configures PaC for a component, it creates a **repo-level
+   webhook** that points directly to the cluster route. You need to update this webhook to use
+   your smee.io URL as well. You can do this through the GitHub UI (under the repository's
+   Settings → Webhooks) or via the API:
+
+   ```shell
+   # Find the webhook ID
+   gh api repos/<your-org>/<your-repo>/hooks --jq '.[].id'
+
+   # Update the webhook URL
+   gh api repos/<your-org>/<your-repo>/hooks/<webhook-id> -X PATCH \
+     -f config[url]="<your-smee-url>" \
+     -f config[content_type]="json"
+   ```
+
+   The webhook secret is stored in the `pipelines-as-code-webhooks-secret` secret in the namespace
+   where your component was created. You need to set this same secret on the GitHub webhook for
+   signature validation to pass:
+
+   ```shell
+   WEBHOOK_SECRET=$(oc get secret pipelines-as-code-webhooks-secret -n <namespace> \
+     -o go-template='{{index .data "<secret-key>"}}' | base64 -d)
+
+   gh api repos/<your-org>/<your-repo>/hooks/<webhook-id> -X PATCH \
+     -f config[url]="<your-smee-url>" \
+     -f config[content_type]="json" \
+     -f config[secret]="$WEBHOOK_SECRET"
+   ```
+
+   The secret key name follows the pattern `https___github.com_<org>_<repo>`.
 
 ### Testing code changes
 
@@ -262,5 +362,5 @@ Even with 6 CPU cores, you will need to reduce the CPU resource requests for eac
 [github-create-org]: https://docs.github.com/en/organizations/collaborating-with-groups-in-organizations/creating-a-new-organization-from-scratch
 [github-get-access-token]: https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-personal-access-token-classic
 [github-install-app]: https://docs.github.com/en/apps/using-github-apps/installing-your-own-github-app
-[pac-setup-manual]: https://pipelinesascode.com/docs/install/github_apps/#setup-manually
+[pac-setup-manual]: https://pipelinesascode.com/docs/providers/github-app/#manual-setup
 [build-service-kustomization]: https://github.com/redhat-appstudio/infra-deployments/blob/main/components/build-service/base/kustomization.yaml
