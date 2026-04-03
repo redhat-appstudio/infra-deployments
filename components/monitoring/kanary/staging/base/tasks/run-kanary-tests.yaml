@@ -125,6 +125,7 @@ spec:
         #!/usr/bin/env bash
         set -euo pipefail
         echo -n "unknown" > $(results.test-outcome.path)
+        echo "$USERS" > users.json
         ./run-stage.sh
     - name: collect-results
       image: quay.io/redhat-user-workloads/konflux-perfscale-tenant/loadtest
