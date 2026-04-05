@@ -26,6 +26,13 @@ data:
                 gauge:
                   path: [spec, paused]
                   nilIsZero: true
+            - name: "velero_schedule_last_backup"
+              help: "status.lastBackup as Unix seconds; 0 if unset (UI n/a)."
+              each:
+                type: Gauge
+                gauge:
+                  path: [status, lastBackup]
+                  nilIsZero: true
 
         ###############################################################################
         # Add your custom resources below this line
