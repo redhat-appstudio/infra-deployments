@@ -19,7 +19,6 @@ spec:
       annotations:
         summary: "Loki component {{ $labels.job }} is down"
         description: "{{ $labels.job }} has been down for more than 5 minutes"
-    
     - alert: LokiHighRequestLatency
       expr: |
         histogram_quantile(0.99,
@@ -31,7 +30,6 @@ spec:
       annotations:
         summary: "Loki high request latency"
         description: "99th percentile latency is {{ $value }}s"
-    
     - alert: LokiIngestionFailure
       expr: |
         rate(loki_request_duration_seconds_count{
