@@ -12,7 +12,7 @@ spec:
     interval: 30s
     rules:
     - alert: LokiDown
-      expr: up{namespace="product-kubearchive-logging",job=~"loki-.*"} == 0
+      expr: up{namespace="product-kubearchive-logging",job=~"loki-ingester.*"} == 0
       for: 5m
       labels:
         severity: critical

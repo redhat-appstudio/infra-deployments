@@ -46,9 +46,16 @@ spec:
   - path: /metrics
     port: http-metrics
     scheme: http
-    tlsConfig:
-      insecureSkipVerify: true
   selector:
-    matchLabels:
-      app.kubernetes.io/component: querier
-      app.kubernetes.io/name: loki
+    matchExpressions:
+    - key: app.kubernetes.io/component
+      operator: In
+      values:
+      - querier
+      - ingester
+      - distributor
+      - compactor
+    - key: app.kubernetes.io/name
+      operator: In
+      values:
+      - loki
