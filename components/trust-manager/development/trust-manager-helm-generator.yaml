@@ -8,6 +8,12 @@ version: 0.19.0
 namespace: cert-manager
 releaseName: trust-manager
 valuesInline:
+  # Leader election is disabled, so replicas must remain 1 to avoid
+  # multiple active controllers running concurrently.
+  replicaCount: 1
+  app:
+    leaderElection:
+      enabled: false
   resources:
     requests:
       cpu: 25m

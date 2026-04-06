@@ -1,0 +1,308 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: kueue-bootstrap-queue-new-tenant-labeled-namespace
+spec:
+  description: |
+    Tests that a LocalQueue is created in a namespace labeled with
+    `konflux-ci.dev/type=tenant`.
+  concurrent: false
+  namespace: kueue-queue-new
+  bindings:
+  - name: suffix
+    value: labeled
+  steps:
+  - name: given-localqueue-crd-exists
+    description: |
+      Install the Kueue LocalQueue CRD so the API server accepts LocalQueue objects in the test cluster.
+    try:
+    - apply:
+        file: ./resources/localqueue-crd.yaml
+  - name: given-kyverno-has-permission-on-resources
+    description: |
+      Apply Kyverno RBAC so the policy engine can generate and reconcile LocalQueue resources.
+    try:
+    - apply:
+        file: ../kyverno-rbac.yaml
+  - name: given-cluster-policy-is-ready
+    description: |
+      Apply the queue bootstrap ClusterPolicy and assert Kyverno reports the policy as ready before exercising generation.
+    try:
+    - apply:
+        file: ../cluster-policy.yaml
+    - assert:
+        file: chainsaw-assert-clusterpolicy.yaml
+  - name: when-tenant-labeled-namespace-is-created
+    description: |
+      Create a namespace labeled konflux-ci.dev/type=tenant so the policy should generate a LocalQueue.
+    try:
+    - apply:
+        file: resources/namespace-tenant.yaml
+        template: true
+  - name: then-localqueue-is-created
+    description: |
+      Assert the expected pipelines-queue LocalQueue exists and matches the fixture (name and spec).
+    try:
+    - assert:
+        file: resources/expected-localqueue.yaml
+        template: true
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: kueue-bootstrap-queue-unlabeled-namespace-negative
+spec:
+  description: |
+    Tests that a LocalQueue is NOT created in an unlabeled namespace
+    that does not match the special names.
+  concurrent: false
+  namespace: kueue-queue-new
+  bindings:
+  - name: suffix
+    value: unlabeled
+  steps:
+  - name: given-localqueue-crd-exists
+    description: |
+      Install the Kueue LocalQueue CRD so the API server accepts LocalQueue objects in the test cluster.
+    try:
+    - apply:
+        file: ./resources/localqueue-crd.yaml
+  - name: given-kyverno-has-permission-on-resources
+    description: |
+      Apply Kyverno RBAC so the policy engine can generate and reconcile LocalQueue resources.
+    try:
+    - apply:
+        file: ../kyverno-rbac.yaml
+  - name: given-cluster-policy-is-ready
+    description: |
+      Apply the queue bootstrap ClusterPolicy and assert Kyverno reports the policy as ready before exercising generation.
+    try:
+    - apply:
+        file: ../cluster-policy.yaml
+    - assert:
+        file: chainsaw-assert-clusterpolicy.yaml
+  - name: when-unlabeled-namespace-is-created
+    description: |
+      Create a namespace without the tenant label and without a special name so generation must not run.
+    try:
+    - apply:
+        file: resources/namespace-unlabeled.yaml
+        template: true
+  - name: then-localqueue-is-not-created
+    description: |
+      Confirm pipelines-queue LocalQueue is absent (NotFound) and stays absent after a short wait.
+    try:
+    - script:
+        content: kubectl get localqueues.kueue.x-k8s.io pipelines-queue
+        check:
+          ($error != null): true
+          ($stderr): |
+            Error from server (NotFound): localqueues.kueue.x-k8s.io "pipelines-queue" not found
+    - sleep:
+        duration: 5s
+    - script:
+        content: kubectl get localqueues.kueue.x-k8s.io pipelines-queue
+        check:
+          ($error != null): true
+          ($stderr): |
+            Error from server (NotFound): localqueues.kueue.x-k8s.io "pipelines-queue" not found
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: kueue-bootstrap-queue-label-added-to-namespace
+spec:
+  description: |
+    Tests that a LocalQueue is created when an unlabeled namespace is
+    updated to have the label `konflux-ci.dev/type=tenant`.
+  concurrent: false
+  namespace: kueue-queue-update
+  bindings:
+  - name: suffix
+    value: updated-labeled
+  steps:
+  - name: given-localqueue-crd-exists
+    description: |
+      Install the Kueue LocalQueue CRD so the API server accepts LocalQueue objects in the test cluster.
+    try:
+    - apply:
+        file: ./resources/localqueue-crd.yaml
+  - name: given-kyverno-has-permission-on-resources
+    description: |
+      Apply Kyverno RBAC so the policy engine can generate and reconcile LocalQueue resources.
+    try:
+    - apply:
+        file: ../kyverno-rbac.yaml
+  - name: given-cluster-policy-is-ready
+    description: |
+      Apply the queue bootstrap ClusterPolicy and assert Kyverno reports the policy as ready before exercising generation.
+    try:
+    - apply:
+        file: ../cluster-policy.yaml
+    - assert:
+        file: chainsaw-assert-clusterpolicy.yaml
+  - name: given-unlabeled-namespace-exists
+    description: |
+      Create an unlabeled namespace first so a later label update can trigger the policy on change.
+    try:
+    - apply:
+        file: resources/namespace-unlabeled.yaml
+        template: true
+  - name: when-tenant-label-is-added
+    description: |
+      Apply the tenant-labeled namespace manifest so konflux-ci.dev/type=tenant is set on the existing namespace.
+    try:
+    - apply:
+        file: resources/namespace-tenant.yaml
+        template: true
+  - name: then-localqueue-is-created
+    description: |
+      Assert the expected pipelines-queue LocalQueue exists and matches the fixture (name and spec).
+    try:
+    - assert:
+        file: resources/expected-localqueue.yaml
+        template: true
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: kueue-bootstrap-queue-labeled-namespace-before-policy
+spec:
+  description: |
+    Tests that a LocalQueue is created for an existing tenant-labeled
+    namespace when the ClusterPolicy is applied (generateExisting).
+  concurrent: false
+  namespace: kueue-queue-existing
+  bindings:
+  - name: suffix
+    value: labeled
+  steps:
+  - name: given-localqueue-crd-exists
+    description: |
+      Install the Kueue LocalQueue CRD so the API server accepts LocalQueue objects in the test cluster.
+    try:
+    - apply:
+        file: ./resources/localqueue-crd.yaml
+  - name: given-tenant-labeled-namespace-exists
+    description: |
+      Create the tenant-labeled namespace before the ClusterPolicy exists to exercise generateExisting on policy install.
+    try:
+    - apply:
+        file: resources/namespace-tenant.yaml
+        template: true
+  - name: given-kyverno-has-permission-on-resources
+    description: |
+      Apply Kyverno RBAC so the policy engine can generate and reconcile LocalQueue resources.
+    try:
+    - apply:
+        file: ../kyverno-rbac.yaml
+  - name: when-cluster-policy-is-ready
+    description: |
+      Apply the ClusterPolicy after the target namespace exists so generateExisting can backfill the LocalQueue.
+    try:
+    - apply:
+        file: ../cluster-policy.yaml
+    - assert:
+        file: chainsaw-assert-clusterpolicy.yaml
+  - name: then-localqueue-is-created
+    description: |
+      Assert the expected pipelines-queue LocalQueue exists and matches the fixture (name and spec).
+    try:
+    - assert:
+        file: resources/expected-localqueue.yaml
+        template: true
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: kueue-bootstrap-queue-mintmaker-namespace-before-policy
+spec:
+  description: |
+    Tests that a LocalQueue is created for an existing `mintmaker`
+    namespace when the ClusterPolicy is applied (generateExisting,
+    name-based match).
+  concurrent: false
+  namespace: kueue-queue-mintmaker-existing
+  steps:
+  - name: given-localqueue-crd-exists
+    description: |
+      Install the Kueue LocalQueue CRD so the API server accepts LocalQueue objects in the test cluster.
+    try:
+    - apply:
+        file: ./resources/localqueue-crd.yaml
+  - name: given-mintmaker-namespace-exists
+    description: |
+      Create the mintmaker namespace before policy install so name-based matching is satisfied for generateExisting.
+    try:
+    - apply:
+        file: resources/namespace-mintmaker.yaml
+  - name: given-kyverno-has-permission-on-resources
+    description: |
+      Apply Kyverno RBAC so the policy engine can generate and reconcile LocalQueue resources.
+    try:
+    - apply:
+        file: ../kyverno-rbac.yaml
+  - name: when-cluster-policy-is-ready
+    description: |
+      Apply the ClusterPolicy after the target namespace exists so generateExisting can backfill the LocalQueue.
+    try:
+    - apply:
+        file: ../cluster-policy.yaml
+    - assert:
+        file: chainsaw-assert-clusterpolicy.yaml
+  - name: then-localqueue-is-created
+    description: |
+      Assert the expected pipelines-queue LocalQueue exists and matches the fixture (name and spec).
+    try:
+    - assert:
+        file: resources/expected-localqueue-mintmaker.yaml
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: kueue-bootstrap-queue-mintmaker-by-name
+spec:
+  description: |
+    Tests that a LocalQueue is created for the `mintmaker` namespace
+    without the tenant label (name-based match).
+  concurrent: false
+  namespace: kueue-queue-mintmaker-test
+  steps:
+  - name: given-localqueue-crd-exists
+    description: |
+      Install the Kueue LocalQueue CRD so the API server accepts LocalQueue objects in the test cluster.
+    try:
+    - apply:
+        file: ./resources/localqueue-crd.yaml
+  - name: given-kyverno-has-permission-on-resources
+    description: |
+      Apply Kyverno RBAC so the policy engine can generate and reconcile LocalQueue resources.
+    try:
+    - apply:
+        file: ../kyverno-rbac.yaml
+  - name: given-cluster-policy-is-ready
+    description: |
+      Apply the queue bootstrap ClusterPolicy and assert Kyverno reports the policy as ready before exercising generation.
+    try:
+    - apply:
+        file: ../cluster-policy.yaml
+    - assert:
+        file: chainsaw-assert-clusterpolicy.yaml
+  - name: when-mintmaker-namespace-is-created
+    description: |
+      Create the mintmaker namespace after the policy is ready to verify name-based generation without the tenant label.
+    try:
+    - apply:
+        file: resources/namespace-mintmaker.yaml
+  - name: then-localqueue-is-created
+    description: |
+      Assert the expected pipelines-queue LocalQueue exists and matches the fixture (name and spec).
+    try:
+    - assert:
+        file: resources/expected-localqueue-mintmaker.yaml
