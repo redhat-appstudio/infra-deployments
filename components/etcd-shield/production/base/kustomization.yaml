@@ -1,22 +1,23 @@
+---
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 configMapGenerator:
-- files:
-  - ./config.yaml
-  name: etcd-shield-config
+  - files:
+      - ./config.yaml
+    name: etcd-shield-config
 # generatorOptions:
 #   # until https://github.com/kubernetes-sigs/kustomize/issues/4475 is fixed
 #   disableNameSuffixHash: true
 images:
-- name: etcd-shield
-  newName: quay.io/konflux-ci/etcd-shield
-  newTag: abc84cc1dfcf1b3e80aa85caffff3de793c7dae9
+  - name: etcd-shield
+    newName: quay.io/konflux-ci/etcd-shield
+    newTag: 907dbd7ccdee9e6b4a61a87ab2a8f44308c02f29
 namespace: etcd-shield
 resources:
-- deployment.yaml
-- ns.yaml
-- rbac.yaml
-- service.yaml
-- webhook.yaml
-- etcd_shield_alerts.yaml
-- ./metrics
+  - deployment.yaml
+  - ns.yaml
+  - rbac.yaml
+  - service.yaml
+  - webhook.yaml
+  - etcd_shield_alerts.yaml
+  - ./metrics
