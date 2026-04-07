@@ -4,14 +4,10 @@ kind: Kustomization
 namespace: appstudio-monitoring
 
 resources:
-  - namespace.yaml
   - rbac.yaml
   - custom-resource-state-config.yaml
   - deployment.yaml
   - service.yaml
   - servicemonitor.yaml
 
-labels:
-  - pairs:
-      app.kubernetes.io/managed-by: kustomize
-      monitoring.rhobs/enabled: "true"
+

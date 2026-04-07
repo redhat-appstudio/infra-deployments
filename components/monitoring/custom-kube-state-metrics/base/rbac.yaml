@@ -10,13 +10,7 @@ metadata:
   name: custom-kube-state-metrics
 rules:
   - apiGroups: ["velero.io"]
-    resources: ["backups", "restores"]
-    verbs: ["list", "watch", "get"]
-  - apiGroups: ["kueue.x-k8s.io"]
-    resources: ["clusterqueues", "localqueues"]
-    verbs: ["list", "watch", "get"]
-  - apiGroups: ["kyverno.io"]
-    resources: ["clusterpolicies", "policies"]
+    resources: ["schedules"]
     verbs: ["list", "watch", "get"]
   # Needed so kube-state-metrics can discover CRDs for custom-resource collectors.
   - apiGroups: ["apiextensions.k8s.io"]

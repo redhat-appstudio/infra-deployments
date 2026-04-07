@@ -23,7 +23,7 @@ archDefaults:
     security-group-id: "sg-0482e8ccae008b240"
     subnet-id: "subnet-07597d1edafa2b9d3"
   windows-amd64:
-    ami: "ami-0cf643428c5013531"
+    ami: "ami-0cbf74fa8206e0c0f"
     key-name: "aws-win-ssh-key"
     security-group-id: "sg-0482e8ccae008b240"
     subnet-id: "subnet-07597d1edafa2b9d3"
@@ -128,6 +128,10 @@ dynamicConfigs:
 
   linux-c8xlarge-amd64: {}
 
+  linux-d160-c8xlarge-arm64: {}
+
+  linux-d160-c8xlarge-amd64: {}
+
   linux-g4xlarge-amd64: {}
 
   linux-g64xlarge-amd64:
@@ -195,6 +199,8 @@ dynamicConfigs:
 
 
   windows-4xlarge-amd64:
+    allowed-remote-addresses:
+    - 10.29.64.0/24
     # user-data loaded from base/host-config-chart/files/windows-init.ps1
 
 # Static hosts configuration

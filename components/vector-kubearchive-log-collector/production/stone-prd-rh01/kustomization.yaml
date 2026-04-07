@@ -15,9 +15,9 @@ resources:
 - ../base
 
 patches:
-  - patch: |
+  - patch: |-
       - op: add
-        path: /spec/persistentVolumeReclaimPolicy
+        path: /spec/persistentVolumeClaimRetentionPolicy
         value:
           whenDeleted: Delete
           whenScaled: Delete
@@ -25,7 +25,6 @@ patches:
       group: apps
       version: v1
       kind: StatefulSet
-      name: loki-ingester
       namespace: product-kubearchive-logging
       labelSelector: app.kubernetes.io/name=loki,app.kubernetes.io/component=ingester
 

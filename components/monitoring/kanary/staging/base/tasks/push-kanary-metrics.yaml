@@ -1,0 +1,103 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: push-kanary-metrics
+spec:
+  params:
+    - name: otel-endpoint
+      type: string
+      default: http://open-telemetry-opentelemetry-collector.konflux-otel.svc.cluster.local:4318
+    - name: tested-cluster
+      type: string
+      default: stone-stage-p01
+    - name: test-type
+      type: string
+      default: container-single-arch
+    - name: test-outcome
+      type: string
+      default: unknown
+      description: "Test outcome from collect-results: passed, failed, or unknown"
+  steps:
+    - name: push-metrics
+      image: registry.redhat.io/ubi9/python-312:latest
+      env:
+        - name: OTEL_ENDPOINT
+          value: $(params.otel-endpoint)
+        - name: TESTED_CLUSTER
+          value: $(params.tested-cluster)
+        - name: TEST_TYPE
+          value: $(params.test-type)
+        - name: TEST_OUTCOME
+          value: $(params.test-outcome)
+      script: |
+        #!/usr/bin/env python3
+        import os
+        import subprocess
+        import time
+
+        subprocess.check_call([
+            "pip", "install", "--quiet",
+            "opentelemetry-api",
+            "opentelemetry-sdk",
+            "opentelemetry-exporter-otlp-proto-http",
+        ])
+
+        from opentelemetry import metrics
+        from opentelemetry.sdk.metrics import MeterProvider
+        from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
+        from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
+        from opentelemetry.sdk.resources import Resource
+
+        endpoint = os.environ["OTEL_ENDPOINT"] + "/v1/metrics"
+        tested_cluster = os.environ["TESTED_CLUSTER"]
+        test_type = os.environ["TEST_TYPE"]
+        test_outcome = os.environ["TEST_OUTCOME"]
+
+        print(f"Pushing kanary metrics to: {endpoint}")
+        print(f"  tested_cluster={tested_cluster}, type={test_type}, test_outcome={test_outcome}")
+
+        resource = Resource.create({
+            "service.name": "kanary",
+            "service.namespace": "appstudio-kanary-exporter",
+        })
+        exporter = OTLPMetricExporter(endpoint=endpoint)
+        reader = PeriodicExportingMetricReader(exporter, export_interval_millis=1000)
+        provider = MeterProvider(resource=resource, metric_readers=[reader])
+        metrics.set_meter_provider(provider)
+
+        meter = metrics.get_meter("kanary")
+
+        labels_up = {"tested_cluster": tested_cluster, "type": test_type}
+        labels_error = {"tested_cluster": tested_cluster, "type": test_type, "reason": "infrastructure"}
+
+        kanary_up = meter.create_gauge(
+            "kanary_up_poc",
+            description="Kanary signal: 1 if the e2e test passed, 0 if it failed",
+        )
+        kanary_error = meter.create_gauge(
+            "kanary_error_poc",
+            description="Binary indicator of an infrastructure error preventing test execution",
+        )
+        kanary_timestamp = meter.create_gauge(
+            "kanary_last_push_timestamp_poc",
+            description="Epoch timestamp of the last kanary metrics push",
+        )
+
+        if test_outcome == "passed":
+            print("Test outcome: passed")
+            kanary_up.set(1, labels_up)
+            kanary_error.set(0, labels_error)
+        elif test_outcome == "failed":
+            print("Test outcome: failed")
+            kanary_up.set(0, labels_up)
+            kanary_error.set(0, labels_error)
+        else:
+            print(f"Test outcome: {test_outcome}, reporting infrastructure error")
+            kanary_up.set(1, labels_up)
+            kanary_error.set(1, labels_error)
+
+        kanary_timestamp.set(time.time(), {"tested_cluster": tested_cluster, "type": test_type})
+
+        provider.force_flush()
+        provider.shutdown()
+        print("Metrics pushed successfully.")

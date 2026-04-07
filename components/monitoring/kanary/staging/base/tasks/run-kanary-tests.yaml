@@ -1,0 +1,164 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: run-kanary-tests
+spec:
+  params:
+    - name: tested-cluster
+      type: string
+      default: stone-stage-p01
+    - name: test-type
+      type: string
+      default: container-single-arch
+    - name: component-repo
+      type: string
+      default: "https://gitlab.cee.redhat.com/jhutar/nodejs-devfile-sample4"
+    - name: user-prefix
+      type: string
+      default: "stagep01cs"
+    - name: quay-repo
+      type: string
+      default: "redhat-user-workloads-stage"
+    - name: pipeline-repo-templating-source
+      type: string
+      default: "https://github.com/rhtap-perf-test/konflux-probe-test-templates"
+    - name: pipeline-repo-templating-source-dir
+      type: string
+      default: "nodejs-devfile-sample-SingleArch/"
+    - name: release-pipeline-service-account
+      type: string
+      default: "loadtest-probe-serviceaccount"
+    # Private clusters only (GitLab-based repos). Leave empty for public clusters.
+    - name: fork-target
+      type: string
+      default: "jhutar"
+    - name: gitlab-api-url
+      type: string
+      default: "https://gitlab.cee.redhat.com/api/v4"
+    - name: member-cluster
+      type: string
+      default: "https://api.stone-stage-p01.hpmt.p1.openshiftapps.com:6443"
+    # RPM test type only. Leave empty for container test types.
+    - name: component-repo-revision
+      type: string
+      default: ""
+    - name: pipeline-image-pull-secrets
+      type: string
+      default: ""
+    - name: test-scenario-git-url
+      type: string
+      default: ""
+  results:
+    - name: test-outcome
+      description: "Test outcome: passed, failed, or unknown"
+  volumes:
+    - name: artifacts
+      emptyDir: {}
+    - name: users-secret
+      secret:
+        secretName: kanary-probe-users-credentials
+        items:
+          - key: users
+            path: users.json
+  steps:
+    - name: run-test
+      image: quay.io/redhat-user-workloads/konflux-perfscale-tenant/loadtest
+      volumeMounts:
+        - name: artifacts
+          mountPath: /tmp/artifacts
+        - name: users-secret
+          mountPath: /opt/app-root/src/users.json
+          subPath: users.json
+          readOnly: true
+      env:
+        - name: OUTPUT_DIR
+          value: /tmp/artifacts
+        - name: CONCURRENCY
+          value: "1"
+        - name: MY_GITHUB_ORG
+          value: "rhtap-perf-test"
+        - name: COMPONENT_REPO
+          value: $(params.component-repo)
+        - name: COMPONENT_REPO_REVISION
+          value: $(params.component-repo-revision)
+        - name: LOGGING_LEVEL
+          value: "debug"
+        - name: USER_PREFIX
+          value: $(params.user-prefix)
+        - name: QUAY_REPO
+          value: $(params.quay-repo)
+        - name: PIPELINE_REPO_TEMPLATING
+          value: "true"
+        - name: PIPELINE_REPO_TEMPLATING_SOURCE
+          value: $(params.pipeline-repo-templating-source)
+        - name: PIPELINE_REPO_TEMPLATING_SOURCE_DIR
+          value: $(params.pipeline-repo-templating-source-dir)
+        - name: RELEASE_POLICY
+          value: "tmp-onboard-policy"
+        - name: RELEASE_PIPELINE_URL
+          value: "https://github.com/konflux-ci/release-service-catalog.git"
+        - name: RELEASE_PIPELINE_REVISION
+          value: "production"
+        - name: RELEASE_PIPELINE_PATH
+          value: "pipelines/managed/e2e/e2e.yaml"
+        - name: RELEASE_PIPELINE_SERVICE_ACCOUNT
+          value: $(params.release-pipeline-service-account)
+        - name: FORK_TARGET
+          value: $(params.fork-target)
+        - name: GITLAB_API_URL
+          value: $(params.gitlab-api-url)
+        - name: PIPELINE_IMAGE_PULL_SECRETS
+          value: $(params.pipeline-image-pull-secrets)
+        - name: TEST_SCENARIO_GIT_URL
+          value: $(params.test-scenario-git-url)
+        - name: GITHUB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: kanary-probe-credentials
+              key: github-token
+        - name: GITLAB_BOT_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: kanary-probe-credentials
+              key: gitlab-bot-token
+        - name: OCP_PROMETHEUS_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: kanary-probe-credentials
+              key: ocp-prometheus-token
+      script: |
+        #!/usr/bin/env bash
+        set -euo pipefail
+        echo -n "unknown" > $(results.test-outcome.path)
+        ./run-stage.sh
+        cp -f started ended /tmp/artifacts/
+    - name: collect-results
+      image: quay.io/redhat-user-workloads/konflux-perfscale-tenant/loadtest
+      volumeMounts:
+        - name: artifacts
+          mountPath: /tmp/artifacts
+      env:
+        - name: ARTIFACT_DIR
+          value: /tmp/artifacts/results
+        - name: SOURCE_DIR
+          value: /tmp/artifacts
+        - name: MEMBER_CLUSTER
+          value: $(params.member-cluster)
+        - name: OCP_PROMETHEUS_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: kanary-probe-credentials
+              key: ocp-prometheus-token
+      script: |
+        #!/usr/bin/env bash
+        # -e (errexit) is omitted so we can inspect the exit code
+        # to distinguish test failures from script errors.
+        set -uo pipefail
+        KANARY_FAIL_CODE=42
+        ci-scripts/stage/collect-results-probe.sh --tests-dir . --exit-on-fail "$KANARY_FAIL_CODE"
+        exit_code=$?
+        if [[ "$exit_code" -eq 0 ]]; then
+          echo -n "passed" > $(results.test-outcome.path)
+        elif [[ "$exit_code" -eq "$KANARY_FAIL_CODE" ]]; then
+          echo -n "failed" > $(results.test-outcome.path)
+        fi

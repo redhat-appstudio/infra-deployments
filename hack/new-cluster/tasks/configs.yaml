@@ -1,0 +1,15 @@
+- name: "Create the configs/{{ config }}/{{ subdir }}/{{ shortname }} directory if it does not exist"
+  tags: [configs]
+  file:
+    path: "{{ dst }}/configs/{{ config }}/{{ subdir }}/{{ shortname }}"
+    state: directory
+    mode: '0755'
+
+- name: "Create files from template for configs/{{ config }}/{{ subdir }}/{{ shortname }}"
+  tags: [configs]
+  template:
+    src: "{{ item['src'] }}"
+    dest: "{{ dst }}/configs/{{ config }}/{{ subdir }}/{{ shortname }}/{{item['path'] }}"
+  with_filetree:
+  - "templates/{{ config }}/"
+  when: "item['state'] == 'file'"

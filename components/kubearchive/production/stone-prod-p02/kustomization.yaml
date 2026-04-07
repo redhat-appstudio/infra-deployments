@@ -33,6 +33,8 @@ configMapGenerator:
           - |
               START=cel:status.?startTime == optional.none() ? int(now()-duration('1h'))*1000000000: status.startTime
           - |
+              END=cel:status.?startTime == optional.none() ? int(now()+duration('1h'))*1000000000: int(timestamp(status.startTime)+duration('6h'))*1000000000
+          - |
               QUERY={stream="{NAMESPACE}"} | pod_id = `{POD_ID}` | container = `{CONTAINER_NAME}`
           - |
               LOG_URL=http://loki-gateway.product-kubearchive-logging.svc.cluster.local:80
@@ -50,6 +52,7 @@ configMapGenerator:
                   params:
                     query: ${QUERY}
                     start: ${START}
+                    end: ${END}
                     limit: ${TAIL_LINES}
                     direction: backward
                   json-path: "$.data.result[*].values[*][1]"
@@ -57,12 +60,18 @@ configMapGenerator:
                   reverse: false
                   path: /loki/api/v1/query_range
                   method: GET
+                  timeout: 1m
                   params:
                     query: ${QUERY}
                     start: ${START}
+                    end: ${END}
                     limit: 300
                     direction: forward
                   json-path: "$.data.result[*].values[*][1]"
+                  pagination:
+                    next-cursor: "$.data.result[*].values[*][0]"
+                    param: start
+                    cursor-increment: 1
 
 patches:
   # Delete the original ConfigMaps since we're generating them with configMapGenerator
@@ -102,7 +111,7 @@ patches:
               spec:
                 containers:
                   - name: vacuum
-                    image: quay.io/kubearchive/vacuum:v1.19.0
+                    image: quay.io/kubearchive/vacuum:v1.20.0
 
   - patch: |-
       apiVersion: batch/v1
@@ -186,12 +195,19 @@ patches:
       metadata:
         name: kubearchive-api-server
         namespace: kubearchive
-        annotations:
-          ignore-check.kube-linter.io/no-anti-affinity: "It is not needed for now"
       spec:
-        replicas: 1
+        replicas: 2
         template:
           spec:
+            affinity:
+              podAntiAffinity:
+                preferredDuringSchedulingIgnoredDuringExecution:
+                  - weight: 50
+                    podAffinityTerm:
+                      labelSelector:
+                        matchLabels:
+                          app: kubearchive-api-server
+                      topologyKey: kubernetes.io/hostname
             containers:
               - name: kubearchive-api-server
                 env:

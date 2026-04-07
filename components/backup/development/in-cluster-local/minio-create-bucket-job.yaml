@@ -1,0 +1,78 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: create-velero-bucket
+  namespace: openshift-adp
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: create-bucket
+          image: quay.io/minio/mc:RELEASE.2024-08-26T10-49-58Z
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -e
+              echo "Waiting for MinIO to become ready..."
+              for i in $(seq 1 30); do
+                if mc --insecure --config-dir /tmp config host add minio "$S3_ENDPOINT" "$S3_ACCESS_KEY_ID" "$S3_SECRET_ACCESS_KEY" >/dev/null 2>&1; then
+                  echo "MinIO is ready."
+                  break
+                fi
+                if [ "$i" -eq 30 ]; then
+                  echo "MinIO did not become ready in time." >&2
+                  exit 1
+                fi
+                echo "MinIO not ready yet (attempt $i/30), retrying in 10s..."
+                sleep 10
+              done
+
+              if mc --insecure --config-dir /tmp ls minio | grep -q "$S3_BUCKET_NAME"; then
+                echo "Bucket $S3_BUCKET_NAME already exists."
+              else
+                mc --insecure --config-dir /tmp mb --with-lock --region "$S3_REGION" "minio/$S3_BUCKET_NAME"
+                echo "Bucket $S3_BUCKET_NAME created."
+              fi
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 10m
+              memory: 64Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          env:
+            - name: S3_ENDPOINT
+              value: "https://minio.openshift-adp.svc.cluster.local"
+            - name: S3_BUCKET_NAME
+              value: "velero"
+            - name: S3_REGION
+              value: "us-east-1"
+            - name: S3_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: backup-s3-credentials
+                  key: access_key_id
+            - name: S3_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: backup-s3-credentials
+                  key: secret_access_key
+      volumes:
+        - name: tmp
+          emptyDir: {}

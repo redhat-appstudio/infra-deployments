@@ -1,0 +1,110 @@
+name: Verify Pipelines Configuration
+
+on:
+  pull_request_target:
+    branches:
+      - main
+      - pipelines-config-validation
+    paths:
+      - 'components/pipeline-service/**'
+      - '.github/workflows/verify-pipelines-configs.yaml'
+      - 'hack/generate-deploy-config.sh'
+
+jobs:
+  verify-pipelines-configs:
+    name: Verify pipelines kustomize in sync
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      has_errors: ${{ steps.check.outputs.has_errors }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Setup Kustomize
+        uses: multani/action-setup-kustomize@v1
+        with:
+          version: 5.6.0
+
+      - name: Verify Pipelines kustomize output is in sync
+        id: check
+        run: |
+          ERRORS_FILE="/tmp/errors_detected"
+          COMMENT_FILE="/tmp/pr_comment"
+
+          function fail() {
+            message="${1:-An unknown error occurred}"
+            body="${2:-See workflow logs for details}"
+            echo "::error::${message}"
+            printf '## ⚠️ %s\n\n%s\n\n' "${message}" "${body}" | tee -a "${GITHUB_STEP_SUMMARY}" >> "${COMMENT_FILE}"
+            touch "${ERRORS_FILE}"
+          }
+
+          function check_changes() {
+            ENVIRONMENT="${1}"
+            ./hack/generate-deploy-config.sh -c "components/pipeline-service/${ENVIRONMENT}" || fail "Error generating configuration for ${ENVIRONMENT}"
+
+            if [ -n "$(git status --porcelain components/pipeline-service/${ENVIRONMENT})" ]; then
+              body="Please rebuild with kustomize following [the README](https://github.com/redhat-appstudio/infra-deployments/tree/main/components/pipeline-service#update-procedure). If the change is unexpected, use git-blame to identify the source of the change and confirm with the author that the change is safe."
+              diff="$(git diff components/pipeline-service/${ENVIRONMENT})"
+              fail "Pipelines service \`${ENVIRONMENT}\` configuration is out of sync." "$(printf '%s\n\n```diff\n%s\n```' "${body}" "${diff}")"
+            fi
+          }
+
+          check_changes "staging"
+          check_changes "production"
+
+          if [ -e "${ERRORS_FILE}" ]; then
+            echo "has_errors=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "✅ All Pipelines service configurations are in sync with kustomize" | tee -a "${GITHUB_STEP_SUMMARY}" | tee -a "${COMMENT_FILE}"
+            echo "has_errors=false" >> "${GITHUB_OUTPUT}"
+          fi
+
+      - name: Upload comment artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-comment
+          path: /tmp/pr_comment
+          retention-days: 1
+
+  # Run as a separate job to ensure `kustomize build` is not run on unapproved code with a privileged token in its environment
+  report-validation-status:
+    name: Status Report
+    runs-on: ubuntu-latest
+    needs: verify-pipelines-configs
+    if: always()
+    permissions:
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Download comment artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: pr-comment
+          path: /tmp
+
+      - name: Post comment
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          COMMENT_MARKER="<!-- verify-pipelines-configs -->"
+
+          # Delete any previous comment from this workflow
+          gh api "repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" \
+            --jq ".[] | select(.body | contains(\"${COMMENT_MARKER}\")) | .id" \
+            | xargs -r -I {} gh api "repos/${{ github.repository }}/issues/comments/{}" -X DELETE
+
+          echo "${COMMENT_MARKER}" >> /tmp/pr_comment
+
+          gh pr comment ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }} \
+            --body-file /tmp/pr_comment
+
+          if [ "${{ needs.verify-pipelines-configs.outputs.has_errors }}" = "true" ]; then
+            exit 1
+          fi

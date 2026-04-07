@@ -11,10 +11,11 @@
     - --http-address
     - "127.0.0.1:6000"
     - --redirect-url
-    - https://konflux-ui.apps.kflux-fedora-01.84db.p1.openshiftapps.com/oauth2/callback
+    - /oauth2/callback
+    - --reverse-proxy
+    - "true"
     - --oidc-issuer-url
     - https://konflux-ui.apps.kflux-fedora-01.84db.p1.openshiftapps.com/idp
-    - "true"
     - --cookie-name
     - __Host-konflux-ci-cookie
     - --email-domain
@@ -25,4 +26,6 @@
     - "true"
     - --whitelist-domain
     - konflux-ui.apps.kflux-fedora-01.84db.p1.openshiftapps.com
+    - --whitelist-domain
+    - konflux-ci.fedoraproject.org
     - --skip-provider-button
