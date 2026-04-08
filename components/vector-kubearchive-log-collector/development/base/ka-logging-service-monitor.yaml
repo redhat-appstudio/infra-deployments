@@ -44,13 +44,18 @@ metadata:
 spec:
   endpoints:
   - path: /metrics
-    port: https
-    scheme: https
-    bearerTokenSecret:
-      name: "metrics-reader"
-      key: token
-    tlsConfig:
-      insecureSkipVerify: true
+    port: http-metrics
+    scheme: http
   selector:
-    matchLabels:
-      app.kubernetes.io/name: "loki"
+    matchExpressions:
+    - key: app.kubernetes.io/component
+      operator: In
+      values:
+      - querier
+      - ingester
+      - distributor
+      - compactor
+    - key: app.kubernetes.io/name
+      operator: In
+      values:
+      - loki

@@ -18,7 +18,7 @@ commonAnnotations:
     "Minio post-job containers from chart do not expose resource configuration options."
 
 resources:
-- ../base
+- ../../base
 - rbac.yaml
 - loki-secret.yaml
 - sa.yaml
@@ -42,6 +42,6 @@ patches:
       labelSelector: app.kubernetes.io/name=loki
 
 generators:
-- vector-helm-generator.yaml
-- loki-helm-generator.yaml
-- grafana-helm-generator.yaml
+- ../vector-helm-generator.yaml
+- ../loki-helm-generator.yaml
+- ../grafana-helm-generator.yaml
