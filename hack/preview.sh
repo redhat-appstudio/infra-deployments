@@ -385,7 +385,7 @@ apply_service_image_overrides() {
     [ -n "${BUILD_SERVICE_IMAGE_TAG}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/konflux-ci/build-service\")) |=.newTag=\"${BUILD_SERVICE_IMAGE_TAG}\"" $ROOT/components/build-service/development/kustomization.yaml
     [ -n "${BUILD_SERVICE_IMAGE_TAG_EXPIRATION}" ] && yq -i e "(.spec.template.spec.containers[].env[] | select(.name==\"IMAGE_TAG_ON_PR_EXPIRATION\") | .value) |= \"${BUILD_SERVICE_IMAGE_TAG_EXPIRATION}\"" $ROOT/components/build-service/development/image-expiration-patch.yaml
     [[ -n "${BUILD_SERVICE_PR_OWNER}" && "${BUILD_SERVICE_PR_SHA}" ]] && yq -i e "(.resources[] | select(. ==\"*github.com/konflux-ci/build-service*\")) |= \"https://github.com/${BUILD_SERVICE_PR_OWNER}/build-service/config/default?ref=${BUILD_SERVICE_PR_SHA}\"" $ROOT/components/build-service/development/kustomization.yaml
-    # Configure smee.io channel URL for webhook forwarding (used for Forgejo/Codeberg testing)
+    # Configure webhook forwarding channel URL (used for Forgejo/Codeberg testing, use hook.pipelinesascode.com not smee.io)
     [ -n "${SMEE_CHANNEL}" ] && yq -i e ".[].value = \"${SMEE_CHANNEL}\"" $ROOT/components/smee-client/development/sever-url-patch.yaml
     # Configure build-service webhook-config for Codeberg to use the smee channel
     [ -n "${SMEE_CHANNEL}" ] && sed -i.bak "s|SMEE_CHANNEL_PLACEHOLDER|${SMEE_CHANNEL}|g" $ROOT/components/build-service/development/webhook-config.json && rm -f $ROOT/components/build-service/development/webhook-config.json.bak
