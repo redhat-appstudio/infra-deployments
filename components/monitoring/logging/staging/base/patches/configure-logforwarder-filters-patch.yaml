@@ -36,9 +36,13 @@
     type: drop
     drop:
       - test:
+          - field: .kubernetes.namespace_name
+            matches: 'openshift-pipelines|tekton-.*'
           - field: .message
             matches: '(?i)Operation cannot be fulfilled on (pipelineruns?|taskruns?)\.tekton\.dev'
       - test:
+          - field: .kubernetes.namespace_name
+            matches: 'openshift-pipelines|tekton-.*'
           - field: .message
             matches: '(?i)Reconcile error'
           - field: .message
@@ -51,11 +55,15 @@
     type: drop
     drop:
       - test:
+          - field: .kubernetes.namespace_name
+            matches: 'openshift-pipelines|tekton-.*'
           - field: .message
             matches: '(?i)(pipelineruns|taskruns)\.tekton\.dev .* not found'
           - field: .message
             matches: '(?i)finalizer'
       - test:
+          - field: .kubernetes.namespace_name
+            matches: 'openshift-pipelines|tekton-.*'
           - field: .message
             matches: '(?i)failed to (set|clear) finalizers.*not found'
 # Drop "resource request in progress"
@@ -66,11 +74,15 @@
     type: drop
     drop:
       - test:
+          - field: .kubernetes.namespace_name
+            matches: 'openshift-pipelines|tekton-.*'
           - field: .message
             matches: '(?i)resource request in progress'
           - field: .message
             matches: '(?i)(TaskRun|PipelineRun)'
       - test:
+          - field: .kubernetes.namespace_name
+            matches: 'openshift-pipelines|tekton-.*'
           - field: .message
             matches: '(?i)TaskRun prepare error.*resource request in progress'
 # Drop repetitive label update warnings
@@ -81,11 +93,13 @@
     type: drop
     drop:
       - test:
+          - field: .kubernetes.namespace_name
+            matches: 'openshift-pipelines|tekton-.*'
           - field: .message
             matches: '(?i)Failed to update (PipelineRun|TaskRun) labels'
           - field: .message
             matches: '(?i)Operation cannot be fulfilled'
-# application index filters
+# application index filters (Tekton drops target openshift-pipelines and tekton-* namespaces)
 - op: add
   path: /spec/pipelines/0/filterRefs/-
   value: drop-tekton-reconcile-conflicts
@@ -97,4 +111,17 @@
   value: drop-resource-request-in-progress
 - op: add
   path: /spec/pipelines/0/filterRefs/-
+  value: drop-tekton-label-update-failures
+# audit index filters
+- op: add
+  path: /spec/pipelines/1/filterRefs/-
+  value: drop-tekton-reconcile-conflicts
+- op: add
+  path: /spec/pipelines/1/filterRefs/-
+  value: drop-finalizer-not-found
+- op: add
+  path: /spec/pipelines/1/filterRefs/-
+  value: drop-resource-request-in-progress
+- op: add
+  path: /spec/pipelines/1/filterRefs/-
   value: drop-tekton-label-update-failures
