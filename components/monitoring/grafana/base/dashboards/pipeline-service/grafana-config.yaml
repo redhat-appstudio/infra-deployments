@@ -1305,7 +1305,7 @@ data:
               "targets": [
                 {
                   "exemplar": true,
-                  "expr": "avg(tekton_pipelines_controller_workqueue_depth)",
+                  "expr": "avg(kn_workqueue_depth{job='tekton-pipelines-controller'})",
                   "interval": "",
                   "legendFormat": "",
                   "refId": "A"
@@ -1472,7 +1472,7 @@ data:
               "targets": [
                 {
                   "exemplar": true,
-                  "expr": "rate(tekton_pipelines_controller_client_results[1h])*3600",
+                  "expr": "rate(kn_k8s_client_http_response_status_code_total{job='tekton-pipelines-controller'}[1h])*3600",
                   "interval": "",
                   "legendFormat": "",
                   "refId": "A"
