@@ -18,7 +18,7 @@ commonAnnotations:
     "Minio post-job containers from chart do not expose resource configuration options."
 
 resources:
-- ../../base
+- scc.yaml
 - rbac.yaml
 - loki-secret.yaml
 - sa.yaml
@@ -53,4 +53,6 @@ patches:
       kind: StatefulSet
       namespace: product-kubearchive-logging
       labelSelector: app.kubernetes.io/name=loki,app.kubernetes.io/component=ingester
+
+      
 
