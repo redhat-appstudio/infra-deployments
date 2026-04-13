@@ -10,37 +10,12 @@ commonAnnotations:
     "Vector runs requires certain host mounts to watch files being created by pods."
   ignore-check.kube-linter.io/pdb-unhealthy-pod-eviction-policy: |
     "Managed by upstream Loki chart (no value exposed for unhealthyPodEvictionPolicy)."
-  ignore-check.kube-linter.io/no-read-only-root-fs: |
-    "Minio post-jobs from chart require write access to filesystem."
-  ignore-check.kube-linter.io/unset-cpu-requirements: |
-    "Minio post-job containers from chart do not expose resource configuration options."
-  ignore-check.kube-linter.io/unset-memory-requirements: |
-    "Minio post-job containers from chart do not expose resource configuration options."
 
 resources:
-- ../base
-- rbac.yaml
-- loki-secret.yaml
-- sa.yaml
-
-patches:
-  - path: scc-patch.yaml
-    target:
-      kind: SecurityContextConstraints
-      name: kubearchive-logging-scc
-  # Patch all Loki PodDisruptionBudgets to allow eviction of unhealthy pods
-  # This is critical for StatefulSets where stale pods should be evicted
-  - patch: |
-      - op: add
-        path: /spec/unhealthyPodEvictionPolicy
-        value: AlwaysAllow
-    target:
-      group: policy
-      version: v1
-      kind: PodDisruptionBudget
-      labelSelector: app.kubernetes.io/name=loki
+- ./base
 
 generators:
 - vector-helm-generator.yaml
 - loki-helm-generator.yaml
 - grafana-helm-generator.yaml
+
