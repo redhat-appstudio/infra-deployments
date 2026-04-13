@@ -3,8 +3,6 @@ kind: Kustomization
 namespace: product-kubearchive-logging
 commonAnnotations:
   argocd.argoproj.io/sync-wave: "-1"
-
-commonAnnotations:
   ignore-check.kube-linter.io/drop-net-raw-capability: |
     "Vector runs requires access to socket."
   ignore-check.kube-linter.io/run-as-non-root: |
@@ -21,11 +19,10 @@ commonAnnotations:
     "Minio post-job containers from chart do not expose resource configuration options."
 
 resources:
-- scc.yaml
+- ../../base
 - rbac.yaml
 - loki-secret.yaml
 - sa.yaml
-- ka-logging-service-monitor.yaml
 - prometheus-rules.yaml
 
 patches:
@@ -33,6 +30,13 @@ patches:
     target:
       kind: SecurityContextConstraints
       name: kubearchive-logging-scc
+  # Patch ServiceMonitor for development (HTTP instead of HTTPS)
+  - path: servicemonitor-patch.yaml
+    target:
+      group: monitoring.coreos.com
+      version: v1
+      kind: ServiceMonitor
+      name: product-kubearchive-logging-monitor
   # Patch all Loki PodDisruptionBudgets to allow eviction of unhealthy pods
   # This is critical for StatefulSets where stale pods should be evicted
   - patch: |
