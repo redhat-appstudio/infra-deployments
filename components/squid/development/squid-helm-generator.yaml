@@ -4,7 +4,7 @@ metadata:
   name: squid-helm
 name: squid-helm
 repo: oci://quay.io/konflux-ci/caching
-version: 0.1.1400+4a52f5d
+version: 0.1.1409+5a80313
 valuesInline:
   installCertManagerComponents: false
   mirrord:
@@ -68,6 +68,12 @@ valuesInline:
       - ^https://[a-z0-9]+\.cloudfront\.net/sha256/[a-f0-9]{2}/[a-f0-9]{64}
     size: 192
     maxObjectSize: 128
+  prometheus:
+    serviceMonitor:
+      nginxTLS:
+        ca:
+          configMapName: openshift-service-ca.crt
+          key: service-ca.crt
   tlsOutgoingOptions:
     caFile: /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
   volumes:
