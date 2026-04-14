@@ -7,13 +7,13 @@ metadata:
     pipelinesascode.tekton.dev/on-cel-expression: |
       event == "push" && target_branch == "main" && "components/image-controller/staging/base/kustomization.yaml".pathChanged()
     pipelinesascode.tekton.dev/max-keep-runs: "5"
-    pipelinesascode.tekton.dev/task: "[.tekton/tasks/promote-component.yaml, .tekton/tasks/validate-image-contoller-upgrade.yaml]"
+    pipelinesascode.tekton.dev/task: "[.tekton/tasks/promote-component.yaml, .tekton/tasks/validate-image-controller-upgrade.yaml]"
 spec:
   pipelineSpec:
     tasks:
-      - name: validate-image-contoller-upgrade
+      - name: validate-image-controller-upgrade
         taskRef:
-          name: validate-image-contoller-upgrade
+          name: validate-image-controller-upgrade
       - name: promote-component-from-stage-to-prod
         params:
           - name: BRANCH_NAME
