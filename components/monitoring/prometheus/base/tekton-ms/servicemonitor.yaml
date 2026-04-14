@@ -16,3 +16,7 @@ spec:
   endpoints:
   - port: http-metrics
     interval: 15s
+    metricRelabelings:
+    - sourceLabels: [__name__]
+      regex: tekton_pipelines_controller_taskruns_pod_latency_milliseconds
+      action: drop
