@@ -38,14 +38,14 @@
       - test:
           - field: .kubernetes.namespace_name
             matches: 'openshift-pipelines|tekton-.*'
-          - field: .message
+          - field: .structured.error
             matches: '(?i)Operation cannot be fulfilled on (pipelineruns?|taskruns?)\.tekton\.dev'
       - test:
           - field: .kubernetes.namespace_name
             matches: 'openshift-pipelines|tekton-.*'
-          - field: .message
+          - field: .structured.msg
             matches: '(?i)Reconcile error'
-          - field: .message
+          - field: .structured.error
             matches: '(?i)(pipelinerun|taskrun|tekton)'
 # Drop "resource not found" during finalizer cleanup
 - op: add
@@ -57,14 +57,14 @@
       - test:
           - field: .kubernetes.namespace_name
             matches: 'openshift-pipelines|tekton-.*'
-          - field: .message
+          - field: .structured.error
             matches: '(?i)(pipelineruns|taskruns)\.tekton\.dev .* not found'
-          - field: .message
-            matches: '(?i)finalizer'
+          - field: .structured.error
+            matches: '(?i)finalizers?'
       - test:
           - field: .kubernetes.namespace_name
             matches: 'openshift-pipelines|tekton-.*'
-          - field: .message
+          - field: .structured.error
             matches: '(?i)failed to (set|clear) finalizers.*not found'
 # Drop "resource request in progress"
 - op: add
@@ -76,14 +76,14 @@
       - test:
           - field: .kubernetes.namespace_name
             matches: 'openshift-pipelines|tekton-.*'
-          - field: .message
+          - field: .structured.error
             matches: '(?i)resource request in progress'
-          - field: .message
+          - field: .structured.error
             matches: '(?i)(TaskRun|PipelineRun)'
       - test:
           - field: .kubernetes.namespace_name
             matches: 'openshift-pipelines|tekton-.*'
-          - field: .message
+          - field: .structured.error
             matches: '(?i)TaskRun prepare error.*resource request in progress'
 # Drop repetitive label update warnings
 - op: add
@@ -95,9 +95,9 @@
       - test:
           - field: .kubernetes.namespace_name
             matches: 'openshift-pipelines|tekton-.*'
-          - field: .message
+          - field: .structured.error
             matches: '(?i)Failed to update (PipelineRun|TaskRun) labels'
-          - field: .message
+          - field: .structured.error
             matches: '(?i)Operation cannot be fulfilled'
 # application index filters (Tekton drops target openshift-pipelines and tekton-* namespaces)
 - op: add
