@@ -104,6 +104,18 @@
             matches: '(?i)Failed to update (PipelineRun|TaskRun) labels'
           - field: .structured.error
             matches: '(?i)Operation cannot be fulfilled'
+# Drop admission controller nil annotation logs (audit noise)
+- op: add
+  path: /spec/filters/-
+  value:
+    name: drop-admission-controller-nil-annotations
+    type: drop
+    drop:
+      - test:
+          - field: .kubernetes.namespace_name
+            matches: 'openshift-pipelines'
+          - field: .structured.msg
+            matches: 'remote admission controller audit annotations=map\[string\]string\(nil\)'
 # Drop tekton-results duplicate key database errors
 - op: add
   path: /spec/filters/-
@@ -153,6 +165,9 @@
   value: drop-tekton-label-update-failures
 - op: add
   path: /spec/pipelines/0/filterRefs/-
+  value: drop-admission-controller-nil-annotations
+- op: add
+  path: /spec/pipelines/0/filterRefs/-
   value: drop-tekton-results-duplicate-key
 - op: add
   path: /spec/pipelines/0/filterRefs/-
@@ -173,6 +188,9 @@
 - op: add
   path: /spec/pipelines/1/filterRefs/-
   value: drop-tekton-label-update-failures
+- op: add
+  path: /spec/pipelines/1/filterRefs/-
+  value: drop-admission-controller-nil-annotations
 - op: add
   path: /spec/pipelines/1/filterRefs/-
   value: drop-tekton-results-duplicate-key
