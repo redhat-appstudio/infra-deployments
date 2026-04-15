@@ -47,6 +47,11 @@
             matches: '(?i)Reconcile error'
           - field: .structured.error
             matches: '(?i)(pipelinerun|taskrun|tekton)'
+      - test:
+          - field: .kubernetes.namespace_name
+            matches: 'tekton-kueue'
+          - field: .message
+            matches: '(?i)error.*Operation cannot be fulfilled on (pipelineruns?|taskruns?)\.tekton\.dev'
 # Drop "resource not found" during finalizer cleanup
 - op: add
   path: /spec/filters/-
@@ -99,6 +104,18 @@
             matches: '(?i)Failed to update (PipelineRun|TaskRun) labels'
           - field: .structured.error
             matches: '(?i)Operation cannot be fulfilled'
+# Drop tekton-results duplicate key database errors
+- op: add
+  path: /spec/filters/-
+  value:
+    name: drop-tekton-results-duplicate-key
+    type: drop
+    drop:
+      - test:
+          - field: .kubernetes.namespace_name
+            matches: 'tekton-results'
+          - field: .structured.error
+            matches: '(?i)duplicate key value violates unique constraint.*results_by_name'
 # application index filters (Tekton drops target openshift-pipelines and tekton-* namespaces)
 - op: add
   path: /spec/pipelines/0/filterRefs/-
@@ -112,6 +129,9 @@
 - op: add
   path: /spec/pipelines/0/filterRefs/-
   value: drop-tekton-label-update-failures
+- op: add
+  path: /spec/pipelines/0/filterRefs/-
+  value: drop-tekton-results-duplicate-key
 # audit index filters
 - op: add
   path: /spec/pipelines/1/filterRefs/-
@@ -125,3 +145,6 @@
 - op: add
   path: /spec/pipelines/1/filterRefs/-
   value: drop-tekton-label-update-failures
+- op: add
+  path: /spec/pipelines/1/filterRefs/-
+  value: drop-tekton-results-duplicate-key
