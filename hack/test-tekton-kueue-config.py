@@ -453,6 +453,35 @@ PIPELINERUN_DEFINITIONS: Dict[str, PipelineRunTestData] = {
         }
     },
 
+    "nudge_pipelinerun": {
+        "name": "Multi-platform pipeline with user-specific priority (new style)",
+        "pipelinerun": {
+            "apiVersion": "tekton.dev/v1",
+            "kind": "PipelineRun",
+            "metadata": {
+                "name": "nudging-pipelinerun",
+                "namespace": "default",
+                "labels": {
+                    "build.appstudio.openshift.io/type": "nudge",
+                    # make sure the nudge type overrides this
+                    "pipelinesascode.tekton.dev/event-type": "push"
+                }
+            },
+            "spec": {
+                "pipelineRef": {"name": "renovate"},
+                "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
+            }
+        },
+        "expected": {
+            "annotations": {},
+            "labels": {
+                "build.appstudio.openshift.io/type": "nudge",
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-dependency-update"
+            }
+        }
+    },
+
     "build-test-comment": {
         "name": "build pipeline triggered via /test comment",
         "pipelinerun": {
@@ -1127,6 +1156,10 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
         "pipelinerun_key": "build-ok-to-test-comment",
         "config_key": "development"
     },
+    "nudging_dev": {
+        "pipelinerun_key": "nudge_pipelinerun",
+        "config_key": "development"
+    },
 
     # multiplatform_old edge cases
     "multiplatform_old_no_pipelineSpecTasks": {
@@ -1201,6 +1234,10 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
     },
     "build_ok_to_test_comment_staging": {
         "pipelinerun_key": "build-ok-to-test-comment",
+        "config_key": "staging"
+    },
+    "nudging_staging": {
+        "pipelinerun_key": "nudge_pipelinerun",
         "config_key": "staging"
     },
 
