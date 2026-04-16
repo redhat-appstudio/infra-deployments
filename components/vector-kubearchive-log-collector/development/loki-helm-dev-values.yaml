@@ -8,20 +8,20 @@ gateway:
   serviceAccount:
     create: false
     name: loki-gateway
-  # Override security context to allow OpenShift to assign UID/GID
-  podSecurityContext:
-    runAsNonRoot: true
-    fsGroup: null
-    runAsUser: null
-    runAsGroup: null
-  containerSecurityContext:
-    runAsNonRoot: true
+  securityContext:
     allowPrivilegeEscalation: false
+    runAsUser: 0
     capabilities:
       drop:
-        - ALL
-    runAsUser: null
-    runAsGroup: null
+        - CHOWN
+        - DAC_OVERRIDE
+        - FOWNER
+        - FSETID
+        - KILL
+        - NET_BIND_SERVICE
+        - SETGID
+        - SETPCAP
+        - SETUID
   resources:
     requests:
       cpu: 50m
@@ -292,19 +292,20 @@ chunksCache:
   serviceAccount:
     create: false
     name: loki-memcached
-  podSecurityContext:
-    runAsNonRoot: true
-    fsGroup: null
-    runAsUser: null
-    runAsGroup: null
-  containerSecurityContext:
-    runAsNonRoot: true
+  securityContext:
     allowPrivilegeEscalation: false
+    runAsUser: 0
     capabilities:
       drop:
-        - ALL
-    runAsUser: null
-    runAsGroup: null
+        - CHOWN
+        - DAC_OVERRIDE
+        - FOWNER
+        - FSETID
+        - KILL
+        - NET_BIND_SERVICE
+        - SETGID
+        - SETPCAP
+        - SETUID
 
 resultsCache:
   enabled: true
@@ -315,19 +316,20 @@ resultsCache:
   serviceAccount:
     create: false
     name: loki-memcached
-  podSecurityContext:
-    runAsNonRoot: true
-    fsGroup: null
-    runAsUser: null
-    runAsGroup: null
-  containerSecurityContext:
-    runAsNonRoot: true
+  securityContext:
     allowPrivilegeEscalation: false
+    runAsUser: 0
     capabilities:
       drop:
-        - ALL
-    runAsUser: null
-    runAsGroup: null
+        - CHOWN
+        - DAC_OVERRIDE
+        - FOWNER
+        - FSETID
+        - KILL
+        - NET_BIND_SERVICE
+        - SETGID
+        - SETPCAP
+        - SETUID
 
 memcached:
   enabled: true
