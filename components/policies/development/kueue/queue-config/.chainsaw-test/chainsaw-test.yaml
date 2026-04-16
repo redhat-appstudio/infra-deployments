@@ -154,14 +154,14 @@ spec:
         template: true
   - name: when-tenant-labeled-namespace-is-updated-to-unpause
     description: |
-      Create a namespace labeled konflux-ci.dev/type=tenant so the policy should generate a LocalQueue.
+      Update the namespace to unpause it
     try:
-    - apply:
+    - update:
         file: resources/namespace-tenant.yaml
         template: true
   - name: then-localqueue-is-unpaused
     description: |
-      Assert the expected pipelines-queue LocalQueue exists and matches the fixture (name and spec).
+      Assert the LocalQueue's StopPolicy is None
     try:
     - assert:
         file: resources/expected-localqueue.yaml
