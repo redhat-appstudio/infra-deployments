@@ -19,7 +19,7 @@ spec:
               imagePullPolicy: IfNotPresent
               env:
               - name: IMAGE
-                value: quay.io/konflux-ci/etcd-defrag@sha256:7539e569f085540b65759f70fe07f399c9d06511349087f8ae559be3ccd484dc
+                value: quay.io/konflux-ci/etcd-defrag@sha256:7a19f7b9b7bbdeb4f8d51e06d3319ac5c0555094fcbf2093d6e4d71f136afb55
               - name: FRAGMENTATION_THRESHOLD
                 value: "30"
               - name: DISK_USAGE_THRESHOLD
@@ -32,7 +32,7 @@ spec:
                 - |
                   etcd_pod=$(oc get pod -l app=etcd -oname -n openshift-etcd | awk -F"/" 'NR==1{ print $2 }')
                   oc -n openshift-etcd debug pod/${etcd_pod} \
-                    fragmentationThreshold="${FRAGMENTATION_THRESHOLD}"\
+                    fragmentationThreshold="${FRAGMENTATION_THRESHOLD}" \
                     diskUsageThreshold="${DISK_USAGE_THRESHOLD}" \
                     reclaimSpaceThreshold="${RECLAIM_SPACE_THRESHOLD}" \
                     --image="${IMAGE}" \
