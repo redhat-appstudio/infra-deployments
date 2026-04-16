@@ -6,7 +6,8 @@ metadata:
 spec:
   description: |
     Tests that a LocalQueue is created in a namespace labeled with
-    `konflux-ci.dev/type=tenant`.
+    `konflux-ci.dev/type=tenant` and no `kueue.konflux-ci.dev/stop-policy`
+    annotation.
   concurrent: false
   namespace: kueue-queue-new
   bindings:
@@ -46,6 +47,241 @@ spec:
     try:
     - assert:
         file: resources/expected-localqueue.yaml
+        template: true
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: kueue-bootstrap-queue-new-tenant-labeled-namespace-unpaused
+spec:
+  description: |
+    Tests that a LocalQueue is created in a namespace labeled with
+    `konflux-ci.dev/type=tenant` and the `kueue.konflux-ci.dev/stop-policy`
+    annotation set to a value different from `hold`.
+  concurrent: false
+  namespace: kueue-queue-new
+  bindings:
+  - name: suffix
+    value: labeled
+  steps:
+  - name: given-localqueue-crd-exists
+    description: |
+      Install the Kueue LocalQueue CRD so the API server accepts LocalQueue objects in the test cluster.
+    try:
+    - apply:
+        file: ./resources/localqueue-crd.yaml
+  - name: given-kyverno-has-permission-on-resources
+    description: |
+      Apply Kyverno RBAC so the policy engine can generate and reconcile LocalQueue resources.
+    try:
+    - apply:
+        file: ../kyverno-rbac.yaml
+  - name: given-cluster-policy-is-ready
+    description: |
+      Apply the queue bootstrap ClusterPolicy and assert Kyverno reports the policy as ready before exercising generation.
+    try:
+    - apply:
+        file: ../cluster-policy.yaml
+    - assert:
+        file: chainsaw-assert-clusterpolicy.yaml
+  - name: when-tenant-labeled-namespace-is-created
+    description: |
+      Create a namespace labeled konflux-ci.dev/type=tenant so the policy should generate a LocalQueue.
+    try:
+    - apply:
+        file: resources/namespace-tenant-unpaused.yaml
+        template: true
+  - name: then-localqueue-is-created
+    description: |
+      Assert the expected pipelines-queue LocalQueue exists and matches the fixture (name and spec).
+    try:
+    - assert:
+        file: resources/expected-localqueue.yaml
+        template: true
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: kueue-bootstrap-queue-new-tenant-labeled-paused-namespace-resumed
+spec:
+  description: |
+    Tests that a LocalQueue with `stopPolicy` set to `Hold` is created
+    in a namespace labeled with `konflux-ci.dev/type=tenant` with the
+    `kueue.konflux-ci.dev/stop-policy` annotation set to `hold`. The
+    `stopPolicy` is then set to `None` when the annotation is removed
+    from the namespace.
+  concurrent: false
+  namespace: kueue-queue-new
+  bindings:
+  - name: suffix
+    value: labeled
+  steps:
+  - name: given-localqueue-crd-exists
+    description: |
+      Install the Kueue LocalQueue CRD so the API server accepts LocalQueue objects in the test cluster.
+    try:
+    - apply:
+        file: ./resources/localqueue-crd.yaml
+  - name: given-kyverno-has-permission-on-resources
+    description: |
+      Apply Kyverno RBAC so the policy engine can generate and reconcile LocalQueue resources.
+    try:
+    - apply:
+        file: ../kyverno-rbac.yaml
+  - name: given-cluster-policy-is-ready
+    description: |
+      Apply the queue bootstrap ClusterPolicy and assert Kyverno reports the policy as ready before exercising generation.
+    try:
+    - apply:
+        file: ../cluster-policy.yaml
+    - assert:
+        file: chainsaw-assert-clusterpolicy.yaml
+  - name: when-tenant-labeled-namespace-is-created-paused
+    description: |
+      update a namespace labeled konflux-ci.dev/type=tenant so the policy should generate a LocalQueue.
+    try:
+    - apply:
+        file: resources/namespace-tenant-paused.yaml
+        template: true
+  - name: then-localqueue-is-created-paused
+    description: |
+      Assert the expected pipelines-queue LocalQueue exists and matches the fixture (name and spec).
+    try:
+    - assert:
+        file: resources/expected-localqueue-paused.yaml
+        template: true
+  - name: when-tenant-labeled-namespace-is-updated-to-unpause
+    description: |
+      Create a namespace labeled konflux-ci.dev/type=tenant so the policy should generate a LocalQueue.
+    try:
+    - apply:
+        file: resources/namespace-tenant.yaml
+        template: true
+  - name: then-localqueue-is-unpaused
+    description: |
+      Assert the expected pipelines-queue LocalQueue exists and matches the fixture (name and spec).
+    try:
+    - assert:
+        file: resources/expected-localqueue.yaml
+        template: true
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: kueue-bootstrap-queue-new-tenant-labeled-namespace-update-paused
+spec:
+  description: |
+    Tests that a LocalQueue with `stopPolicy` set to `None` is created
+    in a namespace labeled with `konflux-ci.dev/type=tenant` with no
+    `kueue.konflux-ci.dev/stop-policy` annotation set. The `stopPolicy`
+    is then set to `Hold` when the annotation is added to the namespace.
+  concurrent: false
+  namespace: kueue-queue-new
+  bindings:
+  - name: suffix
+    value: labeled
+  steps:
+  - name: given-localqueue-crd-exists
+    description: |
+      Install the Kueue LocalQueue CRD so the API server accepts LocalQueue objects in the test cluster.
+    try:
+    - apply:
+        file: ./resources/localqueue-crd.yaml
+  - name: given-kyverno-has-permission-on-resources
+    description: |
+      Apply Kyverno RBAC so the policy engine can generate and reconcile LocalQueue resources.
+    try:
+    - apply:
+        file: ../kyverno-rbac.yaml
+  - name: given-cluster-policy-is-ready
+    description: |
+      Apply the queue bootstrap ClusterPolicy and assert Kyverno reports the policy as ready before exercising generation.
+    try:
+    - apply:
+        file: ../cluster-policy.yaml
+    - assert:
+        file: chainsaw-assert-clusterpolicy.yaml
+  - name: when-tenant-labeled-namespace-is-created
+    description: |
+      Create a namespace labeled konflux-ci.dev/type=tenant so the policy should generate a LocalQueue.
+    try:
+    - apply:
+        file: resources/namespace-tenant.yaml
+        template: true
+  - name: then-localqueue-is-created
+    description: |
+      Assert the expected pipelines-queue LocalQueue exists and matches the fixture (name and spec).
+    try:
+    - assert:
+        file: resources/expected-localqueue.yaml
+        template: true
+  - name: when-tenant-labeled-namespace-is-updated
+    description: |
+      update a namespace labeled konflux-ci.dev/type=tenant so the policy should generate a LocalQueue.
+    try:
+    - apply:
+        file: resources/namespace-tenant-paused.yaml
+        template: true
+  - name: then-localqueue-is-updated
+    description: |
+      Assert the expected pipelines-queue LocalQueue exists and matches the fixture (name and spec).
+    try:
+    - assert:
+        file: resources/expected-localqueue-paused.yaml
+        template: true
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: kueue-bootstrap-queue-new-tenant-labeled-namespace-paused
+spec:
+  description: |
+    Tests that a LocalQueue is created in a namespace labeled with
+    `konflux-ci.dev/type=tenant` and with annotation to pause the
+    LocalQueue.
+  concurrent: false
+  namespace: kueue-queue-new
+  bindings:
+  - name: suffix
+    value: labeled
+  steps:
+  - name: given-localqueue-crd-exists
+    description: |
+      Install the Kueue LocalQueue CRD so the API server accepts LocalQueue objects in the test cluster.
+    try:
+    - apply:
+        file: ./resources/localqueue-crd.yaml
+  - name: given-kyverno-has-permission-on-resources
+    description: |
+      Apply Kyverno RBAC so the policy engine can generate and reconcile LocalQueue resources.
+    try:
+    - apply:
+        file: ../kyverno-rbac.yaml
+  - name: given-cluster-policy-is-ready
+    description: |
+      Apply the queue bootstrap ClusterPolicy and assert Kyverno reports the policy as ready before exercising generation.
+    try:
+    - apply:
+        file: ../cluster-policy.yaml
+    - assert:
+        file: chainsaw-assert-clusterpolicy.yaml
+  - name: when-tenant-labeled-namespace-is-created
+    description: |
+      Create a namespace labeled konflux-ci.dev/type=tenant so the policy should generate a LocalQueue.
+    try:
+    - apply:
+        file: resources/namespace-tenant-paused.yaml
+        template: true
+  - name: then-localqueue-is-created
+    description: |
+      Assert the expected pipelines-queue LocalQueue exists and matches the fixture (name and spec).
+    try:
+    - assert:
+        file: resources/expected-localqueue-paused.yaml
         template: true
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
