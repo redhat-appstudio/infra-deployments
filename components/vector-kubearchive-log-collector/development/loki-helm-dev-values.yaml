@@ -4,6 +4,24 @@ global:
     - "-log.level=debug"
 
 gateway:
+  # Override service account to use our custom one from SCC
+  serviceAccount:
+    create: false
+    name: loki-gateway
+  # Override security context to allow OpenShift to assign UID/GID
+  podSecurityContext:
+    runAsNonRoot: true
+    fsGroup: null
+    runAsUser: null
+    runAsGroup: null
+  containerSecurityContext:
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    runAsUser: null
+    runAsGroup: null
   resources:
     requests:
       cpu: 50m
@@ -270,12 +288,46 @@ chunksCache:
   parallelism: 10  # Parallel threads for cache operations
   maxItemMemory: 10  # MB
   defaultValidity: 12h  # How long cached chunks are stored
+  # Override service account and security context for OpenShift
+  serviceAccount:
+    create: false
+    name: loki-memcached
+  podSecurityContext:
+    runAsNonRoot: true
+    fsGroup: null
+    runAsUser: null
+    runAsGroup: null
+  containerSecurityContext:
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    runAsUser: null
+    runAsGroup: null
 
 resultsCache:
   enabled: true
   replicas: 1
   maxItemMemory: 10  # MB
   defaultValidity: 12h  # How long cached query results are stored
+  # Override service account and security context for OpenShift
+  serviceAccount:
+    create: false
+    name: loki-memcached
+  podSecurityContext:
+    runAsNonRoot: true
+    fsGroup: null
+    runAsUser: null
+    runAsGroup: null
+  containerSecurityContext:
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    runAsUser: null
+    runAsGroup: null
 
 memcached:
   enabled: true
