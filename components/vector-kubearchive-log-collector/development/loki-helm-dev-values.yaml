@@ -334,25 +334,44 @@ resultsCache:
 memcached:
   enabled: true
   maxItemMemory: 10  # MB - Shared default for general memcached instances
+  # Override service account to use our custom one from SCC
+  serviceAccount:
+    create: false
+    name: loki-memcached
 
 # Shared memcached configuration (used as defaults for all memcached instances)
 # These don't deploy separate instances - they configure shared settings
 memcachedResults:
   enabled: true
   maxItemMemory: 10  # MB - For query result caching
+  serviceAccount:
+    create: false
+    name: loki-memcached
 
 memcachedChunks:
   enabled: true
   maxItemMemory: 10  # MB - For chunk caching
+  serviceAccount:
+    create: false
+    name: loki-memcached
 
 memcachedFrontend:
   enabled: true
   maxItemMemory: 10  # MB - Frontend cache can handle large query results
+  serviceAccount:
+    create: false
+    name: loki-memcached
 
 memcachedIndexQueries:
   enabled: true
   maxItemMemory: 10  # MB - Index queries can be large
+  serviceAccount:
+    create: false
+    name: loki-memcached
 
 memcachedIndexWrites:
   enabled: true
   maxItemMemory: 10  # MB - Index write operations
+  serviceAccount:
+    create: false
+    name: loki-memcached
