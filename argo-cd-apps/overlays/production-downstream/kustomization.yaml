@@ -6,7 +6,6 @@ resources:
   - ../../base/ca-bundle
   - ../../base/repository-validator
   - ../../base/cluster-secret-store-rh
-  - ../../base/monitoring-workload-kanary
 patchesStrategicMerge:
   - delete-applications.yaml
 namespace: argocd
@@ -86,6 +85,11 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: monitoring-workload-grafana
+  - path: production-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: monitoring-workload-custom-kube-state-metrics
   - path: production-overlay-patch.yaml
     target:
       kind: ApplicationSet

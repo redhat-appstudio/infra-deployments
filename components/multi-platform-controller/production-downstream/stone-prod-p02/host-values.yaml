@@ -14,7 +14,7 @@ archDefaults:
     security-group-id: "sg-0903aedd465be979e"
     subnet-id: "subnet-02c476f8d2a4ae05e"
   windows-amd64:
-    ami: "ami-0cf643428c5013531"
+    ami: "ami-0cbf74fa8206e0c0f"
     key-name: "aws-win-ssh-key"
     security-group-id: "sg-0903aedd465be979e"
     subnet-id: "subnet-02c476f8d2a4ae05e"
@@ -125,6 +125,8 @@ dynamicConfigs:
     # user-data loaded from base/host-config-chart/files/macos-mac2metal-arm64-init.sh
 
   windows-4xlarge-amd64:
+    allowed-remote-addresses:
+    - 10.29.67.0/24
     # user-data loaded from base/host-config-chart/files/windows-init.ps1
 
   linux-root-amd64:

@@ -1,0 +1,22 @@
+apiVersion: monitoring.rhobs/v1
+kind: ServiceMonitor
+metadata:
+  name: appstudio-tekton-pipelines-smon
+  namespace: appstudio-tekton
+  labels:
+    monitoring.rhobs/stack: appstudio-tekton-ms
+spec:
+  namespaceSelector:
+    matchNames:
+    - openshift-pipelines
+  selector:
+    matchLabels:
+      app: tekton-pipelines-controller
+      app.kubernetes.io/component: controller
+  endpoints:
+  - port: http-metrics
+    interval: 15s
+    metricRelabelings:
+    - sourceLabels: [__name__]
+      regex: tekton_pipelines_controller_taskruns_pod_latency_milliseconds
+      action: drop

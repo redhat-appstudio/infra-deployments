@@ -1,0 +1,71 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  labels:
+    app.kubernetes.io/version: "0.1"
+  annotations:
+    tekton.dev/pipelines.minVersion: "0.12.1"
+  name: validate-image-controller-upgrade
+spec:
+  description: |
+    This task validates the token refresh of image repository in a specific namespace is success.
+  params:
+    - name: CLUSTER_API_URL
+      description: Cluster api url of the test cluster
+      type: string
+      default: "https://api.stone-stg-rh01.l2vh.p1.openshiftapps.com:6443"
+  steps:
+    - name: validate
+      image: quay.io/konflux-ci/task-runner:1.4.1@sha256:d9feec6f2ce9b10cfb76b45ea14f83b5ed9f231de7d6083291550aebe8eb09ea
+      env:
+      - name: CLUSTER_API_URL
+        value: $(params.CLUSTER_API_URL)
+      - name: SA_TOKEN
+        valueFrom:
+          secretKeyRef:
+            name: upgrade-sa-token
+            key: token
+      script: |
+        #!/usr/bin/env sh
+        set -e
+
+        NAMESPACE="build-samples-tenant"
+        SAMPLE_IMAGE_REPOSITORY_NAME="imagerepository-for-build-upgrade-test-application-sample-component-golang"
+
+        # Login to the cluster
+        if ! oc login --token="${SA_TOKEN}" --server="${CLUSTER_API_URL}"; then
+          echo "[ERROR] Failed to login to the cluster."
+          exit 1
+        fi
+
+        # Check if the image repository exists
+        if ! oc get imagerepository "${SAMPLE_IMAGE_REPOSITORY_NAME}" -n "${NAMESPACE}"; then
+          echo "[ERROR] failed to get image repository from the cluster"
+          exit 1
+        fi
+
+        # Get the current generation timestamp
+        previous_generation_time=$(oc get imagerepository "${SAMPLE_IMAGE_REPOSITORY_NAME}" -n "${NAMESPACE}" -o jsonpath='{.status.credentials.generationTimestamp}')
+
+        # Patch imagerepository for token refresh
+        if ! oc patch imagerepository "${SAMPLE_IMAGE_REPOSITORY_NAME}" --type='merge' -p '{"spec": { "credentials" : {"regenerate-token":true}}}' -n "${NAMESPACE}"; then
+          echo "[ERROR] failed to patch imagerepository for token refresh"
+        fi
+
+        # Check the token refresh is succeeded
+        timeout_in_seconds=120
+        total_wait_in_seconds=0
+        delay_in_seconds=5
+        while true; do
+          current_generation_time=$(oc get imagerepository "${SAMPLE_IMAGE_REPOSITORY_NAME}" -n "${NAMESPACE}" -o jsonpath='{.status.credentials.generationTimestamp}')
+          if [ "$previous_generation_time" != "$current_generation_time" ]; then
+            break
+          fi
+          if [ "$total_wait_in_seconds" -gt "$timeout_in_seconds" ]; then
+            echo "timeout waiting for generation timestamp to be updated"
+            exit 1
+          fi
+          total_wait_in_seconds=$((total_wait_in_seconds + delay_in_seconds))
+          echo "[INFO] Waiting for generation timestamp to be updated - ${total_wait_in_seconds}s elapsed"
+          sleep "$delay_in_seconds"
+        done

@@ -2,15 +2,18 @@ apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
 metadata:
   name: image-controller-prod-overlay-update
-  namespace: tekton-ci
+  namespace: konflux-ci
   annotations:
     pipelinesascode.tekton.dev/on-cel-expression: |
       event == "push" && target_branch == "main" && "components/image-controller/staging/base/kustomization.yaml".pathChanged()
     pipelinesascode.tekton.dev/max-keep-runs: "5"
-    pipelinesascode.tekton.dev/task: "[.tekton/tasks/promote-component.yaml]"
+    pipelinesascode.tekton.dev/task: "[.tekton/tasks/promote-component.yaml, .tekton/tasks/validate-image-controller-upgrade.yaml]"
 spec:
   pipelineSpec:
     tasks:
+      - name: validate-image-controller-upgrade
+        taskRef:
+          name: validate-image-controller-upgrade
       - name: promote-component-from-stage-to-prod
         params:
           - name: BRANCH_NAME
@@ -25,3 +28,22 @@ spec:
               sed -i "s/$OLD_PROD_SHA/$STAGE_SHA/g" components/image-controller/production/base/kustomization.yaml
         taskRef:
           name: promote-component
+    finally:
+      - name: slack-webhook-notification
+        taskRef:
+          params:
+          - name: bundle
+            value: quay.io/konflux-ci/tekton-catalog/task-slack-webhook-notification:0.1
+          - name: name
+            value: slack-webhook-notification
+          - name: kind
+            value: Task
+        when:
+        - input: $(tasks.status)
+          operator: in
+          values: ["Failed"]
+        params:
+        - name: message
+          value: ":x: Stage to production component upgrade pipelineRun for image-controller failed"
+        - name: key-name
+          value: "build"
