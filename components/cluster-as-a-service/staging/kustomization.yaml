@@ -4,6 +4,7 @@ kind: Kustomization
 resources:
   - ../base
   - ../../openshift-gitops
+  - cluster-aas-operator-rbac.yaml
   - external-secrets.yaml
 patches:
   - path: add-hypershift-params.yaml
