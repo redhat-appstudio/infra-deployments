@@ -4,6 +4,7 @@ resources:
   - ../base
   - dashboards
   - https://github.com/redhat-appstudio/o11y/config/exporters/monitoring/grafana/base?ref=0d3c45516968bffb24196952c3273cebd6df5d4f
+  - disable-leader-elect-job.yaml
 
 images:
 - name: quay.io/redhat-appstudio/o11y
@@ -19,3 +20,15 @@ patches:
     target:
       name: grafana-oauth
       kind: Grafana
+  - path: grafana-operator-subscription-patch.yaml
+    target:
+      name: grafana-operator
+      kind: Subscription
+  # Set resyncPeriod on ALL GrafanaDashboard resources
+  # Reduces reconciliation frequency (default 10m → 30m)
+  - target:
+      kind: GrafanaDashboard
+    patch: |-
+      - op: add
+        path: /spec/resyncPeriod
+        value: "30m"
