@@ -47,6 +47,11 @@
             matches: '(?i)Reconcile error'
           - field: .structured.error
             matches: '(?i)(pipelinerun|taskrun|tekton)'
+      - test:
+          - field: .kubernetes.namespace_name
+            matches: 'tekton-kueue'
+          - field: .message
+            matches: '(?i)error.*Operation cannot be fulfilled on (pipelineruns?|taskruns?)\.tekton\.dev'
 # Drop "resource not found" during finalizer cleanup
 - op: add
   path: /spec/filters/-
@@ -99,6 +104,52 @@
             matches: '(?i)Failed to update (PipelineRun|TaskRun) labels'
           - field: .structured.error
             matches: '(?i)Operation cannot be fulfilled'
+# Drop admission controller nil annotation logs (audit noise)
+- op: add
+  path: /spec/filters/-
+  value:
+    name: drop-admission-controller-nil-annotations
+    type: drop
+    drop:
+      - test:
+          - field: .kubernetes.namespace_name
+            matches: 'openshift-pipelines'
+          - field: .structured.msg
+            matches: 'remote admission controller audit annotations=map\[string\]string\(nil\)'
+# Drop tekton-results duplicate key database errors
+- op: add
+  path: /spec/filters/-
+  value:
+    name: drop-tekton-results-duplicate-key
+    type: drop
+    drop:
+      - test:
+          - field: .kubernetes.namespace_name
+            matches: 'tekton-results'
+          - field: .structured.error
+            matches: '(?i)duplicate key value violates unique constraint.*results_by_name'
+# Drop leader election optimistic locking (Kubernetes coordination noise)
+- op: add
+  path: /spec/filters/-
+  value:
+    name: drop-leader-election-conflicts
+    type: drop
+    drop:
+      - test:
+          - field: .message
+            matches: '(?i)leaderelection.*Failed to update lock optimistically.*Operation cannot be fulfilled on leases\.coordination\.k8s\.io'
+# Drop TLS EOF errors ONLY (health check noise), KEEP bad certificate errors for security audit
+- op: add
+  path: /spec/filters/-
+  value:
+    name: drop-tls-eof-noise
+    type: drop
+    drop:
+      - test:
+          - field: .kubernetes.pod_name
+            matches: 'tekton.*webhook'
+          - field: .structured.msg
+            matches: '(?i)http: TLS handshake error.*EOF'
 # application index filters (Tekton drops target openshift-pipelines and tekton-* namespaces)
 - op: add
   path: /spec/pipelines/0/filterRefs/-
@@ -112,6 +163,18 @@
 - op: add
   path: /spec/pipelines/0/filterRefs/-
   value: drop-tekton-label-update-failures
+- op: add
+  path: /spec/pipelines/0/filterRefs/-
+  value: drop-admission-controller-nil-annotations
+- op: add
+  path: /spec/pipelines/0/filterRefs/-
+  value: drop-tekton-results-duplicate-key
+- op: add
+  path: /spec/pipelines/0/filterRefs/-
+  value: drop-leader-election-conflicts
+- op: add
+  path: /spec/pipelines/0/filterRefs/-
+  value: drop-tls-eof-noise
 # audit index filters
 - op: add
   path: /spec/pipelines/1/filterRefs/-
@@ -125,3 +188,15 @@
 - op: add
   path: /spec/pipelines/1/filterRefs/-
   value: drop-tekton-label-update-failures
+- op: add
+  path: /spec/pipelines/1/filterRefs/-
+  value: drop-admission-controller-nil-annotations
+- op: add
+  path: /spec/pipelines/1/filterRefs/-
+  value: drop-tekton-results-duplicate-key
+- op: add
+  path: /spec/pipelines/1/filterRefs/-
+  value: drop-leader-election-conflicts
+- op: add
+  path: /spec/pipelines/1/filterRefs/-
+  value: drop-tls-eof-noise
