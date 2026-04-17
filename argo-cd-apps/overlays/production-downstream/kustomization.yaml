@@ -89,6 +89,11 @@ patches:
     target:
       kind: ApplicationSet
       version: v1alpha1
+      name: monitoring-workload-custom-kube-state-metrics
+  - path: production-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
       name: cluster-secret-store-rh
   - path: production-overlay-patch.yaml
     target:
@@ -285,3 +290,8 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: disaster-recovery
+  - path: production-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: perf-team-prometheus-reader

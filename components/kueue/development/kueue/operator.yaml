@@ -8,22 +8,6 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "-4"
 ---
-apiVersion: operators.coreos.com/v1alpha1
-kind: CatalogSource
-metadata:
-  annotations:
-    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-    argocd.argoproj.io/sync-wave: "-3"
-  name: redhat-operators-1-18
-  namespace: openshift-kueue-operator
-spec:
-  displayName: redhat-operators-1-18
-  image: registry.redhat.io/redhat/redhat-operator-index:v4.18
-  sourceType: grpc
-  updateStrategy:
-    registryPoll:
-      interval: 30m
----
 apiVersion: operators.coreos.com/v1
 kind: OperatorGroup
 metadata:
@@ -43,5 +27,5 @@ spec:
   channel: stable-v1.2
   installPlanApproval: Automatic
   name: kueue-operator
-  source: redhat-operators-1-18
-  sourceNamespace: openshift-kueue-operator
+  source: redhat-operators
+  sourceNamespace: openshift-marketplace

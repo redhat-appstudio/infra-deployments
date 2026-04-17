@@ -1,0 +1,28 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: cluster-aas-operator-applicationset-manager
+  namespace: cluster-aas-operator
+rules:
+- apiGroups:
+  - argoproj.io
+  resources:
+  - applicationsets
+  verbs:
+  - delete
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cluster-aas-operator-applicationset-manager
+  namespace: cluster-aas-operator
+subjects:
+- kind: ServiceAccount
+  name: cluster-aas-operator-controller-manager
+  namespace: openshift-operators
+roleRef:
+  kind: Role
+  name: cluster-aas-operator-applicationset-manager
+  apiGroup: rbac.authorization.k8s.io
