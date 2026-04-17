@@ -1,6 +1,6 @@
 ---
 # This ClusterPolicy automatically generates a ClusterRoleBinding for users
-# in the 'ai-konflux-user-support' Group to enable namespace-lister access.
+# in the groups supporting Konflux to enable namespace-lister access.
 #
 # The namespace-lister service checks for ClusterRoleBindings with the label
 # 'namespace-lister.konflux-ci.dev/use-for-access: true' and grants access
@@ -9,13 +9,13 @@
 apiVersion: kyverno.io/v1
 kind: ClusterPolicy
 metadata:
-  name: generate-konflux-support-crb
+  name: generate-konflux-viewer-access
   annotations:
     policies.kyverno.io/title: "Generate ClusterRoleBinding for ai-konflux-user-support Group Users"
     policies.kyverno.io/category: Multi-Tenancy
     policies.kyverno.io/description: >-
       This policy automatically generates a ClusterRoleBinding for all users
-      in the 'ai-konflux-user-support' Group. The ClusterRoleBinding includes the
+      in the groups that support Konflux. The ClusterRoleBinding includes the
       label 'namespace-lister.konflux-ci.dev/use-for-access: true' which
       enables namespace-lister to grant these users access to tenant namespaces.
       The binding is synchronized with the Group, so any changes to group
@@ -34,6 +34,7 @@ spec:
             - ai-konflux-user-support
             - konflux-sre
             - plm-poe
+            - konflux-prodsec-support
       context:
         - name: userSubjects
           variable:
