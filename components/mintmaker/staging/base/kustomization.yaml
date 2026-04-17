@@ -5,6 +5,7 @@ labels:
     paas.redhat.com/appcode: MINT-001
 resources:
 - ../../base
+- mintmaker-schedule-calculator-manager.yaml
 - ../../base/external-secrets
 - ../blackbox
 - plrs-resource-quota.yaml
@@ -20,6 +21,8 @@ images:
 - name: quay.io/konflux-ci/mintmaker-renovate-image
   newName: quay.io/konflux-ci/mintmaker-renovate-image
   newTag: 0410e2026b964953df7094e0455a2668305ad068
+- name: quay.io/konflux-ci/mintmaker-schedule-calculator
+  newName: quay.io/konflux-ci/mintmaker-schedule-calculator
 
 commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
