@@ -3,3 +3,10 @@ kind: Kustomization
 resources:
   - ../base
   - https://github.com/pulp/pulp-access-controller/config/manifests/production?ref=a3228f9289e94fb8b1fc44337038cb547a45d04f
+patches:
+  - path: pulp-access-controller-cert-patch.yaml
+    target:
+      name: pulp-access-controller-cert
+      kind: ExternalSecret
+      group: external-secrets.io
+      version: v1
