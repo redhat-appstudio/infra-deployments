@@ -292,20 +292,6 @@ chunksCache:
   serviceAccount:
     create: false
     name: loki-memcached
-  securityContext:
-    allowPrivilegeEscalation: false
-    runAsUser: 0
-    capabilities:
-      drop:
-        - CHOWN
-        - DAC_OVERRIDE
-        - FOWNER
-        - FSETID
-        - KILL
-        - NET_BIND_SERVICE
-        - SETGID
-        - SETPCAP
-        - SETUID
 
 resultsCache:
   enabled: true
@@ -316,20 +302,6 @@ resultsCache:
   serviceAccount:
     create: false
     name: loki-memcached
-  securityContext:
-    allowPrivilegeEscalation: false
-    runAsUser: 0
-    capabilities:
-      drop:
-        - CHOWN
-        - DAC_OVERRIDE
-        - FOWNER
-        - FSETID
-        - KILL
-        - NET_BIND_SERVICE
-        - SETGID
-        - SETPCAP
-        - SETUID
 
 memcached:
   enabled: true
