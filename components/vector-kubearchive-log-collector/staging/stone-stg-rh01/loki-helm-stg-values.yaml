@@ -6,6 +6,23 @@ global:
 gateway:
   service:
     type: LoadBalancer
+  serviceAccount:
+    create: false
+    name: loki-gateway
+  securityContext:
+    allowPrivilegeEscalation: false
+    runAsUser: 0
+    capabilities:
+      drop:
+        - CHOWN
+        - DAC_OVERRIDE
+        - FOWNER
+        - FSETID
+        - KILL
+        - NET_BIND_SERVICE
+        - SETGID
+        - SETPCAP
+        - SETUID
   resources:
     requests:
       cpu: 100m
@@ -224,39 +241,63 @@ chunksCache:
   parallelism: 10  # Parallel threads for cache operations
   maxItemMemory: 30  # MB - Increased from 10MB to handle chunks (3MB target + compression overhead + metadata)
   defaultValidity: 12h  # How long cached chunks are stored
+  serviceAccount:
+    create: false
+    name: loki-memcached
 
 resultsCache:
   enabled: true
   replicas: 1
   maxItemMemory: 100  # MB - Increased from 10MB to handle large query results (can be much larger than chunks)
   defaultValidity: 12h  # How long cached query results are stored
+  serviceAccount:
+    create: false
+    name: loki-memcached
 
 memcached:
   enabled: true
   maxItemMemory: 30  # MB - Shared default for general memcached instances
+  serviceAccount:
+    create: false
+    name: loki-memcached
 
 # Shared memcached configuration (used as defaults for all memcached instances)
 # These don't deploy separate instances - they configure shared settings
 memcachedResults:
   enabled: true
   maxItemMemory: 100  # MB - For query result caching
+  serviceAccount:
+    create: false
+    name: loki-memcached
 
 memcachedChunks:
   enabled: true
   maxItemMemory: 30  # MB - For chunk caching
+  serviceAccount:
+    create: false
+    name: loki-memcached
 
 memcachedFrontend:
   enabled: true
   maxItemMemory: 100  # MB - Frontend cache can handle large query results
+  serviceAccount:
+    create: false
+    name: loki-memcached
 
 memcachedIndexQueries:
   enabled: true
   maxItemMemory: 50  # MB - Index queries can be large
+  serviceAccount:
+    create: false
+    name: loki-memcached
 
 memcachedIndexWrites:
   enabled: true
   maxItemMemory: 30  # MB - Index write operations
-
+  serviceAccount:
+    create: false
+    name: loki-memcached
+    
 # Disable Minio
 minio:
   enabled: false
