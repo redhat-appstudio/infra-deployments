@@ -489,7 +489,9 @@ PIPELINERUN_DEFINITIONS: Dict[str, PipelineRunTestData] = {
             }
         },
         "expected": {
-            "annotations": {},
+            "annotations": {
+                "kueue.konflux-ci.dev/requests-konflux-ci-dev-token": "2",
+            },
             "labels": {
                 "build.appstudio.openshift.io/type": "nudge",
                 "kueue.x-k8s.io/queue-name": "pipelines-queue",
