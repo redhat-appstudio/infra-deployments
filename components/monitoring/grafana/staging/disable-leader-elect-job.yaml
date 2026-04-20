@@ -1,0 +1,170 @@
+# ArgoCD hooks to disable leader election for single-replica grafana-operator
+# Two-layer approach:
+#   1. CSV patch (primary): Patches ClusterServiceVersion - OLM's source of truth
+#   2. Deployment patch (backup): Patches Deployment directly as safety net
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: disable-leader-elect
+  namespace: appstudio-grafana
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: disable-leader-elect
+  namespace: appstudio-grafana
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+rules:
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - get
+  - patch
+- apiGroups:
+  - operators.coreos.com
+  resources:
+  - clusterserviceversions
+  verbs:
+  - get
+  - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: disable-leader-elect
+  namespace: appstudio-grafana
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: disable-leader-elect
+subjects:
+- kind: ServiceAccount
+  name: disable-leader-elect
+  namespace: appstudio-grafana
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: disable-grafana-leader-elect-deployment
+  namespace: appstudio-grafana
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded, BeforeHookCreation
+spec:
+  backoffLimit: 3
+  template:
+    spec:
+      serviceAccountName: disable-leader-elect
+      containers:
+      - name: patch
+        image: registry.redhat.io/openshift4/ose-cli:v4.12
+        securityContext:
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+        command:
+        - /bin/bash
+        - -c
+        - |
+          DEPLOY="grafana-operator-controller-manager-v5"
+          NS="appstudio-grafana"
+
+          CURRENT_ARGS=$(oc get deployment "$DEPLOY" -n "$NS" \
+            -o jsonpath='{.spec.template.spec.containers[0].args}')
+
+          if echo "$CURRENT_ARGS" | grep -q '"--leader-elect"'; then
+            echo "Removing --leader-elect from $DEPLOY args"
+            oc get deployment "$DEPLOY" -n "$NS" -o json \
+              | python3 -c "
+          import json, sys
+          dep = json.load(sys.stdin)
+          args = dep['spec']['template']['spec']['containers'][0]['args']
+          args = [a for a in args if a != '--leader-elect']
+          patch = {'spec':{'template':{'spec':{'containers':[{'name':'manager','args':args}]}}}}
+          print(json.dumps(patch))
+          " | oc patch deployment "$DEPLOY" -n "$NS" --type=strategic -p "$(cat -)"
+            echo "Patched deployment: --leader-elect removed. ENABLE_LEADER_ELECTION=false env var now takes effect."
+          else
+            echo "No --leader-elect flag found in $DEPLOY args, nothing to do."
+          fi
+      restartPolicy: Never
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: disable-grafana-leader-elect-csv
+  namespace: appstudio-grafana
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded, BeforeHookCreation
+spec:
+  backoffLimit: 3
+  template:
+    spec:
+      serviceAccountName: disable-leader-elect
+      containers:
+      - name: patch
+        image: registry.redhat.io/openshift4/ose-cli:v4.12
+        securityContext:
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+        command:
+        - /bin/bash
+        - -c
+        - |
+          CSV="grafana-operator.v5.21.2"
+          NS="appstudio-grafana"
+
+          echo "Checking CSV: $CSV in namespace: $NS"
+
+          CURRENT_ARGS=$(oc get csv "$CSV" -n "$NS" \
+            -o jsonpath='{.spec.install.spec.deployments[0].spec.template.spec.containers[0].args}')
+
+          if echo "$CURRENT_ARGS" | grep -q '"--leader-elect"'; then
+            echo "Removing --leader-elect from CSV args"
+
+            oc patch csv "$CSV" -n "$NS" --type=json -p='[
+              {
+                "op": "replace",
+                "path": "/spec/install/spec/deployments/0/spec/template/spec/containers/0/args",
+                "value": [
+                  "--health-probe-bind-address=:8081",
+                  "--metrics-bind-address=0.0.0.0:9090"
+                ]
+              }
+            ]'
+
+            echo "Patched CSV: --leader-elect removed. OLM will reconcile deployment to match."
+          else
+            echo "No --leader-elect flag found in CSV args, already patched or correct."
+          fi
+      restartPolicy: Never
