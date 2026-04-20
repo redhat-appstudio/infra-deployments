@@ -21,22 +21,6 @@ rules:
       - serviceaccounts
     resourceNames:
       - pipeline # TODO: figure out how to 'gitops' this.
-  - verbs:
-      - create
-      - get
-      - list
-      - watch
-      - delete
-    apiGroups:
-      - ''
-    resources:
-      - secrets
-  - verbs:
-      - '*' # needed till we figure out how to cleanup workspaces.
-    apiGroups:
-      - 'tekton.dev'
-    resources:
-      - 'pipelineruns'
   - apiGroups:
       - results.tekton.dev
     resources:
@@ -58,5 +42,4 @@ rules:
       - deployments
     verbs:
       - get
-      - patch
       - delete
