@@ -159,6 +159,25 @@
             matches: 'tekton.*webhook'
           - field: .structured.msg
             matches: '(?i)http: TLS handshake error.*EOF'
+# Drop Kueue Workload reconciliation noise
+- op: add
+  path: /spec/filters/-
+  value:
+    name: drop-kueue-reconciliation-noise
+    type: drop
+    drop:
+      # Kueue Workload optimistic locking
+      - test:
+          - field: .kubernetes.namespace_name
+            matches: 'tekton-kueue'
+          - field: .message
+            matches: '(?i)(Removing finalizer|Reconciler error).*error.*Operation cannot be fulfilled on workloads\.kueue\.x-k8s\.io'
+      # PipelineRun not found during unsuspending
+      - test:
+          - field: .kubernetes.namespace_name
+            matches: 'tekton-kueue'
+          - field: .message
+            matches: '(?i)Unsuspending job.*error.*pipelineruns\.tekton\.dev.*not found'
 # application index filters (Tekton drops target openshift-pipelines and tekton-* namespaces)
 - op: add
   path: /spec/pipelines/0/filterRefs/-
@@ -184,6 +203,9 @@
 - op: add
   path: /spec/pipelines/0/filterRefs/-
   value: drop-tls-eof-noise
+- op: add
+  path: /spec/pipelines/0/filterRefs/-
+  value: drop-kueue-reconciliation-noise
 # audit index filters
 - op: add
   path: /spec/pipelines/1/filterRefs/-
@@ -209,3 +231,6 @@
 - op: add
   path: /spec/pipelines/1/filterRefs/-
   value: drop-tls-eof-noise
+- op: add
+  path: /spec/pipelines/1/filterRefs/-
+  value: drop-kueue-reconciliation-noise
