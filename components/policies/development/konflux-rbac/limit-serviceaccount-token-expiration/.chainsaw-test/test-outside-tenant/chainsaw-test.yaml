@@ -33,6 +33,6 @@ spec:
         env:
         - name: NAMESPACE
           value: ($namespace)
-        content: kubectl create token chainsaw-test-sa -n ${NAMESPACE} --duration=90001s >/dev/null
+        content: kubectl create token chainsaw-test-sa -n ${NAMESPACE} --duration=31536001s >/dev/null
         check:
           ($error): ~
