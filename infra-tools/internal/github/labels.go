@@ -16,6 +16,7 @@ var LabelPrefixes = []string{
 	"environment/",
 	"cluster/",
 	"infra/",
+	"prod/",
 }
 
 // HoldProductionLabel is applied when the PR affects the production
@@ -26,6 +27,10 @@ const HoldProductionLabel = "infra/hold-production"
 // NeedsApprovalProductionLabel is applied when the PR affects the production
 // environment, signalling that explicit approval is required before merging.
 const NeedsApprovalProductionLabel = "prod/needs-approval"
+
+// ApprovedProductionLabel is applied when the PR affects the production
+// environment, signalling that the PR has been approved.
+const ApprovedProductionLabel = "prod/approved"
 
 // IssuesService is the subset of the GitHub Issues API used by this package.
 type IssuesService interface {
