@@ -94,6 +94,11 @@ cel:
 
     # Set the pipeline priority
     - |
+        has(pipelineRun.metadata.labels) &&
+        'build.appstudio.openshift.io/type' in pipelineRun.metadata.labels &&
+        pipelineRun.metadata.labels['build.appstudio.openshift.io/type'] == 'nudge' ?
+        priority('konflux-dependency-update') :
+
         pacEventType == 'push' ? priority('konflux-post-merge-build') :
         pacEventType == 'pull_request' ||
           pacEventType == "Merge_Request" ||
@@ -119,8 +124,8 @@ cel:
         has(pipelineRun.metadata.labels) &&
         'appstudio.openshift.io/service' in pipelineRun.metadata.labels &&
         pipelineRun.metadata.labels['appstudio.openshift.io/service'] == 'release' &&
-        'pipelines.appstudio.openshift.io/type' in pipelineRun.metadata.labels &&
-        pipelineRun.metadata.labels['pipelines.appstudio.openshift.io/type'] == 'tenant' ?
+        'release.appstudio.openshift.io/namespace' in pipelineRun.metadata.labels &&
+        pipelineRun.metadata.labels['release.appstudio.openshift.io/namespace'] == plrNamespace ?
         priority('konflux-tenant-release') :
 
         plrNamespace == 'mintmaker' ? priority('konflux-dependency-update') :
