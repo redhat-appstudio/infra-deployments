@@ -9,7 +9,9 @@
         memory: "4Gi"
       limits:
         cpu: "1"
-        memory: "4Gi"
+        memory: "5Gi"
     env:
       - name: GOMEMLIMIT
-        value: "3277MiB"
+        valueFrom:
+          resourceFieldRef:
+            resource: requests.memory
