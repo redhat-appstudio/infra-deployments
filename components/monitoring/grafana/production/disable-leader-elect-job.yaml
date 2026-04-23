@@ -1,0 +1,169 @@
+# ArgoCD hook to disable leader election for single-replica grafana-operator
+# Patches the ClusterServiceVersion (OLM's source of truth) to remove the hardcoded
+# --leader-elect flag, allowing the ENABLE_LEADER_ELECTION env var to take effect.
+# OLM will automatically reconcile the Deployment to match the patched CSV.
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: disable-leader-elect
+  namespace: appstudio-grafana
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/sync-wave: "0"
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: disable-leader-elect
+  namespace: appstudio-grafana
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/sync-wave: "0"
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+rules:
+- apiGroups:
+  - operators.coreos.com
+  resources:
+  - clusterserviceversions
+  verbs:
+  - get
+  - patch
+- apiGroups:
+  - operators.coreos.com
+  resources:
+  - subscriptions
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: disable-leader-elect
+  namespace: appstudio-grafana
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/sync-wave: "0"
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: disable-leader-elect
+subjects:
+- kind: ServiceAccount
+  name: disable-leader-elect
+  namespace: appstudio-grafana
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: disable-grafana-leader-elect-csv
+  namespace: appstudio-grafana
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 3
+  template:
+    spec:
+      serviceAccountName: disable-leader-elect
+      containers:
+      - name: patch
+        image: registry.redhat.io/openshift4/ose-cli:v4.12
+        securityContext:
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+        command:
+        - /bin/bash
+        - -c
+        - |
+          set -euo pipefail
+
+          NS="appstudio-grafana"
+          SUBSCRIPTION="grafana-operator"
+          CONTAINER="manager"
+
+          echo "Fetching installed CSV from subscription: $SUBSCRIPTION in namespace: $NS"
+
+          # Wait for subscription to report installed CSV (with retries)
+          # 5-minute timeout to handle slow OLM operations under load
+          MAX_RETRIES=60
+          RETRY_DELAY=5
+          CSV=""
+          START_TIME=$(date +%s)
+
+          for i in $(seq 1 $MAX_RETRIES); do
+            CSV=$(oc get subscriptions.operators.coreos.com "$SUBSCRIPTION" -n "$NS" -o jsonpath='{.status.installedCSV}' 2>/dev/null || echo "")
+            if [ -n "$CSV" ]; then
+              ELAPSED=$(($(date +%s) - START_TIME))
+              echo "Found installed CSV: $CSV (attempt $i/$MAX_RETRIES, elapsed ${ELAPSED}s)"
+              break
+            fi
+            if [ $i -eq $MAX_RETRIES ]; then
+              ELAPSED=$(($(date +%s) - START_TIME))
+              echo "ERROR: Subscription $SUBSCRIPTION has no installedCSV after $MAX_RETRIES attempts (${ELAPSED}s elapsed)"
+              echo ""
+              echo "Subscription status:"
+              oc get subscriptions.operators.coreos.com "$SUBSCRIPTION" -n "$NS" -o jsonpath='{.status}' 2>/dev/null || echo "Failed to get subscription status"
+              echo ""
+              echo "Subscription conditions:"
+              oc get subscriptions.operators.coreos.com "$SUBSCRIPTION" -n "$NS" -o jsonpath='{.status.conditions}' 2>/dev/null || echo "Failed to get subscription conditions"
+              echo ""
+              exit 1
+            fi
+            ELAPSED=$(($(date +%s) - START_TIME))
+            echo "Subscription not ready yet, waiting ${RETRY_DELAY}s (attempt $i/$MAX_RETRIES, elapsed ${ELAPSED}s)..."
+            sleep $RETRY_DELAY
+          done
+
+          # Verify CSV exists
+          if ! oc get csv "$CSV" -n "$NS" &>/dev/null; then
+            echo "ERROR: CSV $CSV reported by subscription but not found in cluster"
+            exit 1
+          fi
+
+          # Verify python3 is available
+          if ! command -v python3 &>/dev/null; then
+            echo "ERROR: python3 not found in container image"
+            exit 1
+          fi
+
+          # Validate container exists by name in first deployment - pass container name as argument
+          CONTAINER_INDEX=$(oc get csv "$CSV" -n "$NS" -o json | python3 -c 'import json,sys;csv=json.load(sys.stdin);containers=csv["spec"]["install"]["spec"]["deployments"][0]["spec"]["template"]["spec"]["containers"];idx=next((i for i,c in enumerate(containers) if c.get("name")==sys.argv[1]),-1);print(idx)' "$CONTAINER")
+
+          if [ "$CONTAINER_INDEX" = "-1" ]; then
+            echo "ERROR: Container '$CONTAINER' not found in CSV $CSV deployment[0]"
+            exit 1
+          fi
+
+          echo "Found container '$CONTAINER' at index $CONTAINER_INDEX in CSV"
+
+          CURRENT_ARGS=$(oc get csv "$CSV" -n "$NS" \
+            -o jsonpath="{.spec.install.spec.deployments[0].spec.template.spec.containers[$CONTAINER_INDEX].args}")
+
+          if echo "$CURRENT_ARGS" | grep -q '"--leader-elect"'; then
+            echo "Removing --leader-elect from CSV args"
+
+            # Generate patch - pass index as argument to avoid shell interpolation
+            PATCH=$(oc get csv "$CSV" -n "$NS" -o json | python3 -c 'import json,sys;idx=int(sys.argv[1]);csv=json.load(sys.stdin);args=[a for a in csv["spec"]["install"]["spec"]["deployments"][0]["spec"]["template"]["spec"]["containers"][idx]["args"] if a!="--leader-elect"];print(json.dumps([{"op":"replace","path":f"/spec/install/spec/deployments/0/spec/template/spec/containers/{idx}/args","value":args}]))' "$CONTAINER_INDEX")
+
+            # Apply patch with error handling
+            if oc patch csv "$CSV" -n "$NS" --type=json -p "$PATCH"; then
+              echo "Patched CSV: --leader-elect removed. OLM will reconcile deployment to match."
+            else
+              echo "ERROR: Failed to patch CSV"
+              exit 1
+            fi
+          else
+            echo "No --leader-elect flag found in CSV args, already patched or correct."
+          fi
+      restartPolicy: Never
