@@ -1,7 +1,7 @@
-# ArgoCD hooks to disable leader election for single-replica grafana-operator
-# Two-layer approach:
-#   1. CSV patch (primary): Patches ClusterServiceVersion - OLM's source of truth
-#   2. Deployment patch (backup): Patches Deployment directly as safety net
+# ArgoCD hook to disable leader election for single-replica grafana-operator
+# Patches the ClusterServiceVersion (OLM's source of truth) to remove the hardcoded
+# --leader-elect flag, allowing the ENABLE_LEADER_ELECTION env var to take effect.
+# OLM will automatically reconcile the Deployment to match the patched CSV.
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -24,19 +24,18 @@ metadata:
     argocd.argoproj.io/hook-delete-policy: HookSucceeded
 rules:
 - apiGroups:
-  - apps
-  resources:
-  - deployments
-  verbs:
-  - get
-  - patch
-- apiGroups:
   - operators.coreos.com
   resources:
   - clusterserviceversions
   verbs:
   - get
   - patch
+- apiGroups:
+  - operators.coreos.com
+  resources:
+  - subscriptions
+  verbs:
+  - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -59,66 +58,12 @@ subjects:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: disable-grafana-leader-elect-deployment
-  namespace: appstudio-grafana
-  annotations:
-    argocd.argoproj.io/hook: Sync
-    argocd.argoproj.io/sync-wave: "1"
-    argocd.argoproj.io/hook-delete-policy: HookSucceeded, BeforeHookCreation
-spec:
-  backoffLimit: 3
-  template:
-    spec:
-      serviceAccountName: disable-leader-elect
-      containers:
-      - name: patch
-        image: registry.redhat.io/openshift4/ose-cli:v4.12
-        securityContext:
-          readOnlyRootFilesystem: true
-          runAsNonRoot: true
-        resources:
-          requests:
-            cpu: 100m
-            memory: 128Mi
-          limits:
-            cpu: 200m
-            memory: 256Mi
-        command:
-        - /bin/bash
-        - -c
-        - |
-          DEPLOY="grafana-operator-controller-manager-v5"
-          NS="appstudio-grafana"
-
-          CURRENT_ARGS=$(oc get deployment "$DEPLOY" -n "$NS" \
-            -o jsonpath='{.spec.template.spec.containers[0].args}')
-
-          if echo "$CURRENT_ARGS" | grep -q '"--leader-elect"'; then
-            echo "Removing --leader-elect from $DEPLOY args"
-            oc get deployment "$DEPLOY" -n "$NS" -o json \
-              | python3 -c "
-          import json, sys
-          dep = json.load(sys.stdin)
-          args = dep['spec']['template']['spec']['containers'][0]['args']
-          args = [a for a in args if a != '--leader-elect']
-          patch = {'spec':{'template':{'spec':{'containers':[{'name':'manager','args':args}]}}}}
-          print(json.dumps(patch))
-          " | oc patch deployment "$DEPLOY" -n "$NS" --type=strategic -p "$(cat -)"
-            echo "Patched deployment: --leader-elect removed. ENABLE_LEADER_ELECTION=false env var now takes effect."
-          else
-            echo "No --leader-elect flag found in $DEPLOY args, nothing to do."
-          fi
-      restartPolicy: Never
----
-apiVersion: batch/v1
-kind: Job
-metadata:
   name: disable-grafana-leader-elect-csv
   namespace: appstudio-grafana
   annotations:
     argocd.argoproj.io/hook: PostSync
     argocd.argoproj.io/sync-wave: "1"
-    argocd.argoproj.io/hook-delete-policy: HookSucceeded, BeforeHookCreation
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
 spec:
   backoffLimit: 3
   template:
@@ -141,29 +86,76 @@ spec:
         - /bin/bash
         - -c
         - |
-          CSV="grafana-operator.v5.21.2"
-          NS="appstudio-grafana"
+          set -euo pipefail
 
-          echo "Checking CSV: $CSV in namespace: $NS"
+          NS="appstudio-grafana"
+          SUBSCRIPTION="grafana-operator"
+          CONTAINER="manager"
+
+          echo "Fetching installed CSV from subscription: $SUBSCRIPTION in namespace: $NS"
+
+          # Wait for subscription to report installed CSV (with retries)
+          MAX_RETRIES=10
+          RETRY_DELAY=3
+          CSV=""
+          for i in $(seq 1 $MAX_RETRIES); do
+            CSV=$(oc get subscriptions.operators.coreos.com "$SUBSCRIPTION" -n "$NS" -o jsonpath='{.status.installedCSV}' 2>/dev/null || echo "")
+            if [ -n "$CSV" ]; then
+              echo "Found installed CSV: $CSV (attempt $i/$MAX_RETRIES)"
+              break
+            fi
+            if [ $i -eq $MAX_RETRIES ]; then
+              echo "ERROR: Subscription $SUBSCRIPTION has no installedCSV after $MAX_RETRIES attempts"
+              echo "Subscription status:"
+              oc get subscriptions.operators.coreos.com "$SUBSCRIPTION" -n "$NS" -o jsonpath='{.status}' 2>/dev/null || echo "Failed to get subscription status"
+              echo ""
+              echo "Subscription conditions:"
+              oc get subscriptions.operators.coreos.com "$SUBSCRIPTION" -n "$NS" -o jsonpath='{.status.conditions}' 2>/dev/null || echo "Failed to get subscription conditions"
+              echo ""
+              exit 1
+            fi
+            echo "Subscription not ready yet, waiting ${RETRY_DELAY}s (attempt $i/$MAX_RETRIES)..."
+            sleep $RETRY_DELAY
+          done
+
+          # Verify CSV exists
+          if ! oc get csv "$CSV" -n "$NS" &>/dev/null; then
+            echo "ERROR: CSV $CSV reported by subscription but not found in cluster"
+            exit 1
+          fi
+
+          # Verify python3 is available
+          if ! command -v python3 &>/dev/null; then
+            echo "ERROR: python3 not found in container image"
+            exit 1
+          fi
+
+          # Validate container exists by name in first deployment - pass container name as argument
+          CONTAINER_INDEX=$(oc get csv "$CSV" -n "$NS" -o json | python3 -c 'import json,sys;csv=json.load(sys.stdin);containers=csv["spec"]["install"]["spec"]["deployments"][0]["spec"]["template"]["spec"]["containers"];idx=next((i for i,c in enumerate(containers) if c.get("name")==sys.argv[1]),-1);print(idx)' "$CONTAINER")
+
+          if [ "$CONTAINER_INDEX" = "-1" ]; then
+            echo "ERROR: Container '$CONTAINER' not found in CSV $CSV deployment[0]"
+            exit 1
+          fi
+
+          echo "Found container '$CONTAINER' at index $CONTAINER_INDEX in CSV"
 
           CURRENT_ARGS=$(oc get csv "$CSV" -n "$NS" \
-            -o jsonpath='{.spec.install.spec.deployments[0].spec.template.spec.containers[0].args}')
+            -o jsonpath="{.spec.install.spec.deployments[0].spec.template.spec.containers[$CONTAINER_INDEX].args}")
 
           if echo "$CURRENT_ARGS" | grep -q '"--leader-elect"'; then
             echo "Removing --leader-elect from CSV args"
 
-            oc patch csv "$CSV" -n "$NS" --type=json -p='[
-              {
-                "op": "replace",
-                "path": "/spec/install/spec/deployments/0/spec/template/spec/containers/0/args",
-                "value": [
-                  "--health-probe-bind-address=:8081",
-                  "--metrics-bind-address=0.0.0.0:9090"
-                ]
-              }
-            ]'
+            # Generate patch - pass index as argument to avoid shell interpolation
+            PATCH=$(oc get csv "$CSV" -n "$NS" -o json | python3 -c 'import json,sys;idx=int(sys.argv[1]);csv=json.load(sys.stdin);args=[a for a in csv["spec"]["install"]["spec"]["deployments"][0]["spec"]["template"]["spec"]["containers"][idx]["args"] if a!="--leader-elect"];print(json.dumps([{"op":"replace","path":f"/spec/install/spec/deployments/0/spec/template/spec/containers/{idx}/args","value":args}]))' "$CONTAINER_INDEX")
 
-            echo "Patched CSV: --leader-elect removed. OLM will reconcile deployment to match."
+            # Apply patch with error handling
+            if oc patch csv "$CSV" -n "$NS" --type=json -p "$PATCH"; then
+              echo "Patched CSV: --leader-elect removed. OLM will reconcile deployment to match."
+            else
+              echo "ERROR: Failed to patch CSV"
+              exit 1
+            fi
           else
             echo "No --leader-elect flag found in CSV args, already patched or correct."
           fi
