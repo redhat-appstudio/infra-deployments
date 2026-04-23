@@ -12,10 +12,10 @@ patchesStrategicMerge:
   - otelcollector-patch.yaml
 
 helmGlobals:
-  chartHome: ../base
+  chartHome: ./base
 
 helmCharts:
-- name: host-config-chart-stage
+- name: host-config-chart
   releaseName: host-config
   namespace: multi-platform-controller
   valuesFile: host-values.yaml
