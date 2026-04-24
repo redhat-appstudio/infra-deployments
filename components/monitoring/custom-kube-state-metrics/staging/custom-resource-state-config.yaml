@@ -52,3 +52,30 @@ data:
                 gauge:
                   path: [status, lastBackup]
                   nilIsZero: true
+
+        ###############################################################################
+        # Hanging PipelineRun detection — tracks PipelineRuns stuck on finalizers
+        # after the Tekton pruner requested deletion.
+        ###############################################################################
+        - groupVersionKind:
+            group: "tekton.dev"
+            version: "v1"
+            kind: "PipelineRun"
+          labelsFromPath:
+            pipelinerun: [metadata, name]
+            namespace: [metadata, namespace]
+          metrics:
+            - name: "konflux_pipelinerun_deletion_timestamp_seconds"
+              help: "Unix timestamp when deletion was requested. Only emitted when deletionTimestamp is set, meaning a finalizer is blocking garbage collection."
+              each:
+                type: Gauge
+                gauge:
+                  path: [metadata, deletionTimestamp]
+            - name: "konflux_pipelinerun_finalizer"
+              help: "Finalizers present on a PipelineRun. One series per finalizer; label identifies the responsible service."
+              each:
+                type: Info
+                info:
+                  path: [metadata, finalizers]
+                  labelsFromPath:
+                    finalizer: []
