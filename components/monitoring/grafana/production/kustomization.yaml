@@ -4,6 +4,7 @@ resources:
   - ../base
   - dashboards
   - https://github.com/redhat-appstudio/o11y/config/exporters/monitoring/grafana/base?ref=b4f5902e18f3d8788181e174c186d4a01aa6cc47
+  - disable-leader-elect-job.yaml
 
 images:
 - name: quay.io/redhat-appstudio/o11y
@@ -15,3 +16,7 @@ patches:
     target:
       name: grafana-oauth
       kind: Grafana
+  - path: grafana-operator-resources-patch.yaml
+    target:
+      name: grafana-operator
+      kind: Subscription
