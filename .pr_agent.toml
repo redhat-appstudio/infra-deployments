@@ -1,0 +1,19 @@
+[pr_reviewer]
+extra_instructions = """
+Check if this PR includes a staging validation link.
+
+The link must appear somewhere in the PR description or in a PR comment, in one of these formats:
+- A `## Validation` section containing `Staging PR: <full GitHub PR URL>`
+- A line starting with `Staging PR:` or `Stage PR:` followed by a full GitHub PR URL
+
+If no staging PR link is found, post a comment that:
+1. Mentions the PR author with @
+2. States the PR is missing a staging validation link
+3. Shows the exact format to use:
+
+## Validation
+
+Staging PR: <your-staging-pr-url>
+
+Note: The production approval dashboard requires the full GitHub PR URL (not a PR number) to verify the staging PR is merged and calculate soak time.
+"""
