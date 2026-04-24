@@ -15,7 +15,6 @@ resources:
 - ../../base
 - loki-secret.yaml
 - sa.yaml
-- rbac.yaml
 
 patches:
   - path: scc-patch.yaml
@@ -34,19 +33,5 @@ patches:
       kind: StatefulSet
       namespace: product-kubearchive-logging
       labelSelector: app.kubernetes.io/name=loki,app.kubernetes.io/component=ingester
-  - path: servicemonitor-patch.yaml
-    target:
-      group: monitoring.coreos.com
-      version: v1
-      kind: ServiceMonitor
-      name: product-kubearchive-logging-monitor
-  - patch: |
-      - op: add
-        path: /spec/unhealthyPodEvictionPolicy
-        value: AlwaysAllow
-    target:
-      group: policy
-      version: v1
-      kind: PodDisruptionBudget
-      labelSelector: app.kubernetes.io/name=loki
+
 
