@@ -1,4 +1,6 @@
 ---
+# Development-specific service accounts (grafana, minio)
+# Base service accounts (loki, loki-canary) are provided by ../../base
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -7,7 +9,6 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "-1"  # Before workloads
 ---
-# Additional service accounts for development (minio)
 apiVersion: v1
 kind: ServiceAccount
 metadata:
