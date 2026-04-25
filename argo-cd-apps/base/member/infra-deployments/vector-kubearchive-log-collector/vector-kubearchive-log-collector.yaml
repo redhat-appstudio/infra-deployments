@@ -74,6 +74,9 @@ spec:
         namespace: product-kubearchive-logging
         server: '{{server}}'
       syncPolicy:
+        managedNamespaceMetadata:
+          labels:
+            openshift.io/cluster-monitoring: "true"
         automated:
           prune: true
           selfHeal: true
