@@ -92,6 +92,31 @@ cel:
     - |
         plrNamespace == 'mintmaker' ? [resource('mintmaker', 1)] : []
 
+    # The token mechanism allows us to balance admitted PipelineRuns.
+    # Here we want to state that each PipelineRuns needs one token, but
+    # Build PipelineRuns are usually heavier, so they need 2.
+    #
+    # The total amount of PipelineRuns executing in the system at the same time
+    # will be decided by the first to saturate between `tekton.dev/pipelineruns`
+    # and `konflux-ci.dev/token`. This way we can tune the percentage of usually
+    # heavier PipelineRuns with respect to lighter ones.
+    #
+    # As an example, if both `tekton.dev/pipelineruns` and `konflux-ci.dev/token`
+    # are 600, we could have:
+    # * 300 Build PipelineRuns
+    # * 200 Build PipelineRuns + 200 Non-Build PipelineRuns
+    # * 100 Build PipelineRuns + 400 Non-Build PipelineRuns
+    # * 600 Non-Build PipelineRuns
+    - |
+        pacEventType == 'push' ||
+          pacEventType == 'pull_request' ||
+          pacEventType == "Merge_Request" ||
+          pacEventType == 'test-comment' ||
+          pacEventType == 'retest-comment' ||
+          pacEventType == 'retest-all-comment' ||
+          pacEventType == 'ok-to-test-comment'  ? resource('konflux-ci-dev-token', 2) :
+        resource('konflux-ci-dev-token', 1)
+
     # Set the pipeline priority
     - |
         has(pipelineRun.metadata.labels) &&
