@@ -78,7 +78,7 @@ loki:
     chunk_idle_period: 1h
     max_chunk_age: 2h
     chunk_encoding: snappy            # Compress data (reduces S3 transfer size)
-    chunk_retain_period: 1h           # Keep chunks in memory after flush
+    chunk_retain_period: 5m
     flush_op_timeout: 10m             # Add timeout for S3 operations
     lifecycler:
       ring:
@@ -219,17 +219,21 @@ indexGateway:
 # Increased maxItemMemory to prevent "object too large for cache" errors
 chunksCache:
   enabled: true
+  allocatedMemory: 8192
   replicas: 1
   batchSize: 256  # Batch size for sending/receiving chunks from cache
   parallelism: 10  # Parallel threads for cache operations
   maxItemMemory: 30  # MB - Increased from 10MB to handle chunks (3MB target + compression overhead + metadata)
   defaultValidity: 12h  # How long cached chunks are stored
+  extraExtendedOptions: "slab_reassign,slab_automove"
 
 resultsCache:
   enabled: true
+  allocatedMemory: 1024
   replicas: 1
   maxItemMemory: 100  # MB - Increased from 10MB to handle large query results (can be much larger than chunks)
   defaultValidity: 12h  # How long cached query results are stored
+  extraExtendedOptions: "slab_reassign,slab_automove"
 
 memcached:
   enabled: true
