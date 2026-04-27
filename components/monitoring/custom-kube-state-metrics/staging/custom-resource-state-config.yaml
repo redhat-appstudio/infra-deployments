@@ -64,19 +64,13 @@ data:
           labelsFromPath:
             pipelinerun: [metadata, name]
             namespace: [metadata, namespace]
+            pipeline: [metadata, labels, tekton.dev/pipeline]
+            konflux_service: [metadata, labels, appstudio.openshift.io/service]
           metrics:
             - name: "konflux_pipelinerun_deletion_timestamp_seconds"
-              help: "Unix timestamp when deletion was requested. Only emitted when deletionTimestamp is set, meaning a finalizer is blocking garbage collection."
+              help: "Unix timestamp when deletion was requested (0 = not deleted). Use > 0 to find stuck PipelineRuns."
               each:
                 type: Gauge
                 gauge:
                   path: [metadata, deletionTimestamp]
                   nilIsZero: true
-            - name: "konflux_pipelinerun_finalizer_info"
-              help: "Finalizers present on a PipelineRun. One series per finalizer; label identifies the responsible service."
-              each:
-                type: Info
-                info:
-                  path: [metadata, finalizers]
-                  labelsFromPath:
-                    finalizer: []
