@@ -2,78 +2,93 @@
 # so I'm introducing registry at each image.
 global:
   imageRegistry: quay.io
+
 loki:
   image:
     registry: quay.io
     repository: kubearchive/loki
-    tag: 3.6.3
+    tag: 3.7.1
+
 lokiCanary:
   image:
     registry: quay.io
     repository: kubearchive/loki-canary
-    tag: 3.6.3
+    tag: 3.7.1
+
 test:
   image:
     registry: quay.io
     repository: kubearchive/loki-helm-test
     tag: latest
+
 memcached:
   image:
     registry: quay.io
     repository: kubearchive/memcached
-    tag: 1.6.39-alpine
+    tag: 1.6.41-alpine
+
 memcachedExporter:
   image:
     registry: quay.io
     repository: kubearchive/memcached-exporter
-    tag: v0.15.4
+    tag: v0.16.0
+
 sidecar:
   image:
     registry: quay.io
     repository: kubearchive/k8s-sidecar
-    tag: 1.30.9
+    tag: 2.6.0
+
 gateway:
   image:
     registry: quay.io
     repository: nginx/nginx-unprivileged
-    tag: 1.24-alpine
+    tag: 1.29-alpine
+
 compactor:
   image:
     registry: quay.io
     repository: kubearchive/loki
-    tag: 3.6.3
+    tag: 3.7.1
+
 distributor:
   image:
     registry: quay.io
     repository: kubearchive/loki
-    tag: 3.6.3
+    tag: 3.7.1
+
 ingester:
   image:
     registry: quay.io
     repository: kubearchive/loki
-    tag: 3.6.3
+    tag: 3.7.1
+
 querier:
   image:
     registry: quay.io
     repository: kubearchive/loki
-    tag: 3.6.3
+    tag: 3.7.1
+
 queryFrontend:
   image:
     registry: quay.io
     repository: kubearchive/loki
-    tag: 3.6.3
+    tag: 3.7.1
+
 queryScheduler:
   image:
     registry: quay.io
     repository: kubearchive/loki
-    tag: 3.6.3
+    tag: 3.7.1
+
 indexGateway:
   image:
     registry: quay.io
     repository: kubearchive/loki
-    tag: 3.6.3
+    tag: 3.7.1
+
 ruler:
   image:
     registry: quay.io
     repository: kubearchive/loki
-    tag: 3.6.3
+    tag: 3.7.1
