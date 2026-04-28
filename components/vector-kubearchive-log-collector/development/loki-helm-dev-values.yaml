@@ -76,25 +76,26 @@ loki:
     shard_streams:
       enabled: false
     retention_period: 24h     # Reduce from 744h for development
-    ingestion_rate_mb: 5      # Reduce from 10 for development
-    ingestion_burst_size_mb: 10  # Reduce from 20
+    ingestion_rate_mb: 3      # Reduce from 10 — limits total ingestion rate per tenant
+    ingestion_burst_size_mb: 6  # Reduce from 20 — limits burst ingestion
     max_streams_per_user: 0
     max_line_size: 3145728
-    per_stream_rate_limit: 20M
-    per_stream_rate_limit_burst: 50M
+    per_stream_rate_limit: 5M  # Reduce from 20M — limits per-stream ingestion to curb chunk growth
+    per_stream_rate_limit_burst: 10M  # Reduce from 50M
     reject_old_samples: true
     reject_old_samples_max_age: 6h  # Reduce from 168h
     discover_service_name: []
     discover_log_levels: false
     volume_enabled: true
     max_global_streams_per_user: 10000  # Reduce from 50000
-    max_entries_limit_per_query: 100000
+    max_entries_limit_per_query: 5000  # Reduce from 100000 — single query was decompressing 268MB
     increment_duplicate_timestamp: true
     allow_structured_metadata: true
-    # Query timeout configuration to prevent context canceled errors
     max_query_length: 721h      # Maximum time range for queries (30 days)
-    max_query_parallelism: 32  # Maximum number of parallel queries
-    query_timeout: 10m         # Timeout for individual queries (10 minutes)
+    max_query_parallelism: 4  # Reduce from 32 — fewer parallel subqueries = less concurrent memory
+    query_timeout: 5m         # Reduce from 10m — fail fast instead of accumulating memory
+    max_query_bytes_read: 150MB  # Cap bytes read per query — production queries hit 402MB
+    max_querier_bytes_read: 300MB  # Cap total bytes across concurrent queries per querier
   runtimeConfig:
     configs:
       kubearchive:
@@ -105,10 +106,10 @@ loki:
   ingester:
     autoforget_unhealthy: true
     chunk_encoding: snappy
-    chunk_target_size: 3145728
-    chunk_idle_period: 1h
-    max_chunk_age: 2h
-    chunk_retain_period: 1h
+    chunk_target_size: 1572864  # Reduce from 3MB to 1.5MB — production chunks grew to 8MB compressed / 40MB uncompressed
+    chunk_idle_period: 30m  # Reduce from 1h — flush idle chunks sooner to free memory
+    max_chunk_age: 1h  # Reduce from 2h — cap how long a chunk can live in memory
+    chunk_retain_period: 5m
     flush_op_timeout: 10m
     lifecycler:
       ring:
@@ -118,7 +119,7 @@ loki:
       dir: /var/loki/wal
       checkpoint_duration: 5m
       flush_on_shutdown: true
-      replay_memory_ceiling: 2GB
+      replay_memory_ceiling: 512MB  # Reduce from 2GB — must fit within container memory limit
   server:
     grpc_server_max_recv_msg_size: 15728640  # 15MB
     grpc_server_max_send_msg_size: 15728640
@@ -131,8 +132,7 @@ loki:
       max_recv_msg_size: 15728640  # 15MB
       max_send_msg_size: 15728640  # 15MB
   querier:
-    # Reduce concurrency for development
-    max_concurrent: 2  # Reduce from 4
+    max_concurrent: 1  # Reduce from 2 — single concurrent query prevents memory spikes from parallel decompression
   query_range:
     # Query range configuration for better query performance
     parallelise_shardable_queries: true  # Enable parallel query execution
@@ -149,10 +149,10 @@ ingester:
     enabled: false
   resources:
     requests:
-      cpu: 50m  # Reduce from 100m
-      memory: 256Mi  # Increase from 128Mi to prevent OOM
+      cpu: 50m
+      memory: 512Mi  # Increase from 256Mi — WAL replay + chunk buffering needs headroom
     limits:
-      memory: 512Mi  # Increase from 256Mi to prevent OOM
+      memory: 1Gi  # Increase from 512Mi — production OOMed at 4Gi with old config
   persistence:
     enabled: false  # Disable persistence for dev to avoid storage class issues
     size: 10Gi
@@ -199,10 +199,10 @@ querier:
     enabled: false
   resources:
     requests:
-      cpu: 50m  # Keep at 50m
-      memory: 128Mi  # Increase from 128Mi for safety
+      cpu: 50m
+      memory: 256Mi  # Increase from 128Mi
     limits:
-      memory: 512Mi  # Restore to 512Mi as it needs more memory
+      memory: 1Gi  # Increase from 512Mi — queries decompress up to 268MB from ingesters
   affinity: {}
 
 queryFrontend:
@@ -263,18 +263,22 @@ indexGateway:
 # from chunksCache and resultsCache settings
 # Increased maxItemMemory to prevent "object too large for cache" errors
 chunksCache:
+  allocatedMemory: 8192
   enabled: true
   replicas: 1
   batchSize: 256  # Batch size for sending/receiving chunks from cache
   parallelism: 10  # Parallel threads for cache operations
   maxItemMemory: 10  # MB
   defaultValidity: 12h  # How long cached chunks are stored
+  extraExtendedOptions: "slab_reassign,slab_automove"
 
 resultsCache:
+  allocatedMemory: 1024
   enabled: true
   replicas: 1
   maxItemMemory: 10  # MB
   defaultValidity: 12h  # How long cached query results are stored
+  extraExtendedOptions: "slab_reassign,slab_automove"
 
 memcached:
   enabled: true
