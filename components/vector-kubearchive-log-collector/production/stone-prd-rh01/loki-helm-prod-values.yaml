@@ -62,9 +62,13 @@ loki:
     discover_log_levels: false
     volume_enabled: true
     max_global_streams_per_user: 75000
-    max_entries_limit_per_query: 100000
+    max_entries_limit_per_query: 10000  # Reduce from 100000 — large result sets cause querier OOM
     increment_duplicate_timestamp: true
     allow_structured_metadata: true
+    max_query_parallelism: 8  # Limit parallel subqueries to bound concurrent memory usage
+    query_timeout: 5m  # Fail fast instead of accumulating memory
+    max_query_bytes_read: 300MB  # Cap bytes read per query — production queries hit 402MB
+    max_querier_bytes_read: 1GB  # Cap total bytes across concurrent queries per querier
   runtimeConfig:
     configs:
       kubearchive:
@@ -74,12 +78,12 @@ loki:
         log_duplicate_stream_info: true
   ingester:
     autoforget_unhealthy: true
-    chunk_target_size: 8388608        # 8MB
-    chunk_idle_period: 1h
-    max_chunk_age: 2h
-    chunk_encoding: snappy            # Compress data (reduces S3 transfer size)
-    chunk_retain_period: 1h           # Keep chunks in memory after flush
-    flush_op_timeout: 10m             # Add timeout for S3 operations
+    chunk_target_size: 4194304        # 4MB — reduce from 8MB, mintmaker chunks grew to 66MB uncompressed each
+    chunk_idle_period: 30m            # Reduce from 1h — flush idle chunks sooner to free memory
+    max_chunk_age: 1h                 # Reduce from 2h — cap how long a chunk lives in memory
+    chunk_encoding: snappy
+    chunk_retain_period: 5m           # Reduce from 1h — flushed chunks (up to 399MB) lingered in memory
+    flush_op_timeout: 10m
     lifecycler:
       ring:
         heartbeat_timeout: 10m
@@ -102,7 +106,7 @@ loki:
       max_send_msg_size: 15728640  # 15MB
   # Tuning for high-load queries
   querier:
-    max_concurrent: 8
+    max_concurrent: 4  # Reduce from 8 — 8 concurrent queries decompressing 268MB each exceeds 6Gi
   query_range:
     # split_queries_by_interval deprecated in Loki 3.x - removed
     parallelise_shardable_queries: false
