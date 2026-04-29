@@ -1383,13 +1383,34 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
     },
     "nudging_production": {
         "pipelinerun_key": "nudge_pipelinerun",
-        "config_key": "production"
+        "config_key": "production",
+        "expected": {
+            "annotations": {},
+            "labels": {
+                "build.appstudio.openshift.io/type": "nudge",
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-dependency-update"
+            }
+        }
     },
 
     # Test key PipelineRuns with production kflux-ocp-p01 config
     "multiplatform_new_production-kflux-ocp-p01": {
         "pipelinerun_key": "multiplatform_new",
-        "config_key": "production-kflux-ocp-p01"
+        "config_key": "production-kflux-ocp-p01",
+        "expected": {
+            "annotations": {
+                "kueue.konflux-ci.dev/requests-linux-amd64": "1",
+                "kueue.konflux-ci.dev/requests-linux-s390x": "1",
+                "kueue.konflux-ci.dev/requests-linux-arm64": "1",
+                "kueue.konflux-ci.dev/requests-aws-ip": "2"
+            },
+            "labels": {
+                "kueue.x-k8s.io/priority-class": "konflux-post-merge-build",
+                "kueue.x-k8s.io/queue-name": "pipelines-queue", 
+                "pipelinesascode.tekton.dev/event-type": "push"
+            }
+        }
     },
     "release_managed_production-kflux-ocp-p01": {
         "pipelinerun_key": "release_managed",
