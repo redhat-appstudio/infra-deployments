@@ -23,7 +23,7 @@ configMapGenerator:
         annotations:
           argocd.argoproj.io/sync-wave: "-2"
       literals:
-        - MIGRATION_VERSION=5
+        - MIGRATION_VERSION=13
     - name: kubearchive-logging-writer
       literals:
           - |
@@ -111,7 +111,7 @@ patches:
               spec:
                 containers:
                   - name: vacuum
-                    image: quay.io/kubearchive/vacuum:v1.20.0
+                    image: quay.io/kubearchive/vacuum:v1.21.3
 
   - patch: |-
       apiVersion: batch/v1

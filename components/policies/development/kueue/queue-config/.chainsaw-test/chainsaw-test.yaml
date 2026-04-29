@@ -397,3 +397,80 @@ spec:
     try:
     - assert:
         file: resources/expected-localqueue-kanary.yaml
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: ensure-kueue-remains-on-policy-deletion
+spec:
+  description: |
+    Tests that a LocalQueue is not removed when the associated policy is deleted.
+  concurrent: false
+  namespace: kueue-queue-preserved
+  bindings:
+  - name: suffix
+    value: orphan
+  steps:
+  - name: given-localqueue-crd-exists
+    description: |
+      Install the Kueue LocalQueue CRD so the API server accepts LocalQueue objects in the test cluster.
+    try:
+    - apply:
+        file: ./resources/localqueue-crd.yaml
+  - name: given-kyverno-has-permission-on-resources
+    description: |
+      Apply Kyverno RBAC so the policy engine can generate and reconcile LocalQueue resources.
+    try:
+    - apply:
+        file: ../kyverno-rbac.yaml
+  - name: given-cluster-policy-is-ready
+    description: |
+      Apply the queue bootstrap ClusterPolicy and assert Kyverno reports the policy as ready before exercising generation.
+    try:
+    - apply:
+        file: ../cluster-policy.yaml
+    - assert:
+        file: chainsaw-assert-clusterpolicy.yaml
+  - name: when-tenant-labeled-namespace-is-created
+    description: |
+      Create a namespace labeled konflux-ci.dev/type=tenant so the policy should generate a LocalQueue.
+    try:
+    - apply:
+        file: resources/namespace-tenant.yaml
+        template: true
+  - name: then-localqueue-is-created
+    description: |
+      Assert the expected pipelines-queue LocalQueue exists and matches the fixture (name and spec).
+    try:
+    - assert:
+        file: resources/expected-localqueue.yaml
+        template: true
+  - name: when-policy-is-deleted
+    description: |
+      Remove the policy from the cluster.
+    try:
+    - delete:
+        file: ../cluster-policy.yaml
+    - wait:
+        apiVersion: kyverno.io/v1
+        kind: ClusterPolicy
+        name: bootstrap-tenant-namespace-queue
+        for:
+          deletion: {}
+    - script:
+        content: |
+          while true; do
+            if [ "$(kubectl get updaterequests -n konflux-kyverno -o yaml | yq '.items | length')" -eq 0 ]; then
+              exit 0
+            fi
+            sleep 1
+          done
+        timeout: 30s
+  - name: then-localqueue-exists
+    description: |
+      Assert the LocalQueue created earlier still exists
+    try:
+    - assert:
+        file: resources/expected-localqueue.yaml
+        template: true

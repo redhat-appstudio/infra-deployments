@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: custom-kube-state-metrics-config
+  namespace: appstudio-monitoring
+data:
+  custom-resource-state.yaml: |
+    spec:
+      resources:
+        ###############################################################################
+        # Add your custom resources below this line
+        ###############################################################################
+        # Template:
+        # - groupVersionKind:
+        #     group: "<api-group>"
+        #     version: "<version>"
+        #     kind: "<Kind>"
+        #   labelsFromPath:
+        #     name: [metadata, name]
+        #     namespace: [metadata, namespace]  # omit for cluster-scoped
+        #   metrics:
+        #     - name: "<metric_name>"
+        #       help: "<description>"
+        #       each:
+        #         type: Gauge  # or StateSet, Info
+        #         gauge:
+        #           path: [status, someField]
+        #           nilIsZero: true
+
+        ###############################################################################
+        # Velero Schedules
+        ###############################################################################
+        - groupVersionKind:
+            group: "velero.io"
+            version: "v1"
+            kind: "Schedule"
+          labelsFromPath:
+            schedule: [metadata, name]
+            namespace: [metadata, namespace]
+          metrics:
+            - name: "velero_schedule_paused"
+              help: "Whether the Velero schedule is paused (1 = paused, 0 = active)"
+              each:
+                type: Gauge
+                gauge:
+                  path: [spec, paused]
+                  nilIsZero: true
+            - name: "velero_schedule_last_backup"
+              help: "status.lastBackup as Unix seconds; 0 if unset (UI n/a)."
+              each:
+                type: Gauge
+                gauge:
+                  path: [status, lastBackup]
+                  nilIsZero: true

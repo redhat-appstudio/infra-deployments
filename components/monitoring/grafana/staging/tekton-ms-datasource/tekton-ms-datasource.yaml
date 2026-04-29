@@ -1,0 +1,30 @@
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDatasource
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  name: prometheus-tekton-ms-ds
+  namespace: appstudio-grafana
+spec:
+  valuesFrom:
+    - targetPath: "secureJsonData.httpHeaderValue1"
+      valueFrom:
+        secretKeyRef:
+          name: "metrics-reader"
+          key: "token"
+  instanceSelector:
+    matchLabels:
+      dashboards: "appstudio-grafana"
+  datasource:
+    access: proxy
+    editable: true
+    isDefault: false
+    jsonData:
+      httpHeaderName1: "Authorization"
+      timeInterval: 5s
+      tlsSkipVerify: true
+    name: prometheus-tekton-ms-ds
+    secureJsonData:
+      httpHeaderValue1: "Bearer ${token}"
+    type: prometheus
+    url: 'https://appstudio-tekton-ms-prometheus.appstudio-tekton.svc:9090'
