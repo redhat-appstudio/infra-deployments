@@ -1,0 +1,15 @@
+---
+apiVersion: external-secrets.io/v1
+kind: ClusterSecretStore
+metadata:
+  name: insights-appsre-vault
+spec:
+  conditions:
+    - namespaces:
+        - insights-management-tenant
+        - hcm-eng-prod-tenant
+        - rh-subs-watch-tenant
+        - hcc-platex-services-tenant
+        - rh-platform-experien-tenant
+        - ansible-automationhu-tenant
+        - cost-mgmt-dev-tenant

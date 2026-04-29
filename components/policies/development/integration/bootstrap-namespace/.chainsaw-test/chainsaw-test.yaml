@@ -327,3 +327,74 @@ spec:
         expect:
         - check:
             ($error != null): true
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: orphan-resources-on-policy-deletion
+spec:
+  description: |
+    tests that resources created by this policy remain when the policy is deleted
+  concurrent: false
+  namespace: 'generate-new-namespace'
+  bindings:
+  - name: suffix
+    value: orphan
+  steps:
+  - name: given-konflux-integration-runner-clusterrole-exists
+    try:
+    - apply:
+        file: resources/actual-konflux-integration-runner-clusterrole.yaml
+  - name: given-kyverno-has-permission-on-resources
+    try:
+    - apply:
+        file: ../kyverno-rbac.yaml
+  - name: given-cluster-policy-is-ready
+    try:
+    - apply:
+        file: ../bootstrap-namespace.yaml
+    - assert:
+        file: chainsaw-assert-clusterpolicy.yaml
+  - name: when-konfluxcidev-labeled-namespace-is-created
+    try:
+    - apply:
+        file: resources/actual-namespace-konfluxcidev.yaml
+        template: true
+  - name: then-serviceaccount-is-created
+    try:
+    - assert:
+        file: resources/expected-integration-serviceaccount.yaml
+        template: true
+  - name: then-rolebinding-is-created
+    try:
+    - assert:
+        file: resources/expected-integration-rolebinding.yaml
+        template: true
+  - name: when-the-policy-is-deleted
+    try:
+    - delete:
+        file: ../bootstrap-namespace.yaml
+    - wait:
+        apiVersion: kyverno.io/v1
+        kind: ClusterPolicy
+        name: init-ns-integration
+        for:
+          deletion: {}
+    - script:
+        content: |
+          while true; do
+            if [ "$(kubectl get updaterequests -n konflux-kyverno -o yaml | yq '.items | length')" -eq 0 ]; then
+              exit 0
+            fi
+            sleep 1
+          done
+        timeout: 30s
+  - name: then-the-resouces-remain
+    try:
+    - assert:
+        file: resources/expected-integration-serviceaccount.yaml
+        template: true
+    - assert:
+        file: resources/expected-integration-rolebinding.yaml
+        template: true
