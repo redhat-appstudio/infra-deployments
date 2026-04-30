@@ -1,7 +1,383 @@
 # Test: `kueue-bootstrap-queue-new-tenant-labeled-namespace`
 
 Tests that a LocalQueue is created in a namespace labeled with
-`konflux-ci.dev/type=tenant`.
+`konflux-ci.dev/type=tenant` and no `kueue.konflux-ci.dev/stop-policy`
+annotation.
+
+
+## Bindings
+
+| # | Name | Value |
+|:-:|---|---|
+| 1 | `suffix` | "labeled" |
+
+## Steps
+
+| # | Name | Bindings | Try | Catch | Finally | Cleanup |
+|:-:|---|:-:|:-:|:-:|:-:|:-:|
+| 1 | [given-localqueue-crd-exists](#step-given-localqueue-crd-exists) | 0 | 1 | 0 | 0 | 0 |
+| 2 | [given-kyverno-has-permission-on-resources](#step-given-kyverno-has-permission-on-resources) | 0 | 1 | 0 | 0 | 0 |
+| 3 | [given-cluster-policy-is-ready](#step-given-cluster-policy-is-ready) | 0 | 2 | 0 | 0 | 0 |
+| 4 | [when-tenant-labeled-namespace-is-created](#step-when-tenant-labeled-namespace-is-created) | 0 | 1 | 0 | 0 | 0 |
+| 5 | [then-localqueue-is-created](#step-then-localqueue-is-created) | 0 | 1 | 0 | 0 | 0 |
+
+### Step: `given-localqueue-crd-exists`
+
+Install the Kueue LocalQueue CRD so the API server accepts LocalQueue objects in the test cluster.
+
+
+#### Try
+
+| # | Operation | Bindings | Outputs | Description |
+|:-:|---|:-:|:-:|---|
+| 1 | `apply` | 0 | 0 | *No description* |
+
+### Step: `given-kyverno-has-permission-on-resources`
+
+Apply Kyverno RBAC so the policy engine can generate and reconcile LocalQueue resources.
+
+
+#### Try
+
+| # | Operation | Bindings | Outputs | Description |
+|:-:|---|:-:|:-:|---|
+| 1 | `apply` | 0 | 0 | *No description* |
+
+### Step: `given-cluster-policy-is-ready`
+
+Apply the queue bootstrap ClusterPolicy and assert Kyverno reports the policy as ready before exercising generation.
+
+
+#### Try
+
+| # | Operation | Bindings | Outputs | Description |
+|:-:|---|:-:|:-:|---|
+| 1 | `apply` | 0 | 0 | *No description* |
+| 2 | `assert` | 0 | 0 | *No description* |
+
+### Step: `when-tenant-labeled-namespace-is-created`
+
+Create a namespace labeled konflux-ci.dev/type=tenant so the policy should generate a LocalQueue.
+
+
+#### Try
+
+| # | Operation | Bindings | Outputs | Description |
+|:-:|---|:-:|:-:|---|
+| 1 | `apply` | 0 | 0 | *No description* |
+
+### Step: `then-localqueue-is-created`
+
+Assert the expected pipelines-queue LocalQueue exists and matches the fixture (name and spec).
+
+
+#### Try
+
+| # | Operation | Bindings | Outputs | Description |
+|:-:|---|:-:|:-:|---|
+| 1 | `assert` | 0 | 0 | *No description* |
+
+---
+
+# Test: `kueue-bootstrap-queue-new-tenant-labeled-namespace-unpaused`
+
+Tests that a LocalQueue is created in a namespace labeled with
+`konflux-ci.dev/type=tenant` and the `kueue.konflux-ci.dev/stop-policy`
+annotation set to a value different from `hold`.
+
+
+## Bindings
+
+| # | Name | Value |
+|:-:|---|---|
+| 1 | `suffix` | "labeled-unpaused" |
+
+## Steps
+
+| # | Name | Bindings | Try | Catch | Finally | Cleanup |
+|:-:|---|:-:|:-:|:-:|:-:|:-:|
+| 1 | [given-localqueue-crd-exists](#step-given-localqueue-crd-exists) | 0 | 1 | 0 | 0 | 0 |
+| 2 | [given-kyverno-has-permission-on-resources](#step-given-kyverno-has-permission-on-resources) | 0 | 1 | 0 | 0 | 0 |
+| 3 | [given-cluster-policy-is-ready](#step-given-cluster-policy-is-ready) | 0 | 2 | 0 | 0 | 0 |
+| 4 | [when-tenant-labeled-namespace-is-created](#step-when-tenant-labeled-namespace-is-created) | 0 | 1 | 0 | 0 | 0 |
+| 5 | [then-localqueue-is-created](#step-then-localqueue-is-created) | 0 | 1 | 0 | 0 | 0 |
+
+### Step: `given-localqueue-crd-exists`
+
+Install the Kueue LocalQueue CRD so the API server accepts LocalQueue objects in the test cluster.
+
+
+#### Try
+
+| # | Operation | Bindings | Outputs | Description |
+|:-:|---|:-:|:-:|---|
+| 1 | `apply` | 0 | 0 | *No description* |
+
+### Step: `given-kyverno-has-permission-on-resources`
+
+Apply Kyverno RBAC so the policy engine can generate and reconcile LocalQueue resources.
+
+
+#### Try
+
+| # | Operation | Bindings | Outputs | Description |
+|:-:|---|:-:|:-:|---|
+| 1 | `apply` | 0 | 0 | *No description* |
+
+### Step: `given-cluster-policy-is-ready`
+
+Apply the queue bootstrap ClusterPolicy and assert Kyverno reports the policy as ready before exercising generation.
+
+
+#### Try
+
+| # | Operation | Bindings | Outputs | Description |
+|:-:|---|:-:|:-:|---|
+| 1 | `apply` | 0 | 0 | *No description* |
+| 2 | `assert` | 0 | 0 | *No description* |
+
+### Step: `when-tenant-labeled-namespace-is-created`
+
+Create a namespace labeled konflux-ci.dev/type=tenant so the policy should generate a LocalQueue.
+
+
+#### Try
+
+| # | Operation | Bindings | Outputs | Description |
+|:-:|---|:-:|:-:|---|
+| 1 | `apply` | 0 | 0 | *No description* |
+
+### Step: `then-localqueue-is-created`
+
+Assert the expected pipelines-queue LocalQueue exists and matches the fixture (name and spec).
+
+
+#### Try
+
+| # | Operation | Bindings | Outputs | Description |
+|:-:|---|:-:|:-:|---|
+| 1 | `assert` | 0 | 0 | *No description* |
+
+---
+
+# Test: `kueue-bootstrap-queue-new-tenant-labeled-paused-namespace-resumed`
+
+Tests that a LocalQueue with `stopPolicy` set to `Hold` is created
+in a namespace labeled with `konflux-ci.dev/type=tenant` with the
+`kueue.konflux-ci.dev/stop-policy` annotation set to `hold`. The
+`stopPolicy` is then set to `None` when the annotation is removed
+from the namespace.
+
+
+## Bindings
+
+| # | Name | Value |
+|:-:|---|---|
+| 1 | `suffix` | "labeled-paused-unpaused" |
+
+## Steps
+
+| # | Name | Bindings | Try | Catch | Finally | Cleanup |
+|:-:|---|:-:|:-:|:-:|:-:|:-:|
+| 1 | [given-localqueue-crd-exists](#step-given-localqueue-crd-exists) | 0 | 1 | 0 | 0 | 0 |
+| 2 | [given-kyverno-has-permission-on-resources](#step-given-kyverno-has-permission-on-resources) | 0 | 1 | 0 | 0 | 0 |
+| 3 | [given-cluster-policy-is-ready](#step-given-cluster-policy-is-ready) | 0 | 2 | 0 | 0 | 0 |
+| 4 | [when-tenant-labeled-namespace-is-created-paused](#step-when-tenant-labeled-namespace-is-created-paused) | 0 | 1 | 0 | 0 | 0 |
+| 5 | [then-localqueue-is-created-paused](#step-then-localqueue-is-created-paused) | 0 | 1 | 0 | 0 | 0 |
+| 6 | [when-tenant-labeled-namespace-is-updated-to-unpause](#step-when-tenant-labeled-namespace-is-updated-to-unpause) | 0 | 1 | 0 | 0 | 0 |
+| 7 | [then-localqueue-is-unpaused](#step-then-localqueue-is-unpaused) | 0 | 1 | 0 | 0 | 0 |
+
+### Step: `given-localqueue-crd-exists`
+
+Install the Kueue LocalQueue CRD so the API server accepts LocalQueue objects in the test cluster.
+
+
+#### Try
+
+| # | Operation | Bindings | Outputs | Description |
+|:-:|---|:-:|:-:|---|
+| 1 | `apply` | 0 | 0 | *No description* |
+
+### Step: `given-kyverno-has-permission-on-resources`
+
+Apply Kyverno RBAC so the policy engine can generate and reconcile LocalQueue resources.
+
+
+#### Try
+
+| # | Operation | Bindings | Outputs | Description |
+|:-:|---|:-:|:-:|---|
+| 1 | `apply` | 0 | 0 | *No description* |
+
+### Step: `given-cluster-policy-is-ready`
+
+Apply the queue bootstrap ClusterPolicy and assert Kyverno reports the policy as ready before exercising generation.
+
+
+#### Try
+
+| # | Operation | Bindings | Outputs | Description |
+|:-:|---|:-:|:-:|---|
+| 1 | `apply` | 0 | 0 | *No description* |
+| 2 | `assert` | 0 | 0 | *No description* |
+
+### Step: `when-tenant-labeled-namespace-is-created-paused`
+
+update a namespace labeled konflux-ci.dev/type=tenant so the policy should generate a LocalQueue.
+
+
+#### Try
+
+| # | Operation | Bindings | Outputs | Description |
+|:-:|---|:-:|:-:|---|
+| 1 | `apply` | 0 | 0 | *No description* |
+
+### Step: `then-localqueue-is-created-paused`
+
+Assert the expected pipelines-queue LocalQueue exists and matches the fixture (name and spec).
+
+
+#### Try
+
+| # | Operation | Bindings | Outputs | Description |
+|:-:|---|:-:|:-:|---|
+| 1 | `assert` | 0 | 0 | *No description* |
+
+### Step: `when-tenant-labeled-namespace-is-updated-to-unpause`
+
+Update the namespace to unpause it
+
+
+#### Try
+
+| # | Operation | Bindings | Outputs | Description |
+|:-:|---|:-:|:-:|---|
+| 1 | `update` | 0 | 0 | *No description* |
+
+### Step: `then-localqueue-is-unpaused`
+
+Assert the LocalQueue's StopPolicy is None
+
+
+#### Try
+
+| # | Operation | Bindings | Outputs | Description |
+|:-:|---|:-:|:-:|---|
+| 1 | `assert` | 0 | 0 | *No description* |
+
+---
+
+# Test: `kueue-bootstrap-queue-new-tenant-labeled-namespace-update-paused`
+
+Tests that a LocalQueue with `stopPolicy` set to `None` is created
+in a namespace labeled with `konflux-ci.dev/type=tenant` with no
+`kueue.konflux-ci.dev/stop-policy` annotation set. The `stopPolicy`
+is then set to `Hold` when the annotation is added to the namespace.
+
+
+## Bindings
+
+| # | Name | Value |
+|:-:|---|---|
+| 1 | `suffix` | "labeled-unpaused-paused" |
+
+## Steps
+
+| # | Name | Bindings | Try | Catch | Finally | Cleanup |
+|:-:|---|:-:|:-:|:-:|:-:|:-:|
+| 1 | [given-localqueue-crd-exists](#step-given-localqueue-crd-exists) | 0 | 1 | 0 | 0 | 0 |
+| 2 | [given-kyverno-has-permission-on-resources](#step-given-kyverno-has-permission-on-resources) | 0 | 1 | 0 | 0 | 0 |
+| 3 | [given-cluster-policy-is-ready](#step-given-cluster-policy-is-ready) | 0 | 2 | 0 | 0 | 0 |
+| 4 | [when-tenant-labeled-namespace-is-created](#step-when-tenant-labeled-namespace-is-created) | 0 | 1 | 0 | 0 | 0 |
+| 5 | [then-localqueue-is-created](#step-then-localqueue-is-created) | 0 | 1 | 0 | 0 | 0 |
+| 6 | [when-tenant-labeled-namespace-is-updated](#step-when-tenant-labeled-namespace-is-updated) | 0 | 1 | 0 | 0 | 0 |
+| 7 | [then-localqueue-is-updated](#step-then-localqueue-is-updated) | 0 | 1 | 0 | 0 | 0 |
+
+### Step: `given-localqueue-crd-exists`
+
+Install the Kueue LocalQueue CRD so the API server accepts LocalQueue objects in the test cluster.
+
+
+#### Try
+
+| # | Operation | Bindings | Outputs | Description |
+|:-:|---|:-:|:-:|---|
+| 1 | `apply` | 0 | 0 | *No description* |
+
+### Step: `given-kyverno-has-permission-on-resources`
+
+Apply Kyverno RBAC so the policy engine can generate and reconcile LocalQueue resources.
+
+
+#### Try
+
+| # | Operation | Bindings | Outputs | Description |
+|:-:|---|:-:|:-:|---|
+| 1 | `apply` | 0 | 0 | *No description* |
+
+### Step: `given-cluster-policy-is-ready`
+
+Apply the queue bootstrap ClusterPolicy and assert Kyverno reports the policy as ready before exercising generation.
+
+
+#### Try
+
+| # | Operation | Bindings | Outputs | Description |
+|:-:|---|:-:|:-:|---|
+| 1 | `apply` | 0 | 0 | *No description* |
+| 2 | `assert` | 0 | 0 | *No description* |
+
+### Step: `when-tenant-labeled-namespace-is-created`
+
+Create a namespace labeled konflux-ci.dev/type=tenant so the policy should generate a LocalQueue.
+
+
+#### Try
+
+| # | Operation | Bindings | Outputs | Description |
+|:-:|---|:-:|:-:|---|
+| 1 | `apply` | 0 | 0 | *No description* |
+
+### Step: `then-localqueue-is-created`
+
+Assert the expected pipelines-queue LocalQueue exists and matches the fixture (name and spec).
+
+
+#### Try
+
+| # | Operation | Bindings | Outputs | Description |
+|:-:|---|:-:|:-:|---|
+| 1 | `assert` | 0 | 0 | *No description* |
+
+### Step: `when-tenant-labeled-namespace-is-updated`
+
+update a namespace labeled konflux-ci.dev/type=tenant so the policy should generate a LocalQueue.
+
+
+#### Try
+
+| # | Operation | Bindings | Outputs | Description |
+|:-:|---|:-:|:-:|---|
+| 1 | `apply` | 0 | 0 | *No description* |
+
+### Step: `then-localqueue-is-updated`
+
+Assert the expected pipelines-queue LocalQueue exists and matches the fixture (name and spec).
+
+
+#### Try
+
+| # | Operation | Bindings | Outputs | Description |
+|:-:|---|:-:|:-:|---|
+| 1 | `assert` | 0 | 0 | *No description* |
+
+---
+
+# Test: `kueue-bootstrap-queue-new-tenant-labeled-namespace-paused`
+
+Tests that a LocalQueue is created in a namespace labeled with
+`konflux-ci.dev/type=tenant` and with annotation to pause the
+LocalQueue.
 
 
 ## Bindings
