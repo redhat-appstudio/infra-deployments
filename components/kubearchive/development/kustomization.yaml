@@ -171,7 +171,16 @@ patches:
                         name: kubearchive-schema-version
                         key: MIGRATION_VERSION
                   - name: BATCH_SIZE
-                    value: "1000"
+                    value: "1000000"
+                  - name: SLEEP_INTERVAL
+                    value: "0"
+                resources:
+                  limits:
+                    cpu: 100m
+                    memory: 64Mi
+                  requests:
+                    cpu: 100m
+                    memory: 64Mi
                 securityContext:
                   runAsUser: null
   # These patches add an annotation so an OpenShift service
