@@ -137,6 +137,17 @@ patches:
                       configMapKeyRef:
                         name: kubearchive-schema-version
                         key: MIGRATION_VERSION
+                  - name: BATCH_SIZE
+                    value: "1000000"
+                  - name: SLEEP_INTERVAL
+                    value: "0"
+                resources:
+                  limits:
+                    cpu: 100m
+                    memory: 128Mi
+                  requests:
+                    cpu: 100m
+                    memory: 128Mi
                 securityContext:
                   runAsUser: null
   # We don't need the Secret as it will be created by the ExternalSecrets Operator
