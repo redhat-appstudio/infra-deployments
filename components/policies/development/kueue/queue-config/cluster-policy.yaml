@@ -21,6 +21,11 @@ spec:
           names:
           - mintmaker
           - appstudio-kanary-exporter
+    context:
+    - name: stopPolicy
+      variable:
+        jmesPath: >-
+          (request.object.metadata.annotations."kueue.konflux-ci.dev/stop-policy" || '') == 'hold' && 'Hold' || 'None'
     generate:
       generateExisting: true
       orphanDownstreamOnPolicyDelete: true
@@ -32,3 +37,4 @@ spec:
       data:
         spec:
           clusterQueue: cluster-pipeline-queue
+          stopPolicy: "{{stopPolicy}}"

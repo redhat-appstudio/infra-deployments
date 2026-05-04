@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: custom-kube-state-metrics
+  namespace: appstudio-monitoring
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: custom-kube-state-metrics
+rules:
+  - apiGroups: ["velero.io"]
+    resources: ["schedules"]
+    verbs: ["list", "watch", "get"]
+  - apiGroups: ["tekton.dev"]
+    resources: ["pipelineruns"]
+    verbs: ["list", "watch", "get"]
+  - apiGroups: ["apiextensions.k8s.io"]
+    resources: ["customresourcedefinitions"]
+    verbs: ["list", "watch", "get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: custom-kube-state-metrics
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: custom-kube-state-metrics
+subjects:
+  - kind: ServiceAccount
+    name: custom-kube-state-metrics
+    namespace: appstudio-monitoring

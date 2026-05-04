@@ -1,0 +1,70 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: in-tenant-create-opaque-secret-allowed
+spec:
+  description: |
+    Creates an Opaque Secret in a tenant namespace while the policy is active.
+  concurrent: false
+  steps:
+  - name: ensure-namespace-is-labeled
+    try:
+    - apply:
+        resource:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: ($namespace)
+            labels:
+              konflux-ci.dev/type: tenant
+  - name: given-validatingadmissionpolicy-is-installed
+    try:
+    - apply:
+        file: ../../deny-serviceaccount-token-secrets-validationadmissionpolicy.yaml
+    - apply:
+        file: ../../deny-serviceaccount-token-secrets-validationadmissionpolicybinding.yaml
+    - assert:
+        file: ../chainsaw-assert-policy.yaml
+  - name: then-opaque-secret-can-be-created
+    try:
+    - create:
+        file: ../resources/secret_opaque.yaml
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: in-tenant-deny-legacy-serviceaccount-token-secret
+spec:
+  description: |
+    Fails to create a Secret of type kubernetes.io/service-account-token in a tenant namespace.
+  concurrent: false
+  steps:
+  - name: ensure-namespace-is-labeled
+    try:
+    - apply:
+        resource:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: ($namespace)
+            labels:
+              konflux-ci.dev/type: tenant
+  - name: given-validatingadmissionpolicy-is-installed
+    try:
+    - apply:
+        file: ../../deny-serviceaccount-token-secrets-validationadmissionpolicy.yaml
+    - apply:
+        file: ../../deny-serviceaccount-token-secrets-validationadmissionpolicybinding.yaml
+    - assert:
+        file: ../chainsaw-assert-policy.yaml
+  - name: given-serviceaccount-exists
+    try:
+    - create:
+        file: ../resources/serviceaccount.yaml
+  - name: then-legacy-sa-token-secret-can-not-be-created
+    try:
+    - error:
+        file: ../resources/secret_legacy_serviceaccount_token.yaml

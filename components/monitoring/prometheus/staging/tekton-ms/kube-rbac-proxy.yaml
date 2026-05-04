@@ -1,0 +1,91 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: tekton-ms-kube-rbac-proxy
+  namespace: appstudio-tekton
+---
+# Required so kube-rbac-proxy can create tokenreviews and subjectaccessreviews
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: tekton-ms-kube-rbac-proxy-auth-delegator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:auth-delegator
+subjects:
+  - kind: ServiceAccount
+    name: tekton-ms-kube-rbac-proxy
+    namespace: appstudio-tekton
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tekton-ms-kube-rbac-proxy
+  namespace: appstudio-tekton
+  labels:
+    app: tekton-ms-kube-rbac-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tekton-ms-kube-rbac-proxy
+  template:
+    metadata:
+      labels:
+        app: tekton-ms-kube-rbac-proxy
+    spec:
+      serviceAccountName: tekton-ms-kube-rbac-proxy
+      containers:
+        - name: kube-rbac-proxy
+          image: registry.redhat.io/openshift4/ose-kube-rbac-proxy:v4.15
+          args:
+            - '--secure-listen-address=0.0.0.0:9091'
+            - '--upstream=http://appstudio-tekton-ms-prometheus.appstudio-tekton.svc:9090/'
+            - '--tls-cert-file=/etc/tls/private/tls.crt'
+            - '--tls-private-key-file=/etc/tls/private/tls.key'
+            - '--logtostderr=true'
+            - '--v=3'
+          ports:
+            - containerPort: 9091
+              name: https
+          resources:
+            limits:
+              cpu: 10m
+              memory: 64Mi
+            requests:
+              cpu: 10m
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+          volumeMounts:
+            - name: tls
+              mountPath: /etc/tls/private
+              readOnly: true
+      volumes:
+        - name: tls
+          secret:
+            secretName: tekton-ms-kube-rbac-proxy-tls
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tekton-ms-kube-rbac-proxy
+  namespace: appstudio-tekton
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: tekton-ms-kube-rbac-proxy-tls
+  labels:
+    app: tekton-ms-kube-rbac-proxy
+spec:
+  ports:
+    - name: https
+      port: 9091
+      targetPort: https
+  selector:
+    app: tekton-ms-kube-rbac-proxy

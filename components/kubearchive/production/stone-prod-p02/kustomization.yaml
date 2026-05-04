@@ -120,8 +120,6 @@ patches:
         name: kubearchive-schema-migration
         namespace: kubearchive
         annotations:
-          # Needed if just the command is changed, otherwise the job needs to be deleted manually
-          argocd.argoproj.io/sync-options: Force=true,Replace=true
           argocd.argoproj.io/sync-wave: "-1"
           ignore-check.kube-linter.io/no-read-only-root-fs: >
             "This job needs to clone a repository to do its job, so it needs write access to the FS."
@@ -131,6 +129,7 @@ patches:
           spec:
             containers:
               - name: migration
+                image: quay.io/kubearchive/postgresql:v1.21.3@sha256:2ce1545b19d29bd36c1022de13f451f14847aed04d62ab896a3254d74f7c0d39
                 env:
                   - name: MIGRATION_VERSION
                     valueFrom:
@@ -139,6 +138,16 @@ patches:
                         key: MIGRATION_VERSION
                 securityContext:
                   runAsUser: null
+  # Add version suffix to Job name so syncs with unchanged version are a no-op
+  # (immutable Job, same name = nothing to do). On upgrade, new name = new Job
+  # created, old completed one pruned. Update suffix when changing MIGRATION_VERSION.
+  - target:
+      kind: Job
+      name: kubearchive-schema-migration
+    patch: |-
+      - op: replace
+        path: /metadata/name
+        value: kubearchive-schema-migration-v13
   # We don't need the Secret as it will be created by the ExternalSecrets Operator
   - patch: |-
       $patch: delete
