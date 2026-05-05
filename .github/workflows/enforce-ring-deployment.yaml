@@ -1,0 +1,83 @@
+name: Enforce Ring Deployment
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+    paths:
+      - 'components/**'
+      - 'argo-cd-apps/**'
+      - 'configs/**'
+      - '.github/workflows/enforce-ring-deployment.yaml'
+
+jobs:
+  ring-deployment-check:
+    name: Check ring deployment policy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    steps:
+      # Check out the BASE branch (trusted code) so we never execute PR code.
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: infra-tools/go.mod
+          cache-dependency-path: infra-tools/go.sum
+
+      - name: Setup Kustomize
+        uses: multani/action-setup-kustomize@v1
+        with:
+          version: 5.6.0
+
+      # Build from the trusted base branch before switching to PR code.
+      - name: Build env-detector (from base branch)
+        working-directory: infra-tools
+        run: go build -o bin/env-detector ./cmd/env-detector
+
+      # Fetch the GitHub-synthesized merge commit so the tool analyses the
+      # post-merge state, while the binary remains the trusted base build.
+      - name: Checkout PR merge ref
+        run: |
+          git fetch origin pull/${{ github.event.pull_request.number }}/merge:pr-merge
+          git checkout pr-merge
+
+      - name: Check ring deployment policy
+        id: ring-check
+        continue-on-error: true
+        working-directory: infra-tools
+        run: |
+          ./bin/env-detector \
+            --repo-root=.. \
+            --base-ref=origin/${{ github.event.pull_request.base.ref }} \
+            --enforce-ring-deployment \
+            --ring-report-file=/tmp/ring-report.md \
+            --dry-run
+
+      - name: Post or update PR comment
+        if: always() && steps.ring-check.outcome != 'skipped'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          COMMENT_MARKER="<!-- ring-deployment-check -->"
+
+          # Delete any previous comment from this workflow
+          gh api "repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" \
+            --paginate --jq ".[] | select(.body | contains(\"${COMMENT_MARKER}\")) | .id" \
+            | xargs -r -I {} gh api "repos/${{ github.repository }}/issues/comments/{}" -X DELETE
+
+          # Post a new comment only if the report file was generated
+          if [ -s /tmp/ring-report.md ]; then
+            echo "${COMMENT_MARKER}" >> /tmp/ring-report.md
+            gh pr comment ${{ github.event.pull_request.number }} \
+              --repo ${{ github.repository }} \
+              --body-file /tmp/ring-report.md
+          fi
+
+      - name: Fail on ring deployment violation
+        if: always() && steps.ring-check.outcome == 'failure'
+        run: exit 1

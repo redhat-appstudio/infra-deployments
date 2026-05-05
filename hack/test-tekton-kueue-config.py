@@ -1270,6 +1270,10 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
         "pipelinerun_key": "gitlab_merge_request_test",
         "config_key": "production"
     },
+    "nudging_production": {
+        "pipelinerun_key": "nudge_pipelinerun",
+        "config_key": "production"
+    },
 
     # Test key PipelineRuns with production kflux-ocp-p01 config
     "multiplatform_new_production-kflux-ocp-p01": {

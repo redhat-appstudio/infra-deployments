@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"slices"
 	"sort"
+	"strings"
 	"syscall"
 
 	charmlog "github.com/charmbracelet/log"
@@ -24,15 +25,17 @@ import (
 
 func main() {
 	var (
-		repoRoot      = flag.String("repo-root", ".", "Path to the repository root")
-		baseRef       = flag.String("base-ref", "main", "Base git ref to compare against")
-		overlaysDir   = flag.String("overlays-dir", "argo-cd-apps/overlays", "Path to overlays directory relative to repo root")
-		dryRun        = flag.Bool("dry-run", false, "Print results without calling GitHub API")
-		prNumber      = flag.Int("pr-number", 0, "PR number to label (required if not --dry-run)")
-		githubToken   = flag.String("github-token", "", "GitHub token (required if not --dry-run)")
-		repo          = flag.String("repo", "", "GitHub repository in owner/repo format (required if not --dry-run)")
-		clusterLabels = flag.Bool("cluster-labels", false, "Include cluster/<name> labels in addition to environment labels")
-		logFile       = flag.String("log-file", "", "Write debug-level logs to this file (in addition to INFO-level logs on stdout)")
+		repoRoot             = flag.String("repo-root", ".", "Path to the repository root")
+		baseRef              = flag.String("base-ref", "main", "Base git ref to compare against")
+		overlaysDir          = flag.String("overlays-dir", "argo-cd-apps/overlays", "Path to overlays directory relative to repo root")
+		dryRun               = flag.Bool("dry-run", false, "Print results without calling GitHub API")
+		prNumber             = flag.Int("pr-number", 0, "PR number to label (required if not --dry-run)")
+		githubToken          = flag.String("github-token", "", "GitHub token (required if not --dry-run)")
+		repo                 = flag.String("repo", "", "GitHub repository in owner/repo format (required if not --dry-run)")
+		clusterLabels        = flag.Bool("cluster-labels", false, "Include cluster/<name> labels in addition to environment labels")
+		logFile              = flag.String("log-file", "", "Write debug-level logs to this file (in addition to INFO-level logs on stdout)")
+		enforceRingDeploy    = flag.Bool("enforce-ring-deployment", false, "Fail when both staging and production overlays are directly modified in the same PR")
+		ringReportFile       = flag.String("ring-report-file", "", "Write ring deployment check result (markdown) to this file for external consumers like PR comments")
 	)
 	flag.Parse()
 
@@ -136,15 +139,32 @@ func main() {
 
 	printSummary(result, labels, headSHA, baseSHA)
 
-	if *dryRun {
-		return
+	if !*dryRun {
+		// Step 5: Sync labels via GitHub API
+		slog.Info("Syncing labels...")
+		if err := syncLabels(ctx, *githubToken, *repo, *prNumber, labels); err != nil {
+			fatal("syncing labels", "err", err)
+		}
 	}
 
-	// Step 5: Sync labels via GitHub API
-	slog.Info("Syncing labels...")
-	if err := syncLabels(ctx, *githubToken, *repo, *prNumber, labels); err != nil {
-		fatal("syncing labels", "err", err)
+	// Step 6: Ring deployment enforcement (runs in both dry-run and normal mode)
+	if *enforceRingDeploy {
+		ringResult := detector.CheckRingDeployment(changedFiles, result.AffectedEnvironments)
+		if ringResult.DirectConflict {
+			msg := formatRingViolation(ringResult)
+			fmt.Println(msg)
+			writeStepSummary(msg)
+			writeReportFile(*ringReportFile, msg)
+			os.Exit(1)
+		}
+		if ringResult.IndirectConflict {
+			msg := formatRingWarning()
+			fmt.Println(msg)
+			writeStepSummary(msg)
+			writeReportFile(*ringReportFile, msg)
+		}
 	}
+
 	slog.Info("Done!")
 }
 
@@ -277,4 +297,63 @@ func syncLabels(ctx context.Context, token, repoName string, prNumber int, label
 		return err
 	}
 	return client.SyncLabels(ctx, prNumber, labels)
+}
+
+// formatRingViolation returns a markdown message for a direct staging+production conflict.
+func formatRingViolation(r *detector.RingCheckResult) string {
+	var b strings.Builder
+	b.WriteString("\n## Ring Deployment Violation\n\n")
+	b.WriteString("This PR modifies both **staging** and **production** overlays, which violates the ring deployment policy.\n")
+	b.WriteString("Changes must be validated in staging before promoting to production.\n\n")
+	b.WriteString("Please split this PR into two:\n")
+	b.WriteString("1. First PR: staging changes only\n")
+	b.WriteString("2. Second PR: production changes (after staging is validated)\n")
+
+	b.WriteString("\n### Staging files\n")
+	for _, f := range r.StagingFiles {
+		fmt.Fprintf(&b, "- `%s`\n", f)
+	}
+	b.WriteString("\n### Production files\n")
+	for _, f := range r.ProductionFiles {
+		fmt.Fprintf(&b, "- `%s`\n", f)
+	}
+	return b.String()
+}
+
+// formatRingWarning returns a markdown message for an indirect (base-only) conflict.
+func formatRingWarning() string {
+	var b strings.Builder
+	b.WriteString("\n## Ring Deployment Warning\n\n")
+	b.WriteString("This PR modifies shared base files that affect both **staging** and **production** environments.\n\n")
+	b.WriteString("If possible, split this PR into two:\n")
+	b.WriteString("1. First PR: staging changes only\n")
+	b.WriteString("2. Second PR: revert staging-only changes and apply changes to the shared base files (after staging is validated)\n\n")
+	b.WriteString("If this is not possible, **excercise extreme caution**!\n")
+	return b.String()
+}
+
+// writeReportFile writes markdown to a report file for use by external
+// consumers (e.g. a workflow step that posts a PR comment).
+func writeReportFile(path, markdown string) {
+	if path == "" {
+		return
+	}
+	if err := os.WriteFile(path, []byte(markdown), 0600); err != nil {
+		slog.Warn("failed to write ring report file", "path", path, "err", err)
+	}
+}
+
+// writeStepSummary appends markdown to the GitHub Actions step summary file.
+func writeStepSummary(markdown string) {
+	summaryFile := os.Getenv("GITHUB_STEP_SUMMARY")
+	if summaryFile == "" {
+		return
+	}
+	f, err := os.OpenFile(summaryFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		slog.Warn("failed to open GITHUB_STEP_SUMMARY", "err", err)
+		return
+	}
+	defer f.Close()
+	fmt.Fprintln(f, markdown)
 }
