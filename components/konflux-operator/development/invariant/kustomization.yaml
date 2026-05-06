@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# Env-invariant bundle for OpenShift GitOps: everything under this directory is
+# the payload to align across environments when promoting a Konflux operator
+# release (remote install source, operator image pin, shared Konflux spec).
+# Parent `../kustomization.yaml` adds per-team overlays from `../cr/overlay-patches/`.
+resources:
+  # Upstream operator config (konflux-ci builds install.yaml from this layout).
+  - https://github.com/konflux-ci/konflux-ci/operator/config/default?ref=0bace1e20ff164a00e9d6becfce52e310a921931
+  - konflux.yaml
+
+patches:
+  - path: release-config.yaml
+
+images:
+  - name: localhost/konflux-operator
+    newName: quay.io/konflux-ci/konflux-operator
+    newTag: 0bace1e20ff164a00e9d6becfce52e310a921931

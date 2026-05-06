@@ -1,0 +1,17 @@
+apiVersion: konflux.konflux-ci.dev/v1alpha1
+kind: Konflux
+metadata:
+  name: konflux
+spec:
+  releaseService:
+    spec:
+      releaseControllerManager:
+        replicas: 1
+        manager:
+          resources:
+            requests:
+              cpu: 30m
+              memory: 256Mi
+            limits:
+              cpu: 30m
+              memory: 256Mi
