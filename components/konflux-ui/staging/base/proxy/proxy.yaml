@@ -99,7 +99,7 @@ spec:
             set -e
 
             # Generate auth.conf with bearer token replacement
-            token=$(cat /mnt/api-token/token)
+            token=$(cat /var/run/secrets/konflux-ci.dev/serviceaccount/token)
             sed "s/__BEARER_TOKEN__/$token/g" /mnt/nginx-templates/auth.conf > /mnt/nginx-generated-config/auth.conf
 
             chmod 640 /mnt/nginx-generated-config/auth.conf
@@ -112,12 +112,13 @@ spec:
             chmod 640 /mnt/nginx-generated-config/watson-auth.conf
 
         volumeMounts:
+        - mountPath: /var/run/secrets/konflux-ci.dev/serviceaccount
+          name: kube-api-token
+          readOnly: true
         - name: nginx-generated-config
           mountPath: /mnt/nginx-generated-config
         - name: nginx-templates
           mountPath: /mnt/nginx-templates
-        - name: api-token
-          mountPath: /mnt/api-token
         - name: watson-api-key
           mountPath: /mnt/watson-api-key
         securityContext:
@@ -132,14 +133,47 @@ spec:
             cpu: 10m
             memory: 64Mi
       containers:
+      - name: generate-nginx-configs-loop
+        image: quay.io/konflux-ci/konflux-ui
+        command:
+          - bash
+        args:
+          - "/var/run/scripts/konflux-ci.dev/proxy-nginx-generate-loop.sh"
+        livenessProbe:
+          exec:
+            command:
+            - bash
+            args:
+            - "/var/run/scripts/konflux-ci.dev/proxy-nginx-generate-loop-probe.sh"
+          periodSeconds: 30
+          failureThreshold: 3
+        volumeMounts:
+        - mountPath: /var/run/scripts/konflux-ci.dev/
+          name: proxy-generate-loop-script
+          readOnly: true
+        - mountPath: /var/run/secrets/konflux-ci.dev/serviceaccount
+          name: kube-api-token
+          readOnly: true
+        - name: nginx-generated-config
+          mountPath: /mnt/nginx-generated-config
+        - name: nginx-templates
+          mountPath: /mnt/nginx-templates
+        securityContext:
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+        resources:
+          limits:
+            cpu: 50m
+            memory: 128Mi
+          requests:
+            cpu: 10m
+            memory: 64Mi
       - image: registry.access.redhat.com/ubi9/nginx-124@sha256:b924363ff07ee0f8fd4f680497da774ac0721722a119665998ff5b2111098ad1
         name: nginx
         command:
-          - nginx
-          - "-g"
-          - "daemon off;"
-          - -c
-          - /etc/nginx/nginx.conf
+          - bash
+        args:
+          - "/var/run/scripts/konflux-ci.dev/proxy-nginx-run.sh"
         livenessProbe:
           failureThreshold: 3
           httpGet:
@@ -268,6 +302,27 @@ spec:
             cpu: 50m
             memory: 128Mi
       volumes:
+        - name: proxy-generate-loop-script
+          configMap:
+            defaultMode: 0750
+            name: proxy-nginx-generate-loop
+            items:
+              - key: proxy-nginx-generate-loop.sh
+                path: proxy-nginx-generate-loop.sh
+        - name: proxy-nginx-run-script
+          configMap:
+            defaultMode: 0750
+            name: proxy-nginx-run
+            items:
+              - key: proxy-nginx-run.sh
+                path: proxy-nginx-run.sh
+        - name: kube-api-token
+          projected:
+            defaultMode: 420
+            sources:
+            - serviceAccountToken:
+                expirationSeconds: 600
+                path: token
         - configMap:
             defaultMode: 420
             name: proxy
@@ -294,9 +349,6 @@ spec:
             secretName: serving-cert
         - name: nginx-generated-config
           emptyDir: {}
-        - name: api-token
-          secret:
-            secretName: proxy
         - name: watson-api-key
           secret:
             secretName: watson-config
@@ -346,14 +398,6 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: proxy
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: proxy
-  annotations:
-    kubernetes.io/service-account.name: proxy
-type: kubernetes.io/service-account-token
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
