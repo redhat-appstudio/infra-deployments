@@ -32,7 +32,7 @@ spec:
             app: proxy
       initContainers:
       - name: copy-static-content
-        image: quay.io/konflux-ci/konflux-ui:68500b32e57278bf33ac18d4ef631ef243abb579
+        image: quay.io/konflux-ci/konflux-ui@sha256:9be7f81931ab35a8d15b920231ae3d0ff6bceaffffe39d4dcf366bb34ffd291b
         command:
           - cp
           - -R
@@ -134,7 +134,7 @@ spec:
             memory: 64Mi
       containers:
       - name: generate-nginx-configs-loop
-        image: quay.io/konflux-ci/konflux-ui:68500b32e57278bf33ac18d4ef631ef243abb579
+        image: quay.io/konflux-ci/konflux-ui@sha256:9be7f81931ab35a8d15b920231ae3d0ff6bceaffffe39d4dcf366bb34ffd291b
         command:
           - bash
         args:
@@ -161,6 +161,7 @@ spec:
         securityContext:
           readOnlyRootFilesystem: true
           runAsNonRoot: true
+          runAsUser: 1001
         resources:
           limits:
             cpu: 50m
