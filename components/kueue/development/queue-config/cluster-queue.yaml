@@ -19,7 +19,7 @@ spec:
     admissionChecks:
     - static-admission
     flavorFungibility:
-      whenCanBorrow: Borrow
+      whenCanBorrow: MayStopSearch
       whenCanPreempt: TryNextFlavor
     namespaceSelector: {}
     preemption:
@@ -28,7 +28,6 @@ spec:
       reclaimWithinCohort: Never
       withinClusterQueue: Never
     queueingStrategy: BestEffortFIFO
-    stopPolicy: None
     resourceGroups:
     - coveredResources:
       - tekton.dev/pipelineruns

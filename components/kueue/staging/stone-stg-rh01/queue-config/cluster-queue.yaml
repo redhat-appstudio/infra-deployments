@@ -13,7 +13,7 @@ spec:
   admissionChecks:
   - static-admission
   flavorFungibility:
-    whenCanBorrow: Borrow
+    whenCanBorrow: MayStopSearch
     whenCanPreempt: TryNextFlavor
   namespaceSelector: {}
   preemption:
@@ -143,7 +143,6 @@ spec:
         nominalQuota: '1000'
       - name: localhost
         nominalQuota: '1000'
-  stopPolicy: None
 ---
 apiVersion: kueue.x-k8s.io/v1beta1
 kind: ResourceFlavor
