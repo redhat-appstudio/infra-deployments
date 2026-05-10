@@ -44,3 +44,16 @@ patches:
                       limits:
                         cpu: 100m
                         memory: 1Gi
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: otel-collector
+        labels:
+          app: otel-collector
+      spec:
+        template:
+          spec:
+            containers:
+              - name: otel-collector
+                image: quay.io/kubearchive/opentelemetry-collector:0.151.0
