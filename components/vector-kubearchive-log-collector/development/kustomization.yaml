@@ -22,8 +22,14 @@ resources:
 - rbac.yaml
 - loki-secret.yaml
 - sa.yaml
+- service-monitor-patch.yaml
+- prometheus-rules.yaml
 
 patches:
+  - path: namespace-patch.yaml
+    target:
+      kind: Namespace
+      name: product-kubearchive-logging
   - path: scc-patch.yaml
     target:
       kind: SecurityContextConstraints
@@ -51,6 +57,12 @@ patches:
       kind: StatefulSet
       namespace: product-kubearchive-logging
       labelSelector: app.kubernetes.io/name=loki,app.kubernetes.io/component=ingester
+  - path: servicemonitor-patch.yaml
+    target:
+      group: monitoring.coreos.com
+      version: v1
+      kind: ServiceMonitor
+      name: product-kubearchive-logging-monitor
 
 generators:
 - vector-helm-generator.yaml
