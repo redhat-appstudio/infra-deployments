@@ -3,6 +3,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ../base
+  - monitoring-otel-collector.yaml
   - postgresql.yaml
   - vacuum.yaml
   - release-vacuum.yaml
@@ -309,6 +310,19 @@ patches:
                   requests:
                     cpu: 200m
                     memory: 128Mi
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: otel-collector
+        labels:
+          app: otel-collector
+      spec:
+        template:
+          spec:
+            containers:
+              - name: otel-collector
+                image: quay.io/kubearchive/opentelemetry-collector:0.151.0
 
   # We don't need this CronJob as it is suspended, we can enable it later
   - patch: |-
