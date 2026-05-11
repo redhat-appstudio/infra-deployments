@@ -24,11 +24,10 @@ resources:
 - sa.yaml
 - prometheus-rules.yaml
 
+patchesStrategicMerge:
+  - namespace-patch.yaml
+
 patches:
-  - path: namespace-patch.yaml
-    target:
-      kind: Namespace
-      name: product-kubearchive-logging
   - path: scc-patch.yaml
     target:
       kind: SecurityContextConstraints
