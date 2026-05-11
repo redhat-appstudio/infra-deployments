@@ -22,47 +22,47 @@ Deleted Releases are archived in KubeArchive and can still be accessed through t
 
 ## Upgrading
 
-To upgrade start by upgrading development, which also upgrades staging. First replace the current `kubearchive.yaml` manifest
-with the one from the new version, then the change the `kustomization.yaml` file so the diff looks like this:
+To upgrade start by upgrading development, which also upgrades staging:
 
-```diff
-diff --git a/components/kubearchive/development/kustomization.yaml b/components/kubearchive/development/kustomization.yaml
-index 98bf1d721..ee330ff5a 100644
---- a/components/kubearchive/development/kustomization.yaml
-+++ b/components/kubearchive/development/kustomization.yaml
-@@ -56,7 +56,7 @@ patches:
-               spec:
-                 containers:
-                   - name: vacuum
--                    image: quay.io/kubearchive/vacuum:v1.14.0
-+                    image: quay.io/kubearchive/vacuum:v1.15.0
-   - patch: |-
-       apiVersion: batch/v1
-       kind: CronJob
-@@ -69,7 +69,7 @@ patches:
-               spec:
-                 containers:
-                   - name: vacuum
--                    image: quay.io/kubearchive/vacuum:v1.14.0
-+                    image: quay.io/kubearchive/vacuum:v1.15.0
-   - patch: |-
-       apiVersion: batch/v1
-       kind: CronJob
-@@ -82,7 +82,7 @@ patches:
-               spec:
-                 containers:
-                   - name: vacuum
--                    image: quay.io/kubearchive/vacuum:v1.14.0
-+                    image: quay.io/kubearchive/vacuum:v1.15.0
-```
+1. Replace `development/kubearchive.yaml` with the manifest from the new release.
+2. Update the vacuum image tags in `development/kustomization.yaml`.
+3. If the new release includes a schema change:
+   * Bump `MIGRATION_VERSION` in both configmaps in `development/kustomization.yaml`:
+     `kubearchive-schema-version` (used by the migration Job) and
+     `kubearchive-deployment-schema-version` (used by api-server and sink).
+   * Update the Job name suffix in `development/kustomization.yaml` to match
+     (e.g. `kubearchive-schema-migration-v14`).
 
-So the version should change at:
+All changes go in a single commit. ArgoCD sync waves handle the ordering:
+the migration Job (wave -1) runs before deployments (wave 0) pick up the new
+version.
 
-* Patches that change the KubeArchive vacuum image for vacuum CronJobs.
+If the release introduces a breaking schema change that requires deployments
+to be upgraded between two migration phases, split the work into two commits:
+first bump `kubearchive-schema-version` and the Job name suffix, then after
+migration completes bump `kubearchive-deployment-schema-version`.
 
-Then after the upgrade is successful, you can start upgrading production clusters.
-Make sure to review the changes inside the KubeArchive YAML pulled from GitHub. Some
-resources may change so some patches may not be useful/wrong after upgrading.
+### Schema version configmaps
+
+There are two configmaps for `MIGRATION_VERSION`:
+
+* `kubearchive-schema-version` (sync-wave -2) — used by the migration Job.
+* `kubearchive-deployment-schema-version` (no sync-wave) — used by api-server
+  and sink deployments. Protects running deployments from restarting during
+  migration if the configmap hash changes.
+
+### Versioned Job name
+
+A versioned Job name suffix (e.g. `kubearchive-schema-migration-v13`) is used
+so that ArgoCD resyncs do not restart the immutable migration Job. When
+changing `MIGRATION_VERSION`, update the suffix in
+`development/kustomization.yaml` to match.
+
+### Production
+
+After the staging upgrade is successful, start upgrading production clusters.
+Make sure to review the changes inside the KubeArchive YAML pulled from GitHub.
+Some resources may change so some patches may not be useful/wrong after upgrading.
 
 ### Upgrade Script
 
@@ -70,10 +70,21 @@ There is a simple bash script you can use to upgrade, run it as follows:
 
 ```
 cd infra-deployments/
-bash components/kubearchive/upgrade.sh <current-version> <new-version>
-# For example: bash components/kubearchive/upgrade.sh v1.14.0 v1.15.0
+bash components/kubearchive/upgrade.sh <current-version> <new-version> [<new-migration-version>]
 ```
 
-This script downloads the new manifests from the GitHub repository
-and replaces (using `sed`) the `<current-version>` string with the
-`<new-version>` string on all `kustomization.yaml` files.
+Examples:
+
+```bash
+# No schema change:
+bash components/kubearchive/upgrade.sh v1.21.3 v1.21.4
+
+# With schema change (migration version bumps to 14):
+bash components/kubearchive/upgrade.sh v1.21.4 v1.22.0 14
+```
+
+The script downloads the new manifests from the GitHub repository
+and replaces the `<current-version>` string with the `<new-version>`
+string on all `kustomization.yaml` files. When `<new-migration-version>`
+is provided, it also updates `MIGRATION_VERSION` in both configmaps and
+the Job name suffix in `development/kustomization.yaml`.
