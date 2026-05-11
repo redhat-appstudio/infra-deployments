@@ -128,6 +128,7 @@ When updating multi-platform-controller host configurations:
 
 - Python 3.6+
 - PyYAML (`pip install PyYAML`)
+- kubernetes (`pip install kubernetes`) — used for `format_quantity()` to emit canonical `resource.Quantity` notation
 
 ## Files
 
