@@ -143,8 +143,8 @@ spec:
           exec:
             command:
             - bash
-            args:
             - "/var/run/scripts/konflux-ci.dev/proxy-nginx-generate-loop-probe.sh"
+          initialDelaySeconds: 30
           periodSeconds: 30
           failureThreshold: 3
         volumeMounts:
@@ -210,6 +210,9 @@ spec:
             cpu: 30m
             memory: 128Mi
         volumeMounts:
+          - mountPath: /var/run/scripts/konflux-ci.dev/
+            name: proxy-nginx-run-script
+            readOnly: true
           - mountPath: /etc/nginx/nginx.conf
             subPath: nginx.conf
             name: proxy
@@ -310,6 +313,8 @@ spec:
             items:
               - key: proxy-nginx-generate-loop.sh
                 path: proxy-nginx-generate-loop.sh
+              - key: proxy-nginx-generate-loop-probe.sh
+                path: proxy-nginx-generate-loop-probe.sh
         - name: proxy-nginx-run-script
           configMap:
             defaultMode: 0750
