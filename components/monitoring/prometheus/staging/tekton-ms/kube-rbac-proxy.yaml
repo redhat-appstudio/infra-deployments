@@ -19,34 +19,6 @@ subjects:
     name: tekton-ms-kube-rbac-proxy
     namespace: appstudio-tekton
 ---
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: tekton-ms-metrics-reader
-rules:
-  - nonResourceURLs:
-      - /api/v1/query
-      - /api/v1/query_range
-      - /api/v1/labels
-      - /api/v1/label/*/values
-      - /api/v1/series
-      - /api/v1/metadata
-    verbs:
-      - get
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: tekton-ms-metrics-reader
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: tekton-ms-metrics-reader
-subjects:
-  - kind: ServiceAccount
-    name: metrics-reader
-    namespace: appstudio-grafana
----
 apiVersion: v1
 kind: ConfigMap
 metadata:
