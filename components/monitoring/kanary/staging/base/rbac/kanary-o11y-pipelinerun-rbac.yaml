@@ -1,0 +1,23 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: kanary-o11y-pipelinerun-runner
+rules:
+  - apiGroups: ["tekton.dev"]
+    resources: ["pipelineruns"]
+    verbs: ["create", "get"]
+  - apiGroups: ["tekton.dev"]
+    resources: ["pipelines"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kanary-o11y-pipelinerun-runner
+subjects:
+  - kind: Group
+    name: konflux-o11y
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: kanary-o11y-pipelinerun-runner
