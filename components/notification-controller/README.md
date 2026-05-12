@@ -35,6 +35,7 @@ List of environment variables:
 | -- | -- |
 | NOTIFICATION_REGION | define the AWS region to use
 | NOTIFICATION_TOPIC_ARN | the topic arn the messages will be sent to
+| NOTIFICATION_FILTER_ANNOTATIONS | comma-separated annotation keys to match PipelineRuns for notification processing
 
 These environment variables will be used to define the `SNS topic` which the messages will be sent to 
 and the `region` of the AWS account.
