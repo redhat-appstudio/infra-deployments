@@ -1,25 +1,26 @@
 ---
-apiVersion: kueue.x-k8s.io/v1beta1
+apiVersion: kueue.x-k8s.io/v1beta2
 kind: ResourceFlavor
 metadata:
   name: "default-flavor"
 ---
-apiVersion: kueue.x-k8s.io/v1beta1
+apiVersion: kueue.x-k8s.io/v1beta2
 kind: AdmissionCheck
 metadata:
   name: static-admission
 spec:
   controllerName: konflux-ci.dev/kueue-external-admission
 ---
-apiVersion: kueue.x-k8s.io/v1beta1
+apiVersion: kueue.x-k8s.io/v1beta2
 kind: ClusterQueue
 metadata:
   name: cluster-pipeline-queue
 spec:
-    admissionChecks:
-    - static-admission
+    admissionChecksStrategy:
+      admissionChecks:
+      - name: static-admission
     flavorFungibility:
-      whenCanBorrow: Borrow
+      whenCanBorrow: MayStopSearch
       whenCanPreempt: TryNextFlavor
     namespaceSelector: {}
     preemption:
@@ -28,7 +29,6 @@ spec:
       reclaimWithinCohort: Never
       withinClusterQueue: Never
     queueingStrategy: BestEffortFIFO
-    stopPolicy: None
     resourceGroups:
     - coveredResources:
       - tekton.dev/pipelineruns

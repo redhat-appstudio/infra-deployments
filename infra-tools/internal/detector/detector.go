@@ -25,6 +25,7 @@ var (
 // Multiple overlays can map to the same environment.
 var OverlayEnvironment = map[string]Environment{
 	"development":               Development,
+	"development-operator":      Development,
 	"konflux-public-staging":    Staging,
 	"staging-downstream":        Staging,
 	"konflux-public-production": Production,

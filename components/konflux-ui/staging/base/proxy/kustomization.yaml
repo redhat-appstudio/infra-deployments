@@ -11,6 +11,13 @@ configMapGenerator:
     files:
       - auth.conf
       - watson-auth.conf
+  - name: proxy-nginx-run
+    files:
+      - proxy-nginx-run.sh=scripts/proxy-nginx-run.sh
+  - name: proxy-nginx-generate-loop
+    files:
+      - proxy-nginx-generate-loop.sh=scripts/proxy-nginx-generate-loop.sh
+      - proxy-nginx-generate-loop-probe.sh=scripts/proxy-nginx-generate-loop-probe.sh
   - name: proxy-nginx-static
     files:
       - tekton-results.conf

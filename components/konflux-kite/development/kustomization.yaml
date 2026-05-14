@@ -39,26 +39,6 @@ configMapGenerator:
     behavior: replace
 
 patches:
-  # Development-specific patches
-  - patch: |-
-      apiVersion: apps/v1
-      kind: Deployment
-      metadata:
-        name: konflux-kite
-        namespace: konflux-kite
-      spec:
-        replicas: 1
-        template:
-          spec:
-            containers:
-              - name: kite-api
-                resources:
-                  limits:
-                    cpu: 200m
-                    memory: 256Mi
-                  requests:
-                    cpu: 50m
-                    memory: 128Mi
   - patch: |-
       - op: replace
         path: /spec/template/spec/containers/0/startupProbe/httpGet/scheme

@@ -52,8 +52,9 @@ spec:
       default: ""
   tasks:
     - name: run-kanary-tests
-      timeout: "1h"
+      timeout: "1h0m0s"
       taskRef:
+        kind: Task
         name: run-kanary-tests
       params:
         - name: tested-cluster

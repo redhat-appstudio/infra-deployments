@@ -384,3 +384,169 @@ spec:
                 apiGroup: rbac.authorization.k8s.io
                 kind: ClusterRole
                 name: konflux-viewer-user-actions
+---
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: orphan-generated-resources
+spec:
+  concurrent: false
+  description: |
+    Tests that removal of the cluster policy doesn't delete the generated cluster role bindings
+  steps:
+    - name: given-kyverno-has-permission-on-resources
+      try:
+        - apply:
+            file: ../kyverno_rbac.yaml
+    - name: given-viewer-clusterrole-exists
+      try:
+        - apply:
+            resource:
+              apiVersion: rbac.authorization.k8s.io/v1
+              kind: ClusterRole
+              metadata:
+                name: konflux-viewer-user-actions
+              rules: []
+    - name: given-group-crd-exists
+      try:
+        - apply:
+            file: resources/group-crd.yaml
+        - assert:
+            resource:
+              apiVersion: apiextensions.k8s.io/v1
+              kind: CustomResourceDefinition
+              metadata:
+                name: groups.user.openshift.io
+              status:
+                conditions:
+                - type: NamesAccepted
+                  status: "True"
+                - type: Established
+                  status: "True"
+    - name: Apply Kyverno ClusterPolicy
+      try:
+        - apply:
+            file: ../generate-support-clusterrolebinding-clusterpolicy.yaml
+        - assert:
+            file: chainsaw-assert-clusterpolicy.yaml
+    - name: Create ai-konflux-user-support Group with users
+      try:
+        - create:
+            file: ./resources/group-with-users-ai-konflux-user-support.yaml
+    - name: Assert ai-konflux-user-support's support ClusterRoleBinding is created correctly
+      try:
+        - assert:
+            resource:
+              apiVersion: rbac.authorization.k8s.io/v1
+              kind: ClusterRoleBinding
+              metadata:
+                name: konflux-support-ai-konflux-user-support
+                labels:
+                  namespace-lister.konflux-ci.dev/use-for-access: 'true'
+              roleRef:
+                apiGroup: rbac.authorization.k8s.io
+                kind: ClusterRole
+                name: konflux-viewer-user-actions
+              subjects:
+                - apiGroup: rbac.authorization.k8s.io
+                  kind: User
+                  name: alice
+                - apiGroup: rbac.authorization.k8s.io
+                  kind: User
+                  name: bob
+                - apiGroup: rbac.authorization.k8s.io
+                  kind: User
+                  name: charlie
+    - name: Create konflux-sre Group with users
+      try:
+        - create:
+            file: ./resources/group-with-users-konflux-sre.yaml
+    - name: Assert konflux-sre's support ClusterRoleBinding is created correctly
+      try:
+        - assert:
+            resource:
+              apiVersion: rbac.authorization.k8s.io/v1
+              kind: ClusterRoleBinding
+              metadata:
+                name: konflux-support-konflux-sre
+                labels:
+                  namespace-lister.konflux-ci.dev/use-for-access: 'true'
+              roleRef:
+                apiGroup: rbac.authorization.k8s.io
+                kind: ClusterRole
+                name: konflux-viewer-user-actions
+              subjects:
+                - apiGroup: rbac.authorization.k8s.io
+                  kind: User
+                  name: dan
+                - apiGroup: rbac.authorization.k8s.io
+                  kind: User
+                  name: frank
+                - apiGroup: rbac.authorization.k8s.io
+                  kind: User
+                  name: john
+    - name: Delete the cluster policy
+      try:
+        - delete:
+            file: ../generate-support-clusterrolebinding-clusterpolicy.yaml
+        - wait:
+            apiVersion: kyverno.io/v1
+            kind: ClusterPolicy
+            name: generate-konflux-viewer-access
+            for:
+              deletion: {}
+        - script:
+            content: |
+              while true; do
+                if [ "$(kubectl get updaterequests -n konflux-kyverno -o yaml | yq '.items | length')" -eq 0 ]; then
+                  exit 0
+                fi
+                sleep 1
+              done
+            timeout: 30s
+    - name: Assert the cluster role bindings still exist
+      try:
+        - assert:
+            resource:
+              apiVersion: rbac.authorization.k8s.io/v1
+              kind: ClusterRoleBinding
+              metadata:
+                name: konflux-support-ai-konflux-user-support
+                labels:
+                  namespace-lister.konflux-ci.dev/use-for-access: 'true'
+              roleRef:
+                apiGroup: rbac.authorization.k8s.io
+                kind: ClusterRole
+                name: konflux-viewer-user-actions
+              subjects:
+                - apiGroup: rbac.authorization.k8s.io
+                  kind: User
+                  name: alice
+                - apiGroup: rbac.authorization.k8s.io
+                  kind: User
+                  name: bob
+                - apiGroup: rbac.authorization.k8s.io
+                  kind: User
+                  name: charlie
+        - assert:
+            resource:
+              apiVersion: rbac.authorization.k8s.io/v1
+              kind: ClusterRoleBinding
+              metadata:
+                name: konflux-support-konflux-sre
+                labels:
+                  namespace-lister.konflux-ci.dev/use-for-access: 'true'
+              roleRef:
+                apiGroup: rbac.authorization.k8s.io
+                kind: ClusterRole
+                name: konflux-viewer-user-actions
+              subjects:
+                - apiGroup: rbac.authorization.k8s.io
+                  kind: User
+                  name: dan
+                - apiGroup: rbac.authorization.k8s.io
+                  kind: User
+                  name: frank
+                - apiGroup: rbac.authorization.k8s.io
+                  kind: User
+                  name: john

@@ -1,0 +1,20 @@
+apiVersion: konflux.konflux-ci.dev/v1alpha1
+kind: Konflux
+metadata:
+  name: konflux
+spec:
+  buildService:
+    spec:
+      buildControllerManager:
+        replicas: 1
+        manager:
+          env:
+            - name: PAC_WEBHOOK_INSECURE_SSL
+              value: "1"
+          resources:
+            requests:
+              cpu: 30m
+              memory: 128Mi
+            limits:
+              cpu: 30m
+              memory: 128Mi

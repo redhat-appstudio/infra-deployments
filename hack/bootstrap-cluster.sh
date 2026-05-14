@@ -37,7 +37,7 @@ log_step() {
 # =============================================================================
 
 main() {
-    local mode obo eaas
+    local mode obo eaas operator_overlay
     local start_time end_time total_time
     start_time=$(date +%s)
     
@@ -51,6 +51,10 @@ main() {
             ;;
         --eaas | -e)
             eaas="--eaas"
+            shift
+            ;;
+        --operator-overlay)
+            operator_overlay="--operator-overlay"
             shift
             ;;
         preview | upstream)
@@ -69,7 +73,7 @@ main() {
 
     log_step "Starting Konflux Cluster Bootstrap"
     log_info "Mode: ${mode:-upstream}"
-    log_info "Options: OBO=${obo:-disabled}, EAAS=${eaas:-disabled}"
+    log_info "Options: OBO=${obo:-disabled}, EAAS=${eaas:-disabled}, OPERATOR_OVERLAY=${operator_overlay:-disabled}"
     log_info "Start time: $(date '+%Y-%m-%d %H:%M:%S %Z')"
 
     # Deploy ArgoCD
@@ -117,7 +121,7 @@ main() {
         ;;
     "preview")
         log_info "Deploying preview configuration"
-        $ROOT/hack/preview.sh $obo $eaas
+        $ROOT/hack/preview.sh $obo $eaas $operator_overlay
         ;;
     esac
 
@@ -147,7 +151,7 @@ main() {
 }
 
 print_help() {
-    echo "Usage: $0 MODE [-o|--obo] [-e|--eaas] [-h|--help]"
+    echo "Usage: $0 MODE [-o|--obo] [-e|--eaas] [--operator-overlay] [-h|--help]"
     echo ""
     echo "Bootstrap a Konflux cluster with ArgoCD and required components."
     echo ""
@@ -159,12 +163,15 @@ print_help() {
     echo "                   (only applicable in preview mode)"
     echo "  -e, --eaas       Install Environment-as-a-Service components"
     echo "                   (only applicable in preview mode)"
+    echo "  --operator-overlay  Preview using development-operator (development minus legacy member appsets)"
+    echo "                      (only applicable in preview mode)"
     echo "  -h, --help       Show this help message and exit"
     echo ""
     echo "Examples:"
     echo "  $0                      # Bootstrap in upstream mode"
     echo "  $0 preview              # Bootstrap in preview mode"
-    echo "  $0 preview --obo --eaas # Preview mode with OBO and EaaS"
+    echo "  $0 preview --obo --eaas             # Preview mode with OBO and EaaS"
+    echo "  $0 preview --operator-overlay       # Preview mode with development-operator overlay"
     echo ""
     echo "Environment variables:"
     echo "  MY_GIT_FORK_REMOTE      Git remote name for your fork (required for preview)"

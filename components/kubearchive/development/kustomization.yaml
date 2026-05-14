@@ -34,6 +34,9 @@ configMapGenerator:
         argocd.argoproj.io/sync-wave: "-2"
     literals:
       - MIGRATION_VERSION=13
+  - name: kubearchive-deployment-schema-version
+    literals:
+      - MIGRATION_VERSION=13
   - name: kubearchive-logging-writer
     literals:
       - |
@@ -96,7 +99,7 @@ patches:
               spec:
                 containers:
                   - name: vacuum
-                    image: quay.io/kubearchive/vacuum:v1.21.3
+                    image: quay.io/kubearchive/vacuum:v1.21.4
   - patch: |-
       apiVersion: batch/v1
       kind: CronJob
@@ -109,7 +112,7 @@ patches:
               spec:
                 containers:
                   - name: vacuum
-                    image: quay.io/kubearchive/vacuum:v1.21.3
+                    image: quay.io/kubearchive/vacuum:v1.21.4
   - patch: |-
       apiVersion: batch/v1
       kind: CronJob
@@ -122,7 +125,7 @@ patches:
               spec:
                 containers:
                   - name: vacuum
-                    image: quay.io/kubearchive/vacuum:v1.21.3
+                    image: quay.io/kubearchive/vacuum:v1.21.4
   # Ensure database is ready before schema-migration job runs
   - patch: |-
       apiVersion: apps/v1
@@ -153,8 +156,6 @@ patches:
         name: kubearchive-schema-migration
         namespace: kubearchive
         annotations:
-          # Needed if just the command is changed, otherwise the job needs to be deleted manually
-          argocd.argoproj.io/sync-options: Force=true,Replace=true
           argocd.argoproj.io/sync-wave: "-1"
           ignore-check.kube-linter.io/no-read-only-root-fs: >
             "This job needs to clone a repository to do its job, so it needs write access to the FS."
@@ -174,6 +175,16 @@ patches:
                     value: "1000"
                 securityContext:
                   runAsUser: null
+  # Add version suffix so syncs with unchanged version are a no-op
+  # (immutable Job, same name = nothing to do). On upgrade, new name = new Job
+  # created, old completed one pruned. Update suffix when changing MIGRATION_VERSION.
+  - target:
+      kind: Job
+      name: kubearchive-schema-migration
+    patch: |-
+      - op: replace
+        path: /metadata/name
+        value: kubearchive-schema-migration-v13
   # These patches add an annotation so an OpenShift service
   # creates the TLS secrets instead of Cert Manager
   - patch: |-
@@ -238,7 +249,7 @@ patches:
                 - name: MIGRATION_VERSION
                   valueFrom:
                     configMapKeyRef:
-                      name: kubearchive-schema-version
+                      name: kubearchive-deployment-schema-version
                       key: MIGRATION_VERSION
                 securityContext:
                   readOnlyRootFilesystem: true
@@ -297,7 +308,7 @@ patches:
                 - name: MIGRATION_VERSION
                   valueFrom:
                     configMapKeyRef:
-                      name: kubearchive-schema-version
+                      name: kubearchive-deployment-schema-version
                       key: MIGRATION_VERSION
                 securityContext:
                   readOnlyRootFilesystem: true
@@ -309,6 +320,19 @@ patches:
                   requests:
                     cpu: 200m
                     memory: 128Mi
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: otel-collector
+        labels:
+          app: otel-collector
+      spec:
+        template:
+          spec:
+            containers:
+              - name: otel-collector
+                image: quay.io/kubearchive/opentelemetry-collector@sha256:b17fec48359d78477cfdeb758bb5d71c86ef70e08a6b3944d70d038352211d03
 
   # We don't need this CronJob as it is suspended, we can enable it later
   - patch: |-
