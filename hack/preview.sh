@@ -997,6 +997,24 @@ if git rev-parse --verify $PREVIEW_BRANCH &> /dev/null; then
 fi
 git checkout -b $PREVIEW_BRANCH
 
+# Sync preview branch with upstream to ensure it includes latest component changes
+UPSTREAM_URL="https://github.com/redhat-appstudio/infra-deployments.git"
+log_step "Syncing preview branch with upstream (redhat-appstudio/infra-deployments)"
+if git fetch "$UPSTREAM_URL" main 2>/dev/null; then
+    if [ "$(git rev-parse HEAD)" != "$(git rev-parse FETCH_HEAD)" ]; then
+        if git merge --no-edit FETCH_HEAD 2>/dev/null; then
+            log_success "Merged latest upstream/main into preview branch"
+        else
+            git merge --abort 2>/dev/null
+            log_warn "Could not merge upstream/main (conflicts) - preview may not include latest upstream changes"
+        fi
+    else
+        log_info "Already up to date with upstream/main"
+    fi
+else
+    log_warn "Could not fetch from upstream - continuing without sync"
+fi
+
 log_success "Git environment initialized"
 log_info "  - Repository URL: $MY_GIT_REPO_URL"
 log_info "  - Source branch: $MY_GIT_BRANCH"
