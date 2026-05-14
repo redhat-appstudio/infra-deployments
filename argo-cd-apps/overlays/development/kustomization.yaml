@@ -221,3 +221,29 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: dummy-deployment
+  # ensure installation order of ApplicationSets during all-application-sets sync
+  - path: dev-application-sync-wave-kyverno.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: kyverno
+  - path: dev-application-sync-wave-kueue.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: kueue
+  - path: dev-application-sync-wave-pipeline-service.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: pipeline-service
+  - path: dev-application-sync-wave-policies.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: policies
+  - path: dev-application-sync-wave-disaster-recovery.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: disaster-recovery
