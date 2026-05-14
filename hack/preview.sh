@@ -990,6 +990,41 @@ if ! git diff --exit-code --quiet; then
     exit 1
 fi
 
+# Sync with upstream to ensure preview includes latest component changes
+UPSTREAM_REMOTE=""
+for remote in $(git remote); do
+    remote_url=$(git ls-remote --get-url "$remote" 2>/dev/null)
+    if echo "$remote_url" | grep -q "redhat-appstudio/infra-deployments"; then
+        UPSTREAM_REMOTE="$remote"
+        break
+    fi
+done
+
+if [ -n "$UPSTREAM_REMOTE" ]; then
+    log_step "Syncing with upstream (redhat-appstudio/infra-deployments)"
+    if git fetch "$UPSTREAM_REMOTE" main 2>/dev/null; then
+        upstream_head=$(git rev-parse "$UPSTREAM_REMOTE/main" 2>/dev/null)
+        if [ "$(git rev-parse HEAD)" != "$upstream_head" ]; then
+            if git merge --ff-only "$UPSTREAM_REMOTE/main" 2>/dev/null; then
+                log_success "Fast-forwarded to latest upstream/main"
+            elif git merge --no-edit "$UPSTREAM_REMOTE/main" 2>/dev/null; then
+                log_success "Merged latest upstream/main"
+            else
+                git merge --abort 2>/dev/null
+                log_warn "Could not merge upstream/main (conflicts) - continuing with current branch state"
+                log_warn "Preview may not include latest upstream changes"
+            fi
+        else
+            log_info "Already up to date with upstream/main"
+        fi
+    else
+        log_warn "Could not fetch from upstream remote '$UPSTREAM_REMOTE' - continuing without sync"
+    fi
+else
+    log_warn "No upstream remote found for redhat-appstudio/infra-deployments - skipping sync"
+    log_warn "To enable automatic sync, add upstream: git remote add upstream https://github.com/redhat-appstudio/infra-deployments.git"
+fi
+
 # Create preview branch for preview configuration
 PREVIEW_BRANCH=preview-${MY_GIT_BRANCH}${TEST_BRANCH_ID+-$TEST_BRANCH_ID}
 if git rev-parse --verify $PREVIEW_BRANCH &> /dev/null; then
