@@ -1,18 +1,8 @@
 apiVersion: kueue.x-k8s.io/v1beta2
-kind: AdmissionCheck
-metadata:
-  name: static-admission
-spec:
-  controllerName: konflux-ci.dev/kueue-external-admission
----
-apiVersion: kueue.x-k8s.io/v1beta2
 kind: ClusterQueue
 metadata:
   name: cluster-pipeline-queue
 spec:
-  admissionChecksStrategy:
-    admissionChecks:
-    - name: static-admission
   flavorFungibility:
     whenCanBorrow: MayStopSearch
     whenCanPreempt: TryNextFlavor
