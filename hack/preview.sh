@@ -983,13 +983,6 @@ if [ -z "$MY_GITHUB_ORG" ] || [ "$MY_GITHUB_ORG" == "redhat-appstudio-appdata" ]
     exit 1
 fi
 
-if ! git diff --exit-code --quiet; then
-    log_error "Uncommitted changes detected in Git working tree"
-    log_error "ACTION REQUIRED: Commit or stash your changes before running preview"
-    log_error "Run 'git status' to see pending changes"
-    exit 1
-fi
-
 # Create preview branch for preview configuration
 PREVIEW_BRANCH=preview-${MY_GIT_BRANCH}${TEST_BRANCH_ID+-$TEST_BRANCH_ID}
 if git rev-parse --verify $PREVIEW_BRANCH &> /dev/null; then
@@ -997,22 +990,68 @@ if git rev-parse --verify $PREVIEW_BRANCH &> /dev/null; then
 fi
 git checkout -b $PREVIEW_BRANCH
 
-# Sync preview branch with upstream to ensure it includes latest component changes
+# Commit any local changes (e.g., PR changes applied by CI) to the preview branch
+git add -A
+git diff --cached --exit-code --quiet || git commit -m "Include PR changes in preview branch"
+
+# Fetch and merge infra-deployments PR changes
+# Supports: explicit env vars, Prow auto-detection, or upstream sync fallback
 UPSTREAM_URL="https://github.com/redhat-appstudio/infra-deployments.git"
-log_step "Syncing preview branch with upstream (redhat-appstudio/infra-deployments)"
-if git fetch "$UPSTREAM_URL" main 2>/dev/null; then
-    if [ "$(git rev-parse HEAD)" != "$(git rev-parse FETCH_HEAD)" ]; then
+
+# Auto-detect Prow CI: when testing an infra-deployments PR, REPO_NAME and PULL_NUMBER are set by Prow
+if [[ -z "${INFRA_DEPLOYMENTS_ORG:-}" && -z "${INFRA_DEPLOYMENTS_BRANCH:-}" && -z "${INFRA_DEPLOYMENTS_PR:-}" ]]; then
+    if [[ "${REPO_NAME:-}" == "infra-deployments" && -n "${PULL_NUMBER:-}" ]]; then
+        log_info "Prow CI detected for infra-deployments PR #${PULL_NUMBER}"
+        INFRA_DEPLOYMENTS_PR="${PULL_NUMBER}"
+    fi
+fi
+
+if [[ -n "${INFRA_DEPLOYMENTS_ORG:-}" && -n "${INFRA_DEPLOYMENTS_BRANCH:-}" ]]; then
+    log_step "Fetching PR changes from ${INFRA_DEPLOYMENTS_ORG}/infra-deployments (branch: ${INFRA_DEPLOYMENTS_BRANCH})"
+    pr_url="https://github.com/${INFRA_DEPLOYMENTS_ORG}/infra-deployments.git"
+    if git fetch "$pr_url" "$INFRA_DEPLOYMENTS_BRANCH" 2>/dev/null; then
         if git merge --no-edit FETCH_HEAD 2>/dev/null; then
-            log_success "Merged latest upstream/main into preview branch"
+            log_success "Merged PR changes from ${INFRA_DEPLOYMENTS_ORG}/${INFRA_DEPLOYMENTS_BRANCH}"
         else
             git merge --abort 2>/dev/null
-            log_warn "Could not merge upstream/main (conflicts) - preview may not include latest upstream changes"
+            log_error "Could not merge PR changes (conflicts) - aborting"
+            exit 1
         fi
     else
-        log_info "Already up to date with upstream/main"
+        log_error "Could not fetch from ${INFRA_DEPLOYMENTS_ORG}/infra-deployments branch ${INFRA_DEPLOYMENTS_BRANCH}"
+        exit 1
+    fi
+elif [[ -n "${INFRA_DEPLOYMENTS_PR:-}" ]]; then
+    log_step "Fetching PR #${INFRA_DEPLOYMENTS_PR} from upstream"
+    if git fetch "$UPSTREAM_URL" "refs/pull/${INFRA_DEPLOYMENTS_PR}/head" 2>/dev/null; then
+        if git merge --no-edit FETCH_HEAD 2>/dev/null; then
+            log_success "Merged upstream PR #${INFRA_DEPLOYMENTS_PR}"
+        else
+            git merge --abort 2>/dev/null
+            log_error "Could not merge PR #${INFRA_DEPLOYMENTS_PR} (conflicts) - aborting"
+            exit 1
+        fi
+    else
+        log_error "Could not fetch PR #${INFRA_DEPLOYMENTS_PR} from upstream"
+        exit 1
     fi
 else
-    log_warn "Could not fetch from upstream - continuing without sync"
+    # No PR specified — sync with upstream/main to pick up latest component changes
+    log_step "Syncing preview branch with upstream (redhat-appstudio/infra-deployments)"
+    if git fetch "$UPSTREAM_URL" main 2>/dev/null; then
+        if [ "$(git rev-parse HEAD)" != "$(git rev-parse FETCH_HEAD)" ]; then
+            if git merge --no-edit FETCH_HEAD 2>/dev/null; then
+                log_success "Merged latest upstream/main into preview branch"
+            else
+                git merge --abort 2>/dev/null
+                log_warn "Could not merge upstream/main (conflicts) - preview may not include latest upstream changes"
+            fi
+        else
+            log_info "Already up to date with upstream/main"
+        fi
+    else
+        log_warn "Could not fetch from upstream - continuing without sync"
+    fi
 fi
 
 log_success "Git environment initialized"
@@ -1114,11 +1153,12 @@ fi
 log_step "Committing and pushing preview changes"
 if ! git diff --exit-code --quiet; then
     git commit -a -m "Preview mode, do not merge into main"
-    git push -f --set-upstream $MY_GIT_FORK_REMOTE $PREVIEW_BRANCH
-    log_success "Preview changes committed and pushed to $MY_GIT_FORK_REMOTE/$PREVIEW_BRANCH"
+    log_info "Preview modifications committed"
 else
-    log_info "No changes to commit"
+    log_info "No additional preview modifications to commit"
 fi
+git push -f --set-upstream $MY_GIT_FORK_REMOTE $PREVIEW_BRANCH
+log_success "Preview branch pushed to $MY_GIT_FORK_REMOTE/$PREVIEW_BRANCH"
 
 # =============================================================================
 # Deploy Applications
