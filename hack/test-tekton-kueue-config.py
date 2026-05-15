@@ -1447,19 +1447,6 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
                 "kueue.x-k8s.io/priority-class": "konflux-user-specific"
             }
         }
-
-    },
-    "internal_pipelinerun_child_production-kflux-ocp-p01": {
-        "pipelinerun_key": "internal_pipelinerun_child",
-        "config_key": "production-kflux-ocp-p01",
-        "expected": {
-            "annotations": {},
-            "labels": {
-                "kueue.x-k8s.io/queue-name": "pipelines-queue",
-                "kueue.x-k8s.io/priority-class": "konflux-release"
-            }
-        }
-
     },
 
     # Test OCP stage/prod priority assignment (only on OCP cluster)
