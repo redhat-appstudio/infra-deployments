@@ -11,8 +11,8 @@ spec:
   - name: loki
     interval: 30s
     rules:
-    - alert: LokiDown
-      expr: up{namespace="product-kubearchive-logging",job=~"loki-ingester.*"} == 0
+    - alert: LokiComponentDown
+      expr: up{namespace="product-kubearchive-logging",job=~"loki-(ingester|distributor|querier|compactor).*"} == 0
       for: 5m
       labels:
         severity: critical
@@ -32,14 +32,20 @@ spec:
         description: "99th percentile latency is {{ $value }}s"
     - alert: LokiIngestionFailure
       expr: |
-        rate(loki_request_duration_seconds_count{
+        100 * sum(rate(loki_request_duration_seconds_count{
           namespace="product-kubearchive-logging",
-          status_code!~"2..",
+          status_code=~"5..",
           route=~".*push.*"
-        }[5m]) > 0.1
+        }[5m])) by (job)
+        /
+        sum(rate(loki_request_duration_seconds_count{
+          namespace="product-kubearchive-logging",
+          route=~".*push.*"
+        }[5m])) by (job)
+        > 10
       for: 5m
       labels:
         severity: warning
       annotations:
         summary: "Loki ingestion failures detected"
-        description: "Ingestion error rate is {{ $value }} per second"
+        description: "{{ $labels.job }} push error rate is {{ $value | printf \"%.1f\" }}%"

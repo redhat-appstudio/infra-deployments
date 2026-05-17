@@ -19,16 +19,16 @@ commonAnnotations:
 
 resources:
 - ../base
-- namespace.yaml
 - rbac.yaml
 - loki-secret.yaml
 - sa.yaml
 - prometheus-rules.yaml
 
-patchesStrategicMerge:
-  - namespace-patch.yaml
-
 patches:
+  - patch: namespace.yaml
+    target:
+      kind: Namespace
+      name: product-kubearchive-logging
   - path: scc-patch.yaml
     target:
       kind: SecurityContextConstraints
@@ -63,6 +63,10 @@ patches:
       - op: replace
         path: /spec/endpoints/0/port
         value: http-metrics
+      - op: remove
+        value: bearerTokenSecret
+      - op: remove
+        value: tlsConfig
       - op: replace
         path: /spec/selector/matchExpressions
         value:
