@@ -32,6 +32,7 @@ spec:
     resourceGroups:
     - coveredResources:
       - tekton.dev/pipelineruns
+      - konflux-ci.dev/token
       - cpu
       - memory
       - linux-arm64
@@ -45,6 +46,8 @@ spec:
         resources:
         - name: tekton.dev/pipelineruns
           nominalQuota: "500"
+        - name: konflux-ci.dev/token
+          nominalQuota: "600"
         - name: linux-arm64
           nominalQuota: "10"
         - name: linux-amd64
