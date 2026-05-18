@@ -1,0 +1,31 @@
+# Temporary workaround: TektonInstallerSet-managed PAC watcher ClusterRole cannot be
+# patched (operator reconciles it). Remove this ClusterRole/Binding once upstream PAC
+# grants pipelineruns/status to pipelines-as-code-watcher.
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: pac-watcher-pipelinerun-status-workaround
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+    description: Temporary until upstream Pipelines-as-Code includes pipelineruns/status in the watcher ClusterRole.
+rules:
+  - apiGroups: ["tekton.dev"]
+    resources: ["pipelineruns/status"]
+    verbs: ["update", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: pac-watcher-pipelinerun-status-workaround
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+    description: Temporary until upstream Pipelines-as-Code includes pipelineruns/status in the watcher ClusterRole.
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: pac-watcher-pipelinerun-status-workaround
+subjects:
+  - kind: ServiceAccount
+    name: pipelines-as-code-watcher
+    namespace: openshift-pipelines
