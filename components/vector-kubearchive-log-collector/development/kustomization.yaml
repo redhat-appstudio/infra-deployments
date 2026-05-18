@@ -23,12 +23,9 @@ resources:
 - loki-secret.yaml
 - sa.yaml
 - prometheus-rules.yaml
+- namespace.yaml
 
 patches:
-  - path: namespace.yaml
-    target:
-      kind: Namespace
-      name: product-kubearchive-logging
   - path: scc-patch.yaml
     target:
       kind: SecurityContextConstraints
