@@ -162,14 +162,6 @@ rules:
   - verbs:
       - get
       - list
-      - watch
-    apiGroups:
-      - rbac.authorization.k8s.io
-    resources:
-      - roles
-  - verbs:
-      - get
-      - list
       - create
       - update
       - patch
@@ -177,6 +169,7 @@ rules:
     apiGroups:
       - rbac.authorization.k8s.io
     resources:
+      - roles
       - rolebindings
   - verbs:
       - get
