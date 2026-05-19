@@ -1,8 +1,20 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-- ../base
+- ../base/kueue
+- ../base-ring1-tekton-kueue
+- ../base/tekton-kueue-monitoring
 - queue-config
 
 commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+
+patches:
+- target:
+    kind: Subscription
+    name: openshift-kueue-operator
+    namespace: openshift-kueue-operator
+  patch: |-
+    - op: replace
+      path: /spec/channel
+      value: stable-v1.3
