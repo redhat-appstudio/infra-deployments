@@ -25,17 +25,17 @@ import (
 
 func main() {
 	var (
-		repoRoot             = flag.String("repo-root", ".", "Path to the repository root")
-		baseRef              = flag.String("base-ref", "main", "Base git ref to compare against")
-		overlaysDir          = flag.String("overlays-dir", "argo-cd-apps/overlays", "Path to overlays directory relative to repo root")
-		dryRun               = flag.Bool("dry-run", false, "Print results without calling GitHub API")
-		prNumber             = flag.Int("pr-number", 0, "PR number to label (required if not --dry-run)")
-		githubToken          = flag.String("github-token", "", "GitHub token (required if not --dry-run)")
-		repo                 = flag.String("repo", "", "GitHub repository in owner/repo format (required if not --dry-run)")
-		clusterLabels        = flag.Bool("cluster-labels", false, "Include cluster/<name> labels in addition to environment labels")
-		logFile              = flag.String("log-file", "", "Write debug-level logs to this file (in addition to INFO-level logs on stdout)")
-		enforceRingDeploy    = flag.Bool("enforce-ring-deployment", false, "Fail when both staging and production overlays are directly modified in the same PR")
-		ringReportFile       = flag.String("ring-report-file", "", "Write ring deployment check result (markdown) to this file for external consumers like PR comments")
+		repoRoot          = flag.String("repo-root", ".", "Path to the repository root")
+		baseRef           = flag.String("base-ref", "main", "Base git ref to compare against")
+		overlaysDir       = flag.String("overlays-dir", "argo-cd-apps/overlays", "Path to overlays directory relative to repo root")
+		dryRun            = flag.Bool("dry-run", false, "Print results without calling GitHub API")
+		prNumber          = flag.Int("pr-number", 0, "PR number to label (required if not --dry-run)")
+		githubToken       = flag.String("github-token", "", "GitHub token (required if not --dry-run)")
+		repo              = flag.String("repo", "", "GitHub repository in owner/repo format (required if not --dry-run)")
+		clusterLabels     = flag.Bool("cluster-labels", false, "Include cluster/<name> labels in addition to environment labels")
+		logFile           = flag.String("log-file", "", "Write debug-level logs to this file (in addition to INFO-level logs on stdout)")
+		enforceRingDeploy = flag.Bool("enforce-ring-deployment", false, "Fail when both staging and production overlays are directly modified in the same PR")
+		ringReportFile    = flag.String("ring-report-file", "", "Write ring deployment check result (markdown) to this file for external consumers like PR comments")
 	)
 	flag.Parse()
 
