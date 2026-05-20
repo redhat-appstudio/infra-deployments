@@ -16,6 +16,7 @@ valuesInline:
       enabled: true
       secretName: artifact-registry-proxy-tls
     service:
+      trafficDistribution: PreferClose
       annotations:
         service.beta.openshift.io/serving-cert-secret-name: artifact-registry-proxy-tls
     upstream:
@@ -26,6 +27,7 @@ valuesInline:
         - ^/.+/@v/.* # <module>/@v/<version>.info|.mod|.zip and <module>/@v/list
         - ^/sumdb/.* # checksum database (e.g. sum.golang.org)
       size: 1024
+      ttl: 30d
   test:
     enabled: false
   cert-manager:
