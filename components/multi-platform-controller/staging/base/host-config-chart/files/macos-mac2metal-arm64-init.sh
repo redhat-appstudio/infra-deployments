@@ -35,8 +35,8 @@ sudo chmod 700 /Users/"$user"/.ssh
 
 # Create/overwrite authorized_keys
 sudo chmod 600 /Users/"$user"/.ssh/authorized_keys 2>/dev/null || true
-sudo tee /Users/"$user"/.ssh/authorized_keys < /Users/"$user"/.ssh/id_rsa.pub > /dev/null
-sudo tee /Users/ec2-user/"$user" < /Users/"$user"/.ssh/id_rsa > /dev/null
+sudo cat /Users/"$user"/.ssh/id_rsa.pub | sudo tee /Users/"$user"/.ssh/authorized_keys > /dev/null
+sudo cat /Users/"$user"/.ssh/id_rsa | sudo tee /Users/ec2-user/"$user" > /dev/null
 
 # Set ownership of entire home directory to ensure user has full control
 sudo chown -R "$user":staff /Users/"$user"
