@@ -74,3 +74,15 @@ data:
                 gauge:
                   path: [metadata, deletionTimestamp]
                   nilIsZero: true
+        ###############################################################################
+        # Measures the number of concurrent PipelineRuns in an unfinished or Unknown  
+        # status
+        ###############################################################################
+            - name: "konflux_pipelinerun_status"
+              help: "PipelineRun status: Unknown=running, True=succeeded, False=failed. Count status=Unknown for concurrent runs."
+              each:
+                type: StateSet
+                stateSet:
+                  labelName: status
+                  path: [status, conditions, "[type=Succeeded]", status]
+                  list: [Unknown, True, False]
