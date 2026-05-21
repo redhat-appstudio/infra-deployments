@@ -334,7 +334,7 @@ Write-Host "Scoop installed successfully!"
 # ---------------------------------------------------
 {{- $addresses := (list) }}
 {{- range $entry := (index . "allowed-remote-addresses" | default (list)) }}
-    {{- $addresses = (squote $entry | append $addresses) }}
+    {{- $addresses = append $addresses (squote $entry) }}
 {{- end }}
 Remove-NetFirewallRule -Name 'OpenSSH-Server-In-TCP' -ErrorAction SilentlyContinue
 New-NetFirewallRule -Name 'OpenSSH-Server-In-TCP' `
