@@ -14,7 +14,9 @@ spec:
                 environment: staging
                 clusterDir: base
           - list:
-              elements: []
+              elements:
+                - nameNormalized: kflux-fedora-01
+                  values.clusterDir: kflux-fedora-01
   template:
     metadata:
       name: perf-team-prometheus-reader-{{nameNormalized}}
