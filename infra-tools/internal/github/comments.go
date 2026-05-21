@@ -44,14 +44,20 @@ func NewCommentClient(token, repoFullName string) (*CommentClient, error) {
 // UpsertComment creates or updates a PR comment identified by CommentMarker.
 // If a comment with the marker exists, it is updated; otherwise a new comment is created.
 func (c *CommentClient) UpsertComment(ctx context.Context, prNumber int, body string) error {
-	// Find existing comment
-	existingID, err := c.findMarkedComment(ctx, prNumber)
+	return c.UpsertCommentByMarker(ctx, prNumber, body, CommentMarker)
+}
+
+// UpsertCommentByMarker creates or updates a PR comment identified by the
+// given HTML marker string. This allows multiple tools to manage their own
+// idempotent comments on the same PR using different markers.
+func (c *CommentClient) UpsertCommentByMarker(ctx context.Context, prNumber int, body, marker string) error {
+	existingID, err := c.findCommentByMarker(ctx, prNumber, marker)
 	if err != nil {
 		return fmt.Errorf("finding existing comment: %w", err)
 	}
 
 	if existingID != 0 {
-		slog.Info("Updating existing render-diff comment", "comment_id", existingID)
+		slog.Info("Updating existing comment", "comment_id", existingID, "marker", marker)
 		_, _, err = c.comments.EditComment(ctx, c.owner, c.repo, existingID, &gh.IssueComment{
 			Body: gh.Ptr(body),
 		})
@@ -61,7 +67,7 @@ func (c *CommentClient) UpsertComment(ctx context.Context, prNumber int, body st
 		return nil
 	}
 
-	slog.Info("Creating new render-diff comment")
+	slog.Info("Creating new comment", "marker", marker)
 	_, _, err = c.comments.CreateComment(ctx, c.owner, c.repo, prNumber, &gh.IssueComment{
 		Body: gh.Ptr(body),
 	})
@@ -71,8 +77,8 @@ func (c *CommentClient) UpsertComment(ctx context.Context, prNumber int, body st
 	return nil
 }
 
-// findMarkedComment searches for a comment containing the CommentMarker.
-func (c *CommentClient) findMarkedComment(ctx context.Context, prNumber int) (int64, error) {
+// findCommentByMarker searches for a PR comment whose body contains marker.
+func (c *CommentClient) findCommentByMarker(ctx context.Context, prNumber int, marker string) (int64, error) {
 	opts := &gh.IssueListCommentsOptions{
 		ListOptions: gh.ListOptions{PerPage: 100},
 	}
@@ -82,7 +88,7 @@ func (c *CommentClient) findMarkedComment(ctx context.Context, prNumber int) (in
 			return 0, err
 		}
 		for _, comment := range comments {
-			if comment.Body != nil && strings.Contains(*comment.Body, CommentMarker) {
+			if comment.Body != nil && strings.Contains(*comment.Body, marker) {
 				return comment.GetID(), nil
 			}
 		}
