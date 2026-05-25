@@ -18,6 +18,6 @@ MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Content-Disposition: attachment; filename="userdata.txt"
 
-{{ . -}}
+{{ . }}
 --//--
 {{- end -}}
