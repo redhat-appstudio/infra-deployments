@@ -116,6 +116,10 @@
     - '{__name__="kube_deployment_status_replicas_updated", namespace="tekton-kueue"}'
     - '{__name__="kube_deployment_spec_replicas", namespace="tekton-kueue"}'
 
+    # Namespace: image-rbac-proxy
+    - '{__name__="kube_deployment_spec_replicas", namespace="image-rbac-proxy"}'
+    - '{__name__="kube_deployment_status_replicas_available", namespace="image-rbac-proxy"}'
+
     ## Container Metrics
     - '{__name__="kube_pod_container_status_waiting_reason", namespace!~".*-tenant|openshift-.*|kube-.*"}'
     - '{__name__="kube_pod_container_resource_limits", namespace=~"release-service|rhtap-releng-tenant"}'
