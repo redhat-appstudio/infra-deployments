@@ -22,6 +22,8 @@ resources:
 - rbac.yaml
 - loki-secret.yaml
 - sa.yaml
+- prometheus-rules.yaml
+- namespace.yaml
 
 patches:
   - path: scc-patch.yaml
@@ -51,6 +53,36 @@ patches:
       kind: StatefulSet
       namespace: product-kubearchive-logging
       labelSelector: app.kubernetes.io/name=loki,app.kubernetes.io/component=ingester
+  - patch: |-
+      - op: replace
+        path: /spec/endpoints/0/scheme
+        value: http
+      - op: replace
+        path: /spec/endpoints/0/port
+        value: http-metrics
+      - op: remove
+        path: /spec/endpoints/0/bearerTokenSecret
+      - op: remove
+        path: /spec/endpoints/0/tlsConfig
+      - op: replace
+        path: /spec/selector/matchExpressions
+        value:
+        - key: app.kubernetes.io/component
+          operator: In
+          values:
+          - querier
+          - ingester
+          - distributor
+          - compactor
+        - key: app.kubernetes.io/name
+          operator: In
+          values:
+          - loki
+    target:
+      group: monitoring.coreos.com
+      version: v1
+      kind: ServiceMonitor
+      name: product-kubearchive-logging-monitor
 
 generators:
 - vector-helm-generator.yaml
