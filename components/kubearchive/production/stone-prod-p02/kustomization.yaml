@@ -23,7 +23,10 @@ configMapGenerator:
         annotations:
           argocd.argoproj.io/sync-wave: "-2"
       literals:
-        - MIGRATION_VERSION=5
+        - MIGRATION_VERSION=13
+    - name: kubearchive-deployment-schema-version
+      literals:
+        - MIGRATION_VERSION=13
     - name: kubearchive-logging-writer
       literals:
           - |
@@ -111,7 +114,7 @@ patches:
               spec:
                 containers:
                   - name: vacuum
-                    image: quay.io/kubearchive/vacuum:v1.20.0
+                    image: quay.io/kubearchive/vacuum:v1.21.4
 
   - patch: |-
       apiVersion: batch/v1
@@ -129,13 +132,14 @@ patches:
           spec:
             containers:
               - name: migration
-                image: quay.io/kubearchive/postgresql:v1.21.3@sha256:2ce1545b19d29bd36c1022de13f451f14847aed04d62ab896a3254d74f7c0d39
                 env:
                   - name: MIGRATION_VERSION
                     valueFrom:
                       configMapKeyRef:
                         name: kubearchive-schema-version
                         key: MIGRATION_VERSION
+                  - name: BATCH_SIZE
+                    value: "10000"
                 securityContext:
                   runAsUser: null
   # Add version suffix to Job name so syncs with unchanged version are a no-op
@@ -147,7 +151,7 @@ patches:
     patch: |-
       - op: replace
         path: /metadata/name
-        value: kubearchive-schema-migration-v13
+        value: kubearchive-schema-migration-v13b
   # We don't need the Secret as it will be created by the ExternalSecrets Operator
   - patch: |-
       $patch: delete
@@ -229,7 +233,7 @@ patches:
                 - name: MIGRATION_VERSION
                   valueFrom:
                     configMapKeyRef:
-                      name: kubearchive-schema-version
+                      name: kubearchive-deployment-schema-version
                       key: MIGRATION_VERSION
                 securityContext:
                   readOnlyRootFilesystem: true
@@ -288,7 +292,7 @@ patches:
                 - name: MIGRATION_VERSION
                   valueFrom:
                     configMapKeyRef:
-                      name: kubearchive-schema-version
+                      name: kubearchive-deployment-schema-version
                       key: MIGRATION_VERSION
                 securityContext:
                   readOnlyRootFilesystem: true
