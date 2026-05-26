@@ -1,0 +1,16 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    rbac.konflux-ci.dev/aggregate-to-admin: "true"
+  name: konflux-admin-jbsconfigs.jvmbuildservice.io
+rules:
+  - apiGroups:
+      - jvmbuildservice.io
+    resources:
+      - jbsconfigs
+    verbs:
+      - get
+      - list
+      - watch

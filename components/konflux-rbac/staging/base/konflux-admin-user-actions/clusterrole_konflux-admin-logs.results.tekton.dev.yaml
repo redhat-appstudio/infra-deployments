@@ -1,0 +1,15 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    rbac.konflux-ci.dev/aggregate-to-admin: "true"
+  name: konflux-admin-logs.results.tekton.dev
+rules:
+  - apiGroups:
+      - results.tekton.dev
+    resources:
+      - logs
+    verbs:
+      - get
+      - list
