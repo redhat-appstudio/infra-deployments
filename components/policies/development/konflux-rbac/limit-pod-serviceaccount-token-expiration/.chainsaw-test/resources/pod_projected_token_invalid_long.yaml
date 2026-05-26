@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: chainsaw-pod-projected-long
+spec:
+  restartPolicy: Never
+  serviceAccountName: chainsaw-test-sa
+  securityContext:
+    runAsNonRoot: true
+  containers:
+  - name: c
+    image: registry.access.redhat.com/ubi10-micro:10.1
+    command: ["sh", "-c", "exit 0"]
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: ["ALL"]
+    volumeMounts:
+    - name: tok
+      mountPath: /var/run/secrets/tokens
+  volumes:
+  - name: tok
+    projected:
+      sources:
+      - serviceAccountToken:
+          path: token
+          expirationSeconds: 31536001
+          audience: https://kubernetes.default.svc

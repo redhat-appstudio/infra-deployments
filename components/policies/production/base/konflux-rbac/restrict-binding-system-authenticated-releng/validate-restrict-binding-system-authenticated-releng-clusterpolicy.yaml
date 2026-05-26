@@ -22,6 +22,9 @@ spec:
           - RoleBinding
           namespaces:
           - rhtap-releng-tenant
+          operations:
+          - CREATE
+          - UPDATE
     preconditions:
       all:
       - key: "{{ request.object.subjects[].name }}"

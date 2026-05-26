@@ -88,7 +88,7 @@ loki:
       dir: /var/loki/wal
       checkpoint_duration: 5m          # Create checkpoints every 5 minutes
       flush_on_shutdown: true          # Ensure data is flushed before shutdown
-      replay_memory_ceiling: 4GB       # 75% of 6Gi limit - PREVENTS OOM during replay
+      replay_memory_ceiling: 2GB       # 75% of 6Gi limit - PREVENTS OOM during replay
   server:
     grpc_server_max_recv_msg_size: 15728640  # 15MB
     grpc_server_max_send_msg_size: 15728640

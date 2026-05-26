@@ -13,7 +13,7 @@ patches:
     patch: |
       - op: replace
         path: /spec/dataFrom/0/extract/key
-        value: staging/monitoring/logging/fluentd/splunk-forwarder-rhtap-staging-application
+        value: staging/monitoring/logging/splunk/rh_rhtap_stage_app
   - target:
       group: external-secrets.io
       version: v1
@@ -22,7 +22,7 @@ patches:
     patch: |
       - op: replace
         path: /spec/dataFrom/0/extract/key
-        value: staging/monitoring/logging/fluentd/splunk-forwarder-rhtap-staging-audit
+        value: staging/monitoring/logging/splunk/rh_rhtap_stage_audit
   - path: ../base/patches/configure-logforwarder-compression-patch.yaml
     target:
       group: observability.openshift.io

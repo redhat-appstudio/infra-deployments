@@ -23,7 +23,7 @@ configMapGenerator:
         annotations:
           argocd.argoproj.io/sync-wave: "-2"
       literals:
-        - MIGRATION_VERSION=5
+        - MIGRATION_VERSION=13
     - name: kubearchive-logging-writer
       literals:
           - |
@@ -111,7 +111,7 @@ patches:
               spec:
                 containers:
                   - name: vacuum
-                    image: quay.io/kubearchive/vacuum:v1.20.0
+                    image: quay.io/kubearchive/vacuum:v1.21.3
 
   - patch: |-
       apiVersion: batch/v1
@@ -336,3 +336,17 @@ patches:
       metadata:
         name: "kubearchive-operator-certificate"
         namespace: kubearchive
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: otel-collector
+        labels:
+          app: otel-collector
+      spec:
+        template:
+          spec:
+            containers:
+              - name: otel-collector
+                image: quay.io/kubearchive/opentelemetry-collector@sha256:b17fec48359d78477cfdeb758bb5d71c86ef70e08a6b3944d70d038352211d03
+

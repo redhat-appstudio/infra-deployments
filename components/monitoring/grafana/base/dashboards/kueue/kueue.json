@@ -87,7 +87,7 @@
           "color": "rgba(255,0,255,0.7)"
         },
         "filterValues": {
-          "le": 1e-9
+          "le": 1E-9
         },
         "legend": {
           "show": true
@@ -173,7 +173,7 @@
         {
           "editorMode": "code",
           "exemplar": false,
-          "expr": "(\n  kube_deployment_status_replicas_available{namespace=~\"openshift-kueue-operator|tekton-kueue|kueue-external-admission\"}\n)\n/\nclamp_min(\n  kube_deployment_spec_replicas{namespace=~\"openshift-kueue-operator|tekton-kueue|kueue-external-admission\"},\n  1\n) * 100",
+          "expr": "(\n  kube_deployment_status_replicas_available{namespace=~\"openshift-kueue-operator|tekton-kueue\"}\n)\n/\nclamp_min(\n  kube_deployment_spec_replicas{namespace=~\"openshift-kueue-operator|tekton-kueue\"},\n  1\n) * 100",
           "format": "time_series",
           "instant": false,
           "legendFormat": "{{deployment}}",
@@ -252,7 +252,7 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "(\n    container_memory_working_set_bytes{namespace=~\"tekton-kueue|kueue-external-admission|openshift-kueue-operator\", image!=\"\"} \n    * on(container, pod)\n    group_left\n    kube_pod_container_status_ready{namespace=~\"tekton-kueue|kueue-external-admission|openshift-kueue-operator\"}\n)\n    / on (pod) max by (pod) (kube_pod_resource_limit{resource='memory',namespace=~\"tekton-kueue|kueue-external-admission|openshift-kueue-operator\"}) * 100",
+          "expr": "(\n    container_memory_working_set_bytes{namespace=~\"tekton-kueue|openshift-kueue-operator\", image!=\"\"} \n    * on(container, pod)\n    group_left\n    kube_pod_container_status_ready{namespace=~\"tekton-kueue|openshift-kueue-operator\"}\n)\n    / on (pod) max by (pod) (kube_pod_resource_limit{resource='memory',namespace=~\"tekton-kueue|openshift-kueue-operator\"}) * 100",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
@@ -399,7 +399,7 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "(\n    pod:container_cpu_usage:sum{namespace=~\"tekton-kueue|kueue-external-admission|openshift-kueue-operator\"}\n    * on(pod)\n    kube_pod_container_status_ready{namespace=~\"tekton-kueue|kueue-external-admission|openshift-kueue-operator\"}\n) / on (pod) group_right max by (pod) (kube_pod_resource_limit{resource='cpu',namespace=~\"tekton-kueue|kueue-external-admission|openshift-kueue-operator\"}) * 100",
+          "expr": "(\n    pod:container_cpu_usage:sum{namespace=~\"tekton-kueue|openshift-kueue-operator\"}\n    * on(pod)\n    kube_pod_container_status_ready{namespace=~\"tekton-kueue|openshift-kueue-operator\"}\n) / on (pod) group_right max by (pod) (kube_pod_resource_limit{resource='cpu',namespace=~\"tekton-kueue|openshift-kueue-operator\"}) * 100",
           "legendFormat": "{{pod}}",
           "range": true,
           "refId": "A"
@@ -602,7 +602,7 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "increase(kube_pod_container_status_restarts_total{namespace=~\"tekton-kueue|kueue-external-admission|openshift-kueue-operator\"}[1h])\n* on(container, pod)\nkube_pod_container_status_ready{namespace=~\"tekton-kueue|kueue-external-admission|openshift-kueue-operator\"}",
+          "expr": "increase(kube_pod_container_status_restarts_total{namespace=~\"tekton-kueue|openshift-kueue-operator\"}[1h])\n* on(container, pod)\nkube_pod_container_status_ready{namespace=~\"tekton-kueue|openshift-kueue-operator\"}",
           "legendFormat": "{{pod}}",
           "range": true,
           "refId": "A"
@@ -1258,7 +1258,7 @@
           "color": "rgba(255,0,255,0.7)"
         },
         "filterValues": {
-          "le": 1e-9
+          "le": 1E-9
         },
         "legend": {
           "show": true
@@ -1331,7 +1331,7 @@
           "color": "rgba(255,0,255,0.7)"
         },
         "filterValues": {
-          "le": 1e-9
+          "le": 1E-9
         },
         "legend": {
           "show": true
@@ -1404,7 +1404,7 @@
           "color": "rgba(255,0,255,0.7)"
         },
         "filterValues": {
-          "le": 1e-9
+          "le": 1E-9
         },
         "legend": {
           "show": true
@@ -1845,7 +1845,7 @@
           "color": "rgba(255,0,255,0.7)"
         },
         "filterValues": {
-          "le": 1e-9
+          "le": 1E-9
         },
         "legend": {
           "show": true

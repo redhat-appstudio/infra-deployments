@@ -3,15 +3,16 @@ kind: Kustomization
 resources:
 - ../../base
 - ../../base/external-secrets
-- https://github.com/konflux-ci/image-controller/config/default?ref=cee4845505cddfdac1de7491093b72e0cb977e08
+- https://github.com/konflux-ci/image-controller/config/default?ref=67cc74626bb768336d375413d93725d380474417
 
 images:
 - name: quay.io/konflux-ci/image-controller
   newName: quay.io/konflux-ci/image-controller
-  newTag: cee4845505cddfdac1de7491093b72e0cb977e08
+  newTag: 67cc74626bb768336d375413d93725d380474417
 
 namespace: image-controller
 
 patches:
   - path: ./manager_resources_patch.yaml
   - path: ./pruner_cronjob_resources_patch.yaml
+  - path: ./notification_resetter_cronjob_resources_patch.yaml

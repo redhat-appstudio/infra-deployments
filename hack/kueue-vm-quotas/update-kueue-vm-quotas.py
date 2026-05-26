@@ -23,9 +23,12 @@ See README.md for detailed usage examples and workflow integration.
 import yaml
 import sys
 import argparse
+from decimal import Decimal
 from pathlib import Path
 from typing import Dict, List, Any
 from dataclasses import dataclass
+
+from kubernetes.utils.quantity import format_quantity
 
 
 @dataclass
@@ -154,17 +157,29 @@ def distribute_platforms(platforms: List[PlatformQuota], max_per_group: int = 16
     return groups
 
 
-def create_platform_resource_group(platforms: List[PlatformQuota]) -> ResourceGroup:
+def format_quota(quota: int) -> str:
+    """Format quota using Kubernetes resource.Quantity canonical form.
+
+    Kubernetes normalizes 1000 -> '1k' when storing resource.Quantity values.
+    Using canonical form prevents ArgoCD drift on v1beta2 ClusterQueues.
+    """
+    if quota % 1000 == 0 and quota >= 1000:
+        return format_quantity(Decimal(quota), 'k', quantize=Decimal(1))
+    return str(quota)
+
+
+def create_platform_resource_group(platforms: List[PlatformQuota], is_v1beta2: bool = False) -> ResourceGroup:
     """Create a resource group for a list of platforms."""
-    # Only include platform names in covered resources (no tekton.dev/pipelineruns)
     covered_resources = [p.name for p in sorted(platforms, key=lambda p: p.name)]
-    
-    # Create individual platform resources
+
     resources = [
-        ResourceSpec(name=p.name, nominal_quota=str(p.quota))
+        ResourceSpec(
+            name=p.name,
+            nominal_quota=format_quota(p.quota) if is_v1beta2 else str(p.quota),
+        )
         for p in sorted(platforms, key=lambda p: p.name)
     ]
-    
+
     return ResourceGroup(covered_resources, resources)
 
 
@@ -254,25 +269,26 @@ def process_cluster_queue_update(cluster_queue_path: str, platform_quotas: Dict[
     # Find main documents
     cluster_queue_doc = find_document_by_kind(documents, 'ClusterQueue')
     existing_flavors = get_existing_flavor_names(documents)
-    
+    is_v1beta2 = cluster_queue_doc.get('apiVersion', '').endswith('/v1beta2')
+
     # Preserve base resource group
     existing_groups = cluster_queue_doc.get('spec', {}).get('resourceGroups', [])
     new_resource_groups = preserve_base_resource_group(existing_groups)
-    
+
     # Create platform resource groups
     platform_list = list(platform_quotas.values())
     platform_groups = distribute_platforms(platform_list)
-    
+
     for group_index, platforms in enumerate(platform_groups, start=1):
         flavor_name = f'platform-group-{group_index}'
-        
+
         # Create ResourceFlavor if needed
         if flavor_name not in existing_flavors:
             documents.append(create_resource_flavor(flavor_name))
             print(f"Created ResourceFlavor: {flavor_name}")
-        
+
         # Create resource group
-        resource_group = create_platform_resource_group(platforms)
+        resource_group = create_platform_resource_group(platforms, is_v1beta2)
         group_dict = resource_group_to_dict(resource_group, flavor_name)
         new_resource_groups.append(group_dict)
         

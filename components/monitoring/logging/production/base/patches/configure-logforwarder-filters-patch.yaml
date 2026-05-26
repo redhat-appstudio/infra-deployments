@@ -1,0 +1,236 @@
+---
+# Validate pipeline ordering before applying filters (fail fast if base changes)
+- op: test
+  path: /spec/pipelines/0/name
+  value: fluentd-forward-logs-to-splunk-rhtap-app-index
+- op: test
+  path: /spec/pipelines/1/name
+  value: fluentd-forward-logs-to-splunk-rhtap-audit-index
+# Drop empty lines
+- op: add
+  path: /spec/filters/-
+  value:
+    name: drop-empty-lines
+    type: drop
+    drop:
+      - test:
+          - field: .message
+            matches: '^\\s*$'
+- op: add
+  path: /spec/pipelines/0/filterRefs/-
+  value: drop-empty-lines
+- op: add
+  path: /spec/pipelines/1/filterRefs/-
+  value: drop-empty-lines
+# Enable multi-line exception detection
+- op: add
+  path: /spec/filters/-
+  value:
+    name: multiline-exception
+    type: detectMultilineException
+- op: add
+  path: /spec/pipelines/0/filterRefs/-
+  value: multiline-exception
+- op: add
+  path: /spec/pipelines/1/filterRefs/-
+  value: multiline-exception
+
+# Drop Tekton reconciliation conflicts (optimistic locking)
+- op: add
+  path: /spec/filters/-
+  value:
+    name: drop-tekton-reconcile-conflicts
+    type: drop
+    drop:
+      - test:
+          - field: .kubernetes.namespace_name
+            matches: 'openshift-pipelines|tekton-.*'
+          - field: .structured.error
+            matches: '(?i)Operation cannot be fulfilled on (pipelineruns?|taskruns?)\.tekton\.dev'
+      - test:
+          - field: .kubernetes.namespace_name
+            matches: 'openshift-pipelines|tekton-.*'
+          - field: .structured.msg
+            matches: '(?i)Reconcile error'
+          - field: .structured.error
+            matches: '(?i)(pipelinerun|taskrun|tekton)'
+      - test:
+          - field: .kubernetes.namespace_name
+            matches: 'tekton-kueue'
+          - field: .message
+            matches: '(?i)error.*Operation cannot be fulfilled on (pipelineruns?|taskruns?)\.tekton\.dev'
+# Drop "resource not found" during finalizer cleanup
+- op: add
+  path: /spec/filters/-
+  value:
+    name: drop-finalizer-not-found
+    type: drop
+    drop:
+      - test:
+          - field: .kubernetes.namespace_name
+            matches: 'openshift-pipelines|tekton-.*'
+          - field: .structured.error
+            matches: '(?i)(pipelineruns|taskruns)\.tekton\.dev .* not found'
+          - field: .structured.error
+            matches: '(?i)finalizers?'
+      - test:
+          - field: .kubernetes.namespace_name
+            matches: 'openshift-pipelines|tekton-.*'
+          - field: .structured.error
+            matches: '(?i)failed to (set|clear) finalizers.*not found'
+# Drop "resource request in progress"
+- op: add
+  path: /spec/filters/-
+  value:
+    name: drop-resource-request-in-progress
+    type: drop
+    drop:
+      - test:
+          - field: .kubernetes.namespace_name
+            matches: 'openshift-pipelines|tekton-.*'
+          - field: .structured.error
+            matches: '(?i)resource request in progress'
+          - field: .structured.error
+            matches: '(?i)(TaskRun|PipelineRun)'
+      - test:
+          - field: .kubernetes.namespace_name
+            matches: 'openshift-pipelines|tekton-.*'
+          - field: .structured.error
+            matches: '(?i)TaskRun prepare error.*resource request in progress'
+# Drop repetitive label update warnings
+- op: add
+  path: /spec/filters/-
+  value:
+    name: drop-tekton-label-update-failures
+    type: drop
+    drop:
+      - test:
+          - field: .kubernetes.namespace_name
+            matches: 'openshift-pipelines|tekton-.*'
+          - field: .structured.error
+            matches: '(?i)Failed to update (PipelineRun|TaskRun) labels'
+          - field: .structured.error
+            matches: '(?i)Operation cannot be fulfilled'
+# Drop admission controller nil annotation logs (audit noise)
+- op: add
+  path: /spec/filters/-
+  value:
+    name: drop-admission-controller-nil-annotations
+    type: drop
+    drop:
+      - test:
+          - field: .kubernetes.namespace_name
+            matches: 'openshift-pipelines'
+          - field: .structured.msg
+            matches: 'remote admission controller audit annotations=map\[string\]string\(nil\)'
+# Drop tekton-results duplicate key database errors
+- op: add
+  path: /spec/filters/-
+  value:
+    name: drop-tekton-results-duplicate-key
+    type: drop
+    drop:
+      - test:
+          - field: .kubernetes.namespace_name
+            matches: 'tekton-results'
+          - field: .structured.error
+            matches: '(?i)duplicate key value violates unique constraint.*results_by_name'
+# Drop leader election optimistic locking (Kubernetes coordination noise)
+- op: add
+  path: /spec/filters/-
+  value:
+    name: drop-leader-election-conflicts
+    type: drop
+    drop:
+      - test:
+          - field: .kubernetes.namespace_name
+            matches: 'openshift-operators|openshift-pipelines|openshift-gitops|tekton-.*'
+          - field: .message
+            matches: '(?i)leaderelection\.go.*Failed to update lock optimistically.*leases/'
+# Drop TLS EOF errors ONLY (health check noise), KEEP bad certificate errors for security audit
+- op: add
+  path: /spec/filters/-
+  value:
+    name: drop-tls-eof-noise
+    type: drop
+    drop:
+      - test:
+          - field: .kubernetes.pod_name
+            matches: 'tekton.*webhook'
+          - field: .structured.msg
+            matches: '(?i)http: TLS handshake error.*EOF'
+# Drop Kueue Workload reconciliation noise
+- op: add
+  path: /spec/filters/-
+  value:
+    name: drop-kueue-reconciliation-noise
+    type: drop
+    drop:
+      # Kueue Workload optimistic locking
+      - test:
+          - field: .kubernetes.namespace_name
+            matches: 'tekton-kueue'
+          - field: .message
+            matches: '(?i)(Removing finalizer|Reconciler error).*error.*Operation cannot be fulfilled on workloads\.kueue\.x-k8s\.io'
+      # PipelineRun not found during unsuspending
+      - test:
+          - field: .kubernetes.namespace_name
+            matches: 'tekton-kueue'
+          - field: .message
+            matches: '(?i)Unsuspending job.*error.*pipelineruns\.tekton\.dev.*not found'
+# application index filters (Tekton drops target openshift-pipelines and tekton-* namespaces)
+- op: add
+  path: /spec/pipelines/0/filterRefs/-
+  value: drop-tekton-reconcile-conflicts
+- op: add
+  path: /spec/pipelines/0/filterRefs/-
+  value: drop-finalizer-not-found
+- op: add
+  path: /spec/pipelines/0/filterRefs/-
+  value: drop-resource-request-in-progress
+- op: add
+  path: /spec/pipelines/0/filterRefs/-
+  value: drop-tekton-label-update-failures
+- op: add
+  path: /spec/pipelines/0/filterRefs/-
+  value: drop-admission-controller-nil-annotations
+- op: add
+  path: /spec/pipelines/0/filterRefs/-
+  value: drop-tekton-results-duplicate-key
+- op: add
+  path: /spec/pipelines/0/filterRefs/-
+  value: drop-leader-election-conflicts
+- op: add
+  path: /spec/pipelines/0/filterRefs/-
+  value: drop-tls-eof-noise
+- op: add
+  path: /spec/pipelines/0/filterRefs/-
+  value: drop-kueue-reconciliation-noise
+# audit index filters
+- op: add
+  path: /spec/pipelines/1/filterRefs/-
+  value: drop-tekton-reconcile-conflicts
+- op: add
+  path: /spec/pipelines/1/filterRefs/-
+  value: drop-finalizer-not-found
+- op: add
+  path: /spec/pipelines/1/filterRefs/-
+  value: drop-resource-request-in-progress
+- op: add
+  path: /spec/pipelines/1/filterRefs/-
+  value: drop-tekton-label-update-failures
+- op: add
+  path: /spec/pipelines/1/filterRefs/-
+  value: drop-admission-controller-nil-annotations
+- op: add
+  path: /spec/pipelines/1/filterRefs/-
+  value: drop-tekton-results-duplicate-key
+- op: add
+  path: /spec/pipelines/1/filterRefs/-
+  value: drop-leader-election-conflicts
+- op: add
+  path: /spec/pipelines/1/filterRefs/-
+  value: drop-tls-eof-noise
+- op: add
+  path: /spec/pipelines/1/filterRefs/-
+  value: drop-kueue-reconciliation-noise

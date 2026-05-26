@@ -3,12 +3,12 @@ kind: Kustomization
 resources:
 - ../../base
 - ../../base/external-secrets
-- https://github.com/konflux-ci/image-controller/config/default?ref=292f181e2ab5575c13f41ddf6aae446344f59783
+- https://github.com/konflux-ci/image-controller/config/default?ref=67cc74626bb768336d375413d93725d380474417
 
 images:
 - name: quay.io/konflux-ci/image-controller
   newName: quay.io/konflux-ci/image-controller
-  newTag: 292f181e2ab5575c13f41ddf6aae446344f59783
+  newTag: 67cc74626bb768336d375413d93725d380474417
 
 namespace: image-controller
 
@@ -20,4 +20,11 @@ patches:
       kind: ExternalSecret
       group: external-secrets.io
       version: v1
+  - path: image-pruner-token.yaml
+    target:
+      name: image-pruner-token
+      kind: ExternalSecret
+      group: external-secrets.io
+      version: v1
   - path: ./pruner_cronjob_resources_patch.yaml
+  - path: ./notification_resetter_cronjob_resources_patch.yaml

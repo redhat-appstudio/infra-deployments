@@ -11,8 +11,16 @@ Note: The steps below should be handled by Argo CD
     $ oc create namespace appstudio-grafana
     ```
 
-- Create the `base` resources by running the following command:
+- Build and apply from the per environment overlay:
 
     ```
-    $ kustomize build components/monitoring/grafana/base | oc apply -f -   
+    $ kustomize build components/monitoring/grafana/development | oc apply -f -
     ```
+
+    Replace `development` with `staging` or `production`. 
+
+## Dashboard migration from base to per environment overlays
+
+The `base/dashboards/` directory is being deprecated. Team dashboards should be moved from `base/dashboards/` into per environment overlays `development/dashboards/`, `staging/dashboards/` and `production/dashboards/`. This allows each environment to reference its own dashboard source independently.
+
+The `release/` dashboard has already been migrated and can be used as a reference for the new structure. The remaining dashboards in `base/dashboards/` will continue to work via `../base` but each team should plan to migrate.

@@ -13,4 +13,9 @@ jobs:
       - uses: actions/checkout@v4
       - name: Lint yaml manifests
         run: |
-          yamllint -f github .
+          yamllint -f github --no-warnings .
+      - name: Check for yaml lint warnings
+        if: always()
+        continue-on-error: true
+        run: |
+          yamllint -f github -s .

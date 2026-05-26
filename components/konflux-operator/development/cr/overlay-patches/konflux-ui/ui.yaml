@@ -1,0 +1,20 @@
+apiVersion: konflux.konflux-ci.dev/v1alpha1
+kind: Konflux
+metadata:
+  name: konflux
+spec:
+  ui:
+    spec:
+      ingress:
+        nodePortService:
+          httpsPort: 30011
+      proxy:
+        replicas: 1
+        nginx:
+          resources:
+            requests:
+              cpu: 30m
+              memory: 128Mi
+            limits:
+              cpu: 30m
+              memory: 128Mi

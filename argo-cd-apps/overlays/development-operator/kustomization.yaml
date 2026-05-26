@@ -1,0 +1,19 @@
+# OpenShift GitOps: member-cluster preview overlay for Konflux operator work.
+# Reuses everything from ../development (platform ApplicationSets, secrets,
+# policies, pipeline-service, etc.) and deletes only the legacy Konflux
+# microservice ApplicationSets listed in delete-legacy-konflux-member-appsets.yaml
+# so those workloads are not deployed alongside the operator-managed stack.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../development
+  - ../../base/member/infra-deployments/konflux-operator
+patchesStrategicMerge:
+  - delete-legacy-konflux-member-appsets.yaml
+patches:
+  - path: development-operator-generator-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: konflux-operator
+namespace: openshift-gitops

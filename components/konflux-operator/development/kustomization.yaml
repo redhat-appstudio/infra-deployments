@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# OpenShift / Argo CD: this root builds the operator install plus one Konflux CR.
+# - `invariant/`: operator remote ref, image pin, and Konflux spec that should
+#   stay the same when promoting a release line to another environment (copy
+#   this directory as a unit).
+# - `cr/overlay-patches/*`: Kustomize components; team- or cluster-specific
+#   Konflux fragments. Update these when the target cluster or ownership
+#   contract changes, not on every operator bump.
+resources:
+  - invariant
+components:
+  - cr/overlay-patches/build
+  - cr/overlay-patches/image-controller
+  - cr/overlay-patches/integration
+  - cr/overlay-patches/konflux-info
+  - cr/overlay-patches/konflux-ui
+  - cr/overlay-patches/namespace-lister
+  - cr/overlay-patches/release

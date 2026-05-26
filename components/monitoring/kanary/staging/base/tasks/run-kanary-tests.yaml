@@ -54,14 +54,24 @@ spec:
   volumes:
     - name: artifacts
       emptyDir: {}
+    - name: users-secret
+      secret:
+        secretName: kanary-probe-users-credentials
+        items:
+          - key: users
+            path: users.json
   steps:
     - name: run-test
       image: quay.io/redhat-user-workloads/konflux-perfscale-tenant/loadtest
       volumeMounts:
         - name: artifacts
           mountPath: /tmp/artifacts
+        - name: users-secret
+          mountPath: /opt/app-root/src/users.json
+          subPath: users.json
+          readOnly: true
       env:
-        - name: ARTIFACT_DIR
+        - name: OUTPUT_DIR
           value: /tmp/artifacts
         - name: CONCURRENCY
           value: "1"
@@ -116,16 +126,12 @@ spec:
             secretKeyRef:
               name: kanary-probe-credentials
               key: ocp-prometheus-token
-        - name: USERS
-          valueFrom:
-            secretKeyRef:
-              name: kanary-probe-users-credentials
-              key: users
       script: |
         #!/usr/bin/env bash
         set -euo pipefail
         echo -n "unknown" > $(results.test-outcome.path)
         ./run-stage.sh
+        cp -f started ended /tmp/artifacts/
     - name: collect-results
       image: quay.io/redhat-user-workloads/konflux-perfscale-tenant/loadtest
       volumeMounts:
@@ -133,6 +139,8 @@ spec:
           mountPath: /tmp/artifacts
       env:
         - name: ARTIFACT_DIR
+          value: /tmp/artifacts/results
+        - name: SOURCE_DIR
           value: /tmp/artifacts
         - name: MEMBER_CLUSTER
           value: $(params.member-cluster)
