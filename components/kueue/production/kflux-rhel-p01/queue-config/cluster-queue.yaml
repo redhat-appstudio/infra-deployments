@@ -1,4 +1,4 @@
-apiVersion: kueue.x-k8s.io/v1beta1
+apiVersion: kueue.x-k8s.io/v1beta2
 kind: ClusterQueue
 metadata:
   name: cluster-pipeline-queue
@@ -178,30 +178,30 @@ spec:
       - name: linux-s390x
         nominalQuota: '60'
       - name: linux-x86-64
-        nominalQuota: '1000'
+        nominalQuota: 1k
       - name: local
-        nominalQuota: '1000'
+        nominalQuota: 1k
       - name: localhost
-        nominalQuota: '1000'
+        nominalQuota: 1k
 ---
-apiVersion: kueue.x-k8s.io/v1beta1
+apiVersion: kueue.x-k8s.io/v1beta2
 kind: ResourceFlavor
 metadata:
   name: default-flavor
 ---
-apiVersion: kueue.x-k8s.io/v1beta1
+apiVersion: kueue.x-k8s.io/v1beta2
 kind: ResourceFlavor
 metadata:
   name: platform-group-1
 spec: {}
 ---
-apiVersion: kueue.x-k8s.io/v1beta1
+apiVersion: kueue.x-k8s.io/v1beta2
 kind: ResourceFlavor
 metadata:
   name: platform-group-2
 spec: {}
 ---
-apiVersion: kueue.x-k8s.io/v1beta1
+apiVersion: kueue.x-k8s.io/v1beta2
 kind: ResourceFlavor
 metadata:
   name: platform-group-3
