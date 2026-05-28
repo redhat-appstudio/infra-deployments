@@ -1,0 +1,24 @@
+# Used when Konflux is installed via the operator (development-operator Argo overlay).
+# Reuses development Tekton/pipeline-service configuration but omits
+# appstudio-pipelines-scc so build-service (operator) can own it with ownerReferences.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../development
+
+# This overlay is applied as live kustomize. Staging/production pipeline-service often
+# uses per-cluster deploy.yaml (see components/pipeline-service/README.md); operator
+# overlays there require the same SCC omission in whatever path Argo actually syncs.
+patches:
+  - target:
+      group: security.openshift.io
+      version: v1
+      kind: SecurityContextConstraints
+      name: appstudio-pipelines-scc
+    patch: |
+      apiVersion: security.openshift.io/v1
+      kind: SecurityContextConstraints
+      metadata:
+        name: appstudio-pipelines-scc
+      $patch: delete

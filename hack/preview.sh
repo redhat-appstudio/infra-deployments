@@ -270,6 +270,8 @@ print_help() {
     echo "Environment (optional):"
     echo "  PREVIEW_WAIT_KONFLUX_CR_READY=true  When using --operator-overlay, additionally wait for the Konflux"
     echo "                       custom resource konflux to exist and report Ready=True (off by default)."
+    echo "  IMAGE_CONTROLLER_QUAY_ORG, IMAGE_CONTROLLER_QUAY_TOKEN  With --operator-overlay, both must be set in"
+    echo "                       hack/preview.env to enable image-controller on the Konflux CR (off by default)."
     echo
     echo "Example: \`$0 preview --obo --grafana --eaas\`"
 }
@@ -376,6 +378,28 @@ configure_kueue_for_ocp_version() {
 
     yq -i 'del(.resources[] | select(test("^kueue/?$")))' "$ROOT/components/policies/development/kustomization.yaml"
     log_success "Kueue disabled for OCP version $ocp_version"
+}
+
+# Enable Konflux CR image-controller only when Quay credentials are provided (operator overlay).
+configure_operator_image_controller() {
+    [ "$TARGET_PREVIEW_OVERLAY" != "development-operator" ] && return
+
+    local cr_patch="$ROOT/components/konflux-operator/development/cr/overlay-patches/image-controller/image-controller.yaml"
+
+    log_step "Configuring Konflux operator image-controller (Quay credentials)"
+
+    if [[ -n "${IMAGE_CONTROLLER_QUAY_ORG}" && -n "${IMAGE_CONTROLLER_QUAY_TOKEN}" ]]; then
+        log_info "IMAGE_CONTROLLER_QUAY_ORG and IMAGE_CONTROLLER_QUAY_TOKEN are set"
+        log_info "  - Quay organization: ${IMAGE_CONTROLLER_QUAY_ORG}"
+        yq -i '.spec.imageController.enabled = true' "$cr_patch"
+        log_success "Konflux CR image-controller: enabled (operator will deploy image-controller)"
+    else
+        log_info "IMAGE_CONTROLLER_QUAY_ORG and/or IMAGE_CONTROLLER_QUAY_TOKEN are not set"
+        [ -z "${IMAGE_CONTROLLER_QUAY_ORG}" ] && log_info "  - IMAGE_CONTROLLER_QUAY_ORG: not set"
+        [ -z "${IMAGE_CONTROLLER_QUAY_TOKEN}" ] && log_info "  - IMAGE_CONTROLLER_QUAY_TOKEN: not set"
+        yq -i '.spec.imageController.enabled = false' "$cr_patch"
+        log_warn "Konflux CR image-controller: disabled (set both Quay variables in hack/preview.env to enable)"
+    fi
 }
 
 # Apply service image overrides from environment variables
@@ -1066,6 +1090,7 @@ label_cluster_nodes
 if [ "$TARGET_PREVIEW_OVERLAY" = "development" ] || [ "$TARGET_PREVIEW_OVERLAY" = "development-operator" ]; then
     configure_deploy_only
     configure_kueue_for_ocp_version
+    configure_operator_image_controller
 
     # Configure GitHub org
     log_step "Configuring GitHub organization"
