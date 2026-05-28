@@ -1,0 +1,101 @@
+apiVersion: builtin
+kind: HelmChartInflationGenerator
+metadata:
+  name: squid-helm
+name: squid-helm
+repo: oci://quay.io/konflux-ci/caching
+version: 0.1.1506+abe1045
+valuesInline:
+  installCertManagerComponents: false
+  mirrord:
+    enabled: false
+  nginx:
+    enabled: true
+    replicaCount: 3
+    name: artifact-registry-proxy
+    tls:
+      enabled: true
+      secretName: artifact-registry-proxy-tls
+    service:
+      port: 443
+      annotations:
+        service.beta.openshift.io/serving-cert-secret-name: artifact-registry-proxy-tls
+    upstream:
+      url: https://red-hat.repo.sonatype.app
+    auth:
+      enabled: true
+      secretName: artifact-registry-credentials
+    cache:
+      allowList:
+        # Cache all traffic to nexus repositories
+        - ^/repository/
+      size: 51200
+    resources:
+      requests:
+        cpu: "2"
+        memory: 2Gi
+      limits:
+        cpu: "2"
+        memory: 2Gi
+  test:
+    enabled: false
+  cert-manager:
+    enabled: false
+  environment: release
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 2Gi
+  icapServer:
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+  squidExporter:
+    resources:
+      requests:
+        cpu: 10m
+        memory: 16Mi
+      limits:
+        cpu: 100m
+        memory: 64Mi
+  cache:
+    allowList:
+      - ^https://cdn([0-9]{2})?\.quay\.io/.+/sha256/.+/[a-f0-9]{64}
+      - ^https://s3\.[a-z0-9-]+\.amazonaws\.com/quayio-production-s3/sha256/.+/[a-f0-9]{64}
+      - ^https://quayio-production-s3\.s3[a-z0-9.-]*\.amazonaws\.com/sha256/.+/[a-f0-9]{64}
+      - ^https://production\.cloudflare\.docker\.com/registry-v2/docker/registry/v2/blobs/sha256/[a-f0-9]{2}/[a-f0-9]{64}/data
+      - ^https://docker-images-prod\.[a-f0-9]{32}\.r2\.cloudflarestorage\.com/registry-v2/docker/registry/v2/blobs/sha256/[a-f0-9]{2}/[a-f0-9]{64}/data
+      - ^https://docker-images-prod\.s3[a-z0-9.-]*\.amazonaws\.com/registry-v2/docker/registry/v2/blobs/sha256/[a-f0-9]{2}/[a-f0-9]{64}/data
+      - ^https://cdn\.registry\.fedoraproject\.org/v2/.+/blobs/sha256:[a-f0-9]{64}
+      - ^https://[a-f0-9]{32}\.r2\.cloudflarestorage\.com/app-ci-image-registry/docker/registry/v2/blobs/sha256/[a-f0-9]{2}/[a-f0-9]{64}/data
+      - ^https://layers\.nvcr\.io/registry/docker/registry/v2/blobs/sha256/[a-f0-9]{2}/[a-f0-9]{64}/data
+      - ^https://[a-z0-9]+\.cloudfront\.net/sha256/[a-f0-9]{2}/[a-f0-9]{64}
+    size: 51200
+    maxObjectSize: 1024
+  prometheus:
+    serviceMonitor:
+      nginxTLS:
+        ca:
+          configMapName: openshift-service-ca.crt
+          key: service-ca.crt
+  tlsOutgoingOptions:
+    caFile: /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
+  volumes:
+    - name: trusted-ca
+      configMap:
+        name: trusted-ca
+        items:
+          - key: ca-bundle.crt
+            path: tls-ca-bundle.pem
+  volumeMounts:
+    - name: trusted-ca
+      mountPath: /etc/pki/ca-trust/extracted/pem
+      readOnly: true
