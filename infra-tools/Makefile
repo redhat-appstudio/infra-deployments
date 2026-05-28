@@ -58,6 +58,7 @@ lint-fix: golangci-lint ## Run golangci-lint linter and perform fixes.
 build: fmt vet ## Build all binaries.
 	go build -o $(LOCALBIN)/env-detector ./cmd/env-detector
 	go build -o $(LOCALBIN)/render-diff ./cmd/render-diff
+	go build -o $(LOCALBIN)/changelog-generator ./cmd/changelog-generator
 
 .PHONY: clean
 clean: ## Remove build artifacts.
