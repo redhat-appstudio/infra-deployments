@@ -2,7 +2,7 @@ name: Enforce Ring Deployment
 
 on:
   pull_request_target:
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened, labeled, unlabeled]
     branches: [main]
     paths:
       - 'components/**'
@@ -19,35 +19,46 @@ jobs:
       pull-requests: write
       issues: write
     steps:
+      - name: Check for hotfix label
+        id: hotfix
+        if: contains(github.event.pull_request.labels.*.name, 'skip-ring-deployment/hotfix')
+        run: echo "skip=true" >> "$GITHUB_OUTPUT"
+
       # Check out the BASE branch (trusted code) so we never execute PR code.
       - uses: actions/checkout@v6
+        if: steps.hotfix.outputs.skip != 'true'
         with:
           fetch-depth: 0
 
       - uses: actions/setup-go@v5
+        if: steps.hotfix.outputs.skip != 'true'
         with:
           go-version-file: infra-tools/go.mod
           cache-dependency-path: infra-tools/go.sum
 
       - name: Setup Kustomize
+        if: steps.hotfix.outputs.skip != 'true'
         uses: multani/action-setup-kustomize@v1
         with:
           version: 5.6.0
 
       # Build from the trusted base branch before switching to PR code.
       - name: Build env-detector (from base branch)
+        if: steps.hotfix.outputs.skip != 'true'
         working-directory: infra-tools
         run: go build -o bin/env-detector ./cmd/env-detector
 
       # Fetch the GitHub-synthesized merge commit so the tool analyses the
       # post-merge state, while the binary remains the trusted base build.
       - name: Checkout PR merge ref
+        if: steps.hotfix.outputs.skip != 'true'
         run: |
           git fetch origin pull/${{ github.event.pull_request.number }}/merge:pr-merge
           git checkout pr-merge
 
       - name: Check ring deployment policy
         id: ring-check
+        if: steps.hotfix.outputs.skip != 'true'
         continue-on-error: true
         working-directory: infra-tools
         run: |
@@ -59,19 +70,31 @@ jobs:
             --dry-run
 
       - name: Post or update PR comment
-        if: always() && steps.ring-check.outcome != 'skipped'
+        if: always() && (steps.ring-check.outcome != 'skipped' || steps.hotfix.outputs.skip == 'true')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           COMMENT_MARKER="<!-- ring-deployment-check -->"
 
-          # Delete any previous comment from this workflow
           gh api "repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" \
             --paginate --jq ".[] | select(.body | contains(\"${COMMENT_MARKER}\")) | .id" \
             | xargs -r -I {} gh api "repos/${{ github.repository }}/issues/comments/{}" -X DELETE
 
-          # Post a new comment only if the report file was generated
-          if [ -s /tmp/ring-report.md ]; then
+          if [ "${{ steps.hotfix.outputs.skip }}" = "true" ]; then
+            cat > /tmp/ring-report.md <<'BODY'
+          ## ✅ Ring Deployment Check — Passed (Hotfix Override)
+
+          This check **passed** because the `skip-ring-deployment/hotfix` label is applied.
+          The normal ring deployment policy has been bypassed for this PR.
+
+          > **Note:** This override should only be used for emergency hotfixes.
+          > The label application is tracked in the PR timeline for audit purposes.
+          BODY
+            echo "${COMMENT_MARKER}" >> /tmp/ring-report.md
+            gh pr comment ${{ github.event.pull_request.number }} \
+              --repo ${{ github.repository }} \
+              --body-file /tmp/ring-report.md
+          elif [ -s /tmp/ring-report.md ]; then
             echo "${COMMENT_MARKER}" >> /tmp/ring-report.md
             gh pr comment ${{ github.event.pull_request.number }} \
               --repo ${{ github.repository }} \
@@ -79,5 +102,5 @@ jobs:
           fi
 
       - name: Fail on ring deployment violation
-        if: always() && steps.ring-check.outcome == 'failure'
+        if: always() && steps.hotfix.outputs.skip != 'true' && steps.ring-check.outcome == 'failure'
         run: exit 1
