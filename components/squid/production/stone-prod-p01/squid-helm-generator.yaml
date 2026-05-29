@@ -18,6 +18,7 @@ valuesInline:
       secretName: artifact-registry-proxy-tls
     service:
       port: 443
+      trafficDistribution: PreferClose
       annotations:
         service.beta.openshift.io/serving-cert-secret-name: artifact-registry-proxy-tls
     upstream:
@@ -30,6 +31,7 @@ valuesInline:
         # Cache all traffic to nexus repositories
         - ^/repository/
       size: 1048576
+      ttl: 30d
     resources:
       requests:
         cpu: "2"
