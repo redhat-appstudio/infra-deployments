@@ -99,10 +99,10 @@ loki:
   ingester:
     autoforget_unhealthy: true
     chunk_target_size: 8388608        # 8MB
-    chunk_idle_period: 1h
-    max_chunk_age: 2h
+    chunk_idle_period: 30m
+    max_chunk_age: 1h
     chunk_encoding: snappy            # Compress data (reduces S3 transfer size)
-    chunk_retain_period: 1h           # Keep chunks in memory after flush
+    chunk_retain_period: 30m          # Keep chunks in memory after flush
     flush_op_timeout: 10m             # Add timeout for S3 operations
     lifecycler:
       ring:
@@ -112,7 +112,7 @@ loki:
       dir: /var/loki/wal
       checkpoint_duration: 5m
       flush_on_shutdown: true
-      replay_memory_ceiling: 2GB
+      replay_memory_ceiling: 9GB
   server:
     grpc_server_max_recv_msg_size: 15728640  # 15MB
     grpc_server_max_send_msg_size: 15728640
@@ -142,10 +142,10 @@ ingester:
   resources:
     requests:
       cpu: 500m
-      memory: 4Gi
+      memory: 8Gi
     limits:
       cpu: 2000m
-      memory: 6Gi
+      memory: 12Gi
   persistence:
     enabled: true
     size: 10Gi
@@ -174,9 +174,9 @@ querier:
   resources:
     requests:
       cpu: 500m
-      memory: 4Gi
-    limits:
       memory: 6Gi
+    limits:
+      memory: 10Gi
   affinity: {}
 
 queryFrontend:
