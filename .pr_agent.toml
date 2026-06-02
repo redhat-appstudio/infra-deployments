@@ -7,3 +7,30 @@ push_commands = [
 
 # Removes internal Jira links
 require_ticket_analysis_review = false
+
+[pr_reviewer]
+extra_instructions="""\
+This is a GitOps monorepo deploying Kubernetes components across multiple clusters.
+
+RING DEPLOYMENT PATTERN — Do NOT flag as a bug or incomplete change:
+- Production changes are intentionally split across multiple PRs (ring1, ring2, ring3),
+  each targeting different cluster directories under components/<name>/production/<cluster>/.
+- It is correct for a PR to only modify a subset of production cluster directories.
+- Do NOT suggest applying changes to additional clusters beyond those in the PR.
+
+PROMOTION ORDER:
+- Changes flow: development → staging → production.
+- It is expected that a change lands in dev/staging first, then production in rings.
+- A production PR without a matching dev/staging change is intentional if dev/staging
+  was already merged in a prior PR.
+
+Focus review on: YAML/Kustomize correctness, consistency within THIS PR's scope,
+security concerns, and reasonable resource/image specs.
+"""
+
+[pr_code_suggestions]
+extra_instructions="""\
+Do not suggest applying production changes to additional cluster directories
+beyond those in the PR. This repo uses ring deployments — clusters are updated
+in separate PRs intentionally.
+"""
