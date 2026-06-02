@@ -333,7 +333,7 @@ Write-Host "Scoop installed successfully!"
 # OpenSSH Administrator Configuration & Service Start
 # ---------------------------------------------------
 {{- $addresses := (list) }}
-{{- range $entry := (index . "allowed-remote-addresses" | default (list)) }}
+{{- range $entry := (index . "allowed-remote-addresses" | required "Remote addresses for the SSH FW must be specified") }}
     {{- $addresses = append $addresses (squote $entry) }}
 {{- end }}
 Remove-NetFirewallRule -Name 'OpenSSH-Server-In-TCP' -ErrorAction SilentlyContinue
@@ -344,7 +344,7 @@ New-NetFirewallRule -Name 'OpenSSH-Server-In-TCP' `
     -Protocol TCP `
     -Action Allow `
     -LocalPort 22 `
-    -RemoteAddress {{ join "," $addresses | default "any" }} | Out-Null
+    -RemoteAddress {{ join "," $addresses }} | Out-Null
 
 # Get public key from AWS Instance Metadata Service (IMDSv2)
 $MAGIC_IP = "169.254.169.254"
