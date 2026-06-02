@@ -65,19 +65,29 @@ func main() {
 		fatal("resolving repo root", "err", err)
 	}
 
-	// Resolve HEAD and base-ref to short commit SHAs for the summary.
+	// Resolve base ref: use merge-base so the diff only contains the PR's
+	// own changes, even when the branch is not rebased on top of base-ref
+	// or the GitHub merge ref is stale.  This mirrors the approach used by
+	// render-diff.
+	effectiveBaseRef, err := git.MergeBase(ctx, absRepoRoot, *baseRef)
+	if err != nil {
+		fatal("computing merge-base", "ref", *baseRef, "err", err)
+	}
+	slog.Debug("Resolved merge-base", "baseRef", *baseRef, "mergeBase", effectiveBaseRef)
+
+	// Resolve HEAD and effective base to short commit SHAs for the summary.
 	headSHA, err := git.ResolveRef(ctx, absRepoRoot, "HEAD")
 	if err != nil {
 		fatal("resolving HEAD", "err", err)
 	}
-	baseSHA, err := git.ResolveRef(ctx, absRepoRoot, *baseRef)
+	baseSHA, err := git.ResolveRef(ctx, absRepoRoot, effectiveBaseRef)
 	if err != nil {
 		fatal("resolving base ref", "err", err)
 	}
 
 	// Step 1: Get changed files via git diff
 	slog.Info("Getting changed files...")
-	changedFiles, err := git.ChangedFiles(ctx, absRepoRoot, *baseRef)
+	changedFiles, err := git.ChangedFiles(ctx, absRepoRoot, effectiveBaseRef)
 	if err != nil {
 		fatal("getting changed files", "err", err)
 	}
@@ -91,9 +101,9 @@ func main() {
 		return
 	}
 
-	// Step 2: Create a temporary git worktree at base-ref
-	slog.Info("Creating worktree...", "ref", *baseRef)
-	worktreePath, cleanup, err := git.CreateWorktree(ctx, absRepoRoot, *baseRef)
+	// Step 2: Create a temporary git worktree at the merge-base
+	slog.Info("Creating worktree...", "ref", effectiveBaseRef)
+	worktreePath, cleanup, err := git.CreateWorktree(ctx, absRepoRoot, effectiveBaseRef)
 	if err != nil {
 		fatal("creating worktree", "err", err)
 	}
