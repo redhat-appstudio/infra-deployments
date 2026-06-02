@@ -1,0 +1,39 @@
+name: Operator Changelog
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'components/konflux-operator/development/invariant/kustomization.yaml'
+
+jobs:
+  changelog:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: operator-changelog-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    permissions:
+      pull-requests: write
+      contents: read
+    steps:
+      # Check out the BASE branch (trusted code) so we never execute fork code.
+      # The binary is built here with the elevated GITHUB_TOKEN — a malicious
+      # fork cannot inject code into this step.
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: infra-tools/go.mod
+          cache-dependency-path: infra-tools/go.sum
+
+      - name: Build changelog-generator
+        working-directory: infra-tools
+        run: go build -o bin/changelog-generator ./cmd/changelog-generator
+
+      - name: Run changelog-generator
+        working-directory: infra-tools
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: ./bin/changelog-generator

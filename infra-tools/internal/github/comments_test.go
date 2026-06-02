@@ -93,3 +93,65 @@ func TestUpsertComment_IgnoresUnrelatedComments(t *testing.T) {
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(fake.created).To(HaveLen(1)) // created new, didn't update existing
 }
+
+// --- UpsertCommentByMarker ---
+
+func TestUpsertCommentByMarker_CreatesWithCustomMarker(t *testing.T) {
+	g := NewWithT(t)
+
+	fake := newFakeCommentsService()
+	client := &CommentClient{comments: fake, owner: "org", repo: "repo"}
+
+	const myMarker = "<!-- my-tool-comment -->"
+	body := myMarker + "\nhello from my tool"
+	err := client.UpsertCommentByMarker(context.Background(), 1, body, myMarker)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(fake.created).To(HaveLen(1))
+	g.Expect(*fake.created[0].Body).To(Equal(body))
+}
+
+func TestUpsertCommentByMarker_UpdatesExistingWithCustomMarker(t *testing.T) {
+	g := NewWithT(t)
+
+	fake := newFakeCommentsService()
+	const myMarker = "<!-- my-tool-comment -->"
+	fake.comments = []*gh.IssueComment{
+		{ID: gh.Ptr(int64(7)), Body: gh.Ptr(myMarker + "\nold content")},
+	}
+	client := &CommentClient{comments: fake, owner: "org", repo: "repo"}
+
+	updated := myMarker + "\nnew content"
+	err := client.UpsertCommentByMarker(context.Background(), 1, updated, myMarker)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(fake.created).To(BeEmpty())
+	g.Expect(fake.edited).To(HaveKey(int64(7)))
+	g.Expect(*fake.edited[7].Body).To(Equal(updated))
+}
+
+func TestUpsertCommentByMarker_DoesNotMatchDifferentMarker(t *testing.T) {
+	g := NewWithT(t)
+
+	// Two tools each post with their own marker — they must not interfere.
+	fake := newFakeCommentsService()
+	fake.comments = []*gh.IssueComment{
+		{ID: gh.Ptr(int64(1)), Body: gh.Ptr("<!-- tool-a-comment -->\ntool A content")},
+	}
+	client := &CommentClient{comments: fake, owner: "org", repo: "repo"}
+
+	// Tool B posts with its own marker — should create, not update tool A's comment.
+	err := client.UpsertCommentByMarker(context.Background(), 1, "<!-- tool-b-comment -->\ntool B", "<!-- tool-b-comment -->")
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(fake.created).To(HaveLen(1))
+	g.Expect(fake.edited).To(BeEmpty())
+}
+
+func TestUpsertCommentByMarker_RejectsEmptyMarker(t *testing.T) {
+	g := NewWithT(t)
+
+	fake := newFakeCommentsService()
+	client := &CommentClient{comments: fake, owner: "org", repo: "repo"}
+
+	err := client.UpsertCommentByMarker(context.Background(), 1, "body", "")
+	g.Expect(err).To(HaveOccurred())
+	g.Expect(err.Error()).To(ContainSubstring("marker must not be empty"))
+}
