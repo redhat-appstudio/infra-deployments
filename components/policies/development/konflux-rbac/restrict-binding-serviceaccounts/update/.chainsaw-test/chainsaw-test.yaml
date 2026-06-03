@@ -111,6 +111,43 @@ spec:
 apiVersion: chainsaw.kyverno.io/v1alpha1
 kind: Test
 metadata:
+  name: in-tenant-update-preexisting-valid-konflux-bot-rolebinding
+spec:
+  description: |
+    tests that a pre-existing RoleBinding that already targets a konflux-bot-
+    ServiceAccount and an allowed ClusterRole can still be updated after the
+    policy is enforced
+  concurrent: false
+  namespace: 'update-preexisting-valid-konflux-bot-rb-tenant-namespace'
+  steps:
+  - name: given-tenant-namespace-and-invalid-rolebinding-exist
+    try:
+    - apply:
+        file: ./resources/tenant-namespace.yaml
+    - apply:
+        file: ./resources/valid-serviceaccounts-rolebinding.yaml
+  - name: when-validatingadmissionpolicy-is-ready
+    try:
+    - apply:
+        file: ../restrict-binding-serviceaccounts-update-validatingadmissionpolicy.yaml
+    - apply:
+        file: ../restrict-binding-serviceaccounts-update-validatingadmissionpolicybinding.yaml
+    - sleep:
+        duration: 1s
+    - assert:
+        file: chainsaw-assert-validatingadmissionpolicy.yaml
+  - name: then-preexisting-konflux-bot-rolebinding-can-be-updated
+    try:
+    - apply:
+        file: ./resources/valid-serviceaccounts-rolebinding-with-label.yaml
+        expect:
+        - check:
+            ($error != null): false
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
   name: in-tenant-update-preexisting-invalid-konflux-bot-rolebinding
 spec:
   description: |
