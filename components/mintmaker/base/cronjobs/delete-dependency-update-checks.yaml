@@ -11,6 +11,9 @@ spec:
   jobTemplate:
     spec:
       template:
+        metadata:
+          labels:
+            paas.redhat.com/appcode: MINT-001
         spec:
           restartPolicy: Never
           serviceAccountName: mintmaker-controller-manager

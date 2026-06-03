@@ -35,9 +35,9 @@ func ResolveRef(ctx context.Context, repoRoot, ref string) (string, error) {
 
 // ChangedFiles returns the list of files changed between baseRef and HEAD.
 // It uses a two-point diff (baseRef HEAD) which compares the full trees.
-// For accurate results the caller should ensure HEAD is a merge commit that
-// incorporates baseRef (e.g. GitHub's refs/pull/N/merge), so the diff
-// naturally contains only the PR's own changes.
+// Callers should pass the merge-base commit (see MergeBase) rather than a
+// branch name so the diff only contains the current branch's own changes,
+// regardless of whether the branch has been rebased.
 func ChangedFiles(ctx context.Context, repoRoot, baseRef string) ([]string, error) {
 	cmd := exec.CommandContext(ctx, "git", "diff", "--name-only", baseRef, "HEAD")
 	cmd.Dir = repoRoot

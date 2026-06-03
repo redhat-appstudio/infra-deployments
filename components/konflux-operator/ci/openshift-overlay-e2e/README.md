@@ -10,25 +10,30 @@ step refs (`konflux-ci-install-konflux`, `redhat-appstudio-conformance-tests`).
 
 | File | Role |
 |------|------|
+| `Dockerfile` | Unified CI image (`konflux-overlay-install`): task-runner + Go 1.26 from ubi10/go-toolset |
 | `ci-common.sh` | Shared cluster login (temp kubeconfig copy) and ephemeral git credentials |
 | `install.sh` | Cluster bootstrap (`preview --operator-overlay`), secrets, SprayProxy |
 | `run-e2e.sh` | Clone konflux-ci @ pinned ref and run conformance tests |
 
 ## CI flow (both steps use the same pattern)
 
-1. Step runs in a fixed image (`from_image` in openshift/release).
-2. Shared entrypoint `redhat-appstudio-operator-overlay-install-commands.sh` clones `infra-deployments`, merges the PR when applicable, and calls `ci-common.sh`.
-3. The e2e step sets `OVERLAY_E2E_SCRIPT_NAME=run-e2e.sh` and sources that same entrypoint.
-4. `install.sh` or `run-e2e.sh` runs the phase-specific logic.
+1. ci-operator builds `konflux-overlay-install` from `Dockerfile` (per job, not promoted to `ci/`).
+2. Install and e2e steps both use `from: konflux-overlay-install` in openshift/release.
+3. Shared entrypoint `redhat-appstudio-operator-overlay-install-commands.sh` clones `infra-deployments`, merges the PR when applicable, and calls `ci-common.sh`.
+4. The e2e step sets `OVERLAY_E2E_SCRIPT_NAME=run-e2e.sh` and sources that same entrypoint.
+5. `install.sh` or `run-e2e.sh` runs the phase-specific logic.
 
-| Step | Image |
-|------|-------|
-| Install | `quay.io/konflux-ci/task-runner:1.6.0` |
-| E2E | `openshift/release:rhel-9-release-golang-1.25-openshift-4.21` |
+Both refs set `cli: latest` so `oc` is available in the pod.
 
-Both refs set `cli: latest` so `oc` is available in-step.
+## Local build of the CI image
 
-## Local
+```bash
+cd infra-deployments
+podman build -f components/konflux-operator/ci/openshift-overlay-e2e/Dockerfile \
+  -t konflux-overlay-install:local .
+```
+
+## Local scripts
 
 Run from an `infra-deployments` checkout (after setting `KUBECONFIG`, `GITHUB_TOKEN`, etc.).
 `GITHUB_USER` is optional; when unset, git HTTPS auth uses the `x-access-token` placeholder
