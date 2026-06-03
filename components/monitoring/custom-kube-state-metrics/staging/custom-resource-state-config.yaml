@@ -79,10 +79,13 @@ data:
         # status
         ###############################################################################
             - name: "konflux_pipelinerun_status"
-              help: "PipelineRun status: Unknown=running, True=succeeded, False=failed. Count status=Unknown for concurrent runs."
+              help: "1 if PipelineRun is running (status=Unknown), 0 if finished (succeeded or failed). Sum to count concurrent runs."
               each:
-                type: StateSet
-                stateSet:
-                  labelName: status
+                type: Gauge
+                gauge:
                   path: [status, conditions, "[type=Succeeded]", status]
-                  list: [Unknown, True, False]
+                  nilIsZero: true
+                  valueMap:
+                    Unknown: 1
+                    True: 0
+                    False: 0
