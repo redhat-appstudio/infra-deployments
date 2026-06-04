@@ -214,14 +214,14 @@
     - '{__name__="tekton_pipelines_controller_running_taskruns"}'
     - '{__name__="watcher_workqueue_depth"}'
     - '{__name__="watcher_client_latency_bucket"}'
-    - '{__name__="pac_watcher_work_queue_depth"}'
-    - '{__name__="pac_watcher_client_latency_bucket"}'
+    - '{__name__="kn_workqueue_depth", job="pipelines-as-code-watcher"}'
+    - '{__name__="http_client_request_duration_seconds_bucket", job="pipelines-as-code-watcher"}'
     - '{__name__="watcher_reconcile_latency_bucket", namespace="openshift-pipelines", job="tekton-chains"}'
     - '{__name__="watcher_workqueue_longest_running_processor_seconds_count", container="tekton-chains-controller", service="tekton-chains"}'
     - '{__name__="watcher_go_gc_cpu_fraction", namespace="openshift-pipelines",container="tekton-chains-controller", job="tekton-chains"}'
     - '{__name__="workqueue_depth", namespace="openshift-pipelines", service="pipeline-metrics-exporter-service", container="pipeline-metrics-exporter"}'
-    - '{__name__="pac_watcher_workqueue_unfinished_work_seconds_count"}'
-    - '{__name__="pac_watcher_client_results"}'
+    - '{__name__="kn_workqueue_unfinished_work_seconds", job="pipelines-as-code-watcher"}'
+    - '{__name__="kn_k8s_client_http_response_status_code_total", job="pipelines-as-code-watcher"}'
     - '{__name__="pipelinerun_failed_by_pvc_quota_count"}'
 
     ## Kueue Metrics
