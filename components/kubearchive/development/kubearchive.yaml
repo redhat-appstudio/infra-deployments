@@ -1130,7 +1130,7 @@ spec:
           envFrom:
             - secretRef:
                 name: kubearchive-database-credentials
-          image: quay.io/kubearchive/api@sha256:e68a90000c9d78b2c63e01c8edd0b870cfbda5a3e518817c4d0590bc57aaa0d7
+          image: quay.io/kubearchive/api:v1.22.2@sha256:e68a90000c9d78b2c63e01c8edd0b870cfbda5a3e518817c4d0590bc57aaa0d7
           livenessProbe:
             httpGet:
               path: /livez
@@ -1232,7 +1232,7 @@ spec:
               valueFrom:
                 resourceFieldRef:
                   resource: limits.cpu
-          image: quay.io/kubearchive/operator@sha256:5f35ebd89eb8c7637d2b45d9587fa8920192258c14e78b8c23574375fdbb1303
+          image: quay.io/kubearchive/operator:v1.22.2@sha256:5f35ebd89eb8c7637d2b45d9587fa8920192258c14e78b8c23574375fdbb1303
           livenessProbe:
             httpGet:
               path: /healthz
@@ -1346,7 +1346,7 @@ spec:
           envFrom:
             - secretRef:
                 name: kubearchive-database-credentials
-          image: quay.io/kubearchive/sink@sha256:a52a10ce7219398f17b8b6ac43e62700087e7313b2418db2c4b8cc713a447f4e
+          image: quay.io/kubearchive/sink:v1.22.2@sha256:a52a10ce7219398f17b8b6ac43e62700087e7313b2418db2c4b8cc713a447f4e
           livenessProbe:
             httpGet:
               path: /livez
@@ -1408,7 +1408,7 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.namespace
-              image: quay.io/kubearchive/vacuum@sha256:9e61f19686a463e2468eaf82bc29e5165b57f8f77f69c7146d7a4c4e3035dd2f
+              image: quay.io/kubearchive/vacuum:v1.22.2@sha256:9e61f19686a463e2468eaf82bc29e5165b57f8f77f69c7146d7a4c4e3035dd2f
               name: vacuum
           restartPolicy: Never
           serviceAccount: kubearchive-cluster-vacuum
@@ -1438,7 +1438,7 @@ spec:
           envFrom:
             - secretRef:
                 name: kubearchive-database-credentials
-          image: quay.io/kubearchive/postgresql@sha256:c8068879b345360213123aa03b6eeb7f9f1e22e58f6e2d258c751dafc6a4f7d4
+          image: quay.io/kubearchive/postgresql:v1.22.2@sha256:c8068879b345360213123aa03b6eeb7f9f1e22e58f6e2d258c751dafc6a4f7d4
           name: migration
           resources:
             limits:
