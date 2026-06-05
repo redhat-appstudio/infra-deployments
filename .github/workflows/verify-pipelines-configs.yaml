@@ -48,19 +48,31 @@ jobs:
             ./hack/generate-deploy-config.sh -c "components/pipeline-service/${ENVIRONMENT}" || fail "Error generating configuration for ${ENVIRONMENT}"
 
             if [ -n "$(git status --porcelain components/pipeline-service/${ENVIRONMENT})" ]; then
-              body="Please rebuild with kustomize following [the README](https://github.com/redhat-appstudio/infra-deployments/tree/main/components/pipeline-service#update-procedure). If the change is unexpected, use git-blame to identify the source of the change and confirm with the author that the change is safe."
+              body="If this is a ring deployment, indicate in the commit message using something like \"Ring 1\" to avoid a false positive. If not, please rebuild with kustomize following [the README](https://github.com/redhat-appstudio/infra-deployments/tree/main/components/pipeline-service#update-procedure). If the change is unexpected, use git-blame to identify the source of the change and confirm with the author that the change is safe."
               diff="$(git diff components/pipeline-service/${ENVIRONMENT})"
               fail "Pipelines service \`${ENVIRONMENT}\` configuration is out of sync." "$(printf '%s\n\n```diff\n%s\n```' "${body}" "${diff}")"
             fi
           }
 
+          function is_ring_deployment() {
+            git log --format=%B -n 1 HEAD | grep -qiE '\bring[- ]?[0-9]+'
+          }
+
           check_changes "staging"
-          check_changes "production"
+
+          SUCCESS_MSG="✅ All Pipelines service configurations are in sync with kustomize"
+
+          # Skip this check for Ring deployments since they intentionally do not sync all clusters
+          if is_ring_deployment; then
+              SUCCESS_MSG="⏺️ Commit message indicates a ring deployment. Pipelines service configurations are not expected to be in sync with kustomize. Skipping check"
+          else
+            check_changes "production"
+          fi
 
           if [ -e "${ERRORS_FILE}" ]; then
             echo "has_errors=true" >> "${GITHUB_OUTPUT}"
           else
-            echo "✅ All Pipelines service configurations are in sync with kustomize" | tee -a "${GITHUB_STEP_SUMMARY}" | tee -a "${COMMENT_FILE}"
+            echo "${SUCCESS_MSG}" | tee -a "${GITHUB_STEP_SUMMARY}" | tee -a "${COMMENT_FILE}"
             echo "has_errors=false" >> "${GITHUB_OUTPUT}"
           fi
 
