@@ -18,21 +18,27 @@ PRs always target the upstream repository (`redhat-appstudio/infra-deployments`)
 ## When to Use
 
 - About to open a PR or write a PR description
-- CI check failed and you need to interpret it
 - Preparing a production change and unsure about ring requirements
 - Promoting a change from dev/staging to production
 
 ## Branch Setup
 
-If a dedicated branch already exists for this work, use it. Otherwise, start from a clean, synced main:
+If a dedicated branch already exists for this work, use it. Otherwise, create a branch from the latest main of `redhat-appstudio/infra-deployments`.
+
+First, find which remote points to `redhat-appstudio/infra-deployments`:
 
 ```bash
-git checkout main
-git fetch upstream
-git merge upstream/main
-git push origin main
-git checkout -b <branch-name>
+git remote -v | grep redhat-appstudio/infra-deployments
 ```
+
+Then fetch and branch from it:
+
+```bash
+git fetch <remote>
+git checkout -b <branch-name> <remote>/main --no-track
+```
+
+Common setups: fork-based workflows typically name it `upstream`, while direct clones use `origin`.
 
 Never branch from an old or diverged main.
 
@@ -55,12 +61,13 @@ Clusters affected: <list clusters>
 
 ## Validation
 
-- `kustomize build` passes for all affected overlays
+- `kustomize build --enable-helm` passes for all affected overlays
 - <staging evidence, links to prior ring PRs, test results>
 
 ## Risk Assessment
 
-**Risk Level:** Low / Medium / High
+**Risk Level:** Low / Medium / High / Very High
+**What could go wrong:** <describe what breaks if this change is incorrect>
 **Rollback:** Revert PR / <specific rollback steps>
 <blast radius — how many clusters, which environments>
 ```
@@ -85,7 +92,7 @@ Trailers (at end of commit message body). Use the actual agent/tool identity:
 
 ## Pre-Push Validation
 
-Run `kustomize build --enable-helm` on each affected directory containing a `kustomization.yaml`. Mention the results in the Validation section of the PR body.
+Run `kustomize build --enable-helm` on each affected directory containing a `kustomization.yaml`. The render-diff PR comment also shows the rendered manifest diff — review it to verify your changes produce the expected output. Mention the results in the Validation section of the PR body.
 
 ## Key CI Checks
 
@@ -93,7 +100,7 @@ Run `kustomize build --enable-helm` on each affected directory containing a `kus
 |-------|-------------|--------------|
 | **Ring deployment enforcement** | `components/`, `argo-cd-apps/`, `configs/` | Enforces staging/prod separation — fails if staging and production changes are mixed in the same PR. Apply `skip-ring-deployment/hotfix` label to bypass for critical hotfixes. |
 | **Render-diff** | All PRs | Posts a rendered Kubernetes manifest diff as a PR comment. |
-| **Chainsaw E2E tests** | `components/kyverno/**`, `components/policies/**` | Runs integration tests in a Kind cluster. Path-triggered — runs on any PR changing these paths regardless of environment. Can also be run locally with `hack/chainsaw/chainsaw-prepare.sh`. |
+| **Chainsaw E2E tests** | `components/kyverno/**`, `components/policies/**` | Runs integration tests in a Kind cluster. Path-triggered — runs on any PR changing these paths regardless of environment. Can also be run locally — set up a Kind cluster with `hack/chainsaw/chainsaw-prepare.sh`, then run `chainsaw test <path>`. |
 | **Kyverno policy tests** | `components/kyverno/**`, `components/policies/**` | CLI-based Kyverno policy validation. |
 | **Tekton-Kueue config tests** | `components/kueue/**` | Validates CEL expressions in Tekton-Kueue integration. |
 | **Pipeline-service verify** | `components/pipeline-service/**` | Ensures kustomize output matches committed manifests. |
@@ -104,7 +111,7 @@ Run `kustomize build --enable-helm` on each affected directory containing a `kus
 
 ## Production Ring Rollouts
 
-Production changes must be split into 3 ring PRs covering subsets of clusters. Never apply a production change to all clusters in a single PR.
+Production changes must be split into 3 ring PRs covering subsets of clusters. Never apply a production change to all clusters in a single PR — unless it's a hotfix using the `skip-ring-deployment/hotfix` label.
 
 - Each ring PR title includes the ring number:
   `KFLUXINFRA-1234: short description of the change (ring-1)`
@@ -114,7 +121,7 @@ Production changes must be split into 3 ring PRs covering subsets of clusters. N
 
 ## Production PR Requirements
 
-- **Risk Assessment** section is mandatory (level, rollback plan, blast radius).
+- **Risk Assessment** section is mandatory (level, what could go wrong, rollback plan, blast radius).
 - Follow the ring rollout pattern above.
 - When updating component images, check if corresponding references exist in `hack/new-cluster/templates/` — if so, update them and include this in the PR's **What** section. New clusters are bootstrapped from these templates and won't get ArgoCD-synced versions.
 

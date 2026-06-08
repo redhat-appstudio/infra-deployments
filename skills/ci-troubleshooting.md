@@ -73,13 +73,13 @@ If it shows a "merge conflicts" error, rebase your PR.
 
 Blocks PRs that modify both staging and production files in the same PR.
 
-Fix: split into separate staging and production PRs. For emergencies, apply the `skip-ring-deployment/hotfix` label.
+Fix: split into separate staging and production PRs. For hotfixes that need to roll out fast in production, apply the `skip-ring-deployment/hotfix` label.
 
 ### Chainsaw tests
 
 Path-triggered on `components/kyverno/**` and `components/policies/**` changes. Often flaky due to infrastructure issues.
 
-If logs show no relevant errors and the PR looks correct, comment `/retest`. If the logs don't help identify the issue, run locally with `hack/chainsaw/chainsaw-prepare.sh` then `chainsaw test <path>`.
+If logs show no relevant errors and the PR looks correct, find the failed run ID from `gh pr checks <PR-number> --repo redhat-appstudio/infra-deployments` and rerun it with `gh run rerun <run-id> --repo redhat-appstudio/infra-deployments --failed`. If the logs don't help identify the issue, run locally with `hack/chainsaw/chainsaw-prepare.sh` to set up a Kind cluster, then `chainsaw test <path>`.
 
 ### kube-linter
 
@@ -91,6 +91,3 @@ Scans Kubernetes manifests for security and best practice violations. Check the 
 
 If failed, fetch the log and check whether the failure is an intermittent infrastructure issue (cluster provisioning timeout, image pull failure, TLS handshake errors) or a real test failure. If intermittent, `/retest`.
 
-## Retesting
-
-Comment `/retest` on the PR to re-trigger failed checks. Only use when the failure looks flaky or infrastructure-related, not when your code has actual issues.
