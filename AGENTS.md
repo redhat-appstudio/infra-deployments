@@ -6,7 +6,7 @@ GitOps monorepo deploying 50+ Kubernetes components across multiple clusters via
 
 | Action         | Command                                    |
 |----------------|--------------------------------------------|
-| Build overlay  | `kustomize build components/<name>/<env>/` |
+| Build overlay  | `kustomize build --enable-helm components/<name>/<env>/` |
 | Lint YAML      | `yamllint .`                               |
 | K8s lint       | `kube-linter lint <path>`                  |
 | Chainsaw tests | `./hack/chainsaw/chainsaw-prepare.sh` and `chainsaw test <path to .chainsaw-test folder>` |
@@ -35,3 +35,9 @@ GitOps monorepo deploying 50+ Kubernetes components across multiple clusters via
 - E2E tests are conditional — they only run on dev/staging PRs when specific files change. Production PRs do not run E2E; rely on prior dev/staging validation
 - E2E tests frequently fail due to intermittent infrastructure issues. If the PR looks correct and E2E logs show no relevant errors, comment `/retest` to re-trigger
 - When updating component images, also update image references in `hack/new-cluster/templates/` as part of the production ring deployments — new clusters are bootstrapped from these and won't get ArgoCD-synced versions
+
+## Skills
+
+- Before opening a PR, writing a PR description, or interpreting CI results, read `skills/pr-workflow.md`
+- When a CI check fails on a PR, read `skills/ci-troubleshooting.md`
+- When working interactively on new features or significant changes, read `skills/brainstorming-workflow.md` before making changes
