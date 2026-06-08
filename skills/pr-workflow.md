@@ -92,7 +92,13 @@ Trailers (at end of commit message body). Use the actual agent/tool identity:
 
 ## Pre-Push Validation
 
-Run `kustomize build --enable-helm` on each affected directory containing a `kustomization.yaml`. The render-diff PR comment also shows the rendered manifest diff — review it to verify your changes produce the expected output. Mention the results in the Validation section of the PR body.
+Run `kustomize build --enable-helm` on each affected directory containing a `kustomization.yaml`. You can also run `render-diff` locally to see the full rendered manifest delta across affected components:
+
+```bash
+cd infra-tools && make build && ./bin/render-diff
+```
+
+Mention the results in the Validation section of the PR body.
 
 ## Key CI Checks
 
