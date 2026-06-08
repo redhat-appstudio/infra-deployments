@@ -12,14 +12,14 @@ step refs (`konflux-ci-install-konflux`, `redhat-appstudio-conformance-tests`).
 |------|------|
 | `Dockerfile` | Unified CI image (`konflux-overlay-install`): task-runner + Go 1.26 from ubi10/go-toolset |
 | `ci-common.sh` | Shared cluster login (temp kubeconfig copy) and ephemeral git credentials |
-| `install.sh` | Cluster bootstrap (`preview --operator-overlay`), secrets, SprayProxy |
-| `run-e2e.sh` | Clone konflux-ci @ pinned ref and run conformance tests |
+| `install.sh` | `hack/bootstrap-cluster.sh preview --operator-overlay`, QE secrets, SprayProxy, `e2e-secrets` quay pull secret |
+| `run-e2e.sh` | Clone konflux-ci @ ref from `invariant/kustomization.yaml`; `prepare-conformance-env` + `run-conformance-tests.sh` in `default-tenant` (no `deploy-test-resources.sh`) |
 
 ## CI flow (both steps use the same pattern)
 
 1. ci-operator builds `konflux-overlay-install` from `Dockerfile` (per job, not promoted to `ci/`).
 2. Install and e2e steps both use `from: konflux-overlay-install` in openshift/release.
-3. Shared entrypoint `redhat-appstudio-operator-overlay-install-commands.sh` clones `infra-deployments`, merges the PR when applicable, and calls `ci-common.sh`.
+3. Shared entrypoint `redhat-appstudio-operator-overlay-commands.sh` clones `infra-deployments`, merges the PR when applicable, and calls `ci-common.sh`.
 4. The e2e step sets `OVERLAY_E2E_SCRIPT_NAME=run-e2e.sh` and sources that same entrypoint.
 5. `install.sh` or `run-e2e.sh` runs the phase-specific logic.
 
