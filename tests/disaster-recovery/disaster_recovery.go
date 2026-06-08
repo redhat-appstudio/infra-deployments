@@ -313,10 +313,12 @@ func verifyResources(fw *framework.Framework, t Tenant) {
 		//   - Spec.Actions: A write-once trigger field. Controllers consume
 		//     and remove actions after processing them, so the field is
 		//     expected to be empty on any persisted Component.
+		Expect(t.ForkRepoURL).ShouldNot(BeEmpty(),
+			"ForkRepoURL not set for tenant %s — cannot verify Component URLs", t.Namespace)
 		Expect(c).Should(SatisfyAll(
 			HaveField("Spec.ComponentName", Equal(comp.Name)),
 			HaveField("Spec.Application", Equal(t.AppName)),
-			HaveField("Spec.Source.GitSource.URL", Equal(MathWizzRepo)),
+			HaveField("Spec.Source.GitSource.URL", Equal(t.ForkRepoURL)),
 			HaveField("Spec.Source.GitSource.Context", Equal(comp.ContextDir)),
 			HaveField("Spec.Source.GitSource.DockerfileURL", Equal(comp.DockerfileURL)),
 			HaveField("Spec.TargetPort", Equal(8081)),
