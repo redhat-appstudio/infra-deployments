@@ -10,16 +10,10 @@ resources:
 
 patches:
   - patch: |-
-      apiVersion: apps/v1
+      - op: add
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: 4Gi
+    target:
       kind: Deployment
-      metadata:
-        name: crossplane
-        namespace: crossplane-system
-      spec:
-        template:
-          spec:
-            containers:
-              - name: crossplane
-                resources:
-                  limits:
-                    memory: 4Gi
+      name: crossplane-helm
+      namespace: crossplane-system
