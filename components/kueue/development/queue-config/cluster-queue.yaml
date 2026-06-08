@@ -31,6 +31,7 @@ spec:
       - linux-ppc64le
       - aws-ip
       - mintmaker
+      - konflux-release
       flavors:
       - name: default-flavor
         resources:
@@ -50,6 +51,8 @@ spec:
           nominalQuota: "250"
         - name: mintmaker
           nominalQuota: "150"
+        - name: konflux-release
+          nominalQuota: '50'
         # When a Workload doesn't have cpu or memory requests, if there is a limit range
         # in the namespace, Kueue will assign the requests from it to the Workload.
         # We don't care about the cpu/memory for PipelineRuns, thus setting a high value for both.

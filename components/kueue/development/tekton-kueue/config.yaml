@@ -92,6 +92,26 @@ cel:
     - |
         plrNamespace == 'mintmaker' ? [resource('mintmaker', 1)] : []
 
+    # Add a resource to restrict the number of concurrent release pipelineruns
+    - |
+        has(pipelineRun.metadata.labels) &&
+        'appstudio.openshift.io/service' in pipelineRun.metadata.labels &&
+        pipelineRun.metadata.labels['appstudio.openshift.io/service'] == 'release' &&
+        'pipelines.appstudio.openshift.io/type' in pipelineRun.metadata.labels &&
+        pipelineRun.metadata.labels['pipelines.appstudio.openshift.io/type'] == 'managed' ?
+        [resource('konflux-release', 1)] :
+
+        has(pipelineRun.metadata.labels) &&
+        'appstudio.openshift.io/service' in pipelineRun.metadata.labels &&
+        pipelineRun.metadata.labels['appstudio.openshift.io/service'] == 'release' &&
+        'release.appstudio.openshift.io/namespace' in pipelineRun.metadata.labels &&
+        pipelineRun.metadata.labels['release.appstudio.openshift.io/namespace'] == plrNamespace ?
+        [resource('konflux-release', 1)] :
+
+        has(pipelineRun.metadata.labels) &&
+        'internal-services.appstudio.openshift.io/pipelinerun-uid' in pipelineRun.metadata.labels ?
+        [resource('konflux-release', 1)] : []
+
     # The token mechanism allows us to balance admitted PipelineRuns.
     # Here we want to state that each PipelineRuns needs one token, but
     # Build PipelineRuns are usually heavier, so they need 2.
