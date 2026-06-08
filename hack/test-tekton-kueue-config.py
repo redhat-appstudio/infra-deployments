@@ -406,6 +406,7 @@ PIPELINERUN_DEFINITIONS: Dict[str, PipelineRunTestData] = {
         "expected": {
             "annotations": {
                 "kueue.konflux-ci.dev/requests-konflux-ci-dev-token": "1",
+                "kueue.konflux-ci.dev/requests-konflux-release": "1",
             },
             "labels": {
                 "kueue.x-k8s.io/queue-name": "pipelines-queue",
@@ -435,6 +436,7 @@ PIPELINERUN_DEFINITIONS: Dict[str, PipelineRunTestData] = {
         "expected": {
             "annotations": {
                 "kueue.konflux-ci.dev/requests-konflux-ci-dev-token": "1",
+                "kueue.konflux-ci.dev/requests-konflux-release": "1",
             },
             "labels": {
                 "kueue.x-k8s.io/queue-name": "pipelines-queue",
@@ -845,6 +847,7 @@ PIPELINERUN_DEFINITIONS: Dict[str, PipelineRunTestData] = {
         "expected": {
             "annotations": {
                 "kueue.konflux-ci.dev/requests-konflux-ci-dev-token": "1",
+                "kueue.konflux-ci.dev/requests-konflux-release": "1",
             },
             "labels": {
                 "kueue.x-k8s.io/queue-name": "pipelines-queue",
