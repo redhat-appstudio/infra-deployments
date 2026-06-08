@@ -1,5 +1,8 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+labels:
+- pairs:
+    paas.redhat.com/appcode: MINT-001
 resources:
   - ../../base
   - ../../base/external-secrets
@@ -33,6 +36,7 @@ patches:
       group: external-secrets.io
       version: v1
   - path: manager-set-resources-patch.yaml
+  - path: suspend-dependency-check-patch.yaml
 
 configurations:
 - kustomizeconfig.yaml
