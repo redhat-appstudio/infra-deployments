@@ -1853,17 +1853,7 @@ spec:
                         memory: 8Gi
         tekton-events-controller:
           spec:
-            template:
-              spec:
-                containers:
-                  - name: tekton-events-controller
-                    resources:
-                      limits:
-                        cpu: 200m
-                        memory: 256Mi
-                      requests:
-                        cpu: 200m
-                        memory: 256Mi
+            replicas: 0
         tekton-triggers-controller:
           spec:
             template:
