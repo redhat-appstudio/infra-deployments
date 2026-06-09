@@ -29,5 +29,5 @@ if [ -n "$NEW_MIGRATION_VERSION" ]; then
   echo "Updating schema migration from v$OLD_MIGRATION_VERSION to v$NEW_MIGRATION_VERSION..."
 
   sed -i "s/MIGRATION_VERSION=$OLD_MIGRATION_VERSION/MIGRATION_VERSION=$NEW_MIGRATION_VERSION/g" "$DEV_KUSTOMIZATION"
-  sed -i "s/kubearchive-schema-migration-v$OLD_MIGRATION_VERSION/kubearchive-schema-migration-v$NEW_MIGRATION_VERSION/g" "$DEV_KUSTOMIZATION"
+  sed -i "s/kubearchive-schema-migration-v$OLD_MIGRATION_VERSION-v$OLD_VERSION/kubearchive-schema-migration-v$NEW_MIGRATION_VERSION-v$NEW_VERSION/g" "$DEV_KUSTOMIZATION"
 fi
