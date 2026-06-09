@@ -16,10 +16,12 @@ jobs:
       pull-requests: write
       contents: read
     steps:
-      # Check out the BASE branch (trusted code) so we never execute fork code.
-      # The binary is built here with the elevated GITHUB_TOKEN — a malicious
-      # fork cannot inject code into this step.
+      # Check out the BASE branch with full history (trusted code only).
+      # fetch-depth: 0 is required so git worktree can check out the base SHA.
+      # The binary is built here before we touch any PR-provided file content.
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-go@v5
         with:
@@ -30,10 +32,30 @@ jobs:
         working-directory: infra-tools
         run: go build -o bin/changelog-generator ./cmd/changelog-generator
 
+      # Switch the workspace to the PR merge ref so headPath reads the PR's
+      # kustomization.yaml. The binary was already built from trusted base-branch
+      # code above, so checking out PR content here is safe.
+      - name: Checkout PR merge ref
+        id: fetch-merge
+        continue-on-error: true
+        run: |
+          git fetch origin refs/pull/${{ github.event.pull_request.number }}/merge
+          git checkout FETCH_HEAD
+
+      - name: Warn about required PR rebase
+        if: ${{ always() && steps.fetch-merge.outcome == 'failure' }}
+        run: |
+          echo "ERROR: This PR has merge conflicts — please rebase before the changelog can be generated."
+          exit 1
+
       - name: Run changelog-generator
+        if: steps.fetch-merge.outcome == 'success'
         working-directory: infra-tools
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: ./bin/changelog-generator
+        run: |
+          ./bin/changelog-generator \
+            --repo-root=.. \
+            --base-ref=${{ github.event.pull_request.base.sha }}
