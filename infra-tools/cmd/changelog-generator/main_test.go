@@ -2,13 +2,17 @@ package main
 
 import (
 	"context"
+	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	gh "github.com/google/go-github/v68/github"
 	. "github.com/onsi/gomega"
+
+	"github.com/redhat-appstudio/infra-deployments/infra-tools/internal/changelog"
 )
 
 const (
@@ -28,6 +32,22 @@ func (f *fakeCommenter) UpsertCommentByMarker(_ context.Context, prNumber int, b
 	f.body = body
 	f.marker = marker
 	return nil
+}
+
+// fakeRepoComparer implements changelog.RepoComparer for testing.
+// Set files to return canned file changes; set err to simulate an API failure.
+var _ changelog.RepoComparer = &fakeRepoComparer{}
+
+type fakeRepoComparer struct {
+	files []*gh.CommitFile
+	err   error
+}
+
+func (f *fakeRepoComparer) CompareCommits(_ context.Context, _, _, _, _ string, _ *gh.ListOptions) (*gh.CommitsComparison, *gh.Response, error) {
+	if f.err != nil {
+		return nil, nil, f.err
+	}
+	return &gh.CommitsComparison{Files: f.files}, nil, nil
 }
 
 func writeTempKustomization(t *testing.T, ref string) string {
@@ -61,7 +81,7 @@ func TestPost_PassesCorrectMarkerAndBody(t *testing.T) {
 // are not truncated — the short() helper takes a different branch.
 func TestFormatCompare_ShortRef(t *testing.T) {
 	g := NewWithT(t)
-	body := formatCompare("main", "feature-x")
+	body := formatCompare("main", "feature-x", nil)
 	g.Expect(body).To(ContainSubstring("main"))
 	g.Expect(body).To(ContainSubstring("feature-x"))
 }
@@ -71,7 +91,7 @@ func TestFormatCompare_ShortRef(t *testing.T) {
 func TestComputeBody_Unchanged(t *testing.T) {
 	g := NewWithT(t)
 	path := writeTempKustomization(t, oldRef)
-	body, err := computeBody(path, path)
+	body, err := computeBody(context.Background(), path, path, &fakeRepoComparer{})
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(body).To(ContainSubstring(commentMarker))
 	g.Expect(body).To(ContainSubstring("### Operator Changelog"))
@@ -79,25 +99,119 @@ func TestComputeBody_Unchanged(t *testing.T) {
 }
 
 // TestComputeBody_Changed verifies that different kustomization files produce
-// a compare comment containing both refs, short display refs, and a compare URL.
+// a compare comment containing both refs and a compare URL. No service bumps
+// in this case because the fake comparer returns no files.
 func TestComputeBody_Changed(t *testing.T) {
 	g := NewWithT(t)
 	basePath := writeTempKustomization(t, oldRef)
 	headPath := writeTempKustomization(t, newRef)
-	body, err := computeBody(basePath, headPath)
+	body, err := computeBody(context.Background(), basePath, headPath, &fakeRepoComparer{})
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(body).To(ContainSubstring(commentMarker))
 	g.Expect(body).To(ContainSubstring(oldRef))
 	g.Expect(body).To(ContainSubstring(newRef))
 	g.Expect(body).To(ContainSubstring(oldRef[:12]))
 	g.Expect(body).To(ContainSubstring("konflux-ci/konflux-ci/compare/" + oldRef + "..." + newRef))
+	g.Expect(body).To(ContainSubstring("No upstream service refs changed"))
 	g.Expect(body).NotTo(ContainSubstring("No operator ref change"))
+}
+
+// TestComputeBody_WithServiceBumps verifies that a fake comparer returning a
+// build-service ref change causes "build-service" and its compare link to
+// appear in the comment body.
+func TestComputeBody_WithServiceBumps(t *testing.T) {
+	g := NewWithT(t)
+	buildOldSHA := "cccccccccccccccccccccccccccccccccccccccc"
+	buildNewSHA := "dddddddddddddddddddddddddddddddddddddddd"
+
+	patch := "-  - https://github.com/konflux-ci/build-service/config/default?ref=" + buildOldSHA + "\n" +
+		"+  - https://github.com/konflux-ci/build-service/config/default?ref=" + buildNewSHA + "\n"
+
+	fake := &fakeRepoComparer{
+		files: []*gh.CommitFile{
+			{
+				Filename: gh.Ptr("operator/upstream-kustomizations/build-service/kustomization.yaml"),
+				Patch:    gh.Ptr(patch),
+			},
+		},
+	}
+
+	basePath := writeTempKustomization(t, oldRef)
+	headPath := writeTempKustomization(t, newRef)
+	body, err := computeBody(context.Background(), basePath, headPath, fake)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(body).To(ContainSubstring("build-service"))
+	g.Expect(body).To(ContainSubstring(buildOldSHA[:12]))
+	g.Expect(body).To(ContainSubstring(buildNewSHA[:12]))
+	g.Expect(body).To(ContainSubstring("build-service/compare/" + buildOldSHA + "..." + buildNewSHA))
+}
+
+// TestComputeBody_APIFailureDegrades verifies that when the comparer returns an
+// error, the comment still includes the operator compare link (not an error page),
+// and notes that service bump detection was unavailable.
+func TestComputeBody_APIFailureDegrades(t *testing.T) {
+	g := NewWithT(t)
+	basePath := writeTempKustomization(t, oldRef)
+	headPath := writeTempKustomization(t, newRef)
+	fake := &fakeRepoComparer{err: errors.New("rate limited")}
+	body, err := computeBody(context.Background(), basePath, headPath, fake)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(body).To(ContainSubstring("compare/" + oldRef + "..." + newRef))
+	g.Expect(body).To(ContainSubstring("unavailable"))
+}
+
+// TestComputeBody_TruncatedDegrades verifies that when the compare API signals
+// truncation (≥300 files), the comment still includes the operator compare link
+// but notes that service bump detection was unavailable.
+func TestComputeBody_TruncatedDegrades(t *testing.T) {
+	g := NewWithT(t)
+	basePath := writeTempKustomization(t, oldRef)
+	headPath := writeTempKustomization(t, newRef)
+
+	// Return exactly 300 files to trigger the truncated flag.
+	files := make([]*gh.CommitFile, 300)
+	for i := range files {
+		files[i] = &gh.CommitFile{Filename: gh.Ptr("file.yaml"), Patch: gh.Ptr("diff")}
+	}
+	fake := &fakeRepoComparer{files: files}
+
+	body, err := computeBody(context.Background(), basePath, headPath, fake)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(body).To(ContainSubstring("compare/" + oldRef + "..." + newRef))
+	g.Expect(body).To(ContainSubstring("unavailable"))
+}
+
+// TestComputeBody_EmptyPatchDegrades verifies that when an upstream kustomization
+// file is returned by the compare API but has no patch data, the comment still
+// includes the operator compare link but notes that service bump detection was
+// unavailable — preventing a misleading "no upstream service refs changed" message.
+func TestComputeBody_EmptyPatchDegrades(t *testing.T) {
+	g := NewWithT(t)
+	basePath := writeTempKustomization(t, oldRef)
+	headPath := writeTempKustomization(t, newRef)
+
+	// The file is an upstream kustomization but its patch is empty — GitHub omits
+	// patch data for very large or renamed files.
+	fake := &fakeRepoComparer{
+		files: []*gh.CommitFile{
+			{
+				Filename: gh.Ptr("operator/upstream-kustomizations/build-service/kustomization.yaml"),
+				Patch:    gh.Ptr(""),
+			},
+		},
+	}
+
+	body, err := computeBody(context.Background(), basePath, headPath, fake)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(body).To(ContainSubstring("compare/" + oldRef + "..." + newRef))
+	g.Expect(body).To(ContainSubstring("unavailable"))
+	g.Expect(body).NotTo(ContainSubstring("No upstream service refs changed"))
 }
 
 // TestComputeBody_Error verifies that an unreadable file returns an error.
 func TestComputeBody_Error(t *testing.T) {
 	g := NewWithT(t)
-	_, err := computeBody("/nonexistent/kustomization.yaml", "/nonexistent/kustomization.yaml")
+	_, err := computeBody(context.Background(), "/nonexistent/kustomization.yaml", "/nonexistent/kustomization.yaml", &fakeRepoComparer{})
 	g.Expect(err).To(HaveOccurred())
 	g.Expect(err.Error()).To(ContainSubstring("extracting operator refs"))
 }
@@ -108,7 +222,6 @@ func TestComputeBody_Error(t *testing.T) {
 func TestBuildBody_Integration(t *testing.T) {
 	g := NewWithT(t)
 
-	// Set up a bare git repo with minimal config.
 	dir := t.TempDir()
 	gitRun(t, dir, "init")
 	gitRun(t, dir, "config", "user.email", "test@example.com")
@@ -127,15 +240,14 @@ func TestBuildBody_Integration(t *testing.T) {
 	gitRun(t, dir, "add", ".")
 	gitRun(t, dir, "commit", "-m", "bump operator ref")
 
-	// buildBody should detect the change and return a compare body.
-	body, err := buildBody(context.Background(), dir, baseCommit)
+	// Use a fake comparer so the test does not make real GitHub API calls.
+	body, err := buildBody(context.Background(), dir, baseCommit, &fakeRepoComparer{})
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(body).To(ContainSubstring(oldRef))
 	g.Expect(body).To(ContainSubstring(newRef))
 	g.Expect(body).To(ContainSubstring("compare"))
 }
 
-// gitRun runs a git command in dir and fails the test on error.
 func gitRun(t *testing.T, dir string, args ...string) {
 	t.Helper()
 	cmd := exec.CommandContext(context.Background(), "git", args...)
@@ -145,7 +257,6 @@ func gitRun(t *testing.T, dir string, args ...string) {
 	}
 }
 
-// gitOutput runs a git command and returns its stdout.
 func gitOutput(t *testing.T, dir string, args ...string) string {
 	t.Helper()
 	cmd := exec.CommandContext(context.Background(), "git", args...)
@@ -157,7 +268,6 @@ func gitOutput(t *testing.T, dir string, args ...string) string {
 	return string(out)
 }
 
-// writeKustomizationFile writes a minimal kustomization.yaml with the given ref.
 func writeKustomizationFile(t *testing.T, path, ref string) {
 	t.Helper()
 	content := "apiVersion: kustomize.config.k8s.io/v1beta1\nkind: Kustomization\nresources:\n" +
