@@ -142,7 +142,7 @@ cel:
         has(pipelineRun.metadata.labels) &&
         'build.appstudio.openshift.io/type' in pipelineRun.metadata.labels &&
         pipelineRun.metadata.labels['build.appstudio.openshift.io/type'] == 'nudge' ?
-        priority('konflux-dependency-update') :
+        priority('konflux-nudge') :
 
         pacEventType == 'push' ? priority('konflux-post-merge-build') :
         pacEventType == 'pull_request' ||
