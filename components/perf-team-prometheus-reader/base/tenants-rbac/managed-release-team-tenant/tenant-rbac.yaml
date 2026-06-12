@@ -1,0 +1,37 @@
+# SA for loadtest to collect manifests and logs from managed-release-team-tenant NS
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: perf-team-release-reader-sa
+  namespace: managed-release-team-tenant
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: perf-team-release-reader-role
+  namespace: managed-release-team-tenant
+rules:
+- apiGroups: ["tekton.dev"]
+  resources: ["pipelineruns", "taskruns"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["pods/log"]
+  verbs: ["get"]
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: perf-team-release-reader-binding
+  namespace: managed-release-team-tenant
+subjects:
+- kind: ServiceAccount
+  name: perf-team-release-reader-sa
+  namespace: managed-release-team-tenant
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: perf-team-release-reader-role
