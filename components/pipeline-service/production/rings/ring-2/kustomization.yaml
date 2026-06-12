@@ -1,0 +1,45 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Ring 2 production rollout patches
+# Add patches here when deploying to ring 2 clusters
+# Clear this file (leave only these comments) after promoting to all rings
+
+resources:
+  - ../../base
+
+patches:
+  # Upgrade index
+  - target:
+      kind: CatalogSource
+      name: custom-operators
+    patch: |-
+      - op: replace
+        path: /spec/image
+        value: quay.io/openshift-pipeline/pipelines-index-4.18@sha256:a4aa211a70b0a92c98c885cca8fed2cce490e3fec656ad1ea68bf7e7c3c18304
+  # Increase tekton events controller resources
+  - target:
+      kind: TektonConfig
+      name: config
+    patch: |-
+      apiVersion: operator.tekton.dev/v1alpha1
+      kind: TektonConfig
+      metadata:
+        name: config
+      spec:
+        pipeline:
+          options:
+            deployments:
+              tekton-events-controller:
+                spec:
+                  template:
+                    spec:
+                      containers:
+                      - name: tekton-events-controller
+                        resources:
+                          limits:
+                            cpu: 200m
+                            memory: 4096Mi
+                          requests:
+                            cpu: 200m
+                            memory: 4096Mi

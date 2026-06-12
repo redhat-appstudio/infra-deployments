@@ -78,7 +78,9 @@ $ git status
 
 - For production overlay:
 
-Same as 'stage' overlay, though you'll deal with the yaml files under the 'production' subdirectory, and the 
+By default production changes are done using a Ring deployment, for which details are included below.
+If you're making changes which do not require a ring deployment, the change can be made
+the same as the 'stage' overlay, though you'll deal with the yaml files under the 'production' subdirectory, and the
 use of 'generate-deploy-config.sh' similarily is tweaked to update the 'production' overlay.
 
 ```shell
@@ -86,4 +88,106 @@ use of 'generate-deploy-config.sh' similarily is tweaked to update the 'producti
 $ ./hack/generate-deploy-config.sh -c components/pipeline-service/production
 # to see if your updates made it to the deploy.yaml files
 $ git status
+```
+
+## Production Ring Deployments
+
+Production clusters are organized into three rings for gradual rollout to minimize blast radius:
+
+- **Ring 1**: Early adopter clusters (smallest blast radius)
+- **Ring 2**: Mid-tier clusters
+- **Ring 3**: Remaining production clusters
+
+See `./components/pipeline-service/production/ring-mappings.yaml` for current cluster membership.
+
+### Updating procedure for Ring Deployments
+
+1. Apply the change as a patch in ring-1's kustomization file. For example:
+```yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources: []
+patches:
+  - target:
+      kind: CatalogSource
+      name: custom-operators
+    patch: |-
+      - op: replace
+        path: /spec/image
+        value: quay.io/openshift-pipeline/pipelines-index-4.18@sha256:d4d3f6210a384da6bfb11214a860e72e52d0a38b73037b8135c0571a6365d2a1
+```
+
+2. Sync ring configuration and regenerate deploy.yaml files
+```bash
+# Sync ring references to all clusters
+./components/pipeline-service/production/sync-rings.sh
+
+# Regenerate all deploy.yaml files
+./hack/generate-deploy-config.sh -c components/pipeline-service/production
+```
+
+3. Deploy the changes
+
+4. After the ring has been deployed and validated, repeat steps 1 through 3 for the next ring.
+
+5. Once the change is ready to deploy on all clusters, apply the change to `components/pipeline-service/production/base/main-pipeline-service-configuration.yaml` and remove the patch from the rings' `kustomization.yaml` files.
+
+6. Sync the ring configuration and regenerate `deploy.yaml` files. There should be no changes to the `deploy.yaml` files.
+
+
+### Managing Ring Membership
+
+To add a cluster to a ring or move it between rings, edit `production/ring-mappings.yaml`:
+
+```yaml
+ring-1:
+  - kflux-fedora-01
+  - stone-prod-p01
+  - new-cluster-01  # Add new cluster here
+
+ring-2:
+  - stone-prod-p02
+  - kflux-rhel-p01
+```
+
+Then run `./components/pipeline-service/production/sync-rings.sh` to apply the changes. The script will validate that all mapped clusters exist and all cluster directories are mapped to a ring.
+
+### Common Ring Deployment Patterns
+
+**Index update:**
+```yaml
+patches:
+  - target:
+      kind: CatalogSource
+      name: custom-operators
+    patch: |-
+      - op: replace
+        path: /spec/image
+        value: quay.io/openshift-pipeline/pipelines-index-4.18@sha256:d4d3f6210a384da6bfb11214a860e72e52d0a38b73037b8135c0571a6365d2a1
+```
+
+**Image override:**
+```yaml
+patches:
+  - target:
+      kind: Subscription
+      name: openshift-pipelines-operator
+    patch: |-
+      - op: add
+        path: /spec/config/env
+        value: {"name": "IMAGE_PAC_PAC_CLI", "value": "quay.io/openshift-pipeline/pipelines-pipelines-as-code-cli-rhel9@sha256:0fc0dd05236f14265e25cc770a7f9f3aeea2e27964a730dac39cf9f61d349bde"}
+```
+
+**Resource limit adjustment:**
+```yaml
+patches:
+  - target:
+      kind: TektonConfig
+      name: config
+    patch: |-
+      - op: replace
+        path: /spec/pipeline/options/statefulSets/tekton-pipelines-remote-resolvers/spec/template/spec/
+containers/0/resources/limits/memory
+        value: 12G
 ```
