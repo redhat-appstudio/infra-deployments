@@ -1054,7 +1054,7 @@ if $OBO; then
     else
     log_step "Enabling Observability (OBO) components"
     log_info "Adding Observability operator and Prometheus for federation"
-    yq -i '.resources += ["monitoringstack/"]' $ROOT/components/monitoring/prometheus/development/kustomization.yaml
+    yq -i '.resources += ["federation/"]' $ROOT/components/monitoring/prometheus/development/kustomization.yaml
     log_success "Observability components enabled"
     fi
 fi
