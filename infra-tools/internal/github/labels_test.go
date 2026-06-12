@@ -8,6 +8,12 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+const (
+	ProductionLabel  = "environment/production"
+	StagingLabel     = "environment/staging"
+	DevelopmentLabel = "environment/development"
+)
+
 // fakeIssuesService implements IssuesService for testing.
 type fakeIssuesService struct {
 	// labels simulates the current labels on a PR.
@@ -46,14 +52,16 @@ func TestIsManagedLabel(t *testing.T) {
 		label string
 		want  bool
 	}{
-		{"environment label", "environment/production", true},
-		{"environment staging", "environment/staging", true},
-		{"environment development", "environment/development", true},
+		{"environment label", ProductionLabel, true},
+		{"environment staging", StagingLabel, true},
+		{"environment development", DevelopmentLabel, true},
 		{"cluster label", "cluster/kflux-ocp-p01", true},
 		{"bug label", "bug", false},
 		{"priority label", "priority/high", false},
 		{"approved label", "approved", false},
 		{"hold-production label", HoldProductionLabel, true},
+		{"prod-needs-approval label", NeedsApprovalProductionLabel, true},
+		{"prod-approved label", ApprovedProductionLabel, true},
 		{"infra prefix", "infra/something", true},
 		{"empty label", "", false},
 		{"partial prefix", "environ", false},
@@ -74,8 +82,8 @@ func TestSyncLabels_OnlyRemovesManagedLabels(t *testing.T) {
 
 	fake := &fakeIssuesService{
 		labels: []*gh.Label{
-			{Name: gh.Ptr("environment/production")},
-			{Name: gh.Ptr("environment/staging")},
+			{Name: gh.Ptr(ProductionLabel)},
+			{Name: gh.Ptr(StagingLabel)},
 			{Name: gh.Ptr("cluster/kflux-ocp-p01")},
 			{Name: gh.Ptr("bug")},
 			{Name: gh.Ptr("approved")},
@@ -87,12 +95,12 @@ func TestSyncLabels_OnlyRemovesManagedLabels(t *testing.T) {
 
 	// Desired: only environment/development — stale managed labels should be
 	// removed, but bug/approved/priority must stay.
-	err := client.SyncLabels(context.Background(), 1, []string{"environment/development"})
+	err := client.SyncLabels(context.Background(), 1, []string{DevelopmentLabel})
 	g.Expect(err).NotTo(HaveOccurred())
 
 	g.Expect(fake.removed).To(ConsistOf(
-		"environment/production",
-		"environment/staging",
+		ProductionLabel,
+		StagingLabel,
 		"cluster/kflux-ocp-p01",
 	))
 
@@ -107,18 +115,57 @@ func TestSyncLabels_NoRemovalWhenAllDesired(t *testing.T) {
 
 	fake := &fakeIssuesService{
 		labels: []*gh.Label{
-			{Name: gh.Ptr("environment/production")},
+			{Name: gh.Ptr(ProductionLabel)},
 			{Name: gh.Ptr("bug")},
 		},
 	}
 
 	client := &Client{issues: fake, owner: "o", repo: "r"}
 
-	err := client.SyncLabels(context.Background(), 1, []string{"environment/production"})
+	err := client.SyncLabels(context.Background(), 1, []string{ProductionLabel})
 	g.Expect(err).NotTo(HaveOccurred())
 
 	g.Expect(fake.removed).To(BeEmpty())
 	g.Expect(fake.added).To(BeEmpty())
+}
+
+func TestSyncLabels_SynchronizeAfterRebase(t *testing.T) {
+	t.Run("previously approved", func(t *testing.T) {
+		g := NewWithT(t)
+
+		fake := &fakeIssuesService{
+			labels: []*gh.Label{
+				{Name: gh.Ptr(ProductionLabel)},
+				{Name: gh.Ptr(ApprovedProductionLabel)},
+			},
+		}
+
+		client := &Client{issues: fake, owner: "o", repo: "r"}
+		err := client.SyncLabels(context.Background(), 1, []string{HoldProductionLabel, ProductionLabel, NeedsApprovalProductionLabel})
+		g.Expect(err).NotTo(HaveOccurred())
+
+		g.Expect(fake.removed).To(ConsistOf(ApprovedProductionLabel))
+		g.Expect(fake.added).To(ConsistOf(HoldProductionLabel, NeedsApprovalProductionLabel))
+	})
+
+	t.Run("previously not approved", func(t *testing.T) {
+		g := NewWithT(t)
+
+		fake := &fakeIssuesService{
+			labels: []*gh.Label{
+				{Name: gh.Ptr(ProductionLabel)},
+				{Name: gh.Ptr(NeedsApprovalProductionLabel)},
+				{Name: gh.Ptr(HoldProductionLabel)},
+			},
+		}
+
+		client := &Client{issues: fake, owner: "o", repo: "r"}
+		err := client.SyncLabels(context.Background(), 1, []string{ProductionLabel, NeedsApprovalProductionLabel, HoldProductionLabel})
+		g.Expect(err).NotTo(HaveOccurred())
+
+		g.Expect(fake.removed).To(BeEmpty())
+		g.Expect(fake.added).To(BeEmpty())
+	})
 }
 
 func TestSyncLabels_HoldLabelAddedAndRemoved(t *testing.T) {
@@ -127,19 +174,19 @@ func TestSyncLabels_HoldLabelAddedAndRemoved(t *testing.T) {
 
 		fake := &fakeIssuesService{
 			labels: []*gh.Label{
-				{Name: gh.Ptr("environment/development")},
+				{Name: gh.Ptr(DevelopmentLabel)},
 			},
 		}
 
 		client := &Client{issues: fake, owner: "o", repo: "r"}
 		err := client.SyncLabels(context.Background(), 1, []string{
-			"environment/production",
+			ProductionLabel,
 			HoldProductionLabel,
 		})
 		g.Expect(err).NotTo(HaveOccurred())
 
-		g.Expect(fake.removed).To(ConsistOf("environment/development"))
-		g.Expect(fake.added).To(ConsistOf("environment/production", HoldProductionLabel))
+		g.Expect(fake.removed).To(ConsistOf(DevelopmentLabel))
+		g.Expect(fake.added).To(ConsistOf(ProductionLabel, HoldProductionLabel))
 	})
 
 	t.Run("removes hold label when production is no longer desired", func(t *testing.T) {
@@ -147,7 +194,7 @@ func TestSyncLabels_HoldLabelAddedAndRemoved(t *testing.T) {
 
 		fake := &fakeIssuesService{
 			labels: []*gh.Label{
-				{Name: gh.Ptr("environment/production")},
+				{Name: gh.Ptr(ProductionLabel)},
 				{Name: gh.Ptr(HoldProductionLabel)},
 				{Name: gh.Ptr("approved")}, // non-managed — must survive
 			},
@@ -155,12 +202,12 @@ func TestSyncLabels_HoldLabelAddedAndRemoved(t *testing.T) {
 
 		client := &Client{issues: fake, owner: "o", repo: "r"}
 		err := client.SyncLabels(context.Background(), 1, []string{
-			"environment/development",
+			DevelopmentLabel,
 		})
 		g.Expect(err).NotTo(HaveOccurred())
 
-		g.Expect(fake.removed).To(ConsistOf("environment/production", HoldProductionLabel))
-		g.Expect(fake.added).To(ConsistOf("environment/development"))
+		g.Expect(fake.removed).To(ConsistOf(ProductionLabel, HoldProductionLabel))
+		g.Expect(fake.added).To(ConsistOf(DevelopmentLabel))
 	})
 }
 
@@ -175,9 +222,9 @@ func TestSyncLabels_AddsNewLabels(t *testing.T) {
 
 	client := &Client{issues: fake, owner: "o", repo: "r"}
 
-	err := client.SyncLabels(context.Background(), 1, []string{"environment/staging"})
+	err := client.SyncLabels(context.Background(), 1, []string{StagingLabel})
 	g.Expect(err).NotTo(HaveOccurred())
 
 	g.Expect(fake.removed).To(BeEmpty())
-	g.Expect(fake.added).To(ConsistOf("environment/staging"))
+	g.Expect(fake.added).To(ConsistOf(StagingLabel))
 }
