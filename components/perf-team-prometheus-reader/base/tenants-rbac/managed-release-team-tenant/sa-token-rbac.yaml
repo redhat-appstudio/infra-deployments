@@ -1,0 +1,28 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: perf-team-release-reader-token-creator
+  namespace: managed-release-team-tenant
+rules:
+  - verbs:
+      - create
+    apiGroups:
+      - ""
+    resources:
+      - serviceaccounts/token
+    resourceNames:
+      - perf-team-release-reader-sa
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: perf-team-release-reader-token-creator
+  namespace: managed-release-team-tenant
+subjects:
+  - kind: Group
+    apiGroup: rbac.authorization.k8s.io
+    name: konflux-performance
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: perf-team-release-reader-token-creator
