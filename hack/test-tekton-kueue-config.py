@@ -1422,7 +1422,16 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
     },
     "release_managed_production-kflux-ocp-p01": {
         "pipelinerun_key": "release_managed",
-        "config_key": "production-kflux-ocp-p01"
+        "config_key": "production-kflux-ocp-p01",
+        "expected": {
+            "annotations": {
+                "kueue.konflux-ci.dev/requests-konflux-release": "1",
+            },
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-release"
+            }
+        }
     },
     "mintmaker_production-kflux-ocp-p01": {
         "pipelinerun_key": "mintmaker",
@@ -1430,7 +1439,16 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
     },
     "internal_pipelinerun_child_production-kflux-ocp-p01": {
         "pipelinerun_key": "internal_pipelinerun_child",
-        "config_key": "production-kflux-ocp-p01"
+        "config_key": "production-kflux-ocp-p01",
+        "expected": {
+            "annotations": {
+                "kueue.konflux-ci.dev/requests-konflux-release": "1",
+            },
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-release"
+            }
+        }
     },
     "prefer_new_parameters_production-kflux-ocp-p01": {
         "pipelinerun_key": "prefer-new-parameters",
