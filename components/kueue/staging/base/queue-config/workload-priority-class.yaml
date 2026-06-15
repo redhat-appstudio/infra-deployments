@@ -2,9 +2,16 @@
 apiVersion: kueue.x-k8s.io/v1beta2
 kind: WorkloadPriorityClass
 metadata:
+  name: konflux-nudge
+value: 1100
+description: "Highest priority for component nudges"
+---
+apiVersion: kueue.x-k8s.io/v1beta2
+kind: WorkloadPriorityClass
+metadata:
   name: konflux-release
 value: 1000
-description: "Highest priority for release pipelines"
+description: "Higher priority for release pipelines"
 ---
 apiVersion: kueue.x-k8s.io/v1beta2
 kind: WorkloadPriorityClass

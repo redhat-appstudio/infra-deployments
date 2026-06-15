@@ -1,15 +1,9 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+
 resources:
-- ../base
-- queue-config
+- monitoringstack.yaml
+- prometheusrule-uwm.yaml
 
 commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-
-configMapGenerator:
-  - name: tekton-kueue-config
-    namespace: tekton-kueue
-    behavior: replace
-    files:
-      - config.yaml

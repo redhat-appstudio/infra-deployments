@@ -43,3 +43,15 @@ patches:
                           requests:
                             cpu: 200m
                             memory: 4096Mi
+  # TODO: Remove this once Pipelines 1.13.x is deployed
+  # NOTE: IMAGE_PIPELINES_CONTROLLER is the image used specifically by the resolvers,
+  # the pipelines-controller uses IMAGE_PIPELINES_TEKTON_PIPELINES_CONTROLLER
+  - target:
+      kind: Subscription
+      name: openshift-pipelines-operator
+    patch: |-
+      - op: add
+        path: /spec/config/env/-
+        value:
+          name: IMAGE_PIPELINES_CONTROLLER
+          value: "quay.io/openshift-pipeline/pipelines-resolvers-rhel9@sha256:7cd91bc4c0f3469ec4c39d08d818b00c90ce07456364910e49ad5e1430f3110a"
