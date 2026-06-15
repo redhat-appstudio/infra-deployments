@@ -16,6 +16,7 @@ spec:
   resourceGroups:
   - coveredResources:
     - tekton.dev/pipelineruns
+    - konflux-ci-dev-token
     - cpu
     - memory
     - aws-ip
@@ -24,6 +25,8 @@ spec:
     - name: default-flavor
       resources:
       - name: tekton.dev/pipelineruns
+        nominalQuota: '30'
+      - name: konflux-ci-dev-token
         nominalQuota: '30'
       - name: cpu
         nominalQuota: 1k
