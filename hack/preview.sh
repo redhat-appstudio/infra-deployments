@@ -1054,7 +1054,7 @@ if $OBO; then
     else
     log_step "Enabling Observability (OBO) components"
     log_info "Adding Observability operator and Prometheus for federation"
-    yq -i '.resources += ["monitoringstack/"]' $ROOT/components/monitoring/prometheus/development/kustomization.yaml
+    yq -i '.resources += ["federation/"]' $ROOT/components/monitoring/prometheus/development/kustomization.yaml
     log_success "Observability components enabled"
     fi
 fi
@@ -1155,7 +1155,7 @@ wait_for_tekton_crds
 # =============================================================================
 if [ "$TARGET_PREVIEW_OVERLAY" = "development" ] || [ "$TARGET_PREVIEW_OVERLAY" = "development-operator" ]; then
     log_step "Configuring Pipelines as Code integration"
-    $ROOT/hack/build/setup-pac-integration.sh
+    TARGET_PREVIEW_OVERLAY="$TARGET_PREVIEW_OVERLAY" "$ROOT/hack/build/setup-pac-integration.sh"
     log_success "Pipelines as Code configured"
 else
     log_info "Skipping Pipelines as Code integration for '$TARGET_PREVIEW_OVERLAY'"

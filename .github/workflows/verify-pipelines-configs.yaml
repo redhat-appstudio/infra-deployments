@@ -46,6 +46,7 @@ jobs:
           function check_changes() {
             ENVIRONMENT="${1}"
             ./hack/generate-deploy-config.sh -c "components/pipeline-service/${ENVIRONMENT}" || fail "Error generating configuration for ${ENVIRONMENT}"
+            ./components/pipeline-service/production/sync-rings.sh || fail "Error syncing production ring configuration"
 
             if [ -n "$(git status --porcelain components/pipeline-service/${ENVIRONMENT})" ]; then
               body="Please rebuild with kustomize following [the README](https://github.com/redhat-appstudio/infra-deployments/tree/main/components/pipeline-service#update-procedure). If the change is unexpected, use git-blame to identify the source of the change and confirm with the author that the change is safe."

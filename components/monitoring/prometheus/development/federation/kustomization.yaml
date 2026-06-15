@@ -1,13 +1,10 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - ../../../base/monitoringstack
+  - ../../base/observability-operator
+  - ../../staging/base/federation
 patches:
   - path: cluster-type-patch.yaml
-    target:
-      name: appstudio-federate-smon
-      kind: ServiceMonitor
-  - path: endpoints-params.yaml
     target:
       name: appstudio-federate-smon
       kind: ServiceMonitor
@@ -19,18 +16,16 @@ patches:
     target:
       name: appstudio-federate-ms
       kind: MonitoringStack
-  - path: writeRelabelConfigs.yaml
+  - path: monitoringstack-dev-resources-patch.yaml
     target:
       name: appstudio-federate-ms
       kind: MonitoringStack
-  - path: monitoringstack-log-level.yaml
+  - path: observability-operator-dev-resources-patch.yaml
     target:
-      name: appstudio-federate-ms
-      kind: MonitoringStack
-  - path: prometheusrule-uwm.yaml
-    target:
-      name: prometheus-recording-rules-uwm-namespace
-      kind: PrometheusRule
+      name: cluster-observability-operator
+      kind: Subscription
+      group: operators.coreos.com
+      version: v1alpha1
 
 commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true

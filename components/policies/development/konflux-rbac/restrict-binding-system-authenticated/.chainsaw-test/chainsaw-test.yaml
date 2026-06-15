@@ -113,6 +113,47 @@ spec:
 apiVersion: chainsaw.kyverno.io/v1alpha1
 kind: Test
 metadata:
+  name: in-default-tenant-valid-rolebinding
+spec:
+  description: |
+    tests that any RoleBinding can be created in the
+    tenant namespace 'default-tenant'
+  concurrent: false
+  namespace: 'default-tenant'
+  steps:
+  - name: given-kyverno-has-permission-on-resources
+    try:
+    - apply:
+        file: ../kyverno_rbac.yaml
+  - name: given-cluster-policy-is-ready
+    try:
+    - apply:
+        file: ../validate-restrict-binding-system-authenticated-clusterpolicy.yaml
+    - assert:
+        file: chainsaw-assert-clusterpolicy.yaml
+  - name: given-tenant-namespace-exists
+    try:
+    - apply:
+        file: ./resources/tenant-namespace.yaml
+  - name: then-valid-rolebinding-can-be-created
+    try:
+    - apply:
+        file: ./resources/valid-systemauthenticated-rolebinding.yaml
+        expect:
+        - check:
+            ($error != null): false
+  - name: then-invalid-rolebinding-can-be-created
+    try:
+    - apply:
+        file: ./resources/invalid-systemauthenticated-rolebinding.yaml
+        expect:
+        - check:
+            ($error != null): false
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
   name: in-tenant-valid-rolebinding
 spec:
   description: |

@@ -126,7 +126,7 @@ setup-pac-app() (
         sleep $ROUTE_WAIT_INTERVAL
         retry=$((retry+1))
     done
-    
+
     pac_host=$(oc get -n $PAC_NAMESPACE route pipelines-as-code-controller -o go-template="{{ .spec.host }}")
     log_success "PAC route is available: https://$pac_host"
 
@@ -134,7 +134,7 @@ setup-pac-app() (
     log_substep "Updating GitHub App webhook configuration"
     log_debug "  - Webhook URL: https://$pac_host"
     log_debug "  - GitHub App ID: $PAC_GITHUB_APP_ID"
-    
+
     local curl_response curl_status
     curl_response=$(curl -s -w "\n%{http_code}" \
         -X PATCH \
@@ -142,9 +142,9 @@ setup-pac-app() (
         -H "Authorization: Bearer $token" \
         https://api.github.com/app/hook/config \
         -d "{\"content_type\":\"json\",\"insecure_ssl\":\"1\",\"secret\":\"$webhook_secret\",\"url\":\"https://$pac_host\"}")
-    
+
     curl_status=$(echo "$curl_response" | tail -n1)
-    
+
     if [ "$curl_status" -ge 200 ] && [ "$curl_status" -lt 300 ]; then
         log_success "GitHub App webhook configuration updated successfully"
     else
@@ -173,7 +173,7 @@ create_namespace_if_needed() {
 create_pac_secret() {
     local namespace=$1
     local secret_data=$2
-    
+
     log_substep "Creating PAC secret in namespace '$namespace'"
     if eval "oc -n '$namespace' create secret generic '$PAC_SECRET_NAME' $secret_data -o yaml --dry-run=client" | oc apply -f-; then
         log_success "PAC secret configured in '$namespace'"
@@ -203,7 +203,7 @@ GITLAB_WEBHOOK_DATA=""
 if [ -n "${PAC_GITHUB_APP_ID}" ] && [ -n "${PAC_GITHUB_APP_PRIVATE_KEY}" ]; then
     log_info "Authentication method: GitHub App"
     log_info "  - GitHub App ID: $PAC_GITHUB_APP_ID"
-    
+
     # if using the existing QE sprayproxy, we suppose the setup between sprayproxy and github App is already done
     if [ -n "${PAC_GITHUB_APP_WEBHOOK_SECRET}" ]; then
         log_info "Using existing QE sprayproxy configuration (webhook secret provided)"
@@ -217,14 +217,14 @@ if [ -n "${PAC_GITHUB_APP_ID}" ] && [ -n "${PAC_GITHUB_APP_PRIVATE_KEY}" ]; then
             exit 1
         fi
     fi
-    
+
     GITHUB_APP_PRIVATE_KEY=$(echo "$PAC_GITHUB_APP_PRIVATE_KEY" | base64 -d)
     if [ -z "$GITHUB_APP_PRIVATE_KEY" ]; then
         log_error "Failed to decode GitHub App private key"
         log_error "ACTION REQUIRED: Verify PAC_GITHUB_APP_PRIVATE_KEY is valid base64-encoded PEM key"
         exit 1
     fi
-    
+
     GITHUB_APP_DATA="--from-literal github-private-key='$GITHUB_APP_PRIVATE_KEY' --from-literal github-application-id='${PAC_GITHUB_APP_ID}' --from-literal webhook.secret='$WEBHOOK_SECRET'"
     log_success "GitHub App credentials configured"
 else
@@ -266,8 +266,15 @@ create_pac_secret "$PAC_NAMESPACE" "$FULL_SECRET_DATA"
 create_pac_secret "build-service" "$FULL_SECRET_DATA"
 create_pac_secret "$INTEGRATION_NAMESPACE" "$FULL_SECRET_DATA"
 
-# Mintmaker only needs GitHub App data (no webhook tokens)
-create_pac_secret "mintmaker" "$GITHUB_APP_DATA"
+# Mintmaker only needs GitHub App data (no webhook tokens). development-operator
+# overlay does not deploy mintmaker.
+PAC_CONFIGURED_NAMESPACES=("$PAC_NAMESPACE" "build-service" "$INTEGRATION_NAMESPACE")
+if [ "${TARGET_PREVIEW_OVERLAY:-development}" != "development-operator" ]; then
+    create_pac_secret "mintmaker" "$GITHUB_APP_DATA"
+    PAC_CONFIGURED_NAMESPACES+=("mintmaker")
+else
+    log_info "Skipping mintmaker PAC secret (development-operator overlay excludes mintmaker)"
+fi
 
 log_info "============================================================================="
 log_success "PAC Integration Setup Complete"
@@ -276,8 +283,11 @@ log_info "Configured namespaces:"
 log_info "  - $PAC_NAMESPACE (PAC controller)"
 log_info "  - build-service (Build Service)"
 log_info "  - $INTEGRATION_NAMESPACE (Integration Service)"
-log_info "  - mintmaker (Mintmaker)"
+if [[ " ${PAC_CONFIGURED_NAMESPACES[*]} " == *" mintmaker "* ]]; then
+    log_info "  - mintmaker (Mintmaker)"
+fi
 
 # Output summary for LLM parsing
+PAC_NAMESPACES_JSON=$(printf '%s\n' "${PAC_CONFIGURED_NAMESPACES[@]}" | jq -R . | jq -sc .)
 echo ""
-echo "[PAC_SETUP_JSON] {\"status\":\"success\",\"namespaces\":[\"$PAC_NAMESPACE\",\"build-service\",\"$INTEGRATION_NAMESPACE\",\"mintmaker\"],\"github_app_configured\":$([ -n "$GITHUB_APP_DATA" ] && echo "true" || echo "false"),\"github_token_configured\":$([ -n "$GITHUB_WEBHOOK_DATA" ] && echo "true" || echo "false"),\"gitlab_token_configured\":$([ -n "$GITLAB_WEBHOOK_DATA" ] && echo "true" || echo "false")}"
+echo "[PAC_SETUP_JSON] {\"status\":\"success\",\"namespaces\":${PAC_NAMESPACES_JSON},\"github_app_configured\":$([ -n "$GITHUB_APP_DATA" ] && echo "true" || echo "false"),\"github_token_configured\":$([ -n "$GITHUB_WEBHOOK_DATA" ] && echo "true" || echo "false"),\"gitlab_token_configured\":$([ -n "$GITLAB_WEBHOOK_DATA" ] && echo "true" || echo "false")}"
