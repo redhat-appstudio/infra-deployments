@@ -1,0 +1,157 @@
+queueName: pipelines-queue
+cel:
+  expressions:
+    # Set resource requests for multi platform pipelines
+    - |
+        has(pipelineRun.spec.params) &&
+        pipelineRun.spec.params.exists(p, p.name == 'build-platforms') ?
+        pipelineRun.spec.params.filter(
+          p,
+          p.name == 'build-platforms')[0]
+        .value.map(
+          p,
+          resource(replace(replace(p, "/", "-"), "_", "-"), 1)
+        ) : []
+
+    # Request AWS IP for AWS-based platforms
+    - |
+        has(pipelineRun.spec.params) &&
+        pipelineRun.spec.params.exists(p, p.name == 'build-platforms') ?
+        pipelineRun.spec.params.filter(
+          p,
+          p.name == 'build-platforms')[0]
+        .value.filter(
+          p,
+          !(
+            p in [
+              'linux/ppc64le',
+              'linux/s390x',
+              'linux/x86_64',
+              'local',
+              'localhost',
+            ]
+          )
+        ).map(
+          p,
+          resource('aws-ip', 1)
+        ) : []
+
+    # Set resource requests for multi platform pipelines which doesn't use the build-platforms parameter (old style)
+    - |
+      !(
+        has(pipelineRun.spec.params) &&
+        pipelineRun.spec.params.exists(p, p.name == 'build-platforms')
+      ) &&
+      has(pipelineRun.spec.pipelineSpec) &&
+      has(pipelineRun.spec.pipelineSpec.tasks) &&
+      pipelineRun.spec.pipelineSpec.tasks.size() > 0 ?
+      pipelineRun.spec.pipelineSpec.tasks.map(
+        task,
+        has(task.params) ? task.params.filter(p, p.name == 'PLATFORM') : []
+      )
+      .filter(p, p.size() > 0)
+      .map(
+        p,
+        resource(replace(replace(p[0].value, "/", "-"), "_", "-"), 1)
+      ) : []
+
+    # Request AWS IP for AWS-based platforms which doesn't use the build-platforms parameter (old style)
+    - |
+      !(
+        has(pipelineRun.spec.params) &&
+        pipelineRun.spec.params.exists(p, p.name == 'build-platforms')
+      ) &&
+      has(pipelineRun.spec.pipelineSpec) &&
+      has(pipelineRun.spec.pipelineSpec.tasks) &&
+      pipelineRun.spec.pipelineSpec.tasks.size() > 0 ?
+      pipelineRun.spec.pipelineSpec.tasks.map(
+        task,
+        has(task.params) ? task.params.filter(p, p.name == 'PLATFORM') : []
+      )
+      .filter(p, p.size() > 0)
+      .filter(
+        p,
+        !(
+          p[0].value in [
+            'linux/ppc64le',
+            'linux/s390x',
+            'linux/x86_64',
+            'local',
+            'localhost',
+          ]
+        )
+      )
+      .map(
+        p,
+        resource('aws-ip', 1)
+      ) : []
+
+    # Set mintmaker resource requests.
+    # Necessary since mintmaker refreshes can overload clusters without a
+    # bottleneck on the number of pipelineruns running.
+    - |
+        plrNamespace == 'mintmaker' ? [resource('mintmaker', 1)] : []
+
+    # Add a resource to restrict the number of concurrent release pipelineruns
+    - |
+        has(pipelineRun.metadata.labels) &&
+        'appstudio.openshift.io/service' in pipelineRun.metadata.labels &&
+        pipelineRun.metadata.labels['appstudio.openshift.io/service'] == 'release' &&
+        'pipelines.appstudio.openshift.io/type' in pipelineRun.metadata.labels &&
+        pipelineRun.metadata.labels['pipelines.appstudio.openshift.io/type'] == 'managed' ?
+        [resource('konflux-release', 1)] :
+
+        has(pipelineRun.metadata.labels) &&
+        'appstudio.openshift.io/service' in pipelineRun.metadata.labels &&
+        pipelineRun.metadata.labels['appstudio.openshift.io/service'] == 'release' &&
+        'release.appstudio.openshift.io/namespace' in pipelineRun.metadata.labels &&
+        pipelineRun.metadata.labels['release.appstudio.openshift.io/namespace'] == plrNamespace ?
+        [resource('konflux-release', 1)] :
+
+        has(pipelineRun.metadata.labels) &&
+        'internal-services.appstudio.openshift.io/pipelinerun-uid' in pipelineRun.metadata.labels ?
+        [resource('konflux-release', 1)] : []
+
+    # Set the pipeline priority
+    - |
+        has(pipelineRun.metadata.labels) &&
+        'build.appstudio.openshift.io/type' in pipelineRun.metadata.labels &&
+        pipelineRun.metadata.labels['build.appstudio.openshift.io/type'] == 'nudge' ?
+        priority('konflux-dependency-update') :
+
+        pacEventType == 'push' ? priority('konflux-post-merge-build') :
+        pacEventType == 'pull_request' ||
+          pacEventType == "Merge_Request" ||
+          pacEventType == 'test-comment' ||
+          pacEventType == 'retest-comment' ||
+          pacEventType == 'retest-all-comment' ||
+          pacEventType == 'ok-to-test-comment'  ? priority('konflux-pre-merge-build') :
+        pacTestEventType == 'push' ? priority('konflux-post-merge-test') :
+        pacTestEventType == 'pull_request' ||
+          pacTestEventType == "Merge_Request" ||
+          pacTestEventType == 'test-comment' ||
+          pacTestEventType == 'retest-comment' ||
+          pacTestEventType == 'retest-all-comment' ||
+          pacTestEventType == 'ok-to-test-comment' ? priority('konflux-pre-merge-test') :
+
+        has(pipelineRun.metadata.labels) &&
+        'appstudio.openshift.io/service' in pipelineRun.metadata.labels &&
+        pipelineRun.metadata.labels['appstudio.openshift.io/service'] == 'release' &&
+        'pipelines.appstudio.openshift.io/type' in pipelineRun.metadata.labels &&
+        pipelineRun.metadata.labels['pipelines.appstudio.openshift.io/type'] == 'managed' ?
+        priority('konflux-release') :
+
+        has(pipelineRun.metadata.labels) &&
+        'appstudio.openshift.io/service' in pipelineRun.metadata.labels &&
+        pipelineRun.metadata.labels['appstudio.openshift.io/service'] == 'release' &&
+        'release.appstudio.openshift.io/namespace' in pipelineRun.metadata.labels &&
+        pipelineRun.metadata.labels['release.appstudio.openshift.io/namespace'] == plrNamespace ?
+        priority('konflux-tenant-release') :
+
+        plrNamespace == 'mintmaker' ? priority('konflux-dependency-update') :
+
+        has(pipelineRun.metadata.labels) &&
+        'internal-services.appstudio.openshift.io/pipelinerun-uid' in pipelineRun.metadata.labels ?
+        priority('konflux-release') :
+
+        priority('konflux-default')

@@ -5,13 +5,17 @@ metadata:
 spec:
   integrationService:
     spec:
+      pipelineTimeout: "6h"
+      tasksTimeout: "4h"
+      finallyTimeout: "2h"
+      prSnapshotsToKeep: "10"
       integrationControllerManager:
         replicas: 1
         manager:
           resources:
             requests:
-              cpu: 30m
-              memory: 128Mi
+              cpu: 100m
+              memory: 20Mi
             limits:
-              cpu: 30m
-              memory: 128Mi
+              cpu: 500m
+              memory: 1Gi
