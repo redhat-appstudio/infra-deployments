@@ -2,5 +2,10 @@
 - op: add
   path: /spec/template/spec/containers/0/env/-
   value:
+    name: NOTIFICATION_FILTER_LABELS
+    value: "pipelinesascode.tekton.dev/event-type=push"
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
     name: NOTIFICATION_FILTER_ANNOTATIONS
     value: "art-jenkins-job-url"
