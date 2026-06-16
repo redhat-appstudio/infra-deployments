@@ -145,7 +145,7 @@ spec:
           --arg NAMESPACE "$TENANT_NAMESPACE" \
           --rawfile USER_TOKEN /opt/users-secret/token \
           '[{apiurl: $SERVER_API_URL, namespace: $NAMESPACE, token: ($USER_TOKEN | rtrimstr("\n")), verified: true}]' > users.json
-        ./run-stage.sh
+        ./ci-scripts/run-probe/run.sh
         cp -f started ended /tmp/artifacts/
     - name: collect-results
       image: quay.io/redhat-user-workloads/konflux-perfscale-tenant/loadtest
