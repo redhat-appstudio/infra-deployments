@@ -38,6 +38,9 @@ spec:
     - name: member-cluster
       type: string
       default: "https://api.stone-stage-p01.hpmt.p1.openshiftapps.com:6443"
+    - name: tenant-namespace
+      type: string
+      default: "konflux-perfscale-4-tenant"
     # RPM test type only. Leave empty for container test types.
     - name: component-repo-revision
       type: string
@@ -58,8 +61,8 @@ spec:
       secret:
         secretName: kanary-probe-users-credentials
         items:
-          - key: users
-            path: users.json
+          - key: token
+            path: token
   steps:
     - name: run-test
       image: quay.io/redhat-user-workloads/konflux-perfscale-tenant/loadtest
@@ -67,8 +70,7 @@ spec:
         - name: artifacts
           mountPath: /tmp/artifacts
         - name: users-secret
-          mountPath: /opt/app-root/src/users.json
-          subPath: users.json
+          mountPath: /opt/users-secret
           readOnly: true
       env:
         - name: OUTPUT_DIR
@@ -126,10 +128,23 @@ spec:
             secretKeyRef:
               name: kanary-probe-credentials
               key: ocp-prometheus-token
+        - name: TENANT_NAMESPACE
+          value: $(params.tenant-namespace)
+        - name: SERVER_API_URL
+          value: $(params.member-cluster)
       script: |
         #!/usr/bin/env bash
         set -euo pipefail
         echo -n "unknown" > $(results.test-outcome.path)
+        if [[ ! -s /opt/users-secret/token ]]; then
+          echo "ERROR: /opt/users-secret/token is missing or empty" >&2
+          exit 1
+        fi
+        jq -n \
+          --arg SERVER_API_URL "$SERVER_API_URL" \
+          --arg NAMESPACE "$TENANT_NAMESPACE" \
+          --rawfile USER_TOKEN /opt/users-secret/token \
+          '[{apiurl: $SERVER_API_URL, namespace: $NAMESPACE, token: ($USER_TOKEN | rtrimstr("\n")), verified: true}]' > users.json
         ./run-stage.sh
         cp -f started ended /tmp/artifacts/
     - name: collect-results

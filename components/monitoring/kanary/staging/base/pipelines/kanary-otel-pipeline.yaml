@@ -40,6 +40,9 @@ spec:
       default: "https://gitlab.cee.redhat.com/api/v4"
     - name: member-cluster
       type: string
+    - name: tenant-namespace
+      type: string
+      default: "konflux-perfscale-4-tenant"
     # RPM test type only. Leave empty for container test types.
     - name: component-repo-revision
       type: string
@@ -79,6 +82,8 @@ spec:
           value: $(params.gitlab-api-url)
         - name: member-cluster
           value: $(params.member-cluster)
+        - name: tenant-namespace
+          value: $(params.tenant-namespace)
         - name: component-repo-revision
           value: $(params.component-repo-revision)
         - name: pipeline-image-pull-secrets
