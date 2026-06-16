@@ -117,17 +117,17 @@ spec:
           valueFrom:
             secretKeyRef:
               name: kanary-probe-credentials
-              key: github-token
+              key: github_token
         - name: GITLAB_BOT_TOKEN
           valueFrom:
             secretKeyRef:
               name: kanary-probe-credentials
-              key: gitlab-bot-token
+              key: gitlab-cee-pipelines-as-code-secret
         - name: OCP_PROMETHEUS_TOKEN
           valueFrom:
             secretKeyRef:
-              name: kanary-probe-credentials
-              key: ocp-prometheus-token
+              name: kanary-probe-prometheus-credentials
+              key: prometheus_token
         - name: TENANT_NAMESPACE
           value: $(params.tenant-namespace)
         - name: SERVER_API_URL
@@ -162,8 +162,8 @@ spec:
         - name: OCP_PROMETHEUS_TOKEN
           valueFrom:
             secretKeyRef:
-              name: kanary-probe-credentials
-              key: ocp-prometheus-token
+              name: kanary-probe-prometheus-credentials
+              key: prometheus_token
       script: |
         #!/usr/bin/env bash
         # -e (errexit) is omitted so we can inspect the exit code
