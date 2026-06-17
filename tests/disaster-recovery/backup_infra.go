@@ -27,6 +27,7 @@ import (
 	"github.com/konflux-ci/e2e-tests/pkg/constants"
 	"github.com/konflux-ci/e2e-tests/pkg/framework"
 	"github.com/konflux-ci/e2e-tests/pkg/utils"
+	"github.com/konflux-ci/e2e-tests/pkg/utils/build"
 	tektonutils "github.com/konflux-ci/release-service/tekton/utils"
 )
 
@@ -144,7 +145,8 @@ func createTenant(fw *framework.Framework, t Tenant) {
 			},
 		}
 
-		_, err = fw.AsKubeAdmin.HasController.CreateComponent(spec, t.Namespace, "", "", t.AppName, false, nil)
+		_, err = fw.AsKubeAdmin.HasController.CreateComponent(spec, t.Namespace, "", "", t.AppName, false,
+			build.GetBuildPipelineBundleAnnotation(constants.DockerBuildOciTAMin))
 		Expect(err).ShouldNot(HaveOccurred(), "failed to create Component %s in namespace %s", comp.Name, t.Namespace)
 	}
 
