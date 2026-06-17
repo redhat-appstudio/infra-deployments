@@ -41,6 +41,14 @@ rules:
   - list
   - watch
 - apiGroups:
+  - ""
+  resources:
+  - secrets
+  resourceNames:
+  - ibm-public-key
+  verbs:
+  - get
+- apiGroups:
   - tekton.dev
   resources:
   - pipelineruns
