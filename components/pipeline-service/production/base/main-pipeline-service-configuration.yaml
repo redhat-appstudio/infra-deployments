@@ -1852,17 +1852,6 @@ spec:
         # events in the future, the controller can be re-enabled
         tekton-events-controller:
           spec:
-            template:
-              spec:
-                containers:
-                  - name: tekton-events-controller
-                    resources:
-                      limits:
-                        cpu: 200m
-                        memory: 4Gi
-                      requests:
-                        cpu: 200m
-                        memory: 4Gi
             replicas: 0
         # tekton-triggers-controller:
         #   spec:
