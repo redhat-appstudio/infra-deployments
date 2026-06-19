@@ -8,7 +8,8 @@ spec:
     matchLabels:
       monitoring.rhobs/stack: appstudio-tekton-ms
   logLevel: info
-  retention: 3h
+  retention: 7d
+  retentionSize: 9GB
   alertmanagerConfig:
     disabled: true
   resources:
@@ -20,6 +21,13 @@ spec:
   prometheusConfig:
     externalLabels: {} # added by overlays (source_cluster, source_environment)
     replicas: 1 # single replica for staging validation; bump to 2 for production HA
+    persistentVolumeClaim:
+      storageClassName: gp3
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 10Gi
     remoteWrite:
     - oauth2:
         clientId:
