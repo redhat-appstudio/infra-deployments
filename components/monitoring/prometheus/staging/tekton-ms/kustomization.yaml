@@ -4,5 +4,13 @@ resources:
   - kube-rbac-proxy.yaml
   - networkpolicy.yaml
 
+patches:
+  - path: rhobs-secret-path.yaml
+    target:
+      name: rhobs
+      kind: ExternalSecret
+      group: external-secrets.io
+      version: v1
+
 commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
