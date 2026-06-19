@@ -20,3 +20,17 @@ spec:
   prometheusConfig:
     externalLabels: {} # added by overlays (source_cluster, source_environment)
     replicas: 1 # single replica for staging validation; bump to 2 for production HA
+    remoteWrite:
+    - oauth2:
+        clientId:
+          secret:
+            key: client-id
+            name: rhobs
+        clientSecret:
+          key: client-secret
+          name: rhobs
+        endpointParams:
+          audience: # added by overlays
+        tokenUrl: https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token
+      url: # added by overlays
+      # writeRelabelConfigs:  # added by overlays
