@@ -23,7 +23,10 @@ configMapGenerator:
         annotations:
           argocd.argoproj.io/sync-wave: "-2"
       literals:
-        - MIGRATION_VERSION=5
+        - MIGRATION_VERSION=13
+    - name: kubearchive-deployment-schema-version
+      literals:
+        - MIGRATION_VERSION=13
     - name: kubearchive-logging-writer
       literals:
           - |
