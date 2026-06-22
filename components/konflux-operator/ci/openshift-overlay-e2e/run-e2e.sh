@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run konflux-ci conformance tests against the operator overlay cluster.
+# Run konflux-ci proxy integration tests and conformance against the operator overlay cluster.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -36,22 +36,33 @@ if [[ "${KONFLUX_CI_REF}" != "main" ]]; then
   }
 fi
 
-export GH_ORG="${MY_GITHUB_ORG:-redhat-appstudio-qe}"
-export GH_TOKEN="${GITHUB_TOKEN}"
-export E2E_APPLICATIONS_NAMESPACE="${E2E_APPLICATIONS_NAMESPACE:-default-tenant}"
-
-if [[ -n "${GINKGO_LABEL_FILTER:-}" ]]; then
-  export E2E_CONFORMANCE_GO_TEST_EXTRA_ARGS="-ginkgo.label-filter=${GINKGO_LABEL_FILTER}"
-fi
+# Env for konflux-ci test/e2e/run-e2e.sh (proxy + conformance go test invocations).
+# Previously run-conformance-tests.sh set GITHUB_TOKEN/MY_GITHUB_ORG/QUAY_TOKEN internally from GH_TOKEN/GH_ORG;
+# calling run-e2e.sh directly requires the names conformance reads (test/go-tests/pkg/constants).
+export GITHUB_TOKEN="${GITHUB_TOKEN}"  # conformance: GitHub API (pkg/clients/kube, HAS, build/git)
+export MY_GITHUB_ORG="${MY_GITHUB_ORG:-redhat-appstudio-qe}"  # conformance: fork org for testrepo
+export E2E_APPLICATIONS_NAMESPACE="${E2E_APPLICATIONS_NAMESPACE:-default-tenant}"  # conformance: tenant under test (pkg/framework)
+export QUAY_TOKEN=''  # conformance: force quay.io/dockerconfig from cluster secret, not install-time token (pkg/clients/kube/secret)
 
 echo "[INFO] Preparing conformance environment (pipeline bundle pin)..."
 # prepare-conformance-env.sh prints export lines when not in GitHub Actions.
 eval "$(bash scripts/operator-e2e/prepare-conformance-env.sh "${KONFLUX_CI_DIR}")"
 
+export KONFLUX_PROXY_AUTH=openshift
+export KONFLUX_PROXY_WAIT_UI_ONLY=true
+
 JUNIT_REPORT="${ARTIFACT_DIR:-/tmp}/junit-conformance.xml"
 mkdir -p "$(dirname "${JUNIT_REPORT}")"
 
-echo "[INFO] Running conformance tests (namespace=${E2E_APPLICATIONS_NAMESPACE})..."
-bash scripts/operator-e2e/run-conformance-tests.sh "${KONFLUX_CI_DIR}" "${JUNIT_REPORT}"
+CONFORMANCE_ARGS=(
+  -ginkgo.github-output
+  -ginkgo.junit-report="${JUNIT_REPORT}"
+)
+if [[ -n "${GINKGO_LABEL_FILTER:-}" ]]; then
+  CONFORMANCE_ARGS+=(-ginkgo.label-filter="${GINKGO_LABEL_FILTER}")
+fi
+
+echo "[INFO] Running test/e2e/run-e2e.sh (deploy test resources, proxy integration tests, conformance; namespace=${E2E_APPLICATIONS_NAMESPACE})..."
+bash test/e2e/run-e2e.sh "${CONFORMANCE_ARGS[@]}"
 
 echo "[INFO] run-e2e.sh complete"
