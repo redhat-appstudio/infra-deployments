@@ -9,7 +9,7 @@ spec:
       monitoring.rhobs/stack: appstudio-tekton-ms
   logLevel: info
   retention: 7d
-  retentionSize: 9GB
+  retentionSize: 15GB
   alertmanagerConfig:
     disabled: true
   resources:
@@ -27,7 +27,7 @@ spec:
         - ReadWriteOnce
       resources:
         requests:
-          storage: 10Gi
+          storage: 20Gi
     remoteWrite:
     - oauth2:
         clientId:
