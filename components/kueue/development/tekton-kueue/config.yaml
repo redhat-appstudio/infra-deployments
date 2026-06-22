@@ -140,8 +140,8 @@ cel:
     # Set the pipeline priority
     - |
         has(pipelineRun.metadata.labels) &&
-        'build.appstudio.openshift.io/type' in pipelineRun.metadata.labels &&
-        pipelineRun.metadata.labels['build.appstudio.openshift.io/type'] == 'nudge' ?
+        'build.appstudio.redhat.com/type' in pipelineRun.metadata.labels &&
+        pipelineRun.metadata.labels['build.appstudio.redhat.com/type'] == 'nudge' ?
         priority('konflux-nudge') :
 
         pacEventType == 'push' ? priority('konflux-post-merge-build') :
