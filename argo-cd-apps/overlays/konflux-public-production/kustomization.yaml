@@ -4,7 +4,6 @@ resources:
   - ../../base/member
   - ../../base/all-clusters
   - ../../base/backup
-  - ../../base/tekton-ci
   - ../../base/konflux-ci
   - ../../base/cluster-secret-store-rh
   - ../../base/eaas
@@ -51,11 +50,6 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: cluster-secret-store
-  - path: production-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: tekton-ci
   - path: production-overlay-patch.yaml
     target:
       kind: ApplicationSet
