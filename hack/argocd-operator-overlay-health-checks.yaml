@@ -1,0 +1,33 @@
+# Strategic-merge patch for openshift-gitops ArgoCD CR resourceHealthChecks.
+# Applied only for development-operator bootstrap (preview --operator-overlay).
+spec:
+  resourceHealthChecks:
+    - group: konflux.konflux-ci.dev
+      kind: Konflux
+      check: |
+        hs = {}
+        if obj.status == nil or obj.status.conditions == nil then
+          hs.status = "Progressing"
+          hs.message = "Waiting for Konflux status"
+          return hs
+        end
+        for i, condition in ipairs(obj.status.conditions) do
+          if condition.type == "Ready" then
+            if condition.status == "True" then
+              hs.status = "Healthy"
+              hs.message = condition.message
+              return hs
+            end
+            if condition.reason == "ComponentsNotReady" then
+              hs.status = "Progressing"
+              hs.message = condition.message
+              return hs
+            end
+            hs.status = "Degraded"
+            hs.message = condition.message
+            return hs
+          end
+        end
+        hs.status = "Progressing"
+        hs.message = "Ready condition not reported yet"
+        return hs
