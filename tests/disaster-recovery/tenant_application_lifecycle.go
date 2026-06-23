@@ -158,32 +158,29 @@ func buildListOpts(namespace, pipelineType, componentName string) []client.ListO
 // High-level lifecycle helpers
 // ---------------------------------------------------------------------------
 
-// pipelineRunBaseCounts holds per-component build PipelineRun counts.
+// pipelineRunBaseCounts holds per-component build and test PipelineRun counts.
 // Used as a baseline for waitForPipelineChains so it can wait for counts
 // relative to an initial snapshot (e.g., after triggering a new build).
 type pipelineRunBaseCounts struct {
 	build int
+	test  int
 }
 
-// waitForPipelineChains waits for the full pipeline chain (build → release)
-// to complete for every component across all tenants. Each component's build
-// wait runs in its own goroutine so that a slow component doesn't block
-// faster ones. Release PipelineRuns are waited for after all builds complete,
+// waitForPipelineChains waits for the full pipeline chain (build → test →
+// release) to complete for every component across all tenants. Each
+// component's chain runs in its own goroutine so that a slow component
+// doesn't block faster ones from progressing through subsequent stages.
+// Release PipelineRuns are waited for after all build/test chains complete,
 // since release PRs may not be per-component.
 //
-// Integration test PipelineRuns are NOT waited for because DR tenant
-// namespaces have no IntegrationTestScenarios configured. The integration
-// service auto-promotes snapshots when no ITS exists, so releases trigger
-// directly after successful builds.
-//
-// baseBuild provides per-component starting counts keyed by
+// baseBuildTest provides per-component starting counts keyed by
 // "namespace/componentName". baseRelease provides aggregate starting counts
 // keyed by managed namespace. Pass nil for both on the first run (base of 0).
 func waitForPipelineChains(fw *framework.Framework, tenants []Tenant,
-	baseBuild map[string]pipelineRunBaseCounts, baseRelease map[string]int) {
+	baseBuildTest map[string]pipelineRunBaseCounts, baseRelease map[string]int) {
 	GinkgoHelper()
 
-	By("Waiting for per-component build PipelineRuns across all tenants")
+	By("Waiting for per-component build → test chains across all tenants")
 
 	var wg sync.WaitGroup
 	for _, t := range tenants {
@@ -194,19 +191,24 @@ func waitForPipelineChains(fw *framework.Framework, tenants []Tenant,
 				defer wg.Done()
 
 				key := tenant.Namespace + "/" + component.Name
-				base := baseBuild[key] // zero-value if nil map or missing key
+				base := baseBuildTest[key] // zero-value if nil map or missing key
 
 				By(fmt.Sprintf("Waiting for build PipelineRun for %s in %s (base: %d)",
 					component.Name, tenant.Namespace, base.build))
 				waitForSucceededPRCount(fw, tenant.Namespace, "build", component.Name,
 					base.build+1, PipelineTimeout, PipelinePoll)
+
+				By(fmt.Sprintf("Waiting for test PipelineRun for %s in %s (base: %d)",
+					component.Name, tenant.Namespace, base.test))
+				waitForSucceededPRCount(fw, tenant.Namespace, "test", component.Name,
+					base.test+1, PipelineTimeout, PipelinePoll)
 			}(t, comp)
 		}
 	}
 	wg.Wait()
 
 	// Release PipelineRuns run in the managed namespace and may not map 1:1
-	// to components, so wait for them in aggregate after all builds complete.
+	// to components, so wait for them in aggregate after all builds/tests pass.
 	for _, t := range tenants {
 		releaseBase := baseRelease[t.ManagedNamespace] // zero if nil map or missing key
 		expected := releaseBase + ComponentsPerTenant
@@ -219,15 +221,16 @@ func waitForPipelineChains(fw *framework.Framework, tenants []Tenant,
 
 // triggerBuildsAndVerify creates a pull request on each tenant's forked
 // MathWizz repo to trigger new builds via PaC webhooks, then waits for the
-// full pipeline chain (build → release) to complete across all tenants. This
-// proves that PaC webhooks, Secrets, ServiceAccounts, ReleasePlans, and the
-// full build/release chain survived the backup/restore cycle.
+// full pipeline chain (build → integration test → release) to complete across
+// all tenants. This proves that PaC webhooks, Secrets, ServiceAccounts,
+// IntegrationTestScenarios, ReleasePlans, and the full build/test/release
+// chain survived the backup/restore cycle.
 //
 // The method:
 //  1. Snapshots current per-component PipelineRun counts.
 //  2. For each tenant: creates a branch, appends a timestamp to README.md,
 //     opens a PR on the tenant's fork repo.
-//  3. Waits for new build PipelineRuns per component (parallel).
+//  3. Waits for new build and test PipelineRuns per component (parallel).
 //  4. Waits for new release PipelineRuns (aggregate).
 //  5. Cleans up the branches (which closes the PRs).
 func triggerBuildsAndVerify(fw *framework.Framework, tenants []Tenant) {
@@ -243,9 +246,10 @@ func triggerBuildsAndVerify(fw *framework.Framework, tenants []Tenant) {
 			key := t.Namespace + "/" + comp.Name
 			initialPerComp[key] = pipelineRunBaseCounts{
 				build: countSucceededPRs(fw, t.Namespace, "build", comp.Name),
+				test:  countSucceededPRs(fw, t.Namespace, "test", comp.Name),
 			}
-			GinkgoWriter.Printf("initial build count for %s: %d\n",
-				key, initialPerComp[key].build)
+			GinkgoWriter.Printf("initial counts for %s: build=%d, test=%d\n",
+				key, initialPerComp[key].build, initialPerComp[key].test)
 		}
 		initialRelease[t.ManagedNamespace] = countSucceededPRs(fw, t.ManagedNamespace, "", "")
 		GinkgoWriter.Printf("initial release count for %s: %d\n",

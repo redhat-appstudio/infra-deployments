@@ -165,6 +165,34 @@ var Components = []ComponentDef{
 }
 
 // ---------------------------------------------------------------------------
+// IntegrationTestScenario — Conforma / Enterprise Contract integration test
+// ---------------------------------------------------------------------------
+//
+// Each tenant gets an IntegrationTestScenario that points at the canonical
+// enterprise-contract pipeline from build-definitions. This mirrors what the
+// Konflux UI auto-creates when a user imports an Application, ensuring the
+// DR test exercises the realistic build → integration test → release chain.
+
+const (
+	// DRIntegrationTestScenarioName is the IntegrationTestScenario CR name
+	// created in each tenant namespace.
+	DRIntegrationTestScenarioName = "dr-enterprise-contract"
+
+	// DRIntegrationTestGitURL is the Git repo containing the EC pipeline
+	// definition used by the IntegrationTestScenario.
+	DRIntegrationTestGitURL = "https://github.com/konflux-ci/build-definitions"
+
+	// DRIntegrationTestGitRevision is the branch/tag/commit of the pipeline
+	// definition repo. Using "main" matches what the Konflux UI sets for
+	// new Applications.
+	DRIntegrationTestGitRevision = "main"
+
+	// DRIntegrationTestPathInRepo is the path to the EC pipeline YAML
+	// within the build-definitions repo.
+	DRIntegrationTestPathInRepo = "pipelines/enterprise-contract.yaml"
+)
+
+// ---------------------------------------------------------------------------
 // Release infrastructure — constants for setting up the release pipeline chain
 // ---------------------------------------------------------------------------
 //
