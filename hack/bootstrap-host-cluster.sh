@@ -46,14 +46,6 @@ main() {
         log_warn "Failed to configure Quality Dashboard secrets (dashboard may have limited functionality)"
     fi
     
-    # Setup CI Helper App secret
-    log_substep "Configuring CI Helper App secret"
-    if "${ROOT}/secret-creator/create-ci-helper-app-secret.sh"; then
-        log_success "CI Helper App secret configured"
-    else
-        log_warn "Failed to configure CI Helper App secret"
-    fi
-    
     log_success "Host cluster bootstrap complete"
 }
 
