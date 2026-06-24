@@ -243,14 +243,6 @@ const (
 	DRReleaseCatalogTAQuaySecret = "release-catalog-trusted-artifacts-quay-secret"
 )
 
-// DRCosignPublicKey is the test cosign public key used for Enterprise Contract
-// policy verification. This is a well-known test key shared across the e2e
-// test suites (same key as used in tests/release/).
-var DRCosignPublicKey = []byte("-----BEGIN PUBLIC KEY-----\n" +
-	"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEocSG/SnE0vQ20wRfPltlXrY4Ib9B\n" +
-	"CRnFUCg/fndZsXdz0IX5sfzIyspizaTbu4rapV85KirmSBU6XUaLY347xg==\n" +
-	"-----END PUBLIC KEY-----")
-
 // DRManagedNamespaceSecrets lists the Secrets that must exist in the managed
 // namespace before the release ServiceAccount is created. These are referenced
 // by the ServiceAccount's secrets field so the release pipeline can pull images

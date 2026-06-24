@@ -209,9 +209,13 @@ func setupReleaseInfra(fw *framework.Framework, t Tenant) {
 		t.ManagedNamespace, DRQuayAuthSecret, DRReleasePipelineSA, true)
 	Expect(err).ShouldNot(HaveOccurred(), "failed to link Quay auth secret to release SA in %s", t.ManagedNamespace)
 
+	By("Fetching Tekton Chains public key from the cluster")
+	chainsPublicKey, err := fw.AsKubeAdmin.TektonController.GetTektonChainsPublicKey()
+	Expect(err).ShouldNot(HaveOccurred(), "failed to get Tekton Chains public key")
+
 	By(fmt.Sprintf("Creating cosign signing secret in managed namespace %s", t.ManagedNamespace))
 	Expect(fw.AsKubeAdmin.TektonController.CreateOrUpdateSigningSecret(
-		DRCosignPublicKey, DRCosignSecretName, t.ManagedNamespace)).
+		chainsPublicKey, DRCosignSecretName, t.ManagedNamespace)).
 		Should(Succeed(), "failed to create cosign signing secret in %s", t.ManagedNamespace)
 
 	By("Getting default Enterprise Contract policy from enterprise-contract-service namespace")
