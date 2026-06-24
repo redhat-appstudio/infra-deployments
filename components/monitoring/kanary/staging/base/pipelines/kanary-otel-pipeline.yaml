@@ -30,7 +30,10 @@ spec:
       default: "nodejs-devfile-sample-SingleArch/"
     - name: release-pipeline-service-account
       type: string
-      default: "loadtest-probe-serviceaccount"
+      default: "managed-konflux-perfscale-sa"
+    - name: release-managed-namespace
+      type: string
+      default: "managed-konflux-perfscale-tenant"
     # Private clusters only (GitLab-based repos). Leave empty for public clusters.
     - name: fork-target
       type: string
@@ -76,6 +79,8 @@ spec:
           value: $(params.pipeline-repo-templating-source-dir)
         - name: release-pipeline-service-account
           value: $(params.release-pipeline-service-account)
+        - name: release-managed-namespace
+          value: $(params.release-managed-namespace)
         - name: fork-target
           value: $(params.fork-target)
         - name: gitlab-api-url

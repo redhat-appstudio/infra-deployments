@@ -27,7 +27,10 @@ spec:
       default: "nodejs-devfile-sample-SingleArch/"
     - name: release-pipeline-service-account
       type: string
-      default: "loadtest-probe-serviceaccount"
+      default: "managed-konflux-perfscale-sa"
+    - name: release-managed-namespace
+      type: string
+      default: "managed-konflux-perfscale-tenant"
     # Private clusters only (GitLab-based repos). Leave empty for public clusters.
     - name: fork-target
       type: string
@@ -105,6 +108,13 @@ spec:
           value: "pipelines/managed/e2e/e2e.yaml"
         - name: RELEASE_PIPELINE_SERVICE_ACCOUNT
           value: $(params.release-pipeline-service-account)
+        - name: RELEASE_MANAGED_NAMESPACE
+          value: $(params.release-managed-namespace)
+        - name: RELEASE_MANAGED_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: kanary-probe-prometheus-credentials
+              key: managed_sa_token
         - name: FORK_TARGET
           value: $(params.fork-target)
         - name: GITLAB_API_URL
