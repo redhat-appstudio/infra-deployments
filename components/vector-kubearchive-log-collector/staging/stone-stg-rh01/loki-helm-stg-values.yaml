@@ -6,6 +6,9 @@ global:
 gateway:
   service:
     type: ClusterIP
+  basicAuth:
+    enabled: true
+    existingSecret: kubearchive-loki
   serviceAccount:
     create: false
     name: loki-gateway
