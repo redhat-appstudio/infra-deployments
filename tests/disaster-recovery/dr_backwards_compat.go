@@ -57,6 +57,9 @@ func defineBackwardsCompatSpecs() {
 		})
 
 		// Phase 1: Create tenants on the old Konflux version and run initial pipelines.
+		// PaC config PRs must be merged before waiting for pipeline chains because
+		// releases only trigger for push-event builds (merge commits on the default
+		// branch), not pull-request-event builds.
 		When("creating tenants on the old Konflux version", func() {
 			It("should create both tenants concurrently", func() {
 				var wg sync.WaitGroup
@@ -71,14 +74,14 @@ func defineBackwardsCompatSpecs() {
 				wg.Wait()
 			})
 
-			It("should wait for all build PipelineRuns to succeed", func() {
-				waitForPipelineChains(fw, bcTenants, nil, nil)
-			})
-
 			It("should merge PaC configuration PRs on forked repos", func() {
 				for _, t := range bcTenants {
 					mergePaCConfigPRs(fw, t)
 				}
+			})
+
+			It("should wait for all pipeline chains to succeed", func() {
+				waitForPipelineChains(fw, bcTenants, nil, nil)
 			})
 		})
 

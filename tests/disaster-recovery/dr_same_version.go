@@ -44,6 +44,9 @@ func defineSameVersionSpecs() {
 		})
 
 		// Phase 1: Tenant creation and initial pipeline execution.
+		// PaC config PRs must be merged before waiting for pipeline chains because
+		// releases only trigger for push-event builds (merge commits on the default
+		// branch), not pull-request-event builds.
 		When("creating tenants and running initial pipelines", func() {
 			It("should create both tenants concurrently", func() {
 				var wg sync.WaitGroup
@@ -58,14 +61,14 @@ func defineSameVersionSpecs() {
 				wg.Wait()
 			})
 
-			It("should wait for all build PipelineRuns to succeed", func() {
-				waitForPipelineChains(fw, svTenants, nil, nil)
-			})
-
 			It("should merge PaC configuration PRs on forked repos", func() {
 				for _, t := range svTenants {
 					mergePaCConfigPRs(fw, t)
 				}
+			})
+
+			It("should wait for all pipeline chains to succeed", func() {
+				waitForPipelineChains(fw, svTenants, nil, nil)
 			})
 		})
 
