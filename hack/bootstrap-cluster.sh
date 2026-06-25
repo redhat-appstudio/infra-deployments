@@ -120,6 +120,12 @@ main() {
         log_success "Upstream configuration deployed"
         ;;
     "preview")
+        if [ -n "$operator_overlay" ]; then
+            log_step "Configuring operator-overlay Argo CD health checks"
+            # shellcheck source=/dev/null
+            source "${ROOT}/hack/deploy-argocd.sh"
+            configure_operator_overlay_health_customizations
+        fi
         log_info "Deploying preview configuration"
         $ROOT/hack/preview.sh $obo $eaas $operator_overlay
         ;;

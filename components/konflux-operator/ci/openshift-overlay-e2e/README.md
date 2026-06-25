@@ -13,7 +13,7 @@ step refs (`konflux-ci-install-konflux`, `redhat-appstudio-conformance-tests`).
 | `Dockerfile` | Unified CI image (`konflux-overlay-install`): task-runner + Go 1.26 from ubi10/go-toolset |
 | `ci-common.sh` | Shared cluster login (temp kubeconfig copy) and ephemeral git credentials |
 | `install.sh` | `hack/bootstrap-cluster.sh preview --operator-overlay`, QE secrets, SprayProxy, `e2e-secrets` quay pull secret |
-| `run-e2e.sh` | Clone konflux-ci @ ref from `invariant/kustomization.yaml`; `prepare-conformance-env` + `run-conformance-tests.sh` in `default-tenant` (no `deploy-test-resources.sh`) |
+| `run-e2e.sh` | Clone konflux-ci @ ref from `invariant/kustomization.yaml`; `prepare-conformance-env` + `test/e2e/run-e2e.sh` (deploy test resources, proxy integration tests, then conformance in `default-tenant`) |
 
 ## CI flow (both steps use the same pattern)
 

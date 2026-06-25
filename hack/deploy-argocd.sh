@@ -238,6 +238,23 @@ spec:
     fi
 }
 
+configure_operator_overlay_health_customizations() {
+    log_substep "Configuring Konflux CR health check for development-operator overlay"
+
+    local patch_file="$ROOT/hack/argocd-operator-overlay-health-checks.yaml"
+    if [ ! -f "$patch_file" ]; then
+        log_error "Missing operator overlay Argo CD health patch file: $patch_file"
+        exit 1
+    fi
+
+    if kubectl patch argocd/openshift-gitops -n openshift-gitops --type=merge --patch-file "$patch_file"; then
+        log_success "Operator overlay Konflux CR health customization applied"
+    else
+        log_warn "Failed to apply operator overlay Konflux CR health customization"
+        return 1
+    fi
+}
+
 set_kustomize_build_options() {
     log_substep "Enabling Helm support in Kustomize builds"
     

@@ -1,4 +1,6 @@
-#!/bin/bash -ex
+#!/bin/bash
+
+set -xeuo pipefail
 
 # Format and mount NVMe disk
 mkfs -t xfs /dev/nvme1n1
@@ -19,6 +21,11 @@ mkdir -p /etc/cdi /var/run/cdi
 chmod a+rwx /etc/cdi /var/run/cdi
 setsebool container_use_devices 1 2>/dev/null || true
 su - ec2-user -c 'nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml'
+if ! timeout 300s bash -c 'until nvidia-ctk cdi list 2>/dev/null | grep -q "nvidia.com/gpu=all"; do echo "Waiting for CDI..."; sleep 1; done'; then
+    echo "Timed out waiting for Nvidia CDI to get Ready"
+    exit 1
+fi
+echo "Nvidia CDI Ready"
 chmod a+rw /etc/cdi/nvidia.yaml
 
 # Configure ec2-user SSH access

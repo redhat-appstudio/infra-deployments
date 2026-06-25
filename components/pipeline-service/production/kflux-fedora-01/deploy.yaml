@@ -302,6 +302,18 @@ rules:
   - update
   - watch
 - apiGroups:
+  - operator.tekton.dev
+  resources:
+  - tektoninstallersets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - ""
   resources:
   - nodes
@@ -2344,6 +2356,7 @@ spec:
       deployments:
         tekton-events-controller:
           spec:
+            replicas: 0
             template:
               spec:
                 containers:
@@ -2351,10 +2364,10 @@ spec:
                   resources:
                     limits:
                       cpu: 200m
-                      memory: 4096Mi
+                      memory: 4Gi
                     requests:
                       cpu: 200m
-                      memory: 4096Mi
+                      memory: 4Gi
         tekton-operator-proxy-webhook:
           spec:
             replicas: 2
