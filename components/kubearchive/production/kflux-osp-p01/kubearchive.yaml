@@ -1232,7 +1232,7 @@ spec:
               valueFrom:
                 resourceFieldRef:
                   resource: limits.cpu
-          image: quay.io/kubearchive/operator:v.1.22.2@sha256:5f35ebd89eb8c7637d2b45d9587fa8920192258c14e78b8c23574375fdbb1303
+          image: quay.io/kubearchive/operator:v1.22.2@sha256:5f35ebd89eb8c7637d2b45d9587fa8920192258c14e78b8c23574375fdbb1303
           livenessProbe:
             httpGet:
               path: /healthz
@@ -1438,7 +1438,7 @@ spec:
           envFrom:
             - secretRef:
                 name: kubearchive-database-credentials
-          image: quay.io/kubearchive/postgresqlv1.22.2@sha256:c8068879b345360213123aa03b6eeb7f9f1e22e58f6e2d258c751dafc6a4f7d4
+          image: quay.io/kubearchive/postgresql:v1.22.2@sha256:c8068879b345360213123aa03b6eeb7f9f1e22e58f6e2d258c751dafc6a4f7d4
           name: migration
           resources:
             limits:
