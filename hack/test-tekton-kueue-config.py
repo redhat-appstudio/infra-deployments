@@ -511,7 +511,7 @@ PIPELINERUN_DEFINITIONS: Dict[str, PipelineRunTestData] = {
                 "name": "nudging-pipelinerun",
                 "namespace": "default",
                 "labels": {
-                    "build.appstudio.openshift.io/type": "nudge",
+                    "build.appstudio.redhat.com/type": "nudge",
                     # make sure the nudge type overrides this
                     "pipelinesascode.tekton.dev/event-type": "push"
                 }
@@ -526,7 +526,7 @@ PIPELINERUN_DEFINITIONS: Dict[str, PipelineRunTestData] = {
                 "kueue.konflux-ci.dev/requests-konflux-ci-dev-token": "2",
             },
             "labels": {
-                "build.appstudio.openshift.io/type": "nudge",
+                "build.appstudio.redhat.com/type": "nudge",
                 "kueue.x-k8s.io/queue-name": "pipelines-queue",
                 "kueue.x-k8s.io/priority-class": "konflux-nudge"
             }
@@ -1436,9 +1436,9 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
         "expected": {
             "annotations": {},
             "labels": {
-                "build.appstudio.openshift.io/type": "nudge",
+                "build.appstudio.redhat.com/type": "nudge",
                 "kueue.x-k8s.io/queue-name": "pipelines-queue",
-                "kueue.x-k8s.io/priority-class": "konflux-dependency-update"
+                "kueue.x-k8s.io/priority-class": "konflux-nudge"
             }
         }
     },
@@ -1521,6 +1521,21 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
             }
         }
     },
+    "nudging_kflux-ocp-p01": {
+        "pipelinerun_key": "nudge_pipelinerun",
+        "config_key": "production-kflux-ocp-p01",
+        "expected": {
+            "annotations": {
+                "kueue.konflux-ci.dev/requests-konflux-ci-dev-token": "1",
+            },
+            "labels": {
+                "build.appstudio.redhat.com/type": "nudge",
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-nudge"
+            }
+        }
+    },
+
 
     # Example: Test the same PipelineRun with different configs to show reusability
     "user-specific-priority_and_mixed_platforms_production-kflux-ocp-p01": {
@@ -1678,9 +1693,9 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
                 "kueue.konflux-ci.dev/requests-konflux-ci-dev-token": "1",
             },
             "labels": {
-                "build.appstudio.openshift.io/type": "nudge",
+                "build.appstudio.redhat.com/type": "nudge",
                 "kueue.x-k8s.io/queue-name": "pipelines-queue",
-                "kueue.x-k8s.io/priority-class": "konflux-dependency-update"
+                "kueue.x-k8s.io/priority-class": "konflux-nudge"
             }
         }
     },
@@ -1722,9 +1737,9 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
                 "kueue.konflux-ci.dev/requests-konflux-ci-dev-token": "1",
             },
             "labels": {
-                "build.appstudio.openshift.io/type": "nudge",
+                "build.appstudio.redhat.com/type": "nudge",
                 "kueue.x-k8s.io/queue-name": "pipelines-queue",
-                "kueue.x-k8s.io/priority-class": "konflux-dependency-update"
+                "kueue.x-k8s.io/priority-class": "konflux-nudge"
             }
         }
     },
