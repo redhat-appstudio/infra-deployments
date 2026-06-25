@@ -1,10 +1,9 @@
 // Command changelog-generator posts a changelog comment on infra-deployments PRs
 // that bump the Konflux operator ref.
 //
-// This is step 3 (KFLUXVNGD-1024): it reads the operator ref at the base branch
-// and PR head, posts a compare link, and lists which upstream sub-services had
-// their pinned SHA bumped inside the operator repo. Commit-level details per
-// service are introduced in the next PR.
+// This is step 4 (KFLUXVNGD-1079): it reads the operator ref, lists upstream
+// sub-services whose pinned SHA changed, and fetches per-service feat/fix
+// conventional commits to display under each bump entry.
 package main
 
 import (
@@ -151,12 +150,39 @@ func computeBody(ctx context.Context, basePath, headPath string, comparer change
 	}
 	slog.Info("Service bumps detected", "count", len(bumps))
 
-	// Normalize nil (no bumps found) to empty slice so formatCompare can
-	// distinguish "found nothing" from "API call failed" (nil).
-	if bumps == nil {
-		bumps = []changelog.ServiceBump{}
+	enriched := enrichWithCommits(ctx, comparer, bumps)
+	return formatCompare(oldRef, newRef, enriched), nil
+}
+
+// bumpWithCommits pairs a ServiceBump with the conventional commits found
+// between its old and new SHAs.
+type bumpWithCommits struct {
+	Bump      changelog.ServiceBump
+	Commits   []changelog.ConventionalCommit
+	Failed    bool // true when the commit fetch API call failed
+	Truncated bool // true when AheadBy hit the 250-commit API limit
+}
+
+// enrichWithCommits fetches feat/fix commits for each bump and returns a
+// slice ready for rendering. API errors per service are logged and surfaced
+// as Failed=true so the bump header is still shown without commits.
+func enrichWithCommits(ctx context.Context, comparer changelog.RepoComparer, bumps []changelog.ServiceBump) []bumpWithCommits {
+	// Explicit empty (not nil) so formatCompare shows "no refs changed", not
+	// the degraded "detection unavailable" message.
+	if len(bumps) == 0 {
+		return []bumpWithCommits{}
 	}
-	return formatCompare(oldRef, newRef, bumps), nil
+	result := make([]bumpWithCommits, len(bumps))
+	for i, bump := range bumps {
+		commits, truncated, err := changelog.FetchServiceCommits(ctx, comparer, bump)
+		if err != nil {
+			slog.Warn("fetching service commits", "service", bump.Repo, "err", err)
+			result[i] = bumpWithCommits{Bump: bump, Failed: true}
+			continue
+		}
+		result[i] = bumpWithCommits{Bump: bump, Commits: commits, Truncated: truncated}
+	}
+	return result
 }
 
 // formatNoChange returns the comment body when the operator ref did not change.
@@ -164,12 +190,12 @@ func formatNoChange() string {
 	return commentMarker + "\n### Operator Changelog\n\nNo operator ref change detected in this PR.\n"
 }
 
-// formatCompare returns the comment body with the operator compare link and
-// the list of upstream service bumps.
+// formatCompare returns the comment body with the operator compare link, the
+// list of upstream service bumps, and per-service feat/fix commit summaries.
 //
 // bumps == nil means the service bump detection API call failed (degraded).
 // bumps == [] means the call succeeded but no sub-service SHAs changed.
-func formatCompare(oldRef, newRef string, bumps []changelog.ServiceBump) string {
+func formatCompare(oldRef, newRef string, bumps []bumpWithCommits) string {
 	const base = "https://github.com/konflux-ci/konflux-ci"
 	short := func(ref string) string {
 		if len(ref) > 12 {
@@ -193,7 +219,8 @@ func formatCompare(oldRef, newRef string, bumps []changelog.ServiceBump) string 
 	default:
 		fmt.Fprintln(&b, "#### Upstream Service Bumps")
 		fmt.Fprintln(&b)
-		for _, bump := range bumps {
+		for _, bwc := range bumps {
+			bump := bwc.Bump
 			compareURL := fmt.Sprintf("https://github.com/%s/%s/compare/%s...%s",
 				bump.Owner, bump.Repo, bump.OldSHA, bump.NewSHA)
 			oldURL := fmt.Sprintf("https://github.com/%s/%s/commit/%s", bump.Owner, bump.Repo, bump.OldSHA)
@@ -203,6 +230,26 @@ func formatCompare(oldRef, newRef string, bumps []changelog.ServiceBump) string 
 				short(bump.OldSHA), oldURL,
 				short(bump.NewSHA), newURL,
 				compareURL)
+
+			switch {
+			case bwc.Failed:
+				fmt.Fprintf(&b, "\n_Commit details unavailable._\n\n")
+			case len(bwc.Commits) == 0:
+				fmt.Fprintf(&b, "\n_No notable commits (feat/fix)._\n\n")
+			default:
+				fmt.Fprintln(&b)
+				for _, c := range bwc.Commits {
+					if c.Scope != "" {
+						fmt.Fprintf(&b, "- %s(%s): %s\n", c.Type, c.Scope, c.Subject)
+					} else {
+						fmt.Fprintf(&b, "- %s: %s\n", c.Type, c.Subject)
+					}
+				}
+				if bwc.Truncated {
+					fmt.Fprintf(&b, "\n_Showing first %d commits only — results may be incomplete._\n", changelog.CommitMaxFromCompare)
+				}
+				fmt.Fprintln(&b)
+			}
 		}
 	}
 
