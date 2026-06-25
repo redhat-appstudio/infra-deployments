@@ -10,6 +10,7 @@ config:
       access_token: ${env:SIGNALFX_API_TOKEN}
     prometheus:
       endpoint: 0.0.0.0:8889
+      metric_expiration: 45m
   extensions:
     # The health_check extension is mandatory for this chart.
     # Without the health_check extension the collector will fail the readiness and liveliness probes.
