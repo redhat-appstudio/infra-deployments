@@ -2341,17 +2341,7 @@ spec:
       deployments:
         tekton-events-controller:
           spec:
-            template:
-              spec:
-                containers:
-                - name: tekton-events-controller
-                  resources:
-                    limits:
-                      cpu: 200m
-                      memory: 4Gi
-                    requests:
-                      cpu: 200m
-                      memory: 4Gi
+            replicas: 0
         tekton-operator-proxy-webhook:
           spec:
             replicas: 2
