@@ -183,7 +183,10 @@ func defineBackwardsCompatSpecs() {
 func performKonfluxUpgrade(fw *framework.Framework) {
 	GinkgoHelper()
 
-	repoPath := "./tmp/infra-deployments"
+	repoPath := os.Getenv("INFRA_DEPLOYMENTS_DIR")
+	if repoPath == "" {
+		repoPath = "./tmp/infra-deployments"
+	}
 	branch := os.Getenv("UPGRADE_BRANCH")
 	Expect(branch).ShouldNot(BeEmpty(), "UPGRADE_BRANCH env var must be set")
 
