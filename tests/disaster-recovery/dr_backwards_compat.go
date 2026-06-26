@@ -247,13 +247,24 @@ func performKonfluxUpgrade(fw *framework.Framework) {
 		mergeBranchOrFail(repoPath, "remotes/forked_repo/"+branch)
 	}
 
-	// Push to the qe remote — mirrors MergePRInRemote's push. The qe remote
-	// was configured during BootstrapClusterForUpgrade with the correct URL.
-	By("Pushing merged changes to qe remote")
+	// Push to the qe remote so ArgoCD picks up the merged changes.
+	// The CI commands.sh adds the qe remote (redhat-appstudio-qe fork) and
+	// discovers ARGO_TARGET_REVISION — the preview branch ArgoCD is watching.
+	// We force-push the merged local branch to that preview branch.
+	argoTargetRevision := os.Getenv("ARGO_TARGET_REVISION")
+	var pushRefSpec gitconfig.RefSpec
+	if argoTargetRevision != "" {
+		By(fmt.Sprintf("Pushing merged changes to qe remote (branch %s)", argoTargetRevision))
+		pushRefSpec = gitconfig.RefSpec(fmt.Sprintf("%s:refs/heads/%s", previewBranchRef.Name(), argoTargetRevision))
+	} else {
+		By("Pushing merged changes to qe remote (same branch name)")
+		pushRefSpec = gitconfig.RefSpec(fmt.Sprintf("%s:%s", previewBranchRef.Name(), previewBranchRef.Name()))
+	}
 	Expect(repo.Push(&git.PushOptions{
-		RefSpecs:   []gitconfig.RefSpec{gitconfig.RefSpec(fmt.Sprintf("%s:%s", previewBranchRef.Name(), previewBranchRef.Name()))},
+		RefSpecs:   []gitconfig.RefSpec{pushRefSpec},
 		RemoteName: "qe",
 		Auth:       auth,
+		Force:      true,
 	})).Should(Succeed(), "failed to push to qe remote")
 
 	// Wait for ArgoCD to sync — uses the importable installation package.
