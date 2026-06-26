@@ -1846,6 +1846,10 @@ spec:
         #               requests:
         #                 cpu: 1500m
         #                 memory: 8Gi
+        # The events controller is unused by Konflux but requires not-insignificant resources
+        # since it watches all PipelineRuns and TaskRuns in the cluster
+        # Disabling it saves resources. If Konflux requires CloudEvents for Tekton *Run lifecycle
+        # events in the future, the controller can be re-enabled
         tekton-events-controller:
           spec:
             template:
@@ -1859,6 +1863,7 @@ spec:
                       requests:
                         cpu: 200m
                         memory: 4Gi
+            replicas: 0
         # tekton-triggers-controller:
         #   spec:
         #     template:

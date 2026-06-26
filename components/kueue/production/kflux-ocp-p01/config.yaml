@@ -126,6 +126,11 @@ cel:
         'kueue.x-k8s.io/priority-class' in pipelineRun.metadata.labels ?
         priority(pipelineRun.metadata.labels['kueue.x-k8s.io/priority-class']) :
 
+        has(pipelineRun.metadata.labels) &&
+        'build.appstudio.redhat.com/type' in pipelineRun.metadata.labels &&
+        pipelineRun.metadata.labels['build.appstudio.redhat.com/type'] == 'nudge' ?
+        priority('konflux-nudge') :
+
         pacEventType == 'push' ? priority('konflux-post-merge-build') :
         pacEventType == 'pull_request'
           || pacEventType == "Merge_Request"

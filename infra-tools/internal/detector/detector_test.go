@@ -120,6 +120,22 @@ func TestNewDetector_Valid(t *testing.T) {
 	g.Expect(d.overlayEnvs["konflux-public-production"]).To(Equal(Production))
 }
 
+func TestNewDetector_Valid_Ring(t *testing.T) {
+	g := NewWithT(t)
+
+	head := &fakeRepo{dirs: map[string][]string{"overlays": {"ring-0", "ring-1", "ring-2", "ring-3", "ring-4"}}}
+	base := &fakeRepo{dirs: map[string][]string{"overlays": {"ring-0"}}}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(d.overlayEnvs).To(HaveLen(5))
+	g.Expect(d.overlayEnvs["ring-0"]).To(Equal(Development))
+	g.Expect(d.overlayEnvs["ring-1"]).To(Equal(Staging))
+	g.Expect(d.overlayEnvs["ring-2"]).To(Equal(Production))
+	g.Expect(d.overlayEnvs["ring-3"]).To(Equal(Production))
+	g.Expect(d.overlayEnvs["ring-4"]).To(Equal(Production))
+}
+
 func TestNewDetector_UnknownOverlay(t *testing.T) {
 	g := NewWithT(t)
 

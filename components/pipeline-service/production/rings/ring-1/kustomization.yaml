@@ -8,4 +8,29 @@ kind: Kustomization
 resources:
   - ../../base
 
-patches: []
+patches:
+  - target:
+      kind: Subscription
+      name: openshift-pipelines-operator
+    patch: |-
+      # TODO: remove these when upgrading to a bundle including Pipelines as Code v0.48.0+
+      - op: add
+        path: /spec/config/env/-
+        value:
+          name: IMAGE_PAC_PAC_CONTROLLER
+          value: "quay.io/openshift-pipeline/pipelines-pipelines-as-code-controller-rhel9@sha256:1b1e365cfdcc85646d5890232a04bad8c7ba9ebb0db36042eeda5961f8106567"
+      - op: add
+        path: /spec/config/env/-
+        value:
+          name: IMAGE_PAC_PAC_WEBHOOK
+          value: "quay.io/openshift-pipeline/pipelines-pipelines-as-code-webhook-rhel9@sha256:0ccda15a17a405020fa199b3dce4a630e592da9dfdbd9778be1dcc9f4bdc3fbd"
+      - op: add
+        path: /spec/config/env/-
+        value:
+          name: IMAGE_PAC_PAC_WATCHER
+          value: "quay.io/openshift-pipeline/pipelines-pipelines-as-code-watcher-rhel9@sha256:d100578068feb5482e2631b4fadc80b9687f129c7e303b55431ac41ce58f7758"
+      - op: add
+        path: /spec/config/env/-
+        value:
+          name: IMAGE_PAC_PAC_CLI
+          value: "quay.io/openshift-pipeline/pipelines-pipelines-as-code-cli-rhel9@sha256:0fc0dd05236f14265e25cc770a7f9f3aeea2e27964a730dac39cf9f61d349bde"
