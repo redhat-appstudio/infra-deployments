@@ -86,22 +86,7 @@ cleanupController:
     minAvailable: null
     unhealthyPodEvictionPolicy: AlwaysAllow
 reportsController:
-  replicas: 3
-  resources:
-    limits:
-      cpu: 500m
-  securityContext:
-    allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: true
-    runAsNonRoot: true
-    capabilities:
-      drop:
-      - "ALL"
-  podDisruptionBudget:
-    enabled: true
-    maxUnavailable: 2
-    minAvailable: null
-    unhealthyPodEvictionPolicy: AlwaysAllow
+  enabled: false
 policyReportsCleanup:
   image:
     registry: mirror.gcr.io

@@ -1,15 +1,18 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+labels:
+- pairs:
+    paas.redhat.com/appcode: MINT-001
 resources:
   - ../base
   - plrs-resource-quota.yaml
-  - https://github.com/konflux-ci/mintmaker/config/default?ref=9916264be87d8750d4e75fa625fd771b9f408dda
-  - https://github.com/konflux-ci/mintmaker/config/renovate?ref=9916264be87d8750d4e75fa625fd771b9f408dda
+  - https://github.com/konflux-ci/mintmaker/config/default?ref=30c16866eab1dd107f780004d9ce784266dba783
+  - https://github.com/konflux-ci/mintmaker/config/renovate?ref=30c16866eab1dd107f780004d9ce784266dba783
 
 images:
   - name: quay.io/konflux-ci/mintmaker
     newName: quay.io/konflux-ci/mintmaker
-    newTag: 9916264be87d8750d4e75fa625fd771b9f408dda
+    newTag: 30c16866eab1dd107f780004d9ce784266dba783
   - name: quay.io/konflux-ci/mintmaker-renovate-image
     newName: quay.io/konflux-ci/mintmaker-renovate-image
     newTag: latest

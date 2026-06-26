@@ -1,20 +1,23 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+labels:
+- pairs:
+    paas.redhat.com/appcode: MINT-001
 resources:
   - ../../base
   - ../../base/external-secrets
-  - https://github.com/konflux-ci/mintmaker/config/default?ref=9916264be87d8750d4e75fa625fd771b9f408dda
-  - https://github.com/konflux-ci/mintmaker/config/renovate?ref=9916264be87d8750d4e75fa625fd771b9f408dda
+  - https://github.com/konflux-ci/mintmaker/config/default?ref=30c16866eab1dd107f780004d9ce784266dba783
+  - https://github.com/konflux-ci/mintmaker/config/renovate?ref=30c16866eab1dd107f780004d9ce784266dba783
 
 namespace: mintmaker
 
 images:
   - name: quay.io/konflux-ci/mintmaker
     newName: quay.io/konflux-ci/mintmaker
-    newTag: 9916264be87d8750d4e75fa625fd771b9f408dda
+    newTag: 30c16866eab1dd107f780004d9ce784266dba783
   - name: quay.io/konflux-ci/mintmaker-renovate-image
     newName: quay.io/konflux-ci/mintmaker-renovate-image
-    newTag: d1de4c8ad000d4e27164e3f6e8e077898a741127
+    newTag: 63f76fa2b0f1fec33e6138a09cde9f745130cbbd
 
 commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true

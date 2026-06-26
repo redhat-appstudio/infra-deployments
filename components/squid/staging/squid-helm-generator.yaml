@@ -4,7 +4,7 @@ metadata:
   name: squid-helm
 name: squid-helm
 repo: oci://quay.io/konflux-ci/caching
-version: 0.1.1409+5a80313
+version: 0.1.1579+32fdfe0
 valuesInline:
   installCertManagerComponents: false
   mirrord:
@@ -18,6 +18,7 @@ valuesInline:
       secretName: artifact-registry-proxy-tls
     service:
       port: 443
+      trafficDistribution: PreferClose
       annotations:
         service.beta.openshift.io/serving-cert-secret-name: artifact-registry-proxy-tls
     upstream:
@@ -29,7 +30,8 @@ valuesInline:
       allowList:
         # Cache all traffic to nexus repositories
         - ^/repository/
-      size: 51200
+      size: 102400
+      ttl: 30d
     resources:
       requests:
         cpu: "2"

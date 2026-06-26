@@ -25,10 +25,16 @@ var (
 // Multiple overlays can map to the same environment.
 var OverlayEnvironment = map[string]Environment{
 	"development":               Development,
+	"development-operator":      Development,
 	"konflux-public-staging":    Staging,
 	"staging-downstream":        Staging,
 	"konflux-public-production": Production,
 	"production-downstream":     Production,
+	"ring-0":                    Development,
+	"ring-1":                    Staging,
+	"ring-2":                    Production,
+	"ring-3":                    Production,
+	"ring-4":                    Production,
 }
 
 // kustomizeReservedDirs are directory names that are kustomize conventions and

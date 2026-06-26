@@ -4,7 +4,7 @@
 minio:
   enabled: true
   rootUser: loki
-  rootPassword: supersecret
+  rootPassword: supersecret # nosecret - used for development and staging
   mode: standalone
   persistence:
     enabled: false  # Use emptyDir for development (no storage class available)
@@ -14,5 +14,9 @@ minio:
       memory: 128Mi  # Increase from 64Mi to 128Mi
     limits:
       memory: 256Mi  # Increase from 128Mi to 256Mi
+  buckets:
+    - name: loki-data
+      policy: none
+      purge: false
   postJob:
-    enabled: false
+    enabled: true

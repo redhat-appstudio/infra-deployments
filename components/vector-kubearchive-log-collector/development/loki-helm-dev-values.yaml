@@ -1,7 +1,23 @@
 ---
 global:
   extraArgs:
-    - "-log.level=debug"
+    - "-log.level=info"
+  extraEnv:
+    - name: AWS_ACCESS_KEY_ID
+      valueFrom:
+        secretKeyRef:
+          name: kubearchive-loki
+          key: AWS_ACCESS_KEY_ID
+    - name: AWS_SECRET_ACCESS_KEY
+      valueFrom:
+        secretKeyRef:
+          name: kubearchive-loki
+          key: AWS_SECRET_ACCESS_KEY
+    - name: AWS_DEFAULT_REGION
+      valueFrom:
+        secretKeyRef:
+          name: kubearchive-loki
+          key: AWS_DEFAULT_REGION
 
 gateway:
   # Override service account to use our custom one from SCC
@@ -83,14 +99,6 @@ loki:
       region: us-east-1
       s3ForcePathStyle: true
       insecure: true
-  storage_config:
-    aws:
-      s3: s3://loki-chunks
-      s3forcepathstyle: true
-      bucketnames: loki-data
-      region: us-east-1
-      endpoint: minio:9000
-      insecure: true
   limits_config:
     shard_streams:
       enabled: false
@@ -117,17 +125,17 @@ loki:
   runtimeConfig:
     configs:
       kubearchive:
-        log_push_request: true
-        log_push_request_streams: true
+        log_push_request: false
+        log_push_request_streams: false
         log_stream_creation: false
-        log_duplicate_stream_info: true
+        log_duplicate_stream_info: false
   ingester:
     autoforget_unhealthy: true
     chunk_encoding: snappy
-    chunk_target_size: 3145728
-    chunk_idle_period: 1h
-    max_chunk_age: 2h
-    chunk_retain_period: 1h
+    chunk_target_size: 4194304
+    chunk_idle_period: 30m
+    max_chunk_age: 1h
+    chunk_retain_period: 15m
     flush_op_timeout: 10m
     lifecycler:
       ring:
@@ -137,7 +145,7 @@ loki:
       dir: /var/loki/wal
       checkpoint_duration: 5m
       flush_on_shutdown: true
-      replay_memory_ceiling: 2GB
+      replay_memory_ceiling: 4GB
   server:
     grpc_server_max_recv_msg_size: 15728640  # 15MB
     grpc_server_max_send_msg_size: 15728640
@@ -169,7 +177,7 @@ ingester:
   resources:
     requests:
       cpu: 50m  # Reduce from 100m
-      memory: 256Mi  # Increase from 128Mi to prevent OOM
+      memory: 256Mi  # Increase from 256Mi to prevent OOM
     limits:
       memory: 512Mi  # Increase from 256Mi to prevent OOM
   persistence:
@@ -179,25 +187,6 @@ ingester:
   podAntiAffinity:
     soft: {}
     hard: {}
-  # AWS credentials for S3/MinIO access
-  # These match the MinIO credentials from loki-helm-minio-values.yaml
-  # Using secretKeyRef to satisfy kube-linter security requirements
-  extraEnv:
-    - name: AWS_ACCESS_KEY_ID
-      valueFrom:
-        secretKeyRef:
-          name: kubearchive-loki
-          key: AWS_ACCESS_KEY_ID
-    - name: AWS_SECRET_ACCESS_KEY
-      valueFrom:
-        secretKeyRef:
-          name: kubearchive-loki
-          key: AWS_SECRET_ACCESS_KEY
-    - name: AWS_DEFAULT_REGION
-      valueFrom:
-        secretKeyRef:
-          name: kubearchive-loki
-          key: AWS_DEFAULT_REGION
   # Graceful shutdown configuration to prevent stale ring instances
   # Give Loki time to flush chunks and leave the ring gracefully
   # Set to 90s to be longer than left_ingesters_timeout (60s) but still allow quick cleanup

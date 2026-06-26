@@ -1,0 +1,19 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: image-controller-notification-resetter-cronjob
+  namespace: image-controller-system
+spec:
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: notification-resetter
+            resources:
+              limits:
+                cpu: 500m
+                memory: 1Gi
+              requests:
+                cpu: 150m
+                memory: 1Gi

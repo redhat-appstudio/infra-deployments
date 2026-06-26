@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Ring 2 production rollout patches
+# Add patches here when deploying to ring 2 clusters
+# Clear this file (leave only these comments) after promoting to all rings
+
+resources:
+  - ../../base
+
+patches:
+  # TODO: Remove this patch to deploy the change to Ring 2
+  - target:
+      kind: TektonConfig
+      name: config
+    patch: |-
+      - op: remove
+        path: /spec/pipeline/options/deployments/tekton-events-controller/spec/replicas
+

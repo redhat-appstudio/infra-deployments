@@ -1,0 +1,9 @@
+---
+# DisasterRecovery needs to be installed after
+# * pipeline-service
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: disaster-recovery
+  annotations:
+    argocd.argoproj.io/sync-wave: "25"

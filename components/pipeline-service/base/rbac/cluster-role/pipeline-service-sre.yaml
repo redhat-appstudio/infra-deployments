@@ -49,6 +49,20 @@ rules:
       - patch
       - update
       - watch
+  # Grant full access to limited tekton operator related resources
+  # Deleting TektonInstallerSets is required to apply hotfixes when the new image given as a subscription override
+  - apiGroups:
+      - operator.tekton.dev
+    resources:
+      - "tektoninstallersets"
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
   # This rule is needed to be able to diagnose Cluster Health. A diagnosis can be made in situations like
   # PipelineRun Execution/Scheduling Overhead alert starts firing.
   - apiGroups:

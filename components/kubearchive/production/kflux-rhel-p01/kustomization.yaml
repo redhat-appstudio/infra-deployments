@@ -338,3 +338,17 @@ patches:
       metadata:
         name: "kubearchive-operator-certificate"
         namespace: kubearchive
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: otel-collector
+        labels:
+          app: otel-collector
+      spec:
+        template:
+          spec:
+            containers:
+              - name: otel-collector
+                image: quay.io/kubearchive/opentelemetry-collector@sha256:74edb825a429b415262e7eb7a99ed77685c9b2b7238ef69fb42a3625df75458f
+

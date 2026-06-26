@@ -19,6 +19,20 @@ subjects:
     name: tekton-ms-kube-rbac-proxy
     namespace: appstudio-tekton
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tekton-ms-kube-rbac-proxy-config
+  namespace: appstudio-tekton
+data:
+  config.yaml: |
+    authorization:
+      resourceAttributes:
+        apiGroup: monitoring.coreos.com
+        resource: prometheuses/api
+        name: k8s
+        verb: get
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -43,6 +57,7 @@ spec:
           args:
             - '--secure-listen-address=0.0.0.0:9091'
             - '--upstream=http://appstudio-tekton-ms-prometheus.appstudio-tekton.svc:9090/'
+            - '--config-file=/etc/kube-rbac-proxy/config.yaml'
             - '--tls-cert-file=/etc/tls/private/tls.crt'
             - '--tls-private-key-file=/etc/tls/private/tls.key'
             - '--logtostderr=true'
@@ -68,10 +83,16 @@ spec:
             - name: tls
               mountPath: /etc/tls/private
               readOnly: true
+            - name: config
+              mountPath: /etc/kube-rbac-proxy
+              readOnly: true
       volumes:
         - name: tls
           secret:
             secretName: tekton-ms-kube-rbac-proxy-tls
+        - name: config
+          configMap:
+            name: tekton-ms-kube-rbac-proxy-config
 ---
 apiVersion: v1
 kind: Service

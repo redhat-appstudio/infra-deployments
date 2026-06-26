@@ -92,12 +92,57 @@ cel:
     - |
         plrNamespace == 'mintmaker' ? [resource('mintmaker', 1)] : []
 
+    # Add a resource to restrict the number of concurrent release pipelineruns
+    - |
+        has(pipelineRun.metadata.labels) &&
+        'appstudio.openshift.io/service' in pipelineRun.metadata.labels &&
+        pipelineRun.metadata.labels['appstudio.openshift.io/service'] == 'release' &&
+        'pipelines.appstudio.openshift.io/type' in pipelineRun.metadata.labels &&
+        pipelineRun.metadata.labels['pipelines.appstudio.openshift.io/type'] == 'managed' ?
+        [resource('konflux-release', 1)] :
+
+        has(pipelineRun.metadata.labels) &&
+        'appstudio.openshift.io/service' in pipelineRun.metadata.labels &&
+        pipelineRun.metadata.labels['appstudio.openshift.io/service'] == 'release' &&
+        'release.appstudio.openshift.io/namespace' in pipelineRun.metadata.labels &&
+        pipelineRun.metadata.labels['release.appstudio.openshift.io/namespace'] == plrNamespace ?
+        [resource('konflux-release', 1)] :
+
+        has(pipelineRun.metadata.labels) &&
+        'internal-services.appstudio.openshift.io/pipelinerun-uid' in pipelineRun.metadata.labels ?
+        [resource('konflux-release', 1)] : []
+
+    # The token mechanism allows us to balance admitted PipelineRuns.
+    # Here we want to state that each PipelineRuns needs one token, but
+    # Build PipelineRuns are usually heavier, so they need 2.
+    #
+    # The total amount of PipelineRuns executing in the system at the same time
+    # will be decided by the first to saturate between `tekton.dev/pipelineruns`
+    # and `konflux-ci.dev/token`. This way we can tune the percentage of usually
+    # heavier PipelineRuns with respect to lighter ones.
+    #
+    # As an example, if both `tekton.dev/pipelineruns` and `konflux-ci.dev/token`
+    # are 600, we could have:
+    # * 300 Build PipelineRuns
+    # * 200 Build PipelineRuns + 200 Non-Build PipelineRuns
+    # * 100 Build PipelineRuns + 400 Non-Build PipelineRuns
+    # * 600 Non-Build PipelineRuns
+    - |
+        pacEventType == 'push' ||
+          pacEventType == 'pull_request' ||
+          pacEventType == "Merge_Request" ||
+          pacEventType == 'test-comment' ||
+          pacEventType == 'retest-comment' ||
+          pacEventType == 'retest-all-comment' ||
+          pacEventType == 'ok-to-test-comment'  ? resource('konflux-ci-dev-token', 2) :
+        resource('konflux-ci-dev-token', 1)
+
     # Set the pipeline priority
     - |
         has(pipelineRun.metadata.labels) &&
-        'build.appstudio.openshift.io/type' in pipelineRun.metadata.labels &&
-        pipelineRun.metadata.labels['build.appstudio.openshift.io/type'] == 'nudge' ?
-        priority('konflux-dependency-update') :
+        'build.appstudio.redhat.com/type' in pipelineRun.metadata.labels &&
+        pipelineRun.metadata.labels['build.appstudio.redhat.com/type'] == 'nudge' ?
+        priority('konflux-nudge') :
 
         pacEventType == 'push' ? priority('konflux-post-merge-build') :
         pacEventType == 'pull_request' ||
