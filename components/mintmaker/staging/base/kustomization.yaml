@@ -6,6 +6,7 @@ labels:
 resources:
 - ../../base
 - mintmaker-schedule-calculator-manager.yaml
+- mintmaker-schedule-calculator.yaml
 - ../../base/external-secrets
 - ../blackbox
 - plrs-resource-quota.yaml
@@ -23,6 +24,7 @@ images:
   newTag: 0410e2026b964953df7094e0455a2668305ad068
 - name: quay.io/konflux-ci/mintmaker-schedule-calculator
   newName: quay.io/konflux-ci/mintmaker-schedule-calculator
+  newTag: 8c2d84ac806503f3b3ee93b9d330a5978238f680
 
 commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
