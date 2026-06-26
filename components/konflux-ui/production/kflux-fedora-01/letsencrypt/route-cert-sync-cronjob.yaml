@@ -51,6 +51,7 @@ spec:
   failedJobsHistoryLimit: 3
   jobTemplate:
     spec:
+      activeDeadlineSeconds: 300
       backoffLimit: 2
       template:
         spec:
@@ -63,6 +64,11 @@ spec:
           containers:
             - name: sync
               image: registry.redhat.io/openshift4/ose-cli:v4.12
+              env:
+                - name: POD_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
               command:
                 - /bin/sh
                 - -c
@@ -71,21 +77,36 @@ spec:
                   python3 <<'PY'
                   import base64
                   import json
+                  import os
                   import subprocess
                   import sys
 
-                  NS = "konflux-ui"
+                  NS = os.environ["POD_NAMESPACE"]
                   SECRET = "konflux-ci-certificate"
                   ROUTES = ("konflux-nice", "konflux-nice-idp")
+                  OC_TIMEOUT = 60
 
 
                   def oc(*args):
-                      return subprocess.run(
-                          ["oc", *args],
-                          capture_output=True,
-                          text=True,
-                          check=True,
-                      )
+                      cmd = ["oc", *args]
+                      try:
+                          return subprocess.run(
+                              cmd,
+                              capture_output=True,
+                              text=True,
+                              check=True,
+                              timeout=OC_TIMEOUT,
+                          )
+                      except subprocess.TimeoutExpired as exc:
+                          print(
+                              f"timeout after {OC_TIMEOUT}s: {' '.join(cmd)}",
+                              file=sys.stderr,
+                          )
+                          if exc.stdout:
+                              print(f"stdout:\n{exc.stdout}", file=sys.stderr)
+                          if exc.stderr:
+                              print(f"stderr:\n{exc.stderr}", file=sys.stderr)
+                          raise SystemExit(1) from exc
 
 
                   secret = json.loads(
