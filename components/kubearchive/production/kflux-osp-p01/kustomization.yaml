@@ -23,7 +23,10 @@ configMapGenerator:
         annotations:
           argocd.argoproj.io/sync-wave: "-2"
       literals:
-        - MIGRATION_VERSION=5
+        - MIGRATION_VERSION=13
+    - name: kubearchive-deployment-schema-version
+      literals:
+        - MIGRATION_VERSION=13
     - name: kubearchive-logging-writer
       literals:
           - |
@@ -111,7 +114,7 @@ patches:
               spec:
                 containers:
                   - name: vacuum
-                    image: quay.io/kubearchive/vacuum:v1.20.0
+                    image: quay.io/kubearchive/vacuum:v1.22.2
 
   - patch: |-
       apiVersion: batch/v1
@@ -137,8 +140,18 @@ patches:
                       configMapKeyRef:
                         name: kubearchive-schema-version
                         key: MIGRATION_VERSION
+                  - name: BATCH_SIZE
+                    value: "10000"
                 securityContext:
                   runAsUser: null
+  - target:
+      kind: Job
+      name: kubearchive-schema-migration
+    patch: |-
+      - op: replace
+        path: /metadata/name
+        value: kubearchive-schema-migration-v13-v1.22.2
+
   # We don't need the Secret as it will be created by the ExternalSecrets Operator
   - patch: |-
       $patch: delete
@@ -222,7 +235,7 @@ patches:
                 - name: MIGRATION_VERSION
                   valueFrom:
                     configMapKeyRef:
-                      name: kubearchive-schema-version
+                      name: kubearchive-deployment-schema-version
                       key: MIGRATION_VERSION
                 securityContext:
                   readOnlyRootFilesystem: true
@@ -281,7 +294,7 @@ patches:
                 - name: MIGRATION_VERSION
                   valueFrom:
                     configMapKeyRef:
-                      name: kubearchive-schema-version
+                      name: kubearchive-deployment-schema-version
                       key: MIGRATION_VERSION
                 securityContext:
                   readOnlyRootFilesystem: true

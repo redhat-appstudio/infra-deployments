@@ -7,3 +7,15 @@ spec:
     # patched by hack/preview.sh if IMAGE_CONTROLLER_QUAY_ORG and
     # IMAGE_CONTROLLER_QUAY_TOKEN are set
     enabled: false
+    spec:
+      logEncoder: console
+      imageControllerManager:
+        replicas: 1
+        manager:
+          resources:
+            requests:
+              cpu: 100m
+              memory: 20Mi
+            limits:
+              cpu: 500m
+              memory: 2Gi

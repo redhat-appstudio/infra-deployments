@@ -8,4 +8,11 @@ kind: Kustomization
 resources:
   - ../../base
 
-patches: []
+patches:
+  # TODO: Remove this patch to deploy the change
+  - target:
+      kind: TektonConfig
+      name: config
+    patch: |-
+      - op: remove
+        path: /spec/pipeline/options/deployments/tekton-events-controller/spec/replicas

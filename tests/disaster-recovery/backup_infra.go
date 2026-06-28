@@ -27,6 +27,7 @@ import (
 	"github.com/konflux-ci/e2e-tests/pkg/constants"
 	"github.com/konflux-ci/e2e-tests/pkg/framework"
 	"github.com/konflux-ci/e2e-tests/pkg/utils"
+	"github.com/konflux-ci/e2e-tests/pkg/utils/build"
 	tektonutils "github.com/konflux-ci/release-service/tekton/utils"
 )
 
@@ -124,6 +125,22 @@ func createTenant(fw *framework.Framework, t Tenant) {
 	_, err = fw.AsKubeAdmin.HasController.CreateApplication(t.AppName, t.Namespace)
 	Expect(err).ShouldNot(HaveOccurred(), "failed to create Application %s in namespace %s", t.AppName, t.Namespace)
 
+	By(fmt.Sprintf("Creating IntegrationTestScenario %s in namespace %s", DRIntegrationTestScenarioName, t.Namespace))
+	Eventually(func() error {
+		_, err := fw.AsKubeAdmin.IntegrationController.CreateIntegrationTestScenario(
+			DRIntegrationTestScenarioName,
+			t.AppName,
+			t.Namespace,
+			DRIntegrationTestGitURL,
+			DRIntegrationTestGitRevision,
+			DRIntegrationTestPathInRepo,
+			"",
+			[]string{},
+		)
+		return err
+	}, 2*time.Minute, 5*time.Second).Should(Succeed(),
+		"timed out creating IntegrationTestScenario %s in %s", DRIntegrationTestScenarioName, t.Namespace)
+
 	for _, comp := range Components {
 		By(fmt.Sprintf("Creating Component %s in namespace %s", comp.Name, t.Namespace))
 
@@ -144,7 +161,8 @@ func createTenant(fw *framework.Framework, t Tenant) {
 			},
 		}
 
-		_, err = fw.AsKubeAdmin.HasController.CreateComponent(spec, t.Namespace, "", "", t.AppName, false, nil)
+		_, err = fw.AsKubeAdmin.HasController.CreateComponent(spec, t.Namespace, "", "", t.AppName, false,
+			build.GetBuildPipelineBundleAnnotation(constants.DockerBuildOciTAMin))
 		Expect(err).ShouldNot(HaveOccurred(), "failed to create Component %s in namespace %s", comp.Name, t.Namespace)
 	}
 

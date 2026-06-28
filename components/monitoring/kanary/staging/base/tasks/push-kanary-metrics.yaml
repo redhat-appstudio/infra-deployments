@@ -71,15 +71,15 @@ spec:
         labels_error = {"tested_cluster": tested_cluster, "type": test_type, "reason": "infrastructure"}
 
         kanary_up = meter.create_gauge(
-            "kanary_up_poc",
+            "kanary_up",
             description="Kanary signal: 1 if the e2e test passed, 0 if it failed",
         )
         kanary_error = meter.create_gauge(
-            "kanary_error_poc",
+            "kanary_error",
             description="Binary indicator of an infrastructure error preventing test execution",
         )
         kanary_timestamp = meter.create_gauge(
-            "kanary_last_push_timestamp_poc",
+            "kanary_last_push_timestamp",
             description="Epoch timestamp of the last kanary metrics push",
         )
 

@@ -1,14 +1,28 @@
+codecov:
+  require_ci_to_pass: true
+
 coverage:
   status:
     patch:
       default:
-        target: auto
+        target: 80%
 
 comment:
   layout: "reach,diff,flags,components"
   behavior: default
 
 ignore:
-  # main() functions are CLI entrypoints that cannot be unit tested.
   - "infra-tools/cmd/*/main.go"
+  - "components/**"
+  - "argo-cd-apps/**"
+  - "configs/**"
+  - "hack/**"
+  - "docs/**"
+  - "**/*.yaml"
+  - "**/*.yml"
+  - "**/*.json"
+  - "**/*.md"
+  - "**/*.sh"
+  - "**/*.env"
+  - "**/*.conf"
   - "tests"

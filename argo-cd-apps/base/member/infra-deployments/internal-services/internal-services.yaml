@@ -1,17 +1,28 @@
+---
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
   name: internal-services
 spec:
   generators:
-    - clusters: {}
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              values:
+                sourceRoot: components/internal-services
+                environment: staging
+                clusterDir: ""
+          - list:
+              elements: []
   template:
     metadata:
       name: internal-services-{{nameNormalized}}
     spec:
       project: default
       source:
-        path: components/internal-services
+        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
         repoURL: https://github.com/redhat-appstudio/infra-deployments.git
         targetRevision: main
       destination:

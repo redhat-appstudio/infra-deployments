@@ -3,7 +3,7 @@ kind: CronJob
 metadata:
   name: kanary-trigger-multi-arch
 spec:
-  schedule: "0 * * * *"
+  schedule: "15,45 * * * *"
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
@@ -39,7 +39,8 @@ spec:
                     --param quay-repo=redhat-user-workloads-stage \
                     --param pipeline-repo-templating-source=https://github.com/rhtap-perf-test/konflux-probe-test-templates \
                     --param pipeline-repo-templating-source-dir=nodejs-devfile-sample-MultiArch/ \
-                    --param release-pipeline-service-account=release-serviceaccount \
+                    --param release-pipeline-service-account=managed-konflux-perfscale-sa \
+                    --param release-managed-namespace=managed-konflux-perfscale-tenant \
                     --param fork-target="" \
                     --param gitlab-api-url="" \
                     --param member-cluster=https://api.stone-stg-rh01.l2vh.p1.openshiftapps.com:6443 \

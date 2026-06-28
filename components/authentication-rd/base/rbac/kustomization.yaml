@@ -1,0 +1,42 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- component-maintainer-cr.yaml
+- everyone-can-view-crs.yaml
+- konflux-admins-cr.yaml
+- konflux-admins-pod-admin-cr.yaml
+- grafana-view-only-cr.yaml
+- view-testplatformclusters-cr.yaml
+- konflux-sre-cr.yaml
+
+patches:
+  - path: patches/everyone-can-view-patch.yaml
+    target:
+      name: everyone-view-rd
+      kind: ClusterRoleBinding
+      group: rbac.authorization.k8s.io
+      version: v1
+  - path: patches/everyone-can-view-patch.yaml
+    target:
+      name: everyone-view-appstudio-rd
+      kind: ClusterRoleBinding
+      group: rbac.authorization.k8s.io
+      version: v1
+  - path: patches/everyone-can-view-patch.yaml
+    target:
+      name: everyone-view-cluster-version-rd
+      kind: ClusterRoleBinding
+      group: rbac.authorization.k8s.io
+      version: v1
+  - path: patches/everyone-can-view-patch.yaml
+    target:
+      name: everyone-view-cluster-monitoring-rd
+      kind: ClusterRoleBinding
+      group: rbac.authorization.k8s.io
+      version: v1
+  - path: patches/everyone-can-view-patch.yaml
+    target:
+      name: everyone-view-compute-rd
+      kind: ClusterRoleBinding
+      group: rbac.authorization.k8s.io
+      version: v1

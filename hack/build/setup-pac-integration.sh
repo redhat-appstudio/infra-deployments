@@ -266,15 +266,10 @@ create_pac_secret "$PAC_NAMESPACE" "$FULL_SECRET_DATA"
 create_pac_secret "build-service" "$FULL_SECRET_DATA"
 create_pac_secret "$INTEGRATION_NAMESPACE" "$FULL_SECRET_DATA"
 
-# Mintmaker only needs GitHub App data (no webhook tokens). development-operator
-# overlay does not deploy mintmaker.
+# Mintmaker only needs GitHub App data (no webhook tokens).
 PAC_CONFIGURED_NAMESPACES=("$PAC_NAMESPACE" "build-service" "$INTEGRATION_NAMESPACE")
-if [ "${TARGET_PREVIEW_OVERLAY:-development}" != "development-operator" ]; then
-    create_pac_secret "mintmaker" "$GITHUB_APP_DATA"
-    PAC_CONFIGURED_NAMESPACES+=("mintmaker")
-else
-    log_info "Skipping mintmaker PAC secret (development-operator overlay excludes mintmaker)"
-fi
+create_pac_secret "mintmaker" "$GITHUB_APP_DATA"
+PAC_CONFIGURED_NAMESPACES+=("mintmaker")
 
 log_info "============================================================================="
 log_success "PAC Integration Setup Complete"
