@@ -8,6 +8,9 @@ config:
       realm: "us1"
       api_url: "https://api.us1.signalfx.com"
       access_token: ${env:SIGNALFX_API_TOKEN}
+    prometheus:
+      endpoint: 0.0.0.0:8889
+      metric_expiration: 45m
   extensions:
     # The health_check extension is mandatory for this chart.
     # Without the health_check extension the collector will fail the readiness and liveliness probes.
@@ -61,7 +64,24 @@ config:
           - attributes/prod
         receivers:
           - otlp
-      metrics: null
+      metrics:
+        receivers:
+        - otlp
+        processors:
+        - memory_limiter
+        - batch
+        exporters:
+        - prometheus
+    telemetry:
+      metrics:
+        level: basic
+        readers:
+        - pull:
+            exporter:
+              prometheus:
+                host: 0.0.0.0
+                port: 8888
+
 # Configuration for ports
 ports:
   otlp:
@@ -75,6 +95,11 @@ ports:
     containerPort: 4318
     servicePort: 4318
     hostPort: 4318
+    protocol: TCP
+  prometheus:
+    enabled: true
+    containerPort: 8889
+    servicePort: 8889
     protocol: TCP
   jaeger-compact:
     enabled: false
@@ -94,7 +119,7 @@ image:
   repository: quay.io/konflux-ci/opentelemetry-collector-k8s
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "0.110.0"
+  tag: "0.113.0"
 # OpenTelemetry Collector executable
 command:
   # The operator prepends '/' to the command name...no idea why.
