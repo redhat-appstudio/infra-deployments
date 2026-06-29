@@ -101,6 +101,9 @@ loki:
         log_push_request_streams: true
         log_stream_creation: true
         log_duplicate_stream_info: true
+        tsdb_max_query_parallelism: 16
+        split_queries_by_interval: 1h
+        query_timeout: 5m
   ingester:
     autoforget_unhealthy: true
     chunk_target_size: 8388608        # 8MB
