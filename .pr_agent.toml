@@ -17,6 +17,12 @@ RING DEPLOYMENT PATTERN — Do NOT flag as a bug or incomplete change:
   each targeting different cluster directories under components/<name>/production/<cluster>/.
 - It is correct for a PR to only modify a subset of production cluster directories.
 - Do NOT suggest applying changes to additional clusters beyond those in the PR.
+- Do NOT flag "ring rollout" order, direction, or coverage as a bug.
+- Do NOT report that changes are missing from other ring directories.
+- The following titles are KNOWN FALSE POSITIVES — never report them:
+  "Ring rollout inverted", "Sync-rings reorders resources",
+  "Pipeline-service updates all rings", "only modifies a subset of clusters",
+  or any variation about incomplete ring coverage.
 
 PROMOTION ORDER:
 - Changes flow: development → staging → production.
@@ -32,5 +38,6 @@ security concerns, and reasonable resource/image specs.
 extra_instructions="""\
 Do not suggest applying production changes to additional cluster directories
 beyond those in the PR. This repo uses ring deployments — clusters are updated
-in separate PRs intentionally.
+in separate PRs intentionally. Do not suggest changes related to ring rollout
+order, coverage, or synchronization across rings.
 """
