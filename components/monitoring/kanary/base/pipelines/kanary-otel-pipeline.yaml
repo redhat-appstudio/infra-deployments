@@ -7,21 +7,28 @@ spec:
     - name: otel-endpoint
       type: string
       default: http://open-telemetry-opentelemetry-collector.konflux-otel.svc.cluster.local:4318
+    # Cluster-specific params (must be set by cronjob)
     - name: tested-cluster
       type: string
-      default: stone-stage-p01
+    - name: component-repo
+      type: string
+    - name: user-prefix
+      type: string
+    - name: quay-repo
+      type: string
+    - name: member-cluster
+      type: string
+    # Private clusters only (GitLab-based repos). Leave empty for public clusters.
+    - name: fork-target
+      type: string
+      default: ""
+    - name: gitlab-api-url
+      type: string
+      default: ""
+    # Shared params (same across all clusters)
     - name: test-type
       type: string
       default: container-single-arch
-    - name: component-repo
-      type: string
-      default: "https://gitlab.cee.redhat.com/jhutar/nodejs-devfile-sample4"
-    - name: user-prefix
-      type: string
-      default: "stagep01cs"
-    - name: quay-repo
-      type: string
-      default: "redhat-user-workloads-stage"
     - name: pipeline-repo-templating-source
       type: string
       default: "https://github.com/rhtap-perf-test/konflux-probe-test-templates"
@@ -34,15 +41,6 @@ spec:
     - name: release-managed-namespace
       type: string
       default: "managed-konflux-perfscale-tenant"
-    # Private clusters only (GitLab-based repos). Leave empty for public clusters.
-    - name: fork-target
-      type: string
-      default: "jhutar"
-    - name: gitlab-api-url
-      type: string
-      default: "https://gitlab.cee.redhat.com/api/v4"
-    - name: member-cluster
-      type: string
     - name: tenant-namespace
       type: string
       default: "konflux-perfscale-4-tenant"
