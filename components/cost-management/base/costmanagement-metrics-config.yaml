@@ -27,6 +27,14 @@ spec:
     create_source: true
     name: 'konflux-cost-cluster'
     sources_path: /api/sources/v1.0/
+  config:
+    resources:
+      limits:
+        cpu: "500m"
+        memory: "1Gi"
+      requests:
+        cpu: "100m"
+        memory: "20Mi"
   upload:
     upload_cycle: 360
     upload_toggle: true
