@@ -92,6 +92,8 @@ loki:
     max_entries_limit_per_query: 100000
     increment_duplicate_timestamp: true
     allow_structured_metadata: true
+    max_query_length: 6h
+    query_timeout: 5m
   runtimeConfig:
     configs:
       kubearchive:
@@ -188,9 +190,9 @@ queryFrontend:
   resources:
     requests:
       cpu: 200m
-      memory: 512Mi
+      memory: 2Gi
     limits:
-      memory: 1Gi
+      memory: 4Gi
 
 queryScheduler:
   replicas: 2
