@@ -1,7 +1,7 @@
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: view-testplatformclusters-rd
+  name: view-testplatformclusters
 rules:
 - apiGroups:
   - ci.openshift.org
@@ -24,7 +24,7 @@ rules:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: test-platform-ci-admins-view-rd
+  name: test-platform-ci-admins-view
 subjects:
 - kind: Group
   apiGroup: rbac.authorization.k8s.io
@@ -32,4 +32,4 @@ subjects:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: view-testplatformclusters-rd
+  name: view-testplatformclusters
