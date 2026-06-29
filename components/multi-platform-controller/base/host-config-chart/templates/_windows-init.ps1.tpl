@@ -28,7 +28,7 @@ function Wait-Folder {
 # ---------------------
 # Docker Installation
 # ---------------------
-Invoke-WebRequest -UseBasicParsing "https://raw.githubusercontent.com/microsoft/Windows-Containers/Main/helpful_tools/Install-DockerCE/install-docker-ce.ps1" -o install-docker-ce.ps1
+Invoke-WebRequest -UseBasicParsing "https://raw.githubusercontent.com/microsoft/Windows-Containers/Main/helpful_tools/Install-DockerCE/install-docker-ce.ps1" -OutFile install-docker-ce.ps1
 .\install-docker-ce.ps1
 
 # ---------------------------------------------------
@@ -333,8 +333,8 @@ Write-Host "Scoop installed successfully!"
 # OpenSSH Administrator Configuration & Service Start
 # ---------------------------------------------------
 {{- $addresses := (list) }}
-{{- range $entry := (index . "allowed-remote-addresses" | required "Allowed remote addresses for the SSH firewall must be specified") }}
-    {{- $addresses = (squote $entry | append $addresses) }}
+{{- range $entry := (index . "allowed-remote-addresses" | required "Remote addresses for the SSH FW must be specified") }}
+    {{- $addresses = append $addresses (squote $entry) }}
 {{- end }}
 Remove-NetFirewallRule -Name 'OpenSSH-Server-In-TCP' -ErrorAction SilentlyContinue
 New-NetFirewallRule -Name 'OpenSSH-Server-In-TCP' `
