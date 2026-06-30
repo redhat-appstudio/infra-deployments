@@ -11,6 +11,7 @@ configure_nvidia_cdi() {
     # expect nvidia.com/gpu=all device to be in the generated list
     if nvidia-ctk cdi list 2>/dev/null | grep -q 'nvidia.com/gpu=all'; then
       echo "Nvidia CDI Ready"
+      set -e
       return 0
     fi
 
@@ -19,6 +20,7 @@ configure_nvidia_cdi() {
   done
 
   echo "Nvidia CDI Failed"
+  set -e
   return 1
 }
 
