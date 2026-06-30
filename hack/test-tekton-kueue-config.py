@@ -887,6 +887,42 @@ PIPELINERUN_DEFINITIONS: Dict[str, PipelineRunTestData] = {
         }
     },
 
+    "multiplatform_new_string_param": {
+        "name": "Multi-platform pipeline with build-platforms as string (invalid type)",
+        "pipelinerun": {
+            "apiVersion": "tekton.dev/v1",
+            "kind": "PipelineRun",
+            "metadata": {
+                "name": "test-multiplatform-string-param",
+                "namespace": "default",
+                "labels": {
+                    "pipelinesascode.tekton.dev/event-type": "push"
+                }
+            },
+            "spec": {
+                "pipelineRef": {"name": "build-pipeline"},
+                "params": [
+                    {
+                        "name": "build-platforms",
+                        "value": "linux/amd64"
+                    },
+                    {"name": "other-param", "value": "test"}
+                ],
+                "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
+            }
+        },
+        "expected": {
+            "annotations": {
+                "tekton-kueue.konflux-ci.dev/validation-error": "build-platforms parameter must be an array of platform strings, got a non-array value",
+                "kueue.konflux-ci.dev/requests-konflux-ci-dev-token": "2",
+            },
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-post-merge-build"
+            }
+        }
+    },
+
     "aws_platforms_only": {
         "name": "Multi-platform pipeline with AWS platforms only (new style)",
         "pipelinerun": {
@@ -1253,6 +1289,14 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
     "build_ok_to_test_comment_development": {
         "pipelinerun_key": "build-ok-to-test-comment",
         "config_key": "development"
+    },
+    "multiplatform_new_string_param_dev": {
+        "pipelinerun_key": "multiplatform_new_string_param",
+        "config_key": "development"
+    },
+    "multiplatform_new_string_param_staging": {
+        "pipelinerun_key": "multiplatform_new_string_param",
+        "config_key": "staging"
     },
     "nudging_dev": {
         "pipelinerun_key": "nudge_pipelinerun",
