@@ -1,7 +1,7 @@
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: view-appstudio-rd
+  name: view-appstudio
 rules:
 - apiGroups:
   - kubearchive.org
@@ -100,7 +100,7 @@ rules:
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: view-cluster-version-rd
+  name: view-cluster-version
 rules:
 - apiGroups:
   - config.openshift.io
@@ -114,7 +114,7 @@ rules:
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: view-compute-rd
+  name: view-compute
 rules:
 - apiGroups:
   - ''
@@ -155,7 +155,7 @@ rules:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: everyone-view-rd
+  name: everyone-view
 subjects: [] # added by patch to avoid duplicating the groups
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -165,27 +165,27 @@ roleRef:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: everyone-view-appstudio-rd
+  name: everyone-view-appstudio
 subjects: [] # added by patch to avoid duplicating the groups
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: view-appstudio-rd
+  name: view-appstudio
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: everyone-view-cluster-version-rd
+  name: everyone-view-cluster-version
 subjects: [] # added by patch to avoid duplicating the groups
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: view-cluster-version-rd
+  name: view-cluster-version
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: everyone-view-cluster-monitoring-rd
+  name: everyone-view-cluster-monitoring
 subjects: [] # added by patch to avoid duplicating the groups
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -195,9 +195,9 @@ roleRef:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: everyone-view-compute-rd
+  name: everyone-view-compute
 subjects: [] # added by patch to avoid duplicating the groups
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: view-compute-rd
+  name: view-compute

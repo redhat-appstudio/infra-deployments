@@ -17,6 +17,8 @@ import (
 // failTimes controls how many calls return err before the call succeeds.
 type fakeComparer struct {
 	files     []*gh.CommitFile
+	commits   []*gh.RepositoryCommit // returned in CommitsComparison.Commits
+	aheadBy   int                    // returned in CommitsComparison.AheadBy
 	err       error
 	failTimes int // number of initial calls that return err before succeeding
 	calls     int // tracks total calls made
@@ -27,7 +29,11 @@ func (f *fakeComparer) CompareCommits(_ context.Context, _, _, _, _ string, _ *g
 	if f.failTimes > 0 && f.calls <= f.failTimes {
 		return nil, nil, f.err
 	}
-	return &gh.CommitsComparison{Files: f.files}, nil, nil
+	return &gh.CommitsComparison{
+		Files:   f.files,
+		Commits: f.commits,
+		AheadBy: gh.Ptr(f.aheadBy),
+	}, nil, nil
 }
 
 func TestFetchOperatorCompare_ReturnsConvertedFiles(t *testing.T) {
