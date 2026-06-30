@@ -15,6 +15,12 @@ spec:
         - podSelector:
             matchLabels:
               app: tekton-ms-kube-rbac-proxy
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: appstudio-cardinality-exporter
+          podSelector:
+            matchLabels:
+              app: prometheus-cardinality-exporter
       ports:
         - protocol: TCP
           port: 9090

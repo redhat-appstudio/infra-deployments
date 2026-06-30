@@ -35,19 +35,33 @@ func (f *fakeCommenter) UpsertCommentByMarker(_ context.Context, prNumber int, b
 }
 
 // fakeRepoComparer implements changelog.RepoComparer for testing.
-// Set files to return canned file changes; set err to simulate an API failure.
+// The operator compare call (repo == "konflux-ci") uses err and files.
+// Service compare calls (any other repo) use commitErr and commits/aheadBy.
 var _ changelog.RepoComparer = &fakeRepoComparer{}
 
 type fakeRepoComparer struct {
-	files []*gh.CommitFile
-	err   error
+	files     []*gh.CommitFile
+	commits   []*gh.RepositoryCommit
+	aheadBy   int
+	err       error // returned for the operator compare call
+	commitErr error // returned for service compare calls
 }
 
-func (f *fakeRepoComparer) CompareCommits(_ context.Context, _, _, _, _ string, _ *gh.ListOptions) (*gh.CommitsComparison, *gh.Response, error) {
-	if f.err != nil {
-		return nil, nil, f.err
+func (f *fakeRepoComparer) CompareCommits(_ context.Context, _, repo, _, _ string, _ *gh.ListOptions) (*gh.CommitsComparison, *gh.Response, error) {
+	if repo == "konflux-ci" {
+		if f.err != nil {
+			return nil, nil, f.err
+		}
+		return &gh.CommitsComparison{Files: f.files}, nil, nil
 	}
-	return &gh.CommitsComparison{Files: f.files}, nil, nil
+	// Service compare call
+	if f.commitErr != nil {
+		return nil, nil, f.commitErr
+	}
+	return &gh.CommitsComparison{
+		Commits: f.commits,
+		AheadBy: gh.Ptr(f.aheadBy),
+	}, nil, nil
 }
 
 func writeTempKustomization(t *testing.T, ref string) string {
@@ -214,6 +228,134 @@ func TestComputeBody_Error(t *testing.T) {
 	_, err := computeBody(context.Background(), "/nonexistent/kustomization.yaml", "/nonexistent/kustomization.yaml", &fakeRepoComparer{})
 	g.Expect(err).To(HaveOccurred())
 	g.Expect(err.Error()).To(ContainSubstring("extracting operator refs"))
+}
+
+// TestComputeBody_WithServiceCommits verifies that feat/fix conventional commits
+// fetched for a bumped service appear in the comment body, while chore/docs are
+// excluded.
+func TestComputeBody_WithServiceCommits(t *testing.T) {
+	g := NewWithT(t)
+	buildOldSHA := "cccccccccccccccccccccccccccccccccccccccc"
+	buildNewSHA := "dddddddddddddddddddddddddddddddddddddddd"
+
+	patch := "-  - https://github.com/konflux-ci/build-service/config/default?ref=" + buildOldSHA + "\n" +
+		"+  - https://github.com/konflux-ci/build-service/config/default?ref=" + buildNewSHA + "\n"
+
+	fake := &fakeRepoComparer{
+		files: []*gh.CommitFile{
+			{
+				Filename: gh.Ptr("operator/upstream-kustomizations/build-service/kustomization.yaml"),
+				Patch:    gh.Ptr(patch),
+			},
+		},
+		commits: []*gh.RepositoryCommit{
+			{SHA: gh.Ptr("e1e1e1e1e1e1"), Commit: &gh.Commit{Message: gh.Ptr("feat: add multi-arch support")}},
+			{SHA: gh.Ptr("f2f2f2f2f2f2"), Commit: &gh.Commit{Message: gh.Ptr("fix(pipeline): correct timeout handling")}},
+			{SHA: gh.Ptr("a3a3a3a3a3a3"), Commit: &gh.Commit{Message: gh.Ptr("chore: update deps")}},
+		},
+	}
+
+	basePath := writeTempKustomization(t, oldRef)
+	headPath := writeTempKustomization(t, newRef)
+	body, err := computeBody(context.Background(), basePath, headPath, fake)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(body).To(ContainSubstring("build-service"))
+	g.Expect(body).To(ContainSubstring("feat: add multi-arch support"))
+	g.Expect(body).To(ContainSubstring("fix(pipeline): correct timeout handling"))
+	g.Expect(body).NotTo(ContainSubstring("chore:"))
+}
+
+// TestComputeBody_ServiceCommitsFail verifies that when the commit fetch fails
+// for a service, the bump header is still shown with a "unavailable" note,
+// while the operator-level compare link is unaffected.
+func TestComputeBody_ServiceCommitsFail(t *testing.T) {
+	g := NewWithT(t)
+	buildOldSHA := "cccccccccccccccccccccccccccccccccccccccc"
+	buildNewSHA := "dddddddddddddddddddddddddddddddddddddddd"
+
+	patch := "-  - https://github.com/konflux-ci/build-service/config/default?ref=" + buildOldSHA + "\n" +
+		"+  - https://github.com/konflux-ci/build-service/config/default?ref=" + buildNewSHA + "\n"
+
+	fake := &fakeRepoComparer{
+		files: []*gh.CommitFile{
+			{
+				Filename: gh.Ptr("operator/upstream-kustomizations/build-service/kustomization.yaml"),
+				Patch:    gh.Ptr(patch),
+			},
+		},
+		commitErr: errors.New("rate limited"),
+	}
+
+	basePath := writeTempKustomization(t, oldRef)
+	headPath := writeTempKustomization(t, newRef)
+	body, err := computeBody(context.Background(), basePath, headPath, fake)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(body).To(ContainSubstring("build-service"))
+	g.Expect(body).To(ContainSubstring("compare/" + oldRef + "..." + newRef))
+	g.Expect(body).To(ContainSubstring("Commit details unavailable"))
+	g.Expect(body).NotTo(ContainSubstring("check manually")) // operator-level degradation message absent
+}
+
+// TestComputeBody_ServiceCommitsTruncated verifies that when AheadBy hits the
+// 250-commit API limit, a truncation note appears after the commit list.
+func TestComputeBody_ServiceCommitsTruncated(t *testing.T) {
+	g := NewWithT(t)
+	buildOldSHA := "cccccccccccccccccccccccccccccccccccccccc"
+	buildNewSHA := "dddddddddddddddddddddddddddddddddddddddd"
+
+	patch := "-  - https://github.com/konflux-ci/build-service/config/default?ref=" + buildOldSHA + "\n" +
+		"+  - https://github.com/konflux-ci/build-service/config/default?ref=" + buildNewSHA + "\n"
+
+	fake := &fakeRepoComparer{
+		files: []*gh.CommitFile{
+			{
+				Filename: gh.Ptr("operator/upstream-kustomizations/build-service/kustomization.yaml"),
+				Patch:    gh.Ptr(patch),
+			},
+		},
+		commits: []*gh.RepositoryCommit{
+			{SHA: gh.Ptr("e1e1e1e1e1e1"), Commit: &gh.Commit{Message: gh.Ptr("feat: add feature")}},
+		},
+		aheadBy: 250,
+	}
+
+	basePath := writeTempKustomization(t, oldRef)
+	headPath := writeTempKustomization(t, newRef)
+	body, err := computeBody(context.Background(), basePath, headPath, fake)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(body).To(ContainSubstring("feat: add feature"))
+	g.Expect(body).To(ContainSubstring("250 commits"))
+}
+
+// TestComputeBody_NoNotableCommits verifies that when service commits exist but
+// none are feat/fix conventional commits, a clear "no notable commits" note is shown.
+func TestComputeBody_NoNotableCommits(t *testing.T) {
+	g := NewWithT(t)
+	buildOldSHA := "cccccccccccccccccccccccccccccccccccccccc"
+	buildNewSHA := "dddddddddddddddddddddddddddddddddddddddd"
+
+	patch := "-  - https://github.com/konflux-ci/build-service/config/default?ref=" + buildOldSHA + "\n" +
+		"+  - https://github.com/konflux-ci/build-service/config/default?ref=" + buildNewSHA + "\n"
+
+	fake := &fakeRepoComparer{
+		files: []*gh.CommitFile{
+			{
+				Filename: gh.Ptr("operator/upstream-kustomizations/build-service/kustomization.yaml"),
+				Patch:    gh.Ptr(patch),
+			},
+		},
+		commits: []*gh.RepositoryCommit{
+			{SHA: gh.Ptr("a1a1a1"), Commit: &gh.Commit{Message: gh.Ptr("chore: bump go version")}},
+			{SHA: gh.Ptr("b2b2b2"), Commit: &gh.Commit{Message: gh.Ptr("Merge pull request #42")}},
+		},
+	}
+
+	basePath := writeTempKustomization(t, oldRef)
+	headPath := writeTempKustomization(t, newRef)
+	body, err := computeBody(context.Background(), basePath, headPath, fake)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(body).To(ContainSubstring("build-service"))
+	g.Expect(body).To(ContainSubstring("No notable commits"))
 }
 
 // TestBuildBody_Integration creates a real git repo with two commits that have
