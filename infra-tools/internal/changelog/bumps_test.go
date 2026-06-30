@@ -141,6 +141,40 @@ func TestExtractServiceBumps_NoGitHubURL(t *testing.T) {
 	g.Expect(bumps).To(BeEmpty())
 }
 
+// TestExtractServiceBumps_MultipleBumpsInOnePatch verifies that when a single
+// kustomization file references multiple upstream services and both SHAs change,
+// both bumps are detected — not just the first one.
+func TestExtractServiceBumps_MultipleBumpsInOnePatch(t *testing.T) {
+	g := NewWithT(t)
+	intOldSHA := "cccccccccccccccccccccccccccccccccccccccc"
+	intNewSHA := "dddddddddddddddddddddddddddddddddddddddd"
+	// Both build-service and integration-service refs change in the same file.
+	patch := "-  - https://github.com/konflux-ci/build-service/config?ref=" + buildOldSHA + "\n" +
+		"+  - https://github.com/konflux-ci/build-service/config?ref=" + buildNewSHA + "\n" +
+		"-  - https://github.com/konflux-ci/integration-service/config?ref=" + intOldSHA + "\n" +
+		"+  - https://github.com/konflux-ci/integration-service/config?ref=" + intNewSHA + "\n"
+	files := []changelog.FileChange{
+		{
+			Filename: "operator/upstream-kustomizations/combined/kustomization.yaml",
+			Patch:    patch,
+		},
+	}
+	bumps, skipped := changelog.ExtractServiceBumps(files)
+	g.Expect(skipped).To(BeFalse())
+	g.Expect(bumps).To(HaveLen(2))
+
+	byRepo := make(map[string]changelog.ServiceBump)
+	for _, b := range bumps {
+		byRepo[b.Repo] = b
+	}
+	g.Expect(byRepo).To(HaveKey("build-service"))
+	g.Expect(byRepo["build-service"].OldSHA).To(Equal(buildOldSHA))
+	g.Expect(byRepo["build-service"].NewSHA).To(Equal(buildNewSHA))
+	g.Expect(byRepo).To(HaveKey("integration-service"))
+	g.Expect(byRepo["integration-service"].OldSHA).To(Equal(intOldSHA))
+	g.Expect(byRepo["integration-service"].NewSHA).To(Equal(intNewSHA))
+}
+
 // TestExtractServiceBumps_MultipleURLsSameFile verifies that when a kustomization
 // file has two resource URLs and only one changes, the correct SHA pair is returned
 // and the owner/repo is derived from the URL that actually changed — not from any
