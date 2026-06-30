@@ -25,8 +25,10 @@ var (
 // for kustomization files under operator/upstream-kustomizations/ that have
 // a ?ref=<sha> change, and returns one ServiceBump per bumped service.
 //
-// Duplicate (owner, repo) pairs are deduplicated — only the first occurrence
-// is kept, since the same service can appear in multiple kustomization files.
+// A single kustomization file can reference multiple upstream repositories;
+// all changed pairs within a file are detected, not just the first one.
+// Duplicate (owner, repo) pairs across files are deduplicated — only the
+// first occurrence is kept.
 //
 // The second return value is true when one or more upstream kustomization files
 // had an empty patch (GitHub omits patch data for very large or renamed files).
@@ -47,23 +49,22 @@ func ExtractServiceBumps(files []FileChange) ([]ServiceBump, bool) {
 			hasSkipped = true
 			continue
 		}
-		matchedBase, oldSHA, newSHA := extractRefChange(f.Patch)
-		if oldSHA == "" || newSHA == "" {
-			continue
+		// Iterate ALL ref changes in the patch — a kustomization file can pin
+		// several upstream services; each changed URL base is its own bump.
+		for _, change := range extractRefChanges(f.Patch) {
+			// Derive owner/repo from the specific URL that changed, not from any
+			// github.com URL in the diff — prevents misattribution.
+			owner, repo := extractGitHubRepoFromURL(change.base)
+			if owner == "" || repo == "" {
+				continue
+			}
+			key := owner + "/" + repo
+			if seen[key] {
+				continue
+			}
+			seen[key] = true
+			bumps = append(bumps, ServiceBump{Owner: owner, Repo: repo, OldSHA: change.oldSHA, NewSHA: change.newSHA})
 		}
-		// Derive owner/repo from the specific URL that changed, not from any
-		// github.com URL in the diff — prevents misattribution when a file
-		// references multiple repositories.
-		owner, repo := extractGitHubRepoFromURL(matchedBase)
-		if owner == "" || repo == "" {
-			continue
-		}
-		key := owner + "/" + repo
-		if seen[key] {
-			continue
-		}
-		seen[key] = true
-		bumps = append(bumps, ServiceBump{Owner: owner, Repo: repo, OldSHA: oldSHA, NewSHA: newSHA})
 	}
 	return bumps, hasSkipped
 }
@@ -75,18 +76,27 @@ func isUpstreamKustomization(filename string) bool {
 		(strings.HasSuffix(filename, "/kustomization.yaml") || strings.HasSuffix(filename, "/kustomization.yml"))
 }
 
-// extractRefChange scans a unified diff for a removed (-) and added (+)
-// ?ref=<40-char-sha> pair that share the same URL base (everything before ?ref=).
-// Pairing by URL base avoids false matches when a file contains multiple resource
-// URLs that change independently.
+// refChange holds one matched old→new SHA pair found in a patch, together with
+// the URL base (everything before ?ref=) that identifies which resource changed.
+type refChange struct {
+	base   string
+	oldSHA string
+	newSHA string
+}
+
+// extractRefChanges scans a unified diff and returns ALL removed(-)/added(+)
+// ?ref=<40-char-sha> pairs that share the same URL base.
 //
-// Returns the matched URL base together with the old and new SHAs so callers
-// can derive owner/repo from the exact URL that changed. Returns ("","","") if
-// no matching pair is found.
-func extractRefChange(patch string) (matchedBase, oldSHA, newSHA string) {
+// Pairing by URL base is the key correctness invariant: it ensures that when a
+// kustomization file lists several upstream services, each service's old→new SHA
+// is matched to its own URL rather than to a SHA from a different service.
+//
+// The `removed` map is consumed as matches are found, so the same base cannot
+// produce multiple pairs even if the diff is malformed.
+func extractRefChanges(patch string) []refChange {
 	lines := strings.Split(patch, "\n")
 
-	// First pass: collect removed refs keyed by URL base.
+	// First pass: collect every removed (-) ref, keyed by URL base.
 	removed := make(map[string]string) // urlBase → sha
 	for _, line := range lines {
 		if len(line) == 0 || line[0] != '-' {
@@ -101,7 +111,10 @@ func extractRefChange(patch string) (matchedBase, oldSHA, newSHA string) {
 		}
 	}
 
-	// Second pass: find an added ref whose URL base matches a removed one.
+	// Second pass: collect every added (+) ref whose URL base was also removed,
+	// and whose SHA actually changed. Deleting from `removed` after each match
+	// prevents the same base from being emitted more than once.
+	var changes []refChange
 	for _, line := range lines {
 		if len(line) == 0 || line[0] != '+' {
 			continue
@@ -112,11 +125,12 @@ func extractRefChange(patch string) (matchedBase, oldSHA, newSHA string) {
 		}
 		if base := urlBase(line); base != "" {
 			if old, ok := removed[base]; ok && old != m[1] {
-				return base, old, m[1]
+				changes = append(changes, refChange{base: base, oldSHA: old, newSHA: m[1]})
+				delete(removed, base)
 			}
 		}
 	}
-	return "", "", ""
+	return changes
 }
 
 // urlBase returns the portion of a diff line before the ?ref= query parameter,

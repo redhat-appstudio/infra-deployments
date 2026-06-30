@@ -2,7 +2,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: konflux-admins-pod-admin-rd
+  name: konflux-admins-pod-admin
   annotations:
     description: "Additional permissions for konflux-admins to manage pods in specific namespaces"
 rules:
@@ -39,7 +39,7 @@ subjects:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: konflux-admins-pod-admin-rd
+  name: konflux-admins-pod-admin
 ---
 # RoleBinding for pod admin in openshift-etcd namespace
 apiVersion: rbac.authorization.k8s.io/v1
@@ -54,4 +54,4 @@ subjects:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: konflux-admins-pod-admin-rd
+  name: konflux-admins-pod-admin
