@@ -527,7 +527,7 @@ data:
     {{ $line }}
   {{- end }}
   {{- else }}
-{{ .Files.Get "files/linux-c6gd2xlarge-arm64-init.sh" | indent 4 }}
+{{ include "multi-platform-controller.cloud-init-userdata" (.Files.Get "files/linux-c6gd2xlarge-arm64-init.sh") | indent 4 }}
   {{- end }}
   {{- end }}
   {{ end }}
@@ -908,7 +908,7 @@ data:
     {{ $line }}
   {{- end }}
   {{- else }}
-{{ .Files.Get "files/linux-g6xlarge-amd64-init.sh" | indent 4 }}
+{{ include "multi-platform-controller.cloud-init-userdata" (.Files.Get "files/linux-g6xlarge-amd64-init.sh") | indent 4 }}
   {{- end }}
   {{- end }}
   {{ end }}
@@ -1001,7 +1001,7 @@ data:
     {{ $line }}
   {{- end }}
   {{- else }}
-{{ .Files.Get "files/linux-root-amd64-init.sh" | indent 4 }}
+{{ include "multi-platform-controller.cloud-init-userdata" (.Files.Get "files/linux-root-amd64-init.sh") | indent 4 }}
   {{- end }}
   {{- end }}
   {{ end }}
