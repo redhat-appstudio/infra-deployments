@@ -1,23 +1,8 @@
 resources:
   - ../base
-  - external-secrets
   - cronjobs
-  - https://github.com/redhat-appstudio/o11y/config/exporters/monitoring/kanary/base?ref=1dc5cfb1178223522e5cf1fd1d629fa9c0ea2fdd
-
-images:
-  - name: quay.io/redhat-appstudio/o11y
-    newName: quay.io/redhat-appstudio/o11y
-    newTag: 1dc5cfb1178223522e5cf1fd1d629fa9c0ea2fdd
 
 patches:
-  # Kanary MVP
-  - path: kanary-db-credentials-secret-path.yaml
-    target:
-      name: kanary-db-credentials
-      kind: ExternalSecret
-      group: external-secrets.io
-      version: v1
-  # Kanary V1
   - path: external-secrets/patches/kanary-probe-credentials-path.yaml
     target:
       name: kanary-probe-credentials
