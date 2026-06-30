@@ -9,6 +9,11 @@ spec:
         nodePortService:
           httpsPort: 30011
       proxy:
+        endpoints:
+          kite:
+            enabled: true
+          kubearchive:
+            enabled: true
         replicas: 1
         reverseProxy:
           resources:
