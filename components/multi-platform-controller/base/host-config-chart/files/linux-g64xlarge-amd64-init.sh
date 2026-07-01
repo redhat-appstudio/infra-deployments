@@ -3,6 +3,7 @@
 set -xeuo pipefail
 
 configure_nvidia_cdi() {
+  set +e
   # generate Nvdia CDI with retry
   for i in {1..10}; do
     su - ec2-user -c 'nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml' 
