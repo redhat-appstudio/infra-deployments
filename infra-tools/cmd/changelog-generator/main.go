@@ -24,7 +24,7 @@ import (
 
 // kustomizationPath is the path, relative to the repo root, of the
 // kustomization.yaml file that pins the operator ref.
-const kustomizationPath = "components/konflux-operator/development/invariant/kustomization.yaml"
+const kustomizationPath = "components/konflux-operator/rings/ring-0/base/kustomization.yaml"
 
 // commentMarker identifies the changelog comment for idempotent updates.
 // This string is permanent — changing it would orphan existing comments on open PRs.

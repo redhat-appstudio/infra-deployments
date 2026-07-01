@@ -384,7 +384,7 @@ configure_kueue_for_ocp_version() {
 configure_operator_image_controller() {
     [ "$TARGET_PREVIEW_OVERLAY" != "development-operator" ] && return
 
-    local cr_patch="$ROOT/components/konflux-operator/development/cr/overlay-patches/image-controller/image-controller.yaml"
+    local cr_patch="$ROOT/components/konflux-operator/rings/ring-0/base/cr/image-controller/image-controller.yaml"
 
     log_step "Configuring Konflux operator image-controller (Quay credentials)"
 
