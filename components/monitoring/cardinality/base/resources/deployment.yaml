@@ -32,7 +32,8 @@ spec:
             # blocks /api/v1/status/tsdb (OBSDA-1356)
             - "--namespaces=openshift-monitoring"
             - "--namespaces=appstudio-tekton"
-            - "--regex=(prometheus-k8s|appstudio-tekton-ms-prometheus)"
+            - "--namespaces=appstudio-monitoring"
+            - "--regex=(prometheus-k8s|appstudio-tekton-ms-prometheus|appstudio-federate-ms-prometheus)"
             - "--auth=/etc/cardinality-exporter/auth.yaml"
           volumeMounts:
             - name: auth-config
