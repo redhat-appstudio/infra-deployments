@@ -9,19 +9,23 @@ spec:
           - nameNormalized
         generators:
           - clusters:
+              selector:
+                matchLabels:
+                  appstudio.redhat.com/member-cluster: "true"
               values:
                 sourceRoot: components/konflux-operator
-                environment: staging
+                ring: "ring-0"
                 clusterDir: base
           - list:
               elements: []
+
   template:
     metadata:
       name: konflux-operator-{{nameNormalized}}
     spec:
       project: default
       source:
-        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
+        path: '{{values.sourceRoot}}/rings/{{values.ring}}/{{values.clusterDir}}'
         repoURL: https://github.com/redhat-appstudio/infra-deployments.git
         targetRevision: main
       destination:

@@ -22,9 +22,9 @@ import (
 	ghclient "github.com/redhat-appstudio/infra-deployments/infra-tools/internal/github"
 )
 
-// kustomizationPath is the path, relative to the repo root, of the
-// kustomization.yaml file that pins the operator ref.
-const kustomizationPath = "components/konflux-operator/development/invariant/kustomization.yaml"
+// defaultKustomizationPath is the default path, relative to the repo root,
+// of the kustomization.yaml file that pins the operator ref.
+const defaultKustomizationPath = "components/konflux-operator/rings/ring-0/base/invariant/kustomization.yaml"
 
 // commentMarker identifies the changelog comment for idempotent updates.
 // This string is permanent — changing it would orphan existing comments on open PRs.
@@ -37,6 +37,7 @@ type commenter interface {
 func main() {
 	repoRoot := flag.String("repo-root", "", "Path to infra-deployments root (default: auto-detect via git)")
 	baseRef := flag.String("base-ref", "", "Base git ref to compare against (default: merge-base with main)")
+	kustomizationPathFlag := flag.String("kustomization-path", defaultKustomizationPath, "Path to the kustomization.yaml that pins the operator ref, relative to repo root")
 	dryRun := flag.Bool("dry-run", false, "Print comment to stdout instead of posting")
 	flag.Parse()
 
@@ -49,7 +50,7 @@ func main() {
 
 	comparer := changelog.NewRepoComparer(token)
 
-	body, err := buildBody(ctx, *repoRoot, *baseRef, comparer)
+	body, err := buildBody(ctx, *repoRoot, *baseRef, *kustomizationPathFlag, comparer)
 	if err != nil {
 		slog.Error("building changelog body", "err", err)
 		os.Exit(1)
@@ -85,7 +86,7 @@ func main() {
 
 // buildBody resolves the repo root and base ref, creates a git worktree for the
 // base ref, then delegates all comment logic to computeBody.
-func buildBody(ctx context.Context, repoRoot, baseRef string, comparer changelog.RepoComparer) (string, error) {
+func buildBody(ctx context.Context, repoRoot, baseRef, kustPath string, comparer changelog.RepoComparer) (string, error) {
 	absRoot, err := resolveRepoRoot(ctx, repoRoot)
 	if err != nil {
 		return "", fmt.Errorf("resolving repo root: %w", err)
@@ -105,8 +106,8 @@ func buildBody(ctx context.Context, repoRoot, baseRef string, comparer changelog
 	}
 	defer cleanup()
 
-	basePath := filepath.Join(worktreePath, kustomizationPath)
-	headPath := filepath.Join(absRoot, kustomizationPath)
+	basePath := filepath.Join(worktreePath, kustPath)
+	headPath := filepath.Join(absRoot, kustPath)
 
 	return computeBody(ctx, basePath, headPath, comparer)
 }

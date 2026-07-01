@@ -4,7 +4,7 @@ on:
   pull_request_target:
     types: [opened, synchronize, reopened]
     paths:
-      - 'components/konflux-operator/development/invariant/kustomization.yaml'
+      - 'components/konflux-operator/rings/*/base/invariant/kustomization.yaml'
 
 jobs:
   changelog:
@@ -48,14 +48,34 @@ jobs:
           echo "ERROR: This PR has merge conflicts — please rebase before the changelog can be generated."
           exit 1
 
-      - name: Run changelog-generator
+      - name: Detect changed ring kustomizations
         if: steps.fetch-merge.outcome == 'success'
+        id: detect-rings
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          CHANGED=$(git diff --name-only "$BASE_SHA" HEAD -- \
+            'components/konflux-operator/rings/*/base/invariant/kustomization.yaml')
+          echo "paths<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$CHANGED" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+      - name: Run changelog-generator
+        if: steps.fetch-merge.outcome == 'success' && steps.detect-rings.outputs.paths != ''
         working-directory: infra-tools
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          CHANGED_PATHS: ${{ steps.detect-rings.outputs.paths }}
         run: |
-          ./bin/changelog-generator \
-            --repo-root=.. \
-            --base-ref=${{ github.event.pull_request.base.sha }}
+          while IFS= read -r kust_path; do
+            [ -z "$kust_path" ] && continue
+            echo "::group::Changelog for $kust_path"
+            ./bin/changelog-generator \
+              --repo-root=.. \
+              --base-ref="$BASE_SHA" \
+              --kustomization-path="$kust_path"
+            echo "::endgroup::"
+          done <<< "$CHANGED_PATHS"
