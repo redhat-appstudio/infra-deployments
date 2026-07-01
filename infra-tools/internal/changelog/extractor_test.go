@@ -51,7 +51,7 @@ func TestExtractRef_RealFile(t *testing.T) {
 	g := NewWithT(t)
 	// Walk up from this test file to the repo root and find the real overlay.
 	path := filepath.Join("..", "..", "..", "components",
-		"konflux-operator", "development", "invariant", "kustomization.yaml")
+		"konflux-operator", "rings", "ring-0", "base", "kustomization.yaml")
 	ref, err := changelog.ExtractRef(path)
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(ref).NotTo(BeEmpty())

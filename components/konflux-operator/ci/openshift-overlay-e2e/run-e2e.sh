@@ -3,7 +3,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-INVARIANT_KUSTOMIZATION="components/konflux-operator/development/invariant/kustomization.yaml"
+INVARIANT_KUSTOMIZATION="components/konflux-operator/rings/ring-0/base/kustomization.yaml"
 KONFLUX_CI_REPO="${KONFLUX_CI_REPO:-konflux-ci/konflux-ci}"
 
 : "${INFRA_DEPLOYMENTS_ROOT:?INFRA_DEPLOYMENTS_ROOT must be set by the CI entrypoint}"
