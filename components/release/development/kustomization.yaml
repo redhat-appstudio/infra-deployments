@@ -20,3 +20,9 @@ patches:
       kind: Deployment
       name: release-service-controller-manager
     path: manager-memory-patch.yaml
+  - target:
+      group: rbac.authorization.k8s.io
+      version: v1
+      kind: ClusterRole
+      name: release-pipeline-resource-role
+    path: ibm-public-key-patch.yaml
