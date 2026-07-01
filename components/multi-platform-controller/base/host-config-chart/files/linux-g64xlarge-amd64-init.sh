@@ -17,7 +17,29 @@ MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Content-Disposition: attachment; filename="userdata.txt"
 
-#!/bin/bash -ex
+#!/bin/bash
+
+set -xeuo pipefail
+
+configure_nvidia_cdi() {
+  # generate Nvdia CDI with retry
+  for i in {1..10}; do
+    su - ec2-user -c 'nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml'
+    su - ec2-user -c 'nvidia-ctk cdi generate --output=/var/run/cdi/nvidia.yaml'
+
+    # expect nvidia.com/gpu=all device to be in the generated list
+    if nvidia-ctk cdi list 2>/dev/null | grep -q 'nvidia.com/gpu=all'; then
+      echo "Nvidia CDI Ready"
+      return 0
+    fi
+
+    # sleep only if we'll be retrying again
+    [ "${i}" -lt "10" ] && sleep 1
+  done
+
+  echo "Nvidia CDI Failed"
+  return 1
+}
 
 # Format and mount NVMe disk
 mkfs -t xfs /dev/nvme1n1
@@ -36,9 +58,9 @@ restorecon -r /var/lib/containers /var/tmp
 mkdir -p /etc/cdi /var/run/cdi
 chmod a+rwx /etc/cdi /var/run/cdi
 setsebool container_use_devices 1 2>/dev/null || true
-su - ec2-user
-nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml
+configure_nvidia_cdi
 chmod a+rw /etc/cdi/nvidia.yaml
+chmod a+rw /var/run/cdi/nvidia.yaml
 
 # Configure ec2-user SSH access
 chown -R ec2-user /home/ec2-user
