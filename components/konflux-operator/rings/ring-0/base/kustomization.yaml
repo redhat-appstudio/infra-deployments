@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - invariant
+
+components:
+  - cr/default-tenant
+  - cr/build
+  - cr/image-controller
+  - cr/integration
+  - cr/konflux-info
+  - cr/konflux-ui
+  - cr/namespace-lister
+  - cr/release
+  - cr/enterprise-contract
