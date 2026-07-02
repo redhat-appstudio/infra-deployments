@@ -35,18 +35,3 @@ spec:
     kind: Service
     name: dex
     weight: 100
----
-kind: ServiceAccount
-apiVersion: v1
-metadata:
-  name: dex-client
-  annotations:
-    serviceaccounts.openshift.io/oauth-redirecturi.konflux: tba
----
-kind: Secret
-apiVersion: v1
-metadata:
-  name: dex-client
-  annotations:
-    kubernetes.io/service-account.name: dex-client
-type: kubernetes.io/service-account-token
