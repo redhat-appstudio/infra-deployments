@@ -900,14 +900,17 @@ data:
   dynamic.linux-g6xlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-g6xlarge" $environment) | quote }}
   dynamic.linux-g6xlarge-amd64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.linux-g6xlarge-amd64.allocation-timeout: "1200"
-  {{- if (index $config "user-data") }}
+  {{- if or (index $config "user-data") (.Files.Get "files/linux-g6xlarge-amd64-init.sh") }}
   dynamic.linux-g6xlarge-amd64.user-data: |
+  {{- if (index $config "user-data") }}
   {{- $lines := splitList "\n" (index $config "user-data") }}
   {{- range $line := $lines }}
     {{ $line }}
   {{- end }}
+  {{- else }}
+{{ include "multi-platform-controller.cloud-init-userdata" (.Files.Get "files/linux-g6xlarge-amd64-init.sh") | indent 4 }}
   {{- end }}
-  {{ end }}
+  {{- end }}
 
 
   {{- if hasKey .Values.dynamicConfigs "linux-g64xlarge-amd64" }}
