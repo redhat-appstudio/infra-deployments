@@ -12,6 +12,7 @@ mount --bind /home/var-lib-containers /var/lib/containers
 mount --bind /home/var-tmp /var/tmp
 chmod 1777 /home/var-tmp /var/tmp
 chown root:root /home/var-tmp /var/tmp
+
 restorecon -r /var/lib/containers /var/tmp
 
 # Configure ec2-user SSH access
