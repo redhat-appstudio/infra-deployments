@@ -9,8 +9,7 @@ spec:
   endpoints:
     - port: http
       path: /metrics
-      # Exporter runs every couple of hours. No need for frequent scraping.
-      interval: 10m
+      interval: 2m
   selector:
     matchLabels:
       app: prometheus-cardinality-exporter
