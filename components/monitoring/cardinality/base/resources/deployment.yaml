@@ -33,7 +33,7 @@ spec:
             - "--namespaces=openshift-monitoring"
             - "--namespaces=appstudio-tekton"
             - "--namespaces=appstudio-monitoring"
-            - "--regex=(prometheus-k8s|appstudio-tekton-ms-prometheus|appstudio-federate-ms-prometheus)"
+            - "--regex=^(prometheus-k8s|appstudio-tekton-ms-prometheus|appstudio-federate-ms-prometheus)$"
             - "--auth=/etc/cardinality-exporter/auth.yaml"
           volumeMounts:
             - name: auth-config
