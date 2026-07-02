@@ -4,7 +4,8 @@ cel:
     # Set resource requests for multi platform pipelines
     - |
         has(pipelineRun.spec.params) &&
-        pipelineRun.spec.params.exists(p, p.name == 'build-platforms') ?
+        pipelineRun.spec.params.exists(p, p.name == 'build-platforms') &&
+        type(pipelineRun.spec.params.filter(p, p.name == 'build-platforms')[0].value) == list ?
         pipelineRun.spec.params.filter(
           p,
           p.name == 'build-platforms')[0]
@@ -16,7 +17,8 @@ cel:
     # Request AWS IP for AWS-based platforms
     - |
         has(pipelineRun.spec.params) &&
-        pipelineRun.spec.params.exists(p, p.name == 'build-platforms') ?
+        pipelineRun.spec.params.exists(p, p.name == 'build-platforms') &&
+        type(pipelineRun.spec.params.filter(p, p.name == 'build-platforms')[0].value) == list ?
         pipelineRun.spec.params.filter(
           p,
           p.name == 'build-platforms')[0]
@@ -35,6 +37,14 @@ cel:
           p,
           resource('aws-ip', 1)
         ) : []
+
+    # Flag validation error when build-platforms is present but not a list
+    - |
+        has(pipelineRun.spec.params) &&
+        pipelineRun.spec.params.exists(p, p.name == 'build-platforms') &&
+        type(pipelineRun.spec.params.filter(p, p.name == 'build-platforms')[0].value) != list ?
+        [annotation('tekton-kueue.konflux-ci.dev/validation-error',
+          'build-platforms parameter must be an array of platform strings, got a non-array value')] : []
 
     # Set resource requests for multi platform pipelines which doesn't use the build-platforms parameter (old style)
     - |
