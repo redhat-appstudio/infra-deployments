@@ -287,6 +287,21 @@
     - '{__name__="cluster_ram_requested_perc"}'
     - '{__name__="node_memory_pressured_perc"}'
 
+    - '{__name__="worker_node:container_memory_working_set_bytes_tenant:sum"}'
+    - '{__name__="worker_node:container_memory_working_set_bytes_non_tenant:sum"}'
+    - '{__name__="worker_node:kube_node_status_capacity_memory:sum"}'
+    - '{__name__="worker_node:container_cpu_usage_seconds_total_tenant:sum"}'
+    - '{__name__="worker_node:container_cpu_usage_seconds_total_non_tenant:sum"}'
+    - '{__name__="worker_node:kube_node_status_capacity_cpu:sum"}'
+    - '{__name__="infra_node:container_memory_working_set_bytes_non_tenant:sum"}'
+    - '{__name__="infra_node:kube_node_status_capacity_memory:sum"}'
+    - '{__name__="infra_node:container_cpu_usage_seconds_total_non_tenant:sum"}'
+    - '{__name__="infra_node:kube_node_status_capacity_cpu:sum"}'
+    - '{__name__="master_node:container_memory_working_set_bytes_non_tenant:sum"}'
+    - '{__name__="master_node:kube_node_status_capacity_memory:sum"}'
+    - '{__name__="master_node:container_cpu_usage_seconds_total_non_tenant:sum"}'
+    - '{__name__="master_node:kube_node_status_capacity_cpu:sum"}'
+
     ## Miscellaneous Metrics
     - '{__name__="platform:hypershift_hostedclusters:max"}'
     - '{__name__="redis_node_memory_usage_perc"}'
