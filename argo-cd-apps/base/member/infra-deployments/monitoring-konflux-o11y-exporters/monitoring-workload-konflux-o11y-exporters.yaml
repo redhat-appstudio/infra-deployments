@@ -1,0 +1,43 @@
+kind: ApplicationSet
+apiVersion: argoproj.io/v1alpha1
+metadata:
+  name: monitoring-workload-konflux-o11y-kaexporter
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              values:
+                sourceRoot: components/monitoring/exporters/kaexporter
+                environment: staging
+                clusterDir: ""
+          - list:
+              elements:
+                - nameNormalized: stone-stage-p01
+                  values.clusterDir: stone-stage-p01
+                - nameNormalized: stone-stg-rh01
+                  values.clusterDir: stone-stg-rh01
+  template:
+    metadata:
+      name: konflux-o11y-kaexporter-{{nameNormalized}}
+    spec:
+      project: default
+      source:
+        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+        targetRevision: main
+      destination:
+        namespace: konflux-o11y-exporters
+        server: '{{server}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+        - CreateNamespace=true
+        retry:
+          limit: 50
+          backoff:
+            duration: 15s
