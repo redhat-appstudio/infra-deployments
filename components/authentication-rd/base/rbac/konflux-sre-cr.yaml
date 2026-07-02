@@ -1,7 +1,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: konflux-sre-rd
+  name: konflux-sre
 rules:
   # Grant READ-ONLY access (plus delete) to pod-related resources
   # Creating/exec'ing pods can be used to access secrets, so create/update/patch are blocked
@@ -32,11 +32,11 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: konflux-sre-rd
+  name: konflux-sre
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: konflux-sre-rd
+  name: konflux-sre
 subjects:
   - apiGroup: rbac.authorization.k8s.io
     kind: Group

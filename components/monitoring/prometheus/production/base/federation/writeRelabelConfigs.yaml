@@ -3,18 +3,38 @@
   path: /spec/prometheusConfig/remoteWrite/0/writeRelabelConfigs
   value:
   - action: LabelKeep
-    regex: "__name__|source_environment|source_cluster|namespace|app|pod|container|\
-      label_pipelines_appstudio_openshift_io_type|health_status|dest_namespace|\
-      controller|service|reason|phase|type|resource|resourcequota|le|app|image|\
-      commit_hash|job|operation|tokenName|rateLimited|state|persistentvolumeclaim|\
-      storageclass|volumename|release_reason|instance|result|deployment_reason|\
-      validation_reason|strategy|succeeded|target|name|method|code|sp|le|\
-      unexpected_status|failure|hostname|label_app_kubernetes_io_managed_by|status|\
-      pipeline|pipelinename|pipelinerun|schedule|check|grpc_service|grpc_code|\
-      grpc_method|lease|lease_holder|deployment|platform|mode|cpu|role|node|kind|\
-      verb|request_kind|tested_cluster|resource_type|exported_job|http_method|\
-      http_route|http_status_code|gin_errors|rule_result|rule_execution_cause|\
-      policy_name|policy_background_mode|rule_type|policy_type|policy_validation_mode|\
-      resource_request_operation|resource_kind|policy_change_type|event_type|\
-      name|cluster_queue|quantile|slice|scrape_job|tested_registry|error|queue|\
-      priority_class|cache_status|finalizers|severity"
+    # Labels allowlisted for remote-write to RHOBS.
+    # Each line in the regex below corresponds to one group.
+    #
+    # Universal
+    # K8s resource state (RHTAPWATCH-88, SPRE-1489, KFLUXINFRA-3503)
+    # Storage (RHTAPWATCH-88)
+    # HTTP / gRPC (SRVKP-4524, PVO11Y-4652)
+    # Histogram (RHTAPWATCH-88, PVO11Y-4774)
+    # Node / CPU (PVO11Y-4652, PVO11Y-4776)
+    # Tekton / Pipelines (RHTAPWATCH-110)
+    # Controller / leases (KONFLUX-4508)
+    # Kueue (KFLUXINFRA-2067)
+    # Kyverno
+    # Release service (RHTAPWATCH-88)
+    # SPI / auth (RHTAPWATCH-88 — SPI removed, may be dead weight)
+    # Probes / testing (RHTAPWATCH-891, PVO11Y-4802, SPRE-4498, KFLUXVNGD-751)
+    # ArgoCD (RHTAPWATCH-88)
+    # Monitoring infra (RHTAPWATCH-110, PVO11Y-4774)
+    # KubeArchive
+    regex: "__name__|source_environment|source_cluster|namespace|job|instance|pod|container|app|service|deployment|node|\
+      phase|reason|type|resource|kind|name|role|status|state|resourcequota|image|finalizers|verb|request_kind|\
+      persistentvolumeclaim|storageclass|volumename|\
+      method|code|http_method|http_route|http_status_code|grpc_service|grpc_code|grpc_method|sp|\
+      le|quantile|\
+      cpu|mode|\
+      pipeline|pipelinename|pipelinerun|schedule|label_pipelines_appstudio_openshift_io_type|\
+      controller|lease|lease_holder|exported_job|\
+      cluster_queue|priority_class|queue|\
+      policy_name|rule_result|rule_type|rule_execution_cause|policy_background_mode|policy_type|policy_validation_mode|policy_change_type|resource_request_operation|resource_kind|event_type|\
+      release_reason|deployment_reason|validation_reason|strategy|succeeded|target|result|\
+      tokenName|rateLimited|commit_hash|operation|\
+      check|tested_cluster|tested_registry|unexpected_status|failure|severity|cache_status|\
+      health_status|dest_namespace|\
+      hostname|label_app_kubernetes_io_managed_by|platform|scrape_job|slice|error|\
+      resource_type|gin_errors"

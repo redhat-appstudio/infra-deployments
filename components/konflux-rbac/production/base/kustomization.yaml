@@ -1,10 +1,14 @@
 kind: Kustomization
 apiVersion: kustomize.config.k8s.io/v1beta1
 resources:
+- ../../base
 - konflux-admin-user-actions.yaml
 - konflux-maintainer-user-actions.yaml
 - konflux-contributor-user-actions.yaml
 - konflux-viewer-user-actions.yaml
+# can be bound to konflux-bot-* ServiceAccounts
+# and exposed outside the cluster
 - konflux-builder-bot-actions.yaml
 - konflux-releaser-bot-actions.yaml
-- ../../base
+# can NOT be bound to konflux-bot-* ServiceAccounts
+- konflux-tester-internalbot-actions.yaml
