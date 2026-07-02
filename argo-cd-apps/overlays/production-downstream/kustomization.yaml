@@ -54,11 +54,6 @@ patches:
     target:
       kind: ApplicationSet
       version: v1alpha1
-      name: tekton-ci
-  - path: production-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
       name: konflux-ci
   - path: production-overlay-patch.yaml
     target:
@@ -140,12 +135,12 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: cluster-as-a-service
-  - path: production-overlay-patch.yaml
+  - path: production-tracing-overlay-patch.yaml
     target:
       kind: ApplicationSet
       version: v1alpha1
       name: tracing-workload-otel-collector
-  - path: production-overlay-patch.yaml
+  - path: production-tracing-overlay-patch.yaml
     target:
       kind: ApplicationSet
       version: v1alpha1
@@ -310,3 +305,8 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: internal-services
+  - path: production-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: monitoring-workload-konflux-o11y-kaexporter
