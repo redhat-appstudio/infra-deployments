@@ -4,3 +4,24 @@ resources:
 - ../base/
 - ../policies/kubearchive/
 - ../policies/kueue/
+patches:
+- patch: |-
+    apiVersion: kyverno.io/v1
+    kind: ClusterPolicy
+    metadata:
+      annotations:
+        argocd.argoproj.io/sync-options: Replace=true
+      name: not-used
+  target:
+    group: kyverno.io
+    kind: ClusterPolicy
+- patch: |-
+    apiVersion: kyverno.io/v1
+    kind: ValidatingPolicy
+    metadata:
+      annotations:
+        argocd.argoproj.io/sync-options: Replace=true
+      name: not-used
+  target:
+    group: kyverno.io
+    kind: ValidatingPolicy
