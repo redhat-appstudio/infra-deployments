@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/konflux-ci/e2e-tests/pkg/framework"
 	imagecontrollerv1alpha1 "github.com/konflux-ci/image-controller/api/v1alpha1"
@@ -296,6 +297,51 @@ func restoreFromBackup(fw *framework.Framework, t Tenant, method RestoreMethod) 
 		return got.Status.Phase, nil
 	}, RestoreTimeout, RestorePollInterval).Should(Equal(velerov1.RestorePhaseCompleted),
 		"Restore CR %q did not reach Completed phase within %s", restoreName, RestoreTimeout)
+}
+
+// reconcileComponentOwnership annotates each Component in the tenant namespace
+// to trigger build-service reconciliation, then waits until build-service
+// re-establishes ownerReferences on PaC Repository CRs.
+//
+// Why this is needed: Velero strips ownerReferences during restore (UIDs from
+// the source cluster are invalid). Build-service's ensurePaCRepository adds
+// the Component ownerReference back when it reconciles, but reconciliation
+// only fires on a metadata or spec change — the restored Component arrives
+// in its final state with no pending changes. Annotating forces the update
+// event that triggers reconciliation.
+func reconcileComponentOwnership(fw *framework.Framework, t Tenant) {
+	GinkgoHelper()
+
+	ts := time.Now().UTC().Format(time.RFC3339)
+
+	By(fmt.Sprintf("Annotating %d Components in namespace %q to trigger build-service reconciliation", len(Components), t.Namespace))
+	for _, comp := range Components {
+		c, err := fw.AsKubeAdmin.HasController.GetComponent(comp.Name, t.Namespace)
+		Expect(err).ShouldNot(HaveOccurred(),
+			"failed to get Component %q in namespace %q", comp.Name, t.Namespace)
+
+		if c.Annotations == nil {
+			c.Annotations = map[string]string{}
+		}
+		c.Annotations["dr-restore-reconcile-trigger"] = ts
+
+		err = fw.AsKubeAdmin.HasController.UpdateComponent(c)
+		Expect(err).ShouldNot(HaveOccurred(),
+			"failed to annotate Component %q in namespace %q", comp.Name, t.Namespace)
+	}
+	GinkgoWriter.Printf("Annotated %d Components in namespace %s with reconcile trigger\n", len(Components), t.Namespace)
+
+	By(fmt.Sprintf("Waiting for build-service to re-establish PaC Repository ownerReferences in namespace %q", t.Namespace))
+	for _, comp := range Components {
+		compName := comp.Name
+		Eventually(func() error {
+			_, err := fw.AsKubeAdmin.TektonController.GetRepositoryParams(compName, t.Namespace)
+			return err
+		}, OwnerRefReconcileTimeout, OwnerRefReconcilePoll).Should(Succeed(),
+			"PaC Repository CR for component %q in namespace %q: build-service did not re-establish ownerReference within %s",
+			compName, t.Namespace, OwnerRefReconcileTimeout)
+	}
+	GinkgoWriter.Printf("PaC Repository ownerReferences re-established for all %d Components in namespace %s\n", len(Components), t.Namespace)
 }
 
 // verifyResources performs structural verification of restored tenant resources.

@@ -131,11 +131,18 @@ func defineBackwardsCompatSpecs() {
 			})
 		})
 
-		// Phase 6: Post-restore recovery — rotate stale SA tokens.
+		// Phase 6: Post-restore recovery — rotate stale SA tokens and
+		// trigger build-service reconciliation to re-establish ownerReferences.
 		When("performing post-restore recovery", func() {
 			It("should rotate SA tokens on both tenants", func() {
 				for _, t := range bcTenants {
 					rotateSATokens(fw, t.Namespace)
+				}
+			})
+
+			It("should reconcile PaC Repository ownership on both tenants", func() {
+				for _, t := range bcTenants {
+					reconcileComponentOwnership(fw, t)
 				}
 			})
 		})

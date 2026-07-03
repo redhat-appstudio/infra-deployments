@@ -342,6 +342,12 @@ const (
 	ReleaseChainTimeout = 60 * time.Minute
 	ReleaseChainPoll    = 5 * time.Minute
 
+	// OwnerRefReconcileTimeout is how long to wait for build-service to
+	// re-establish ownerReferences on PaC Repository CRs after annotating
+	// Components to trigger reconciliation.
+	OwnerRefReconcileTimeout = 5 * time.Minute
+	OwnerRefReconcilePoll    = 15 * time.Second
+
 	// VeleroReadyTimeout is how long to wait for Velero deployment readiness
 	// and BSL availability during precondition checks.
 	VeleroReadyTimeout = 5 * time.Minute
