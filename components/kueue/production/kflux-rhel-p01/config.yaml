@@ -92,6 +92,12 @@ cel:
     - |
         plrNamespace == 'mintmaker' ? [resource('mintmaker', 1)] : []
 
+    # The token mechanism allows us to balance admitted PipelineRuns.
+    # Each PipelineRun requests 1 token. The token quota is set equal
+    # to the PLR limit so current behavior is unchanged.
+    - |
+        resource('konflux-ci-dev-token', 1)
+
     # Add a resource to restrict the number of concurrent release pipelineruns
     - |
         has(pipelineRun.metadata.labels) &&
