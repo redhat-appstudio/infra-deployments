@@ -13,7 +13,11 @@ spec:
                 sourceRoot: components/authentication-rd
                 ring: "ring-0"
                 clusterDir: base
-
+          - list:
+              elements:
+                - values.ring: ring-1
+                  nameNormalized: stone-stage-p01
+                  values.clusterDir: stone-stage-p01
   template:
     metadata:
       name: authentication-rd-{{nameNormalized}}
@@ -24,7 +28,7 @@ spec:
         repoURL: https://github.com/redhat-appstudio/infra-deployments.git
         targetRevision: main
       destination:
-        namespace: authentication-rd
+        namespace: authentication
         server: '{{server}}'
       syncPolicy:
         # automated:

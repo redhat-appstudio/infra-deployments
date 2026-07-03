@@ -4,7 +4,6 @@ resources:
   - ../../base/member
   - ../../base/all-clusters
   - ../../base/backup
-  - ../../base/tekton-ci
   - ../../base/konflux-ci
   - ../../base/cluster-secret-store-rh
   - ../../base/eaas
@@ -51,11 +50,6 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: cluster-secret-store
-  - path: production-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: tekton-ci
   - path: production-overlay-patch.yaml
     target:
       kind: ApplicationSet
@@ -126,12 +120,12 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: project-controller
-  - path: production-overlay-patch.yaml
+  - path: production-tracing-overlay-patch.yaml
     target:
       kind: ApplicationSet
       version: v1alpha1
       name: tracing-workload-otel-collector
-  - path: production-overlay-patch.yaml
+  - path: production-tracing-overlay-patch.yaml
     target:
       kind: ApplicationSet
       version: v1alpha1
@@ -296,3 +290,13 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: internal-services
+  - path: production-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: monitoring-workload-kanary
+  - path: production-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: monitoring-workload-konflux-o11y-kaexporter
