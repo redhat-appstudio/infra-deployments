@@ -64,6 +64,27 @@ func (f *fakeRepoComparer) CompareCommits(_ context.Context, _, repo, _, _ strin
 	}, nil, nil
 }
 
+// fakeRegistryInspector implements changelog.RegistryInspector for testing.
+// Returns labels[ref] when set, or an empty map. Returns err for all calls when set.
+type fakeRegistryInspector struct {
+	labels map[string]map[string]string // imageRef → labels
+	err    error
+}
+
+var _ changelog.RegistryInspector = &fakeRegistryInspector{}
+
+func (f *fakeRegistryInspector) InspectLabels(_ context.Context, ref string) (map[string]string, error) {
+	if f.err != nil {
+		return nil, f.err
+	}
+	if f.labels != nil {
+		if m, ok := f.labels[ref]; ok {
+			return m, nil
+		}
+	}
+	return map[string]string{}, nil
+}
+
 func writeTempKustomization(t *testing.T, ref string) string {
 	t.Helper()
 	content := "apiVersion: kustomize.config.k8s.io/v1beta1\nkind: Kustomization\nresources:\n" +
@@ -105,7 +126,7 @@ func TestFormatCompare_ShortRef(t *testing.T) {
 func TestComputeBody_Unchanged(t *testing.T) {
 	g := NewWithT(t)
 	path := writeTempKustomization(t, oldRef)
-	body, err := computeBody(context.Background(), path, path, &fakeRepoComparer{})
+	body, err := computeBody(context.Background(), path, path, &fakeRepoComparer{}, &fakeRegistryInspector{})
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(body).To(ContainSubstring(commentMarker))
 	g.Expect(body).To(ContainSubstring("### Operator Changelog"))
@@ -119,7 +140,7 @@ func TestComputeBody_Changed(t *testing.T) {
 	g := NewWithT(t)
 	basePath := writeTempKustomization(t, oldRef)
 	headPath := writeTempKustomization(t, newRef)
-	body, err := computeBody(context.Background(), basePath, headPath, &fakeRepoComparer{})
+	body, err := computeBody(context.Background(), basePath, headPath, &fakeRepoComparer{}, &fakeRegistryInspector{})
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(body).To(ContainSubstring(commentMarker))
 	g.Expect(body).To(ContainSubstring(oldRef))
@@ -152,7 +173,7 @@ func TestComputeBody_WithServiceBumps(t *testing.T) {
 
 	basePath := writeTempKustomization(t, oldRef)
 	headPath := writeTempKustomization(t, newRef)
-	body, err := computeBody(context.Background(), basePath, headPath, fake)
+	body, err := computeBody(context.Background(), basePath, headPath, fake, &fakeRegistryInspector{})
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(body).To(ContainSubstring("build-service"))
 	g.Expect(body).To(ContainSubstring(buildOldSHA[:12]))
@@ -168,7 +189,7 @@ func TestComputeBody_APIFailureDegrades(t *testing.T) {
 	basePath := writeTempKustomization(t, oldRef)
 	headPath := writeTempKustomization(t, newRef)
 	fake := &fakeRepoComparer{err: errors.New("rate limited")}
-	body, err := computeBody(context.Background(), basePath, headPath, fake)
+	body, err := computeBody(context.Background(), basePath, headPath, fake, &fakeRegistryInspector{})
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(body).To(ContainSubstring("compare/" + oldRef + "..." + newRef))
 	g.Expect(body).To(ContainSubstring("unavailable"))
@@ -189,7 +210,7 @@ func TestComputeBody_TruncatedDegrades(t *testing.T) {
 	}
 	fake := &fakeRepoComparer{files: files}
 
-	body, err := computeBody(context.Background(), basePath, headPath, fake)
+	body, err := computeBody(context.Background(), basePath, headPath, fake, &fakeRegistryInspector{})
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(body).To(ContainSubstring("compare/" + oldRef + "..." + newRef))
 	g.Expect(body).To(ContainSubstring("unavailable"))
@@ -215,7 +236,7 @@ func TestComputeBody_EmptyPatchDegrades(t *testing.T) {
 		},
 	}
 
-	body, err := computeBody(context.Background(), basePath, headPath, fake)
+	body, err := computeBody(context.Background(), basePath, headPath, fake, &fakeRegistryInspector{})
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(body).To(ContainSubstring("compare/" + oldRef + "..." + newRef))
 	g.Expect(body).To(ContainSubstring("unavailable"))
@@ -225,7 +246,7 @@ func TestComputeBody_EmptyPatchDegrades(t *testing.T) {
 // TestComputeBody_Error verifies that an unreadable file returns an error.
 func TestComputeBody_Error(t *testing.T) {
 	g := NewWithT(t)
-	_, err := computeBody(context.Background(), "/nonexistent/kustomization.yaml", "/nonexistent/kustomization.yaml", &fakeRepoComparer{})
+	_, err := computeBody(context.Background(), "/nonexistent/kustomization.yaml", "/nonexistent/kustomization.yaml", &fakeRepoComparer{}, &fakeRegistryInspector{})
 	g.Expect(err).To(HaveOccurred())
 	g.Expect(err.Error()).To(ContainSubstring("extracting operator refs"))
 }
@@ -257,7 +278,7 @@ func TestComputeBody_WithServiceCommits(t *testing.T) {
 
 	basePath := writeTempKustomization(t, oldRef)
 	headPath := writeTempKustomization(t, newRef)
-	body, err := computeBody(context.Background(), basePath, headPath, fake)
+	body, err := computeBody(context.Background(), basePath, headPath, fake, &fakeRegistryInspector{})
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(body).To(ContainSubstring("build-service"))
 	g.Expect(body).To(ContainSubstring("feat: add multi-arch support"))
@@ -288,7 +309,7 @@ func TestComputeBody_ServiceCommitsFail(t *testing.T) {
 
 	basePath := writeTempKustomization(t, oldRef)
 	headPath := writeTempKustomization(t, newRef)
-	body, err := computeBody(context.Background(), basePath, headPath, fake)
+	body, err := computeBody(context.Background(), basePath, headPath, fake, &fakeRegistryInspector{})
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(body).To(ContainSubstring("build-service"))
 	g.Expect(body).To(ContainSubstring("compare/" + oldRef + "..." + newRef))
@@ -321,7 +342,7 @@ func TestComputeBody_ServiceCommitsTruncated(t *testing.T) {
 
 	basePath := writeTempKustomization(t, oldRef)
 	headPath := writeTempKustomization(t, newRef)
-	body, err := computeBody(context.Background(), basePath, headPath, fake)
+	body, err := computeBody(context.Background(), basePath, headPath, fake, &fakeRegistryInspector{})
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(body).To(ContainSubstring("feat: add feature"))
 	g.Expect(body).To(ContainSubstring("250 commits"))
@@ -352,7 +373,7 @@ func TestComputeBody_NoNotableCommits(t *testing.T) {
 
 	basePath := writeTempKustomization(t, oldRef)
 	headPath := writeTempKustomization(t, newRef)
-	body, err := computeBody(context.Background(), basePath, headPath, fake)
+	body, err := computeBody(context.Background(), basePath, headPath, fake, &fakeRegistryInspector{})
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(body).To(ContainSubstring("build-service"))
 	g.Expect(body).To(ContainSubstring("No notable commits"))
@@ -383,11 +404,175 @@ func TestBuildBody_Integration(t *testing.T) {
 	gitRun(t, dir, "commit", "-m", "bump operator ref")
 
 	// Use a fake comparer so the test does not make real GitHub API calls.
-	body, err := buildBody(context.Background(), dir, baseCommit, defaultKustomizationPath, &fakeRepoComparer{})
+	body, err := buildBody(context.Background(), dir, baseCommit, defaultKustomizationPath, &fakeRepoComparer{}, &fakeRegistryInspector{})
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(body).To(ContainSubstring(oldRef))
 	g.Expect(body).To(ContainSubstring(newRef))
 	g.Expect(body).To(ContainSubstring("compare"))
+}
+
+// TestComputeBody_WithImageBumps verifies that a digest change in an upstream
+// kustomization images: block is detected, resolved to git SHAs via the
+// registry inspector, and rendered in the comment body.
+func TestComputeBody_WithImageBumps(t *testing.T) {
+	g := NewWithT(t)
+
+	oldDigest := "sha256:" + strings.Repeat("a", 64)
+	newDigest := "sha256:" + strings.Repeat("b", 64)
+	oldSHA := strings.Repeat("c", 40)
+	newSHA := strings.Repeat("d", 40)
+
+	patch := " images:\n" +
+		"-- digest: " + oldDigest + "\n" +
+		"+- digest: " + newDigest + "\n" +
+		"   name: quay.io/konflux-ci/namespace-lister\n" +
+		"   newName: quay.io/konflux-ci/namespace-lister\n"
+
+	fake := &fakeRepoComparer{
+		files: []*gh.CommitFile{
+			{
+				Filename: gh.Ptr("operator/upstream-kustomizations/namespace-lister/kustomization.yaml"),
+				Patch:    gh.Ptr(patch),
+			},
+		},
+		commits: []*gh.RepositoryCommit{
+			{SHA: gh.Ptr("e1e1e1e1e1e1"), Commit: &gh.Commit{Message: gh.Ptr("feat: expose lister metrics")}},
+		},
+	}
+
+	inspector := &fakeRegistryInspector{
+		labels: map[string]map[string]string{
+			"quay.io/konflux-ci/namespace-lister@" + oldDigest: {
+				"org.opencontainers.image.revision": oldSHA,
+			},
+			"quay.io/konflux-ci/namespace-lister@" + newDigest: {
+				"org.opencontainers.image.revision": newSHA,
+			},
+		},
+	}
+
+	basePath := writeTempKustomization(t, oldRef)
+	headPath := writeTempKustomization(t, newRef)
+	body, err := computeBody(context.Background(), basePath, headPath, fake, inspector)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(body).To(ContainSubstring("namespace-lister"))
+	g.Expect(body).To(ContainSubstring(oldSHA[:12]))
+	g.Expect(body).To(ContainSubstring(newSHA[:12]))
+	g.Expect(body).To(ContainSubstring("feat: expose lister metrics"))
+}
+
+// TestComputeBody_ImageBumpVcsRefFallback verifies that when
+// org.opencontainers.image.revision is absent but vcs-ref is present,
+// the git SHA is resolved correctly.
+func TestComputeBody_ImageBumpVcsRefFallback(t *testing.T) {
+	g := NewWithT(t)
+
+	oldDigest := "sha256:" + strings.Repeat("a", 64)
+	newDigest := "sha256:" + strings.Repeat("b", 64)
+	oldSHA := strings.Repeat("e", 40)
+	newSHA := strings.Repeat("f", 40)
+
+	patch := " images:\n" +
+		"-- digest: " + oldDigest + "\n" +
+		"+- digest: " + newDigest + "\n" +
+		"   name: quay.io/konflux-ci/namespace-lister\n" +
+		"   newName: quay.io/konflux-ci/namespace-lister\n"
+
+	fake := &fakeRepoComparer{
+		files: []*gh.CommitFile{
+			{
+				Filename: gh.Ptr("operator/upstream-kustomizations/namespace-lister/kustomization.yaml"),
+				Patch:    gh.Ptr(patch),
+			},
+		},
+	}
+
+	inspector := &fakeRegistryInspector{
+		labels: map[string]map[string]string{
+			"quay.io/konflux-ci/namespace-lister@" + oldDigest: {"vcs-ref": oldSHA},
+			"quay.io/konflux-ci/namespace-lister@" + newDigest: {"vcs-ref": newSHA},
+		},
+	}
+
+	basePath := writeTempKustomization(t, oldRef)
+	headPath := writeTempKustomization(t, newRef)
+	body, err := computeBody(context.Background(), basePath, headPath, fake, inspector)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(body).To(ContainSubstring("namespace-lister"))
+	g.Expect(body).To(ContainSubstring(oldSHA[:12]))
+	g.Expect(body).To(ContainSubstring(newSHA[:12]))
+}
+
+// TestComputeBody_ImageBumpNoRevisionLabel verifies that when the registry
+// returns no git revision label and no ref bumps exist, the comment degrades
+// rather than reporting a misleading empty-bumps message.
+func TestComputeBody_ImageBumpNoRevisionLabel(t *testing.T) {
+	g := NewWithT(t)
+
+	oldDigest := "sha256:" + strings.Repeat("a", 64)
+	newDigest := "sha256:" + strings.Repeat("b", 64)
+
+	patch := " images:\n" +
+		"-- digest: " + oldDigest + "\n" +
+		"+- digest: " + newDigest + "\n" +
+		"   name: quay.io/konflux-ci/namespace-lister\n" +
+		"   newName: quay.io/konflux-ci/namespace-lister\n"
+
+	fake := &fakeRepoComparer{
+		files: []*gh.CommitFile{
+			{
+				Filename: gh.Ptr("operator/upstream-kustomizations/namespace-lister/kustomization.yaml"),
+				Patch:    gh.Ptr(patch),
+			},
+		},
+	}
+
+	// Inspector returns empty labels — no revision label present.
+	inspector := &fakeRegistryInspector{}
+
+	basePath := writeTempKustomization(t, oldRef)
+	headPath := writeTempKustomization(t, newRef)
+	body, err := computeBody(context.Background(), basePath, headPath, fake, inspector)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(body).To(ContainSubstring(commentMarker))
+	g.Expect(body).To(ContainSubstring("unavailable"))
+	g.Expect(body).NotTo(ContainSubstring("No upstream service refs changed"))
+	g.Expect(body).NotTo(ContainSubstring("namespace-lister"))
+}
+
+// TestComputeBody_ImageBumpRegistryFailsDegrades verifies that when digest
+// changes are detected but the registry inspector fails for all lookups, the
+// comment degrades the same way as for API failures.
+func TestComputeBody_ImageBumpRegistryFailsDegrades(t *testing.T) {
+	g := NewWithT(t)
+
+	oldDigest := "sha256:" + strings.Repeat("a", 64)
+	newDigest := "sha256:" + strings.Repeat("b", 64)
+
+	patch := " images:\n" +
+		"-- digest: " + oldDigest + "\n" +
+		"+- digest: " + newDigest + "\n" +
+		"   name: quay.io/konflux-ci/namespace-lister\n" +
+		"   newName: quay.io/konflux-ci/namespace-lister\n"
+
+	fake := &fakeRepoComparer{
+		files: []*gh.CommitFile{
+			{
+				Filename: gh.Ptr("operator/upstream-kustomizations/namespace-lister/kustomization.yaml"),
+				Patch:    gh.Ptr(patch),
+			},
+		},
+	}
+
+	inspector := &fakeRegistryInspector{err: errors.New("connection refused")}
+
+	basePath := writeTempKustomization(t, oldRef)
+	headPath := writeTempKustomization(t, newRef)
+	body, err := computeBody(context.Background(), basePath, headPath, fake, inspector)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(body).To(ContainSubstring("compare/" + oldRef + "..." + newRef))
+	g.Expect(body).To(ContainSubstring("unavailable"))
+	g.Expect(body).NotTo(ContainSubstring("No upstream service refs changed"))
 }
 
 func gitRun(t *testing.T, dir string, args ...string) {
