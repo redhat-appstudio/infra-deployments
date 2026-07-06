@@ -102,10 +102,10 @@ spec:
                               f"timeout after {OC_TIMEOUT}s: {' '.join(cmd)}",
                               file=sys.stderr,
                           )
-                          if exc.stdout:
-                              print(f"stdout:\n{exc.stdout}", file=sys.stderr)
-                          if exc.stderr:
-                              print(f"stderr:\n{exc.stderr}", file=sys.stderr)
+                          print(
+                              "command output omitted from logs to avoid leaking TLS material",
+                              file=sys.stderr,
+                          )
                           raise SystemExit(1) from exc
 
 
