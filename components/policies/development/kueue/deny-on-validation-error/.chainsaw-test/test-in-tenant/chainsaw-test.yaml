@@ -29,15 +29,27 @@ spec:
   - name: given-validatingadmissionpolicy-is-installed
     try:
     - apply:
-        file: ../../deny-invalid-build-platforms-validatingadmissionpolicy.yaml
+        file: ../../deny-on-validation-error-validatingadmissionpolicy.yaml
     - apply:
-        file: ../../deny-invalid-build-platforms-validatingadmissionpolicybinding.yaml
+        file: ../../deny-on-validation-error-validatingadmissionpolicybinding.yaml
     - assert:
         file: ../chainsaw-assert-policy.yaml
   - name: then-pipelinerun-with-validation-error-is-denied
     try:
-    - error:
+    - create:
         file: ../resources/pipelinerun_with_validation_error.yaml
+        expect:
+          - check:
+              ($error != null): true
+              ($error): |-
+                pipelineruns.tekton.dev "pipelinerun-with-validation-error" is forbidden: ValidatingAdmissionPolicy 'deny-on-validation-error.kueue.konflux-ci.dev' with binding 'deny-on-validation-error.kueue.konflux-ci.dev' denied request: PipelineRun validation failed: build-platforms parameter must be an array of platform strings, got a non-array value
+    - create:
+        file: ../resources/pipelinerun_with_custom_validation_error.yaml
+        expect:
+          - check:
+              ($error != null): true
+              ($error): |-
+                pipelineruns.tekton.dev "pipelinerun-with-validation-error" is forbidden: ValidatingAdmissionPolicy 'deny-on-validation-error.kueue.konflux-ci.dev' with binding 'deny-on-validation-error.kueue.konflux-ci.dev' denied request: PipelineRun validation failed: custom error
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
 apiVersion: chainsaw.kyverno.io/v1alpha1
@@ -69,9 +81,9 @@ spec:
   - name: given-validatingadmissionpolicy-is-installed
     try:
     - apply:
-        file: ../../deny-invalid-build-platforms-validatingadmissionpolicy.yaml
+        file: ../../deny-on-validation-error-validatingadmissionpolicy.yaml
     - apply:
-        file: ../../deny-invalid-build-platforms-validatingadmissionpolicybinding.yaml
+        file: ../../deny-on-validation-error-validatingadmissionpolicybinding.yaml
     - assert:
         file: ../chainsaw-assert-policy.yaml
   - name: then-pipelinerun-without-validation-error-is-allowed

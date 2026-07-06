@@ -19,9 +19,9 @@ spec:
   - name: given-validatingadmissionpolicy-is-installed
     try:
     - apply:
-        file: ../../deny-invalid-build-platforms-validatingadmissionpolicy.yaml
+        file: ../../deny-on-validation-error-validatingadmissionpolicy.yaml
     - apply:
-        file: ../../deny-invalid-build-platforms-validatingadmissionpolicybinding.yaml
+        file: ../../deny-on-validation-error-validatingadmissionpolicybinding.yaml
     - assert:
         file: ../chainsaw-assert-policy.yaml
   - name: then-pipelinerun-with-validation-error-is-allowed
@@ -49,9 +49,9 @@ spec:
   - name: given-validatingadmissionpolicy-is-installed
     try:
     - apply:
-        file: ../../deny-invalid-build-platforms-validatingadmissionpolicy.yaml
+        file: ../../deny-on-validation-error-validatingadmissionpolicy.yaml
     - apply:
-        file: ../../deny-invalid-build-platforms-validatingadmissionpolicybinding.yaml
+        file: ../../deny-on-validation-error-validatingadmissionpolicybinding.yaml
     - assert:
         file: ../chainsaw-assert-policy.yaml
   - name: then-pipelinerun-without-validation-error-is-allowed
