@@ -15,7 +15,6 @@ import (
 	"net/http"
 	"os/exec"
 	"strings"
-	"time"
 
 	"github.com/konflux-ci/e2e-tests/pkg/framework"
 	imagecontrollerv1alpha1 "github.com/konflux-ci/image-controller/api/v1alpha1"
@@ -23,6 +22,7 @@ import (
 	miniocreds "github.com/minio/minio-go/v7/pkg/credentials"
 	. "github.com/onsi/ginkgo/v2" //nolint:staticcheck
 	. "github.com/onsi/gomega"    //nolint:staticcheck
+	pacv1alpha1 "github.com/openshift-pipelines/pipelines-as-code/pkg/apis/pipelinesascode/v1alpha1"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -299,49 +299,60 @@ func restoreFromBackup(fw *framework.Framework, t Tenant, method RestoreMethod) 
 		"Restore CR %q did not reach Completed phase within %s", restoreName, RestoreTimeout)
 }
 
-// reconcileComponentOwnership annotates each Component in the tenant namespace
-// to trigger build-service reconciliation, then waits until build-service
-// re-establishes ownerReferences on PaC Repository CRs.
+// reconcileComponentOwnership directly patches ownerReferences on PaC
+// Repository CRs to point at the restored Components.
 //
 // Why this is needed: Velero strips ownerReferences during restore (UIDs from
-// the source cluster are invalid). Build-service's ensurePaCRepository adds
-// the Component ownerReference back when it reconciles, but reconciliation
-// only fires on a metadata or spec change — the restored Component arrives
-// in its final state with no pending changes. Annotating forces the update
-// event that triggers reconciliation.
+// the source cluster are invalid). Build-service only sets ownerReferences
+// during initial Repository creation — it does not re-establish them when
+// reconciling an existing Repository CR. Direct patching is the only reliable
+// restoration path.
 func reconcileComponentOwnership(fw *framework.Framework, t Tenant) {
 	GinkgoHelper()
 
-	ts := time.Now().UTC().Format(time.RFC3339)
+	ctx := context.Background()
+	restClient := fw.AsKubeAdmin.CommonController.KubeRest()
 
-	By(fmt.Sprintf("Annotating %d Components in namespace %q to trigger build-service reconciliation", len(Components), t.Namespace))
+	By(fmt.Sprintf("Collecting post-restore Component UIDs in namespace %q", t.Namespace))
+	ownerRefs := make([]metav1.OwnerReference, 0, len(Components))
 	for _, comp := range Components {
 		c, err := fw.AsKubeAdmin.HasController.GetComponent(comp.Name, t.Namespace)
 		Expect(err).ShouldNot(HaveOccurred(),
 			"failed to get Component %q in namespace %q", comp.Name, t.Namespace)
+		ownerRefs = append(ownerRefs, metav1.OwnerReference{
+			APIVersion: "appstudio.redhat.com/v1alpha1",
+			Kind:       "Component",
+			Name:       c.Name,
+			UID:        c.UID,
+		})
+	}
 
-		if c.Annotations == nil {
-			c.Annotations = map[string]string{}
-		}
-		c.Annotations["dr-restore-reconcile-trigger"] = ts
+	By(fmt.Sprintf("Listing PaC Repository CRs in namespace %q", t.Namespace))
+	repoList := &pacv1alpha1.RepositoryList{}
+	err := restClient.List(ctx, repoList, &client.ListOptions{Namespace: t.Namespace})
+	Expect(err).ShouldNot(HaveOccurred(),
+		"failed to list PaC repositories in namespace %q", t.Namespace)
+	Expect(repoList.Items).ShouldNot(BeEmpty(),
+		"no PaC Repository CRs found in namespace %q", t.Namespace)
 
-		err = fw.AsKubeAdmin.HasController.UpdateComponent(c)
+	By(fmt.Sprintf("Setting ownerReferences on %d PaC Repository CRs for %d Components", len(repoList.Items), len(ownerRefs)))
+	for i := range repoList.Items {
+		repo := &repoList.Items[i]
+		repo.OwnerReferences = ownerRefs
+		err := restClient.Update(ctx, repo)
 		Expect(err).ShouldNot(HaveOccurred(),
-			"failed to annotate Component %q in namespace %q", comp.Name, t.Namespace)
+			"failed to set ownerReferences on PaC Repository %q in namespace %q", repo.Name, t.Namespace)
+		GinkgoWriter.Printf("Set %d ownerReferences on PaC Repository %s/%s\n", len(ownerRefs), t.Namespace, repo.Name)
 	}
-	GinkgoWriter.Printf("Annotated %d Components in namespace %s with reconcile trigger\n", len(Components), t.Namespace)
 
-	By(fmt.Sprintf("Waiting for build-service to re-establish PaC Repository ownerReferences in namespace %q", t.Namespace))
+	By(fmt.Sprintf("Verifying PaC Repository ownership for all %d Components", len(Components)))
 	for _, comp := range Components {
-		compName := comp.Name
-		Eventually(func() error {
-			_, err := fw.AsKubeAdmin.TektonController.GetRepositoryParams(compName, t.Namespace)
-			return err
-		}, OwnerRefReconcileTimeout, OwnerRefReconcilePoll).Should(Succeed(),
-			"PaC Repository CR for component %q in namespace %q: build-service did not re-establish ownerReference within %s",
-			compName, t.Namespace, OwnerRefReconcileTimeout)
+		_, err := fw.AsKubeAdmin.TektonController.GetRepositoryParams(comp.Name, t.Namespace)
+		Expect(err).ShouldNot(HaveOccurred(),
+			"ownerReference not set correctly on PaC Repository for component %q in namespace %q",
+			comp.Name, t.Namespace)
 	}
-	GinkgoWriter.Printf("PaC Repository ownerReferences re-established for all %d Components in namespace %s\n", len(Components), t.Namespace)
+	GinkgoWriter.Printf("PaC Repository ownerReferences verified for all %d Components in namespace %s\n", len(Components), t.Namespace)
 }
 
 // verifyResources performs structural verification of restored tenant resources.
