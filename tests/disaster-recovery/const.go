@@ -335,6 +335,13 @@ const (
 	PipelineTimeout = 90 * time.Minute
 	PipelinePoll    = 30 * time.Second
 
+	// WebhookDeliveryTimeout is how long to wait for PaC to create at least
+	// one new PipelineRun after trigger PRs are opened. If no PipelineRuns
+	// appear within this window, webhook delivery is broken and there is no
+	// point waiting the full PipelineTimeout.
+	WebhookDeliveryTimeout = 5 * time.Minute
+	WebhookDeliveryPoll    = 30 * time.Second
+
 	// ReleaseChainTimeout is how long to wait for all release PipelineRuns to
 	// complete in the managed namespace after integration tests pass. Release
 	// pipelines are slower because they include image signing, EC validation,
