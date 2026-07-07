@@ -1,11 +1,14 @@
 apiVersion: builtin
 kind: HelmChartInflationGenerator
 metadata:
-  name: squid-helm
-name: squid-helm
+  name: caching-helm
+name: caching-helm
+releaseName: squid
 repo: oci://quay.io/konflux-ci/caching
-version: 0.1.1648+a6ad7bf
+version: 0.1.1688+a7def07
 valuesInline:
+  squid:
+    enabled: true
   installCertManagerComponents: false
   mirrord:
     enabled: false
