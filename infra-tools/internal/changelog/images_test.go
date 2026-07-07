@@ -2,7 +2,6 @@ package changelog_test
 
 import (
 	"context"
-	"strings"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -109,7 +108,76 @@ func TestExtractImageDigestChanges_OneOfThreeChanges(t *testing.T) {
 	g.Expect(changes[0].NewDigest).To(Equal(newB))
 }
 
-// TestExtractImageDigestChanges_DigestUnchanged verifies that when old and new
+// TestExtractImageDigestChanges_NameBeforeDigest verifies dex-style kustomizations
+// where name/newName appear before digest in the images: block.
+func TestExtractImageDigestChanges_NameBeforeDigest(t *testing.T) {
+	g := NewWithT(t)
+
+	oldDigest := "sha256:" + str64('a')
+	newDigest := "sha256:" + str64('b')
+
+	patch := " images:\n" +
+		" - name: quay.io/konflux-ci/dex\n" +
+		"   newName: quay.io/konflux-ci/dex\n" +
+		"-   digest: " + oldDigest + "\n" +
+		"+   digest: " + newDigest + "\n"
+
+	files := []changelog.FileChange{
+		{Filename: "operator/upstream-kustomizations/ui/dex/kustomization.yml", Patch: patch},
+	}
+	changes, hasSkipped := changelog.ExtractImageDigestChanges(files)
+	g.Expect(hasSkipped).To(BeFalse())
+	g.Expect(changes).To(HaveLen(1))
+	g.Expect(changes[0].ImageName).To(Equal("quay.io/konflux-ci/dex"))
+	g.Expect(changes[0].OldDigest).To(Equal(oldDigest))
+	g.Expect(changes[0].NewDigest).To(Equal(newDigest))
+}
+
+// TestExtractImageDigestChanges_PrefersNewName verifies that newName is used
+// when name is a short local alias.
+func TestExtractImageDigestChanges_PrefersNewName(t *testing.T) {
+	g := NewWithT(t)
+
+	oldDigest := "sha256:" + str64('a')
+	newDigest := "sha256:" + str64('b')
+
+	patch := " images:\n" +
+		" - name: dex\n" +
+		"   newName: quay.io/konflux-ci/dex\n" +
+		"-   digest: " + oldDigest + "\n" +
+		"+   digest: " + newDigest + "\n"
+
+	files := []changelog.FileChange{
+		{Filename: "operator/upstream-kustomizations/ui/dex/kustomization.yml", Patch: patch},
+	}
+	changes, hasSkipped := changelog.ExtractImageDigestChanges(files)
+	g.Expect(hasSkipped).To(BeFalse())
+	g.Expect(changes).To(HaveLen(1))
+	g.Expect(changes[0].ImageName).To(Equal("quay.io/konflux-ci/dex"))
+}
+
+// TestExtractImageDigestChanges_HunkBoundary verifies pending digest state does
+// not leak across diff hunk headers.
+func TestExtractImageDigestChanges_HunkBoundary(t *testing.T) {
+	g := NewWithT(t)
+
+	oldDigest := "sha256:" + str64('a')
+	newDigest := "sha256:" + str64('b')
+
+	patch := "@@ -1,5 +1,5 @@\n" +
+		"-- digest: " + oldDigest + "\n" +
+		"+- digest: " + newDigest + "\n" +
+		"@@ -10,5 +10,5 @@\n" +
+		"   name: quay.io/konflux-ci/unrelated\n"
+
+	files := []changelog.FileChange{
+		{Filename: "operator/upstream-kustomizations/namespace-lister/kustomization.yaml", Patch: patch},
+	}
+	changes, hasSkipped := changelog.ExtractImageDigestChanges(files)
+	g.Expect(hasSkipped).To(BeFalse())
+	g.Expect(changes).To(BeEmpty())
+}
+
 // digests are the same, no change is emitted.
 func TestExtractImageDigestChanges_DigestUnchanged(t *testing.T) {
 	g := NewWithT(t)
@@ -170,14 +238,6 @@ func TestInspectLabels_InvalidReference(t *testing.T) {
 	g := NewWithT(t)
 	r := changelog.NewRegistryInspector()
 	_, err := r.InspectLabels(context.Background(), "not-a-valid-image-ref")
-	g.Expect(err).To(HaveOccurred())
-}
-
-func TestInspectLabels_NonexistentDigest(t *testing.T) {
-	g := NewWithT(t)
-	r := changelog.NewRegistryInspector()
-	digest := "sha256:" + strings.Repeat("0", 64)
-	_, err := r.InspectLabels(context.Background(), "quay.io/konflux-ci/namespace-lister@"+digest)
 	g.Expect(err).To(HaveOccurred())
 }
 

@@ -29,6 +29,9 @@ var (
 	// digestLinePattern matches "digest: sha256:<64-hex>" in a diff line body.
 	digestLinePattern = regexp.MustCompile(`digest:\s+(sha256:[0-9a-f]{64})`)
 
+	// newNameLinePattern matches "newName: <value>".
+	newNameLinePattern = regexp.MustCompile(`newName:\s+(\S+)`)
+
 	// imageNameLinePattern matches "name: <value>" but NOT "newName: <value>".
 	// \b ensures the word "name" is not preceded by another word character (e.g. "new").
 	imageNameLinePattern = regexp.MustCompile(`\bname:\s+(\S+)`)
@@ -39,11 +42,9 @@ var (
 // digest: sha256:... change in their images: block, and returns one
 // ImageDigestChange per image whose digest changed.
 //
-// The diff structure for a digest-pinned image is:
-//
-//	-- digest: sha256:OLD...    (removed line: diff '-' + YAML list item)
-//	+- digest: sha256:NEW...    (added line)
-//	   name: quay.io/...        (context line following the digest)
+// Each images: list entry may list fields in any order (e.g. digest-before-name
+// or name-before-digest). The parser groups diff lines into per-entry blocks
+// and collects name/newName/digest fields without relying on ordering.
 //
 // The second return value is true when one or more upstream kustomization files
 // had an empty patch — callers should treat this the same as ExtractServiceBumps.
@@ -67,57 +68,103 @@ func ExtractImageDigestChanges(files []FileChange) ([]ImageDigestChange, bool) {
 // extractDigestChanges parses a single unified diff patch and returns all
 // image entries whose digest changed.
 //
-// Algorithm (single forward pass):
-//  1. A '-' line matching digest: sha256:... sets pendingOld.
-//  2. A '+' line matching digest: sha256:... sets pendingNew.
-//  3. A context ' ' line matching \bname: (not newName:) closes the pending pair
-//     and emits an ImageDigestChange.
-//  4. A context ' ' line that starts a new YAML list item ("- ") resets the
-//     pending state — we crossed an unchanged image entry.
-//
-// This ordering is correct for the real kustomization files: digest appears
-// before name in every images: block entry.
+// Lines are grouped into YAML list-item blocks (one per images: entry). Within
+// each block, name/newName/digest fields are collected regardless of order.
+// newName is preferred over name for the registry reference.
 func extractDigestChanges(patch string) []ImageDigestChange {
 	var out []ImageDigestChange
-	var pendingOld, pendingNew string
+	var block []string
+
+	flush := func() {
+		if change, ok := digestChangeFromBlock(block); ok {
+			out = append(out, change)
+		}
+		block = nil
+	}
 
 	for _, line := range strings.Split(patch, "\n") {
+		if len(line) == 0 {
+			continue
+		}
+		// Hunk headers must not carry state across unrelated sections.
+		if strings.HasPrefix(line, "@@") {
+			flush()
+			continue
+		}
+		if line[0] != '-' && line[0] != '+' && line[0] != ' ' {
+			continue
+		}
+		rest := line[1:]
+		if len(block) > 0 && isImageListItemStart(line[0], rest) {
+			flush()
+		}
+		block = append(block, line)
+	}
+	flush()
+	return out
+}
+
+// isImageListItemStart reports whether a diff line body starts a new images:
+// YAML list item (e.g. "- name:", "- digest:", "- newName:").
+//
+// Added-side digest-first replacements appear as "+- digest:"; those belong to
+// the same list item as the preceding "- digest:" removal and must not split
+// the block.
+func isImageListItemStart(prefix byte, rest string) bool {
+	trimmed := strings.TrimSpace(rest)
+	if !strings.HasPrefix(trimmed, "- ") {
+		return false
+	}
+	field := strings.TrimSpace(trimmed[2:])
+	isDigestField := strings.HasPrefix(field, "digest:")
+	if prefix == '+' && isDigestField {
+		return false
+	}
+	return strings.HasPrefix(field, "name:") ||
+		strings.HasPrefix(field, "newName:") ||
+		isDigestField
+}
+
+func digestChangeFromBlock(lines []string) (ImageDigestChange, bool) {
+	var oldDigest, newDigest, name, newName string
+
+	for _, line := range lines {
 		if len(line) == 0 {
 			continue
 		}
 		prefix := line[0]
 		rest := line[1:]
 
+		if m := newNameLinePattern.FindStringSubmatch(rest); m != nil {
+			newName = m[1]
+		}
+		if m := imageNameLinePattern.FindStringSubmatch(rest); m != nil {
+			name = m[1]
+		}
 		switch prefix {
 		case '-':
 			if m := digestLinePattern.FindStringSubmatch(rest); m != nil {
-				pendingOld = m[1]
+				oldDigest = m[1]
 			}
 		case '+':
 			if m := digestLinePattern.FindStringSubmatch(rest); m != nil {
-				pendingNew = m[1]
-			}
-		case ' ':
-			// New unchanged YAML list item — reset pending and move on.
-			if strings.HasPrefix(strings.TrimSpace(rest), "- ") {
-				pendingOld, pendingNew = "", ""
-				continue
-			}
-			// Image name context line — emit pending pair if complete.
-			// imageNameLinePattern uses \bname: which does not match "newName:".
-			if pendingOld != "" && pendingNew != "" && pendingOld != pendingNew {
-				if m := imageNameLinePattern.FindStringSubmatch(rest); m != nil {
-					out = append(out, ImageDigestChange{
-						ImageName: m[1],
-						OldDigest: pendingOld,
-						NewDigest: pendingNew,
-					})
-					pendingOld, pendingNew = "", ""
-				}
+				newDigest = m[1]
 			}
 		}
 	}
-	return out
+
+	imageName := newName
+	if imageName == "" {
+		imageName = name
+	}
+	if imageName == "" || oldDigest == "" || newDigest == "" || oldDigest == newDigest {
+		return ImageDigestChange{}, false
+	}
+	return ImageDigestChange{
+		ImageName: imageName,
+		OldDigest: oldDigest,
+		NewDigest: newDigest,
+	}, true
 }
 
 // NewRegistryInspector returns a RegistryInspector backed by the real OCI
@@ -133,12 +180,13 @@ type ocRegistryInspector struct{}
 // (e.g. "quay.io/konflux-ci/namespace-lister@sha256:...").
 // The call is retried up to three times with exponential backoff.
 func (r *ocRegistryInspector) InspectLabels(ctx context.Context, imageRef string) (map[string]string, error) {
+	ref, err := name.ParseReference(imageRef)
+	if err != nil {
+		return nil, fmt.Errorf("parsing image reference %s: %w", imageRef, err)
+	}
+
 	var labels map[string]string
-	err := retryDo(ctx, 3, func() error {
-		ref, err := name.ParseReference(imageRef)
-		if err != nil {
-			return fmt.Errorf("parsing image reference %s: %w", imageRef, err)
-		}
+	err = retryDo(ctx, 3, func() error {
 		img, err := remote.Image(ref, remote.WithContext(ctx))
 		if err != nil {
 			return fmt.Errorf("fetching image %s: %w", imageRef, err)

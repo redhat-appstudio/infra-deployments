@@ -272,6 +272,7 @@ func formatCompare(oldRef, newRef string, bumps []bumpWithCommits) string {
 // the registry to resolve each digest to its git SHA via OCI labels.
 // Failures per image are logged and skipped — a partial result is still useful.
 func resolveImageBumps(ctx context.Context, inspector changelog.RegistryInspector, changes []changelog.ImageDigestChange) []changelog.ServiceBump {
+	seen := make(map[string]bool)
 	var bumps []changelog.ServiceBump
 	for _, c := range changes {
 		owner, repo := extractOwnerRepoFromImageName(c.ImageName)
@@ -279,6 +280,11 @@ func resolveImageBumps(ctx context.Context, inspector changelog.RegistryInspecto
 			slog.Warn("cannot derive owner/repo from image name", "image", c.ImageName)
 			continue
 		}
+		key := owner + "/" + repo
+		if seen[key] {
+			continue
+		}
+		seen[key] = true
 		oldSHA, err := resolveDigestToSHA(ctx, inspector, c.ImageName, c.OldDigest)
 		if err != nil {
 			slog.Warn("resolving old digest to git SHA", "image", c.ImageName, "digest", c.OldDigest[:19], "err", err)
