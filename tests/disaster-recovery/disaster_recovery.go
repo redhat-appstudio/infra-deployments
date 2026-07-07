@@ -487,7 +487,7 @@ func collectFailureArtifacts(fw *framework.Framework, tenants []Tenant) {
 		}
 
 		restoreName := "restore-" + t.BackupName
-		By(fmt.Sprintf("Collecting Restore CR status for tenant %q", t.Namespace))
+		By(fmt.Sprintf("Collecting Restore CR status for tenant %q (restore: %s)", t.Namespace, restoreName))
 		restore := &velerov1.Restore{}
 		if err := fw.AsKubeAdmin.CommonController.KubeRest().Get(ctx,
 			client.ObjectKey{Name: restoreName, Namespace: VeleroNamespace}, restore); err != nil {
@@ -498,6 +498,46 @@ func collectFailureArtifacts(fw *framework.Framework, tenants []Tenant) {
 				GinkgoWriter.Printf("  errors=%d, warnings=%d\n", restore.Status.Errors, restore.Status.Warnings)
 			}
 		}
+	}
+
+	collectPaCDiagnostics(tenants)
+}
+
+// collectPaCDiagnostics dumps PaC controller state for troubleshooting
+// webhook delivery failures. Uses oc commands to avoid importing PaC's
+// full operator client.
+func collectPaCDiagnostics(tenants []Tenant) {
+	const pacNamespace = "openshift-pipelines"
+
+	By("Collecting PaC controller diagnostics")
+
+	run := func(args ...string) string {
+		out, _ := exec.Command("oc", args...).CombinedOutput()
+		return strings.TrimSpace(string(out))
+	}
+
+	GinkgoWriter.Printf("=== PaC pods in %s ===\n%s\n\n",
+		pacNamespace, run("get", "pods", "-n", pacNamespace, "-o", "wide"))
+
+	GinkgoWriter.Printf("=== PaC routes in %s ===\n%s\n\n",
+		pacNamespace, run("get", "routes", "-n", pacNamespace, "-o", "wide"))
+
+	GinkgoWriter.Printf("=== PaC services in %s ===\n%s\n\n",
+		pacNamespace, run("get", "services", "-n", pacNamespace, "-o", "wide"))
+
+	pods := strings.Fields(run("get", "pods", "-n", pacNamespace,
+		"-o", "jsonpath={.items[*].metadata.name}"))
+	for _, pod := range pods {
+		if strings.Contains(pod, "controller") || strings.Contains(pod, "watcher") {
+			GinkgoWriter.Printf("=== Logs: %s (last 100 lines) ===\n%s\n\n",
+				pod, run("logs", pod, "-n", pacNamespace, "--tail=100", "--all-containers"))
+		}
+	}
+
+	for _, t := range tenants {
+		GinkgoWriter.Printf("=== Repository CRs in %s ===\n%s\n\n",
+			t.Namespace, run("get", "repositories.pipelinesascode.tekton.dev",
+				"-n", t.Namespace, "-o", "yaml"))
 	}
 }
 
