@@ -131,8 +131,8 @@ func waitForSucceededPRCount(fw *framework.Framework, namespace, pipelineType, c
 			}
 		}
 
-		GinkgoWriter.Printf("namespace %s: %d/%d %s PipelineRuns succeeded\n",
-			namespace, succeededCount, expectedCount, displayType)
+		GinkgoWriter.Printf("namespace %s: %d/%d %s PipelineRuns succeeded (total: %d)\n",
+			namespace, succeededCount, expectedCount, displayType, len(prList.Items))
 		return succeededCount
 	}, timeout, poll).Should(Equal(expectedCount),
 		"expected %d successful %s PipelineRuns in namespace %s",
@@ -256,6 +256,20 @@ func triggerBuildsAndVerify(fw *framework.Framework, tenants []Tenant) {
 			t.ManagedNamespace, initialRelease[t.ManagedNamespace])
 	}
 
+	// Snapshot total PipelineRun count (all statuses) per tenant namespace.
+	// Used by the webhook delivery check below to detect new PipelineRun creation.
+	initialTotalPRs := make(map[string]int)
+	for _, t := range tenants {
+		allPRs := &pipeline.PipelineRunList{}
+		Expect(fw.AsKubeAdmin.CommonController.KubeRest().List(
+			context.Background(), allPRs,
+			client.InNamespace(t.Namespace),
+		)).Should(Succeed(), "failed to list all PipelineRuns in %s", t.Namespace)
+		initialTotalPRs[t.Namespace] = len(allPRs.Items)
+		GinkgoWriter.Printf("initial total PipelineRun count in %s: %d\n",
+			t.Namespace, len(allPRs.Items))
+	}
+
 	ghClient := fw.AsKubeAdmin.HasController.Github
 
 	for _, t := range tenants {
@@ -302,6 +316,37 @@ func triggerBuildsAndVerify(fw *framework.Framework, tenants []Tenant) {
 		GinkgoWriter.Printf("Created PR #%d on %s to trigger builds for tenant %s\n",
 			pr.GetNumber(), t.ForkRepoName, t.Namespace)
 	}
+
+	// Verify PaC webhook delivery before committing to the full pipeline wait.
+	// If no new PipelineRuns appear within WebhookDeliveryTimeout, PaC is not
+	// processing webhook events and waiting PipelineTimeout (90min) is futile.
+	By("Verifying PaC webhook delivery — expecting new PipelineRuns within 5 minutes")
+	Eventually(func() bool {
+		allHaveNew := true
+		for _, t := range tenants {
+			allPRs := &pipeline.PipelineRunList{}
+			if err := fw.AsKubeAdmin.CommonController.KubeRest().List(
+				context.Background(), allPRs,
+				client.InNamespace(t.Namespace),
+			); err != nil {
+				GinkgoWriter.Printf("DIAGNOSTIC: error listing PipelineRuns in %s: %v\n",
+					t.Namespace, err)
+				allHaveNew = false
+				continue
+			}
+			newCount := len(allPRs.Items) - initialTotalPRs[t.Namespace]
+			GinkgoWriter.Printf("DIAGNOSTIC: PipelineRuns in %s — total: %d, baseline: %d, new: %d\n",
+				t.Namespace, len(allPRs.Items), initialTotalPRs[t.Namespace], newCount)
+			if newCount <= 0 {
+				allHaveNew = false
+			}
+		}
+		return allHaveNew
+	}, WebhookDeliveryTimeout, WebhookDeliveryPoll).Should(BeTrue(),
+		"not all tenants received new PipelineRuns within %v of trigger PRs — "+
+			"PaC webhook delivery is broken post-restore; check PaC controller pods "+
+			"in openshift-pipelines namespace and SprayProxy route registration",
+		WebhookDeliveryTimeout)
 
 	waitForPipelineChains(fw, tenants, initialPerComp, initialRelease)
 }
