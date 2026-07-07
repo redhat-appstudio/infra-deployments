@@ -9,6 +9,9 @@ spec:
           - nameNormalized
         generators:
           - clusters:
+              selector:
+                matchLabels:
+                  appstudio.redhat.com/is-tenant-cluster: "true"
               values:
                 sourceRoot: components/authentication-rd
                 ring: "ring-0"
