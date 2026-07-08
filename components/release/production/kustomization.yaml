@@ -16,3 +16,11 @@ images:
     newTag: a971d3c8d10d07257d4afc70e342a09e85a3a33e
 
 namespace: release-service
+
+patches:
+  - target:
+      group: rbac.authorization.k8s.io
+      version: v1
+      kind: ClusterRole
+      name: release-pipeline-resource-role
+    path: ibm-public-key-patch.yaml
