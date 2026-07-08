@@ -1,0 +1,73 @@
+name: Rerun failed checks
+
+# Lets contributors with read-only repo access re-trigger failed GitHub Actions
+# checks by commenting `/rerun` on the pull request.
+#
+# This reruns failed or cancelled GitHub Actions workflow runs on the PR head commit.
+# Prow / OpenShift CI E2E checks are not affected — use `/retest` for those.
+
+on:
+  issue_comment:
+    types:
+      - created
+
+jobs:
+  rerun-workflows:
+    if: |
+      github.event.issue.pull_request &&
+      github.event.comment.body == '/rerun'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: write
+      pull-requests: write
+    steps:
+      - name: Check permissions
+        id: auth
+        run: |
+          case "${{ github.event.comment.author_association }}" in
+            MEMBER|OWNER|COLLABORATOR)
+              echo "allowed=true" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "allowed=false" >> "$GITHUB_OUTPUT"
+              ;;
+          esac
+
+      - name: Report missing permissions
+        if: steps.auth.outputs.allowed != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr comment "${{ github.event.issue.number }}" \
+            --repo "${{ github.repository }}" \
+            --body "@${{ github.event.comment.user.login }} you do not have permission to rerun checks. Only repository members and collaborators can use \`/rerun\` (your association: \`${{ github.event.comment.author_association }}\`). Ask a maintainer to rerun the failed checks or to grant you access."
+
+      - id: rerun
+        if: steps.auth.outputs.allowed == 'true'
+        uses: int128/rerun-workflows-action@2d1223166bc83c38b14cac717ab1bfde6c372474 # v1.7.0
+
+      - name: Comment results
+        if: steps.auth.outputs.allowed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          count="${{ steps.rerun.outputs.workflow-runs-count }}"
+          success="${{ steps.rerun.outputs.rerun-success-count }}"
+          failure="${{ steps.rerun.outputs.rerun-failure-count }}"
+
+          if [ "$count" = "0" ]; then
+            body="No failed or cancelled GitHub Actions workflow runs were found for this PR commit."
+          else
+            body="Re-triggered $success of $count failed GitHub Actions workflow run(s)."
+            if [ "$failure" != "0" ]; then
+              body="$body $failure rerun request(s) were rejected (the run may be too old)."
+            fi
+            body="${body}
+
+          Prow/OpenShift CI E2E checks are not affected — comment \`/retest\` to re-trigger those."
+          fi
+
+          gh pr comment "${{ github.event.issue.number }}" \
+            --repo "${{ github.repository }}" \
+            --body "$body"
