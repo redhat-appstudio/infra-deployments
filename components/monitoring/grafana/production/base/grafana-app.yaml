@@ -242,18 +242,3 @@ spec:
         httpHeaderValue1: "Bearer ${token}"
       type: prometheus
       url: 'https://thanos-querier.openshift-monitoring.svc.cluster.local:9091'
----
-# Add example dashboard
-apiVersion: grafana.integreatly.org/v1beta1
-kind: GrafanaDashboard
-metadata:
-  name: example-dashboard
-  labels:
-    app: appstudio-grafana
-  annotations:
-    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-spec:
-  url: https://raw.githubusercontent.com/redhat-appstudio/infra-deployments/main/components/monitoring/grafana/base/dashboards/generic-dashboards/example.json
-  instanceSelector:
-    matchLabels:
-      dashboards: "appstudio-grafana"
