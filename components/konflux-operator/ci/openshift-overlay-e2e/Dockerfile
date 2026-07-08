@@ -3,9 +3,9 @@
 # ci-operator/config/redhat-appstudio/infra-deployments/.
 #
 # - task-runner: oc, kubectl, jq, yq, git, skopeo, oras, buildah, … (bootstrap/preview)
-# - ubi10/go-toolset @ digest: Go 1.26 for konflux-ci conformance (go test)
+# - ubi10/go-toolset @ digest: Go 1.26.4 for konflux-ci conformance (go test)
 
-FROM registry.access.redhat.com/ubi10/go-toolset@sha256:420e5156ac65cc5c32ba1a2ae7e0fa3bc369728cc8d1740db134a76af7d6c471 AS go-toolset
+FROM registry.access.redhat.com/ubi10/go-toolset@sha256:120c56d15943f96f84c7d415432fc82a9212ea58f6cbebf516587fb854d8631a AS go-toolset
 
 FROM quay.io/konflux-ci/task-runner@sha256:1abfe4e50d4e961d0fd9790202565f93ee650fe8dfc50932c94989acba10485f
 
