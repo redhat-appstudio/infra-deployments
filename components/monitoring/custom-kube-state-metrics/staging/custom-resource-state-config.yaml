@@ -66,7 +66,6 @@ data:
             namespace: [metadata, namespace]
             pipeline: [metadata, labels, tekton.dev/pipeline]
             finalizers: [metadata, finalizers]
-            status: [status, conditions, "[type=Succeeded]", reason]
           metrics:
             - name: "konflux_pipelinerun_deletion_timestamp_seconds"
               help: "Unix timestamp when deletion was requested (0 = not deleted). Use > 0 to find stuck PipelineRuns."
@@ -75,14 +74,4 @@ data:
                 gauge:
                   path: [metadata, deletionTimestamp]
                   nilIsZero: true
-        ###############################################################################
-        # Fetchs the concurrent PipelineRuns in an unfinished or Unknown state filtering
-        # the ones with completionTime unset (equal to zero)
-        ###############################################################################
-            - name: "konflux_pipelinerun_status"
-              help: "fetchs PipelineRun completionTime with status label; 0 means still running"
-              each:
-                type: Gauge
-                gauge:
-                  path: [status, completionTime]
-                  nilIsZero: true
+
