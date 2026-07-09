@@ -25,6 +25,7 @@ import (
 	pacv1alpha1 "github.com/openshift-pipelines/pipelines-as-code/pkg/apis/pipelinesascode/v1alpha1"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -596,4 +597,92 @@ func cleanupTestResources(fw *framework.Framework, tenants []Tenant) {
 	}
 
 	Expect(errs).Should(BeEmpty(), "cleanup encountered %d errors", len(errs))
+}
+
+// ---------------------------------------------------------------------------
+// Image-controller egress blocking — protects Quay resources during DR drills
+// ---------------------------------------------------------------------------
+//
+// During a DR drill, `oc delete project` triggers the image-controller
+// finalizer on ImageRepository CRs, which deletes Quay robot accounts and
+// repositories. After Velero restore, the push secrets contain credentials
+// for non-existent robot accounts, causing trusted-artifact pushes to fail.
+//
+// The fix (validated in KFLUXINFRA-3954): block image-controller egress
+// before namespace deletion so it cannot reach Quay. The Velero resource
+// modifier strips ImageRepository finalizers during restore, so unblocking
+// egress after restore is safe — there are no finalizers left to trigger.
+
+const (
+	// ImageControllerNamespace is where the image-controller pods run.
+	ImageControllerNamespace = "image-controller"
+
+	// drEgressBlockPolicyName is the NetworkPolicy CR name used to block
+	// image-controller egress during disaster simulation.
+	drEgressBlockPolicyName = "dr-block-image-controller-egress"
+)
+
+// blockImageControllerEgress creates a NetworkPolicy in the image-controller
+// namespace that denies all egress from the controller pods. This prevents
+// the controller from deleting Quay robot accounts when the ImageRepository
+// finalizer fires during namespace deletion.
+func blockImageControllerEgress(fw *framework.Framework) {
+	GinkgoHelper()
+
+	By("Blocking image-controller egress to preserve Quay resources during namespace deletion")
+
+	policy := &networkingv1.NetworkPolicy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      drEgressBlockPolicyName,
+			Namespace: ImageControllerNamespace,
+		},
+		Spec: networkingv1.NetworkPolicySpec{
+			PodSelector: metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					"control-plane": "controller-manager",
+				},
+			},
+			PolicyTypes: []networkingv1.PolicyType{
+				networkingv1.PolicyTypeEgress,
+			},
+			// Empty Egress slice = deny all egress.
+			Egress: []networkingv1.NetworkPolicyEgressRule{},
+		},
+	}
+
+	err := fw.AsKubeAdmin.CommonController.KubeRest().Create(context.Background(), policy)
+	Expect(err).ShouldNot(HaveOccurred(),
+		"failed to create egress-blocking NetworkPolicy in %s", ImageControllerNamespace)
+
+	GinkgoWriter.Printf("Created NetworkPolicy %s/%s — image-controller egress blocked\n",
+		ImageControllerNamespace, drEgressBlockPolicyName)
+}
+
+// unblockImageControllerEgress removes the egress-blocking NetworkPolicy,
+// restoring normal image-controller operations. Safe to call after Velero
+// restore because the resource modifier has already stripped ImageRepository
+// finalizers.
+func unblockImageControllerEgress(fw *framework.Framework) {
+	GinkgoHelper()
+
+	By("Removing image-controller egress block — restoring normal operations")
+
+	policy := &networkingv1.NetworkPolicy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      drEgressBlockPolicyName,
+			Namespace: ImageControllerNamespace,
+		},
+	}
+
+	err := fw.AsKubeAdmin.CommonController.KubeRest().Delete(context.Background(), policy)
+	if k8sErrors.IsNotFound(err) {
+		GinkgoWriter.Printf("NetworkPolicy %s/%s already absent — nothing to remove\n",
+			ImageControllerNamespace, drEgressBlockPolicyName)
+		return
+	}
+	Expect(err).ShouldNot(HaveOccurred(),
+		"failed to delete egress-blocking NetworkPolicy from %s", ImageControllerNamespace)
+
+	GinkgoWriter.Printf("Deleted NetworkPolicy %s/%s — image-controller egress restored\n",
+		ImageControllerNamespace, drEgressBlockPolicyName)
 }
