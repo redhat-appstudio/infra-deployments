@@ -1,0 +1,113 @@
+# Workaround for the bug in the operator: https://github.com/grafana/grafana-operator/issues/2552
+# This should run once after operator is deployed so that the installplan is approved automatically
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: approve-installplan
+  namespace: appstudio-grafana
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/sync-wave: "-1"
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: approve-installplan
+  namespace: appstudio-grafana
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/sync-wave: "-1"
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+rules:
+- apiGroups:
+  - operators.coreos.com
+  resources:
+  - installplans
+  verbs:
+  - get
+  - list
+  - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: approve-installplan
+  namespace: appstudio-grafana
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/sync-wave: "-1"
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: approve-installplan
+subjects:
+- kind: ServiceAccount
+  name: approve-installplan
+  namespace: appstudio-grafana
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: approve-grafana-installplan
+  namespace: appstudio-grafana
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/sync-wave: "-1"
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded, BeforeHookCreation
+spec:
+  backoffLimit: 5
+  template:
+    spec:
+      serviceAccountName: approve-installplan
+      containers:
+      - name: approve
+        image: registry.redhat.io/openshift4/ose-cli:v4.12
+        securityContext:
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+        env:
+        - name: TARGET_CSV
+          value: grafana-operator.v5.21.2
+        command:
+        - /bin/bash
+        - -c
+        - |
+          for i in $(seq 1 60); do
+            # Check if already approved, if not approve it
+            APPROVED=$(
+              oc get installplan -n appstudio-grafana \
+                -o jsonpath='{range .items[?(@.spec.approved==true)]}{.spec.clusterServiceVersionNames[0]}{"\n"}{end}' \
+              | awk -v target="$TARGET_CSV" '$1 == target {print $1; exit}'
+            )
+            if [ -n "$APPROVED" ]; then
+              echo "InstallPlan for $TARGET_CSV is already approved"
+              exit 0
+            fi
+
+            # Check for unapproved plan to approve
+            PLAN_NAME=$(
+              oc get installplan -n appstudio-grafana \
+                -o jsonpath='{range .items[?(@.spec.approved==false)]}{.metadata.name}{" "}{.spec.clusterServiceVersionNames[0]}{"\n"}{end}' \
+              | awk -v target="$TARGET_CSV" '$2 == target {print $1; exit}'
+            )
+            if [ -n "$PLAN_NAME" ]; then
+              echo "Approving InstallPlan $PLAN_NAME for $TARGET_CSV"
+              oc patch installplan "$PLAN_NAME" -n appstudio-grafana --type merge -p '{"spec":{"approved":true}}'
+              exit 0
+            fi
+
+            echo "Waiting for InstallPlan for $TARGET_CSV... ($i/60)"
+            sleep 5
+          done
+          echo "No InstallPlan found for $TARGET_CSV"
+          exit 1
+      restartPolicy: Never
