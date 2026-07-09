@@ -228,8 +228,8 @@ func waitForPipelineChains(fw *framework.Framework, tenants []Tenant,
 //
 // The method:
 //  1. Snapshots current per-component PipelineRun counts.
-//  2. For each tenant: creates a branch, appends a timestamp to README.md,
-//     opens a PR on the tenant's fork repo.
+//  2. For each tenant: creates a branch, appends a comment to each component's
+//     Dockerfile (matching PaC .pathChanged() filters), opens a PR on the fork.
 //  3. Waits for new build and test PipelineRuns per component (parallel).
 //  4. Waits for new release PipelineRuns (aggregate).
 //  5. Cleans up the branches (which closes the PRs).
@@ -292,19 +292,23 @@ func triggerBuildsAndVerify(fw *framework.Framework, tenants []Tenant) {
 			}
 		}(t.ForkRepoName, branchName)
 
-		readmeFile, err := ghClient.GetFile(t.ForkRepoName, "README.md", branchName)
-		Expect(err).ShouldNot(HaveOccurred(),
-			"failed to get README.md from branch %s in %s", branchName, t.ForkRepoName)
+		// Modify each component's Dockerfile so PaC's per-component
+		// .pathChanged() CEL expressions match.
+		for _, comp := range Components {
+			dfPath := comp.ContextDir + "/Dockerfile"
+			dfFile, err := ghClient.GetFile(t.ForkRepoName, dfPath, branchName)
+			Expect(err).ShouldNot(HaveOccurred(),
+				"failed to get %s from branch %s in %s", dfPath, branchName, t.ForkRepoName)
 
-		existingContent, err := readmeFile.GetContent()
-		Expect(err).ShouldNot(HaveOccurred(), "failed to decode README.md content")
+			dfContent, err := dfFile.GetContent()
+			Expect(err).ShouldNot(HaveOccurred(), "failed to decode %s content", dfPath)
 
-		updatedContent := existingContent + fmt.Sprintf("\n<!-- DR test trigger %s: %d -->\n",
-			t.AppName, time.Now().Unix())
-		_, err = ghClient.UpdateFile(t.ForkRepoName, "README.md",
-			updatedContent, branchName, readmeFile.GetSHA())
-		Expect(err).ShouldNot(HaveOccurred(),
-			"failed to update README.md on branch %s in %s", branchName, t.ForkRepoName)
+			dfContent += fmt.Sprintf("\n# DR trigger %s %d\n", t.AppName, time.Now().Unix())
+			_, err = ghClient.UpdateFile(t.ForkRepoName, dfPath,
+				dfContent, branchName, dfFile.GetSHA())
+			Expect(err).ShouldNot(HaveOccurred(),
+				"failed to update %s on branch %s in %s", dfPath, branchName, t.ForkRepoName)
+		}
 
 		pr, err := ghClient.CreatePullRequest(t.ForkRepoName,
 			fmt.Sprintf("DR test: trigger builds for %s", t.AppName),
