@@ -89,7 +89,16 @@ func defineSameVersionSpecs() {
 		})
 
 		// Phase 3: Simulate disaster by deleting tenant namespaces.
+		// Block image-controller egress first so that the ImageRepository
+		// finalizer cannot delete Quay robot accounts during namespace
+		// deletion. Without this, restored push secrets reference
+		// non-existent robot accounts and trusted-artifact pushes fail.
+		// See KFLUXINFRA-3954.
 		When("simulating disaster by deleting namespaces", func() {
+			It("should block image-controller egress to preserve Quay resources", func() {
+				blockImageControllerEgress(fw)
+			})
+
 			It("should delete both tenant namespaces", func() {
 				for _, t := range svTenants {
 					deleteNamespace(fw, t.Namespace)
@@ -105,6 +114,10 @@ func defineSameVersionSpecs() {
 
 			It("should restore tenant-2 (MosheKipod) via oc command method", func() {
 				restoreFromBackup(fw, SVTenant2, RestoreMethodOCCommand)
+			})
+
+			It("should unblock image-controller egress after restore", func() {
+				unblockImageControllerEgress(fw)
 			})
 		})
 
