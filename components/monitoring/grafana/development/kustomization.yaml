@@ -1,8 +1,12 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - ../base
+  - grafana-operator.yaml
+  - approve-installplan.yaml
+  - grafana-app.yaml
+  - rbac/
   - dashboards
+  - https://github.com/redhat-appstudio/o11y/config/probes/monitoring/grafana/base?ref=ff478366bb92b0a9d7e4eb1625194e0cce138185
   - https://github.com/redhat-appstudio/o11y/config/exporters/monitoring/grafana/base?ref=0d3c45516968bffb24196952c3273cebd6df5d4f
 
 images:
