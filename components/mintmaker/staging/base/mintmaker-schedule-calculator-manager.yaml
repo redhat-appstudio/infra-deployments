@@ -21,12 +21,18 @@ rules:
       - watch
   - apiGroups:
       - ''
+    resources:
+      - configmaps
+    verbs:
+      - create
+  - apiGroups:
+      - ''
     resourceNames:
       - mintmaker-schedule-calculator-results
     resources:
       - configmaps
     verbs:
-      - create
+      - update
       - delete
   - apiGroups:
       - batch
