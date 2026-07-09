@@ -116,10 +116,6 @@ cel:
         pipelineRun.metadata.labels['appstudio.openshift.io/service'] == 'release' &&
         'release.appstudio.openshift.io/namespace' in pipelineRun.metadata.labels &&
         pipelineRun.metadata.labels['release.appstudio.openshift.io/namespace'] == plrNamespace ?
-        [resource('konflux-release', 1)] :
-
-        has(pipelineRun.metadata.labels) &&
-        'internal-services.appstudio.openshift.io/pipelinerun-uid' in pipelineRun.metadata.labels ?
         [resource('konflux-release', 1)] : []
 
     # The token mechanism allows us to balance admitted PipelineRuns.
@@ -137,15 +133,15 @@ cel:
     # * 200 Build PipelineRuns + 200 Non-Build PipelineRuns
     # * 100 Build PipelineRuns + 400 Non-Build PipelineRuns
     # * 600 Non-Build PipelineRuns
+    #
+    #
+    # WARNING: As a temporary measure, we are using tokens to provide a priority lane
+    # for internal-services PLRs. They'll be removed in some time and moved to the
+    # common clusters.
     - |
-        pacEventType == 'push' ||
-          pacEventType == 'pull_request' ||
-          pacEventType == "Merge_Request" ||
-          pacEventType == 'test-comment' ||
-          pacEventType == 'retest-comment' ||
-          pacEventType == 'retest-all-comment' ||
-          pacEventType == 'ok-to-test-comment'  ? resource('konflux-ci-dev-token', 2) :
-        resource('konflux-ci-dev-token', 1)
+        has(pipelineRun.metadata.labels) &&
+        'internal-services.appstudio.openshift.io/pipelinerun-uid' in pipelineRun.metadata.labels ?
+        [] : [resource('konflux-ci-dev-token', 1)]
 
     # Set the pipeline priority
     - |
