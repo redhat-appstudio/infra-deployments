@@ -9,8 +9,8 @@ Note: The steps below should be handled by Argo CD
     $ oc create namespace appstudio-kanary-exporter
     ```
 
-- Create the `base` resources by running the following command:
+- Create the Grafana resources by running the following command:
 
     ```
-    $ kustomize build components/monitoring/grafana/base | oc apply -f -   
+    $ kustomize build components/monitoring/grafana/development | oc apply -f -   
     ```
