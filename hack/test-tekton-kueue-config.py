@@ -1543,10 +1543,7 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
         "pipelinerun_key": "internal_pipelinerun_child",
         "config_key": "production-kflux-ocp-p01",
         "expected": {
-            "annotations": {
-                "kueue.konflux-ci.dev/requests-konflux-ci-dev-token": "1",
-                "kueue.konflux-ci.dev/requests-konflux-release": "1",
-            },
+            "annotations": {},
             "labels": {
                 "kueue.x-k8s.io/queue-name": "pipelines-queue",
                 "kueue.x-k8s.io/priority-class": "konflux-release"
@@ -1695,10 +1692,7 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
         "pipelinerun_key": "internal_pipelinerun_child",
         "config_key": "production-stone-prod-p02",
         "expected": {
-            "annotations": {
-                "kueue.konflux-ci.dev/requests-konflux-ci-dev-token": "1",
-                "kueue.konflux-ci.dev/requests-konflux-release": "1",
-            },
+            "annotations": {},
             "labels": {
                 "kueue.x-k8s.io/queue-name": "pipelines-queue",
                 "kueue.x-k8s.io/priority-class": "konflux-release"
@@ -1742,10 +1736,7 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
         "pipelinerun_key": "internal_pipelinerun_child",
         "config_key": "production-kflux-rhel-p01",
         "expected": {
-            "annotations": {
-                "kueue.konflux-ci.dev/requests-konflux-ci-dev-token": "1",
-                "kueue.konflux-ci.dev/requests-konflux-release": "1",
-            },
+            "annotations": {},
             "labels": {
                 "kueue.x-k8s.io/queue-name": "pipelines-queue",
                 "kueue.x-k8s.io/priority-class": "konflux-release"
