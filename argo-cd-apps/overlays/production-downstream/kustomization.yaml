@@ -1,7 +1,12 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - ../konflux-public-staging
+  - ../../base/member
+  - ../../base/all-clusters
+  - ../../base/backup
+  - ../../base/quality-dashboard
+  - ../../base/eaas
+  - ../../base/monitoring-blackbox
   - ../../base/smee-client
   - ../../base/ca-bundle
   - ../../base/repository-validator
