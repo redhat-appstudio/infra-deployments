@@ -2074,7 +2074,7 @@ metadata:
   namespace: openshift-marketplace
 spec:
   displayName: custom-operators
-  image: quay.io/openshift-pipeline/pipelines-index-4.18@sha256:a4aa211a70b0a92c98c885cca8fed2cce490e3fec656ad1ea68bf7e7c3c18304
+  image: quay.io/openshift-pipeline/pipelines-index-4.19@sha256:d33de5fb02ab99f6d93bdec9592400d0c8fd2622354446c4c043fa1dcba4e72e
   sourceType: grpc
   updateStrategy:
     registryPoll:
@@ -2097,20 +2097,6 @@ spec:
     env:
       - name: AUTOINSTALL_COMPONENTS
         value: "false"
-      # TODO: remove these when upgrading to a bundle including Pipelines as Code v0.48.0+
-      - name: IMAGE_PAC_PAC_CONTROLLER
-        value: "quay.io/openshift-pipeline/pipelines-pipelines-as-code-controller-rhel9@sha256:1b1e365cfdcc85646d5890232a04bad8c7ba9ebb0db36042eeda5961f8106567"
-      - name: IMAGE_PAC_PAC_WEBHOOK
-        value: "quay.io/openshift-pipeline/pipelines-pipelines-as-code-webhook-rhel9@sha256:0ccda15a17a405020fa199b3dce4a630e592da9dfdbd9778be1dcc9f4bdc3fbd"
-      - name: IMAGE_PAC_PAC_WATCHER
-        value: "quay.io/openshift-pipeline/pipelines-pipelines-as-code-watcher-rhel9@sha256:d100578068feb5482e2631b4fadc80b9687f129c7e303b55431ac41ce58f7758"
-      - name: IMAGE_PAC_PAC_CLI
-        value: "quay.io/openshift-pipeline/pipelines-pipelines-as-code-cli-rhel9@sha256:0fc0dd05236f14265e25cc770a7f9f3aeea2e27964a730dac39cf9f61d349bde"
-      # TODO: Remove this once Pipelines 1.13.x is deployed
-      # NOTE: IMAGE_PIPELINES_CONTROLLER is the image used specifically by the resolvers,
-      # the pipelines-controller uses IMAGE_PIPELINES_TEKTON_PIPELINES_CONTROLLER
-      - name: IMAGE_PIPELINES_CONTROLLER
-        value: "quay.io/openshift-pipeline/pipelines-resolvers-rhel9@sha256:7cd91bc4c0f3469ec4c39d08d818b00c90ce07456364910e49ad5e1430f3110a"
 
 ---
 apiVersion: route.openshift.io/v1
