@@ -1,0 +1,63 @@
+apiVersion: builtin
+kind: HelmChartInflationGenerator
+metadata:
+  name: caching-helm
+name: caching-helm
+repo: oci://quay.io/konflux-ci/caching
+version: 0.1.1688+a7def07
+valuesInline:
+  squid:
+    enabled: false
+  nginx:
+    enabled: true
+    name: artifact-registry-proxy
+    tls:
+      enabled: true
+      secretName: artifact-registry-proxy-tls
+    service:
+      trafficDistribution: PreferClose
+      annotations:
+        service.beta.openshift.io/serving-cert-secret-name: artifact-registry-proxy-tls
+    upstream:
+      # No nexus instance in development, use standard Go module proxy
+      url: https://proxy.golang.org
+    cache:
+      allowList:
+        - ^/.+/@v/.* # <module>/@v/<version>.info|.mod|.zip and <module>/@v/list
+        - ^/sumdb/.* # checksum database (e.g. sum.golang.org)
+      size: 1024
+      ttl: 30d
+    resources:
+      requests:
+        cpu: "1"
+        memory: 1Gi
+      limits:
+        cpu: "2"
+        memory: 2Gi
+  installCertManagerComponents: false
+  mirrord:
+    enabled: false
+  test:
+    enabled: false
+  cert-manager:
+    enabled: false
+  environment: release
+  prometheus:
+    serviceMonitor:
+      nginxTLS:
+        ca:
+          configMapName: openshift-service-ca.crt
+          key: service-ca.crt
+  tlsOutgoingOptions:
+    caFile: /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
+  volumes:
+    - name: trusted-ca
+      configMap:
+        name: trusted-ca
+        items:
+          - key: ca-bundle.crt
+            path: tls-ca-bundle.pem
+  volumeMounts:
+    - name: trusted-ca
+      mountPath: /etc/pki/ca-trust/extracted/pem
+      readOnly: true
