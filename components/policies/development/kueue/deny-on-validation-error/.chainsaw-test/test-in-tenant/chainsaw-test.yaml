@@ -1,0 +1,92 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: in-tenant-deny-pipelinerun-with-validation-error
+spec:
+  description: |
+    denies a PipelineRun that has the tekton-kueue validation-error
+    annotation in a tenant namespace
+  concurrent: false
+  steps:
+  - name: given-pipelineruns-crd-exists
+    try:
+    - apply:
+        file: ../resources/pipelineruns.tekton.dev_customresourcedefinition.yaml
+    - assert:
+        file: ../chainsaw-assert-pipelineruns-crd.yaml
+  - name: ensure-namespace-is-labeled
+    try:
+    - apply:
+        resource:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: ($namespace)
+            labels:
+              konflux-ci.dev/type: tenant
+  - name: given-validatingadmissionpolicy-is-installed
+    try:
+    - apply:
+        file: ../../deny-on-validation-error-validatingadmissionpolicy.yaml
+    - apply:
+        file: ../../deny-on-validation-error-validatingadmissionpolicybinding.yaml
+    - assert:
+        file: ../chainsaw-assert-policy.yaml
+  - name: then-pipelinerun-with-validation-error-is-denied
+    try:
+    - create:
+        file: ../resources/pipelinerun_with_validation_error.yaml
+        expect:
+          - check:
+              ($error != null): true
+              ($error): |-
+                pipelineruns.tekton.dev "pipelinerun-with-validation-error" is forbidden: ValidatingAdmissionPolicy 'deny-on-validation-error.kueue.konflux-ci.dev' with binding 'deny-on-validation-error.kueue.konflux-ci.dev' denied request: PipelineRun validation failed: build-platforms parameter must be an array of platform strings, got a non-array value
+    - create:
+        file: ../resources/pipelinerun_with_custom_validation_error.yaml
+        expect:
+          - check:
+              ($error != null): true
+              ($error): |-
+                pipelineruns.tekton.dev "pipelinerun-with-validation-error" is forbidden: ValidatingAdmissionPolicy 'deny-on-validation-error.kueue.konflux-ci.dev' with binding 'deny-on-validation-error.kueue.konflux-ci.dev' denied request: PipelineRun validation failed: custom error
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: in-tenant-allow-pipelinerun-without-validation-error
+spec:
+  description: |
+    allows a PipelineRun that does not have the tekton-kueue
+    validation-error annotation in a tenant namespace
+  concurrent: false
+  steps:
+  - name: given-pipelineruns-crd-exists
+    try:
+    - apply:
+        file: ../resources/pipelineruns.tekton.dev_customresourcedefinition.yaml
+    - assert:
+        file: ../chainsaw-assert-pipelineruns-crd.yaml
+  - name: ensure-namespace-is-labeled
+    try:
+    - apply:
+        resource:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: ($namespace)
+            labels:
+              konflux-ci.dev/type: tenant
+  - name: given-validatingadmissionpolicy-is-installed
+    try:
+    - apply:
+        file: ../../deny-on-validation-error-validatingadmissionpolicy.yaml
+    - apply:
+        file: ../../deny-on-validation-error-validatingadmissionpolicybinding.yaml
+    - assert:
+        file: ../chainsaw-assert-policy.yaml
+  - name: then-pipelinerun-without-validation-error-is-allowed
+    try:
+    - create:
+        file: ../resources/pipelinerun_without_validation_error.yaml

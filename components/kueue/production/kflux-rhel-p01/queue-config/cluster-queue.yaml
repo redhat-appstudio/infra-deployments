@@ -16,14 +16,18 @@ spec:
   resourceGroups:
   - coveredResources:
     - tekton.dev/pipelineruns
+    - konflux-ci-dev-token
     - cpu
     - memory
     - aws-ip
     - mintmaker
+    - konflux-release
     flavors:
     - name: default-flavor
       resources:
       - name: tekton.dev/pipelineruns
+        nominalQuota: '400'
+      - name: konflux-ci-dev-token
         nominalQuota: '300'
       - name: cpu
         nominalQuota: 1k
@@ -33,6 +37,8 @@ spec:
         nominalQuota: '250'
       - name: mintmaker
         nominalQuota: '150'
+      - name: konflux-release
+        nominalQuota: '100'
   - coveredResources:
     - linux-amd64
     - linux-arm64

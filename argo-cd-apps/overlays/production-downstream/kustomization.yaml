@@ -1,7 +1,12 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - ../konflux-public-staging
+  - ../../base/member
+  - ../../base/all-clusters
+  - ../../base/backup
+  - ../../base/quality-dashboard
+  - ../../base/eaas
+  - ../../base/monitoring-blackbox
   - ../../base/smee-client
   - ../../base/ca-bundle
   - ../../base/repository-validator
@@ -50,11 +55,6 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: cluster-secret-store
-  - path: production-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: tekton-ci
   - path: production-overlay-patch.yaml
     target:
       kind: ApplicationSet
@@ -140,12 +140,12 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: cluster-as-a-service
-  - path: production-overlay-patch.yaml
+  - path: production-tracing-overlay-patch.yaml
     target:
       kind: ApplicationSet
       version: v1alpha1
       name: tracing-workload-otel-collector
-  - path: production-overlay-patch.yaml
+  - path: production-tracing-overlay-patch.yaml
     target:
       kind: ApplicationSet
       version: v1alpha1
@@ -300,3 +300,18 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: k8s-groups
+  - path: production-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: application-api
+  - path: production-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: internal-services
+  - path: production-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: monitoring-workload-konflux-o11y-kaexporter

@@ -326,6 +326,18 @@ rules:
   - update
   - watch
 - apiGroups:
+  - operator.tekton.dev
+  resources:
+  - tektoninstallersets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - ""
   resources:
   - nodes
@@ -2332,6 +2344,7 @@ spec:
                 requests:
                   memory: "256Mi"
                   cpu: "100m"
+            default-imagepullbackoff-timeout: 15m
             default-pod-template: |
               nodeSelector:
                 konflux-ci.dev/workload: konflux-tenants
@@ -2441,17 +2454,7 @@ spec:
                       memory: 8Gi
         tekton-events-controller:
           spec:
-            template:
-              spec:
-                containers:
-                - name: tekton-events-controller
-                  resources:
-                    limits:
-                      cpu: 200m
-                      memory: 256Mi
-                    requests:
-                      cpu: 200m
-                      memory: 256Mi
+            replicas: 0
         tekton-operator-proxy-webhook:
           spec:
             replicas: 2

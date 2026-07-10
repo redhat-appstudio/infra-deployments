@@ -4,7 +4,8 @@ cel:
     # Set resource requests for multi platform pipelines
     - |
         has(pipelineRun.spec.params) &&
-        pipelineRun.spec.params.exists(p, p.name == 'build-platforms') ?
+        pipelineRun.spec.params.exists(p, p.name == 'build-platforms') &&
+        type(pipelineRun.spec.params.filter(p, p.name == 'build-platforms')[0].value) == list ?
         pipelineRun.spec.params.filter(
           p,
           p.name == 'build-platforms')[0]
@@ -16,7 +17,8 @@ cel:
     # Request AWS IP for AWS-based platforms
     - |
         has(pipelineRun.spec.params) &&
-        pipelineRun.spec.params.exists(p, p.name == 'build-platforms') ?
+        pipelineRun.spec.params.exists(p, p.name == 'build-platforms') &&
+        type(pipelineRun.spec.params.filter(p, p.name == 'build-platforms')[0].value) == list ?
         pipelineRun.spec.params.filter(
           p,
           p.name == 'build-platforms')[0]
@@ -35,6 +37,14 @@ cel:
           p,
           resource('aws-ip', 1)
         ) : []
+
+    # Flag validation error when build-platforms is present but not a list
+    - |
+        has(pipelineRun.spec.params) &&
+        pipelineRun.spec.params.exists(p, p.name == 'build-platforms') &&
+        type(pipelineRun.spec.params.filter(p, p.name == 'build-platforms')[0].value) != list ?
+        [annotation('tekton-kueue.konflux-ci.dev/validation-error',
+          'build-platforms parameter must be an array of platform strings, got a non-array value')] : []
 
     # Set resource requests for multi platform pipelines which doesn't use the build-platforms parameter (old style)
     - |
@@ -106,10 +116,6 @@ cel:
         pipelineRun.metadata.labels['appstudio.openshift.io/service'] == 'release' &&
         'release.appstudio.openshift.io/namespace' in pipelineRun.metadata.labels &&
         pipelineRun.metadata.labels['release.appstudio.openshift.io/namespace'] == plrNamespace ?
-        [resource('konflux-release', 1)] :
-
-        has(pipelineRun.metadata.labels) &&
-        'internal-services.appstudio.openshift.io/pipelinerun-uid' in pipelineRun.metadata.labels ?
         [resource('konflux-release', 1)] : []
 
     # The token mechanism allows us to balance admitted PipelineRuns.
@@ -127,21 +133,21 @@ cel:
     # * 200 Build PipelineRuns + 200 Non-Build PipelineRuns
     # * 100 Build PipelineRuns + 400 Non-Build PipelineRuns
     # * 600 Non-Build PipelineRuns
+    #
+    #
+    # WARNING: As a temporary measure, we are using tokens to provide a priority lane
+    # for internal-services PLRs. They'll be removed in some time and moved to the
+    # common clusters.
     - |
-        pacEventType == 'push' ||
-          pacEventType == 'pull_request' ||
-          pacEventType == "Merge_Request" ||
-          pacEventType == 'test-comment' ||
-          pacEventType == 'retest-comment' ||
-          pacEventType == 'retest-all-comment' ||
-          pacEventType == 'ok-to-test-comment'  ? resource('konflux-ci-dev-token', 2) :
-        resource('konflux-ci-dev-token', 1)
+        has(pipelineRun.metadata.labels) &&
+        'internal-services.appstudio.openshift.io/pipelinerun-uid' in pipelineRun.metadata.labels ?
+        [] : [resource('konflux-ci-dev-token', 1)]
 
     # Set the pipeline priority
     - |
         has(pipelineRun.metadata.labels) &&
-        'build.appstudio.openshift.io/type' in pipelineRun.metadata.labels &&
-        pipelineRun.metadata.labels['build.appstudio.openshift.io/type'] == 'nudge' ?
+        'build.appstudio.redhat.com/type' in pipelineRun.metadata.labels &&
+        pipelineRun.metadata.labels['build.appstudio.redhat.com/type'] == 'nudge' ?
         priority('konflux-nudge') :
 
         pacEventType == 'push' ? priority('konflux-post-merge-build') :

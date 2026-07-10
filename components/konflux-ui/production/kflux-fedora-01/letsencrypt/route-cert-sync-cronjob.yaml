@@ -1,0 +1,159 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: konflux-ci-route-cert-sync
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: konflux-ci-route-cert-sync
+rules:
+  - apiGroups:
+      - ""
+    resourceNames:
+      - konflux-ci-certificate
+    resources:
+      - secrets
+    verbs:
+      - get
+  - apiGroups:
+      - route.openshift.io
+    resourceNames:
+      - konflux-nice
+      - konflux-nice-idp
+    resources:
+      - routes
+    verbs:
+      - get
+      - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: konflux-ci-route-cert-sync
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: konflux-ci-route-cert-sync
+subjects:
+  - kind: ServiceAccount
+    name: konflux-ci-route-cert-sync
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: konflux-ci-route-cert-sync
+spec:
+  schedule: "0 6 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 300
+      backoffLimit: 2
+      template:
+        spec:
+          serviceAccountName: konflux-ci-route-cert-sync
+          restartPolicy: OnFailure
+          securityContext:
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: sync
+              image: registry.redhat.io/openshift4/ose-cli:v4.12
+              env:
+                - name: POD_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -eu
+                  python3 <<'PY'
+                  import base64
+                  import json
+                  import os
+                  import subprocess
+                  import sys
+
+                  NS = os.environ["POD_NAMESPACE"]
+                  SECRET = "konflux-ci-certificate"
+                  ROUTES = ("konflux-nice", "konflux-nice-idp")
+                  OC_TIMEOUT = 60
+
+
+                  def oc(*args):
+                      cmd = ["oc", *args]
+                      try:
+                          return subprocess.run(
+                              cmd,
+                              capture_output=True,
+                              text=True,
+                              check=True,
+                              timeout=OC_TIMEOUT,
+                          )
+                      except subprocess.TimeoutExpired as exc:
+                          print(
+                              f"timeout after {OC_TIMEOUT}s: {' '.join(cmd)}",
+                              file=sys.stderr,
+                          )
+                          print(
+                              "command output omitted from logs to avoid leaking TLS material",
+                              file=sys.stderr,
+                          )
+                          raise SystemExit(1) from exc
+
+
+                  secret = json.loads(
+                      oc("get", "secret", SECRET, "-n", NS, "-o", "json").stdout
+                  )
+                  cert = base64.b64decode(secret["data"]["tls.crt"]).decode()
+                  key = base64.b64decode(secret["data"]["tls.key"]).decode()
+                  patch = json.dumps({"spec": {"tls": {"certificate": cert, "key": key}}})
+
+                  updated = 0
+                  for route in ROUTES:
+                      current = oc("get", "route", route, "-n", NS, "-o", "json").stdout
+                      route_cert = (
+                          json.loads(current)
+                          .get("spec", {})
+                          .get("tls", {})
+                          .get("certificate", "")
+                      )
+                      if route_cert.strip() == cert.strip():
+                          print(f"{route}: already in sync")
+                          continue
+                      oc(
+                          "patch",
+                          "route",
+                          route,
+                          "-n",
+                          NS,
+                          "--type=merge",
+                          "-p",
+                          patch,
+                      )
+                      print(f"{route}: updated")
+                      updated += 1
+
+                  print(f"done: {updated} route(s) updated")
+                  PY
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  cpu: 100m
+                  memory: 128Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+                readOnlyRootFilesystem: true
+                runAsNonRoot: true

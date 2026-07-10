@@ -29,6 +29,6 @@ connectors:
       # OpenShift API
       issuer: https://api.stone-stage-p01.hpmt.p1.openshiftapps.com:6443
       # Credentials can be string literals or pulled from the environment.
-      clientID: system:serviceaccount:konflux-ui:dex-client
+      clientID: $OPENSHIFT_OAUTH_CLIENT_ID
       clientSecret: $OPENSHIFT_OAUTH_CLIENT_SECRET
       redirectURI: https://konflux-ui.apps.stone-stage-p01.hpmt.p1.openshiftapps.com/idp/callback

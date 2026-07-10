@@ -1938,6 +1938,7 @@ spec:
                   value: "konflux-tenants"
                   effect: "NoSchedule"
             default-timeout-minutes: "120"
+            default-imagepullbackoff-timeout: "15m"
       deployments:
         tekton-operator-proxy-webhook:
           spec:
@@ -2033,17 +2034,7 @@ spec:
                         memory: 128Mi
         tekton-events-controller:
           spec:
-            template:
-              spec:
-                containers:
-                  - name: tekton-events-controller
-                    resources:
-                      limits:
-                        cpu: 100m
-                        memory: 100Mi
-                      requests:
-                        cpu: 50m
-                        memory: 64Mi
+            replicas: 0
         tekton-triggers-controller:
           spec:
             template:

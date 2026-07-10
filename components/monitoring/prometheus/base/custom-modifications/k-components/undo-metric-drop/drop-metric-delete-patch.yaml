@@ -1,7 +1,0 @@
-# openshift-pipelines namespace does not exist in EaaS clusters. This patch will stop ArgoCD from synclooping.
-$patch: delete
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
-  name: openshift-pipelines-monitor
-  namespace: openshift-pipelines

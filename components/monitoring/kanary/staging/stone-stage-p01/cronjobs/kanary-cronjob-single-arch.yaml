@@ -3,7 +3,7 @@ kind: CronJob
 metadata:
   name: kanary-trigger-single-arch
 spec:
-  schedule: "0 * * * *"
+  schedule: "0,30 * * * *"
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
@@ -39,7 +39,8 @@ spec:
                     --param quay-repo=redhat-user-workloads-stage \
                     --param pipeline-repo-templating-source=https://github.com/rhtap-perf-test/konflux-probe-test-templates \
                     --param pipeline-repo-templating-source-dir=nodejs-devfile-sample-SingleArch/ \
-                    --param release-pipeline-service-account=loadtest-probe-serviceaccount \
+                    --param release-pipeline-service-account=managed-konflux-perfscale-sa \
+                    --param release-managed-namespace=managed-konflux-perfscale-tenant \
                     --param fork-target=jhutar \
                     --param gitlab-api-url=https://gitlab.cee.redhat.com/api/v4 \
                     --param member-cluster=https://api.stone-stage-p01.hpmt.p1.openshiftapps.com:6443 \

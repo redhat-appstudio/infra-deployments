@@ -8,18 +8,18 @@ resources:
 - ../../base/external-secrets
 - ../blackbox
 - plrs-resource-quota.yaml
-- https://github.com/konflux-ci/mintmaker/config/default?ref=cca09d9f397c274c60f37c9a6fe2117d44048a06
-- https://github.com/konflux-ci/mintmaker/config/renovate?ref=cca09d9f397c274c60f37c9a6fe2117d44048a06
+- https://github.com/konflux-ci/mintmaker/config/default?ref=7bc5ca7e6ecd17749926284e491173bc90b2222d
+- https://github.com/konflux-ci/mintmaker/config/renovate?ref=7bc5ca7e6ecd17749926284e491173bc90b2222d
 
 namespace: mintmaker
 
 images:
 - name: quay.io/konflux-ci/mintmaker
   newName: quay.io/konflux-ci/mintmaker
-  newTag: cca09d9f397c274c60f37c9a6fe2117d44048a06
+  newTag: 7bc5ca7e6ecd17749926284e491173bc90b2222d
 - name: quay.io/konflux-ci/mintmaker-renovate-image
   newName: quay.io/konflux-ci/mintmaker-renovate-image
-  newTag: 7ec5e69c873f874c267fd33ff30e5d5de7564de9
+  newTag: 6d4fe394b5d555736285e610cdd91d901c1eec16
 
 commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
@@ -33,7 +33,6 @@ patches:
   - path: manager-mount-config-patch.yaml
   - path: manager-set-resources-patch.yaml
   - path: manager-enable-pprof-patch.yaml
-  - path: suspend-dependency-check-patch.yaml
 
 configurations:
 - kustomizeconfig.yaml
