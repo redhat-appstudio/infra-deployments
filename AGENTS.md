@@ -33,7 +33,7 @@ GitOps monorepo deploying 50+ Kubernetes components across multiple clusters via
 
 - E2E tests are designed to validate in an isolated environment in GitHub Actions CI and should not be run locally
 - E2E tests are conditional — they only run on dev/staging PRs when specific files change. Production PRs do not run E2E; rely on prior dev/staging validation
-- E2E tests frequently fail due to intermittent infrastructure issues. If the PR looks correct and E2E logs show no relevant errors, comment `/retest` to re-trigger
+- E2E tests frequently fail due to intermittent infrastructure issues. If the PR looks correct and E2E logs show no relevant errors, comment `/retest` to re-trigger Prow checks, or `/rerun` to re-trigger failed GitHub Actions checks
 - When updating component images, also update image references in `hack/new-cluster/templates/` as part of the production ring deployments — new clusters are bootstrapped from these and won't get ArgoCD-synced versions
 
 ## Skills

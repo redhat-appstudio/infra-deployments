@@ -113,7 +113,8 @@ Mention the results in the Validation section of the PR body.
 
 **E2E test caveats:**
 - Chainsaw tests can be run locally — use `hack/chainsaw/chainsaw-prepare.sh` to set up a Kind cluster with Kyverno, then `chainsaw test <path>`.
-- E2E tests frequently fail in CI due to intermittent infrastructure issues. If the PR looks correct and logs show no relevant errors, comment `/retest` to re-trigger.
+- Flaky **GitHub Actions** checks (yamllint, chainsaw, kube-linter, etc.): comment `/rerun` on the PR.
+- Flaky **Prow / OpenShift CI** E2E checks: comment `/retest` on the PR.
 
 ## Production Ring Rollouts
 

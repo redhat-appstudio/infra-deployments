@@ -57,6 +57,14 @@ If a Prow job failed, fetch the log directly:
 https://prow.ci.openshift.org/log?container=test&id=<build-id>&job=<job-name>
 ```
 
+## Re-triggering failed checks
+
+Comment on the PR to retry flaky CI without write access:
+
+- **`/rerun`** — re-runs failed or cancelled **GitHub Actions** checks (yamllint, chainsaw, kube-linter, render-diff, etc.). Available to repository members and collaborators. `/rerun` can appear anywhere in the comment (e.g. `please /rerun`).
+
+- **`/retest`** — re-triggers **Prow / OpenShift CI** E2E checks (`ci/prow/appstudio-e2e-tests`, etc.). Handled by the OpenShift CI bot.
+
 ## Common Failures
 
 ### yamllint
@@ -79,7 +87,7 @@ Fix: split into separate staging and production PRs. For hotfixes that need to r
 
 Path-triggered on `components/kyverno/**` and `components/policies/**` changes. Often flaky due to infrastructure issues.
 
-If logs show no relevant errors and the PR looks correct, find the failed run ID from `gh pr checks <PR-number> --repo redhat-appstudio/infra-deployments` and rerun it with `gh run rerun <run-id> --repo redhat-appstudio/infra-deployments --failed`. If the logs don't help identify the issue, run locally with `hack/chainsaw/chainsaw-prepare.sh` to set up a Kind cluster, then `chainsaw test <path>`.
+If logs show no relevant errors and the PR looks correct, comment `/rerun` on the PR. Maintainers with write access can also rerun manually with `gh run rerun <run-id> --repo redhat-appstudio/infra-deployments --failed`. If the logs don't help identify the issue, run locally with `hack/chainsaw/chainsaw-prepare.sh` to set up a Kind cluster, then `chainsaw test <path>`.
 
 ### kube-linter
 
