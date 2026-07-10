@@ -1,7 +1,7 @@
 name: Rerun failed checks
 
 # Lets contributors with read-only repo access re-trigger failed GitHub Actions
-# checks by commenting `/rerun` on the pull request.
+# checks by commenting `/rerun` anywhere in a pull request comment.
 #
 # This reruns failed or cancelled GitHub Actions workflow runs on the PR head commit.
 # Prow / OpenShift CI E2E checks are not affected — use `/retest` for those.
@@ -15,7 +15,7 @@ jobs:
   rerun-workflows:
     if: |
       github.event.issue.pull_request &&
-      github.event.comment.body == '/rerun'
+      contains(github.event.comment.body, '/rerun')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
