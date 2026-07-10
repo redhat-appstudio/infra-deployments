@@ -28,17 +28,4 @@ spec:
       resources:
         requests:
           storage: 20Gi
-    remoteWrite:
-    - oauth2:
-        clientId:
-          secret:
-            key: client-id
-            name: rhobs
-        clientSecret:
-          key: client-secret
-          name: rhobs
-        endpointParams:
-          audience: # added by overlays
-        tokenUrl: https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token
-      url: # added by overlays
-      # writeRelabelConfigs:  # added by overlays
+    remoteWrite: [] # defined entirely by overlays

@@ -2,13 +2,14 @@ apiVersion: external-secrets.io/v1
 kind: ExternalSecret
 metadata:
   name: rhobs
+  namespace: appstudio-tekton
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
     argocd.argoproj.io/sync-wave: "-1"
 spec:
   dataFrom:
     - extract:
-        key: # will be added by the overlays
+        key: staging/monitoring/rhobs
   refreshInterval: 1h
   secretStoreRef:
     kind: ClusterSecretStore
