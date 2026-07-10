@@ -8,51 +8,56 @@ edit these files; reviewers use this file to understand layout and promotion rul
 The operator install bundle is consumed as **plain Kubernetes manifests** (CRDs, RBAC,
 Deployment, and so on), not as OLM `Subscription` / `ClusterServiceVersion` objects.
 
-## Directory layout per environment
+## Directory layout (ring-based)
 
-Each **environment** (for example `development/`, and later `staging-ring-a/` or
-similar) is a self-contained Kustomize root that Argo syncs. The layout is the same for
-every environment:
+Deployments follow a **4-tier Kustomize structure** with Kargo-driven promotions:
 
-| Path | Purpose |
-|------|--------|
-| `invariant/` | Operator pin (remote ref + `images`) plus **cluster-invariant** `Konflux` CR fragments. This is the **only** directory you replace as a unit when promoting a release line from one environment to another. |
-| `cr/overlay-patches/<team>/` | **Per-environment or per-team** strategic-merge fragments for the same `Konflux` object (`metadata.name: konflux`). These files are **not** overwritten during a normal promotion. |
+| Tier | Path | Purpose |
+|------|------|---------|
+| 1 | `base/` | Shared anchor and common Konflux CR overlay patches (`cr/`). |
+| 2 | `rings/ring-N/base/` | Upstream ref, image pin, `Konflux` CR. This is where Kargo writes promoted content. References `base/cr/` components. |
+| 3 | `rings/ring-N/<cluster>/` | Per-cluster overlays that reference `../base`. |
 
-Example (`development/`):
+Example (`ring-0`):
 
 ```text
-development/
-  kustomization.yaml          # resources: [invariant]; components: cr/overlay-patches/...
-  invariant/
-    kustomization.yaml        # remote operator + images + local CR inputs
-    konflux.yaml              # minimal Konflux CR shell
-    release-config.yaml       # merged spec shared across clusters for this release line
-  cr/
-    overlay-patches/
-      build/
-      konflux-ui/
-      ...
+base/
+  kustomization.yaml              # resources: [] (shared anchor)
+  cr/                             # Konflux CR overlay patches (shared across rings)
+    build/
+    konflux-ui/
+    image-controller/
+    ...
+rings/
+  ring-0/
+    base/
+      kustomization.yaml          # resources: [invariant], components: ../../../base/cr/...
+      invariant/
+        kustomization.yaml        # remote operator + images + konflux.yaml
+        konflux.yaml              # minimal Konflux CR shell
+        release-config.yaml       # cluster-invariant spec for this release line
 ```
 
-You may split a subtree such as `spec.buildService` across **`invariant/`**
-(release-wide defaults) and **`overlay-patches/build/`** (environment- or team-specific
-keys), as long as you avoid conflicting duplicate leaf values; see Kustomize
-strategic-merge ordering if two patches touch the same field.
+## What gets promoted across rings
 
-## Promoting to another environment
+Only the **invariant content** in `rings/ring-N/base/` is promoted by Kargo:
+- Upstream remote ref (the `?ref=` in `resources`)
+- Image tags (the `images` block)
+- Base `Konflux` CR (`konflux.yaml`) and release config (`release-config.yaml`)
 
-1. Copy or reconcile **only** `<target-env>/invariant/` with the content from
-`<source-env>/invariant/` (or edit those files so the pull request shows exactly what
-changed).
-2. Leave `<target-env>/cr/overlay-patches/` unchanged unless the target cluster
-genuinely needs different patches.
-3. **Rollback** is a normal Git operation (`git revert`, or restore `invariant/` from
-an earlier revision).
+The `cr/` overlay patches live in `base/cr/` and are **shared across all rings**.
+If a CR needs ring-specific configuration in the future, it can be moved back to per-ring directories.
 
-Adding a new environment: create a sibling directory with the same shape as
-`development/`, seed `invariant/` once from the environment you trust, then maintain
-`cr/overlay-patches/` for that cluster class.
+## Promoting to another ring
+
+1. Kargo promotes the invariant content (upstream ref, image pin) from one ring's
+   `base/` to the next ring's `base/`.
+2. `cr/` overlay patches in `base/cr/` are shared — all rings use the same set.
+3. **Rollback** is a normal Git operation (`git revert`, or restore the invariant
+   from an earlier revision).
+
+Adding a new ring: create `rings/ring-N/base/` with the same shape, seed
+the invariant from the ring you trust. CR patches from `base/cr/` are inherited automatically.
 
 ## Preview script and `Konflux` readiness
 
@@ -69,17 +74,17 @@ for that run.
 
 From the repository root, after logging in to a cluster:
 
-`kubectl apply -k components/konflux-operator/development`
+`kubectl apply -k components/konflux-operator/rings/ring-0/base`
 
 To sync **only** the operator controller and CRDs without applying the `Konflux`
-instance, temporarily remove the CR inputs from `invariant/kustomization.yaml`
-(for example `konflux.yaml` and the `patches` entry that references
-`release-config.yaml`), apply, then restore those lines when you want the instance.
+instance, temporarily remove the CR inputs from `rings/ring-0/base/invariant/kustomization.yaml`
+(for example `konflux.yaml` and `release-config.yaml`), apply, then restore those lines
+when you want the instance.
 
 ## Konflux CR ownership
 
-- **`invariant/konflux.yaml`** — minimal `Konflux` object.
-- **`invariant/release-config.yaml`** — cluster-invariant `spec` carried with the
-operator pin for that release line.
-- **`cr/overlay-patches/*/OWNERS`** — team ownership for overlay fragments under each
-subdirectory.
+- **`rings/ring-N/base/invariant/konflux.yaml`** — minimal `Konflux` object.
+- **`rings/ring-N/base/invariant/release-config.yaml`** — cluster-invariant `spec`
+  carried with the operator pin for that release line.
+- **`base/cr/*/OWNERS`** — team ownership for overlay fragments under each
+  subdirectory.
