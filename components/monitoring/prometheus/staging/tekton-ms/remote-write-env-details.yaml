@@ -30,3 +30,37 @@
             |tekton_pipelines_controller_running_taskruns_throttled_by_quota"
         - action: LabelKeep
           regex: "__name__|source_environment|source_cluster|namespace|job|instance|pipeline|status|task"
+    # Prometheus self-monitoring metrics
+    - url: https://observatorium-mst.api.stage.openshift.com/api/metrics/v1/rhtap/api/v1/receive
+      oauth2:
+        clientId:
+          secret:
+            key: client-id
+            name: rhobs
+        clientSecret:
+          key: client-secret
+          name: rhobs
+        endpointParams:
+          audience: observatorium-osd-staging
+        tokenUrl: https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token
+      writeRelabelConfigs:
+        - action: Keep
+          sourceLabels: [__name__]
+          regex: "prometheus_ready\
+            |prometheus_build_info\
+            |prometheus_engine_query_duration_seconds\
+            |prometheus_engine_query_duration_seconds_count\
+            |prometheus_sd_discovered_targets\
+            |prometheus_target_interval_length_seconds_count\
+            |prometheus_target_interval_length_seconds_sum\
+            |prometheus_target_scrapes_exceeded_sample_limit_total\
+            |prometheus_target_scrapes_sample_duplicate_timestamp_total\
+            |prometheus_target_scrapes_sample_out_of_bounds_total\
+            |prometheus_target_scrapes_sample_out_of_order_total\
+            |prometheus_target_sync_length_seconds_sum\
+            |prometheus_tsdb_head_series\
+            |prometheus_tsdb_head_chunks\
+            |prometheus_tsdb_head_samples_appended_total\
+            |process_start_time_seconds"
+        - action: LabelKeep
+          regex: "__name__|source_environment|source_cluster|namespace|job|instance|version|quantile|slice|scrape_job"
