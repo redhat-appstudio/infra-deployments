@@ -1,0 +1,45 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: authentication
+  labels:
+    appstudio.redhat.com/environment: all # Helps cluster patches detect this appset
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              selector:
+                matchLabels:
+                  appstudio.redhat.com/is-tenant-cluster: "true"
+              values:
+                sourceRoot: components/authentication-rd
+                ring: "ring-4"
+                clusterDir: base
+          - list:
+              elements: [] # Populated via a patch(or manually if the cluster list is unusual)
+
+  template:
+    metadata:
+      name: authentication-rd-{{nameNormalized}}
+    spec:
+      project: default
+      source:
+        path: '{{values.sourceRoot}}/rings/{{values.ring}}/{{values.clusterDir}}'
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+        targetRevision: main
+      destination:
+        namespace: authentication
+        server: '{{server}}'
+      syncPolicy:
+        # automated:
+        #   prune: true
+        #   selfHeal: true
+        syncOptions:
+        - CreateNamespace=true
+        retry:
+          limit: 50
+          backoff:
+            duration: 15s

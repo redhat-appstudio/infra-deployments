@@ -1,11 +1,25 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-resources:
-  - ../../base/ring-deployments
 
 namespace: argocd-infra-deployments
+nameSuffix: -ring-3
+
+resources:
+  - authentication-appset.yaml
+
 patches:
-  - path: patches/ring-patch.yaml
+  - path: patches/all-clusters-patch.yaml
     target:
       kind: ApplicationSet
       version: v1alpha1
+      labelSelector: appstudio.redhat.com/environment=all
+  - path: patches/external-clusters-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      labelSelector: appstudio.redhat.com/environment=external
+  - path: patches/internal-clusters-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      labelSelector: appstudio.redhat.com/environment=internal
