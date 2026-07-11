@@ -52,12 +52,20 @@ spec:
       destination:
         namespace: cert-manager-operator
         server: '{{server}}'
+      ignoreDifferences:
+        - group: ""
+          kind: Namespace
+          name: cert-manager
+          jsonPointers:
+            - /metadata/labels
+            - /metadata/annotations
       syncPolicy:
         automated:
           prune: true
           selfHeal: false
         syncOptions:
           - CreateNamespace=true
+          - RespectIgnoreDifferences=true
         retry:
           limit: -1
           backoff:
