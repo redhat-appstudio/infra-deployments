@@ -600,18 +600,41 @@ func cleanupTestResources(fw *framework.Framework, tenants []Tenant) {
 }
 
 // ---------------------------------------------------------------------------
-// Image-controller egress blocking — protects Quay resources during DR drills
+// Quay resource preservation during DR drills
 // ---------------------------------------------------------------------------
 //
-// During a DR drill, `oc delete project` triggers the image-controller
-// finalizer on ImageRepository CRs, which deletes Quay robot accounts and
-// repositories. After Velero restore, the push secrets contain credentials
-// for non-existent robot accounts, causing trusted-artifact pushes to fail.
+// Problem: DR drills vs. real disasters
 //
-// The fix (validated in KFLUXINFRA-3954): block image-controller egress
-// before namespace deletion so it cannot reach Quay. The Velero resource
-// modifier strips ImageRepository finalizers during restore, so unblocking
-// egress after restore is safe — there are no finalizers left to trigger.
+// In a real disaster (etcd loss), the Kubernetes API server is gone.
+// There is no graceful resource deletion. Finalizers never fire.
+// Image-controller never learns that ImageRepository CRs disappeared,
+// so it never calls the Quay API to delete robot accounts. The robot
+// accounts survive, and Velero-restored push secrets remain valid.
+//
+// In a DR drill, we simulate disaster with `oc delete project`. This
+// triggers graceful deletion of every resource in the namespace. The
+// image-controller's finalizer on each ImageRepository CR fires,
+// calling the Quay API to delete robot accounts and image repos.
+// After Velero restore, push secrets reference non-existent robot
+// accounts, and trusted-artifact pushes fail.
+//
+// The drill methodology introduces a failure mode that real disasters
+// do not have. This is not an image-controller bug — the finalizer
+// works correctly. The gap is between simulation and reality.
+//
+// Solution: two-layer protection
+//
+// 1. Block image-controller egress via NetworkPolicy (defense-in-depth
+//    against the race window between finalizer stripping and deletion).
+// 2. Strip ImageRepository finalizers before namespace deletion. This
+//    is the accurate simulation: real etcd loss = finalizers never run.
+//    Without this, the egress block creates a deadlock — the finalizer
+//    cannot complete (no network), so the CR cannot be deleted, so the
+//    namespace hangs until the deletion timeout.
+//
+// After restore, the Velero resource modifier strips ImageRepository
+// finalizers on the restored CRs, so unblocking egress is safe.
+// See KFLUXINFRA-3954, STONEBLD-3714.
 
 const (
 	// ImageControllerNamespace is where the image-controller pods run.
@@ -620,6 +643,11 @@ const (
 	// drEgressBlockPolicyName is the NetworkPolicy CR name used to block
 	// image-controller egress during disaster simulation.
 	drEgressBlockPolicyName = "dr-block-image-controller-egress"
+
+	// imageRepositoryFinalizer is the finalizer that image-controller
+	// adds to every ImageRepository CR. When processed on deletion, it
+	// calls the Quay API to delete robot accounts and image repos.
+	imageRepositoryFinalizer = "appstudio.openshift.io/image-repository"
 )
 
 // blockImageControllerEgress creates a NetworkPolicy in the image-controller
@@ -685,4 +713,61 @@ func unblockImageControllerEgress(fw *framework.Framework) {
 
 	GinkgoWriter.Printf("Deleted NetworkPolicy %s/%s — image-controller egress restored\n",
 		ImageControllerNamespace, drEgressBlockPolicyName)
+}
+
+// stripImageRepositoryFinalizers removes the image-controller finalizer from
+// every ImageRepository CR in the given tenants' namespaces.
+//
+// This must be called AFTER blockImageControllerEgress (which prevents the
+// controller from re-adding finalizers during the race window) and BEFORE
+// deleteNamespace.
+//
+// Why: in a real disaster (etcd loss), finalizers never fire — the API
+// server is gone, so no controller gets a chance to run cleanup logic.
+// But `oc delete project` triggers graceful deletion, which invokes the
+// ImageRepository finalizer. With egress blocked, that finalizer cannot
+// complete (it needs to call the Quay API), creating a deadlock that
+// prevents namespace deletion from finishing within the timeout.
+//
+// Stripping the finalizer before deletion matches real-disaster semantics:
+// the image-controller never processes the deletion, Quay robot accounts
+// survive, and restored push secrets remain valid.
+func stripImageRepositoryFinalizers(fw *framework.Framework, tenants []Tenant) {
+	GinkgoHelper()
+
+	ctx := context.Background()
+	restClient := fw.AsKubeAdmin.CommonController.KubeRest()
+
+	for _, t := range tenants {
+		By(fmt.Sprintf("Stripping ImageRepository finalizers in namespace %q to simulate etcd-loss semantics", t.Namespace))
+
+		imageRepoList := &imagecontrollerv1alpha1.ImageRepositoryList{}
+		err := restClient.List(ctx, imageRepoList, client.InNamespace(t.Namespace))
+		Expect(err).ShouldNot(HaveOccurred(),
+			"failed to list ImageRepositories in namespace %q", t.Namespace)
+
+		stripped := 0
+		for i := range imageRepoList.Items {
+			ir := &imageRepoList.Items[i]
+			var filtered []string
+			found := false
+			for _, f := range ir.Finalizers {
+				if f == imageRepositoryFinalizer {
+					found = true
+					continue
+				}
+				filtered = append(filtered, f)
+			}
+			if found {
+				ir.Finalizers = filtered
+				err := restClient.Update(ctx, ir)
+				Expect(err).ShouldNot(HaveOccurred(),
+					"failed to strip finalizer from ImageRepository %s/%s", t.Namespace, ir.Name)
+				stripped++
+			}
+		}
+
+		GinkgoWriter.Printf("Stripped %q from %d/%d ImageRepositories in namespace %s\n",
+			imageRepositoryFinalizer, stripped, len(imageRepoList.Items), t.Namespace)
+	}
 }

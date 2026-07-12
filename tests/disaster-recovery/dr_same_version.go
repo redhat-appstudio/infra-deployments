@@ -89,14 +89,27 @@ func defineSameVersionSpecs() {
 		})
 
 		// Phase 3: Simulate disaster by deleting tenant namespaces.
-		// Block image-controller egress first so that the ImageRepository
-		// finalizer cannot delete Quay robot accounts during namespace
-		// deletion. Without this, restored push secrets reference
-		// non-existent robot accounts and trusted-artifact pushes fail.
-		// See KFLUXINFRA-3954.
+		//
+		// Real etcd loss destroys all resources instantly — no graceful
+		// deletion, no finalizer processing. But `oc delete project`
+		// triggers graceful deletion, which fires the image-controller
+		// finalizer on ImageRepository CRs (deleting Quay robot accounts).
+		// Two steps replicate real-disaster semantics:
+		//
+		//  1. Block image-controller egress (defense-in-depth against
+		//     the race window between finalizer removal and deletion).
+		//  2. Strip ImageRepository finalizers (prevents the deadlock
+		//     that egress-blocking alone creates, and matches the fact
+		//     that real etcd loss never runs finalizers).
+		//
+		// See KFLUXINFRA-3954, STONEBLD-3714.
 		When("simulating disaster by deleting namespaces", func() {
 			It("should block image-controller egress to preserve Quay resources", func() {
 				blockImageControllerEgress(fw)
+			})
+
+			It("should strip ImageRepository finalizers to match etcd-loss semantics", func() {
+				stripImageRepositoryFinalizers(fw, svTenants)
 			})
 
 			It("should delete both tenant namespaces", func() {

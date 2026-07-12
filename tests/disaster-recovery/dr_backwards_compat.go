@@ -102,14 +102,15 @@ func defineBackwardsCompatSpecs() {
 		})
 
 		// Phase 3: Simulate disaster by deleting tenant namespaces.
-		// Block image-controller egress first so that the ImageRepository
-		// finalizer cannot delete Quay robot accounts during namespace
-		// deletion. Without this, restored push secrets reference
-		// non-existent robot accounts and trusted-artifact pushes fail.
-		// See KFLUXINFRA-3954.
+		// See dr_same_version.go Phase 3 for the full rationale on
+		// egress blocking + finalizer stripping.
 		When("simulating disaster by deleting namespaces", func() {
 			It("should block image-controller egress to preserve Quay resources", func() {
 				blockImageControllerEgress(fw)
+			})
+
+			It("should strip ImageRepository finalizers to match etcd-loss semantics", func() {
+				stripImageRepositoryFinalizers(fw, bcTenants)
 			})
 
 			It("should delete both tenant namespaces", func() {
