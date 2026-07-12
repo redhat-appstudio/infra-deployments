@@ -2297,6 +2297,11 @@ spec:
     metrics.taskrun.level: task
     options:
       configMaps:
+        bundleresolver-config:
+          data:
+            backoff-cap: 30s
+            backoff-steps: "30"
+            fetch-timeout: 2m
         config-defaults:
           data:
             default-container-resource-requirements: |
@@ -2346,6 +2351,11 @@ spec:
                   "callerEncoder": ""
                 }
               }
+        git-resolver-config:
+          data:
+            backoff-cap: 30s
+            backoff-steps: "4"
+            fetch-timeout: 2m
       deployments:
         pipelines-as-code-controller:
           spec:

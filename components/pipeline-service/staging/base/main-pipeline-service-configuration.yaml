@@ -1759,6 +1759,16 @@ spec:
         config-leader-election-resolvers:
           data:
             buckets: "8"
+        bundleresolver-config:
+          data:
+            fetch-timeout: "2m"
+            backoff-steps: "30"
+            backoff-cap: "30s"
+        git-resolver-config:
+          data:
+            fetch-timeout: "2m"
+            backoff-steps: "4"
+            backoff-cap: "30s"
       deployments:
         tekton-operator-proxy-webhook:
           spec:
