@@ -16,16 +16,18 @@ import (
 	"os/exec"
 	"strings"
 
+	appservice "github.com/konflux-ci/application-api/api/v1alpha1"
 	"github.com/konflux-ci/e2e-tests/pkg/framework"
 	imagecontrollerv1alpha1 "github.com/konflux-ci/image-controller/api/v1alpha1"
+	releaseapi "github.com/konflux-ci/release-service/api/v1alpha1"
 	"github.com/minio/minio-go/v7"
 	miniocreds "github.com/minio/minio-go/v7/pkg/credentials"
 	. "github.com/onsi/ginkgo/v2" //nolint:staticcheck
 	. "github.com/onsi/gomega"    //nolint:staticcheck
 	pacv1alpha1 "github.com/openshift-pipelines/pipelines-as-code/pkg/apis/pipelinesascode/v1alpha1"
+	pipeline "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	corev1 "k8s.io/api/core/v1"
-	networkingv1 "k8s.io/api/networking/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -605,169 +607,120 @@ func cleanupTestResources(fw *framework.Framework, tenants []Tenant) {
 //
 // Problem: DR drills vs. real disasters
 //
-// In a real disaster (etcd loss), the Kubernetes API server is gone.
-// There is no graceful resource deletion. Finalizers never fire.
-// Image-controller never learns that ImageRepository CRs disappeared,
-// so it never calls the Quay API to delete robot accounts. The robot
-// accounts survive, and Velero-restored push secrets remain valid.
+// In a real disaster (etcd loss), the API server is gone. There is no
+// graceful deletion. Finalizers never fire. Controllers never learn that
+// resources disappeared — external state (Quay robot accounts, GitHub
+// webhooks) survives intact.
 //
-// In a DR drill, we simulate disaster with `oc delete project`. This
-// triggers graceful deletion of every resource in the namespace. The
-// image-controller's finalizer on each ImageRepository CR fires,
-// calling the Quay API to delete robot accounts and image repos.
-// After Velero restore, push secrets reference non-existent robot
-// accounts, and trusted-artifact pushes fail.
+// `oc delete project` triggers graceful deletion instead. Every resource
+// gets a deletionTimestamp, and every finalizer fires. Multiple Konflux
+// controllers set finalizers on tenant namespace resources:
 //
-// The drill methodology introduces a failure mode that real disasters
-// do not have. This is not an image-controller bug — the finalizer
-// works correctly. The gap is between simulation and reality.
+//   - application-service  → Application
+//   - image-controller     → Application, Component, ImageRepository
+//   - integration-service  → Component, PipelineRun
+//   - release-service      → Release
+//   - pipelines-as-code    → PipelineRun
 //
-// Solution: two-layer protection
+// Each finalizer's controller makes external API calls (Quay, GitHub,
+// Tekton) that can stall or deadlock, blocking namespace deletion past
+// the 10-minute timeout. This is a simulation gap, not a controller bug.
 //
-// 1. Block image-controller egress via NetworkPolicy (defense-in-depth
-//    against the race window between finalizer stripping and deletion).
-// 2. Strip ImageRepository finalizers before namespace deletion. This
-//    is the accurate simulation: real etcd loss = finalizers never run.
-//    Without this, the egress block creates a deadlock — the finalizer
-//    cannot complete (no network), so the CR cannot be deleted, so the
-//    namespace hangs until the deletion timeout.
+// Solution: strip ALL finalizers from ALL resources in tenant namespaces
+// before deletion. One deterministic pre-delete step that matches real
+// disaster semantics — no finalizer processing, no external side effects.
 //
 // After restore, the Velero resource modifier strips ImageRepository
-// finalizers on the restored CRs, so unblocking egress is safe.
-// See KFLUXINFRA-3954, STONEBLD-3714.
+// finalizers on restored CRs (KFLUXINFRA-2177).
+// See also KFLUXINFRA-3954, STONEBLD-3714.
 
-const (
-	// ImageControllerNamespace is where the image-controller pods run.
-	ImageControllerNamespace = "image-controller"
-
-	// drEgressBlockPolicyName is the NetworkPolicy CR name used to block
-	// image-controller egress during disaster simulation.
-	drEgressBlockPolicyName = "dr-block-image-controller-egress"
-
-	// imageRepositoryFinalizer is the finalizer that image-controller
-	// adds to every ImageRepository CR. When processed on deletion, it
-	// calls the Quay API to delete robot accounts and image repos.
-	imageRepositoryFinalizer = "appstudio.openshift.io/image-repository"
-)
-
-// blockImageControllerEgress creates a NetworkPolicy in the image-controller
-// namespace that denies all egress from the controller pods. This prevents
-// the controller from deleting Quay robot accounts when the ImageRepository
-// finalizer fires during namespace deletion.
-func blockImageControllerEgress(fw *framework.Framework) {
-	GinkgoHelper()
-
-	By("Blocking image-controller egress to preserve Quay resources during namespace deletion")
-
-	policy := &networkingv1.NetworkPolicy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      drEgressBlockPolicyName,
-			Namespace: ImageControllerNamespace,
-		},
-		Spec: networkingv1.NetworkPolicySpec{
-			PodSelector: metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"control-plane": "controller-manager",
-				},
-			},
-			PolicyTypes: []networkingv1.PolicyType{
-				networkingv1.PolicyTypeEgress,
-			},
-			// Empty Egress slice = deny all egress.
-			Egress: []networkingv1.NetworkPolicyEgressRule{},
-		},
-	}
-
-	err := fw.AsKubeAdmin.CommonController.KubeRest().Create(context.Background(), policy)
-	Expect(err).ShouldNot(HaveOccurred(),
-		"failed to create egress-blocking NetworkPolicy in %s", ImageControllerNamespace)
-
-	GinkgoWriter.Printf("Created NetworkPolicy %s/%s — image-controller egress blocked\n",
-		ImageControllerNamespace, drEgressBlockPolicyName)
-}
-
-// unblockImageControllerEgress removes the egress-blocking NetworkPolicy,
-// restoring normal image-controller operations. Safe to call after Velero
-// restore because the resource modifier has already stripped ImageRepository
-// finalizers.
-func unblockImageControllerEgress(fw *framework.Framework) {
-	GinkgoHelper()
-
-	By("Removing image-controller egress block — restoring normal operations")
-
-	policy := &networkingv1.NetworkPolicy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      drEgressBlockPolicyName,
-			Namespace: ImageControllerNamespace,
-		},
-	}
-
-	err := fw.AsKubeAdmin.CommonController.KubeRest().Delete(context.Background(), policy)
-	if k8sErrors.IsNotFound(err) {
-		GinkgoWriter.Printf("NetworkPolicy %s/%s already absent — nothing to remove\n",
-			ImageControllerNamespace, drEgressBlockPolicyName)
-		return
-	}
-	Expect(err).ShouldNot(HaveOccurred(),
-		"failed to delete egress-blocking NetworkPolicy from %s", ImageControllerNamespace)
-
-	GinkgoWriter.Printf("Deleted NetworkPolicy %s/%s — image-controller egress restored\n",
-		ImageControllerNamespace, drEgressBlockPolicyName)
-}
-
-// stripImageRepositoryFinalizers removes the image-controller finalizer from
-// every ImageRepository CR in the given tenants' namespaces.
-//
-// This must be called AFTER blockImageControllerEgress (which prevents the
-// controller from re-adding finalizers during the race window) and BEFORE
-// deleteNamespace.
-//
-// Why: in a real disaster (etcd loss), finalizers never fire — the API
-// server is gone, so no controller gets a chance to run cleanup logic.
-// But `oc delete project` triggers graceful deletion, which invokes the
-// ImageRepository finalizer. With egress blocked, that finalizer cannot
-// complete (it needs to call the Quay API), creating a deadlock that
-// prevents namespace deletion from finishing within the timeout.
-//
-// Stripping the finalizer before deletion matches real-disaster semantics:
-// the image-controller never processes the deletion, Quay robot accounts
-// survive, and restored push secrets remain valid.
-func stripImageRepositoryFinalizers(fw *framework.Framework, tenants []Tenant) {
+// stripAllFinalizers removes every finalizer from every resource in the
+// given tenants' namespaces. Call this immediately before deleteNamespace.
+func stripAllFinalizers(fw *framework.Framework, tenants []Tenant) {
 	GinkgoHelper()
 
 	ctx := context.Background()
 	restClient := fw.AsKubeAdmin.CommonController.KubeRest()
 
 	for _, t := range tenants {
-		By(fmt.Sprintf("Stripping ImageRepository finalizers in namespace %q to simulate etcd-loss semantics", t.Namespace))
+		By(fmt.Sprintf("Stripping all finalizers in namespace %q to simulate etcd-loss semantics", t.Namespace))
 
-		imageRepoList := &imagecontrollerv1alpha1.ImageRepositoryList{}
-		err := restClient.List(ctx, imageRepoList, client.InNamespace(t.Namespace))
-		Expect(err).ShouldNot(HaveOccurred(),
-			"failed to list ImageRepositories in namespace %q", t.Namespace)
+		total := 0
 
-		stripped := 0
-		for i := range imageRepoList.Items {
-			ir := &imageRepoList.Items[i]
-			var filtered []string
-			found := false
-			for _, f := range ir.Finalizers {
-				if f == imageRepositoryFinalizer {
-					found = true
-					continue
-				}
-				filtered = append(filtered, f)
-			}
-			if found {
-				ir.Finalizers = filtered
-				err := restClient.Update(ctx, ir)
-				Expect(err).ShouldNot(HaveOccurred(),
-					"failed to strip finalizer from ImageRepository %s/%s", t.Namespace, ir.Name)
-				stripped++
-			}
+		total += stripFinalizers(ctx, restClient, t.Namespace, &appservice.ApplicationList{}, "Application")
+		total += stripFinalizers(ctx, restClient, t.Namespace, &appservice.ComponentList{}, "Component")
+		total += stripFinalizers(ctx, restClient, t.Namespace, &imagecontrollerv1alpha1.ImageRepositoryList{}, "ImageRepository")
+		total += stripFinalizers(ctx, restClient, t.Namespace, &releaseapi.ReleaseList{}, "Release")
+		total += stripFinalizers(ctx, restClient, t.Namespace, &pipeline.PipelineRunList{}, "PipelineRun")
+
+		GinkgoWriter.Printf("Stripped finalizers from %d resources in namespace %s\n", total, t.Namespace)
+	}
+}
+
+// stripFinalizers lists all resources of a given type in a namespace and
+// removes every finalizer from each. Returns the number of resources modified.
+func stripFinalizers(ctx context.Context, restClient client.Client, namespace string, list client.ObjectList, kind string) int {
+	err := restClient.List(ctx, list, client.InNamespace(namespace))
+	if err != nil {
+		GinkgoWriter.Printf("  %s: list failed (may not exist on cluster): %v\n", kind, err)
+		return 0
+	}
+
+	stripped := 0
+	items := extractItems(list)
+	for _, obj := range items {
+		if len(obj.GetFinalizers()) == 0 {
+			continue
 		}
+		GinkgoWriter.Printf("  %s/%s: removing finalizers %v\n", kind, obj.GetName(), obj.GetFinalizers())
+		obj.SetFinalizers(nil)
+		err := restClient.Update(ctx, obj)
+		Expect(err).ShouldNot(HaveOccurred(),
+			"failed to strip finalizers from %s %s/%s", kind, namespace, obj.GetName())
+		stripped++
+	}
 
-		GinkgoWriter.Printf("Stripped %q from %d/%d ImageRepositories in namespace %s\n",
-			imageRepositoryFinalizer, stripped, len(imageRepoList.Items), t.Namespace)
+	if stripped > 0 || len(items) > 0 {
+		GinkgoWriter.Printf("  %s: stripped %d/%d\n", kind, stripped, len(items))
+	}
+	return stripped
+}
+
+// extractItems converts a typed ObjectList into a slice of client.Object
+// for generic finalizer processing.
+func extractItems(list client.ObjectList) []client.Object {
+	switch l := list.(type) {
+	case *appservice.ApplicationList:
+		out := make([]client.Object, len(l.Items))
+		for i := range l.Items {
+			out[i] = &l.Items[i]
+		}
+		return out
+	case *appservice.ComponentList:
+		out := make([]client.Object, len(l.Items))
+		for i := range l.Items {
+			out[i] = &l.Items[i]
+		}
+		return out
+	case *imagecontrollerv1alpha1.ImageRepositoryList:
+		out := make([]client.Object, len(l.Items))
+		for i := range l.Items {
+			out[i] = &l.Items[i]
+		}
+		return out
+	case *releaseapi.ReleaseList:
+		out := make([]client.Object, len(l.Items))
+		for i := range l.Items {
+			out[i] = &l.Items[i]
+		}
+		return out
+	case *pipeline.PipelineRunList:
+		out := make([]client.Object, len(l.Items))
+		for i := range l.Items {
+			out[i] = &l.Items[i]
+		}
+		return out
+	default:
+		return nil
 	}
 }
