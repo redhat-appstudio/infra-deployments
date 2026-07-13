@@ -365,10 +365,12 @@ metadata:
     argocd.argoproj.io/sync-wave: "0"
   name: tekton-pipelines-controller-pod-log-access
 rules:
-  - apiGroups: [""]
-    # Controller needs to get the logs of the results sidecar created by TaskRuns to extract results.
-    resources: ["pods/log"]
-    verbs: ["get"]
+- apiGroups:
+  - ""
+  resources:
+  - pods/log
+  verbs:
+  - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -814,8 +816,8 @@ subjects:
   name: metrics-reader
   namespace: tekton-results
 ---
-kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
 metadata:
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
@@ -828,7 +830,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: tekton-pipelines-controller
-  namespace: tekton-pipelines
+  namespace: openshift-pipelines
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -2322,10 +2324,9 @@ spec:
     enable-hub-resolver: true
     enable-param-enum: true
     enable-step-actions: true
+    max-result-size: 1572863
     metrics.pipelinerun.level: pipeline
     metrics.taskrun.level: task
-    results-from: sidecar-logs
-    max-result-size: 1572863
     options:
       configMaps:
         bundleresolver-config:
@@ -2628,6 +2629,7 @@ spec:
       replicas: 4
       statefulset-ordinals: true
       threads-per-controller: 32
+    results-from: sidecar-logs
   platforms:
     openshift:
       pipelinesAsCode:
