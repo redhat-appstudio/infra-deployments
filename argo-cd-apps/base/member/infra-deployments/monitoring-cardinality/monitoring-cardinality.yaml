@@ -14,7 +14,13 @@ spec:
                 environment: staging
                 clusterDir: ""
           - list:
-              elements: []
+              elements:
+                - nameNormalized: stone-prd-rh01
+                  values.clusterDir: stone-prd-rh01
+                  values.environment: production
+                - nameNormalized: kflux-prd-rh02
+                  values.clusterDir: kflux-prd-rh02
+                  values.environment: production
   template:
     metadata:
       name: monitoring-cardinality-{{nameNormalized}}
