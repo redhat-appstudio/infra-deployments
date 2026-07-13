@@ -1939,6 +1939,16 @@ spec:
                   effect: "NoSchedule"
             default-timeout-minutes: "120"
             default-imagepullbackoff-timeout: "15m"
+        bundleresolver-config:
+          data:
+            fetch-timeout: "2m"
+            backoff-duration: "15s"
+            backoff-factor: "2.0"
+            backoff-steps: "10"
+            backoff-cap: "15m"
+        git-resolver-config:
+          data:
+            fetch-timeout: "2m"
       deployments:
         tekton-operator-proxy-webhook:
           spec:
