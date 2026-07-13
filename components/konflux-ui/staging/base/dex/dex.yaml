@@ -26,9 +26,9 @@ spec:
           matchLabels:
             app: dex
       containers:
-      - image: ghcr.io/dexidp/dex:v2.32.0
+      - image: quay.io/konflux-ci/dex:latest
         name: dex
-        command: ["/usr/local/bin/dex", "serve", "/etc/dex/cfg/config.yaml"]
+        command: ["/usr/local/bin/run-dex.sh"]
         securityContext:
           readOnlyRootFilesystem: true
           runAsNonRoot: true
@@ -46,28 +46,57 @@ spec:
           containerPort: 5558
           protocol: TCP
         volumeMounts:
+        - name: tmp # writeable tmp folder
+          mountPath: /tmp
+          readOnly: false
+        - name: dex-token
+          mountPath: /var/run/secrets/konflux-ci.dev/serviceaccount/
+        - name: run-dex
+          mountPath: /usr/local/bin/run-dex.sh
+          subPath: "run-dex.sh"
         - name: dex
           mountPath: /etc/dex/cfg
         - name: tls
           mountPath: /etc/dex/tls
+        livenessProbe:
+          initialDelaySeconds: 10
+          httpGet:
+            path: /healthz/ready
+            port: telemetry
         readinessProbe:
+          initialDelaySeconds: 10
           httpGet:
             path: /healthz/ready
             port: telemetry
         env:
         - name: GODEBUG
           value: "http2server=0"
-        - name: OPENSHIFT_OAUTH_CLIENT_SECRET
+        - name: TOKEN_PATH
+          value: /var/run/secrets/konflux-ci.dev/serviceaccount/token
+        - name: NAMESPACE
           valueFrom:
-            secretKeyRef:
-              name: dex-client
-              key: token
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_SERVICE_ACCOUNT
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.serviceAccountName
         - name: OAUTH2_CLIENT_SECRET
           valueFrom:
             secretKeyRef:
               name: oauth2-proxy-client-secret
               key: client-secret
       volumes:
+      - name: tmp
+        emptyDir:
+          medium: Memory
+      - name: dex-token
+        projected:
+          defaultMode: 0440
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 600
+              path: token
       - name: dex
         configMap:
           name: dex
@@ -75,6 +104,13 @@ spec:
           items:
           - key: dex-config.yaml
             path: config.yaml
+      - name: run-dex
+        configMap:
+          name: run-dex
+          defaultMode: 0755
+          items:
+          - key: run-dex.sh
+            path: run-dex.sh
       - name: tls
         secret:
           secretName: dex-cert

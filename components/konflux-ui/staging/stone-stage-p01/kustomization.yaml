@@ -2,7 +2,6 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
 - ../base
-- ./base/dex
 # Remove this comment to rotate dex and proxy secrets
 # - ./configure-oauth-proxy-secret.yaml
 
@@ -49,13 +48,5 @@ patches:
   target:
     kind: Route
     version: v1
-- path: remove-dex-client.yaml
-  target:
-    kind: ServiceAccount
-    name: dex-client
-- path: remove-dex-client-secret.yaml
-  target:
-    kind: Secret
-    name: dex-client
 
 namespace: konflux-ui
