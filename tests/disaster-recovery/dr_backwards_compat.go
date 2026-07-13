@@ -102,15 +102,10 @@ func defineBackwardsCompatSpecs() {
 		})
 
 		// Phase 3: Simulate disaster by deleting tenant namespaces.
-		// See dr_same_version.go Phase 3 for the full rationale on
-		// egress blocking + finalizer stripping.
+		// See disaster_recovery.go stripAllFinalizers for full rationale.
 		When("simulating disaster by deleting namespaces", func() {
-			It("should block image-controller egress to preserve Quay resources", func() {
-				blockImageControllerEgress(fw)
-			})
-
-			It("should strip ImageRepository finalizers to match etcd-loss semantics", func() {
-				stripImageRepositoryFinalizers(fw, bcTenants)
+			It("should strip all finalizers to match etcd-loss semantics", func() {
+				stripAllFinalizers(fw, bcTenants)
 			})
 
 			It("should delete both tenant namespaces", func() {
@@ -138,10 +133,6 @@ func defineBackwardsCompatSpecs() {
 
 			It("should restore tenant-2 (MosheKipod) via oc command method", func() {
 				restoreFromBackup(fw, BCTenant2, RestoreMethodOCCommand)
-			})
-
-			It("should unblock image-controller egress after restore", func() {
-				unblockImageControllerEgress(fw)
 			})
 		})
 

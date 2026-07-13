@@ -91,25 +91,17 @@ func defineSameVersionSpecs() {
 		// Phase 3: Simulate disaster by deleting tenant namespaces.
 		//
 		// Real etcd loss destroys all resources instantly — no graceful
-		// deletion, no finalizer processing. But `oc delete project`
-		// triggers graceful deletion, which fires the image-controller
-		// finalizer on ImageRepository CRs (deleting Quay robot accounts).
-		// Two steps replicate real-disaster semantics:
+		// deletion, no finalizer processing. `oc delete project` triggers
+		// graceful deletion instead, invoking every controller finalizer
+		// (application-service, image-controller, integration-service,
+		// release-service, pipelines-as-code). Any of these can stall
+		// namespace deletion past the 10-minute timeout.
 		//
-		//  1. Block image-controller egress (defense-in-depth against
-		//     the race window between finalizer removal and deletion).
-		//  2. Strip ImageRepository finalizers (prevents the deadlock
-		//     that egress-blocking alone creates, and matches the fact
-		//     that real etcd loss never runs finalizers).
-		//
-		// See KFLUXINFRA-3954, STONEBLD-3714.
+		// Strip all finalizers before deletion to match real-disaster
+		// semantics. See KFLUXINFRA-3954, STONEBLD-3714.
 		When("simulating disaster by deleting namespaces", func() {
-			It("should block image-controller egress to preserve Quay resources", func() {
-				blockImageControllerEgress(fw)
-			})
-
-			It("should strip ImageRepository finalizers to match etcd-loss semantics", func() {
-				stripImageRepositoryFinalizers(fw, svTenants)
+			It("should strip all finalizers to match etcd-loss semantics", func() {
+				stripAllFinalizers(fw, svTenants)
 			})
 
 			It("should delete both tenant namespaces", func() {
@@ -127,10 +119,6 @@ func defineSameVersionSpecs() {
 
 			It("should restore tenant-2 (MosheKipod) via oc command method", func() {
 				restoreFromBackup(fw, SVTenant2, RestoreMethodOCCommand)
-			})
-
-			It("should unblock image-controller egress after restore", func() {
-				unblockImageControllerEgress(fw)
 			})
 		})
 
