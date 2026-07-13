@@ -82,19 +82,35 @@ spec:
               key: managed_sa_token
       script: |
         #!/usr/bin/env bash
-        set -uo pipefail
-        MAX_AGE=43200
-        echo "Pre-cleanup: removing orphaned resources older than $((MAX_AGE / 3600))h"
-        oc login --token="$(cat /opt/users-secret/token)" --server="$SERVER_API_URL" --insecure-skip-tls-verify 2>/dev/null
-        for resource in ReleasePlan IntegrationTestScenario Application; do
-          oc -n "$TENANT_NAMESPACE" get "$resource" -o json 2>/dev/null \
-            | jq -r --argjson max "$MAX_AGE" '.items[] | select((now - (.metadata.creationTimestamp | fromdateiso8601)) > $max) | .metadata.name' \
-            | xargs -r oc -n "$TENANT_NAMESPACE" delete "$resource" --wait=false 2>/dev/null || true
-        done
-        oc login --token="$RELEASE_MANAGED_TOKEN" --server="$SERVER_API_URL" --insecure-skip-tls-verify 2>/dev/null
-        oc -n "$RELEASE_MANAGED_NAMESPACE" get ReleasePlanAdmission -o json \
-          | jq -r --arg ns "$TENANT_NAMESPACE" --argjson max "$MAX_AGE" '.items[] | select(.spec.origin == $ns) | select((now - (.metadata.creationTimestamp | fromdateiso8601)) > $max) | .metadata.name' \
-          | xargs -r oc -n "$RELEASE_MANAGED_NAMESPACE" delete ReleasePlanAdmission --wait=false 2>/dev/null || true
+        set -u
+        MAX_AGE_SECONDS=43200
+        echo "Pre-cleanup: removing orphaned resources older than $((MAX_AGE_SECONDS / 3600))h"
+        if ! oc login --token="$(cat /opt/users-secret/token)" --server="$SERVER_API_URL" --insecure-skip-tls-verify; then
+          echo "WARNING: failed to login as tenant SA, skipping tenant cleanup"
+        else
+          for resource in ReleasePlan IntegrationTestScenario Application; do
+            names=$(oc -n "$TENANT_NAMESPACE" get "$resource" -o json 2>/dev/null \
+              | jq -r --argjson max "$MAX_AGE_SECONDS" '.items[] | select((now - (.metadata.creationTimestamp | fromdateiso8601)) > $max) | .metadata.name')
+            if [[ -n "$names" ]]; then
+              count=$(echo "$names" | wc -l)
+              echo "Deleting $count orphaned $resource in $TENANT_NAMESPACE:"
+              echo "$names" | sed 's/^/  /'
+              oc -n "$TENANT_NAMESPACE" delete "$resource" $names --wait=false
+            fi
+          done
+        fi
+        if ! oc login --token="$RELEASE_MANAGED_TOKEN" --server="$SERVER_API_URL" --insecure-skip-tls-verify; then
+          echo "WARNING: failed to login as managed SA, skipping RPA cleanup"
+        else
+          names=$(oc -n "$RELEASE_MANAGED_NAMESPACE" get ReleasePlanAdmission -o json \
+            | jq -r --arg ns "$TENANT_NAMESPACE" --argjson max "$MAX_AGE_SECONDS" '.items[] | select(.spec.origin == $ns) | select((now - (.metadata.creationTimestamp | fromdateiso8601)) > $max) | .metadata.name')
+          if [[ -n "$names" ]]; then
+            count=$(echo "$names" | wc -l)
+            echo "Deleting $count orphaned ReleasePlanAdmission in $RELEASE_MANAGED_NAMESPACE:"
+            echo "$names" | sed 's/^/  /'
+            oc -n "$RELEASE_MANAGED_NAMESPACE" delete ReleasePlanAdmission $names --wait=false
+          fi
+        fi
         echo "Pre-cleanup done"
     - name: run-test
       image: quay.io/redhat-user-workloads/konflux-perfscale-tenant/loadtest
