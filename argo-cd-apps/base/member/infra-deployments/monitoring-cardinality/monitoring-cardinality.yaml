@@ -19,6 +19,26 @@ spec:
                   values.clusterDir: stone-stg-rh01
                 - nameNormalized: stone-stage-p01
                   values.clusterDir: stone-stage-p01
+                # Ring 1 production clusters
+                - nameNormalized: stone-prod-p01
+                  values.clusterDir: stone-prod-p01
+                - nameNormalized: kflux-prd-rh02
+                  values.clusterDir: kflux-prd-rh02
+                # Remaining production clusters — empty-base until promoted
+                - nameNormalized: stone-prd-rh01
+                  values.clusterDir: empty-base
+                - nameNormalized: stone-prod-p02
+                  values.clusterDir: empty-base
+                - nameNormalized: kflux-ocp-p01
+                  values.clusterDir: empty-base
+                - nameNormalized: kflux-prd-rh03
+                  values.clusterDir: empty-base
+                - nameNormalized: kflux-rhel-p01
+                  values.clusterDir: empty-base
+                - nameNormalized: kflux-osp-p01
+                  values.clusterDir: empty-base
+                - nameNormalized: kflux-fedora-01
+                  values.clusterDir: empty-base
   template:
     metadata:
       name: monitoring-cardinality-{{nameNormalized}}
