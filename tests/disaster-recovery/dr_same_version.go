@@ -100,14 +100,8 @@ func defineSameVersionSpecs() {
 		// Strip all finalizers before deletion to match real-disaster
 		// semantics. See KFLUXINFRA-3954, STONEBLD-3714.
 		When("simulating disaster by deleting namespaces", func() {
-			It("should strip all finalizers to match etcd-loss semantics", func() {
-				stripAllFinalizers(fw, svTenants)
-			})
-
-			It("should delete both tenant namespaces", func() {
-				for _, t := range svTenants {
-					deleteNamespace(fw, t.Namespace)
-				}
+			It("should strip finalizers and delete namespaces atomically", func() {
+				stripAndDeleteNamespaces(fw, svTenants)
 			})
 		})
 

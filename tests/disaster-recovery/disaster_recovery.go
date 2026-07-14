@@ -634,9 +634,13 @@ func cleanupTestResources(fw *framework.Framework, tenants []Tenant) {
 // finalizers on restored CRs (KFLUXINFRA-2177).
 // See also KFLUXINFRA-3954, STONEBLD-3714.
 
-// stripAllFinalizers removes every finalizer from every resource in the
-// given tenants' namespaces. Call this immediately before deleteNamespace.
-func stripAllFinalizers(fw *framework.Framework, tenants []Tenant) {
+// stripAndDeleteNamespaces strips all finalizers from each tenant namespace
+// and immediately deletes it before controllers can re-add finalizers.
+// The strip-then-delete MUST happen without interruption per namespace —
+// splitting them across Ginkgo specs allows controllers to re-add finalizers
+// in the gap (observed: 2-43s is enough for image-controller to restore its
+// finalizer, which then deletes Quay robot accounts during graceful deletion).
+func stripAndDeleteNamespaces(fw *framework.Framework, tenants []Tenant) {
 	GinkgoHelper()
 
 	ctx := context.Background()
@@ -654,6 +658,8 @@ func stripAllFinalizers(fw *framework.Framework, tenants []Tenant) {
 		total += stripFinalizers(ctx, restClient, t.Namespace, &pipeline.PipelineRunList{}, "PipelineRun")
 
 		GinkgoWriter.Printf("Stripped finalizers from %d resources in namespace %s\n", total, t.Namespace)
+
+		deleteNamespace(fw, t.Namespace)
 	}
 }
 
