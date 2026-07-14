@@ -3,7 +3,7 @@ kind: Kustomization
 resources:
   - ../base
   - ../base/monitor/production
-  - https://github.com/konflux-ci/release-service/config/default?ref=a971d3c8d10d07257d4afc70e342a09e85a3a33e
+  - https://github.com/konflux-ci/release-service/config/default?ref=6d9abf25ac73986731ba7dbdb1ac459af54999b0
   - release_service_config.yaml
   - signing_configs.yaml
 
@@ -13,6 +13,6 @@ components:
 images:
   - name: quay.io/konflux-ci/release-service
     newName: quay.io/konflux-ci/release-service
-    newTag: a971d3c8d10d07257d4afc70e342a09e85a3a33e
+    newTag: 6d9abf25ac73986731ba7dbdb1ac459af54999b0
 
 namespace: release-service
