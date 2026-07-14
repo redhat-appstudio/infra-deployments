@@ -28,3 +28,19 @@ subjects:
 - kind: ServiceAccount
   name: appstudio-tekton-ms-prometheus
   namespace: appstudio-tekton
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: appstudio-tekton-maintainers
+  namespace: appstudio-tekton
+  labels:
+    monitoring.rhobs/stack: appstudio-tekton-ms
+subjects:
+- apiGroup: rbac.authorization.k8s.io
+  kind: Group
+  name: konflux-o11y
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: component-maintainer
