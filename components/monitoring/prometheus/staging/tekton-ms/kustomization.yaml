@@ -4,21 +4,11 @@ resources:
   - ../../base/tekton-ms
   - kube-rbac-proxy.yaml
   - networkpolicy.yaml
+  - external-secrets/
+  - openshift-pipelines-monitor-drop-tekton-controller.yaml
 
 patches:
-  - path: rhobs-secret-path.yaml
-    target:
-      name: rhobs
-      kind: ExternalSecret
-      group: external-secrets.io
-      version: v1
   - path: remote-write-env-details.yaml
-    target:
-      name: appstudio-tekton-ms
-      kind: MonitoringStack
-      group: monitoring.rhobs
-      version: v1alpha1
-  - path: writeRelabelConfigs.yaml
     target:
       name: appstudio-tekton-ms
       kind: MonitoringStack

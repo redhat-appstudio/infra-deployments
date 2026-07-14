@@ -41,8 +41,7 @@ spec:
         - name: costcenterLabel
           globalReference:
             name: namespaces
-            jmesPath: "[?metadata.name == '{{ request.object.metadata.namespace }}']\
-              \ | [0].metadata.labels.\"cost-center\""
+            jmesPath: "[?metadata.name == '{{ request.namespace }}'] | [0].metadata.labels.\"cost-center\""
       preconditions:
         all:
           - key: '{{ costcenterLabel }}'

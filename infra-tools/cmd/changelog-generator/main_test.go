@@ -370,7 +370,7 @@ func TestBuildBody_Integration(t *testing.T) {
 	gitRun(t, dir, "config", "user.name", "Test")
 
 	// Commit 1: kustomization with oldRef (this becomes the base).
-	kustPath := filepath.Join(dir, kustomizationPath)
+	kustPath := filepath.Join(dir, defaultKustomizationPath)
 	g.Expect(os.MkdirAll(filepath.Dir(kustPath), 0755)).To(Succeed())
 	writeKustomizationFile(t, kustPath, oldRef)
 	gitRun(t, dir, "add", ".")
@@ -383,7 +383,7 @@ func TestBuildBody_Integration(t *testing.T) {
 	gitRun(t, dir, "commit", "-m", "bump operator ref")
 
 	// Use a fake comparer so the test does not make real GitHub API calls.
-	body, err := buildBody(context.Background(), dir, baseCommit, &fakeRepoComparer{})
+	body, err := buildBody(context.Background(), dir, baseCommit, defaultKustomizationPath, &fakeRepoComparer{})
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(body).To(ContainSubstring(oldRef))
 	g.Expect(body).To(ContainSubstring(newRef))

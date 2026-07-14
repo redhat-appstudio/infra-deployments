@@ -1,0 +1,11 @@
+resources:
+  - ../base
+
+patches:
+  - target:
+      kind: ExternalSecret
+      name: ka-kubearchive-credentials
+    patch: |
+      - op: replace
+        path: /spec/dataFrom/0/extract/key
+        value: stonesoup/production/monitoring/exporters/kaexporter/kflux-osp-p01

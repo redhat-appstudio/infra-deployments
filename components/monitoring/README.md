@@ -49,8 +49,8 @@ if it's matching a label, make sure you specify your app's label appropriately (
 Grafana datasources contain the connection settings to the Prometheus instances.
 
 A single
-[datasource (Thanos querier)](https://github.com/redhat-appstudio/infra-deployments/blob/16e48656370dc65dba6471a9f50d745832535723/components/monitoring/grafana/base/grafana-app.yaml#L216),
-`appstudio-datasource` is defined and it lets us query metrics from the Platform and
+datasource (Thanos querier), `appstudio-datasource` is defined in each environment's
+`grafana-app.yaml` and it lets us query metrics from the Platform and
 User Workload Monitoring Prometheus.
 
 To use this default datasource any definition of a datasource in the dashboard json file
@@ -70,10 +70,9 @@ infra-deployments repository, or imported from other projects.
    (After navigating to your folder + Create Dashboard).
 
    > **_Note:_**  Creating a new dashboard manually is available only for development
-                   environment. You may copy and edit the `example` dashboard json
-                   instead, and test the new dashboard on the staging and production
-                   environments. The `example` dashboard json definition can be found
-                   [here](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/monitoring/grafana/base/dashboards/generic-dashboards/example.json)
+                   environment. For staging and production, add the dashboard JSON to
+                   the appropriate environment overlay under
+                   `components/monitoring/grafana/<environment>/dashboards/`.
 
 2. Add tiles to the dashboard to track your initial set of service level indicators.
    If the servicemonitor was added correctly to the stage Prometheus datasource,
