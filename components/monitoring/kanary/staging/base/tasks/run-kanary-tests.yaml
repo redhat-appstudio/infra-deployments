@@ -88,7 +88,7 @@ spec:
         if ! oc login --token="$(cat /opt/users-secret/token)" --server="$SERVER_API_URL" --insecure-skip-tls-verify; then
           echo "WARNING: failed to login as tenant SA, skipping tenant cleanup"
         else
-          for resource in ReleasePlan IntegrationTestScenario Application; do
+          for resource in ReleasePlan IntegrationTestScenario Application ImageRepository; do
             names=$(oc -n "$TENANT_NAMESPACE" get "$resource" -o json 2>/dev/null \
               | jq -r --argjson max "$MAX_AGE_SECONDS" '.items[] | select((now - (.metadata.creationTimestamp | fromdateiso8601)) > $max) | .metadata.name')
             if [[ -n "$names" ]]; then
