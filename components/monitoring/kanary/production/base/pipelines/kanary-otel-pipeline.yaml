@@ -34,6 +34,8 @@ spec:
     - name: release-managed-namespace
       type: string
       default: "managed-konflux-perfscale-tenant"
+    - name: oci-storage
+      type: string
     # Private clusters only (GitLab-based repos). Leave empty for public clusters.
     - name: fork-target
       type: string
@@ -81,6 +83,8 @@ spec:
           value: $(params.release-pipeline-service-account)
         - name: release-managed-namespace
           value: $(params.release-managed-namespace)
+        - name: oci-storage
+          value: $(params.oci-storage)
         - name: fork-target
           value: $(params.fork-target)
         - name: gitlab-api-url

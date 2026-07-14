@@ -31,6 +31,8 @@ spec:
     - name: release-managed-namespace
       type: string
       default: "managed-konflux-perfscale-tenant"
+    - name: oci-storage
+      type: string
     # Private clusters only (GitLab-based repos). Leave empty for public clusters.
     - name: fork-target
       type: string
@@ -106,6 +108,8 @@ spec:
           value: "production"
         - name: RELEASE_PIPELINE_PATH
           value: "pipelines/managed/e2e/e2e.yaml"
+        - name: OCI_STORAGE
+          value: $(params.oci-storage)
         - name: RELEASE_PIPELINE_SERVICE_ACCOUNT
           value: $(params.release-pipeline-service-account)
         - name: RELEASE_MANAGED_NAMESPACE
