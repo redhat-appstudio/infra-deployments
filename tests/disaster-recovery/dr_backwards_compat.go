@@ -102,16 +102,10 @@ func defineBackwardsCompatSpecs() {
 		})
 
 		// Phase 3: Simulate disaster by deleting tenant namespaces.
-		// See disaster_recovery.go stripAllFinalizers for full rationale.
+		// See disaster_recovery.go stripAndDeleteNamespaces for full rationale.
 		When("simulating disaster by deleting namespaces", func() {
-			It("should strip all finalizers to match etcd-loss semantics", func() {
-				stripAllFinalizers(fw, bcTenants)
-			})
-
-			It("should delete both tenant namespaces", func() {
-				for _, t := range bcTenants {
-					deleteNamespace(fw, t.Namespace)
-				}
+			It("should strip finalizers and delete namespaces atomically", func() {
+				stripAndDeleteNamespaces(fw, bcTenants)
 			})
 		})
 
