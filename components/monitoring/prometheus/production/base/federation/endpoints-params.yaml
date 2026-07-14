@@ -120,6 +120,20 @@
     - '{__name__="kube_deployment_spec_replicas", namespace="image-rbac-proxy"}'
     - '{__name__="kube_deployment_status_replicas_available", namespace="image-rbac-proxy"}'
 
+    # Namespace: cert-manager
+    - '{__name__="kube_deployment_status_replicas_ready", namespace="cert-manager"}'
+    - '{__name__="kube_deployment_status_replicas_available", namespace="cert-manager"}'
+    - '{__name__="kube_deployment_spec_replicas", namespace="cert-manager"}'
+    - '{__name__="certmanager_certificate_ready_status", namespace="cert-manager"}'
+    - '{__name__="certmanager_certificate_expiration_timestamp_seconds", namespace="cert-manager"}'
+    - '{__name__="certmanager_certificate_renewal_timestamp_seconds", namespace="cert-manager"}'
+    - '{__name__="certmanager_certificate_not_after_timestamp_seconds", namespace="cert-manager"}'
+    - '{__name__="certmanager_certificate_not_before_timestamp_seconds", namespace="cert-manager"}'
+    - '{__name__="certmanager_controller_sync_call_count", namespace="cert-manager"}'
+    - '{__name__="certmanager_controller_sync_error_count", namespace="cert-manager"}'
+    - '{__name__="certmanager_clusterissuer_ready_status", namespace="cert-manager"}'
+    - '{__name__="certmanager_issuer_ready_status", namespace="cert-manager"}'
+
     ## Container Metrics
     - '{__name__="kube_pod_container_status_waiting_reason", namespace!~".*-tenant|openshift-.*|kube-.*"}'
     - '{__name__="kube_pod_container_resource_limits", namespace=~"release-service|rhtap-releng-tenant"}'
