@@ -1,7 +1,11 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-resources:
-  - ../../base/ring-deployments
-namespace: openshift-gitops
 
-## No patches until those applications are onboarded to the new standards
+namespace: openshift-gitops
+nameSuffix: -ring-0
+
+resources:
+  - konflux-operator
+
+# No patches until those applications are onboarded to the new standards
+patches: []

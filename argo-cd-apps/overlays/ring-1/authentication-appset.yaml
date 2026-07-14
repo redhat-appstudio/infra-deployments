@@ -1,7 +1,9 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: konflux-operator
+  name: authentication
+  labels:
+    appstudio.redhat.com/environment: all # Helps cluster patches detect this appset
 spec:
   generators:
     - merge:
@@ -11,17 +13,17 @@ spec:
           - clusters:
               selector:
                 matchLabels:
-                  appstudio.redhat.com/member-cluster: "true"
+                  appstudio.redhat.com/is-tenant-cluster: "true"
               values:
-                sourceRoot: components/konflux-operator
-                ring: "ring-0"
+                sourceRoot: components/authentication-rd
+                ring: "ring-1"
                 clusterDir: base
           - list:
-              elements: []
+              elements: [] # Populated via a patch(or manually if the cluster list is unusual)
 
   template:
     metadata:
-      name: konflux-operator-{{nameNormalized}}
+      name: authentication-rd-{{nameNormalized}}
     spec:
       project: default
       source:
@@ -29,18 +31,15 @@ spec:
         repoURL: https://github.com/redhat-appstudio/infra-deployments.git
         targetRevision: main
       destination:
-        namespace: konflux-operator
+        namespace: authentication
         server: '{{server}}'
       syncPolicy:
-        automated:
-          prune: true
-          selfHeal: true
+        # automated:
+        #   prune: true
+        #   selfHeal: true
         syncOptions:
-          - CreateNamespace=true
-          - SkipDryRunOnMissingResource=true
+        - CreateNamespace=true
         retry:
-          limit: -1
+          limit: 50
           backoff:
-            duration: 10s
-            factor: 2
-            maxDuration: 3m
+            duration: 15s
