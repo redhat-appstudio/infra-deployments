@@ -6,19 +6,15 @@ spec:
   params:
     - name: tested-cluster
       type: string
-      default: stone-stage-p01
     - name: test-type
       type: string
       default: container-single-arch
     - name: component-repo
       type: string
-      default: "https://gitlab.cee.redhat.com/jhutar/nodejs-devfile-sample4"
     - name: user-prefix
       type: string
-      default: "stagep01cs"
     - name: quay-repo
       type: string
-      default: "redhat-user-workloads-stage"
     - name: pipeline-repo-templating-source
       type: string
       default: "https://github.com/rhtap-perf-test/konflux-probe-test-templates"
@@ -34,13 +30,12 @@ spec:
     # Private clusters only (GitLab-based repos). Leave empty for public clusters.
     - name: fork-target
       type: string
-      default: "jhutar"
+      default: ""
     - name: gitlab-api-url
       type: string
-      default: "https://gitlab.cee.redhat.com/api/v4"
+      default: ""
     - name: member-cluster
       type: string
-      default: "https://api.stone-stage-p01.hpmt.p1.openshiftapps.com:6443"
     - name: tenant-namespace
       type: string
       default: "konflux-perfscale-4-tenant"
@@ -67,6 +62,56 @@ spec:
           - key: token
             path: token
   steps:
+    - name: pre-cleanup
+      image: quay.io/redhat-user-workloads/konflux-perfscale-tenant/loadtest
+      volumeMounts:
+        - name: users-secret
+          mountPath: /opt/users-secret
+          readOnly: true
+      env:
+        - name: SERVER_API_URL
+          value: $(params.member-cluster)
+        - name: TENANT_NAMESPACE
+          value: $(params.tenant-namespace)
+        - name: RELEASE_MANAGED_NAMESPACE
+          value: $(params.release-managed-namespace)
+        - name: RELEASE_MANAGED_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: kanary-probe-prometheus-credentials
+              key: managed_sa_token
+      script: |
+        #!/usr/bin/env bash
+        set -u
+        MAX_AGE_SECONDS=43200
+        echo "Pre-cleanup: removing orphaned resources older than $((MAX_AGE_SECONDS / 3600))h"
+        if ! oc login --token="$(cat /opt/users-secret/token)" --server="$SERVER_API_URL" --insecure-skip-tls-verify; then
+          echo "WARNING: failed to login as tenant SA, skipping tenant cleanup"
+        else
+          for resource in ReleasePlan IntegrationTestScenario Application ImageRepository; do
+            names=$(oc -n "$TENANT_NAMESPACE" get "$resource" -o json 2>/dev/null \
+              | jq -r --argjson max "$MAX_AGE_SECONDS" '.items[] | select((now - (.metadata.creationTimestamp | fromdateiso8601)) > $max) | .metadata.name')
+            if [[ -n "$names" ]]; then
+              count=$(echo "$names" | wc -l)
+              echo "Deleting $count orphaned $resource in $TENANT_NAMESPACE:"
+              echo "$names" | sed 's/^/  /'
+              oc -n "$TENANT_NAMESPACE" delete "$resource" $names --wait=false
+            fi
+          done
+        fi
+        if ! oc login --token="$RELEASE_MANAGED_TOKEN" --server="$SERVER_API_URL" --insecure-skip-tls-verify; then
+          echo "WARNING: failed to login as managed SA, skipping RPA cleanup"
+        else
+          names=$(oc -n "$RELEASE_MANAGED_NAMESPACE" get ReleasePlanAdmission -o json \
+            | jq -r --arg ns "$TENANT_NAMESPACE" --argjson max "$MAX_AGE_SECONDS" '.items[] | select(.spec.origin == $ns) | select((now - (.metadata.creationTimestamp | fromdateiso8601)) > $max) | .metadata.name')
+          if [[ -n "$names" ]]; then
+            count=$(echo "$names" | wc -l)
+            echo "Deleting $count orphaned ReleasePlanAdmission in $RELEASE_MANAGED_NAMESPACE:"
+            echo "$names" | sed 's/^/  /'
+            oc -n "$RELEASE_MANAGED_NAMESPACE" delete ReleasePlanAdmission $names --wait=false
+          fi
+        fi
+        echo "Pre-cleanup done"
     - name: run-test
       image: quay.io/redhat-user-workloads/konflux-perfscale-tenant/loadtest
       volumeMounts:
