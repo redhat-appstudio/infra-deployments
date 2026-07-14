@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: tekton-ms-prometheus-restrict-http
+  namespace: appstudio-tekton
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: appstudio-tekton-ms
+      app.kubernetes.io/name: prometheus
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: tekton-ms-kube-rbac-proxy
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: appstudio-cardinality-exporter
+          podSelector:
+            matchLabels:
+              app: prometheus-cardinality-exporter
+      ports:
+        - protocol: TCP
+          port: 9090
