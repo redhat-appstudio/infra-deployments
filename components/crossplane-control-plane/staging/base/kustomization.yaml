@@ -5,20 +5,13 @@ resources:
 - ../../base
 - provider-config.yaml
 - testplatform-provider-config.yaml
-- https://github.com/konflux-ci/crossplane-control-plane/crossplane?ref=a91519bb2e0628895a351783c084dca911b1a4b4
-- https://github.com/konflux-ci/crossplane-control-plane/config?ref=a91519bb2e0628895a351783c084dca911b1a4b4
+- https://github.com/konflux-ci/crossplane-control-plane/crossplane?ref=93468e78be8cb6980dec3cd97ef400de6d54064b
+- https://github.com/konflux-ci/crossplane-control-plane/config?ref=93468e78be8cb6980dec3cd97ef400de6d54064b
 
 images:
   - name: quay.io/konflux-ci/task-runner
     newTag: v1
     digest: sha256:b9ef0479b57a494368a12a02886c650314c9ac7391c6228f21065865aab71c9e
 
-patches:
-  - patch: |-
-      - op: add
-        path: /spec/template/spec/containers/0/resources/limits/memory
-        value: 4Gi
-    target:
-      kind: Deployment
-      name: crossplane-helm
-      namespace: crossplane-system
+components:
+  - ../../k-components/crossplane-resources
