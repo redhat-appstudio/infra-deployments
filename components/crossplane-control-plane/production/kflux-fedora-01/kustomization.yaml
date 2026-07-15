@@ -3,3 +3,9 @@ kind: Kustomization
 
 resources:
 - ../base
+- environment-config.yaml
+- https://github.com/konflux-ci/crossplane-control-plane/crossplane?ref=93468e78be8cb6980dec3cd97ef400de6d54064b
+- https://github.com/konflux-ci/crossplane-control-plane/config?ref=93468e78be8cb6980dec3cd97ef400de6d54064b
+
+components:
+  - ../../k-components/crossplane-resources
