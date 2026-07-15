@@ -29,6 +29,7 @@ jobs:
           find argo-cd-apps components -name 'kustomization.yaml' \
             ! -path '*/k-components/*' \
             ! -path '*konflux-operator/*/cr/*' \
+            ! -path '*konflux-operator/rings/*/base/cr/*' \
             ! -path 'components/repository-validator/staging/*' \
             ! -path 'components/repository-validator/production/*' \
             ! -path 'components/monitoring/blackbox/staging/*' \

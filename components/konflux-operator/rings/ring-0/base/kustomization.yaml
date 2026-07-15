@@ -5,12 +5,14 @@ resources:
   - invariant
 
 components:
-  - ../../../base/cr/default-tenant
-  - ../../../base/cr/build
-  - ../../../base/cr/image-controller
-  - ../../../base/cr/integration
-  - ../../../base/cr/konflux-info
-  - ../../../base/cr/konflux-ui
-  - ../../../base/cr/namespace-lister
-  - ../../../base/cr/release
-  - ../../../base/cr/enterprise-contract
+  - cr/build
+  - cr/image-controller
+  - cr/integration
+  - cr/konflux-info
+  - cr/konflux-ui
+  - cr/namespace-lister
+  - cr/release
+  - cr/enterprise-contract
+
+patches:
+  - path: release-config.yaml
