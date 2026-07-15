@@ -6,3 +6,61 @@ resources:
 
 generators:
 - caching-helm-generator.yaml
+
+patches:
+  - target:
+      kind: StatefulSet
+      name: artifact-registry-proxy
+      namespace: caching
+    patch: |
+      - op: add
+        path: /metadata/annotations/argocd.argoproj.io~1sync-options
+        value: Prune=false
+  - target:
+      kind: Service
+      name: artifact-registry-proxy
+      namespace: caching
+    patch: |
+      - op: add
+        path: /metadata/annotations/argocd.argoproj.io~1sync-options
+        value: Prune=false
+  - target:
+      kind: Service
+      name: artifact-registry-proxy-headless
+      namespace: caching
+    patch: |
+      - op: add
+        path: /metadata/annotations/argocd.argoproj.io~1sync-options
+        value: Prune=false
+  - target:
+      kind: Secret
+      name: artifact-registry-proxy-tls
+      namespace: caching
+    patch: |
+      - op: add
+        path: /metadata/annotations/argocd.argoproj.io~1sync-options
+        value: Prune=false
+  - target:
+      kind: ServiceMonitor
+      name: artifact-registry-proxy
+      namespace: caching
+    patch: |
+      - op: add
+        path: /metadata/annotations/argocd.argoproj.io~1sync-options
+        value: Prune=false
+  - target:
+      kind: ConfigMap
+      name: artifact-registry-proxy-config
+      namespace: caching
+    patch: |
+      - op: add
+        path: /metadata/annotations/argocd.argoproj.io~1sync-options
+        value: Prune=false
+  - target:
+      kind: ConfigMap
+      name: artifact-registry-proxy-exporter-config
+      namespace: caching
+    patch: |
+      - op: add
+        path: /metadata/annotations/argocd.argoproj.io~1sync-options
+        value: Prune=false
