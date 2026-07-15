@@ -62,7 +62,7 @@ if [[ -n "${GINKGO_LABEL_FILTER:-}" ]]; then
   CONFORMANCE_ARGS+=(-ginkgo.label-filter="${GINKGO_LABEL_FILTER}")
 fi
 
-echo "[INFO] Running test/e2e/run-e2e.sh (deploy test resources, proxy integration tests, conformance; namespace=${E2E_APPLICATIONS_NAMESPACE})..."
+echo "[INFO] Running test/e2e/run-e2e.sh (OpenShift UWM metrics, deploy test resources, proxy integration tests, conformance; namespace=${E2E_APPLICATIONS_NAMESPACE})..."
 bash test/e2e/run-e2e.sh "${CONFORMANCE_ARGS[@]}"
 
 echo "[INFO] run-e2e.sh complete"
