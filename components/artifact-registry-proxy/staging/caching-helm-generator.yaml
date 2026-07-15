@@ -4,22 +4,26 @@ metadata:
   name: caching-helm
 name: caching-helm
 repo: oci://quay.io/konflux-ci/caching
-version: 0.1.1688+a7def07
+version: 0.1.1779+f29d8f2
 valuesInline:
   squid:
+    enabled: false
+  selfsigned-certificate:
+    enabled: false
+  selfsigned-bundle:
     enabled: false
   nginx:
     enabled: true
     replicaCount: 3
-    name: artifact-registry-proxy-v2
+    name: artifact-registry-proxy
     tls:
       enabled: true
-      secretName: artifact-registry-proxy-v2-tls
+      secretName: artifact-registry-proxy-tls
     service:
       port: 443
       trafficDistribution: PreferClose
       annotations:
-        service.beta.openshift.io/serving-cert-secret-name: artifact-registry-proxy-v2-tls
+        service.beta.openshift.io/serving-cert-secret-name: artifact-registry-proxy-tls
     upstream:
       url: https://red-hat.repo.sonatype.app
     auth:
@@ -52,16 +56,3 @@ valuesInline:
         ca:
           configMapName: openshift-service-ca.crt
           key: service-ca.crt
-  tlsOutgoingOptions:
-    caFile: /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
-  volumes:
-    - name: trusted-ca
-      configMap:
-        name: trusted-ca
-        items:
-          - key: ca-bundle.crt
-            path: tls-ca-bundle.pem
-  volumeMounts:
-    - name: trusted-ca
-      mountPath: /etc/pki/ca-trust/extracted/pem
-      readOnly: true
