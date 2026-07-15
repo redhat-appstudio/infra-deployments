@@ -1,9 +1,13 @@
 resources:
   - rbac
   - external-secrets
-  - https://github.com/redhat-appstudio/o11y/config/exporters/monitoring/kaexporter/base?ref=cd48a7ad17234ef50526134e0ad628ce30894b5a
+  - configs
+  - https://github.com/redhat-appstudio/o11y/config/exporters/monitoring/kaexporter/base?ref=6a5258fd68e6f9ce3b3f0189a8224793db53ce31
 
 images:
   - name: quay.io/redhat-appstudio/o11y
     newName: quay.io/redhat-appstudio/o11y
-    newTag: cd48a7ad17234ef50526134e0ad628ce30894b5a
+    newTag: 6a5258fd68e6f9ce3b3f0189a8224793db53ce31
+
+patches:
+  - path: ./configs/kaexporter-deployment-patch.yaml
