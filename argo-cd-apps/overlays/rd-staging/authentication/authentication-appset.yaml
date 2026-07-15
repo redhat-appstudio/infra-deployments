@@ -15,7 +15,7 @@ spec:
                 matchLabels:
                   appstudio.redhat.com/is-tenant-cluster: "true"
               values:
-                sourceRoot: components/authentication-rd
+                sourceRoot: components/authentication
                 ring: "empty-base"
                 clusterDir: "empty-base"
           - list:
@@ -23,7 +23,7 @@ spec:
 
   template:
     metadata:
-      name: authentication-rd-{{nameNormalized}}
+      name: authentication-{{nameNormalized}}
     spec:
       project: default
       source:
