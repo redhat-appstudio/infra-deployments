@@ -1,0 +1,18 @@
+apiVersion: konflux.konflux-ci.dev/v1alpha1
+kind: Konflux
+metadata:
+  name: konflux
+spec:
+  namespaceLister:
+    spec:
+      cacheResyncPeriod: "10m"
+      logLevel: info
+      namespaceLister:
+        replicas: 3
+        resources:
+          requests:
+            cpu: 4000m
+            memory: 6Gi
+          limits:
+            cpu: 4000m
+            memory: 6Gi

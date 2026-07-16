@@ -1,0 +1,31 @@
+apiVersion: konflux.konflux-ci.dev/v1alpha1
+kind: Konflux
+metadata:
+  name: konflux
+spec:
+  ui:
+    spec:
+      proxy:
+        replicas: 3
+        endpoints:
+          kite:
+            enabled: true
+          kubearchive:
+            enabled: true
+        reverseProxy:
+          resources:
+            requests:
+              cpu: 30m
+              memory: 128Mi
+            limits:
+              cpu: 300m
+              memory: 256Mi
+      dex:
+        config:
+          configureLoginWithOpenShift: true
+      runtimeConfig:
+        monitoring:
+          enabled: true
+          dsn: "https://2d1bbbd05a2ff473d916df439cfc363e@o490301.ingest.us.sentry.io/4510260965408768"
+          environment: staging
+          sampleRateErrors: "1.0"
