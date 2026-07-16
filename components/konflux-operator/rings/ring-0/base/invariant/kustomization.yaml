@@ -1,7 +1,7 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - https://github.com/konflux-ci/konflux-ci/operator/config/default?ref=72d73f696e8847edfd53bbf9d302d6f2f703cfef
+  - https://github.com/konflux-ci/konflux-ci/operator/config/default?ref=60324b00449e08c2e3799ac5ab4cd4a892618c2c
   - konflux.yaml
 
 patches:
@@ -10,4 +10,4 @@ patches:
 images:
   - name: localhost/konflux-operator
     newName: quay.io/konflux-ci/konflux-operator
-    newTag: 72d73f696e8847edfd53bbf9d302d6f2f703cfef
+    newTag: 60324b00449e08c2e3799ac5ab4cd4a892618c2c
