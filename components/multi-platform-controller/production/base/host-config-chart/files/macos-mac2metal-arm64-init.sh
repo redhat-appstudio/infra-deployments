@@ -1,19 +1,19 @@
 #!/bin/bash
-set -eu
+set -euo pipefail
 set -x
 
 user="konflux-builder"
 
 # Check if user already exists
 if ! id "$user" &>/dev/null; then
-    # Generate random password
+    # Suppress xtrace to avoid leaking password in logs
+    set +x
     random_password=$(openssl rand -base64 32)
-
     # Create user
     sudo sysadminctl -addUser "$user" -fullName "Konflux Builder" -password "$random_password" -home /Users/"$user"
-
     # Clear password from variable
     unset random_password
+    set -x
 else
     echo "User $user already exists, skipping user creation"
 fi
