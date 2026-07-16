@@ -910,7 +910,7 @@ PIPELINERUN_DEFINITIONS: Dict[str, PipelineRunTestData] = {
         },
         "expected": {
             "annotations": {
-                "tekton-kueue.konflux-ci.dev/validation-error": "build-platforms parameter must be an array of platform strings, got a non-array value",
+                "kueue.konflux-ci.dev/validation-error": "build-platforms parameter must be an array of platform strings, got a non-array value",
                 "kueue.konflux-ci.dev/requests-konflux-ci-dev-token": "1",
             },
             "labels": {
