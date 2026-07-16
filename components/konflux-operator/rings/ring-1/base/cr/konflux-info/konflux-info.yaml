@@ -1,0 +1,36 @@
+apiVersion: konflux.konflux-ci.dev/v1alpha1
+kind: Konflux
+metadata:
+  name: konflux
+spec:
+  info:
+    spec:
+      clusterConfig:
+        data:
+          allowCacheProxy: true
+          allowPackageRegistryProxy: true
+          httpProxy: squid.caching.svc.cluster.local:3128
+          noProxy: ""
+          packageRegistryProxyGomodUrl: https://artifact-registry-proxy.caching.svc.cluster.local/repository/go-proxy
+          packageRegistryProxyNpmUrl: https://artifact-registry-proxy.caching.svc.cluster.local/repository/npm-proxy
+          packageRegistryProxyPipUrl: https://artifact-registry-proxy.caching.svc.cluster.local/repository/pypi-proxy/simple
+          packageRegistryProxyPnpmUrl: https://artifact-registry-proxy.caching.svc.cluster.local/repository/npm-proxy
+          packageRegistryProxyYarnUrl: https://artifact-registry-proxy.caching.svc.cluster.local/repository/npm-proxy
+      publicInfo:
+        environment: staging
+        integrations:
+          sbom_server:
+            url: "https://atlas.build.stage.devshift.net/sbom/content/<PLACEHOLDER>"
+            sbom_sha: "https://atlas.build.stage.devshift.net/sboms/<PLACEHOLDER>"
+          image_controller:
+            enabled: true
+            notifications:
+              - title: "SBOM-event-to-Bombino"
+                event: "repo_push"
+                method: "webhook"
+                config:
+                  url: "https://bombino.preprod.api.redhat.com/v1/sbom/quay/push"
+      banner:
+        items:
+          - summary: "Want to **display important updates** here? [See how to create a banner](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/konflux-info/README.md)."
+            type: info
