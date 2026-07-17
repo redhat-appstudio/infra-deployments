@@ -71,6 +71,9 @@ patches:
                 env:
                 - name: KUBEARCHIVE_OTEL_MODE
                   value: delegated
+                - name: GOMEMLIMIT
+                  value: 440MiB
+
   - patch: |-
       apiVersion: apps/v1
       kind: Deployment
