@@ -1,0 +1,55 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app: prometheus-cardinality-exporter
+    kubernetes.io/part-of: appstudio-cardinality-exporter
+  name: prometheus-cardinality-exporter
+# Role necessary for automatic discovery of prometheus endpoints
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: prometheus-cardinality-exporter-list
+  labels:
+    kubernetes.io/part-of: appstudio-cardinality-exporter
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - namespaces
+      - endpoints
+    verbs:
+      - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus-cardinality-exporter
+  labels:
+    kubernetes.io/part-of: appstudio-cardinality-exporter
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: prometheus-cardinality-exporter-list
+subjects:
+  - kind: ServiceAccount
+    name: prometheus-cardinality-exporter
+    namespace: appstudio-cardinality-exporter
+---
+# CMO owned prometheus instances are protected by kube-rbac-proxy. Grant necessary permissions to the exporter SA.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus-cardinality-exporter-monitoring-view
+  labels:
+    kubernetes.io/part-of: appstudio-cardinality-exporter
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-monitoring-view
+subjects:
+- kind: ServiceAccount
+  name: prometheus-cardinality-exporter
+  namespace: appstudio-cardinality-exporter
