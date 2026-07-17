@@ -2,6 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ../base
+  - ../base/dex-dynamic
   - configure-oauth-proxy-secret.yaml
 
 configMapGenerator:
@@ -35,8 +36,16 @@ patches:
       kind: Deployment
   - path: set-redirect-uri.yaml
     target:
-      name: dex-client
+      name: dex
       kind: ServiceAccount
+  - path: remove-dex-client.yaml
+    target:
+      kind: ServiceAccount
+      name: dex-client
+  - path: remove-dex-client-secret.yaml
+    target:
+      kind: Secret
+      name: dex-client
   - path: set-hostname.yaml
     target:
       kind: Route
