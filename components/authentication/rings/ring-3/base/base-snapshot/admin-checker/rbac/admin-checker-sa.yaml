@@ -1,0 +1,32 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: admin-checker-sa
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: groups-reader
+rules:
+- apiGroups:
+    - "user.openshift.io"
+  resources:
+    - "groups"
+  verbs:
+    - "get"
+    - "list"
+    - "watch"
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: admin-checker-group-reader
+subjects:
+- kind: ServiceAccount
+  name: admin-checker-sa
+  namespace: admin-checker
+roleRef:
+  kind: ClusterRole
+  name: groups-reader
+  apiGroup: rbac.authorization.k8s.io
