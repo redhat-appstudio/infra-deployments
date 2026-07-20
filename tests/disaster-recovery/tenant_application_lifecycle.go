@@ -10,6 +10,8 @@ package disaster_recovery
 import (
 	"context"
 	"fmt"
+	"io"
+	"strings"
 	"sync"
 	"time"
 
@@ -17,6 +19,7 @@ import (
 	. "github.com/onsi/ginkgo/v2" //nolint:staticcheck
 	. "github.com/onsi/gomega"    //nolint:staticcheck
 	pipeline "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
+	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -53,11 +56,16 @@ func countSucceededPRs(fw *framework.Framework, namespace, pipelineType, compone
 }
 
 // logFailedTaskRuns lists TaskRuns belonging to a failed PipelineRun and logs
-// each failed TaskRun's pipeline task name and failure message.
+// each failed TaskRun's pipeline task name, failure message, and the actual
+// container logs from the failing step. The container logs are critical for
+// diagnosing OCI-TA and other step-level failures where the condition message
+// only says "exited with code 1: Error".
 func logFailedTaskRuns(fw *framework.Framework, namespace, prName string) {
+	ctx := context.Background()
+
 	trList := &pipeline.TaskRunList{}
 	if err := fw.AsKubeAdmin.CommonController.KubeRest().List(
-		context.Background(), trList,
+		ctx, trList,
 		client.InNamespace(namespace),
 		client.MatchingLabels{"tekton.dev/pipelineRun": prName},
 	); err != nil {
@@ -73,11 +81,90 @@ func logFailedTaskRuns(fw *framework.Framework, namespace, prName string) {
 					taskName := tr.Labels["tekton.dev/pipelineTask"]
 					GinkgoWriter.Printf("  FAILED TaskRun %s (task: %s) in PipelineRun %s: %s\n",
 						tr.Name, taskName, prName, c.Message)
+					logFailedStepContainers(fw, namespace, tr)
 				}
 				break
 			}
 		}
 	}
+}
+
+// logFailedStepContainers reads the container logs from the pod backing a
+// failed TaskRun. It identifies which step(s) failed from the TaskRun status
+// and fetches the last 80 lines of each failing container's logs.
+func logFailedStepContainers(fw *framework.Framework, namespace string, tr *pipeline.TaskRun) {
+	podName := tr.Status.PodName
+	if podName == "" {
+		GinkgoWriter.Printf("    no pod name in TaskRun %s status — cannot read container logs\n", tr.Name)
+		return
+	}
+
+	failedContainers := findFailedStepContainers(tr)
+	if len(failedContainers) == 0 {
+		GinkgoWriter.Printf("    no failed step containers identified in TaskRun %s — dumping all step statuses\n", tr.Name)
+		for _, step := range tr.Status.Steps {
+			state := "unknown"
+			if step.Terminated != nil {
+				state = fmt.Sprintf("terminated(exit=%d, reason=%s)", step.Terminated.ExitCode, step.Terminated.Reason)
+			} else if step.Running != nil {
+				state = "running"
+			} else if step.Waiting != nil {
+				state = fmt.Sprintf("waiting(reason=%s)", step.Waiting.Reason)
+			}
+			GinkgoWriter.Printf("    step %s: %s\n", step.Name, state)
+		}
+		return
+	}
+
+	kubeClient := fw.AsKubeAdmin.CommonController.KubeInterface()
+	tailLines := int64(80)
+
+	for _, containerName := range failedContainers {
+		GinkgoWriter.Printf("    --- container logs: %s/%s (container: %s) ---\n", namespace, podName, containerName)
+
+		logReq := kubeClient.CoreV1().Pods(namespace).GetLogs(podName, &corev1.PodLogOptions{
+			Container: containerName,
+			TailLines: &tailLines,
+		})
+		stream, err := logReq.Stream(context.Background())
+		if err != nil {
+			GinkgoWriter.Printf("    ERROR reading logs for %s/%s container %s: %v\n",
+				namespace, podName, containerName, err)
+			continue
+		}
+
+		logBytes, err := io.ReadAll(stream)
+		stream.Close()
+		if err != nil {
+			GinkgoWriter.Printf("    ERROR reading log stream for %s/%s container %s: %v\n",
+				namespace, podName, containerName, err)
+			continue
+		}
+
+		logStr := string(logBytes)
+		if logStr == "" {
+			GinkgoWriter.Printf("    (empty log output)\n")
+		} else {
+			GinkgoWriter.Printf("%s\n", logStr)
+		}
+		GinkgoWriter.Printf("    --- end container logs: %s ---\n", containerName)
+	}
+}
+
+// findFailedStepContainers returns container names for steps that terminated
+// with a non-zero exit code. Tekton names step containers "step-<stepName>".
+func findFailedStepContainers(tr *pipeline.TaskRun) []string {
+	var failed []string
+	for _, step := range tr.Status.Steps {
+		if step.Terminated != nil && step.Terminated.ExitCode != 0 {
+			containerName := step.Container
+			if containerName == "" {
+				containerName = "step-" + strings.ReplaceAll(step.Name, " ", "-")
+			}
+			failed = append(failed, containerName)
+		}
+	}
+	return failed
 }
 
 // waitForSucceededPRCount polls until exactly expectedCount PipelineRuns with
