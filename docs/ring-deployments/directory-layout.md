@@ -225,6 +225,25 @@ rings/ring-1/base/
 
 Promoted resources (RBACs, CRDs, additional manifests) and ring-authored resources (ExternalSecrets, feature flags) both live in Tier 2 but in their own subdirectories for clarity.
 
+> **Invariant Subdirectory Pattern**
+>
+> Components that deploy an operator with a Custom Resource can isolate the Kargo-promoted content into an `invariant/` subdirectory within Tier 2. This separates what Kargo writes (upstream ref, image pin) from ring-authored configuration (CR components, environment-specific patches):
+>
+> ```
+> rings/ring-0/base/
+> ├── kustomization.yaml              # resources: [invariant], components: [cr/*], patches: [release-config.yaml]
+> ├── invariant/                      # Kargo-promoted content only
+> │   ├── kustomization.yaml          # upstream ref (?ref=SHA), images block, konflux.yaml
+> │   └── konflux.yaml                # minimal CR shell
+> ├── cr/                             # ring-owned CR overlay components (team-owned, with OWNERS)
+> │   ├── build/
+> │   ├── integration/
+> │   └── ...
+> └── release-config.yaml             # environment-specific CR settings (non-team-owned)
+> ```
+>
+> Kargo promotes by updating `invariant/kustomization.yaml` (the `?ref=` and `images:` block). The CR components and `release-config.yaml` are ring-authored and not promoted — each ring defines its own values. See `components/konflux-operator/` for a concrete example.
+
 ```yaml
 # components/build-service/rings/ring-1/base/kustomization.yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
