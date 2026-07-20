@@ -26,7 +26,7 @@ GitOps monorepo deploying 50+ Kubernetes components across multiple clusters via
 - Promotion order: development/staging → production; changes must be validated in dev/staging before promoting to production
 - Production has per-cluster overlay directories; rollouts must be split into rings (subsets of clusters), not applied to all at once
 - All changes via PR; CODEOWNERS approval required
-- Production PRs must include `## Risk Assessment` (level, description, rollback plan) and `## Validation` (staging evidence if applicable)
+- Production PRs must include `## Risk Assessment` (level, what could go wrong, rollback plan, blast radius) and `## Validation` (staging evidence if applicable). See `skills/risk-assessment.md`
 - Commits - Jira ID at start (e.g., `KFLUXINFRA-1234 description`). Interactive sessions: Use the -s flag and `Assisted-by:` trailer. Agentic workflow: `Authored-by:` trailer. Include agent name and tool.
 
 ## Gotchas
@@ -39,5 +39,7 @@ GitOps monorepo deploying 50+ Kubernetes components across multiple clusters via
 ## Skills
 
 - Before opening a PR, writing a PR description, or interpreting CI results, read `skills/pr-workflow.md`
+- When drafting or reviewing a production PR's Risk Assessment section, read `skills/risk-assessment.md` (canonical: `.agents/skills/risk-assessment/SKILL.md`)
+- Fullsend auto-discovers that skill via `.agents/skills/` (`.claude/skills` symlinks there)
 - When a CI check fails on a PR, read `skills/ci-troubleshooting.md`
 - When working interactively on new features or significant changes, read `skills/brainstorming-workflow.md` before making changes
