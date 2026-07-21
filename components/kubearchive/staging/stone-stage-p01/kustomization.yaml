@@ -72,13 +72,14 @@ patches:
                 - name: KUBEARCHIVE_OTEL_MODE
                   value: delegated
                 - name: GOMEMLIMIT
-                  value: "440Mi"
-                  valueFrom: null
+                  valueFrom:
+                    resourceFieldRef:
+                      resource: requests.memory
                 resources:
                   limits:
                     memory: 512Mi
                   requests:
-                    memory: 512Mi
+                    memory: 460Mi
   - patch: |-
       apiVersion: apps/v1
       kind: Deployment
