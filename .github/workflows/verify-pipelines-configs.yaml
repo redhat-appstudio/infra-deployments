@@ -20,9 +20,15 @@ jobs:
       has_errors: ${{ steps.check.outputs.has_errors }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ github.event.pull_request.head.sha }}
+          # Kustomize is executed on the remote code to build the manifest,
+          # but this job in the workflow is specifically scoped to have
+          # no permissions besides content: read, ensuring we can  safely
+          # checkout and build the kustomize resources.
+          # Without this setting, we couldn't checkout the code from a fork
+          allow-unsafe-pr-checkout: true
 
       - name: Setup Kustomize
         uses: multani/action-setup-kustomize@v1
