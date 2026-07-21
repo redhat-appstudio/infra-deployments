@@ -3,11 +3,3 @@ kind: Kustomization
 resources:
 - ../base
 - ../policies/kubearchive/
-- ../policies/kueue/
-patches:
-- path: patches/kueue-policy-prepare-recreate.yaml
-  target:
-    group: kyverno.io
-    version: v1
-    kind: ClusterPolicy
-    name: bootstrap-tenant-namespace-queue
