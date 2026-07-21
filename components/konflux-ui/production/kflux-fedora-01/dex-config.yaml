@@ -28,6 +28,6 @@ connectors:
       # OpenShift API
       issuer: https://api.kflux-fedora-01.84db.p1.openshiftapps.com:6443
       # Credentials can be string literals or pulled from the environment.
-      clientID: system:serviceaccount:konflux-ui:dex-client
+      clientID: $OPENSHIFT_OAUTH_CLIENT_ID
       clientSecret: $OPENSHIFT_OAUTH_CLIENT_SECRET
       redirectURI: https://konflux-ui.apps.kflux-fedora-01.84db.p1.openshiftapps.com/idp/callback
