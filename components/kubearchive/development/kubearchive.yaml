@@ -1112,7 +1112,9 @@ spec:
                 fieldRef:
                   fieldPath: metadata.name
             - name: GOMEMLIMIT
-              value: "120Mi"
+              valueFrom:
+                resourceFieldRef:
+                  resource: requests.memory
             - name: GOMAXPROCS
               valueFrom:
                 resourceFieldRef:
@@ -1223,7 +1225,9 @@ spec:
                 fieldRef:
                   fieldPath: metadata.name
             - name: GOMEMLIMIT
-              value: "120Mi"
+              valueFrom:
+                resourceFieldRef:
+                  resource: requests.memory
             - name: GOMAXPROCS
               valueFrom:
                 resourceFieldRef:
