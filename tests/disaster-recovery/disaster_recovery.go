@@ -10,11 +10,13 @@ package disaster_recovery
 import (
 	"context"
 	"crypto/tls"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"os/exec"
 	"strings"
+	"time"
 
 	appservice "github.com/konflux-ci/application-api/api/v1alpha1"
 	"github.com/konflux-ci/e2e-tests/pkg/framework"
@@ -450,6 +452,119 @@ func verifyResources(fw *framework.Framework, t Tenant) {
 	Expect(err).ShouldNot(HaveOccurred(), "should be able to list ImageRepositories in namespace %q", t.Namespace)
 	Expect(imageRepoList.Items).Should(HaveLen(len(Components)),
 		"expected %d ImageRepository CRs in namespace %q (one per component)", len(Components), t.Namespace)
+}
+
+// waitForPushSecretReadiness polls each tenant's ImageRepository push secrets
+// until all contain valid .dockerconfigjson auth entries. After a Velero
+// restore, image-controller must reconcile each ImageRepository — creating
+// new Quay robot accounts and writing fresh credentials into the push
+// secrets. Builds that start before this reconciliation completes fail with
+// "unauthorized: Could not find robot with specified username".
+func waitForPushSecretReadiness(fw *framework.Framework, tenants []Tenant) {
+	GinkgoHelper()
+
+	By("Waiting for ImageRepository push secrets to contain valid credentials")
+
+	for _, t := range tenants {
+		imageRepoList := &imagecontrollerv1alpha1.ImageRepositoryList{}
+		Expect(fw.AsKubeAdmin.CommonController.KubeRest().List(
+			context.Background(), imageRepoList, client.InNamespace(t.Namespace),
+		)).Should(Succeed(), "failed to list ImageRepositories in %s", t.Namespace)
+
+		for i := range imageRepoList.Items {
+			ir := &imageRepoList.Items[i]
+			secretName := ir.Status.Credentials.PushSecretName
+			if secretName == "" {
+				GinkgoWriter.Printf("ImageRepository %s/%s has no push secret name in status — waiting for reconciliation\n",
+					t.Namespace, ir.Name)
+			}
+
+			Eventually(func() bool {
+				// Re-read ImageRepository to pick up status changes.
+				freshIR := &imagecontrollerv1alpha1.ImageRepository{}
+				if err := fw.AsKubeAdmin.CommonController.KubeRest().Get(
+					context.Background(),
+					client.ObjectKey{Name: ir.Name, Namespace: t.Namespace},
+					freshIR,
+				); err != nil {
+					GinkgoWriter.Printf("  error reading ImageRepository %s/%s: %v\n", t.Namespace, ir.Name, err)
+					return false
+				}
+
+				if freshIR.Status.State != imagecontrollerv1alpha1.ImageRepositoryStateReady {
+					GinkgoWriter.Printf("  ImageRepository %s/%s state: %s (waiting for ready)\n",
+						t.Namespace, ir.Name, freshIR.Status.State)
+					return false
+				}
+
+				sName := freshIR.Status.Credentials.PushSecretName
+				if sName == "" {
+					GinkgoWriter.Printf("  ImageRepository %s/%s ready but no push secret name yet\n",
+						t.Namespace, ir.Name)
+					return false
+				}
+
+				secret := &corev1.Secret{}
+				if err := fw.AsKubeAdmin.CommonController.KubeRest().Get(
+					context.Background(),
+					client.ObjectKey{Name: sName, Namespace: t.Namespace},
+					secret,
+				); err != nil {
+					GinkgoWriter.Printf("  push secret %s/%s not found: %v\n", t.Namespace, sName, err)
+					return false
+				}
+
+				dockerCfgJSON, ok := secret.Data[".dockerconfigjson"]
+				if !ok || len(dockerCfgJSON) == 0 {
+					GinkgoWriter.Printf("  push secret %s/%s has no .dockerconfigjson\n", t.Namespace, sName)
+					return false
+				}
+
+				var cfg struct {
+					Auths map[string]struct {
+						Auth string `json:"auth"`
+					} `json:"auths"`
+				}
+				if err := json.Unmarshal(dockerCfgJSON, &cfg); err != nil {
+					GinkgoWriter.Printf("  push secret %s/%s: malformed .dockerconfigjson: %v\n",
+						t.Namespace, sName, err)
+					return false
+				}
+
+				if len(cfg.Auths) == 0 {
+					GinkgoWriter.Printf("  push secret %s/%s: auths map is empty\n", t.Namespace, sName)
+					return false
+				}
+
+				for registry, cred := range cfg.Auths {
+					if cred.Auth == "" {
+						GinkgoWriter.Printf("  push secret %s/%s: empty auth for registry %s\n",
+							t.Namespace, sName, registry)
+						return false
+					}
+					decoded, err := base64.StdEncoding.DecodeString(cred.Auth)
+					if err != nil {
+						GinkgoWriter.Printf("  push secret %s/%s: auth for %s is not valid base64: %v\n",
+							t.Namespace, sName, registry, err)
+						return false
+					}
+					if !strings.Contains(string(decoded), ":") {
+						GinkgoWriter.Printf("  push secret %s/%s: auth for %s decoded but missing colon separator\n",
+							t.Namespace, sName, registry)
+						return false
+					}
+				}
+
+				GinkgoWriter.Printf("  push secret %s/%s: valid credentials for %d registries (robot: %s)\n",
+					t.Namespace, sName, len(cfg.Auths), freshIR.Status.Credentials.PushRobotAccountName)
+				return true
+			}, 5*time.Minute, 5*time.Second).Should(BeTrue(),
+				"ImageRepository %s/%s push secret did not become ready within 5 minutes",
+				t.Namespace, ir.Name)
+		}
+	}
+
+	GinkgoWriter.Println("All ImageRepository push secrets contain valid credentials")
 }
 
 // collectFailureArtifacts logs diagnostic information for troubleshooting DR

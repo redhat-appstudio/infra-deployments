@@ -140,6 +140,10 @@ func defineSameVersionSpecs() {
 				}
 			})
 
+			It("should confirm push secrets contain valid credentials before triggering builds", func() {
+				waitForPushSecretReadiness(fw, svTenants)
+			})
+
 			It("should confirm functional pipeline execution after restore", func() {
 				triggerBuildsAndVerify(fw, svTenants)
 			})
