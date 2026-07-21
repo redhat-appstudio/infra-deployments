@@ -1,0 +1,79 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - github.com/minio/operator?ref=v5.0.15
+  - base-snapshot
+  - rbac
+  - secrets
+  - api-cm.yaml
+  - minio-tenant.yaml
+  - postgres-app.yaml
+
+patches:
+  - path: patches/delete-tekton-results-resources-patch.yaml
+  - path: patches/delete-openshift-pipelines-resources-patch.yaml
+  - path: patches/delete-tekton-logging-resources-patch.yaml
+  - path: patches/delete-testing-resources-patch.yaml
+
+  - path: patches/minio-patches/add-dangling-service-annotation.yaml
+    target:
+      kind: Service
+      name: minio-operator
+      namespace: minio-operator
+
+  - path: patches/minio-patches/update-minio-operator-image-patch.yaml
+    target:
+      kind: Deployment
+      name: minio-operator
+      namespace: minio-operator
+  - path: patches/minio-patches/add-read-only-root-fs-annotation-patch.yaml
+    target:
+      kind: Deployment
+      name: minio-operator
+      namespace: minio-operator
+  - path: patches/minio-patches/add-minio-operator-resources-requests-patch.yaml
+    target:
+      kind: Deployment
+      name: minio-operator
+      namespace: minio-operator
+  - path: patches/minio-patches/add-minio-operator-resources-limits-patch.yaml
+    target:
+      kind: Deployment
+      name: minio-operator
+      namespace: minio-operator
+  - path: patches/minio-patches/remove-containers-security-context-patch.yaml
+    target:
+      kind: Deployment
+      name: minio-operator
+      namespace: minio-operator
+  - path: patches/minio-patches/update-replicas-count-patch.yaml
+    target:
+      kind: Deployment
+      name: minio-operator
+      namespace: minio-operator
+  
+  - path: patches/minio-patches/update-minio-operator-image-patch.yaml
+    target:
+      kind: Deployment
+      name: console
+      namespace: minio-operator
+  - path: patches/minio-patches/add-console-resources-requests-patch.yaml
+    target:
+      kind: Deployment
+      name: console
+      namespace: minio-operator
+  - path: patches/minio-patches/add-console-resources-limits-patch.yaml
+    target:
+      kind: Deployment
+      name: console
+      namespace: minio-operator
+  - path: patches/minio-patches/remove-containers-security-context-patch.yaml
+    target:
+      kind: Deployment
+      name: console
+      namespace: minio-operator
+  - path: patches/minio-patches/add-containers-fs-security-context-patch.yaml
+    target:
+      kind: Deployment
+      name: console
+      namespace: minio-operator
