@@ -479,6 +479,8 @@ func waitForPushSecretReadiness(fw *framework.Framework, tenants []Tenant) {
 					t.Namespace, ir.Name)
 			}
 
+			recoveryAttempted := false
+
 			Eventually(func() bool {
 				// Re-read ImageRepository to pick up status changes.
 				freshIR := &imagecontrollerv1alpha1.ImageRepository{}
@@ -492,6 +494,33 @@ func waitForPushSecretReadiness(fw *framework.Framework, tenants []Tenant) {
 				}
 
 				if freshIR.Status.State != imagecontrollerv1alpha1.ImageRepositoryStateReady {
+					if freshIR.Status.State == "damaged" && !recoveryAttempted {
+						recoveryAttempted = true
+						const irFinalizer = "appstudio.openshift.io/image-repository"
+						finalizers := freshIR.GetFinalizers()
+						filtered := make([]string, 0, len(finalizers))
+						removed := false
+						for _, f := range finalizers {
+							if f == irFinalizer {
+								removed = true
+							} else {
+								filtered = append(filtered, f)
+							}
+						}
+						if removed {
+							GinkgoWriter.Printf("  ImageRepository %s/%s is damaged — removing finalizer to trigger re-provisioning\n",
+								t.Namespace, ir.Name)
+							freshIR.SetFinalizers(filtered)
+							if err := fw.AsKubeAdmin.CommonController.KubeRest().Update(
+								context.Background(), freshIR,
+							); err != nil {
+								GinkgoWriter.Printf("  error removing finalizer from %s/%s: %v\n", t.Namespace, ir.Name, err)
+							}
+						} else {
+							GinkgoWriter.Printf("  ImageRepository %s/%s is damaged but has no finalizer — waiting for controller\n",
+								t.Namespace, ir.Name)
+						}
+					}
 					GinkgoWriter.Printf("  ImageRepository %s/%s state: %s (waiting for ready)\n",
 						t.Namespace, ir.Name, freshIR.Status.State)
 					return false
