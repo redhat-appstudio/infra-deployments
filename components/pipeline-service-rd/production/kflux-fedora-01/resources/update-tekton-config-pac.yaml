@@ -1,0 +1,12 @@
+---
+- op: add
+  path: /spec/platforms/openshift/pipelinesAsCode/settings
+  value:
+    application-name: Konflux kflux-fedora-01
+    custom-console-name: Konflux kflux-fedora-01
+    custom-console-url: https://konflux-ui.apps.kflux-fedora-01.84db.p1.openshiftapps.com
+    custom-console-url-pr-details: https://konflux-ui.apps.kflux-fedora-01.84db.p1.openshiftapps.com/ns/{{ namespace }}/pipelinerun/{{ pr }}
+    custom-console-url-pr-tasklog: https://konflux-ui.apps.kflux-fedora-01.84db.p1.openshiftapps.com/ns/{{ namespace }}/pipelinerun/{{ pr }}/logs/{{ task }}
+    remember-ok-to-test: "false"
+    secret-github-app-token-scoped: "false"
+    enable-cancel-in-progress-on-pull-requests: "true"

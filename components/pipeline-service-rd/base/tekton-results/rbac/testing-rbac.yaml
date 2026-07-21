@@ -1,0 +1,22 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: tekton-results-tests
+  namespace: plnsvc-tests
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: tekton-results-tests
+  namespace: plnsvc-tests
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: tekton-results-readonly
+subjects:
+  - kind: ServiceAccount
+    name: tekton-results-tests
+    namespace: plnsvc-tests
+---
+# Moving from `components/authentication/base/pipeline-service-sre.yaml`
