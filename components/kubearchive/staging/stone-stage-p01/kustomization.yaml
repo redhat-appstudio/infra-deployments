@@ -74,6 +74,11 @@ patches:
                 - name: GOMEMLIMIT
                   value: "440Mi"
                   valueFrom: null
+                resources:
+                  limits:
+                    memory: 512Mi
+                  requests:
+                    memory: 512Mi
   - patch: |-
       apiVersion: apps/v1
       kind: Deployment
