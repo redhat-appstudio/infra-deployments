@@ -6,6 +6,8 @@ kind: RoleBinding
 metadata:
   name: pipeline-service-sre-ns-edit
   namespace: tekton-results
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 subjects:
   - apiGroup: rbac.authorization.k8s.io
     kind: Group
@@ -23,6 +25,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: pipeline-service-sre-exec-pprof-data
   namespace: tekton-results
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 rules:
   # recent memory leak or hung grpc call issues will require development support running 'oc exec' into the results
   # watcher pod to collect goroutine dumps and/or pprof data
@@ -40,6 +44,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: pipeline-service-sre-exec-pprof-data
   namespace: tekton-results
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 subjects:
   - kind: Group
     apiGroup: rbac.authorization.k8s.io

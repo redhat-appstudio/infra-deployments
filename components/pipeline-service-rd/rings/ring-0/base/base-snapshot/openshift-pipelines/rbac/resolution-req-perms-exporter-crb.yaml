@@ -5,6 +5,7 @@ metadata:
   name: pipeline-service-exporter-resolution-req-read-until-ocp-at-415
   annotations:
     argocd.argoproj.io/sync-wave: "0"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 rules:
   - apiGroups: ["resolution.tekton.dev"]
     resources: ["resolutionrequests"]
@@ -16,6 +17,7 @@ metadata:
   name: pipeline-service-exporter-resolution-req-read-until-ocp-at-415
   annotations:
     argocd.argoproj.io/sync-wave: "0"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole

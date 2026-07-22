@@ -5,6 +5,8 @@ kind: RoleBinding
 metadata:
   name: pipeline-service-sre-ns-edit
   namespace: openshift-pipelines
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 subjects:
   - apiGroup: rbac.authorization.k8s.io
     kind: Group

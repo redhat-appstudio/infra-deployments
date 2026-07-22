@@ -2,6 +2,8 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
   labels:
     app.kubernetes.io/name: tekton-results-retention-policy-agent
     app.kubernetes.io/part-of: tekton-results
@@ -17,6 +19,7 @@ spec:
     metadata:
       annotations:
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+        argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
       labels:
         app.kubernetes.io/name: tekton-results-retention-policy-agent
         app.kubernetes.io/version: devel
