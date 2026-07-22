@@ -1,0 +1,13 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: release-service-configurator
+  namespace: release-service
+rules:
+  - apiGroups:
+      - appstudio.redhat.com
+    resources:
+      - releaseserviceconfigs
+    verbs:
+      - '*'
