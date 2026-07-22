@@ -1,0 +1,17 @@
+# Deployment-agnostic patch: applied to any Deployment that has a container
+# named "api" via a `target:` selector in kustomization.yaml. The
+# metadata.name below is a placeholder required by kustomize to parse the
+# patch; it is not used for matching when a `target:` selector is set.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: placeholder
+spec:
+  template:
+    spec:
+      containers:
+        - name: api
+          volumeMounts:
+            - mountPath: /etc/ssl/certs/s3-cert.crt
+              name: ca-s3
+              subPath: s3-cert.crt

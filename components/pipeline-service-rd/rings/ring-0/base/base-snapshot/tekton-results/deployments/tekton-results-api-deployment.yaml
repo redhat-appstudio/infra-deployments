@@ -5,42 +5,42 @@ metadata:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
     argocd.argoproj.io/sync-wave: "0"
   labels:
-    app.kubernetes.io/name: tekton-results-api-for-watcher
+    app.kubernetes.io/name: tekton-results-api
     app.kubernetes.io/part-of: tekton-results
     app.kubernetes.io/version: devel
-  name: tekton-results-api-for-watcher
+  name: tekton-results-api
   namespace: tekton-results
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: tekton-results-api-for-watcher
+      app.kubernetes.io/name: tekton-results-api
   template:
     metadata:
       annotations:
         argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
       labels:
-        app.kubernetes.io/name: tekton-results-api-for-watcher
+        app.kubernetes.io/name: tekton-results-api
         app.kubernetes.io/version: devel
     spec:
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
-              - matchExpressions:
-                  - key: kubernetes.io/os
-                    operator: NotIn
-                    values:
-                      - windows
+            - matchExpressions:
+              - key: kubernetes.io/os
+                operator: NotIn
+                values:
+                - windows
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
-            - podAffinityTerm:
-                labelSelector:
-                  matchLabels:
-                    app.kubernetes.io/name: tekton-results-api-for-watcher
-                topologyKey: kubernetes.io/hostname
-              weight: 100
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: tekton-results-api
+              topologyKey: kubernetes.io/hostname
+            weight: 100
       containers:
       - env:
         - name: LOGS_API
@@ -135,9 +135,6 @@ spec:
           initialDelaySeconds: 5
           periodSeconds: 10
         volumeMounts:
-        - mountPath: /etc/ssl/certs/s3-cert.crt
-          name: ca-s3
-          subPath: s3-cert.crt
         - mountPath: /etc/tls/db
           name: db-tls-ca
           readOnly: true
@@ -176,14 +173,6 @@ spec:
             type: RuntimeDefault
       serviceAccountName: tekton-results-api
       volumes:
-      - name: ca-s3
-        secret:
-          items:
-          - key: public.crt
-            path: s3-cert.crt
-          secretName: storage-tls
-      - emptyDir: {}
-        name: tmp-mc-volume
       - configMap:
           name: rds-root-crt
         name: db-tls-ca
@@ -192,4 +181,4 @@ spec:
         name: config
       - name: tls
         secret:
-          secretName: tekton-results-for-watcher-tls
+          secretName: tekton-results-tls

@@ -4,6 +4,8 @@ data:
   runAt: 5 5 * * 0
 kind: ConfigMap
 metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
   labels:
     app.kubernetes.io/name: tekton-results-retention-policy
     app.kubernetes.io/part-of: tekton-results

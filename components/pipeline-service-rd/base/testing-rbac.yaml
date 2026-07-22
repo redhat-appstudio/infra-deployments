@@ -4,12 +4,16 @@ kind: ServiceAccount
 metadata:
   name: tekton-results-tests
   namespace: plnsvc-tests
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: tekton-results-tests
   namespace: plnsvc-tests
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -26,6 +30,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: pipeline-service-admin
   namespace: plnsvc-tests
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 subjects:
   - kind: Group
     apiGroup: rbac.authorization.k8s.io

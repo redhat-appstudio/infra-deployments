@@ -2,6 +2,8 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: rds-root-crt
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 data:
 # Public certificate for RDS instances are pubically available to download here:
 # https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.SSL.html#UsingWithRDS.SSL.RegionCertificates

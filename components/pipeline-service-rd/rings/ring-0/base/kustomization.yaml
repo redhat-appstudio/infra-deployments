@@ -5,23 +5,37 @@ resources:
   - base-snapshot
   - rbac
   - secrets
-  - api-cm.yaml
   - minio-tenant.yaml
   - postgres-app.yaml
+  - tekton-chains-signing-secret-job.yaml
+  - tekton-config.yaml
+  - tekton-results-api-cm.yaml
 
 patches:
   - path: patches/delete-tekton-results-resources-patch.yaml
   - path: patches/delete-openshift-pipelines-resources-patch.yaml
   - path: patches/delete-tekton-logging-resources-patch.yaml
   - path: patches/delete-testing-resources-patch.yaml
+  - path: patches/add-argocd-skip-dry-run-annotation-patch.yaml
 
+  # Minio operator services
   - path: patches/minio-patches/add-dangling-service-annotation.yaml
     target:
       kind: Service
+      name: operator
+      namespace: minio-operator
+  # Minio operator deployments
+  - path: patches/minio-patches/update-minio-operator-image-patch.yaml
+    target:
+      kind: Deployment
       name: minio-operator
       namespace: minio-operator
-
-  - path: patches/minio-patches/update-minio-operator-image-patch.yaml
+  - path: patches/minio-patches/remove-containers-security-context-patch.yaml
+    target:
+      kind: Deployment
+      name: minio-operator
+      namespace: minio-operator
+  - path: patches/minio-patches/add-template-argocd-sync-options-annotation-patch.yaml
     target:
       kind: Deployment
       name: minio-operator
@@ -31,43 +45,39 @@ patches:
       kind: Deployment
       name: minio-operator
       namespace: minio-operator
-  - path: patches/minio-patches/add-minio-operator-resources-requests-patch.yaml
-    target:
-      kind: Deployment
-      name: minio-operator
-      namespace: minio-operator
-  - path: patches/minio-patches/add-minio-operator-resources-limits-patch.yaml
-    target:
-      kind: Deployment
-      name: minio-operator
-      namespace: minio-operator
-  - path: patches/minio-patches/remove-containers-security-context-patch.yaml
-    target:
-      kind: Deployment
-      name: minio-operator
-      namespace: minio-operator
   - path: patches/minio-patches/update-replicas-count-patch.yaml
     target:
       kind: Deployment
       name: minio-operator
       namespace: minio-operator
-  
+  # --- Minio operator deployment resources limits & requests
+  - target:
+      kind: Deployment
+      name: minio-operator
+      namespace: minio-operator
+    patch: |
+      - op: add
+        path: /spec/template/spec/containers/0/resources/limits
+        value:
+          cpu: 200m
+          memory: 256Mi
+      - op: add
+        path: /spec/template/spec/containers/0/resources/requests
+        value:
+          cpu: 50m
+          memory: 128Mi
+  # Console deployment
   - path: patches/minio-patches/update-minio-operator-image-patch.yaml
     target:
       kind: Deployment
       name: console
       namespace: minio-operator
-  - path: patches/minio-patches/add-console-resources-requests-patch.yaml
-    target:
-      kind: Deployment
-      name: console
-      namespace: minio-operator
-  - path: patches/minio-patches/add-console-resources-limits-patch.yaml
-    target:
-      kind: Deployment
-      name: console
-      namespace: minio-operator
   - path: patches/minio-patches/remove-containers-security-context-patch.yaml
+    target:
+      kind: Deployment
+      name: console
+      namespace: minio-operator
+  - path: patches/minio-patches/add-template-argocd-sync-options-annotation-patch.yaml
     target:
       kind: Deployment
       name: console
@@ -77,3 +87,46 @@ patches:
       kind: Deployment
       name: console
       namespace: minio-operator
+  # --- Console deployment resources limits & requests
+  - target:
+      kind: Deployment
+      name: console
+      namespace: minio-operator
+    patch: |
+      - op: add
+        path: /spec/template/spec/containers/0/resources
+        value:
+          limits:
+            cpu: 100m
+            memory: 128Mi
+          requests:
+            cpu: 50m
+            memory: 64Mi
+
+  # Tekton Results API Deployment
+  - path: patches/add-dev-volume-mount-to-api-container-patch.yaml
+    target:
+      kind: Deployment
+      name: tekton-results-api
+      namespace: tekton-results
+  - path: patches/add-dev-volumes-patch.yaml
+    target:
+      kind: Deployment
+      name: tekton-results-api
+      namespace: tekton-results
+  - path: patches/add-init-container-field-patch.yaml
+    target:
+      kind: Deployment
+      name: tekton-results-api
+      namespace: tekton-results
+  # Tekton Results API for Watcher Deployment
+  - path: patches/add-dev-volume-mount-to-api-container-patch.yaml
+    target:
+      kind: Deployment
+      name: tekton-results-api-for-watcher
+      namespace: tekton-results
+  - path: patches/add-dev-volumes-patch.yaml
+    target:
+      kind: Deployment
+      name: tekton-results-api-for-watcher
+      namespace: tekton-results
