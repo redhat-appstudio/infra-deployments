@@ -454,16 +454,17 @@ func verifyResources(fw *framework.Framework, t Tenant) {
 		"expected %d ImageRepository CRs in namespace %q (one per component)", len(Components), t.Namespace)
 }
 
-// waitForPushSecretReadiness polls each tenant's ImageRepository push secrets
-// until all contain valid .dockerconfigjson auth entries. After a Velero
+// waitForPushSecretReadiness polls each tenant's ImageRepository push and pull
+// secrets until all contain valid .dockerconfigjson auth entries. After a Velero
 // restore, image-controller must reconcile each ImageRepository — creating
-// new Quay robot accounts and writing fresh credentials into the push
-// secrets. Builds that start before this reconciliation completes fail with
+// new Quay robot accounts and writing fresh credentials into both secrets.
+// Builds that start before push reconciliation completes fail with
 // "unauthorized: Could not find robot with specified username".
+// EC verify tasks that run before pull reconciliation completes fail the same way.
 func waitForPushSecretReadiness(fw *framework.Framework, tenants []Tenant) {
 	GinkgoHelper()
 
-	By("Waiting for ImageRepository push secrets to contain valid credentials")
+	By("Waiting for ImageRepository push and pull secrets to contain valid credentials")
 
 	for _, t := range tenants {
 		imageRepoList := &imagecontrollerv1alpha1.ImageRepositoryList{}
@@ -586,14 +587,75 @@ func waitForPushSecretReadiness(fw *framework.Framework, tenants []Tenant) {
 
 				GinkgoWriter.Printf("  push secret %s/%s: valid credentials for %d registries (robot: %s)\n",
 					t.Namespace, sName, len(cfg.Auths), freshIR.Status.Credentials.PushRobotAccountName)
+
+				pullName := freshIR.Status.Credentials.PullSecretName
+				if pullName == "" {
+					GinkgoWriter.Printf("  ImageRepository %s/%s ready but no pull secret name yet\n",
+						t.Namespace, ir.Name)
+					return false
+				}
+
+				pullSecret := &corev1.Secret{}
+				if err := fw.AsKubeAdmin.CommonController.KubeRest().Get(
+					context.Background(),
+					client.ObjectKey{Name: pullName, Namespace: t.Namespace},
+					pullSecret,
+				); err != nil {
+					GinkgoWriter.Printf("  pull secret %s/%s not found: %v\n", t.Namespace, pullName, err)
+					return false
+				}
+
+				pullCfgJSON, pullOk := pullSecret.Data[".dockerconfigjson"]
+				if !pullOk || len(pullCfgJSON) == 0 {
+					GinkgoWriter.Printf("  pull secret %s/%s has no .dockerconfigjson\n", t.Namespace, pullName)
+					return false
+				}
+
+				var pullCfg struct {
+					Auths map[string]struct {
+						Auth string `json:"auth"`
+					} `json:"auths"`
+				}
+				if err := json.Unmarshal(pullCfgJSON, &pullCfg); err != nil {
+					GinkgoWriter.Printf("  pull secret %s/%s: malformed .dockerconfigjson: %v\n",
+						t.Namespace, pullName, err)
+					return false
+				}
+
+				if len(pullCfg.Auths) == 0 {
+					GinkgoWriter.Printf("  pull secret %s/%s: auths map is empty\n", t.Namespace, pullName)
+					return false
+				}
+
+				for registry, cred := range pullCfg.Auths {
+					if cred.Auth == "" {
+						GinkgoWriter.Printf("  pull secret %s/%s: empty auth for registry %s\n",
+							t.Namespace, pullName, registry)
+						return false
+					}
+					decoded, err := base64.StdEncoding.DecodeString(cred.Auth)
+					if err != nil {
+						GinkgoWriter.Printf("  pull secret %s/%s: auth for %s is not valid base64: %v\n",
+							t.Namespace, pullName, registry, err)
+						return false
+					}
+					if !strings.Contains(string(decoded), ":") {
+						GinkgoWriter.Printf("  pull secret %s/%s: auth for %s decoded but missing colon separator\n",
+							t.Namespace, pullName, registry)
+						return false
+					}
+				}
+
+				GinkgoWriter.Printf("  pull secret %s/%s: valid credentials for %d registries (robot: %s)\n",
+					t.Namespace, pullName, len(pullCfg.Auths), freshIR.Status.Credentials.PullRobotAccountName)
 				return true
 			}, 5*time.Minute, 5*time.Second).Should(BeTrue(),
-				"ImageRepository %s/%s push secret did not become ready within 5 minutes",
+				"ImageRepository %s/%s push/pull secrets did not become ready within 5 minutes",
 				t.Namespace, ir.Name)
 		}
 	}
 
-	GinkgoWriter.Println("All ImageRepository push secrets contain valid credentials")
+	GinkgoWriter.Println("All ImageRepository push and pull secrets contain valid credentials")
 }
 
 // collectFailureArtifacts logs diagnostic information for troubleshooting DR
