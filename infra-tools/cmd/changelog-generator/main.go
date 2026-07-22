@@ -1,9 +1,9 @@
 // Command changelog-generator posts a changelog comment on infra-deployments PRs
 // that bump the Konflux operator ref.
 //
-// This is step 4 (KFLUXVNGD-1079): it reads the operator ref, lists upstream
-// sub-services whose pinned SHA changed, and fetches per-service feat/fix
-// conventional commits to display under each bump entry.
+// Detects upstream service bumps by git ref and by image digest, resolves
+// digest-pinned components to git SHAs via OCI labels, and displays
+// per-service feat/fix commits under each bump entry.
 package main
 
 import (
@@ -49,8 +49,9 @@ func main() {
 	prStr := os.Getenv("PR_NUMBER")
 
 	comparer := changelog.NewRepoComparer(token)
+	inspector := changelog.NewRegistryInspector()
 
-	body, err := buildBody(ctx, *repoRoot, *baseRef, *kustomizationPathFlag, comparer)
+	body, err := buildBody(ctx, *repoRoot, *baseRef, *kustomizationPathFlag, comparer, inspector)
 	if err != nil {
 		slog.Error("building changelog body", "err", err)
 		os.Exit(1)
@@ -86,7 +87,7 @@ func main() {
 
 // buildBody resolves the repo root and base ref, creates a git worktree for the
 // base ref, then delegates all comment logic to computeBody.
-func buildBody(ctx context.Context, repoRoot, baseRef, kustPath string, comparer changelog.RepoComparer) (string, error) {
+func buildBody(ctx context.Context, repoRoot, baseRef, kustPath string, comparer changelog.RepoComparer, inspector changelog.RegistryInspector) (string, error) {
 	absRoot, err := resolveRepoRoot(ctx, repoRoot)
 	if err != nil {
 		return "", fmt.Errorf("resolving repo root: %w", err)
@@ -109,7 +110,7 @@ func buildBody(ctx context.Context, repoRoot, baseRef, kustPath string, comparer
 	basePath := filepath.Join(worktreePath, kustPath)
 	headPath := filepath.Join(absRoot, kustPath)
 
-	return computeBody(ctx, basePath, headPath, comparer)
+	return computeBody(ctx, basePath, headPath, comparer, inspector)
 }
 
 // computeBody extracts operator refs from the two kustomization files and returns
@@ -119,7 +120,7 @@ func buildBody(ctx context.Context, repoRoot, baseRef, kustPath string, comparer
 //
 // If the GitHub API call to fetch operator file diffs fails, the comment still
 // includes the compare link but notes that service bump detection was unavailable.
-func computeBody(ctx context.Context, basePath, headPath string, comparer changelog.RepoComparer) (string, error) {
+func computeBody(ctx context.Context, basePath, headPath string, comparer changelog.RepoComparer, inspector changelog.RegistryInspector) (string, error) {
 	oldRef, newRef, err := changelog.ExtractRefs(basePath, headPath)
 	if err != nil {
 		return "", fmt.Errorf("extracting operator refs: %w", err)
@@ -141,17 +142,27 @@ func computeBody(ctx context.Context, basePath, headPath string, comparer change
 		return formatCompare(oldRef, newRef, nil), nil
 	}
 
-	bumps, hasSkipped := changelog.ExtractServiceBumps(compare.Files)
-	if hasSkipped {
+	refBumps, refSkipped := changelog.ExtractServiceBumps(compare.Files)
+	imgChanges, imgSkipped := changelog.ExtractImageDigestChanges(compare.Files)
+	if refSkipped || imgSkipped {
 		// One or more upstream kustomization files had no patch data — we cannot
-		// confidently say "no service refs changed", so degrade the same way we
-		// do for API failures rather than risk a misleading empty-bumps message.
-		slog.Warn("some upstream kustomization patches were empty; service bump detection may be incomplete")
+		// confidently state what changed, so degrade the same way we do for API
+		// failures rather than risk a misleading empty-bumps message.
+		slog.Warn("some upstream kustomization patches were empty; bump detection may be incomplete")
 		return formatCompare(oldRef, newRef, nil), nil
 	}
-	slog.Info("Service bumps detected", "count", len(bumps))
 
-	enriched := enrichWithCommits(ctx, comparer, bumps)
+	imageBumps := resolveImageBumps(ctx, inspector, imgChanges)
+	if len(refBumps) == 0 && len(imageBumps) == 0 && len(imgChanges) > 0 {
+		// Digest changes were detected in the compare diff but none resolved to git
+		// SHAs — degrade rather than report "no upstream service refs changed".
+		slog.Warn("digest changes detected but registry resolution produced no bumps")
+		return formatCompare(oldRef, newRef, nil), nil
+	}
+	allBumps := append(refBumps, imageBumps...)
+	slog.Info("Service bumps detected", "count", len(allBumps))
+
+	enriched := enrichWithCommits(ctx, comparer, allBumps)
 	return formatCompare(oldRef, newRef, enriched), nil
 }
 
@@ -255,6 +266,71 @@ func formatCompare(oldRef, newRef string, bumps []bumpWithCommits) string {
 	}
 
 	return b.String()
+}
+
+// resolveImageBumps converts image digest changes into ServiceBumps by calling
+// the registry to resolve each digest to its git SHA via OCI labels.
+// Failures per image are logged and skipped — a partial result is still useful.
+func resolveImageBumps(ctx context.Context, inspector changelog.RegistryInspector, changes []changelog.ImageDigestChange) []changelog.ServiceBump {
+	seen := make(map[string]bool)
+	var bumps []changelog.ServiceBump
+	for _, c := range changes {
+		owner, repo := extractOwnerRepoFromImageName(c.ImageName)
+		if owner == "" || repo == "" {
+			slog.Warn("cannot derive owner/repo from image name", "image", c.ImageName)
+			continue
+		}
+		key := owner + "/" + repo
+		if seen[key] {
+			continue
+		}
+		seen[key] = true
+		oldSHA, err := resolveDigestToSHA(ctx, inspector, c.ImageName, c.OldDigest)
+		if err != nil {
+			slog.Warn("resolving old digest to git SHA", "image", c.ImageName, "digest", c.OldDigest[:19], "err", err)
+			continue
+		}
+		newSHA, err := resolveDigestToSHA(ctx, inspector, c.ImageName, c.NewDigest)
+		if err != nil {
+			slog.Warn("resolving new digest to git SHA", "image", c.ImageName, "digest", c.NewDigest[:19], "err", err)
+			continue
+		}
+		bumps = append(bumps, changelog.ServiceBump{Owner: owner, Repo: repo, OldSHA: oldSHA, NewSHA: newSHA})
+	}
+	return bumps
+}
+
+// resolveDigestToSHA calls the registry inspector for imageName@digest and reads
+// the org.opencontainers.image.revision label (falling back to vcs-ref) to get
+// the upstream git SHA.
+func resolveDigestToSHA(ctx context.Context, inspector changelog.RegistryInspector, imageName, digest string) (string, error) {
+	labels, err := inspector.InspectLabels(ctx, imageName+"@"+digest)
+	if err != nil {
+		return "", fmt.Errorf("inspecting %s@%s: %w", imageName, digest[:19], err)
+	}
+	// org.opencontainers.image.revision is the standard OCI label for the git SHA.
+	// vcs-ref is an older convention used as a fallback.
+	for _, key := range []string{"org.opencontainers.image.revision", "vcs-ref"} {
+		if sha := labels[key]; sha != "" {
+			return sha, nil
+		}
+	}
+	return "", fmt.Errorf("%s@%s: no git revision label found (checked org.opencontainers.image.revision, vcs-ref)", imageName, digest[:19])
+}
+
+// extractOwnerRepoFromImageName splits a container image reference of the form
+// "registry/owner/repo[:tag]" or "registry/owner/repo@digest" and returns
+// (owner, repo). Returns ("","") if the image name has fewer than three
+// slash-separated components.
+func extractOwnerRepoFromImageName(imageName string) (owner, repo string) {
+	// Strip tag or digest suffix before splitting on '/'.
+	base := strings.SplitN(imageName, ":", 2)[0]
+	base = strings.SplitN(base, "@", 2)[0]
+	parts := strings.Split(base, "/")
+	if len(parts) < 3 {
+		return "", ""
+	}
+	return parts[1], parts[2]
 }
 
 // resolveRepoRoot returns the absolute path to the repository root.

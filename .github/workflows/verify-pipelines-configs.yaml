@@ -19,10 +19,20 @@ jobs:
     outputs:
       has_errors: ${{ steps.check.outputs.has_errors }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Checkout base branch (scripts trusted)
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # hash v7
+
+      - name: Overlay PR manifests
+        env:
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git fetch --depth=1 origin "${PR_HEAD_SHA}"
+          git checkout "${PR_HEAD_SHA}" -- components/pipeline-service/
+          git checkout HEAD -- components/pipeline-service/production/sync-rings.sh
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "overlay PR manifests" --allow-empty
 
       - name: Setup Kustomize
         uses: multani/action-setup-kustomize@v1

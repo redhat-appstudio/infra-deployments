@@ -1187,26 +1187,6 @@ CONFIG_COMBINATIONS: Dict[str, ConfigCombination] = {
         "name": "Production RHEL config",
         "config_file": "components/kueue/production/kflux-rhel-p01/config.yaml",
         "kustomization_file": "components/kueue/production/base/tekton-kueue/kustomization.yaml"
-    },
-    "production-stone-prod-p01": {
-        "name": "Production stone-prod-p01 config (ring 1 temporary override)",
-        "config_file": "components/kueue/production/stone-prod-p01/config.yaml",
-        "kustomization_file": "components/kueue/production/base/tekton-kueue/kustomization.yaml"
-    },
-    "production-kflux-prd-rh02": {
-        "name": "Production kflux-prd-rh02 config (ring 1 temporary override)",
-        "config_file": "components/kueue/production/kflux-prd-rh02/config.yaml",
-        "kustomization_file": "components/kueue/production/base/tekton-kueue/kustomization.yaml"
-    },
-    "production-kflux-osp-p01": {
-        "name": "Production kflux-osp-p01 config (ring 2 temporary override)",
-        "config_file": "components/kueue/production/kflux-osp-p01/config.yaml",
-        "kustomization_file": "components/kueue/production/base/tekton-kueue/kustomization.yaml"
-    },
-    "production-kflux-prd-rh03": {
-        "name": "Production kflux-prd-rh03 config (ring 2 temporary override)",
-        "config_file": "components/kueue/production/kflux-prd-rh03/config.yaml",
-        "kustomization_file": "components/kueue/production/base/tekton-kueue/kustomization.yaml"
     }
 }
 
@@ -1679,10 +1659,20 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
         }
     },
 
-    # KFLUXINFRA-3980 ring 1: build-platforms type guard
-    # Ring-1 production configs emit kueue.konflux-ci.dev/validation-error
-    # (matching the VAP), unlike the dev/staging default which still emits
-    # tekton-kueue.konflux-ci.dev/validation-error.
+    "multiplatform_new_string_param_production": {
+        "pipelinerun_key": "multiplatform_new_string_param",
+        "config_key": "production",
+        "expected": {
+            "annotations": {
+                "kueue.konflux-ci.dev/validation-error": "build-platforms parameter must be an array of platform strings, got a non-array value",
+                "kueue.konflux-ci.dev/requests-konflux-ci-dev-token": "1",
+            },
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-post-merge-build"
+            }
+        }
+    },
     "multiplatform_new_string_param_production-kflux-ocp-p01": {
         "pipelinerun_key": "multiplatform_new_string_param",
         "config_key": "production-kflux-ocp-p01",
@@ -1697,53 +1687,9 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
             }
         }
     },
-    "multiplatform_new_string_param_production-stone-prod-p01": {
+    "multiplatform_new_string_param_production-kflux-rhel-p01": {
         "pipelinerun_key": "multiplatform_new_string_param",
-        "config_key": "production-stone-prod-p01",
-        "expected": {
-            "annotations": {
-                "kueue.konflux-ci.dev/validation-error": "build-platforms parameter must be an array of platform strings, got a non-array value",
-                "kueue.konflux-ci.dev/requests-konflux-ci-dev-token": "1",
-            },
-            "labels": {
-                "kueue.x-k8s.io/queue-name": "pipelines-queue",
-                "kueue.x-k8s.io/priority-class": "konflux-post-merge-build"
-            }
-        }
-    },
-    "multiplatform_new_string_param_production-kflux-prd-rh02": {
-        "pipelinerun_key": "multiplatform_new_string_param",
-        "config_key": "production-kflux-prd-rh02",
-        "expected": {
-            "annotations": {
-                "kueue.konflux-ci.dev/validation-error": "build-platforms parameter must be an array of platform strings, got a non-array value",
-                "kueue.konflux-ci.dev/requests-konflux-ci-dev-token": "1",
-            },
-            "labels": {
-                "kueue.x-k8s.io/queue-name": "pipelines-queue",
-                "kueue.x-k8s.io/priority-class": "konflux-post-merge-build"
-            }
-        }
-    },
-
-    # KFLUXINFRA-3980 ring 2: build-platforms type guard
-    "multiplatform_new_string_param_production-kflux-osp-p01": {
-        "pipelinerun_key": "multiplatform_new_string_param",
-        "config_key": "production-kflux-osp-p01",
-        "expected": {
-            "annotations": {
-                "kueue.konflux-ci.dev/validation-error": "build-platforms parameter must be an array of platform strings, got a non-array value",
-                "kueue.konflux-ci.dev/requests-konflux-ci-dev-token": "1",
-            },
-            "labels": {
-                "kueue.x-k8s.io/queue-name": "pipelines-queue",
-                "kueue.x-k8s.io/priority-class": "konflux-post-merge-build"
-            }
-        }
-    },
-    "multiplatform_new_string_param_production-kflux-prd-rh03": {
-        "pipelinerun_key": "multiplatform_new_string_param",
-        "config_key": "production-kflux-prd-rh03",
+        "config_key": "production-kflux-rhel-p01",
         "expected": {
             "annotations": {
                 "kueue.konflux-ci.dev/validation-error": "build-platforms parameter must be an array of platform strings, got a non-array value",

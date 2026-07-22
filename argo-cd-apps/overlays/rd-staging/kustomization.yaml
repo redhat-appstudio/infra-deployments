@@ -4,6 +4,7 @@ namespace: argocd-infra-deployments
 
 resources:
   - authentication
+  - etcd-shield
 
 patches:
   - path: patches/all-clusters-patch.yaml
@@ -21,3 +22,8 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       labelSelector: appstudio.redhat.com/environment=internal
+  - path: patches/member-clusters-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      labelSelector: appstudio.redhat.com/environment=member
