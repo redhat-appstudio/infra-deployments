@@ -1,8 +1,9 @@
 config:
   exporters:
-    sapm:
-      endpoint: "https://ingest.us1.signalfx.com/v2/trace"
-      access_token: ${env:SIGNALFX_API_TOKEN}
+    otlphttp/splunk:
+      traces_endpoint: "https://ingest.us1.signalfx.com/v2/trace/otlp"
+      headers:
+        "X-SF-Token": "${env:SIGNALFX_API_TOKEN}"
     signalfx:
       endpoint: "https://api.signalfx.com/v2/traces"
       realm: "us1"
@@ -55,7 +56,7 @@ config:
       traces:
         exporters:
           - debug
-          - sapm
+          - otlphttp/splunk
           - signalfx
         processors:
           - memory_limiter
@@ -119,7 +120,7 @@ image:
   repository: quay.io/konflux-ci/opentelemetry-collector-k8s
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "0.113.0"
+  tag: "0.156.0"
 # OpenTelemetry Collector executable
 command:
   # The operator prepends '/' to the command name...no idea why.
