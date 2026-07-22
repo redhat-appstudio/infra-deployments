@@ -15,6 +15,14 @@ patches:
     target:
       name: appstudio-federate-uwm-smon
       kind: ServiceMonitor
+  - path: drop-prometheus-labels-patch.yaml
+    target:
+      name: appstudio-federate-smon
+      kind: ServiceMonitor
+  - path: drop-prometheus-labels-patch.yaml
+    target:
+      name: appstudio-federate-uwm-smon
+      kind: ServiceMonitor
   - path: remote-write-env-details.yaml
     target:
       name: appstudio-federate-ms

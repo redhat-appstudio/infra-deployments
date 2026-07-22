@@ -2,23 +2,692 @@
 apiVersion: tekton.dev/v1
 kind: Task
 metadata:
-  name: sleep
+  name: dr-preflight
 spec:
+  params:
+  - name: TENANT_NAMESPACE
+    type: string
+  - name: COMPONENT_NAME
+    type: string
+  - name: RELEASE_PLAN_NAME
+    type: string
   steps:
-  - name: sleep
+  - name: check
+    image: quay.io/konflux-ci/tools@sha256:b846eb68ab06f4c61c987bd1053e0e2dda13e18ecd5a75c945a18f7d78743bd8
+    command: ["bash", "-eu", "-o", "pipefail", "-c"]
+    args:
+    - |
+      echo "=== DR Preflight Check ==="
+      NS="$(params.TENANT_NAMESPACE)"
+      COMP="$(params.COMPONENT_NAME)"
+      RP="$(params.RELEASE_PLAN_NAME)"
+
+      echo "Checking Velero deployment..."
+      READY=$(oc get deploy velero -n openshift-adp -o jsonpath='{.status.readyReplicas}' 2>/dev/null || echo "0")
+      if [ "$READY" != "1" ]; then
+        echo "FAIL: Velero deployment not ready (readyReplicas=$READY)"
+        exit 1
+      fi
+      echo "OK: Velero ready"
+
+      echo "Checking BackupStorageLocation..."
+      BSL_PHASE=$(oc get backupstoragelocations -n openshift-adp -o jsonpath='{.items[0].status.phase}' 2>/dev/null || echo "Unknown")
+      if [ "$BSL_PHASE" != "Available" ]; then
+        echo "FAIL: BSL not Available (phase=$BSL_PHASE)"
+        exit 1
+      fi
+      echo "OK: BSL Available"
+
+      echo "Checking tenant namespace $NS..."
+      if ! oc get namespace "$NS" &>/dev/null; then
+        echo "FAIL: Namespace $NS does not exist"
+        exit 1
+      fi
+      echo "OK: Namespace exists"
+
+      echo "Checking Component $COMP..."
+      if ! oc get components.appstudio.redhat.com "$COMP" -n "$NS" &>/dev/null; then
+        echo "FAIL: Component $COMP not found in $NS"
+        exit 1
+      fi
+      echo "OK: Component exists"
+
+      echo "Checking ReleasePlan $RP..."
+      if ! oc get releaseplans.appstudio.redhat.com "$RP" -n "$NS" &>/dev/null; then
+        echo "FAIL: ReleasePlan $RP not found in $NS"
+        exit 1
+      fi
+      echo "OK: ReleasePlan exists"
+
+      echo "=== Preflight PASSED ==="
+    computeResources: {}
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: dr-baseline-run
+spec:
+  params:
+  - name: TENANT_NAMESPACE
+    type: string
+  - name: MANAGED_NAMESPACE
+    type: string
+  - name: COMPONENT_NAME
+    type: string
+  - name: APP_NAME
+    type: string
+  - name: RELEASE_PLAN_NAME
+    type: string
+  results:
+  - name: snapshot-name
+    description: The Snapshot name created by the successful integration test
+  steps:
+  - name: run-baseline
+    image: quay.io/konflux-ci/tools@sha256:b846eb68ab06f4c61c987bd1053e0e2dda13e18ecd5a75c945a18f7d78743bd8
+    command: ["bash", "-eu", "-o", "pipefail", "-c"]
+    args:
+    - |
+      echo "=== DR Baseline Run ==="
+      NS="$(params.TENANT_NAMESPACE)"
+      MANAGED_NS="$(params.MANAGED_NAMESPACE)"
+      COMP="$(params.COMPONENT_NAME)"
+      APP="$(params.APP_NAME)"
+      RP="$(params.RELEASE_PLAN_NAME)"
+
+      # Record PipelineRun count before triggering
+      BEFORE_COUNT=$(oc get pipelineruns -n "$NS" --no-headers 2>/dev/null | wc -l)
+
+      echo "Triggering build on $COMP..."
+      oc annotate component/"$COMP" -n "$NS" \
+        build.appstudio.openshift.io/request=trigger-pac-build --overwrite
+
+      echo "Waiting for new build PipelineRun..."
+      for i in $(seq 1 120); do
+        CURRENT_COUNT=$(oc get pipelineruns -n "$NS" --no-headers 2>/dev/null | wc -l)
+        if [ "$CURRENT_COUNT" -gt "$BEFORE_COUNT" ]; then
+          BUILD_PR=$(oc get pipelineruns -n "$NS" \
+            --sort-by=.metadata.creationTimestamp -o jsonpath='{.items[-1].metadata.name}')
+          echo "Found build PipelineRun: $BUILD_PR"
+          break
+        fi
+        sleep 15
+      done
+      if [ -z "${BUILD_PR:-}" ]; then
+        echo "FAIL: No new build PipelineRun appeared after 30 minutes"
+        exit 1
+      fi
+
+      echo "Waiting for build PipelineRun $BUILD_PR to complete..."
+      for i in $(seq 1 120); do
+        STATUS=$(oc get pipelinerun "$BUILD_PR" -n "$NS" \
+          -o jsonpath='{.status.conditions[0].reason}' 2>/dev/null || echo "Pending")
+        if [ "$STATUS" = "Completed" ] || [ "$STATUS" = "Succeeded" ]; then
+          echo "OK: Build completed"
+          break
+        elif [ "$STATUS" = "Failed" ]; then
+          echo "FAIL: Build PipelineRun $BUILD_PR failed"
+          exit 1
+        fi
+        echo "  Build status: $STATUS (attempt $i/120)"
+        sleep 15
+      done
+
+      echo "Waiting for integration test PipelineRun..."
+      for i in $(seq 1 60); do
+        INT_PR=$(oc get pipelineruns -n "$NS" \
+          -l "appstudio.openshift.io/application=$APP,test.appstudio.openshift.io/scenario" \
+          --sort-by=.metadata.creationTimestamp -o jsonpath='{.items[-1].metadata.name}' 2>/dev/null || echo "")
+        if [ -n "$INT_PR" ]; then
+          INT_STATUS=$(oc get pipelinerun "$INT_PR" -n "$NS" \
+            -o jsonpath='{.status.conditions[0].reason}' 2>/dev/null || echo "Pending")
+          if [ "$INT_STATUS" = "Completed" ] || [ "$INT_STATUS" = "Succeeded" ]; then
+            echo "OK: Integration test completed ($INT_PR)"
+            break
+          elif [ "$INT_STATUS" = "Failed" ]; then
+            echo "FAIL: Integration test PipelineRun $INT_PR failed"
+            exit 1
+          fi
+          echo "  Integration status: $INT_STATUS (attempt $i/60)"
+        else
+          echo "  Waiting for integration PipelineRun to appear (attempt $i/60)"
+        fi
+        sleep 15
+      done
+
+      echo "Finding latest Snapshot..."
+      SNAPSHOT=$(oc get snapshots.appstudio.redhat.com -n "$NS" \
+        -l "appstudio.openshift.io/application=$APP" \
+        --sort-by=.metadata.creationTimestamp -o jsonpath='{.items[-1].metadata.name}')
+      if [ -z "$SNAPSHOT" ]; then
+        echo "FAIL: No Snapshot found for app $APP"
+        exit 1
+      fi
+      echo "OK: Snapshot = $SNAPSHOT"
+
+      echo "Creating Release CR..."
+      RELEASE_NAME="dr-sanity-release-$(date +%Y%m%d%H%M%S)"
+      cat <<RELEASE_EOF | oc apply -f -
+      apiVersion: appstudio.redhat.com/v1alpha1
+      kind: Release
+      metadata:
+        name: $RELEASE_NAME
+        namespace: $NS
+      spec:
+        releasePlan: $RP
+        snapshot: $SNAPSHOT
+      RELEASE_EOF
+      echo "Created Release $RELEASE_NAME"
+
+      echo "Waiting for release PipelineRun in $MANAGED_NS..."
+      for i in $(seq 1 60); do
+        REL_PR=$(oc get pipelineruns -n "$MANAGED_NS" \
+          --sort-by=.metadata.creationTimestamp -o jsonpath='{.items[-1].metadata.name}' 2>/dev/null || echo "")
+        if [ -n "$REL_PR" ]; then
+          REL_STATUS=$(oc get pipelinerun "$REL_PR" -n "$MANAGED_NS" \
+            -o jsonpath='{.status.conditions[0].reason}' 2>/dev/null || echo "Pending")
+          if [ "$REL_STATUS" = "Completed" ] || [ "$REL_STATUS" = "Succeeded" ]; then
+            echo "OK: Release pipeline completed ($REL_PR)"
+            break
+          elif [ "$REL_STATUS" = "Failed" ]; then
+            echo "FAIL: Release PipelineRun $REL_PR failed"
+            exit 1
+          fi
+          echo "  Release status: $REL_STATUS (attempt $i/60)"
+        else
+          echo "  Waiting for release PipelineRun to appear (attempt $i/60)"
+        fi
+        sleep 15
+      done
+
+      printf "%s" "$SNAPSHOT" > "$(results.snapshot-name.path)"
+      echo "=== Baseline Run PASSED ==="
+    computeResources: {}
+    timeout: 90m
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: dr-backup
+spec:
+  params:
+  - name: TENANT_NAMESPACE
+    type: string
+  results:
+  - name: backup-name
+    description: The name of the Velero Backup CR created
+  steps:
+  - name: backup
+    image: quay.io/konflux-ci/tools@sha256:b846eb68ab06f4c61c987bd1053e0e2dda13e18ecd5a75c945a18f7d78743bd8
+    command: ["bash", "-eu", "-o", "pipefail", "-c"]
+    args:
+    - |
+      echo "=== DR Backup ==="
+      NS="$(params.TENANT_NAMESPACE)"
+      BACKUP_NAME="dr-sanity-backup-$(date +%Y%m%d%H%M%S)"
+
+      BSL=$(oc get backupstoragelocations -n openshift-adp -o jsonpath='{.items[0].metadata.name}')
+
+      cat <<BACKUP_EOF | oc apply -f -
+      apiVersion: velero.io/v1
+      kind: Backup
+      metadata:
+        name: $BACKUP_NAME
+        namespace: openshift-adp
+      spec:
+        includedNamespaces:
+        - $NS
+        includedResources:
+        - applications.appstudio.redhat.com
+        - components.appstudio.redhat.com
+        - environments.appstudio.redhat.com
+        - integrationtestscenarios.appstudio.redhat.com
+        - secrets
+        - snapshots.appstudio.redhat.com
+        - serviceaccounts
+        - rolebindings
+        - namespaces
+        - imagerepositories.appstudio.redhat.com
+        - repositories.pipelinesascode.tekton.dev
+        - releases.appstudio.redhat.com
+        - releaseplans.appstudio.redhat.com
+        - releaseplanadmissions.appstudio.redhat.com
+        storageLocation: $BSL
+      BACKUP_EOF
+      echo "Created Backup $BACKUP_NAME"
+
+      echo "Waiting for backup to complete..."
+      for i in $(seq 1 30); do
+        PHASE=$(oc get backup "$BACKUP_NAME" -n openshift-adp \
+          -o jsonpath='{.status.phase}' 2>/dev/null || echo "New")
+        if [ "$PHASE" = "Completed" ]; then
+          ITEMS=$(oc get backup "$BACKUP_NAME" -n openshift-adp \
+            -o jsonpath='{.status.progress.itemsBackedUp}' 2>/dev/null || echo "?")
+          echo "OK: Backup completed ($ITEMS items backed up)"
+          break
+        elif [ "$PHASE" = "Failed" ] || [ "$PHASE" = "PartiallyFailed" ]; then
+          echo "FAIL: Backup $BACKUP_NAME phase=$PHASE"
+          exit 1
+        fi
+        echo "  Backup phase: $PHASE (attempt $i/30)"
+        sleep 60
+      done
+
+      printf "%s" "$BACKUP_NAME" > "$(results.backup-name.path)"
+      echo "=== Backup PASSED ==="
+    computeResources: {}
+    timeout: 30m
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: dr-disaster-and-restore
+spec:
+  params:
+  - name: TENANT_NAMESPACE
+    type: string
+  - name: BACKUP_NAME
+    type: string
+  steps:
+  - name: disaster-and-restore
+    image: quay.io/konflux-ci/tools@sha256:b846eb68ab06f4c61c987bd1053e0e2dda13e18ecd5a75c945a18f7d78743bd8
+    command: ["bash", "-eu", "-o", "pipefail", "-c"]
+    args:
+    - |
+      echo "=== DR Disaster Simulation & Restore ==="
+      NS="$(params.TENANT_NAMESPACE)"
+      BACKUP_NAME="$(params.BACKUP_NAME)"
+      RESTORE_NAME="dr-sanity-restore-$(date +%Y%m%d%H%M%S)"
+
+      # --- Apply NetworkPolicy to block image-controller egress ---
+      echo "Applying NetworkPolicy to block image-controller egress..."
+      cat <<NP_EOF | oc apply -f -
+      apiVersion: networking.k8s.io/v1
+      kind: NetworkPolicy
+      metadata:
+        name: dr-block-image-controller
+        namespace: image-controller
+      spec:
+        podSelector:
+          matchLabels:
+            control-plane: controller-manager
+        policyTypes:
+        - Egress
+        egress: []
+      NP_EOF
+      echo "OK: NetworkPolicy applied"
+      sleep 10
+
+      # --- Strip finalizers ---
+      echo "Stripping finalizers from resources in $NS..."
+
+      for IR in $(oc get imagerepositories.appstudio.redhat.com -n "$NS" -o name 2>/dev/null); do
+        oc patch "$IR" -n "$NS" --type=merge -p '{"metadata":{"finalizers":null}}' 2>/dev/null || true
+      done
+
+      for COMP in $(oc get components.appstudio.redhat.com -n "$NS" -o name 2>/dev/null); do
+        oc patch "$COMP" -n "$NS" --type=merge -p '{"metadata":{"finalizers":null}}' 2>/dev/null || true
+      done
+
+      for APP in $(oc get applications.appstudio.redhat.com -n "$NS" -o name 2>/dev/null); do
+        oc patch "$APP" -n "$NS" --type=merge -p '{"metadata":{"finalizers":null}}' 2>/dev/null || true
+      done
+
+      for KAC in $(oc get kubearchiveconfigs.kubearchive.org -n "$NS" -o name 2>/dev/null); do
+        oc patch "$KAC" -n "$NS" --type=merge -p '{"metadata":{"finalizers":null}}' 2>/dev/null || true
+      done
+
+      for PR in $(oc get pipelineruns -n "$NS" -o name 2>/dev/null); do
+        oc patch "$PR" -n "$NS" --type=merge -p '{"metadata":{"finalizers":null}}' 2>/dev/null || true
+      done
+
+      for TR in $(oc get taskruns -n "$NS" -o name 2>/dev/null); do
+        oc patch "$TR" -n "$NS" --type=merge -p '{"metadata":{"finalizers":null}}' 2>/dev/null || true
+      done
+      echo "OK: Finalizers stripped"
+
+      # --- Delete namespace ---
+      echo "Deleting namespace $NS..."
+      oc delete namespace "$NS" --wait=false
+      echo "Waiting for namespace deletion..."
+      for i in $(seq 1 60); do
+        if ! oc get namespace "$NS" &>/dev/null; then
+          echo "OK: Namespace deleted"
+          break
+        fi
+        if [ "$i" -eq 60 ]; then
+          echo "FAIL: Namespace $NS still exists after 5 minutes"
+          oc delete networkpolicy dr-block-image-controller -n image-controller --ignore-not-found
+          exit 1
+        fi
+        sleep 5
+      done
+
+      # --- Restore from backup ---
+      echo "Creating Restore $RESTORE_NAME from backup $BACKUP_NAME..."
+      BSL=$(oc get backupstoragelocations -n openshift-adp -o jsonpath='{.items[0].metadata.name}')
+      cat <<RESTORE_EOF | oc apply -f -
+      apiVersion: velero.io/v1
+      kind: Restore
+      metadata:
+        name: $RESTORE_NAME
+        namespace: openshift-adp
+      spec:
+        backupName: $BACKUP_NAME
+        includedNamespaces:
+        - $NS
+        restoreStatus:
+          includedResources:
+          - imagerepositories.appstudio.redhat.com
+      RESTORE_EOF
+
+      echo "Waiting for restore to complete..."
+      for i in $(seq 1 60); do
+        PHASE=$(oc get restore "$RESTORE_NAME" -n openshift-adp \
+          -o jsonpath='{.status.phase}' 2>/dev/null || echo "New")
+        if [ "$PHASE" = "Completed" ]; then
+          WARNINGS=$(oc get restore "$RESTORE_NAME" -n openshift-adp \
+            -o jsonpath='{.status.warnings}' 2>/dev/null || echo "?")
+          ERRORS=$(oc get restore "$RESTORE_NAME" -n openshift-adp \
+            -o jsonpath='{.status.errors}' 2>/dev/null || echo "?")
+          echo "OK: Restore completed (warnings=$WARNINGS, errors=$ERRORS)"
+          break
+        elif [ "$PHASE" = "Failed" ] || [ "$PHASE" = "PartiallyFailed" ]; then
+          echo "FAIL: Restore $RESTORE_NAME phase=$PHASE"
+          oc delete networkpolicy dr-block-image-controller -n image-controller --ignore-not-found
+          exit 1
+        fi
+        echo "  Restore phase: $PHASE (attempt $i/60)"
+        sleep 60
+      done
+
+      # --- Remove NetworkPolicy ---
+      echo "Removing NetworkPolicy..."
+      oc delete networkpolicy dr-block-image-controller -n image-controller --ignore-not-found
+      echo "OK: NetworkPolicy removed"
+
+      echo "=== Disaster & Restore PASSED ==="
+    computeResources: {}
+    timeout: 90m
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: dr-post-restore-verify
+spec:
+  params:
+  - name: TENANT_NAMESPACE
+    type: string
+  - name: MANAGED_NAMESPACE
+    type: string
+  - name: COMPONENT_NAME
+    type: string
+  - name: APP_NAME
+    type: string
+  - name: RELEASE_PLAN_NAME
+    type: string
+  steps:
+  - name: verify
+    image: quay.io/konflux-ci/tools@sha256:b846eb68ab06f4c61c987bd1053e0e2dda13e18ecd5a75c945a18f7d78743bd8
+    command: ["bash", "-eu", "-o", "pipefail", "-c"]
+    args:
+    - |
+      echo "=== DR Post-Restore Verification ==="
+      NS="$(params.TENANT_NAMESPACE)"
+      MANAGED_NS="$(params.MANAGED_NAMESPACE)"
+      COMP="$(params.COMPONENT_NAME)"
+      APP="$(params.APP_NAME)"
+      RP="$(params.RELEASE_PLAN_NAME)"
+
+      # --- Fix stale build-pipeline-* ServiceAccounts ---
+      echo "Deleting stale build-pipeline-* ServiceAccounts..."
+      for SA in $(oc get sa -n "$NS" -o name 2>/dev/null | grep "build-pipeline-"); do
+        oc delete "$SA" -n "$NS" 2>/dev/null || true
+      done
+      echo "Waiting for controller to recreate SAs..."
+      sleep 30
+
+      # --- Check ImageRepository status ---
+      echo "Checking ImageRepository status..."
+      IR_STATUS=$(oc get imagerepositories.appstudio.redhat.com -n "$NS" \
+        -o jsonpath='{.items[0].status.state}' 2>/dev/null || echo "unknown")
+      echo "ImageRepository state: $IR_STATUS"
+      if [ "$IR_STATUS" != "ready" ]; then
+        echo "WARNING: ImageRepository not ready ($IR_STATUS), build may fail"
+      fi
+
+      # --- Record PipelineRun count before triggering ---
+      BEFORE_COUNT=$(oc get pipelineruns -n "$NS" --no-headers 2>/dev/null | wc -l)
+
+      # --- Trigger post-restore build ---
+      echo "Triggering post-restore build on $COMP..."
+      oc annotate component/"$COMP" -n "$NS" \
+        build.appstudio.openshift.io/request=trigger-pac-build --overwrite
+
+      echo "Waiting for new build PipelineRun..."
+      BUILD_PR=""
+      for i in $(seq 1 120); do
+        CURRENT_COUNT=$(oc get pipelineruns -n "$NS" --no-headers 2>/dev/null | wc -l)
+        if [ "$CURRENT_COUNT" -gt "$BEFORE_COUNT" ]; then
+          BUILD_PR=$(oc get pipelineruns -n "$NS" \
+            --sort-by=.metadata.creationTimestamp -o jsonpath='{.items[-1].metadata.name}')
+          echo "Found build PipelineRun: $BUILD_PR"
+          break
+        fi
+        sleep 15
+      done
+      if [ -z "$BUILD_PR" ]; then
+        echo "FAIL: No new build PipelineRun appeared after 30 minutes"
+        exit 1
+      fi
+
+      echo "Waiting for post-restore build to complete..."
+      for i in $(seq 1 120); do
+        STATUS=$(oc get pipelinerun "$BUILD_PR" -n "$NS" \
+          -o jsonpath='{.status.conditions[0].reason}' 2>/dev/null || echo "Pending")
+        if [ "$STATUS" = "Completed" ] || [ "$STATUS" = "Succeeded" ]; then
+          echo "OK: Post-restore build completed"
+          break
+        elif [ "$STATUS" = "Failed" ]; then
+          echo "FAIL: Post-restore build $BUILD_PR failed"
+          exit 1
+        fi
+        echo "  Build status: $STATUS (attempt $i/120)"
+        sleep 15
+      done
+
+      echo "Waiting for post-restore integration test..."
+      for i in $(seq 1 60); do
+        INT_PR=$(oc get pipelineruns -n "$NS" \
+          -l "appstudio.openshift.io/application=$APP,test.appstudio.openshift.io/scenario" \
+          --sort-by=.metadata.creationTimestamp -o jsonpath='{.items[-1].metadata.name}' 2>/dev/null || echo "")
+        if [ -n "$INT_PR" ]; then
+          INT_STATUS=$(oc get pipelinerun "$INT_PR" -n "$NS" \
+            -o jsonpath='{.status.conditions[0].reason}' 2>/dev/null || echo "Pending")
+          if [ "$INT_STATUS" = "Completed" ] || [ "$INT_STATUS" = "Succeeded" ]; then
+            echo "OK: Post-restore integration test completed ($INT_PR)"
+            break
+          elif [ "$INT_STATUS" = "Failed" ]; then
+            echo "FAIL: Post-restore integration test $INT_PR failed"
+            exit 1
+          fi
+          echo "  Integration status: $INT_STATUS (attempt $i/60)"
+        fi
+        sleep 15
+      done
+
+      echo "Finding post-restore Snapshot..."
+      SNAPSHOT=$(oc get snapshots.appstudio.redhat.com -n "$NS" \
+        -l "appstudio.openshift.io/application=$APP" \
+        --sort-by=.metadata.creationTimestamp -o jsonpath='{.items[-1].metadata.name}')
+      echo "Creating post-restore Release..."
+      RELEASE_NAME="dr-sanity-post-restore-release-$(date +%Y%m%d%H%M%S)"
+      cat <<RELEASE_EOF | oc apply -f -
+      apiVersion: appstudio.redhat.com/v1alpha1
+      kind: Release
+      metadata:
+        name: $RELEASE_NAME
+        namespace: $NS
+      spec:
+        releasePlan: $RP
+        snapshot: $SNAPSHOT
+      RELEASE_EOF
+
+      echo "Waiting for post-restore release PipelineRun..."
+      for i in $(seq 1 60); do
+        REL_PR=$(oc get pipelineruns -n "$MANAGED_NS" \
+          --sort-by=.metadata.creationTimestamp -o jsonpath='{.items[-1].metadata.name}' 2>/dev/null || echo "")
+        if [ -n "$REL_PR" ]; then
+          REL_STATUS=$(oc get pipelinerun "$REL_PR" -n "$MANAGED_NS" \
+            -o jsonpath='{.status.conditions[0].reason}' 2>/dev/null || echo "Pending")
+          if [ "$REL_STATUS" = "Completed" ] || [ "$REL_STATUS" = "Succeeded" ]; then
+            echo "OK: Post-restore release completed ($REL_PR)"
+            break
+          elif [ "$REL_STATUS" = "Failed" ]; then
+            echo "FAIL: Post-restore release $REL_PR failed"
+            exit 1
+          fi
+          echo "  Release status: $REL_STATUS (attempt $i/60)"
+        fi
+        sleep 15
+      done
+
+      echo "=== Post-Restore Verification PASSED ==="
+    computeResources: {}
+    timeout: 90m
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: dr-cleanup
+spec:
+  params:
+  - name: TENANT_NAMESPACE
+    type: string
+  results:
+  - name: test-result
+    description: Overall test result (PASSED or FAILED)
+  steps:
+  - name: cleanup
     image: quay.io/konflux-ci/tools@sha256:b846eb68ab06f4c61c987bd1053e0e2dda13e18ecd5a75c945a18f7d78743bd8
     command: ["bash", "-c"]
     args:
-      - 'sleep 5'
+    - |
+      echo "=== DR Cleanup ==="
+      NS="$(params.TENANT_NAMESPACE)"
+
+      # Remove NetworkPolicy if it was left behind
+      oc delete networkpolicy dr-block-image-controller -n image-controller --ignore-not-found 2>/dev/null || true
+
+      # Delete test Release CRs
+      for REL in $(oc get releases.appstudio.redhat.com -n "$NS" -o name 2>/dev/null | grep "dr-sanity"); do
+        oc delete "$REL" -n "$NS" --ignore-not-found 2>/dev/null || true
+        echo "Deleted $REL"
+      done
+
+      # Delete test Backup CRs
+      for BACKUP in $(oc get backups.velero.io -n openshift-adp -o name 2>/dev/null | grep "dr-sanity"); do
+        oc delete "$BACKUP" -n openshift-adp --ignore-not-found 2>/dev/null || true
+        echo "Deleted $BACKUP"
+      done
+
+      # Delete test Restore CRs
+      for RESTORE in $(oc get restores.velero.io -n openshift-adp -o name 2>/dev/null | grep "dr-sanity"); do
+        oc delete "$RESTORE" -n openshift-adp --ignore-not-found 2>/dev/null || true
+        echo "Deleted $RESTORE"
+      done
+
+      printf "COMPLETED" > "$(results.test-result.path)"
+      echo "=== Cleanup Done ==="
     computeResources: {}
 ---
 apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
-  name: sleep-pipeline
+  name: dr-sanity-pipeline
 spec:
+  params:
+  - name: TENANT_NAMESPACE
+    type: string
+    default: releng-test-product-tenant
+  - name: MANAGED_NAMESPACE
+    type: string
+    default: rhtap-releng-tenant
+  - name: COMPONENT_NAME
+    type: string
+    default: devfile-sample-python-basic-main
+  - name: APP_NAME
+    type: string
+    default: releng-test-app
+  - name: RELEASE_PLAN_NAME
+    type: string
+    default: releng-test-app-quay-release
   tasks:
-  - name: sleep
+  - name: preflight
     taskRef:
       kind: Task
-      name: sleep
+      name: dr-preflight
+    params:
+    - name: TENANT_NAMESPACE
+      value: $(params.TENANT_NAMESPACE)
+    - name: COMPONENT_NAME
+      value: $(params.COMPONENT_NAME)
+    - name: RELEASE_PLAN_NAME
+      value: $(params.RELEASE_PLAN_NAME)
+  - name: baseline-run
+    runAfter: ["preflight"]
+    taskRef:
+      kind: Task
+      name: dr-baseline-run
+    params:
+    - name: TENANT_NAMESPACE
+      value: $(params.TENANT_NAMESPACE)
+    - name: MANAGED_NAMESPACE
+      value: $(params.MANAGED_NAMESPACE)
+    - name: COMPONENT_NAME
+      value: $(params.COMPONENT_NAME)
+    - name: APP_NAME
+      value: $(params.APP_NAME)
+    - name: RELEASE_PLAN_NAME
+      value: $(params.RELEASE_PLAN_NAME)
+  - name: backup
+    runAfter: ["baseline-run"]
+    taskRef:
+      kind: Task
+      name: dr-backup
+    params:
+    - name: TENANT_NAMESPACE
+      value: $(params.TENANT_NAMESPACE)
+  - name: disaster-and-restore
+    runAfter: ["backup"]
+    taskRef:
+      kind: Task
+      name: dr-disaster-and-restore
+    params:
+    - name: TENANT_NAMESPACE
+      value: $(params.TENANT_NAMESPACE)
+    - name: BACKUP_NAME
+      value: $(tasks.backup.results.backup-name)
+  - name: post-restore-verify
+    runAfter: ["disaster-and-restore"]
+    taskRef:
+      kind: Task
+      name: dr-post-restore-verify
+    params:
+    - name: TENANT_NAMESPACE
+      value: $(params.TENANT_NAMESPACE)
+    - name: MANAGED_NAMESPACE
+      value: $(params.MANAGED_NAMESPACE)
+    - name: COMPONENT_NAME
+      value: $(params.COMPONENT_NAME)
+    - name: APP_NAME
+      value: $(params.APP_NAME)
+    - name: RELEASE_PLAN_NAME
+      value: $(params.RELEASE_PLAN_NAME)
+  finally:
+  - name: cleanup
+    taskRef:
+      kind: Task
+      name: dr-cleanup
+    params:
+    - name: TENANT_NAMESPACE
+      value: $(params.TENANT_NAMESPACE)
