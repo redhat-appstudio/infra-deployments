@@ -6,6 +6,9 @@ minio:
   rootUser: loki
   rootPassword: supersecret # nosecret - used for development and staging
   mode: standalone
+  serviceAccount:
+    create: false
+    name: minio-sa
   persistence:
     enabled: false  # Use emptyDir for development (no storage class available)
   resources:
