@@ -3,4 +3,7 @@ apiVersion: triggers.tekton.dev/v1beta1
 kind: TriggerBinding
 metadata:
   name: cron-binding
-spec: {}
+spec:
+  params:
+  - name: duration
+    value: 10s
