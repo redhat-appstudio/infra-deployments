@@ -63,6 +63,12 @@ serviceAccount:
 
 ignoreMinioDeprecation: true
 
+# Disable chart-generated memcached SA; sa.yaml creates it with ArgoCD annotations
+memcached:
+  serviceAccount:
+    create: false
+    name: loki-memcached
+
 loki:
   commonConfig:
     replication_factor: 1
