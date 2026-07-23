@@ -1,5 +1,5 @@
 ---
-# EventListener ServiceAccount — used by the Tekton EventListener pod
+# https://github.com/tektoncd/triggers/blob/main/examples/rbac.yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -24,88 +24,8 @@ metadata:
 subjects:
 - kind: ServiceAccount
   name: cron-trigger
-  namespace: konflux-disaster-recovery
+  namespace: default
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: tekton-triggers-eventlistener-clusterroles
----
-# Pipeline ServiceAccount — used by PipelineRuns to execute DR sanity tests
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: dr-sanity-runner
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: dr-sanity-runner
-rules:
-# Velero backup/restore operations
-- apiGroups: ["velero.io"]
-  resources: ["backups", "restores"]
-  verbs: ["create", "get", "list", "watch", "delete"]
-- apiGroups: ["velero.io"]
-  resources: ["backupstoragelocations"]
-  verbs: ["get", "list"]
-# Velero deployment health check
-- apiGroups: ["apps"]
-  resources: ["deployments"]
-  verbs: ["get"]
-# Konflux Components — patch to trigger builds via annotation
-- apiGroups: ["appstudio.redhat.com"]
-  resources: ["components"]
-  verbs: ["get", "list", "patch"]
-# Konflux read-only resources for polling
-- apiGroups: ["appstudio.redhat.com"]
-  resources: ["applications", "snapshots", "releaseplans", "releaseplanadmissions", "imagerepositories", "integrationtestscenarios"]
-  verbs: ["get", "list", "watch"]
-# Releases — create for baseline/post-restore, delete for cleanup
-- apiGroups: ["appstudio.redhat.com"]
-  resources: ["releases"]
-  verbs: ["get", "list", "watch", "create", "delete"]
-# PipelineRuns/TaskRuns — poll for completion, patch finalizers
-- apiGroups: ["tekton.dev"]
-  resources: ["pipelineruns", "taskruns"]
-  verbs: ["get", "list", "watch", "patch"]
-# PAC repositories
-- apiGroups: ["pipelinesascode.tekton.dev"]
-  resources: ["repositories"]
-  verbs: ["get", "list"]
-# ImageRepositories — patch finalizers before namespace deletion
-- apiGroups: ["appstudio.redhat.com"]
-  resources: ["imagerepositories", "components", "applications"]
-  verbs: ["patch"]
-# KubeArchive — patch finalizers
-- apiGroups: ["kubearchive.org"]
-  resources: ["kubearchiveconfigs"]
-  verbs: ["get", "list", "patch"]
-# ServiceAccounts — delete stale build-pipeline-* SAs after restore
-- apiGroups: [""]
-  resources: ["serviceaccounts"]
-  verbs: ["get", "list", "delete"]
-# Namespace operations
-- apiGroups: [""]
-  resources: ["namespaces"]
-  verbs: ["get", "list", "delete"]
-# NetworkPolicies — create/delete in image-controller namespace
-- apiGroups: ["networking.k8s.io"]
-  resources: ["networkpolicies"]
-  verbs: ["create", "delete", "get", "patch"]
-# Pods and events for failure diagnostics
-- apiGroups: [""]
-  resources: ["pods", "events", "pods/log"]
-  verbs: ["get", "list"]
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: dr-sanity-runner
-subjects:
-- kind: ServiceAccount
-  name: dr-sanity-runner
-  namespace: konflux-disaster-recovery
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: dr-sanity-runner

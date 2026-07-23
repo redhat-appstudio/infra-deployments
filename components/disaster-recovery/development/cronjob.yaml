@@ -1,17 +1,17 @@
 ---
+# https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/
+# https://github.com/tektoncd/triggers/blob/main/examples/v1beta1/cron/cronjob.yaml
 apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: run-disaster-recovery-pipelinerun
   namespace: konflux-disaster-recovery
 spec:
-  schedule: "0 2 * * *"
+  schedule: "0 * * * *"  # every hour
   concurrencyPolicy: Forbid
-  startingDeadlineSeconds: 300
   suspend: true
   jobTemplate:
     spec:
-      activeDeadlineSeconds: 7200
       template:
         spec:
           containers:
