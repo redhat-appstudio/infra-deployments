@@ -29,19 +29,17 @@ loki:
   # Configure compactor to use writable volumes
   compactor:
     working_directory: /var/loki/compactor
-
-# Security contexts for OpenShift
-podSecurityContext:
-  runAsNonRoot: false
-  allowPrivilegeEscalation: false
-
-containerSecurityContext:
-  runAsNonRoot: false
-  allowPrivilegeEscalation: false
-  capabilities:
-    drop:
-      - ALL
-  readOnlyRootFilesystem: true  # Keep read-only root filesystem for security
+  # Security contexts for OpenShift
+  podSecurityContext:
+    runAsNonRoot: false
+    allowPrivilegeEscalation: false
+  containerSecurityContext:
+    runAsNonRoot: false
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: true
 
 # Disable test pods
 test:
