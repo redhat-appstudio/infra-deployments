@@ -62,16 +62,14 @@ One structure. Every component. No exceptions. Given a component name, a ring nu
 ```
 components/{component-name}/
 │
-├── base/                              # TIER 1
+├── base/                              # TIER 1 (Users write here to change manifests/resources)
 │   ├── kustomization.yaml
 │   ├── allow-argocd-to-manage-cr.yaml
 │   └── monitoring/
 │       ├── controller-sm.yaml
 │       └── slo-alerts-pr.yaml
 │
-├── new-base/                          # TIER 1 (ring-promoted copy of base/ — see §4.1)
-│
-├── features/                           # TIER 4 (library — not a layer; referenced via components:)
+├── features/                           # TIER 4 (library — not a layer; referenced via components)
 │   ├── rh-certs/
 │   │   └── kustomization.yaml
 │   ├── debug/
@@ -84,8 +82,10 @@ components/{component-name}/
 │   │   └── base/                      # TIER 2
 │   │       ├── kustomization.yaml     # ← Kargo writes here (image tags, Git SHAs, Helm charts, ...)
 │   │       ├── ...                    # ← Helm values, Chart.yaml, or other config Kargo manages
-│   │       ├── rbac/                  # ← Human-authored in first ring, promoted by Kargo to next rings
-│   │       │   └── build-pipeline-runner-rb.yaml
+│   │       ├── tier-1-ref/              # ← The snapshot-in-time copy of Tier 1
+│   │       │   ├── kustomization.yaml
+│   │       │   ├── allow-argocd-to-manage-cr.yaml
+│   │       │   └── monitoring/ ...
 │   │       └── patches/               # ← Human-authored
 │   │           └── resource-limits-patch.yaml
 │   │
@@ -93,8 +93,10 @@ components/{component-name}/
 │   │   ├── base/                      # TIER 2
 │   │   │   ├── kustomization.yaml     # ← Kargo writes here (image tags, Git SHAs, Helm charts, ...)
 │   │   │   ├── ...                    # ← Helm values, Chart.yaml, or other config Kargo manages
-│   │   │   ├── rbac/                  # ← Human-authored in first ring, promoted by Kargo to next rings
-│   │   │   │   └── build-pipeline-runner-rb.yaml
+│   │       ├── tier-1-ref/              # ← The snapshot-in-time copy of Tier 1; promoted by Kargo to next rings
+│   │       │   ├── kustomization.yaml
+│   │       │   ├── allow-argocd-to-manage-cr.yaml
+│   │       │   └── monitoring/ ...
 │   │   │   └── patches/               # ← Human-authored
 │   │   │       └── resource-limits-patch.yaml
 │   │   ├── stone-stg-rh01/            # TIER 3
@@ -111,7 +113,10 @@ components/{component-name}/
 │   │   ├── base/                      # TIER 2
 │   │   │   ├── kustomization.yaml     # ← Kargo writes here (image tags, Git SHAs, Helm charts, ...)
 │   │   │   ├── ...                    # ← Helm values, Chart.yaml, or other config Kargo manages
-│   │   │   ├── rbac/                  # ← Human-authored in first ring, promoted by Kargo to next rings
+│   │       ├── tier-1-ref/              # ← The snapshot-in-time copy of Tier 1; promoted by Kargo to next rings
+│   │       │   ├── kustomization.yaml
+│   │       │   ├── allow-argocd-to-manage-cr.yaml
+│   │       │   └── monitoring/ ...
 │   │   │   └── patches/               # ← Human-authored
 │   │   ├── {cluster-a}/               # TIER 3
 │   │   │   └── kustomization.yaml
@@ -130,19 +135,20 @@ components/{component-name}/
 > components/{dev-tool}/
 > ├── base/                              # Tier 1
 > ├── rings/
-> │   └── ring-0/
+> │   └── ring-N/
 > │       ├── base/                      # Tier 2
-> │       │   └── kustomization.yaml
+> │       │   ├─── kustomization.yaml
 > │       └── {cluster}/                 # Tier 3
 > │           └── kustomization.yaml
 > └── OWNERS
 > ```
 >
 > Don't create empty ring directories for rings the component doesn't deploy to.
+> Kargo will create the `tier-1-ref` directory and an entry for it in the Kustomize file for each ring
 
 > **Where Kargo Writes**
 >
-> Kargo **primarily** writes to Tier 2: `components/{component}/rings/ring-N/base/`. The path is computable from `{component}` and `ring-N`, enabling a single generic [PromotionTask](architecture.md#8-definitions). When Tier 1 (`base/`) changes need ring-by-ring rollout, Kargo promotes them via `new-base/` — a copy of `base/` that travels ring-by-ring and is renamed to `base/` at the destination.
+> Kargo **primarily** writes to Tier 2: `components/{component}/rings/ring-N/base/`. The path is computable from `{component}` and `ring-N`, enabling a single generic [PromotionTask](architecture.md#8-definitions). When Tier 1 (`base/`) changes need ring-by-ring rollout, Kargo promotes them via `tier-1-ref/` — a copy of `base/` that travels ring-by-ring.
 >
 > **Where does my change go?** Two questions:
 >
@@ -170,11 +176,7 @@ Every component follows the same four tiers. Tiers can be minimal but must exist
 
 **The Foundation.**
 
-Changes here bypass ring promotion entirely — they hit every ring simultaneously on merge. Only non-disruptive, infra-level resources belong here: ArgoCD sync permissions, monitoring. Nothing that impacts users or running workloads should be in Tier 1 — if a change could break a component or affect tenants, it must go through the rings via Tier 2.
-
-> **Promoting base changes through rings (`new-base/`)**
->
-> When a Tier 1 change needs ring-by-ring rollout (e.g., it could impact workloads), create a `new-base/` directory alongside `base/`. Kargo promotes `new-base/` ring-by-ring like any Tier 2 content, and at the destination ring it is renamed to `base/`. This gives you the safety of ring promotion for changes that would otherwise hit every ring at once.
+Infra-level, cross-ring resources belong here: ArgoCD sync permissions, monitoring. Changes here will get copied to the `tier-1-ref` directory in each ring.
 
 ```yaml
 # components/build-service/base/kustomization.yaml
@@ -184,7 +186,8 @@ kind: Kustomization
 resources:
 - allow-argocd-to-manage-cr.yaml           # ArgoCD sync permission
 - monitoring.yaml                          # ServiceMonitors, alerts
-- rbac/                                    # Platform-level RBACs
+- rbac                                     # Platform-level RBACs
+- tier-1-ref                               # The snapshot-in-time reference to Tier 1
 - build-pipeline-config/build-pipeline-config.yaml
 
 commonAnnotations:
@@ -194,7 +197,7 @@ commonAnnotations:
 Rules:
 
 - **Must exist** for every component, even if it contains a single resource.
-- **Infra-level resources only.** ArgoCD permissions, monitoring. Any resource that could impact workloads or tenants — including RBACs that grant new permissions — belongs in Tier 2, not here.
+- **Infra-level resources only.** ArgoCD permissions, monitoring.
 - **Never contains** `images:`, `namespace:`, environment URLs, or cluster-specific secrets.
 - **Changed by** the component team via manual PR.
 
@@ -207,16 +210,14 @@ This is the ring's shared foundation — every resource that must be consistent 
 1. **Promoted content** — component versions (image tags, upstream refs), RBACs, and other resources that Kargo copies from ring to ring. Authored in the first ring, promoted automatically to subsequent rings.
 2. **Ring-authored config** — configuration that is the same for every cluster in the ring but differs between rings, such as ExternalSecret vault paths, environment-specific feature flags, or resource baselines. These are authored independently in each ring's Tier 2 because the values are ring-specific — Kargo does not promote them.
 
-Tier 2 pulls in Tier 1, pins the component version (however the component manages that), and sets the namespace. Only ring-common objects belong here; anything that differs between individual clusters within a ring belongs in Tier 3. **This is the primary tier Kargo writes to.**
+Tier 2 pulls in Tier 1, via the `tier-1-ref` directory, pins the component version (however the component manages that), and sets the namespace. Only ring-common objects belong here; anything that differs between individual clusters within a ring belongs in Tier 3. **This is the primary tier Kargo writes to.**
 
 **Directory convention** — separate promoted from ring-authored content visually:
 
 ```
 rings/ring-1/base/
 ├── kustomization.yaml              # images, upstream refs — Kargo writes here (promoted)
-├── rbac/                           # RBACs authored in first ring, promoted by Kargo
-│   ├── role.yaml
-│   └── rolebinding.yaml
+├── tier-1-ref/                     # the snapshot-in-time reference to Tier 1
 ├── external-secrets/               # ring-authored — Kargo ignores, authored per ring
 │   └── pipelines-as-code.yaml
 └── patches/                        # ring-wide patches
@@ -250,9 +251,8 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-- ../../../base                                                    # ← Tier 1
-- rbac/                                                            # ← promoted: Kargo copies ring-to-ring
-- external-secrets/                                                # ← ring-authored: Kargo ignores
+- tier-1-ref                                                    ## ← promoted: Kargo copies ring-to-ring                                                          
+- external-secrets                                                # ← ring-authored: Kargo ignores
 - https://github.com/konflux-ci/build-service/config/default?ref=04a4744  # ← promoted: upstream ref
 
 namespace: build-service
@@ -433,7 +433,7 @@ base/
 └── resources.yaml                       # 4 resources with --- separators
 ```
 
-- **Exception:** CRDs or upstream manifests pulled via `?ref=SHA` are not split — they are consumed as-is from upstream.
+- **Exception:** CRDs or upstream manifests pulled via `?ref=SHA` are not split — they are consumed as-is from upstream. Associated (Cluster)Roles and (Cluster)RoleBindings can live in the same file.
 - **Subdirectories** for related groups (e.g. `external-secrets/`, `rbac/`, `monitoring/`) are encouraged when a tier has more than ~6 resource files.
 
 ### 5.3 Patches Directory
