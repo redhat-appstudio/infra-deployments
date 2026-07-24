@@ -1,0 +1,27 @@
+---
+$patch: delete
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: plnsvc-tests
+---
+$patch: delete
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: tekton-results-tests
+  namespace: plnsvc-tests
+---
+$patch: delete
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: tekton-results-tests
+---
+$patch: delete
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: pipeline-service-admin
+  namespace: plnsvc-tests
+---

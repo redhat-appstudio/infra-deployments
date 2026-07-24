@@ -1,0 +1,14 @@
+- op: replace
+  path: /spec/pipeline/options/deployments/tekton-pipelines-controller
+  value:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: tekton-pipelines-controller
+            resources:
+              limits:
+                memory: 12Gi
+              requests:
+                cpu: "1"
+                memory: 12Gi

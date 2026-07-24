@@ -1,0 +1,53 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../base
+
+patches:
+  # ExternalSecret patches
+  - target:
+      kind: ExternalSecret
+      name: pipelines-as-code-secret
+      namespace: openshift-pipelines
+    path: patches/pipelines-as-code-es-key-patch.yaml
+  - target:
+      kind: ExternalSecret
+      name: tekton-chains-public-key
+      namespace: openshift-pipelines
+    path: patches/tekton-chains-public-key-es-key-patch.yaml
+  - target:
+      kind: ExternalSecret
+      name: tekton-chains-signing-secret
+      namespace: openshift-pipelines
+    path: patches/tekton-chains-signing-es-key-patch.yaml
+  - target:
+      kind: ExternalSecret
+      name: tekton-results-s3
+      namespace: tekton-logging
+    path: patches/tekton-results-s3-es-key-patch.yaml
+  - target:
+      kind: ExternalSecret
+      name: tekton-results-database
+      namespace: tekton-results
+    path: patches/tekton-results-db-es-key-patch.yaml.yaml
+  - target:
+      kind: ExternalSecret
+      name: tekton-results-s3
+      namespace: tekton-results
+    path: patches/tekton-results-s3-es-key-patch.yaml
+  # TektonConfig patches
+  - target:
+      kind: TektonConfig
+      name: config
+    patch: |
+      - op: replace
+        path: /spec/chain/artifacts.pipelinerun.format
+        value: slsa/v2alpha3
+      - op: replace
+        path: /spec/chain/builddefinition.buildtype
+        value: https://tekton.dev/chains/v2/slsa-tekton
+  - target:
+      kind: TektonConfig
+      name: config
+    path: patches/update-tekton-cfg-settings-patch.yaml
