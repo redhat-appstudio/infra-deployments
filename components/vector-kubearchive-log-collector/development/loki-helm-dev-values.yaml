@@ -108,6 +108,7 @@ loki:
       s3ForcePathStyle: true
       insecure: true
   limits_config:
+    deletion_mode: filter-only
     shard_streams:
       enabled: false
     retention_period: 24h     # Reduce from 744h for development
@@ -173,7 +174,6 @@ loki:
     align_queries_with_step: true         # Align queries with step for better caching
   compactor:
     retention_enabled: true
-    deletion_mode: filter-only
     delete_request_store: s3
     retention_delete_delay: 2h
     retention_delete_worker_count: 150
