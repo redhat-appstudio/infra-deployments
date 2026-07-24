@@ -69,14 +69,14 @@ Clusters affected: <list clusters>
 **Risk Level:** Low / Medium / High / Very High
 **What could go wrong:** <describe what breaks if this change is incorrect>
 **Rollback:** Revert PR / <specific rollback steps>
-<blast radius — how many clusters, which environments>
+**Blast radius:** <how many clusters, which environments>
 ```
 
 **Rules:**
 - **What** — Concise change list, affected clusters, Jira link at the bottom. Don't explain why here.
 - **Why** — Motivation only. Keep it brief.
 - **Validation** — Proof, not explanation. kustomize build results, staging links, prior ring PRs.
-- **Risk Assessment** — Required for production PRs. May be omitted for dev/staging.
+- **Risk Assessment** — Required for production PRs. May be omitted for dev/staging. When drafting or reviewing this section, read `skills/risk-assessment.md` for level heuristics, blast-radius rules, and templates.
 
 ## Commit Conventions
 
@@ -104,7 +104,7 @@ Mention the results in the Validation section of the PR body.
 
 | Check | Triggers On | What It Does |
 |-------|-------------|--------------|
-| **Ring deployment enforcement** | `components/`, `argo-cd-apps/`, `configs/` | Enforces staging/prod separation — fails if staging and production changes are mixed in the same PR. Apply `skip-ring-deployment/hotfix` label to bypass for critical hotfixes. |
+| **Ring deployment enforcement** | `components/`, `argo-cd-apps/`, `configs/` | Enforces staging/prod separation — fails if staging and production changes are mixed in the same PR. Does **not** enforce splitting production across rings. |
 | **Render-diff** | All PRs | Posts a rendered Kubernetes manifest diff as a PR comment. |
 | **Chainsaw E2E tests** | `components/kyverno/**`, `components/policies/**` | Runs integration tests in a Kind cluster. Path-triggered — runs on any PR changing these paths regardless of environment. Can also be run locally — set up a Kind cluster with `hack/chainsaw/chainsaw-prepare.sh`, then run `chainsaw test <path>`. |
 | **Kyverno policy tests** | `components/kyverno/**`, `components/policies/**` | CLI-based Kyverno policy validation. |
@@ -118,7 +118,7 @@ Mention the results in the Validation section of the PR body.
 
 ## Production Ring Rollouts
 
-Production changes must be split into 3 ring PRs covering subsets of clusters. Never apply a production change to all clusters in a single PR — unless it's a hotfix using the `skip-ring-deployment/hotfix` label.
+Production changes should be rolled out gradually (rings, canary-then-remaining, or component-specific ring layouts). Prefer not applying a critical change to all production clusters in a single first PR. CI does not enforce intra-prod ring splits — only staging/prod separation.
 
 - Each ring PR title includes the ring number:
   `KFLUXINFRA-1234: short description of the change (ring-1)`
@@ -128,7 +128,7 @@ Production changes must be split into 3 ring PRs covering subsets of clusters. N
 
 ## Production PR Requirements
 
-- **Risk Assessment** section is mandatory (level, what could go wrong, rollback plan, blast radius).
+- **Risk Assessment** section is mandatory (level, what could go wrong, rollback plan, blast radius). Follow `skills/risk-assessment.md`.
 - Follow the ring rollout pattern above.
 - When updating component images, check if corresponding references exist in `hack/new-cluster/templates/` — if so, update them and include this in the PR's **What** section. New clusters are bootstrapped from these templates and won't get ArgoCD-synced versions.
 

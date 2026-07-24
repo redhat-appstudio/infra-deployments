@@ -81,7 +81,7 @@ If it shows a "merge conflicts" error, rebase your PR.
 
 Blocks PRs that modify both staging and production files in the same PR.
 
-Fix: split into separate staging and production PRs. For hotfixes that need to roll out fast in production, apply the `skip-ring-deployment/hotfix` label.
+Fix: split into separate staging and production PRs. Hotfixes that must ship fast still need separate staging vs production PRs if both envs change — CI blocks mixing them.
 
 ### Chainsaw tests
 
