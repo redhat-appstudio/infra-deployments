@@ -28,22 +28,13 @@ function Wait-Folder {
 # ---------------------
 # Docker Installation
 # ---------------------
-Invoke-WebRequest -UseBasicParsing "https://raw.githubusercontent.com/microsoft/Windows-Containers/Main/helpful_tools/Install-DockerCE/install-docker-ce.ps1" -o install-docker-ce.ps1
+Invoke-WebRequest -UseBasicParsing "https://raw.githubusercontent.com/microsoft/Windows-Containers/Main/helpful_tools/Install-DockerCE/install-docker-ce.ps1" -OutFile install-docker-ce.ps1
 .\install-docker-ce.ps1
 
 # ---------------------------------------------------
-# OpenSSH Verification
+# OpenSSH Installation (service started at end of script)
 # ---------------------------------------------------
-# OpenSSH Server is pre-installed on Windows Server 2025.
-# Verify it exists before proceeding.
-if (-not (Get-Service sshd -ErrorAction SilentlyContinue)) {
-  Write-Error "sshd service not found. This script requires a Windows Server 2025 AMI."
-  exit 1
-}
-
-# Start the sshd service and set it to start automatically
-Start-Service sshd
-Set-Service -Name sshd -StartupType 'Automatic'
+Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
 
 # -------------------------------
 # User Creation & Profile Setup
@@ -342,8 +333,8 @@ Write-Host "Scoop installed successfully!"
 # OpenSSH Administrator Configuration & Service Start
 # ---------------------------------------------------
 {{- $addresses := (list) }}
-{{- range $entry := (index . "allowed-remote-addresses" | required "Allowed remote addresses for the SSH firewall must be specified") }}
-    {{- $addresses = (squote $entry | append $addresses) }}
+{{- range $entry := (index . "allowed-remote-addresses" | required "Remote addresses for the SSH FW must be specified") }}
+    {{- $addresses = append $addresses (squote $entry) }}
 {{- end }}
 Remove-NetFirewallRule -Name 'OpenSSH-Server-In-TCP' -ErrorAction SilentlyContinue
 New-NetFirewallRule -Name 'OpenSSH-Server-In-TCP' `
@@ -356,28 +347,14 @@ New-NetFirewallRule -Name 'OpenSSH-Server-In-TCP' `
     -RemoteAddress {{ join "," $addresses }} | Out-Null
 
 # Get public key from AWS Instance Metadata Service (IMDSv2)
-# IMDS may not be reachable immediately during early boot, so retry.
 $MAGIC_IP = "169.254.169.254"
-$maxRetries = 30
-$PUBKEY = $null
-for ($i = 1; $i -le $maxRetries; $i++) {
-  try {
-    $token = Invoke-RestMethod -Uri "http://${MAGIC_IP}/latest/api/token" `
-      -Method 'PUT' -Headers @{'X-aws-ec2-metadata-token-ttl-seconds' = '21600'} `
-      -TimeoutSec 5 -ErrorAction Stop
-    $PUBKEY = Invoke-RestMethod -Uri "http://${MAGIC_IP}/latest/meta-data/public-keys/0/openssh-key" `
-      -Headers @{'X-aws-ec2-metadata-token' = $token} `
-      -TimeoutSec 5 -ErrorAction Stop
-    break
-  } catch {
-    Write-Host "IMDS request failed (attempt $i/$maxRetries): $_"
-    if ($i -eq $maxRetries) {
-      Write-Error "Failed to retrieve SSH public key from IMDS after $maxRetries attempts. Exiting."
-      exit 1
-    }
-    Start-Sleep -Seconds 2
-  }
-}
+$IMDS_TOKEN = Invoke-RestMethod -Uri "http://${MAGIC_IP}/latest/api/token" `
+    -Method 'PUT' `
+    -Headers @{'X-aws-ec2-metadata-token-ttl-seconds' = '21600'}
+$PUBKEY = Invoke-RestMethod -Uri "http://${MAGIC_IP}/latest/meta-data/public-keys/0/openssh-key" `
+    -Headers @{'X-aws-ec2-metadata-token' = $IMDS_TOKEN}
+
+Start-Sleep 5
 
 # Configure SSH authorized_keys for Administrator
 $SSH_PATH = "C:\ProgramData\ssh"
@@ -405,7 +382,8 @@ $Ar = New-Object System.Security.AccessControl.FileSystemAccessRule(
 $ACL.SetAccessRule($Ar)
 Set-Acl "$SSH_PATH\administrators_authorized_keys" $ACL
 
-Restart-Service sshd
+Start-Service sshd
+Set-Service -Name sshd -StartupType 'Automatic'
 </powershell>
 <persist>true</persist>
 {{- end -}}
