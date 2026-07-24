@@ -44,6 +44,8 @@ gateway:
       memory: 64Mi
     limits:
       memory: 128Mi
+  metrics:
+    enabled: false
   service:
     type: ClusterIP
     port: 80
@@ -283,11 +285,12 @@ indexGateway:
 chunksCache:
   enabled: true
   replicas: 1
-  batchSize: 256  # Batch size for sending/receiving chunks from cache
-  parallelism: 10  # Parallel threads for cache operations
-  maxItemMemory: 10  # MB
-  defaultValidity: 12h  # How long cached chunks are stored
-  # Override service account and security context for OpenShift
+  allocatedMemory: 512
+  allocatedCPU: 100m
+  batchSize: 256
+  parallelism: 10
+  maxItemMemory: 10
+  defaultValidity: 12h
   serviceAccount:
     create: false
     name: loki-memcached
