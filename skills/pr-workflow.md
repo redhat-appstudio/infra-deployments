@@ -125,6 +125,7 @@ Production changes must be split into 3 ring PRs covering subsets of clusters. N
 - The **What** section lists the specific clusters included in this ring.
 - Later ring PRs reference earlier ring PRs in **Validation** as evidence of success.
 - This is a team convention — CI does not enforce ring splitting, but the ring enforcement check does prevent mixing staging and production changes.
+- See `production-ring-rollout.md` for the concrete ring membership (which clusters are in ring 1/2/3), the temporary-override mechanism for rings 1–2, and the final-ring consolidation steps.
 
 ## Production PR Requirements
 
