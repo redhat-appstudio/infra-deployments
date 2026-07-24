@@ -1114,7 +1114,7 @@ spec:
             - name: GOMEMLIMIT
               valueFrom:
                 resourceFieldRef:
-                  resource: limits.memory
+                  resource: requests.memory
             - name: GOMAXPROCS
               valueFrom:
                 resourceFieldRef:
@@ -1152,10 +1152,10 @@ spec:
           resources:
             limits:
               cpu: 700m
-              memory: 256Mi
+              memory: 512Mi
             requests:
               cpu: 200m
-              memory: 230Mi
+              memory: 460Mi
           volumeMounts:
             - mountPath: /etc/kubearchive/ssl/
               name: tls-secret
@@ -1227,7 +1227,7 @@ spec:
             - name: GOMEMLIMIT
               valueFrom:
                 resourceFieldRef:
-                  resource: limits.memory
+                  resource: requests.memory
             - name: GOMAXPROCS
               valueFrom:
                 resourceFieldRef:
@@ -1256,10 +1256,10 @@ spec:
           resources:
             limits:
               cpu: 500m
-              memory: 128Mi
+              memory: 256Mi
             requests:
               cpu: 10m
-              memory: 64Mi
+              memory: 220Mi
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
