@@ -1,0 +1,24 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../base
+
+patches:
+  - path: build/external-secret-path-patch.yaml
+    target:
+      name: pipelines-as-code-secret
+      namespace: build-service
+      group: external-secrets.io
+      version: v1
+      kind: ExternalSecret
+  - path: integration/external-secret-path-patch.yaml
+    target:
+      name: pipelines-as-code-secret
+      namespace: integration-service
+      group: external-secrets.io
+      version: v1
+      kind: ExternalSecret
+  - path: konflux-info/info-patch.yaml
+  - path: konflux-ui/ui-patch.yaml
+  - path: namespace-lister/resources-patch.yaml

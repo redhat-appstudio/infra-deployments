@@ -5,14 +5,25 @@ metadata:
   name: enterprise-contract
 spec:
   generators:
-    - clusters: {}
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              values:
+                sourceRoot: components/enterprise-contract
+                clusterDir: base
+          - list:
+              elements:
+                - nameNormalized: stone-stage-p01
+                  values.clusterDir: stone-stage-p01
   template:
     metadata:
       name: enterprise-contract-{{nameNormalized}}
     spec:
       project: default
       source:
-        path: components/enterprise-contract
+        path: '{{values.sourceRoot}}/{{values.clusterDir}}'
         repoURL: https://github.com/redhat-appstudio/infra-deployments.git
         targetRevision: main
       destination:

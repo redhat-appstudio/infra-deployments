@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - external-secrets
+  - cronjobs
+  - signing_configs.yaml
+  - release-team.yaml
+  - release-service-configurator-role.yaml
+  - ibm-public-key-clusterrole.yaml
+  - monitor-pipeline-role.yaml
+  - e2e-release-pipeline-resources-role.yaml
+patches:
+  - path: release-service.yaml
