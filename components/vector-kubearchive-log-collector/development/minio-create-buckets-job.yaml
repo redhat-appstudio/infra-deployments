@@ -8,6 +8,7 @@ metadata:
     argocd.argoproj.io/hook: PostSync
     argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
 spec:
+  ttlSecondsAfterFinished: 300
   backoffLimit: 5
   template:
     metadata:
@@ -16,10 +17,25 @@ spec:
     spec:
       restartPolicy: OnFailure
       serviceAccountName: minio-sa
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      volumes:
+        - name: mc-config
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
       containers:
         - name: minio-make-bucket
           image: quay.io/minio/mc:RELEASE.2024-11-21T17-21-54Z
           imagePullPolicy: IfNotPresent
+          securityContext:
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: mc-config
+              mountPath: /etc/minio/mc
+            - name: tmp
+              mountPath: /tmp
           command:
             - /bin/sh
             - -c
