@@ -90,9 +90,10 @@ customConfig:
         max_events: 1000   # Limit number of events per batch
         timeout_secs: 10   # Send batches more frequently
       compression: "gzip"  # Enable compression to reduce data size
+      key_prefix: "namespace={{`{{ namespace }}`}}"
       labels:
         stream: "{{`{{ namespace }}`}}"
-      dangerously_allow_unconfined_template_resolution: true
+      # dangerously_allow_unconfined_template_resolution: true
       buffer:
         type: "memory"
         max_events: 10000
