@@ -18,7 +18,10 @@ minio:
     limits:
       memory: 256Mi  # Increase from 128Mi to 256Mi
   buckets:
-    - name: loki-data
+    - name: chunks
+      policy: none
+      purge: false
+    - name: ruler
       policy: none
       purge: false
   postJob:
