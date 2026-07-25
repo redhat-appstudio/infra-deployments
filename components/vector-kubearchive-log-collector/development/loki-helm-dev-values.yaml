@@ -46,6 +46,11 @@ gateway:
       memory: 128Mi
   metrics:
     enabled: true
+    image:
+      registry: quay.io
+      repository: kubearchive/access-log-exporter
+      tag: 0.4.6
+      pullPolicy: IfNotPresent
   service:
     type: ClusterIP
     port: 80
