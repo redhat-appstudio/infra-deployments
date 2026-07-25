@@ -21,8 +21,6 @@ spec:
         runAsNonRoot: true
         runAsUser: 1000
       volumes:
-        - name: mc-config
-          emptyDir: {}
         - name: tmp
           emptyDir: {}
       containers:
@@ -32,8 +30,6 @@ spec:
           securityContext:
             readOnlyRootFilesystem: true
           volumeMounts:
-            - name: mc-config
-              mountPath: /etc/minio/mc
             - name: tmp
               mountPath: /tmp
           command:
@@ -41,9 +37,10 @@ spec:
             - -c
             - |
               set -e
+              MC="mc --config-dir /tmp --insecure"
               echo "Waiting for MinIO to be ready..."
               ATTEMPTS=0
-              until mc alias set myminio http://loki-minio:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD" --insecure 2>/dev/null; do
+              until $MC alias set myminio http://loki-minio:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD" 2>/dev/null; do
                 ATTEMPTS=$((ATTEMPTS + 1))
                 if [ $ATTEMPTS -gt 30 ]; then
                   echo "Failed to connect to MinIO after 30 attempts"
@@ -55,11 +52,11 @@ spec:
               echo "Connected to MinIO"
 
               for BUCKET in chunks ruler; do
-                if mc stat myminio/$BUCKET --insecure >/dev/null 2>&1; then
+                if $MC stat myminio/$BUCKET >/dev/null 2>&1; then
                   echo "Bucket '$BUCKET' already exists"
                 else
                   echo "Creating bucket '$BUCKET'"
-                  mc mb myminio/$BUCKET --insecure
+                  $MC mb myminio/$BUCKET
                 fi
               done
               echo "All buckets ready"
