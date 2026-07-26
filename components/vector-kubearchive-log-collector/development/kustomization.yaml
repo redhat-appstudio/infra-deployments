@@ -79,7 +79,8 @@ patches:
                     until $MC alias set myminio http://loki-minio:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD" 2>/dev/null; do
                       ATTEMPTS=$((ATTEMPTS + 1))
                       if [ $ATTEMPTS -gt 30 ]; then
-                        echo "Failed to connect to MinIO after 30 attempts"
+                        echo "Failed to connect to MinIO after 30 attempts, last error:"
+                        $MC alias set myminio http://loki-minio:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD"
                         exit 1
                       fi
                       sleep 2
@@ -175,4 +176,4 @@ patches:
 generators:
 - vector-helm-generator.yaml
 - loki-helm-generator.yaml
-
+- grafana-helm-generator.yaml
