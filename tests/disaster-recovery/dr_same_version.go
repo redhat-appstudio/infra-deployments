@@ -144,6 +144,10 @@ func defineSameVersionSpecs() {
 				waitForPushSecretReadiness(fw, svTenants)
 			})
 
+			It("should link pull secrets to pipeline SA for EC verify tasks", func() {
+				ensurePullSecretsOnSA(fw, svTenants)
+			})
+
 			It("should confirm functional pipeline execution after restore", func() {
 				triggerBuildsAndVerify(fw, svTenants)
 			})
