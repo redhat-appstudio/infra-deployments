@@ -1,0 +1,80 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: loki-minio-create-buckets
+  namespace: product-kubearchive-logging
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  ttlSecondsAfterFinished: 300
+  backoffLimit: 5
+  template:
+    metadata:
+      labels:
+        app: minio-create-buckets
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: minio-sa
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      volumes:
+        - name: tmp
+          emptyDir: {}
+      containers:
+        - name: minio-make-bucket
+          image: quay.io/minio/mc:RELEASE.2024-11-21T17-21-54Z
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              MC="mc --config-dir /tmp --insecure"
+              echo "Waiting for MinIO to be ready..."
+              ATTEMPTS=0
+              until $MC alias set myminio http://loki-minio:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD" 2>/dev/null; do
+                ATTEMPTS=$((ATTEMPTS + 1))
+                if [ $ATTEMPTS -gt 30 ]; then
+                  echo "Failed to connect to MinIO after 30 attempts, last error:"
+                  $MC alias set myminio http://loki-minio:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD"
+                  exit 1
+                fi
+                echo "Attempt $ATTEMPTS: MinIO not ready, retrying in 2s..."
+                sleep 2
+              done
+              echo "Connected to MinIO"
+
+              for BUCKET in chunks ruler; do
+                if $MC stat myminio/$BUCKET >/dev/null 2>&1; then
+                  echo "Bucket '$BUCKET' already exists"
+                else
+                  echo "Creating bucket '$BUCKET'"
+                  $MC mb myminio/$BUCKET
+                fi
+              done
+              echo "All buckets ready"
+          env:
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: loki-minio
+                  key: rootUser
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: loki-minio
+                  key: rootPassword
+          resources:
+            requests:
+              cpu: 10m
+              memory: 64Mi
+            limits:
+              memory: 128Mi
