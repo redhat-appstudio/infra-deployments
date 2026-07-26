@@ -154,6 +154,14 @@ func defineBackwardsCompatSpecs() {
 				}
 			})
 
+			It("should confirm push and pull secrets contain valid credentials", func() {
+				waitForPushSecretReadiness(fw, bcTenants)
+			})
+
+			It("should link pull secrets to pipeline SA for EC verify tasks", func() {
+				ensurePullSecretsOnSA(fw, bcTenants)
+			})
+
 			It("should confirm functional pipeline execution after restore", func() {
 				triggerBuildsAndVerify(fw, bcTenants)
 			})

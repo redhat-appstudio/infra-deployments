@@ -19,6 +19,7 @@ import (
 	"time"
 
 	appservice "github.com/konflux-ci/application-api/api/v1alpha1"
+	"github.com/konflux-ci/e2e-tests/pkg/constants"
 	"github.com/konflux-ci/e2e-tests/pkg/framework"
 	imagecontrollerv1alpha1 "github.com/konflux-ci/image-controller/api/v1alpha1"
 	releaseapi "github.com/konflux-ci/release-service/api/v1alpha1"
@@ -656,6 +657,81 @@ func waitForPushSecretReadiness(fw *framework.Framework, tenants []Tenant) {
 	}
 
 	GinkgoWriter.Println("All ImageRepository push and pull secrets contain valid credentials")
+}
+
+// ensurePullSecretsOnSA links each ImageRepository's pull secret to the
+// pipeline ServiceAccount. After backup/restore + re-provisioning, the SA
+// may not have pull secrets in its .secrets field. Without this, Tekton
+// credential initialization won't provide registry auth to integration test
+// tasks (EC verify), causing UNAUTHORIZED errors even though the secrets
+// contain valid credentials.
+func ensurePullSecretsOnSA(fw *framework.Framework, tenants []Tenant) {
+	GinkgoHelper()
+
+	By("Ensuring pull secrets are linked to pipeline ServiceAccount")
+
+	for _, t := range tenants {
+		var pipelineSA *corev1.ServiceAccount
+		var saName string
+		for _, candidate := range []string{constants.DefaultPipelineServiceAccount, "appstudio-pipeline"} {
+			sa := &corev1.ServiceAccount{}
+			if err := fw.AsKubeAdmin.CommonController.KubeRest().Get(
+				context.Background(),
+				client.ObjectKey{Name: candidate, Namespace: t.Namespace},
+				sa,
+			); err == nil {
+				pipelineSA = sa
+				saName = candidate
+				break
+			}
+		}
+		Expect(pipelineSA).ShouldNot(BeNil(),
+			"no pipeline SA found in %s (tried %s, appstudio-pipeline)",
+			t.Namespace, constants.DefaultPipelineServiceAccount)
+
+		secretRefs := make([]string, len(pipelineSA.Secrets))
+		for i, s := range pipelineSA.Secrets {
+			secretRefs[i] = s.Name
+		}
+		GinkgoWriter.Printf("SA %s/%s .secrets: %v\n", t.Namespace, saName, secretRefs)
+
+		pullRefs := make([]string, len(pipelineSA.ImagePullSecrets))
+		for i, s := range pipelineSA.ImagePullSecrets {
+			pullRefs[i] = s.Name
+		}
+		GinkgoWriter.Printf("SA %s/%s .imagePullSecrets: %v\n", t.Namespace, saName, pullRefs)
+
+		irList := &imagecontrollerv1alpha1.ImageRepositoryList{}
+		Expect(fw.AsKubeAdmin.CommonController.KubeRest().List(
+			context.Background(), irList, client.InNamespace(t.Namespace),
+		)).Should(Succeed(), "failed to list ImageRepositories in %s", t.Namespace)
+
+		for i := range irList.Items {
+			pullSecretName := irList.Items[i].Status.Credentials.PullSecretName
+			if pullSecretName == "" {
+				continue
+			}
+
+			alreadyLinked := false
+			for _, s := range pipelineSA.Secrets {
+				if s.Name == pullSecretName {
+					alreadyLinked = true
+					break
+				}
+			}
+
+			if alreadyLinked {
+				GinkgoWriter.Printf("  pull secret %s already in SA %s .secrets\n", pullSecretName, saName)
+			} else {
+				err := fw.AsKubeAdmin.CommonController.LinkSecretToServiceAccount(
+					t.Namespace, pullSecretName, saName, true)
+				Expect(err).ShouldNot(HaveOccurred(),
+					"failed to link pull secret %s to SA %s in %s",
+					pullSecretName, saName, t.Namespace)
+				GinkgoWriter.Printf("  linked pull secret %s to SA %s\n", pullSecretName, saName)
+			}
+		}
+	}
 }
 
 // collectFailureArtifacts logs diagnostic information for troubleshooting DR
