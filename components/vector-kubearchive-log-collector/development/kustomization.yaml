@@ -149,26 +149,20 @@ patches:
       name: product-kubearchive-logging-monitor
 
   # Fix ArgoCD sync drift caused by OpenShift SCC admission mutations on Loki workloads
-  - patch: |
-      apiVersion: apps/v1
-      kind: Deployment
-      metadata:
-        name: not-used
-        annotations:
-          argocd.argoproj.io/sync-options: ServerSideApply=true
+  - patch: |-
+      - op: add
+        path: /metadata/annotations/argocd.argoproj.io~1sync-options
+        value: ServerSideApply=true
     target:
       group: apps
       version: v1
       kind: Deployment
       namespace: product-kubearchive-logging
       labelSelector: app.kubernetes.io/name=loki
-  - patch: |
-      apiVersion: apps/v1
-      kind: StatefulSet
-      metadata:
-        name: not-used
-        annotations:
-          argocd.argoproj.io/sync-options: ServerSideApply=true
+  - patch: |-
+      - op: add
+        path: /metadata/annotations/argocd.argoproj.io~1sync-options
+        value: ServerSideApply=true
     target:
       group: apps
       version: v1
