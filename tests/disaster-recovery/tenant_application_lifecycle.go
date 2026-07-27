@@ -168,9 +168,11 @@ func findFailedStepContainers(tr *pipeline.TaskRun) []string {
 }
 
 // waitForSucceededPRCount polls until exactly expectedCount PipelineRuns with
-// Succeeded=True exist in the namespace. Any deviation from the expected count
-// (including exceeding it) is treated as a finding. Failed PipelineRuns are
-// logged with their component name and failure reason for debugging.
+// Succeeded=True exist in the namespace. If the count exceeds expected, it
+// fails immediately with diagnostic details for each PipelineRun (an overshoot
+// indicates unexpected controller behavior, e.g. re-processing of restored
+// Snapshots). Failed PipelineRuns are logged with their component name and
+// failure reason for debugging.
 //
 // Filters follow the same rules as countSucceededPRs: empty pipelineType or
 // componentName skips that filter.
@@ -220,6 +222,27 @@ func waitForSucceededPRCount(fw *framework.Framework, namespace, pipelineType, c
 
 		GinkgoWriter.Printf("namespace %s: %d/%d %s PipelineRuns succeeded (total: %d)\n",
 			namespace, succeededCount, expectedCount, displayType, len(prList.Items))
+
+		if succeededCount > expectedCount {
+			GinkgoWriter.Printf("OVERSHOOT DETECTED: %d/%d %s PipelineRuns in %s — dumping diagnostics:\n",
+				succeededCount, expectedCount, displayType, namespace)
+			for i := range prList.Items {
+				pr := &prList.Items[i]
+				GinkgoWriter.Printf(
+					"  PipelineRun: %s | created: %s | component: %s | type: %s | snapshot: %s | event: %s\n",
+					pr.Name,
+					pr.CreationTimestamp.Format("15:04:05"),
+					pr.Labels["appstudio.openshift.io/component"],
+					pr.Labels["pipelines.appstudio.openshift.io/type"],
+					pr.Labels["appstudio.openshift.io/snapshot"],
+					pr.Labels["pipelinesascode.tekton.dev/event-type"],
+				)
+			}
+			Fail(fmt.Sprintf(
+				"DR state mismatch: expected exactly %d successful %s PipelineRuns in %s, found %d — see OVERSHOOT diagnostic above",
+				expectedCount, displayType, namespace, succeededCount))
+		}
+
 		return succeededCount
 	}, timeout, poll).Should(Equal(expectedCount),
 		"expected %d successful %s PipelineRuns in namespace %s",
