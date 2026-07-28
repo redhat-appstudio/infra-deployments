@@ -1,0 +1,22 @@
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: segment-write-key
+  namespace: segment-bridge
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  data:
+    - secretKey: SEGMENT_WRITE_KEY
+      remoteRef:
+        key: staging/service-enhancement/segment-write-key
+        property: SEGMENT_WRITE_KEY
+  refreshInterval: 1h
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: appsre-stonesoup-vault
+  target:
+    creationPolicy: Owner
+    deletionPolicy: Delete
+    name: segment-write-key
