@@ -1,0 +1,22 @@
+apiVersion: konflux.konflux-ci.dev/v1alpha1
+kind: Konflux
+metadata:
+  name: konflux
+spec:
+  ui:
+    spec:
+      dex:
+        config:
+          connectors:
+            - type: openshift
+              id: openshift
+              name: OpenShift
+              config:
+                issuer: https://api.stone-stage-p01.hpmt.p1.openshiftapps.com:6443
+                clientID: $OPENSHIFT_OAUTH_CLIENT_ID
+                clientSecret: $OPENSHIFT_OAUTH_CLIENT_SECRET
+      runtimeConfig:
+        chatBot:
+          enabled: false
+        monitoring:
+          cluster: stone-stage-p01
