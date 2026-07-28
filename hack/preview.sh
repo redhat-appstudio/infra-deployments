@@ -385,6 +385,7 @@ configure_operator_image_controller() {
     [ "$TARGET_PREVIEW_OVERLAY" != "development-operator" ] && return
 
     local cr_patch="$ROOT/components/konflux-operator/rings/ring-0/base/cr/image-controller/image-controller.yaml"
+    local ring_kust="$ROOT/components/konflux-operator/rings/ring-0/base/kustomization.yaml"
 
     log_step "Configuring Konflux operator image-controller (Quay credentials)"
 
@@ -392,12 +393,16 @@ configure_operator_image_controller() {
         log_info "IMAGE_CONTROLLER_QUAY_ORG and IMAGE_CONTROLLER_QUAY_TOKEN are set"
         log_info "  - Quay organization: ${IMAGE_CONTROLLER_QUAY_ORG}"
         yq -i '.spec.imageController.enabled = true' "$cr_patch"
+        yq -i '.components += ["cr/image-controller/rbac"] | .components |= unique' "$ring_kust"
+        log_info "  - image-controller RBAC component added to ring kustomization"
         log_success "Konflux CR image-controller: enabled (operator will deploy image-controller)"
     else
         log_info "IMAGE_CONTROLLER_QUAY_ORG and/or IMAGE_CONTROLLER_QUAY_TOKEN are not set"
         [ -z "${IMAGE_CONTROLLER_QUAY_ORG}" ] && log_info "  - IMAGE_CONTROLLER_QUAY_ORG: not set"
         [ -z "${IMAGE_CONTROLLER_QUAY_TOKEN}" ] && log_info "  - IMAGE_CONTROLLER_QUAY_TOKEN: not set"
         yq -i '.spec.imageController.enabled = false' "$cr_patch"
+        yq -i 'del(.components[] | select(. == "cr/image-controller/rbac"))' "$ring_kust"
+        log_info "  - image-controller RBAC component removed from ring kustomization"
         log_warn "Konflux CR image-controller: disabled (set both Quay variables in hack/preview.env to enable)"
     fi
 }

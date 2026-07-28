@@ -1,0 +1,6 @@
+---
+# Remove automated sync (auto-sync + self-heal) from ApplicationSet templates.
+# Used for operator ownership handoff on stone-stage-p01 so ArgoCD does not
+# race the Konflux operator (see PR #13169). Scoped to staging-downstream only.
+- op: remove
+  path: /spec/template/spec/syncPolicy/automated
