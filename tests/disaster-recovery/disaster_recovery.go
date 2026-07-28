@@ -436,9 +436,20 @@ func verifyResources(fw *framework.Framework, t Tenant) {
 	}
 
 	By(fmt.Sprintf("Verifying ReleasePlan %q exists in namespace %q", DRReleasePlanName, t.Namespace))
-	_, err = fw.AsKubeAdmin.ReleaseController.GetReleasePlan(DRReleasePlanName, t.Namespace)
-	Expect(err).ShouldNot(HaveOccurred(),
+	rp, rpErr := fw.AsKubeAdmin.ReleaseController.GetReleasePlan(DRReleasePlanName, t.Namespace)
+	Expect(rpErr).ShouldNot(HaveOccurred(),
 		"ReleasePlan %q should exist in namespace %q (proves release config survived backup/restore)", DRReleasePlanName, t.Namespace)
+
+	By(fmt.Sprintf("Annotating ReleasePlan %q to trigger release-service reconciliation after restore", DRReleasePlanName))
+	if rp.Annotations == nil {
+		rp.Annotations = map[string]string{}
+	}
+	rp.Annotations["dr.redhat.com/restore-trigger"] = time.Now().UTC().Format(time.RFC3339)
+	rpErr = fw.AsKubeAdmin.CommonController.KubeRest().Update(context.Background(), rp)
+	Expect(rpErr).ShouldNot(HaveOccurred(),
+		"failed to annotate ReleasePlan %q for reconciliation", DRReleasePlanName)
+	GinkgoWriter.Printf("Annotated ReleasePlan %s/%s with restore-trigger timestamp\n",
+		t.Namespace, DRReleasePlanName)
 
 	By(fmt.Sprintf("Verifying PaC Repository CRs exist for all %d Components in namespace %q", len(Components), t.Namespace))
 	for _, comp := range Components {
@@ -731,6 +742,46 @@ func ensurePullSecretsOnSA(fw *framework.Framework, tenants []Tenant) {
 				GinkgoWriter.Printf("  linked pull secret %s to SA %s\n", pullSecretName, saName)
 			}
 		}
+	}
+}
+
+// logReleaseChainDiagnostics dumps the state of the release trigger chain
+// (Snapshots, ReleasePlan, Releases, ReleasePlanAdmission, release PipelineRuns)
+// for each tenant. Called before the release PipelineRun wait to capture
+// the chain state at the moment builds and tests complete. Uses oc commands
+// to avoid importing Snapshot types.
+func logReleaseChainDiagnostics(tenants []Tenant) {
+	run := func(args ...string) string {
+		out, _ := exec.Command("oc", args...).CombinedOutput() // #nosec G204
+		return strings.TrimSpace(string(out))
+	}
+
+	for _, t := range tenants {
+		GinkgoWriter.Printf("=== RELEASE CHAIN DIAGNOSTICS: %s ===\n", t.Namespace)
+
+		GinkgoWriter.Printf("Snapshots in %s:\n%s\n\n",
+			t.Namespace, run("get", "snapshots.appstudio.redhat.com",
+				"-n", t.Namespace, "-o", "wide"))
+
+		GinkgoWriter.Printf("ReleasePlan %s status:\n%s\n\n",
+			DRReleasePlanName,
+			run("get", "releaseplans.appstudio.redhat.com", DRReleasePlanName,
+				"-n", t.Namespace, "-o", "jsonpath={.status}"))
+
+		GinkgoWriter.Printf("Releases in %s:\n%s\n\n",
+			t.Namespace, run("get", "releases.appstudio.redhat.com",
+				"-n", t.Namespace, "-o", "wide"))
+
+		GinkgoWriter.Printf("ReleasePlanAdmission in %s:\n%s\n\n",
+			t.ManagedNamespace,
+			run("get", "releaseplanadmissions.appstudio.redhat.com",
+				"-n", t.ManagedNamespace, "-o", "jsonpath={.items[0].status}"))
+
+		GinkgoWriter.Printf("PipelineRuns in %s:\n%s\n\n",
+			t.ManagedNamespace,
+			run("get", "pipelinerun", "-n", t.ManagedNamespace, "-o", "wide"))
+
+		GinkgoWriter.Printf("=== END DIAGNOSTICS: %s ===\n", t.Namespace)
 	}
 }
 

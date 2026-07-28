@@ -316,6 +316,8 @@ func waitForPipelineChains(fw *framework.Framework, tenants []Tenant,
 	}
 	wg.Wait()
 
+	logReleaseChainDiagnostics(tenants)
+
 	// Release PipelineRuns run in the managed namespace and may not map 1:1
 	// to components, so wait for them in aggregate after all builds/tests pass.
 	for _, t := range tenants {
