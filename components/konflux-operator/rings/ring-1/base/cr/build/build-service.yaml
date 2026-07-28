@@ -1,0 +1,20 @@
+apiVersion: konflux.konflux-ci.dev/v1alpha1
+kind: Konflux
+metadata:
+  name: konflux
+spec:
+  buildService:
+    spec:
+      webhookURLs:
+        "https://github.com": "https://smee-smee.apps.rosa.kflux-c-stg-e01.3zdg.p3.openshiftapps.com/redhathookstagep01"
+        "https://gitlab.com": "https://smee-smee.apps.rosa.kflux-c-stg-e01.3zdg.p3.openshiftapps.com/redhathookstagep01"
+      buildControllerManager:
+        replicas: 1
+        manager:
+          resources:
+            requests:
+              cpu: 500m
+              memory: 4Gi
+            limits:
+              cpu: 500m
+              memory: 4Gi

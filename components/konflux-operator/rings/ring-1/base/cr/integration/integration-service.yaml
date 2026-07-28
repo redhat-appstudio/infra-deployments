@@ -1,0 +1,20 @@
+apiVersion: konflux.konflux-ci.dev/v1alpha1
+kind: Konflux
+metadata:
+  name: konflux
+spec:
+  integrationService:
+    spec:
+      pipelineTimeout: "6h"
+      tasksTimeout: "4h"
+      finallyTimeout: "2h"
+      integrationControllerManager:
+        replicas: 1
+        manager:
+          resources:
+            requests:
+              cpu: 100m
+              memory: 8Gi
+            limits:
+              cpu: 500m
+              memory: 8Gi
