@@ -1,0 +1,8 @@
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - external-secrets
+  - trusted-ca-configmap.yaml
+  - rbac
+patches:
+  - path: build-service.yaml
