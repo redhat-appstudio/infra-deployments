@@ -5,9 +5,11 @@
     matchLabels:
       argocd.argoproj.io/secret-type: cluster
     matchExpressions:
+      # Exclude the default cluster (the one hosting this ArgoCD instance, registered with
+      # server https://kubernetes.default.svc)
       - key: app.kubernetes.io/name
         operator: NotIn
-        values: [argocd-default-cluster-config]
+        values: [argocd-infra-deployments-default-cluster-config]
       # Prevent clusters provisioned by the cluster-as-a-service component from being used in
       # an AppSet cluster generator.
       - key: clustertemplateinstance.openshift.io/name
