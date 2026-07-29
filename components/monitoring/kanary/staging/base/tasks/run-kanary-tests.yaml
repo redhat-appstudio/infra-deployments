@@ -51,6 +51,16 @@ spec:
     - name: test-scenario-git-url
       type: string
       default: ""
+    # RPM mirror workaround only. Leave empty for container test types.
+    - name: upstream-repo-url
+      type: string
+      default: ""
+    - name: upstream-repo-branch
+      type: string
+      default: ""
+    - name: fork-repo-host-and-path
+      type: string
+      default: ""
   results:
     - name: test-outcome
       description: "Test outcome: passed, failed, or unknown"
@@ -114,6 +124,71 @@ spec:
           fi
         fi
         echo "Pre-cleanup done"
+    - name: mirror-rpm-repo
+      when:
+        - cel: "'$(params.test-type)' == 'rpm'"
+      image: quay.io/redhat-user-workloads/konflux-perfscale-tenant/loadtest
+      volumeMounts:
+        - name: artifacts
+          mountPath: /tmp/artifacts
+      env:
+        - name: UPSTREAM_REPO_URL
+          value: $(params.upstream-repo-url)
+        - name: UPSTREAM_REPO_BRANCH
+          value: $(params.upstream-repo-branch)
+        - name: FORK_REPO_HOST_AND_PATH
+          value: $(params.fork-repo-host-and-path)
+        - name: GITHUB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: kanary-probe-credentials
+              key: github_token
+        - name: GITLAB_BOT_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: kanary-probe-credentials
+              key: gitlab-cee-pipelines-as-code-secret
+      script: |
+        #!/usr/bin/env bash
+        set -u
+
+        if echo "$FORK_REPO_HOST_AND_PATH" | grep -q "gitlab"; then
+          TOKEN="$GITLAB_BOT_TOKEN"
+        else
+          TOKEN="$GITHUB_TOKEN"
+        fi
+
+        FORK_DIR="$(basename "$FORK_REPO_HOST_AND_PATH" .git)"
+        output_file="$(mktemp)"
+
+        onerr() {
+          error_time="$(date -Ins --utc | sed 's/+00:00/Z/')"
+          error_message="$(cat "${output_file}" | tr '\n' ' ' | tr --delete '"')"
+          echo "${error_time},0,\"Cloning workaround failed: ${error_message}\"" >> /tmp/artifacts/load-test-errors.csv
+          rm -f "${output_file}"
+          exit 0
+        }
+        trap "onerr" ERR
+
+        {
+          git clone "https://jhutar:${TOKEN}@${FORK_REPO_HOST_AND_PATH}"
+          cd "${FORK_DIR}"
+          git remote add upstream "${UPSTREAM_REPO_URL}"
+          git fetch upstream "${UPSTREAM_REPO_BRANCH}"
+          git checkout -B "${UPSTREAM_REPO_BRANCH}" upstream/"${UPSTREAM_REPO_BRANCH}"
+
+          sed -i "s/^Name: libecpg$/Name: konflux-probe-libecpg/" libecpg.spec
+          sed -i "s/^Release: [0-9]\+%{?dist}$/Release: $(date --utc +%Y%m%d%H%M%S)%{?dist}/" libecpg.spec
+          git add libecpg.spec
+          git config user.email "loadtest@localhost"
+          git config user.name "Konflux Probes Kanary"
+          git commit -m "test: Alter package name and release so we can push to Brew"
+
+          git push -f origin "${UPSTREAM_REPO_BRANCH}"
+        } 2>&1 | tee "${output_file}"
+
+        rm -f "${output_file}"
+        echo "RPM mirror step completed successfully"
     - name: run-test
       image: quay.io/redhat-user-workloads/konflux-perfscale-tenant/loadtest
       volumeMounts:

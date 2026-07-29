@@ -1,9 +1,9 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: kanary-trigger-multi-arch
+  name: kanary-trigger-rpm
 spec:
-  schedule: "20,50 * * * *"
+  schedule: "10,40 * * * *"
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
@@ -33,15 +33,21 @@ spec:
                 - |
                   tkn pipeline start kanary-otel-poc --use-param-defaults \
                     --param tested-cluster=stone-stage-p01 \
-                    --param test-type=container-multi-arch \
-                    --param component-repo=https://gitlab.cee.redhat.com/jhutar/nodejs-devfile-sample4 \
-                    --param user-prefix=stagep01cm \
+                    --param test-type=rpm \
+                    --param component-repo=https://gitlab.cee.redhat.com/jhutar/libecpg-gitlab-fork \
+                    --param component-repo-revision=c10s \
+                    --param user-prefix=stagep01cr \
                     --param quay-repo=redhat-user-workloads-stage \
                     --param pipeline-repo-templating-source=https://github.com/rhtap-perf-test/konflux-probe-test-templates \
-                    --param pipeline-repo-templating-source-dir=nodejs-devfile-sample-MultiArch/ \
+                    --param pipeline-repo-templating-source-dir=stone-stage-p01-RPM/ \
+                    --param pipeline-image-pull-secrets="imagerepository-for-toolings-gather-results-container-image-pull imagerepository-for-toolings-get-rpm-sources-container-image-pull imagerepository-for-toolings-mock-rhel-container-image-pull imagerepository-for-toolings-rpmbuild-pipeline-image-pull imagerepository-for-toolings-syft-container-image-pull" \
+                    --param test-scenario-git-url="" \
                     --param oci-storage=quay.io/rhtap-perf-test/perf-release-service-trusted-artifacts-stage \
                     --param release-pipeline-service-account=managed-konflux-perfscale-sa \
                     --param fork-target=jhutar \
                     --param gitlab-api-url=https://gitlab.cee.redhat.com/api/v4 \
+                    --param upstream-repo-url=https://gitlab.com/redhat/centos-stream/rpms/libecpg.git \
+                    --param upstream-repo-branch=c10s \
+                    --param fork-repo-host-and-path=gitlab.cee.redhat.com/jhutar/libecpg-gitlab-fork.git \
                     --param member-cluster=https://api.stone-stage-p01.hpmt.p1.openshiftapps.com:6443 \
-                    --prefix-name kanary-stone-stage-p01-multi-arch-
+                    --prefix-name kanary-stone-stage-p01-rpm-
