@@ -7,24 +7,8 @@ resources:
   - etcd-shield
   - konflux-operator
 
-patches:
-  - path: patches/all-clusters-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      labelSelector: appstudio.redhat.com/environment=all
-  - path: patches/external-clusters-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      labelSelector: appstudio.redhat.com/environment=external
-  - path: patches/internal-clusters-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      labelSelector: appstudio.redhat.com/environment=internal
-  - path: patches/member-clusters-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      labelSelector: appstudio.redhat.com/environment=member
+components:
+  - ../../k-components/deploy-to-all-staging-clusters
+  - ../../k-components/deploy-to-staging-tenant-clusters
+  - ../../k-components/deploy-to-staging-eaas-clusters
+  - ../../k-components/deploy-to-staging-internal-tenant-clusters
