@@ -1,0 +1,9 @@
+---
+# When stone-stage-p01 Applications are removed from an ApplicationSet (see
+# exclude-stone-stage-p01-operator-owned.yaml), do not prune cluster resources.
+# The konflux-operator owns those workloads; Argo must orphan, not delete.
+# Staging-downstream overlay only.
+- op: add
+  path: /spec/syncPolicy
+  value:
+    preserveResourcesOnDeletion: true

@@ -1,0 +1,14 @@
+---
+# Drop stone-stage-p01 from ApplicationSet generation for Konflux services
+# owned by the konflux-operator on that cluster (ring-1). Uses ApplicationSet
+# post-selector on generated params (nameNormalized) so other staging member
+# clusters are unchanged. Staging-downstream overlay only; targets are listed
+# in kustomization.yaml.
+- op: add
+  path: /spec/generators/0/selector
+  value:
+    matchExpressions:
+      - key: nameNormalized
+        operator: NotIn
+        values:
+          - stone-stage-p01
