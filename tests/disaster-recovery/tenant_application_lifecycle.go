@@ -330,20 +330,18 @@ func waitForPipelineChains(fw *framework.Framework, tenants []Tenant,
 	}
 }
 
-// triggerBuildsAndVerify creates a pull request on each tenant's forked
-// MathWizz repo to trigger new builds via PaC webhooks, then waits for the
-// full pipeline chain (build → integration test → release) to complete across
-// all tenants. This proves that PaC webhooks, Secrets, ServiceAccounts,
-// IntegrationTestScenarios, ReleasePlans, and the full build/test/release
-// chain survived the backup/restore cycle.
+// triggerBuildsAndVerify pushes commits to each tenant's forked MathWizz
+// repo's default branch to trigger new builds via PaC push webhooks, then
+// waits for the full pipeline chain (build → integration test → release) to
+// complete. Push events (not PRs) are required because integration-service
+// only auto-releases Snapshots with push event type.
 //
 // The method:
 //  1. Snapshots current per-component PipelineRun counts.
-//  2. For each tenant: creates a branch, appends a comment to each component's
-//     Dockerfile (matching PaC .pathChanged() filters), opens a PR on the fork.
+//  2. For each tenant: pushes a Dockerfile change per component directly to
+//     the default branch (matching PaC .pathChanged() filters).
 //  3. Waits for new build and test PipelineRuns per component (parallel).
 //  4. Waits for new release PipelineRuns (aggregate).
-//  5. Cleans up the branches (which closes the PRs).
 func triggerBuildsAndVerify(fw *framework.Framework, tenants []Tenant) {
 	GinkgoHelper()
 
@@ -367,8 +365,6 @@ func triggerBuildsAndVerify(fw *framework.Framework, tenants []Tenant) {
 			t.ManagedNamespace, initialRelease[t.ManagedNamespace])
 	}
 
-	// Snapshot total PipelineRun count (all statuses) per tenant namespace.
-	// Used by the webhook delivery check below to detect new PipelineRun creation.
 	initialTotalPRs := make(map[string]int)
 	for _, t := range tenants {
 		allPRs := &pipeline.PipelineRunList{}
@@ -387,54 +383,29 @@ func triggerBuildsAndVerify(fw *framework.Framework, tenants []Tenant) {
 		Expect(t.ForkRepoName).ShouldNot(BeEmpty(),
 			"ForkRepoName not set for tenant %s", t.Namespace)
 
-		branchName := fmt.Sprintf("dr-test-trigger-%s-%d", t.AppName, time.Now().Unix())
+		By(fmt.Sprintf("Pushing Dockerfile changes to %s/%s for tenant %s",
+			t.ForkRepoName, MathWizzDefaultBranch, t.Namespace))
 
-		By(fmt.Sprintf("Creating trigger PR on fork %s for tenant %s", t.ForkRepoName, t.Namespace))
-
-		err := ghClient.CreateRef(t.ForkRepoName, MathWizzDefaultBranch, "", branchName)
-		Expect(err).ShouldNot(HaveOccurred(),
-			"failed to create branch %s in %s", branchName, t.ForkRepoName)
-
-		defer func(repo, branch string) {
-			By(fmt.Sprintf("Cleaning up trigger branch %s on %s", branch, repo))
-			if deleteErr := ghClient.DeleteRef(repo, branch); deleteErr != nil {
-				GinkgoWriter.Printf("WARNING: failed to delete trigger branch %s on %s: %v\n",
-					branch, repo, deleteErr)
-			}
-		}(t.ForkRepoName, branchName)
-
-		// Modify each component's Dockerfile so PaC's per-component
-		// .pathChanged() CEL expressions match.
 		for _, comp := range Components {
 			dfPath := comp.ContextDir + "/Dockerfile"
-			dfFile, err := ghClient.GetFile(t.ForkRepoName, dfPath, branchName)
+			dfFile, err := ghClient.GetFile(t.ForkRepoName, dfPath, MathWizzDefaultBranch)
 			Expect(err).ShouldNot(HaveOccurred(),
-				"failed to get %s from branch %s in %s", dfPath, branchName, t.ForkRepoName)
+				"failed to get %s from %s in %s", dfPath, MathWizzDefaultBranch, t.ForkRepoName)
 
 			dfContent, err := dfFile.GetContent()
 			Expect(err).ShouldNot(HaveOccurred(), "failed to decode %s content", dfPath)
 
 			dfContent += fmt.Sprintf("\n# DR trigger %s %d\n", t.AppName, time.Now().Unix())
 			_, err = ghClient.UpdateFile(t.ForkRepoName, dfPath,
-				dfContent, branchName, dfFile.GetSHA())
+				dfContent, MathWizzDefaultBranch, dfFile.GetSHA())
 			Expect(err).ShouldNot(HaveOccurred(),
-				"failed to update %s on branch %s in %s", dfPath, branchName, t.ForkRepoName)
+				"failed to update %s on %s in %s", dfPath, MathWizzDefaultBranch, t.ForkRepoName)
 		}
 
-		pr, err := ghClient.CreatePullRequest(t.ForkRepoName,
-			fmt.Sprintf("DR test: trigger builds for %s", t.AppName),
-			"Automated PR to verify the full build/test/release pipeline chain "+
-				"survives backup/restore. Created by the DR e2e test suite.",
-			branchName, MathWizzDefaultBranch)
-		Expect(err).ShouldNot(HaveOccurred(),
-			"failed to create pull request on %s", t.ForkRepoName)
-		GinkgoWriter.Printf("Created PR #%d on %s to trigger builds for tenant %s\n",
-			pr.GetNumber(), t.ForkRepoName, t.Namespace)
+		GinkgoWriter.Printf("Pushed Dockerfile changes to %s/%s for tenant %s\n",
+			t.ForkRepoName, MathWizzDefaultBranch, t.Namespace)
 	}
 
-	// Verify PaC webhook delivery before committing to the full pipeline wait.
-	// If no new PipelineRuns appear within WebhookDeliveryTimeout, PaC is not
-	// processing webhook events and waiting PipelineTimeout (90min) is futile.
 	By("Verifying PaC webhook delivery — expecting new PipelineRuns within 5 minutes")
 	Eventually(func() bool {
 		allHaveNew := true
@@ -458,7 +429,7 @@ func triggerBuildsAndVerify(fw *framework.Framework, tenants []Tenant) {
 		}
 		return allHaveNew
 	}, WebhookDeliveryTimeout, WebhookDeliveryPoll).Should(BeTrue(),
-		"not all tenants received new PipelineRuns within %v of trigger PRs — "+
+		"not all tenants received new PipelineRuns within %v of push triggers — "+
 			"PaC webhook delivery is broken post-restore; check PaC controller pods "+
 			"in openshift-pipelines namespace and SprayProxy route registration",
 		WebhookDeliveryTimeout)

@@ -436,20 +436,9 @@ func verifyResources(fw *framework.Framework, t Tenant) {
 	}
 
 	By(fmt.Sprintf("Verifying ReleasePlan %q exists in namespace %q", DRReleasePlanName, t.Namespace))
-	rp, rpErr := fw.AsKubeAdmin.ReleaseController.GetReleasePlan(DRReleasePlanName, t.Namespace)
+	_, rpErr := fw.AsKubeAdmin.ReleaseController.GetReleasePlan(DRReleasePlanName, t.Namespace)
 	Expect(rpErr).ShouldNot(HaveOccurred(),
 		"ReleasePlan %q should exist in namespace %q (proves release config survived backup/restore)", DRReleasePlanName, t.Namespace)
-
-	By(fmt.Sprintf("Annotating ReleasePlan %q to trigger release-service reconciliation after restore", DRReleasePlanName))
-	if rp.Annotations == nil {
-		rp.Annotations = map[string]string{}
-	}
-	rp.Annotations["dr.redhat.com/restore-trigger"] = time.Now().UTC().Format(time.RFC3339)
-	rpErr = fw.AsKubeAdmin.CommonController.KubeRest().Update(context.Background(), rp)
-	Expect(rpErr).ShouldNot(HaveOccurred(),
-		"failed to annotate ReleasePlan %q for reconciliation", DRReleasePlanName)
-	GinkgoWriter.Printf("Annotated ReleasePlan %s/%s with restore-trigger timestamp\n",
-		t.Namespace, DRReleasePlanName)
 
 	By(fmt.Sprintf("Verifying PaC Repository CRs exist for all %d Components in namespace %q", len(Components), t.Namespace))
 	for _, comp := range Components {
@@ -762,6 +751,11 @@ func logReleaseChainDiagnostics(tenants []Tenant) {
 		GinkgoWriter.Printf("Snapshots in %s:\n%s\n\n",
 			t.Namespace, run("get", "snapshots.appstudio.redhat.com",
 				"-n", t.Namespace, "-o", "wide"))
+
+		GinkgoWriter.Printf("Snapshot annotations in %s:\n%s\n\n",
+			t.Namespace, run("get", "snapshots.appstudio.redhat.com",
+				"-n", t.Namespace, "-o",
+				`jsonpath={range .items[*]}{.metadata.name}{"\t"}event-type={.metadata.labels.pac\.test\.appstudio\.openshift\.io/event-type}{"\t"}test-status={.metadata.annotations.test\.appstudio\.openshift\.io/status}{"\n"}{end}`))
 
 		GinkgoWriter.Printf("ReleasePlan %s status:\n%s\n\n",
 			DRReleasePlanName,
