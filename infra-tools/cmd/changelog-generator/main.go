@@ -3,7 +3,7 @@
 //
 // Detects upstream service bumps by git ref and by image digest, resolves
 // digest-pinned components to git SHAs via OCI labels, and displays
-// per-service feat/fix commits under each bump entry.
+// feat/fix commits for the operator itself and under each operand bump entry.
 package main
 
 import (
@@ -118,8 +118,9 @@ func buildBody(ctx context.Context, repoRoot, baseRef, kustPath string, comparer
 // setup happens in buildBody; this function only does file I/O, API calls, and
 // formatting.
 //
-// If the GitHub API call to fetch operator file diffs fails, the comment still
-// includes the compare link but notes that service bump detection was unavailable.
+// If the GitHub API call to fetch the operator compare fails, the comment still
+// includes the compare link but notes that commit details and service bump
+// detection were unavailable.
 func computeBody(ctx context.Context, basePath, headPath string, comparer changelog.RepoComparer, inspector changelog.RegistryInspector) (string, error) {
 	oldRef, newRef, err := changelog.ExtractRefs(basePath, headPath)
 	if err != nil {
@@ -134,12 +135,18 @@ func computeBody(ctx context.Context, basePath, headPath string, comparer change
 
 	compare, err := changelog.FetchOperatorCompare(ctx, comparer, oldRef, newRef)
 	if err != nil {
-		slog.Warn("fetching operator compare; service bumps unavailable", "err", err)
-		return formatCompare(oldRef, newRef, nil), nil
+		slog.Warn("fetching operator compare; commit details and service bumps unavailable", "err", err)
+		return formatCompare(oldRef, newRef, commitDetails{Failed: true}, nil), nil
 	}
+
+	op := commitDetails{
+		Commits:   compare.Commits,
+		Truncated: compare.CommitsTruncated,
+	}
+
 	if compare.Truncated {
 		slog.Warn("operator compare truncated (≥300 files); service bump detection unavailable")
-		return formatCompare(oldRef, newRef, nil), nil
+		return formatCompare(oldRef, newRef, op, nil), nil
 	}
 
 	refBumps, refSkipped := changelog.ExtractServiceBumps(compare.Files)
@@ -149,7 +156,7 @@ func computeBody(ctx context.Context, basePath, headPath string, comparer change
 		// confidently state what changed, so degrade the same way we do for API
 		// failures rather than risk a misleading empty-bumps message.
 		slog.Warn("some upstream kustomization patches were empty; bump detection may be incomplete")
-		return formatCompare(oldRef, newRef, nil), nil
+		return formatCompare(oldRef, newRef, op, nil), nil
 	}
 
 	imageBumps := resolveImageBumps(ctx, inspector, imgChanges)
@@ -157,22 +164,28 @@ func computeBody(ctx context.Context, basePath, headPath string, comparer change
 		// Digest changes were detected in the compare diff but none resolved to git
 		// SHAs — degrade rather than report "no upstream service refs changed".
 		slog.Warn("digest changes detected but registry resolution produced no bumps")
-		return formatCompare(oldRef, newRef, nil), nil
+		return formatCompare(oldRef, newRef, op, nil), nil
 	}
 	allBumps := append(refBumps, imageBumps...)
 	slog.Info("Service bumps detected", "count", len(allBumps))
 
 	enriched := enrichWithCommits(ctx, comparer, allBumps)
-	return formatCompare(oldRef, newRef, enriched), nil
+	return formatCompare(oldRef, newRef, op, enriched), nil
+}
+
+// commitDetails holds feat/fix commits (or a failure/truncation flag) for
+// rendering under the operator section or an individual service bump.
+type commitDetails struct {
+	Commits   []changelog.ConventionalCommit
+	Failed    bool // true when the commit fetch API call failed
+	Truncated bool // true when AheadBy hit the 250-commit API limit
 }
 
 // bumpWithCommits pairs a ServiceBump with the conventional commits found
 // between its old and new SHAs.
 type bumpWithCommits struct {
-	Bump      changelog.ServiceBump
-	Commits   []changelog.ConventionalCommit
-	Failed    bool // true when the commit fetch API call failed
-	Truncated bool // true when AheadBy hit the 250-commit API limit
+	Bump changelog.ServiceBump
+	commitDetails
 }
 
 // enrichWithCommits fetches feat/fix commits for each bump and returns a
@@ -189,10 +202,16 @@ func enrichWithCommits(ctx context.Context, comparer changelog.RepoComparer, bum
 		commits, truncated, err := changelog.FetchServiceCommits(ctx, comparer, bump)
 		if err != nil {
 			slog.Warn("fetching service commits", "service", bump.Repo, "err", err)
-			result[i] = bumpWithCommits{Bump: bump, Failed: true}
+			result[i] = bumpWithCommits{Bump: bump, commitDetails: commitDetails{Failed: true}}
 			continue
 		}
-		result[i] = bumpWithCommits{Bump: bump, Commits: commits, Truncated: truncated}
+		result[i] = bumpWithCommits{
+			Bump: bump,
+			commitDetails: commitDetails{
+				Commits:   commits,
+				Truncated: truncated,
+			},
+		}
 	}
 	return result
 }
@@ -202,12 +221,13 @@ func formatNoChange() string {
 	return commentMarker + "\n### Operator Changelog\n\nNo operator ref change detected in this PR.\n"
 }
 
-// formatCompare returns the comment body with the operator compare link, the
-// list of upstream service bumps, and per-service feat/fix commit summaries.
+// formatCompare returns the comment body with the operator compare link,
+// operator feat/fix commits, the list of upstream service bumps, and
+// per-service feat/fix commit summaries.
 //
 // bumps == nil means the service bump detection API call failed (degraded).
 // bumps == [] means the call succeeded but no sub-service SHAs changed.
-func formatCompare(oldRef, newRef string, bumps []bumpWithCommits) string {
+func formatCompare(oldRef, newRef string, op commitDetails, bumps []bumpWithCommits) string {
 	const base = "https://github.com/konflux-ci/konflux-ci"
 	short := func(ref string) string {
 		if len(ref) > 12 {
@@ -221,7 +241,8 @@ func formatCompare(oldRef, newRef string, bumps []bumpWithCommits) string {
 	fmt.Fprintf(&b, "Comparing [`%s`](%s/commit/%s) → [`%s`](%s/commit/%s)\n\n",
 		short(oldRef), base, oldRef,
 		short(newRef), base, newRef)
-	fmt.Fprintf(&b, "[Full diff](%s/compare/%s...%s)\n\n", base, oldRef, newRef)
+	fmt.Fprintf(&b, "[Full diff](%s/compare/%s...%s)\n", base, oldRef, newRef)
+	writeCommitDetails(&b, op)
 
 	switch {
 	case bumps == nil:
@@ -242,30 +263,42 @@ func formatCompare(oldRef, newRef string, bumps []bumpWithCommits) string {
 				short(bump.OldSHA), oldURL,
 				short(bump.NewSHA), newURL,
 				compareURL)
-
-			switch {
-			case bwc.Failed:
-				fmt.Fprintf(&b, "\n_Commit details unavailable._\n\n")
-			case len(bwc.Commits) == 0:
-				fmt.Fprintf(&b, "\n_No notable commits (feat/fix)._\n\n")
-			default:
-				fmt.Fprintln(&b)
-				for _, c := range bwc.Commits {
-					if c.Scope != "" {
-						fmt.Fprintf(&b, "- %s(%s): %s\n", c.Type, c.Scope, c.Subject)
-					} else {
-						fmt.Fprintf(&b, "- %s: %s\n", c.Type, c.Subject)
-					}
-				}
-				if bwc.Truncated {
-					fmt.Fprintf(&b, "\n_Showing first %d commits only — results may be incomplete._\n", changelog.CommitMaxFromCompare)
-				}
-				fmt.Fprintln(&b)
-			}
+			writeCommitDetails(&b, bwc.commitDetails)
 		}
 	}
 
 	return b.String()
+}
+
+// writeCommitDetails appends feat/fix bullets (or a failure / empty note)
+// for either the operator section or a single service bump.
+//
+// When Truncated is set, the GitHub compare API returned only the first
+// CommitMaxFromCompare commits, so an empty filtered list must not be stated
+// as a definitive "no notable commits" result.
+func writeCommitDetails(b *strings.Builder, d commitDetails) {
+	switch {
+	case d.Failed:
+		fmt.Fprintf(b, "\n_Commit details unavailable._\n\n")
+	case len(d.Commits) == 0 && d.Truncated:
+		fmt.Fprintf(b, "\n_No notable commits (feat/fix) in the first %d commits — results may be incomplete._\n\n",
+			changelog.CommitMaxFromCompare)
+	case len(d.Commits) == 0:
+		fmt.Fprintf(b, "\n_No notable commits (feat/fix)._\n\n")
+	default:
+		fmt.Fprintln(b)
+		for _, c := range d.Commits {
+			if c.Scope != "" {
+				fmt.Fprintf(b, "- %s(%s): %s\n", c.Type, c.Scope, c.Subject)
+			} else {
+				fmt.Fprintf(b, "- %s: %s\n", c.Type, c.Subject)
+			}
+		}
+		if d.Truncated {
+			fmt.Fprintf(b, "\n_Showing first %d commits only — results may be incomplete._\n", changelog.CommitMaxFromCompare)
+		}
+		fmt.Fprintln(b)
+	}
 }
 
 // resolveImageBumps converts image digest changes into ServiceBumps by calling
