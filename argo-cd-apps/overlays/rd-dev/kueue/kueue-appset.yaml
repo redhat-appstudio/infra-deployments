@@ -1,0 +1,51 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: kueue
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+  labels:
+    appstudio.redhat.com/deployment-clusters: "tenant"
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              matchExpressions: # Ensures that no clusters are selected
+                - key: appstudio.redhat.com/select-none
+                  operator: Exists
+                - key: appstudio.redhat.com/select-none
+                  operator: DoesNotExist
+              values:
+                sourceRoot: components/kueue-rd
+                ring: "empty-base"
+                clusterDir: "empty-base"
+          - list:
+              elements:
+                - nameNormalized: ring-0
+                  values.ring: "ring-0"
+                  values.clusterDir: "base"
+
+  template:
+    metadata:
+      name: kueue-{{nameNormalized}}
+    spec:
+      project: default
+      source:
+        path: '{{values.sourceRoot}}/rings/{{values.ring}}/{{values.clusterDir}}'
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+        targetRevision: main
+      destination:
+        server: '{{server}}'
+      syncPolicy:
+        # automated:
+        #   prune: true
+        #   selfHeal: true
+        syncOptions:
+        - CreateNamespace=true
+        retry:
+          limit: 50
+          backoff:
+            duration: 15s
