@@ -5,7 +5,7 @@ set -xeuo pipefail
 configure_nvidia_cdi() {
   # generate Nvdia CDI with retry
   for i in {1..10}; do
-    su - ec2-user -c 'nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml' 
+    su - ec2-user -c 'nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml'
     su - ec2-user -c 'nvidia-ctk cdi generate --output=/var/run/cdi/nvidia.yaml'
 
     # expect nvidia.com/gpu=all device to be in the generated list
