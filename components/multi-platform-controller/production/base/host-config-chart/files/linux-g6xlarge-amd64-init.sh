@@ -15,7 +15,7 @@ configure_nvidia_cdi() {
     # sleep only if we'll be retrying again
     [ "${i}" -lt "10" ] && sleep 1
   done
-  
+
   echo "Nvidia CDI Failed"
   return 1
 }

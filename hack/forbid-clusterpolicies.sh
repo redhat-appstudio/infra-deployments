@@ -5,6 +5,7 @@ set -e -o pipefail
 # inputs
 declare OUTPUT
 folder="${1}"
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 error_handler() {
   local exit_code=$?
@@ -24,7 +25,7 @@ error_handler() {
 trap error_handler ERR
 
 # build manifests and filter ClusterPolicies for provided folder
-manifests=$(kustomize build --enable-helm "${folder}" | yq -o=j)
+manifests=$("${script_dir}/kustomize-build-with-retry.sh" "${folder}" | yq -o=j) || exit $?
 policies=$(echo "${manifests}" | jq 'select(.kind=="ClusterPolicy")' | jq -s '.')
 
 # calculate the number of policies in the given folder
