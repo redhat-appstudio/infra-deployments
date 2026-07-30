@@ -11,11 +11,12 @@ spec:
           - nameNormalized
         generators:
           - clusters:
-              matchExpressions: # Ensures that no clusters are selected; k-components will replace this with the correct selector
-                - key: appstudio.redhat.com/select-none
-                  operator: Exists
-                - key: appstudio.redhat.com/select-none
-                  operator: DoesNotExist
+              selector:
+                matchExpressions: # Ensures that no clusters are selected; k-components will replace this with the correct selector
+                  - key: appstudio.redhat.com/select-none
+                    operator: Exists
+                  - key: appstudio.redhat.com/select-none
+                    operator: DoesNotExist
               values:
                 sourceRoot: components/kueue-rd
                 ring: "empty-base"
