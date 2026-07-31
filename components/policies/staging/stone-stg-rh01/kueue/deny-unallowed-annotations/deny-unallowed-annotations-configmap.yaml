@@ -1,0 +1,13 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: deny-unallowed-annotations
+  namespace: tekton-kueue
+data:
+  message-expression: |-
+    "PipelineRun validation failed: the cluster doesn't provide the following resources: " +
+    variables.difference.map(k, k.replace("kueue.konflux-ci.dev/requests-", "")).join(", ")
+  annotation-prefixes: '["kueue.konflux-ci.dev/requests-"]'
+  # this field is generated via `hack/kueue-allowed-vms/generate-allowed-annotations.sh`
+  allowed-annotations: []
