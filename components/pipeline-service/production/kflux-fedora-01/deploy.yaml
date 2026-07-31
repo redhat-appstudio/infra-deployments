@@ -2022,6 +2022,27 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
     argocd.argoproj.io/sync-wave: "-1"
+  name: forge-bot-secret
+  namespace: openshift-pipelines
+spec:
+  dataFrom:
+  - extract:
+      key: production/pipeline-service/kflux-fedora-01/forge-bot
+  refreshInterval: 5m
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: appsre-stonesoup-vault
+  target:
+    creationPolicy: Owner
+    deletionPolicy: Delete
+    name: forge-bot-secret
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "-1"
   name: pipelines-as-code-secret
   namespace: openshift-pipelines
 spec:
@@ -2577,6 +2598,27 @@ spec:
   name: openshift-pipelines-operator-rh
   source: custom-operators
   sourceNamespace: openshift-marketplace
+---
+apiVersion: pipelinesascode.tekton.dev/v1alpha1
+kind: Repository
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "1"
+  name: pipelines-as-code
+  namespace: openshift-pipelines
+spec:
+  git_provider:
+    secret:
+      key: token
+      name: forge-bot-secret
+    type: forgejo
+    url: https://forge.fedoraproject.org
+    user: konflux-forge-bot
+    webhook_secret:
+      key: webhook-secret
+      name: forge-bot-secret
+  url: https://forge.fedoraproject.org
 ---
 apiVersion: route.openshift.io/v1
 kind: Route
