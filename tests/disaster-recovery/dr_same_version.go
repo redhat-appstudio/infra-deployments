@@ -111,7 +111,7 @@ func defineSameVersionSpecs() {
 		})
 
 		// Phase 5: Post-restore recovery — rotate stale SA tokens and
-		// trigger build-service reconciliation to re-establish ownerReferences.
+		// verify PaC Repositories survived the backup/restore cycle.
 		When("performing post-restore recovery", func() {
 			It("should rotate SA tokens on both tenants", func() {
 				for _, t := range svTenants {
@@ -119,9 +119,9 @@ func defineSameVersionSpecs() {
 				}
 			})
 
-			It("should reconcile PaC Repository ownership on both tenants", func() {
+			It("should verify PaC Repositories exist on both tenants", func() {
 				for _, t := range svTenants {
-					reconcileComponentOwnership(fw, t)
+					verifyPaCRepositories(fw, t)
 				}
 			})
 		})

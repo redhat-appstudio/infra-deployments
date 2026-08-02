@@ -305,33 +305,16 @@ func restoreFromBackup(fw *framework.Framework, t Tenant, method RestoreMethod) 
 		"Restore CR %q did not reach Completed phase within %s", restoreName, RestoreTimeout)
 }
 
-// reconcileComponentOwnership directly patches ownerReferences on PaC
-// Repository CRs to point at the restored Components.
-//
-// Why this is needed: Velero strips ownerReferences during restore (UIDs from
-// the source cluster are invalid). Build-service only sets ownerReferences
-// during initial Repository creation — it does not re-establish them when
-// reconciling an existing Repository CR. Direct patching is the only reliable
-// restoration path.
-func reconcileComponentOwnership(fw *framework.Framework, t Tenant) {
+// verifyPaCRepositories checks that PaC Repository CRs exist post-restore
+// and reference the correct git URL. Build-service creates Repository CRs
+// using URL-derived names and may share a single Repository across all
+// Components pointing at the same monorepo. OwnerReference patching is not
+// needed — build-service uses URL-based lookup.
+func verifyPaCRepositories(fw *framework.Framework, t Tenant) {
 	GinkgoHelper()
 
 	ctx := context.Background()
 	restClient := fw.AsKubeAdmin.CommonController.KubeRest()
-
-	By(fmt.Sprintf("Collecting post-restore Component UIDs in namespace %q", t.Namespace))
-	ownerRefByName := make(map[string]metav1.OwnerReference, len(Components))
-	for _, comp := range Components {
-		c, err := fw.AsKubeAdmin.HasController.GetComponent(comp.Name, t.Namespace)
-		Expect(err).ShouldNot(HaveOccurred(),
-			"failed to get Component %q in namespace %q", comp.Name, t.Namespace)
-		ownerRefByName[c.Name] = metav1.OwnerReference{
-			APIVersion: "appstudio.redhat.com/v1alpha1",
-			Kind:       "Component",
-			Name:       c.Name,
-			UID:        c.UID,
-		}
-	}
 
 	By(fmt.Sprintf("Listing PaC Repository CRs in namespace %q", t.Namespace))
 	repoList := &pacv1alpha1.RepositoryList{}
@@ -339,58 +322,24 @@ func reconcileComponentOwnership(fw *framework.Framework, t Tenant) {
 	Expect(err).ShouldNot(HaveOccurred(),
 		"failed to list PaC repositories in namespace %q", t.Namespace)
 	Expect(repoList.Items).ShouldNot(BeEmpty(),
-		"no PaC Repository CRs found in namespace %q", t.Namespace)
+		"no PaC Repository CRs found in namespace %q after restore", t.Namespace)
 
-	By(fmt.Sprintf("Setting 1:1 ownerReferences on %d PaC Repository CRs", len(repoList.Items)))
+	By(fmt.Sprintf("Verifying %d PaC Repository CRs reference tenant fork URL", len(repoList.Items)))
+	Expect(t.ForkRepoURL).ShouldNot(BeEmpty(), "tenant %s ForkRepoURL must be set", t.Namespace)
 	for i := range repoList.Items {
 		repo := &repoList.Items[i]
-		// PaC Repositories are created by build-service with the same
-		// name as their owning Component.
-		ownerRef, ok := ownerRefByName[repo.Name]
-		if !ok {
-			GinkgoWriter.Printf("WARNING: PaC Repository %s/%s has no matching Component — skipping ownerRef\n",
-				t.Namespace, repo.Name)
-			continue
-		}
-		patch := client.MergeFrom(repo.DeepCopy())
-		repo.OwnerReferences = []metav1.OwnerReference{ownerRef}
-		err := restClient.Patch(ctx, repo, patch)
-		Expect(err).ShouldNot(HaveOccurred(),
-			"failed to set ownerReference on PaC Repository %q in namespace %q", repo.Name, t.Namespace)
-		GinkgoWriter.Printf("Set ownerReference on PaC Repository %s/%s → Component %s\n",
-			t.Namespace, repo.Name, ownerRef.Name)
+		Expect(repo.Spec.URL).Should(Equal(t.ForkRepoURL),
+			"PaC Repository %s/%s spec.url should match tenant fork URL", t.Namespace, repo.Name)
+		GinkgoWriter.Printf("PaC Repository %s/%s: url=%s, pipelinerun_status entries=%d\n",
+			t.Namespace, repo.Name, repo.Spec.URL, len(repo.Status))
 	}
-
-	By("Verifying 1:1 ownership — each Repository owned by exactly one matching Component")
-	verifyList := &pacv1alpha1.RepositoryList{}
-	err = restClient.List(ctx, verifyList, &client.ListOptions{Namespace: t.Namespace})
-	Expect(err).ShouldNot(HaveOccurred(),
-		"failed to re-list PaC repositories for verification in namespace %q", t.Namespace)
-	verified := 0
-	for i := range verifyList.Items {
-		repo := &verifyList.Items[i]
-		if _, ok := ownerRefByName[repo.Name]; !ok {
-			continue
-		}
-		Expect(repo.OwnerReferences).Should(HaveLen(1),
-			"Repository %s should have exactly 1 owner, got %d", repo.Name, len(repo.OwnerReferences))
-		Expect(repo.OwnerReferences[0].Name).Should(Equal(repo.Name),
-			"Repository %s should be owned by Component %s, not %s",
-			repo.Name, repo.Name, repo.OwnerReferences[0].Name)
-		verified++
-	}
-	Expect(verified).Should(Equal(len(ownerRefByName)),
-		"expected %d Repositories to match Components, but only %d matched in namespace %s",
-		len(ownerRefByName), verified, t.Namespace)
-	GinkgoWriter.Printf("PaC Repository 1:1 ownership verified: %d matched (of %d total) in namespace %s\n",
-		verified, len(verifyList.Items), t.Namespace)
 }
 
 // verifyResources performs structural verification of restored tenant resources.
 // It checks that the Application, Components, IntegrationTestScenarios,
 // ServiceAccounts, SA token Secrets, ReleasePlan, and ImageRepository CRs
 // all exist and have the expected field values. PaC Repository verification
-// is handled upstream by reconcileComponentOwnership.
+// is handled upstream by verifyPaCRepositories.
 // This is a structural check (existence + key fields), not a snapshot
 // diff, which keeps the tests stable across Konflux version changes.
 func verifyResources(fw *framework.Framework, t Tenant) {
