@@ -28,7 +28,11 @@ import (
 	"github.com/konflux-ci/e2e-tests/pkg/framework"
 	"github.com/konflux-ci/e2e-tests/pkg/utils"
 	"github.com/konflux-ci/e2e-tests/pkg/utils/build"
+	imagecontrollerv1alpha1 "github.com/konflux-ci/image-controller/api/v1alpha1"
+	releaseapi "github.com/konflux-ci/release-service/api/v1alpha1"
 	tektonutils "github.com/konflux-ci/release-service/tekton/utils"
+	pipeline "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // forkRepoForTenant creates a unique GitHub fork of the MathWizz source repo
@@ -55,6 +59,7 @@ func forkRepoForTenant(fw *framework.Framework, t *Tenant) {
 // even if a fork was never created (empty ForkRepoName is a no-op).
 func cleanupForks(fw *framework.Framework, tenants []Tenant) {
 	ghClient := fw.AsKubeAdmin.HasController.Github
+	var errs []error
 	for _, t := range tenants {
 		if t.ForkRepoName == "" {
 			continue
@@ -62,7 +67,11 @@ func cleanupForks(fw *framework.Framework, tenants []Tenant) {
 		GinkgoWriter.Printf("Deleting fork repo %s for tenant %s\n", t.ForkRepoName, t.Namespace)
 		if err := ghClient.DeleteRepositoryIfExists(t.ForkRepoName); err != nil {
 			GinkgoWriter.Printf("WARNING: failed to delete fork %s: %v\n", t.ForkRepoName, err)
+			errs = append(errs, fmt.Errorf("fork %s: %w", t.ForkRepoName, err))
 		}
+	}
+	if len(errs) > 0 {
+		GinkgoWriter.Printf("WARNING: %d fork cleanup errors (repos may need manual deletion)\n", len(errs))
 	}
 }
 
@@ -380,4 +389,37 @@ func rotateSATokens(fw *framework.Framework, namespace string) {
 		return len(newTokens)
 	}, SATokenTimeout, SATokenPoll).Should(Equal(deletedCount),
 		fmt.Sprintf("expected exactly %d new SA token Secrets in namespace %s", deletedCount, namespace))
+}
+
+// cleanupDanglingNamespaces finds and removes any dr-test-* namespaces left
+// behind by previous failed test runs. Finalizers are stripped from known
+// resource types before deletion to prevent controller-driven stalls.
+func cleanupDanglingNamespaces(fw *framework.Framework) {
+	ctx := context.Background()
+	kubeClient := fw.AsKubeAdmin.CommonController.KubeInterface()
+	restClient := fw.AsKubeAdmin.CommonController.KubeRest()
+
+	nsList, err := kubeClient.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
+	if err != nil {
+		GinkgoWriter.Printf("WARNING: failed to list namespaces for dangling cleanup: %v\n", err)
+		return
+	}
+
+	for i := range nsList.Items {
+		ns := &nsList.Items[i]
+		if !strings.HasPrefix(ns.Name, "dr-test-") {
+			continue
+		}
+		GinkgoWriter.Printf("Dangling namespace detected: %s — cleaning up\n", ns.Name)
+
+		stripFinalizers(ctx, restClient, ns.Name, &appservice.ApplicationList{}, "Application", true)
+		stripFinalizers(ctx, restClient, ns.Name, &appservice.ComponentList{}, "Component", true)
+		stripFinalizers(ctx, restClient, ns.Name, &imagecontrollerv1alpha1.ImageRepositoryList{}, "ImageRepository", true)
+		stripFinalizers(ctx, restClient, ns.Name, &releaseapi.ReleaseList{}, "Release", true)
+		stripFinalizers(ctx, restClient, ns.Name, &pipeline.PipelineRunList{}, "PipelineRun", true)
+
+		if err := kubeClient.CoreV1().Namespaces().Delete(ctx, ns.Name, metav1.DeleteOptions{}); err != nil {
+			GinkgoWriter.Printf("WARNING: failed to clean up dangling namespace %s: %v\n", ns.Name, err)
+		}
+	}
 }

@@ -1,16 +1,10 @@
 // dr_same_version.go implements the same-version DR (Disaster Recovery) test
-// scenario. This test runs AFTER the backwards-compatibility test on the same
-// upgraded cluster, exercising a full backup/restore cycle on the current
-// Konflux version.
+// scenario, exercising a full backup/restore cycle on the current Konflux version.
 //
 // The test creates two tenants (SVTenant1 = KokoHazamar, SVTenant2 = MosheKipod),
 // backs them up, simulates a disaster by deleting their namespaces, restores
 // from backup using both SOP methods (Velero CLI and oc command), rotates
 // ServiceAccount tokens, and verifies structural and functional integrity.
-//
-// This proves that backup/restore works correctly within a single Konflux
-// version — complementing the backwards-compat test which proves cross-version
-// backup/restore.
 package disaster_recovery
 
 import (
@@ -160,6 +154,7 @@ func defineSameVersionSpecs() {
 			} else {
 				cleanupTestResources(fw, svTenants)
 			}
+			cleanupDanglingNamespaces(fw)
 		})
 	})
 }

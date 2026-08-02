@@ -320,17 +320,17 @@ func reconcileComponentOwnership(fw *framework.Framework, t Tenant) {
 	restClient := fw.AsKubeAdmin.CommonController.KubeRest()
 
 	By(fmt.Sprintf("Collecting post-restore Component UIDs in namespace %q", t.Namespace))
-	ownerRefs := make([]metav1.OwnerReference, 0, len(Components))
+	ownerRefByName := make(map[string]metav1.OwnerReference, len(Components))
 	for _, comp := range Components {
 		c, err := fw.AsKubeAdmin.HasController.GetComponent(comp.Name, t.Namespace)
 		Expect(err).ShouldNot(HaveOccurred(),
 			"failed to get Component %q in namespace %q", comp.Name, t.Namespace)
-		ownerRefs = append(ownerRefs, metav1.OwnerReference{
+		ownerRefByName[c.Name] = metav1.OwnerReference{
 			APIVersion: "appstudio.redhat.com/v1alpha1",
 			Kind:       "Component",
 			Name:       c.Name,
 			UID:        c.UID,
-		})
+		}
 	}
 
 	By(fmt.Sprintf("Listing PaC Repository CRs in namespace %q", t.Namespace))
@@ -341,30 +341,56 @@ func reconcileComponentOwnership(fw *framework.Framework, t Tenant) {
 	Expect(repoList.Items).ShouldNot(BeEmpty(),
 		"no PaC Repository CRs found in namespace %q", t.Namespace)
 
-	By(fmt.Sprintf("Setting ownerReferences on %d PaC Repository CRs for %d Components", len(repoList.Items), len(ownerRefs)))
+	By(fmt.Sprintf("Setting 1:1 ownerReferences on %d PaC Repository CRs", len(repoList.Items)))
 	for i := range repoList.Items {
 		repo := &repoList.Items[i]
-		repo.OwnerReferences = ownerRefs
-		err := restClient.Update(ctx, repo)
+		// PaC Repositories are created by build-service with the same
+		// name as their owning Component.
+		ownerRef, ok := ownerRefByName[repo.Name]
+		if !ok {
+			GinkgoWriter.Printf("WARNING: PaC Repository %s/%s has no matching Component — skipping ownerRef\n",
+				t.Namespace, repo.Name)
+			continue
+		}
+		patch := client.MergeFrom(repo.DeepCopy())
+		repo.OwnerReferences = []metav1.OwnerReference{ownerRef}
+		err := restClient.Patch(ctx, repo, patch)
 		Expect(err).ShouldNot(HaveOccurred(),
-			"failed to set ownerReferences on PaC Repository %q in namespace %q", repo.Name, t.Namespace)
-		GinkgoWriter.Printf("Set %d ownerReferences on PaC Repository %s/%s\n", len(ownerRefs), t.Namespace, repo.Name)
+			"failed to set ownerReference on PaC Repository %q in namespace %q", repo.Name, t.Namespace)
+		GinkgoWriter.Printf("Set ownerReference on PaC Repository %s/%s → Component %s\n",
+			t.Namespace, repo.Name, ownerRef.Name)
 	}
 
-	By(fmt.Sprintf("Verifying PaC Repository ownership for all %d Components", len(Components)))
-	for _, comp := range Components {
-		_, err := fw.AsKubeAdmin.TektonController.GetRepositoryParams(comp.Name, t.Namespace)
-		Expect(err).ShouldNot(HaveOccurred(),
-			"ownerReference not set correctly on PaC Repository for component %q in namespace %q",
-			comp.Name, t.Namespace)
+	By("Verifying 1:1 ownership — each Repository owned by exactly one matching Component")
+	verifyList := &pacv1alpha1.RepositoryList{}
+	err = restClient.List(ctx, verifyList, &client.ListOptions{Namespace: t.Namespace})
+	Expect(err).ShouldNot(HaveOccurred(),
+		"failed to re-list PaC repositories for verification in namespace %q", t.Namespace)
+	verified := 0
+	for i := range verifyList.Items {
+		repo := &verifyList.Items[i]
+		if _, ok := ownerRefByName[repo.Name]; !ok {
+			continue
+		}
+		Expect(repo.OwnerReferences).Should(HaveLen(1),
+			"Repository %s should have exactly 1 owner, got %d", repo.Name, len(repo.OwnerReferences))
+		Expect(repo.OwnerReferences[0].Name).Should(Equal(repo.Name),
+			"Repository %s should be owned by Component %s, not %s",
+			repo.Name, repo.Name, repo.OwnerReferences[0].Name)
+		verified++
 	}
-	GinkgoWriter.Printf("PaC Repository ownerReferences verified for all %d Components in namespace %s\n", len(Components), t.Namespace)
+	Expect(verified).Should(Equal(len(ownerRefByName)),
+		"expected %d Repositories to match Components, but only %d matched in namespace %s",
+		len(ownerRefByName), verified, t.Namespace)
+	GinkgoWriter.Printf("PaC Repository 1:1 ownership verified: %d matched (of %d total) in namespace %s\n",
+		verified, len(verifyList.Items), t.Namespace)
 }
 
 // verifyResources performs structural verification of restored tenant resources.
 // It checks that the Application, Components, IntegrationTestScenarios,
-// ServiceAccounts, SA token Secrets, ReleasePlan, PaC Repository CRs, and
-// ImageRepository CRs all exist and have the expected field values.
+// ServiceAccounts, SA token Secrets, ReleasePlan, and ImageRepository CRs
+// all exist and have the expected field values. PaC Repository verification
+// is handled upstream by reconcileComponentOwnership.
 // This is a structural check (existence + key fields), not a snapshot
 // diff, which keeps the tests stable across Konflux version changes.
 func verifyResources(fw *framework.Framework, t Tenant) {
@@ -398,7 +424,7 @@ func verifyResources(fw *framework.Framework, t Tenant) {
 			HaveField("Spec.Source.GitSource.URL", Equal(t.ForkRepoURL)),
 			HaveField("Spec.Source.GitSource.Context", Equal(comp.ContextDir)),
 			HaveField("Spec.Source.GitSource.DockerfileURL", Equal(comp.DockerfileURL)),
-			HaveField("Spec.TargetPort", Equal(8081)),
+			HaveField("Spec.TargetPort", Equal(MathWizzDefaultTargetPort)),
 		), "Component %q in namespace %q has unexpected spec fields", comp.Name, t.Namespace)
 	}
 
@@ -440,19 +466,73 @@ func verifyResources(fw *framework.Framework, t Tenant) {
 	Expect(rpErr).ShouldNot(HaveOccurred(),
 		"ReleasePlan %q should exist in namespace %q (proves release config survived backup/restore)", DRReleasePlanName, t.Namespace)
 
-	By(fmt.Sprintf("Verifying PaC Repository CRs exist for all %d Components in namespace %q", len(Components), t.Namespace))
-	for _, comp := range Components {
-		_, err := fw.AsKubeAdmin.TektonController.GetRepositoryParams(comp.Name, t.Namespace)
-		Expect(err).ShouldNot(HaveOccurred(),
-			"PaC Repository CR should exist for component %q in namespace %q", comp.Name, t.Namespace)
-	}
-
 	By(fmt.Sprintf("Verifying ImageRepository CRs exist in namespace %q (one per component)", t.Namespace))
 	imageRepoList := &imagecontrollerv1alpha1.ImageRepositoryList{}
 	err = fw.AsKubeAdmin.CommonController.KubeRest().List(context.Background(), imageRepoList, client.InNamespace(t.Namespace))
 	Expect(err).ShouldNot(HaveOccurred(), "should be able to list ImageRepositories in namespace %q", t.Namespace)
 	Expect(imageRepoList.Items).Should(HaveLen(len(Components)),
 		"expected %d ImageRepository CRs in namespace %q (one per component)", len(Components), t.Namespace)
+}
+
+// validateDockerConfigSecret fetches the named Secret in the given namespace,
+// parses .dockerconfigjson, and returns true only when every registry entry
+// contains a valid base64-encoded "user:password" auth token. The label
+// parameter (e.g. "push" or "pull") is used in diagnostic log messages.
+func validateDockerConfigSecret(fw *framework.Framework, namespace, secretName, label, robotAccountName string) bool {
+	secret := &corev1.Secret{}
+	if err := fw.AsKubeAdmin.CommonController.KubeRest().Get(
+		context.Background(),
+		client.ObjectKey{Name: secretName, Namespace: namespace},
+		secret,
+	); err != nil {
+		GinkgoWriter.Printf("  %s secret %s/%s not found: %v\n", label, namespace, secretName, err)
+		return false
+	}
+
+	dockerCfgJSON, ok := secret.Data[".dockerconfigjson"]
+	if !ok || len(dockerCfgJSON) == 0 {
+		GinkgoWriter.Printf("  %s secret %s/%s has no .dockerconfigjson\n", label, namespace, secretName)
+		return false
+	}
+
+	var cfg struct {
+		Auths map[string]struct {
+			Auth string `json:"auth"`
+		} `json:"auths"`
+	}
+	if err := json.Unmarshal(dockerCfgJSON, &cfg); err != nil {
+		GinkgoWriter.Printf("  %s secret %s/%s: malformed .dockerconfigjson: %v\n",
+			label, namespace, secretName, err)
+		return false
+	}
+
+	if len(cfg.Auths) == 0 {
+		GinkgoWriter.Printf("  %s secret %s/%s: auths map is empty\n", label, namespace, secretName)
+		return false
+	}
+
+	for registry, cred := range cfg.Auths {
+		if cred.Auth == "" {
+			GinkgoWriter.Printf("  %s secret %s/%s: empty auth for registry %s\n",
+				label, namespace, secretName, registry)
+			return false
+		}
+		decoded, err := base64.StdEncoding.DecodeString(cred.Auth)
+		if err != nil {
+			GinkgoWriter.Printf("  %s secret %s/%s: auth for %s is not valid base64: %v\n",
+				label, namespace, secretName, registry, err)
+			return false
+		}
+		if !strings.Contains(string(decoded), ":") {
+			GinkgoWriter.Printf("  %s secret %s/%s: auth for %s decoded but missing colon separator\n",
+				label, namespace, secretName, registry)
+			return false
+		}
+	}
+
+	GinkgoWriter.Printf("  %s secret %s/%s: valid credentials for %d registries (robot: %s)\n",
+		label, namespace, secretName, len(cfg.Auths), robotAccountName)
+	return true
 }
 
 // waitForPushSecretReadiness polls each tenant's ImageRepository push and pull
@@ -481,7 +561,8 @@ func waitForPushSecretReadiness(fw *framework.Framework, tenants []Tenant) {
 					t.Namespace, ir.Name)
 			}
 
-			recoveryAttempted := false
+			recoveryAttempts := 0
+			const maxRecoveryAttempts = 3
 
 			Eventually(func() bool {
 				// Re-read ImageRepository to pick up status changes.
@@ -496,8 +577,7 @@ func waitForPushSecretReadiness(fw *framework.Framework, tenants []Tenant) {
 				}
 
 				if freshIR.Status.State != imagecontrollerv1alpha1.ImageRepositoryStateReady {
-					if freshIR.Status.State == "damaged" && !recoveryAttempted {
-						recoveryAttempted = true
+					if freshIR.Status.State == "damaged" && recoveryAttempts < maxRecoveryAttempts {
 						const irFinalizer = "appstudio.openshift.io/image-repository"
 						finalizers := freshIR.GetFinalizers()
 						filtered := make([]string, 0, len(finalizers))
@@ -510,18 +590,25 @@ func waitForPushSecretReadiness(fw *framework.Framework, tenants []Tenant) {
 							}
 						}
 						if removed {
-							GinkgoWriter.Printf("  ImageRepository %s/%s is damaged — removing finalizer to trigger re-provisioning\n",
-								t.Namespace, ir.Name)
+							GinkgoWriter.Printf("  ImageRepository %s/%s is damaged — removing finalizer (attempt %d/%d)\n",
+								t.Namespace, ir.Name, recoveryAttempts+1, maxRecoveryAttempts)
 							freshIR.SetFinalizers(filtered)
 							if err := fw.AsKubeAdmin.CommonController.KubeRest().Update(
 								context.Background(), freshIR,
 							); err != nil {
-								GinkgoWriter.Printf("  error removing finalizer from %s/%s: %v\n", t.Namespace, ir.Name, err)
+								GinkgoWriter.Printf("  recovery attempt %d failed: %v — will retry\n",
+									recoveryAttempts+1, err)
+							} else {
+								recoveryAttempts++
+								GinkgoWriter.Printf("  recovery attempt %d succeeded\n", recoveryAttempts)
 							}
 						} else {
 							GinkgoWriter.Printf("  ImageRepository %s/%s is damaged but has no finalizer — waiting for controller\n",
 								t.Namespace, ir.Name)
 						}
+					} else if freshIR.Status.State == "damaged" {
+						GinkgoWriter.Printf("  ImageRepository %s/%s still damaged after %d recovery attempts — no further recovery will be tried\n",
+							t.Namespace, ir.Name, recoveryAttempts)
 					}
 					GinkgoWriter.Printf("  ImageRepository %s/%s state: %s (waiting for ready)\n",
 						t.Namespace, ir.Name, freshIR.Status.State)
@@ -535,59 +622,10 @@ func waitForPushSecretReadiness(fw *framework.Framework, tenants []Tenant) {
 					return false
 				}
 
-				secret := &corev1.Secret{}
-				if err := fw.AsKubeAdmin.CommonController.KubeRest().Get(
-					context.Background(),
-					client.ObjectKey{Name: sName, Namespace: t.Namespace},
-					secret,
-				); err != nil {
-					GinkgoWriter.Printf("  push secret %s/%s not found: %v\n", t.Namespace, sName, err)
+				if !validateDockerConfigSecret(fw, t.Namespace, sName, "push",
+					freshIR.Status.Credentials.PushRobotAccountName) {
 					return false
 				}
-
-				dockerCfgJSON, ok := secret.Data[".dockerconfigjson"]
-				if !ok || len(dockerCfgJSON) == 0 {
-					GinkgoWriter.Printf("  push secret %s/%s has no .dockerconfigjson\n", t.Namespace, sName)
-					return false
-				}
-
-				var cfg struct {
-					Auths map[string]struct {
-						Auth string `json:"auth"`
-					} `json:"auths"`
-				}
-				if err := json.Unmarshal(dockerCfgJSON, &cfg); err != nil {
-					GinkgoWriter.Printf("  push secret %s/%s: malformed .dockerconfigjson: %v\n",
-						t.Namespace, sName, err)
-					return false
-				}
-
-				if len(cfg.Auths) == 0 {
-					GinkgoWriter.Printf("  push secret %s/%s: auths map is empty\n", t.Namespace, sName)
-					return false
-				}
-
-				for registry, cred := range cfg.Auths {
-					if cred.Auth == "" {
-						GinkgoWriter.Printf("  push secret %s/%s: empty auth for registry %s\n",
-							t.Namespace, sName, registry)
-						return false
-					}
-					decoded, err := base64.StdEncoding.DecodeString(cred.Auth)
-					if err != nil {
-						GinkgoWriter.Printf("  push secret %s/%s: auth for %s is not valid base64: %v\n",
-							t.Namespace, sName, registry, err)
-						return false
-					}
-					if !strings.Contains(string(decoded), ":") {
-						GinkgoWriter.Printf("  push secret %s/%s: auth for %s decoded but missing colon separator\n",
-							t.Namespace, sName, registry)
-						return false
-					}
-				}
-
-				GinkgoWriter.Printf("  push secret %s/%s: valid credentials for %d registries (robot: %s)\n",
-					t.Namespace, sName, len(cfg.Auths), freshIR.Status.Credentials.PushRobotAccountName)
 
 				pullName := freshIR.Status.Credentials.PullSecretName
 				if pullName == "" {
@@ -596,59 +634,11 @@ func waitForPushSecretReadiness(fw *framework.Framework, tenants []Tenant) {
 					return false
 				}
 
-				pullSecret := &corev1.Secret{}
-				if err := fw.AsKubeAdmin.CommonController.KubeRest().Get(
-					context.Background(),
-					client.ObjectKey{Name: pullName, Namespace: t.Namespace},
-					pullSecret,
-				); err != nil {
-					GinkgoWriter.Printf("  pull secret %s/%s not found: %v\n", t.Namespace, pullName, err)
+				if !validateDockerConfigSecret(fw, t.Namespace, pullName, "pull",
+					freshIR.Status.Credentials.PullRobotAccountName) {
 					return false
 				}
 
-				pullCfgJSON, pullOk := pullSecret.Data[".dockerconfigjson"]
-				if !pullOk || len(pullCfgJSON) == 0 {
-					GinkgoWriter.Printf("  pull secret %s/%s has no .dockerconfigjson\n", t.Namespace, pullName)
-					return false
-				}
-
-				var pullCfg struct {
-					Auths map[string]struct {
-						Auth string `json:"auth"`
-					} `json:"auths"`
-				}
-				if err := json.Unmarshal(pullCfgJSON, &pullCfg); err != nil {
-					GinkgoWriter.Printf("  pull secret %s/%s: malformed .dockerconfigjson: %v\n",
-						t.Namespace, pullName, err)
-					return false
-				}
-
-				if len(pullCfg.Auths) == 0 {
-					GinkgoWriter.Printf("  pull secret %s/%s: auths map is empty\n", t.Namespace, pullName)
-					return false
-				}
-
-				for registry, cred := range pullCfg.Auths {
-					if cred.Auth == "" {
-						GinkgoWriter.Printf("  pull secret %s/%s: empty auth for registry %s\n",
-							t.Namespace, pullName, registry)
-						return false
-					}
-					decoded, err := base64.StdEncoding.DecodeString(cred.Auth)
-					if err != nil {
-						GinkgoWriter.Printf("  pull secret %s/%s: auth for %s is not valid base64: %v\n",
-							t.Namespace, pullName, registry, err)
-						return false
-					}
-					if !strings.Contains(string(decoded), ":") {
-						GinkgoWriter.Printf("  pull secret %s/%s: auth for %s decoded but missing colon separator\n",
-							t.Namespace, pullName, registry)
-						return false
-					}
-				}
-
-				GinkgoWriter.Printf("  pull secret %s/%s: valid credentials for %d registries (robot: %s)\n",
-					t.Namespace, pullName, len(pullCfg.Auths), freshIR.Status.Credentials.PullRobotAccountName)
 				return true
 			}, 5*time.Minute, 5*time.Second).Should(BeTrue(),
 				"ImageRepository %s/%s push/pull secrets did not become ready within 5 minutes",
@@ -992,7 +982,11 @@ func stripAndDeleteNamespaces(fw *framework.Framework, tenants []Tenant) {
 
 // stripFinalizers lists all resources of a given type in a namespace and
 // removes every finalizer from each. Returns the number of resources modified.
-func stripFinalizers(ctx context.Context, restClient client.Client, namespace string, list client.ObjectList, kind string) int {
+// When bestEffort is true, Update failures are logged instead of asserting —
+// use this in cleanup paths (AfterAll) where an assertion would abort remaining cleanup.
+func stripFinalizers(ctx context.Context, restClient client.Client, namespace string, list client.ObjectList, kind string, bestEffort ...bool) int {
+	isBestEffort := len(bestEffort) > 0 && bestEffort[0]
+
 	err := restClient.List(ctx, list, client.InNamespace(namespace))
 	if err != nil {
 		GinkgoWriter.Printf("  %s: list failed (may not exist on cluster): %v\n", kind, err)
@@ -1008,8 +1002,15 @@ func stripFinalizers(ctx context.Context, restClient client.Client, namespace st
 		GinkgoWriter.Printf("  %s/%s: removing finalizers %v\n", kind, obj.GetName(), obj.GetFinalizers())
 		obj.SetFinalizers(nil)
 		err := restClient.Update(ctx, obj)
-		Expect(err).ShouldNot(HaveOccurred(),
-			"failed to strip finalizers from %s %s/%s", kind, namespace, obj.GetName())
+		if err != nil {
+			if isBestEffort {
+				GinkgoWriter.Printf("  WARNING: failed to strip finalizers from %s %s/%s: %v\n",
+					kind, namespace, obj.GetName(), err)
+				continue
+			}
+			Expect(err).ShouldNot(HaveOccurred(),
+				"failed to strip finalizers from %s %s/%s", kind, namespace, obj.GetName())
+		}
 		stripped++
 	}
 
@@ -1019,41 +1020,33 @@ func stripFinalizers(ctx context.Context, restClient client.Client, namespace st
 	return stripped
 }
 
+func toObjects[E any, P interface {
+	*E
+	client.Object
+}](items []E) []client.Object {
+	out := make([]client.Object, len(items))
+	for i := range items {
+		out[i] = P(&items[i])
+	}
+	return out
+}
+
 // extractItems converts a typed ObjectList into a slice of client.Object
 // for generic finalizer processing.
 func extractItems(list client.ObjectList) []client.Object {
 	switch l := list.(type) {
 	case *appservice.ApplicationList:
-		out := make([]client.Object, len(l.Items))
-		for i := range l.Items {
-			out[i] = &l.Items[i]
-		}
-		return out
+		return toObjects[appservice.Application, *appservice.Application](l.Items)
 	case *appservice.ComponentList:
-		out := make([]client.Object, len(l.Items))
-		for i := range l.Items {
-			out[i] = &l.Items[i]
-		}
-		return out
+		return toObjects[appservice.Component, *appservice.Component](l.Items)
 	case *imagecontrollerv1alpha1.ImageRepositoryList:
-		out := make([]client.Object, len(l.Items))
-		for i := range l.Items {
-			out[i] = &l.Items[i]
-		}
-		return out
+		return toObjects[imagecontrollerv1alpha1.ImageRepository, *imagecontrollerv1alpha1.ImageRepository](l.Items)
 	case *releaseapi.ReleaseList:
-		out := make([]client.Object, len(l.Items))
-		for i := range l.Items {
-			out[i] = &l.Items[i]
-		}
-		return out
+		return toObjects[releaseapi.Release, *releaseapi.Release](l.Items)
 	case *pipeline.PipelineRunList:
-		out := make([]client.Object, len(l.Items))
-		for i := range l.Items {
-			out[i] = &l.Items[i]
-		}
-		return out
+		return toObjects[pipeline.PipelineRun, *pipeline.PipelineRun](l.Items)
 	default:
+		GinkgoWriter.Printf("WARNING: extractItems: unhandled list type %T\n", list)
 		return nil
 	}
 }
