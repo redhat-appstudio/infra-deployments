@@ -22,7 +22,8 @@ spec:
       has(object.metadata.annotations) ?
         object.metadata.annotations.
           filter(i, variables.annotationPrefixes.exists(p, i.startsWith(p))).
-          filter(i, !(i in variables.allowedAnnotations)) : []
+          filter(i, !(i in variables.allowedAnnotations)).
+          sort() : []
   validations:
     - expression: "size(variables.difference) == 0"
       messageExpression: |-
