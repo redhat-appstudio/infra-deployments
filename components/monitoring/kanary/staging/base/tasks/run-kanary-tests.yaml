@@ -150,7 +150,7 @@ spec:
               key: gitlab-cee-pipelines-as-code-secret
       script: |
         #!/usr/bin/env bash
-        set -u
+        set -eu
 
         if echo "$FORK_REPO_HOST_AND_PATH" | grep -q "gitlab"; then
           TOKEN="$GITLAB_BOT_TOKEN"
@@ -162,31 +162,30 @@ spec:
         output_file="$(mktemp)"
 
         onerr() {
-          error_time="$(date -Ins --utc | sed 's/+00:00/Z/')"
-          error_message="$(cat "${output_file}" | tr '\n' ' ' | tr --delete '"')"
+          error_time="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          error_message="$(tr '\n' ' ' < "${output_file}" | tr -d '"' | sed "s|${TOKEN}|***|g")"
           echo "${error_time},0,\"Cloning workaround failed: ${error_message}\"" >> /tmp/artifacts/load-test-errors.csv
           rm -f "${output_file}"
           exit 0
         }
-        trap "onerr" ERR
+        trap 'onerr' ERR
 
-        {
-          git clone "https://jhutar:${TOKEN}@${FORK_REPO_HOST_AND_PATH}"
-          cd "${FORK_DIR}"
-          git remote add upstream "${UPSTREAM_REPO_URL}"
-          git fetch upstream "${UPSTREAM_REPO_BRANCH}"
-          git checkout -B "${UPSTREAM_REPO_BRANCH}" upstream/"${UPSTREAM_REPO_BRANCH}"
+        git clone "https://jhutar:${TOKEN}@${FORK_REPO_HOST_AND_PATH}" >> "${output_file}" 2>&1
+        cd "${FORK_DIR}"
+        git remote add upstream "${UPSTREAM_REPO_URL}" >> "${output_file}" 2>&1
+        git fetch upstream "${UPSTREAM_REPO_BRANCH}" >> "${output_file}" 2>&1
+        git checkout -B "${UPSTREAM_REPO_BRANCH}" upstream/"${UPSTREAM_REPO_BRANCH}" >> "${output_file}" 2>&1
 
-          sed -i "s/^Name: libecpg$/Name: konflux-probe-libecpg/" libecpg.spec
-          sed -i "s/^Release: [0-9]\+%{?dist}$/Release: $(date --utc +%Y%m%d%H%M%S)%{?dist}/" libecpg.spec
-          git add libecpg.spec
-          git config user.email "loadtest@localhost"
-          git config user.name "Konflux Probes Kanary"
-          git commit -m "test: Alter package name and release so we can push to Brew"
+        sed -i "s/^Name: libecpg$/Name: konflux-probe-libecpg/" libecpg.spec
+        sed -i "s/^Release: [0-9]\+%{?dist}$/Release: $(date --utc +%Y%m%d%H%M%S)%{?dist}/" libecpg.spec
+        git add libecpg.spec
+        git config user.email "loadtest@localhost"
+        git config user.name "Konflux Probes Kanary"
+        git commit -m "test: Alter package name and release so we can push to Brew" >> "${output_file}" 2>&1
 
-          git push -f origin "${UPSTREAM_REPO_BRANCH}"
-        } 2>&1 | tee "${output_file}"
+        git push -f origin "${UPSTREAM_REPO_BRANCH}" >> "${output_file}" 2>&1
 
+        cat "${output_file}"
         rm -f "${output_file}"
         echo "RPM mirror step completed successfully"
     - name: run-test
