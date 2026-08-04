@@ -66,7 +66,11 @@
           )
         record: namespace:container_cpu_cfs_throttled_periods:ratio
       - expr: |
-          kube_resourcequota{namespace=~".*-tenant", resource=~"(requests.cpu|limits.cpu|requests.memory|limits.memory)", type="used"}
+          sum by (namespace, resource) (
+            kube_resourcequota{resource=~"(requests.cpu|limits.cpu|requests.memory|limits.memory)", type="used"}
+          )
           / on (namespace, resource)
-          kube_resourcequota{namespace=~".*-tenant", resource=~"(requests.cpu|limits.cpu|requests.memory|limits.memory)", type="hard"}
+          min by (namespace, resource) (
+            kube_resourcequota{resource=~"(requests.cpu|limits.cpu|requests.memory|limits.memory)", type="hard"}
+          )
         record: namespace:konflux_tenant_resourcequota_utilization:ratio
