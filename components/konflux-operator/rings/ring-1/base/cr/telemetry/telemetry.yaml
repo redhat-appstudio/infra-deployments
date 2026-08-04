@@ -5,3 +5,14 @@ metadata:
 spec:
   telemetry:
     enabled: true
+    spec:
+      segmentKeySecretRef:
+        name: segment-write-key
+        key: SEGMENT_WRITE_KEY
+      cronJob:
+        env:
+          # tekton-results is deployed in its own namespace on this cluster
+          # (see components/pipeline-service), not in openshift-pipelines as
+          # the operator's default assumes.
+          - name: TEKTON_RESULTS_API_ADDR
+            value: tekton-results-api-service.tekton-results.svc.cluster.local:8080
