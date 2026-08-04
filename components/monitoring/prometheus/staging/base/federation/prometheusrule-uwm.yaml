@@ -62,7 +62,7 @@
           max by (namespace) (
             sum by (namespace, pod, container) (rate(container_cpu_cfs_throttled_periods_total{container!="", image!="", namespace=~".*-tenant"}[5m]))
             /
-            sum by (namespace, pod, container) (rate(container_cpu_cfs_periods_total{container!="", image!="", namespace=~".*-tenant"}[5m]))
+            (sum by (namespace, pod, container) (rate(container_cpu_cfs_periods_total{container!="", image!="", namespace=~".*-tenant"}[5m])) > 0)
           )
         record: namespace:container_cpu_cfs_throttled_periods:ratio
       - expr: |
