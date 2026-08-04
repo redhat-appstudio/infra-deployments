@@ -159,34 +159,29 @@ spec:
         fi
 
         FORK_DIR="$(basename "$FORK_REPO_HOST_AND_PATH" .git)"
-        output_file="$(mktemp)"
 
         onerr() {
           error_time="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          error_message="$(tr '\n' ' ' < "${output_file}" | tr -d '"' | sed "s|${TOKEN}|***|g")"
-          echo "${error_time},0,\"Cloning workaround failed: ${error_message}\"" >> /tmp/artifacts/load-test-errors.csv
-          rm -f "${output_file}"
+          echo "${error_time},0,\"Mirror-rpm-repo step failed\"" >> /tmp/artifacts/load-test-errors.csv
           exit 0
         }
         trap 'onerr' ERR
 
-        git clone "https://jhutar:${TOKEN}@${FORK_REPO_HOST_AND_PATH}" >> "${output_file}" 2>&1
+        git clone "https://jhutar:${TOKEN}@${FORK_REPO_HOST_AND_PATH}"
         cd "${FORK_DIR}"
-        git remote add upstream "${UPSTREAM_REPO_URL}" >> "${output_file}" 2>&1
-        git fetch upstream "${UPSTREAM_REPO_BRANCH}" >> "${output_file}" 2>&1
-        git checkout -B "${UPSTREAM_REPO_BRANCH}" upstream/"${UPSTREAM_REPO_BRANCH}" >> "${output_file}" 2>&1
+        git remote add upstream "${UPSTREAM_REPO_URL}"
+        git fetch upstream "${UPSTREAM_REPO_BRANCH}"
+        git checkout -B "${UPSTREAM_REPO_BRANCH}" upstream/"${UPSTREAM_REPO_BRANCH}"
 
         sed -i "s/^Name: libecpg$/Name: konflux-probe-libecpg/" libecpg.spec
         sed -i "s/^Release: [0-9]\+%{?dist}$/Release: $(date --utc +%Y%m%d%H%M%S)%{?dist}/" libecpg.spec
         git add libecpg.spec
         git config user.email "loadtest@localhost"
         git config user.name "Konflux Probes Kanary"
-        git commit -m "test: Alter package name and release so we can push to Brew" >> "${output_file}" 2>&1
+        git commit -m "test: Alter package name and release so we can push to Brew"
 
-        git push -f origin "${UPSTREAM_REPO_BRANCH}" >> "${output_file}" 2>&1
+        git push -f origin "${UPSTREAM_REPO_BRANCH}"
 
-        cat "${output_file}"
-        rm -f "${output_file}"
         echo "RPM mirror step completed successfully"
     - name: run-test
       image: quay.io/redhat-user-workloads/konflux-perfscale-tenant/loadtest
