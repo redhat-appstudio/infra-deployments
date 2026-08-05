@@ -1,0 +1,22 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../base
+# The rd-dev root Application is deployed alongside the "development" overlay's
+# "all-application-sets" root Application on the same cluster/ArgoCD instance
+# (see hack/preview.sh). nameSuffix keeps the two root Application objects from
+# colliding (both would otherwise be named "all-application-sets" in the same
+# "openshift-gitops" namespace).
+nameSuffix: -rd-dev
+patches:
+  - path: patches/source-path-patch.yaml
+    target:
+      group: argoproj.io
+      version: v1alpha1
+      kind: Application
+  - path: patches/target-namespace-patch.yaml
+    target:
+      group: argoproj.io
+      version: v1alpha1
+      kind: Application
+namespace: openshift-gitops
