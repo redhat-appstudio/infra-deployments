@@ -161,6 +161,8 @@ spec:
         FORK_DIR="$(basename "$FORK_REPO_HOST_AND_PATH" .git)"
 
         # Use GIT_ASKPASS so the token is never embedded in any URL or git config.
+        # GIT_TERMINAL_PROMPT=0 makes git fail immediately instead of hanging on a
+        # terminal prompt if GIT_ASKPASS fails (no terminal in a Tekton container).
         # See: https://git-scm.com/docs/git#Documentation/git.txt-codeGITASKPASScode
         askpass_script="$(mktemp)"
         echo '#!/bin/sh' > "${askpass_script}"
