@@ -1,4 +1,4 @@
-# Dev-only storage: PostgreSQL + MinIO (S3) for Tekton Results. MinIO runs with reduced resources.
+# Dev-only storage: MinIO (S3) for Tekton Results. MinIO runs with reduced resources.
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -46,131 +46,29 @@ subjects:
   name: openshift-gitops-argocd-application-controller
   namespace: openshift-gitops
 ---
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  annotations:
-    argocd.argoproj.io/sync-wave: "0"
-  name: postgres
-  namespace: openshift-gitops
-spec:
-  destination:
-    namespace: tekton-results
-    server: https://kubernetes.default.svc
-  project: default
-  source:
-    chart: postgresql
-    helm:
-      parameters:
-      - name: tls.enabled
-        value: "true"
-      - name: tls.certificatesSecret
-        value: postgresql-tls
-      - name: tls.certFilename
-        value: tls.crt
-      - name: tls.certKeyFilename
-        value: tls.key
-      - name: auth.database
-        value: tekton_results
-      - name: auth.username
-        value: tekton
-      - name: auth.existingSecret
-        value: tekton-results-database
-      - name: auth.secretKeys.userPasswordKey
-        value: db.password
-      - name: auth.secretKeys.adminPasswordKey
-        value: db.password
-      - name: primary.resources.requests
-        value: "null"
-      - name: primary.podSecurityContext.fsGroup
-        value: "null"
-      - name: primary.podSecurityContext.seccompProfile.type
-        value: RuntimeDefault
-      - name: primary.containerSecurityContext.runAsUser
-        value: "null"
-      - name: primary.containerSecurityContext.allowPrivilegeEscalation
-        value: "false"
-      - name: primary.containerSecurityContext.runAsNonRoot
-        value: "true"
-      - name: primary.containerSecurityContext.seccompProfile.type
-        value: RuntimeDefault
-      - name: primary.containerSecurityContext.capabilities.drop[0]
-        value: ALL
-      - name: volumePermissions.enabled
-        value: "false"
-      - name: shmVolume.enabled
-        value: "false"
-      - name: volumePermissions.image.registry
-        value: quay.io
-      - name: volumePermissions.image.repository
-        value: openshift-pipeline/os-shell
-      - name: volumePermissions.image.tag
-        value: latest
-      - name: image.registry
-        value: quay.io
-      - name: image.repository
-        value: openshift-pipeline/postgresql
-      - name: image.tag
-        value: latest
-      - name: global.security.allowInsecureImages
-        value: "true"
-      releaseName: postgres
-    repoURL: registry-1.docker.io/bitnamichartssecure
-    targetRevision: 17.0.2
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    retry:
-      backoff:
-        duration: 10s
-        factor: 2
-        maxDuration: 3m
-      limit: -1
-    syncOptions:
-    - CreateNamespace=false
-    - Validate=false
----
-apiVersion: v1
-type: Opaque
-kind: Secret
-metadata:
-  name: repo-bitnami-postgresql
-  namespace: openshift-gitops
-  labels:
-    argocd.argoproj.io/secret-type: repository
-data:
-  enableOCI: dHJ1ZQ==
-  name: Yml0bmFtaWNoYXJ0c3NlY3VyZQ==
-  project: ZGVmYXVsdA==
-  type: aGVsbQ==
-  url: cmVnaXN0cnktMS5kb2NrZXIuaW8vYml0bmFtaWNoYXJ0c3NlY3VyZQ==
----
-# MinIO Tenant root credentials. Same credentials are used in tekton-results-s3 for Tekton Results API.
 apiVersion: v1
 kind: Secret
 metadata:
   name: minio-storage-configuration
-  namespace: tekton-results
+  namespace: openshift-pipelines
 type: Opaque
 stringData:
   config.env: |
-    export MINIO_ROOT_USER=minioadmin
-    export MINIO_ROOT_PASSWORD=minioadmin
+    export MINIO_ROOT_USER=minioadmin # gitleaks:allow
+    export MINIO_ROOT_PASSWORD=minioadmin # gitleaks:allow
 ---
-# S3 credentials for Tekton Results (API and watcher). Points at in-cluster MinIO tenant "storage".
 apiVersion: v1
 kind: Secret
 metadata:
   name: tekton-results-s3
-  namespace: tekton-results
+  namespace: openshift-pipelines
 type: Opaque
 stringData:
-  aws_access_key_id: minioadmin
-  aws_secret_access_key: minioadmin
+  aws_access_key_id: minioadmin # gitleaks:allow
+  aws_secret_access_key: minioadmin # gitleaks:allow
   aws_region: us-east-1
   bucket: tekton-results
-  endpoint: https://minio.tekton-results.svc.cluster.local
+  endpoint: https://minio.openshift-pipelines.svc.cluster.local
 ---
 apiVersion: minio.min.io/v2
 kind: Tenant
@@ -184,7 +82,7 @@ metadata:
   labels:
     app: minio
   name: storage
-  namespace: tekton-results
+  namespace: openshift-pipelines
 spec:
   certConfig: {}
   configuration:
@@ -240,3 +138,89 @@ spec:
     minioServiceAnnotations: {}
     minioServiceLabels: {}
   subPath: ""
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+  name: create-minio-bucket
+  namespace: openshift-pipelines
+spec:
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: mc
+        image: quay.io/minio/mc:RELEASE.2023-01-28T20-29-38Z
+        command:
+        - /bin/sh
+        - -c
+        - |
+          set -e
+          echo "Waiting for MinIO to become ready..."
+          for i in $(seq 1 30); do
+            if mc --insecure --config-dir /tmp config host add minio "$S3_ENDPOINT" "$S3_ACCESS_KEY_ID" "$S3_SECRET_ACCESS_KEY" >/dev/null 2>&1; then
+              echo "MinIO is ready."
+              break
+            fi
+            if [ "$i" -eq 30 ]; then
+              echo "MinIO did not become ready in time." >&2
+              exit 1
+            fi
+            echo "MinIO not ready yet (attempt $i/30), retrying in 10s..."
+            sleep 10
+          done
+          if mc --insecure --config-dir /tmp ls minio | grep -q "$S3_BUCKET_NAME"; then
+            echo "Bucket $S3_BUCKET_NAME already exists."
+          else
+            mc --insecure --config-dir /tmp mb --with-lock --region "$S3_REGION" minio/"$S3_BUCKET_NAME"
+            echo "Bucket $S3_BUCKET_NAME created."
+          fi
+        env:
+        - name: S3_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              key: aws_access_key_id
+              name: tekton-results-s3
+        - name: S3_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              key: aws_secret_access_key
+              name: tekton-results-s3
+        - name: S3_REGION
+          valueFrom:
+            secretKeyRef:
+              key: aws_region
+              name: tekton-results-s3
+        - name: S3_BUCKET_NAME
+          valueFrom:
+            secretKeyRef:
+              key: bucket
+              name: tekton-results-s3
+        - name: S3_ENDPOINT
+          valueFrom:
+            secretKeyRef:
+              key: endpoint
+              name: tekton-results-s3
+        resources:
+          limits:
+            cpu: 100m
+            memory: 128Mi
+          requests:
+            cpu: 5m
+            memory: 32Mi
+        securityContext:
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+        volumeMounts:
+        - mountPath: /tmp
+          name: tmp-mc-volume
+      volumes:
+      - emptyDir: {}
+        name: tmp-mc-volume
