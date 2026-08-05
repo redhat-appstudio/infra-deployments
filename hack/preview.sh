@@ -529,6 +529,36 @@ apply_service_image_overrides() {
     fi
 }
 
+# Apply a root Application from a kustomize path and wait for it to become Healthy/Synced.
+# This is used both for the primary overlay's root Application, and (when applicable)
+# for the rd-dev overlay's root Application, so that ApplicationSets/components living
+# in either directory get deployed and observed during e2e. See docs/ring-deployments/
+# for context on the development -> rd-dev migration.
+apply_and_wait_for_root_application() {
+    local app_of_apps_path=$1
+    local app_name=$2
+
+    log_substep "Applying root Application '$app_name' from: $app_of_apps_path"
+    oc apply -k "$app_of_apps_path"
+    log_success "Root Application '$app_name' created"
+
+    log_substep "Waiting for '$app_name' to become Healthy and Synced"
+    local root_wait=0
+    while true; do
+        local root_status
+        root_status=$(oc get applications.argoproj.io "$app_name" -n $ARGOCD_NAMESPACE -o jsonpath='{.status.health.status} {.status.sync.status}')
+
+        if [ "$root_status" == "Healthy Synced" ]; then
+            break
+        fi
+
+        root_wait=$((root_wait + 5))
+        log_wait "Root application '$app_name' status: '$root_status' (target: 'Healthy Synced') - ${root_wait}s elapsed"
+        sleep 5
+    done
+    log_success "Root application '$app_name' is Healthy and Synced"
+}
+
 # Deploy ArgoCD applications and wait for sync
 deploy_and_wait_for_argocd() {
     log_step "Deploying ArgoCD applications"
@@ -536,27 +566,16 @@ deploy_and_wait_for_argocd() {
     local apps app state not_done unknown error
     local total_apps synced_apps pending_apps iteration=0
 
-    # Create the root Application
-    log_substep "Applying root Application from: $TARGET_APP_OF_APPS_PATH"
-    oc apply -k "$TARGET_APP_OF_APPS_PATH"
-    log_success "Root Application 'all-application-sets' created"
+    # Create the primary root Application (points at $TARGET_OVERLAY_PATH)
+    apply_and_wait_for_root_application "$TARGET_APP_OF_APPS_PATH" "all-application-sets"
 
-    # Wait for root application to sync
-    log_substep "Waiting for 'all-application-sets' to become Healthy and Synced"
-    local root_wait=0
-    while true; do
-        local root_status
-        root_status=$(oc get applications.argoproj.io all-application-sets -n $ARGOCD_NAMESPACE -o jsonpath='{.status.health.status} {.status.sync.status}')
-
-        if [ "$root_status" == "Healthy Synced" ]; then
-            break
-        fi
-
-        root_wait=$((root_wait + 5))
-        log_wait "Root application status: '$root_status' (target: 'Healthy Synced') - ${root_wait}s elapsed"
-        sleep 5
-    done
-    log_success "Root application 'all-application-sets' is Healthy and Synced"
+    # Additionally deploy the rd-dev root Application, when applicable. Components are
+    # being migrated incrementally from argo-cd-apps/overlays/development into the
+    # ring-based argo-cd-apps/overlays/rd-dev; deploying both roots during e2e ensures
+    # a component isn't silently dropped from test coverage mid-migration.
+    if [ -n "$TARGET_APP_OF_APPS_PATH_RD_DEV" ]; then
+        apply_and_wait_for_root_application "$TARGET_APP_OF_APPS_PATH_RD_DEV" "all-application-sets-rd-dev"
+    fi
 
     # Trigger hard refresh of all apps
     log_substep "Triggering hard refresh on all ArgoCD applications"
@@ -959,6 +978,17 @@ TARGET_DELETE_FILE="$ROOT/argo-cd-apps/overlays/$TARGET_PREVIEW_OVERLAY/delete-a
 # development-operator kustomization inherits ../development; shared delete list.
 if [ "$TARGET_PREVIEW_OVERLAY" = "development-operator" ]; then
     TARGET_DELETE_FILE="$ROOT/argo-cd-apps/overlays/development/delete-applications.yaml"
+fi
+
+# Components are being migrated incrementally from argo-cd-apps/overlays/development
+# into the ring-based argo-cd-apps/overlays/rd-dev. Deploy the rd-dev root Application
+# alongside "development" so components living in either directory get e2e coverage.
+# Only for the plain "development" overlay: development-operator already imports
+# individual rd-dev/<component> directories directly (see its kustomization.yaml),
+# so applying the whole rd-dev root there would double-deploy those components.
+TARGET_APP_OF_APPS_PATH_RD_DEV=""
+if [ "$TARGET_PREVIEW_OVERLAY" = "development" ]; then
+    TARGET_APP_OF_APPS_PATH_RD_DEV="$ROOT/argo-cd-apps/app-of-app-sets/rd-dev"
 fi
 
 # =============================================================================

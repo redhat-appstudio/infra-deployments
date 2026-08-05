@@ -2,6 +2,8 @@
 
 The Authentication component contains GitOps manifests for Konflux cluster **authentication and authorization**: OpenShift RBAC (**ClusterRoles**, **ClusterRoleBindings**) for Konflux LDAP/Rover groups, baseline view permissions for authenticated users, and the **admin-checker** job that audits cluster admin group membership.
 
+**Migration to Ring Deployments Overlays**: COMPLETE
+
 ## What gets deployed
 
 ### RBAC roles and bindings

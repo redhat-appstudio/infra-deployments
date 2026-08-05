@@ -1,0 +1,33 @@
+name: Check overlay Application-name collisions
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - .github/workflows/check-overlay-app-collisions.yaml
+      - hack/check-overlay-app-collisions.sh
+      - hack/kustomize-build-with-retry.sh
+      - 'argo-cd-apps/**'
+
+jobs:
+  check-overlay-app-collisions:
+    name: Check overlay Application-name collisions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Kustomize
+        uses: multani/action-setup-kustomize@bf96e027caf74ab03bb3f79bac2addb331b28f1d
+        with:
+          version: 5.8.1
+
+      - name: Setup yq
+        run: |
+          sudo wget -q https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_linux_amd64 -O /usr/local/bin/yq
+          sudo chmod +x /usr/local/bin/yq
+          yq --version
+
+      - name: Run check-overlay-app-collisions script
+        env:
+          OUTPUT: GITHUB
+        run: ./hack/check-overlay-app-collisions.sh
