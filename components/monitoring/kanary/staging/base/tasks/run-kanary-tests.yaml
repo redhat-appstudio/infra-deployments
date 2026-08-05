@@ -153,20 +153,21 @@ spec:
         set -eu
 
         if echo "$FORK_REPO_HOST_AND_PATH" | grep -q "gitlab"; then
-          GIT_PASSWORD="$GITLAB_BOT_TOKEN"
+          GIT_TOKEN="$GITLAB_BOT_TOKEN"
         else
-          GIT_PASSWORD="$GITHUB_TOKEN"
+          GIT_TOKEN="$GITHUB_TOKEN"
         fi
 
         FORK_DIR="$(basename "$FORK_REPO_HOST_AND_PATH" .git)"
 
         # Use GIT_ASKPASS so the token is never embedded in any URL or git config.
+        # See: https://git-scm.com/docs/git#Documentation/git.txt-codeGITASKPASScode
         askpass_script="$(mktemp)"
         echo '#!/bin/sh' > "${askpass_script}"
-        echo 'echo "${GIT_PASSWORD}"' >> "${askpass_script}"
+        echo 'echo "${GIT_TOKEN}"' >> "${askpass_script}"
         chmod +x "${askpass_script}"
         export GIT_ASKPASS="${askpass_script}"
-        export GIT_PASSWORD
+        export GIT_TOKEN
         export GIT_TERMINAL_PROMPT=0
 
         onerr() {
