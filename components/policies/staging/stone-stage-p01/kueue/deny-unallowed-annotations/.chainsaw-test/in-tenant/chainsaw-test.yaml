@@ -1,0 +1,76 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: in-tenant-deny-pipelinerun-with-validation-error
+spec:
+  description: |
+    denies a PipelineRun that has unallowed annotation in a tenant namespace
+  concurrent: false
+  steps:
+  - name: given-built-manifests-exists
+    try:
+    - script:
+        content: |-
+          #!/bin/bash
+
+          set -euo pipefail
+
+          rm -r ../resources/manifests/ || true
+          mkdir -p ../resources/manifests/
+          kustomize build ../../../../ -o ../resources/manifests/
+    cleanup:
+    - script:
+        content: |-
+          #!/bin/bash
+
+          set -euo pipefail
+
+          rm -r ../resources/manifests/
+  - name: ensure-namespace-is-labeled
+    try:
+    - apply:
+        resource:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: ($namespace)
+            labels:
+              konflux-ci.dev/type: tenant
+  - name: given-pipelineruns-crd-exists
+    try:
+    - apply:
+        file: ../resources/pipelineruns.tekton.dev_customresourcedefinition.yaml
+    - assert:
+        file: ../chainsaw-assert-pipelineruns-crd.yaml
+  - name: given-validatingadmissionpolicy-is-installed
+    try:
+    - apply:
+        file: ../resources/manifests/konflux-policies_admissionregistration.k8s.io_v1_validatingadmissionpolicybinding_deny-unallowed-annotations.kueue.konflux-ci.dev.yaml
+    - apply:
+        file: ../resources/manifests/konflux-policies_admissionregistration.k8s.io_v1_validatingadmissionpolicy_deny-unallowed-annotations.kueue.konflux-ci.dev.yaml
+    - assert:
+        file: ../chainsaw-assert-policy.yaml
+    - sleep:
+        duration: 1s
+  - name: then-allowed-annotations-are-accepted
+    try:
+    - apply:
+        file: ../resources/pipelinerun_with_allowed_annotations.yaml
+  - name: then-unallowed-annotations-are-rejected
+    try:
+    - create:
+        file: ../resources/pipelinerun_with_unallowed_annotations.yaml
+        expect:
+        - check:
+            ($error != null): true
+            ($error): |-
+              pipelineruns.tekton.dev "pipelinerun-with-unallowed-annotations" is forbidden: ValidatingAdmissionPolicy 'deny-unallowed-annotations.kueue.konflux-ci.dev' with binding 'deny-unallowed-annotations.kueue.konflux-ci.dev' denied request: PipelineRun validation failed: the cluster doesn't provide the following resources: unallowed-resource
+    - create:
+        file: ../resources/pipelinerun_with_allowed_and_unallowed_annotations.yaml
+        expect:
+        - check:
+            ($error != null): true
+            ($error): |-
+              pipelineruns.tekton.dev "pipelinerun-with-allowed-and-unallowed-annotations" is forbidden: ValidatingAdmissionPolicy 'deny-unallowed-annotations.kueue.konflux-ci.dev' with binding 'deny-unallowed-annotations.kueue.konflux-ci.dev' denied request: PipelineRun validation failed: the cluster doesn't provide the following resources: unallowed-resource
