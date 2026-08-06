@@ -5,8 +5,7 @@ on:
     branches: [ main ]
     paths:
       - .github/workflows/check-overlay-app-collisions.yaml
-      - hack/check-overlay-app-collisions.sh
-      - hack/kustomize-build-with-retry.sh
+      - 'infra-tools/**'
       - 'argo-cd-apps/**'
 
 jobs:
@@ -16,18 +15,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Kustomize
-        uses: multani/action-setup-kustomize@bf96e027caf74ab03bb3f79bac2addb331b28f1d
+      - uses: actions/setup-go@v5
         with:
-          version: 5.8.1
+          go-version-file: infra-tools/go.mod
+          cache-dependency-path: infra-tools/go.sum
 
-      - name: Setup yq
-        run: |
-          sudo wget -q https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_linux_amd64 -O /usr/local/bin/yq
-          sudo chmod +x /usr/local/bin/yq
-          yq --version
+      - name: Build overlay-app-collision-checker
+        working-directory: infra-tools
+        run: go build -o bin/overlay-app-collision-checker ./cmd/overlay-app-collision-checker
 
-      - name: Run check-overlay-app-collisions script
-        env:
-          OUTPUT: GITHUB
-        run: ./hack/check-overlay-app-collisions.sh
+      - name: Run overlay-app-collision-checker
+        working-directory: infra-tools
+        run: ./bin/overlay-app-collision-checker --repo-root=..
