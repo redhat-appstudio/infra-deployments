@@ -4150,7 +4150,7 @@ data:
                 {
                   "editorMode": "code",
                   "exemplar": true,
-                  "expr": "sum(watcher_workqueue_depth{container='tekton-chains-controller',app='tekton-chains-controller'})",
+                  "expr": "sum(kn_workqueue_depth{container='tekton-chains-controller',app='tekton-chains-controller'})",
                   "interval": "",
                   "intervalFactor": 1,
                   "legendFormat": "Queue Depth",
@@ -4180,7 +4180,7 @@ data:
                       }
                     ]
                   },
-                  "unit": "ms"
+                  "unit": "s"
                 },
                 "overrides": []
               },
@@ -4212,7 +4212,7 @@ data:
                 {
                   "editorMode": "code",
                   "exemplar": true,
-                  "expr": "histogram_quantile(0.99, sum(rate(watcher_reconcile_latency_bucket{job=\"tekton-chains\"}[2m])) by (le) ) / 1000",
+                  "expr": "histogram_quantile(0.99, sum(rate(kn_workqueue_process_duration_seconds_bucket{job=\"tekton-chains\"}[2m])) by (le) )",
                   "interval": "",
                   "intervalFactor": 4,
                   "legendFormat": "Latency",
@@ -4297,7 +4297,7 @@ data:
               "targets": [
                 {
                   "editorMode": "builder",
-                  "expr": "rate(watcher_go_gc_cpu_fraction{app=\"tekton-chains-controller\"}[5m])",
+                  "expr": "go_memstats_gc_cpu_fraction{app=\"tekton-chains-controller\"}",
                   "legendFormat": "__auto",
                   "range": true,
                   "refId": "A"
@@ -4380,13 +4380,13 @@ data:
               "targets": [
                 {
                   "editorMode": "builder",
-                  "expr": "rate(watcher_workqueue_longest_running_processor_seconds_count{app=\"tekton-chains-controller\"}[5m])",
+                  "expr": "kn_workqueue_longest_running_processor_seconds{app=\"tekton-chains-controller\"}",
                   "legendFormat": "__auto",
                   "range": true,
                   "refId": "A"
                 }
               ],
-              "title": "Tekton Chains Workqueue Rate",
+              "title": "Tekton Chains Workqueue Longest Running Processor",
               "type": "timeseries"
             }
           ],
