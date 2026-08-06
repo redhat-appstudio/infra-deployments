@@ -59,12 +59,12 @@
     - name: konflux_tenant_capacity
       rules:
       - expr: |
-          max by (namespace) (
-            sum by (namespace, pod, container) (rate(container_cpu_cfs_throttled_periods_total{container!="", image!="", namespace=~".*-tenant"}[5m]))
+          avg by (namespace) (
+            sum by (namespace, pod, container) (rate(container_cpu_cfs_throttled_periods_total{container!="", image!="", namespace=~".*-tenant"}[10m]))
             /
-            (sum by (namespace, pod, container) (rate(container_cpu_cfs_periods_total{container!="", image!="", namespace=~".*-tenant"}[5m])) > 0)
+            (sum by (namespace, pod, container) (rate(container_cpu_cfs_periods_total{container!="", image!="", namespace=~".*-tenant"}[10m])) > 0)
           )
-        record: namespace:container_cpu_cfs_throttled_periods:ratio
+        record: namespace:avg_container_cpu_cfs_throttled_periods:ratio
       - expr: |
           max by (namespace, resource) (
             kube_resourcequota{namespace=~".*-tenant", resource=~"(requests|limits)\\.(cpu|memory)", type="used"}

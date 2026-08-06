@@ -1,0 +1,45 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- cluster-queue.yaml
+- base-snapshot
+- external-repo
+
+images:
+- name: konflux-ci/tekton-kueue
+  newName: quay.io/konflux-ci/tekton-kueue
+  newTag: 506d455d266e8e424e7bc5a804256cf449bd5f16
+
+configMapGenerator:
+  - name: tekton-kueue-config
+    namespace: tekton-kueue
+    behavior: replace
+    files:
+      - config.yaml
+generatorOptions:
+  disableNameSuffixHash: true
+
+patches:
+  - target:
+      kind: Deployment
+      name: tekton-kueue-controller-manager
+      group: apps
+    patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 1
+  - target:
+      kind: Deployment
+      name: tekton-kueue-webhook
+      group: apps
+    patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 1
+  - target:
+      kind: Namespace
+      name: tekton-kueue
+    patch: |-
+      - op: add
+        path: /metadata/labels/openshift.io~1cluster-monitoring
+        value: "true"

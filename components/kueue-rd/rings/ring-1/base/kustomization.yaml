@@ -1,0 +1,126 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- catalog-source.yaml
+- base-snapshot
+- external-repo
+
+images:
+- name: konflux-ci/tekton-kueue
+  newName: quay.io/konflux-ci/tekton-kueue
+  newTag: cec0b3c8a240a289bb7aff4313ea647b292d96cc
+
+configMapGenerator:
+  - name: tekton-kueue-config
+    namespace: tekton-kueue
+    behavior: replace
+    files:
+      - config.yaml
+generatorOptions:
+  disableNameSuffixHash: true
+
+patches:
+  - path: patches/subscription-source-patch.yaml
+    target:
+      kind: Subscription
+      name: openshift-kueue-operator
+      namespace: openshift-kueue-operator
+  - target:
+      kind: Namespace
+      name: tekton-kueue
+    patch: |
+      - op: add
+        path: /metadata/labels/openshift.io~1cluster-monitoring
+        value: "true"
+  # Controller Manager Deployment Patches
+  - path: patches/no-anti-affinity-annotation-patch.yaml
+    target:
+      kind: Deployment
+      name: tekton-kueue-controller-manager
+      namespace: tekton-kueue
+  - path: patches/deployment-strategy-patch.yaml
+    target:
+      kind: Deployment
+      name: tekton-kueue-controller-manager
+      namespace: tekton-kueue
+  - path: patches/controller-topology-spread-patch.yaml
+    target:
+      kind: Deployment
+      name: tekton-kueue-controller-manager
+      namespace: tekton-kueue
+  - path: patches/controller-manager-container-args-patch.yaml
+    target:
+      kind: Deployment
+      name: tekton-kueue-controller-manager
+      namespace: tekton-kueue
+  - target:
+      kind: Deployment
+      name: tekton-kueue-controller-manager
+      namespace: tekton-kueue
+    patch: |-
+      - op: add
+        path: /spec/replicas
+        value: 2
+  # -- Resource Requests and Limits Patches
+  - target:
+      kind: Deployment
+      name: tekton-kueue-controller-manager
+      namespace: tekton-kueue
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/resources/requests
+        value:
+          cpu: 500m
+          memory: 1Gi
+
+      - op: add
+        path: /spec/template/spec/containers/0/resources/limits
+        value:
+          cpu: 500m
+          memory: 1Gi
+  # Webhook Deployment Patches
+  - path: patches/no-anti-affinity-annotation-patch.yaml
+    target:
+      kind: Deployment
+      name: tekton-kueue-webhook
+      namespace: tekton-kueue
+  - path: patches/deployment-strategy-patch.yaml
+    target:
+      kind: Deployment
+      name: tekton-kueue-webhook
+      namespace: tekton-kueue
+  - path: patches/webhook-topology-spread-patch.yaml
+    target:
+      kind: Deployment
+      name: tekton-kueue-webhook
+      namespace: tekton-kueue
+  - path: patches/webhook-webhook-container-args-patch.yaml
+    target:
+      kind: Deployment
+      name: tekton-kueue-webhook
+      namespace: tekton-kueue
+  - target:
+      kind: Deployment
+      name: tekton-kueue-webhook
+      namespace: tekton-kueue
+    patch: |-
+      - op: add
+        path: /spec/replicas
+        value: 3
+  # -- Resource Requests and Limits Patches
+  - target:
+      kind: Deployment
+      name: tekton-kueue-webhook
+      namespace: tekton-kueue
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/resources/requests
+        value:
+          cpu: 200m
+          memory: 256Mi
+
+      - op: add
+        path: /spec/template/spec/containers/0/resources/limits
+        value:
+          cpu: 200m
+          memory: 256Mi

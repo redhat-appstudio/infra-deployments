@@ -51,6 +51,19 @@ spec:
     - name: test-scenario-git-url
       type: string
       default: ""
+    # RPM mirror workaround only. Leave empty for container test types.
+    - name: upstream-repo-url
+      type: string
+      default: ""
+    - name: upstream-repo-branch
+      type: string
+      default: ""
+    - name: fork-repo-host-and-path
+      type: string
+      default: ""
+    - name: fork-repo-username
+      type: string
+      default: "jhutar"
   results:
     - name: test-outcome
       description: "Test outcome: passed, failed, or unknown"
@@ -114,6 +127,83 @@ spec:
           fi
         fi
         echo "Pre-cleanup done"
+    - name: mirror-rpm-repo
+      when:
+        - input: "$(params.test-type)"
+          operator: in
+          values: ["rpm"]
+      image: quay.io/redhat-user-workloads/konflux-perfscale-tenant/loadtest
+      volumeMounts:
+        - name: artifacts
+          mountPath: /tmp/artifacts
+      env:
+        - name: UPSTREAM_REPO_URL
+          value: $(params.upstream-repo-url)
+        - name: UPSTREAM_REPO_BRANCH
+          value: $(params.upstream-repo-branch)
+        - name: FORK_REPO_HOST_AND_PATH
+          value: $(params.fork-repo-host-and-path)
+        - name: FORK_REPO_USERNAME
+          value: $(params.fork-repo-username)
+        - name: GITHUB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: kanary-probe-credentials
+              key: github_token
+        - name: GITLAB_BOT_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: kanary-probe-credentials
+              key: gitlab-cee-pipelines-as-code-secret
+      script: |
+        #!/usr/bin/env bash
+        set -eu
+
+        if echo "$FORK_REPO_HOST_AND_PATH" | grep -q "gitlab"; then
+          GIT_TOKEN="$GITLAB_BOT_TOKEN"
+        else
+          GIT_TOKEN="$GITHUB_TOKEN"
+        fi
+
+        FORK_DIR="$(basename "$FORK_REPO_HOST_AND_PATH" .git)"
+
+        # Use GIT_ASKPASS so the token is never embedded in any URL or git config.
+        # GIT_TERMINAL_PROMPT=0 makes git fail immediately instead of hanging on a
+        # terminal prompt if GIT_ASKPASS fails (no terminal in a Tekton container).
+        # See: https://git-scm.com/docs/git#Documentation/git.txt-codeGITASKPASScode
+        askpass_script="$(mktemp)"
+        echo '#!/bin/sh' > "${askpass_script}"
+        echo 'echo "${GIT_TOKEN}"' >> "${askpass_script}"
+        chmod +x "${askpass_script}"
+        export GIT_ASKPASS="${askpass_script}"
+        export GIT_TOKEN
+        export GIT_TERMINAL_PROMPT=0
+
+        onerr() {
+          error_time="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo "${error_time},0,\"Mirror-rpm-repo step failed\"" >> /tmp/artifacts/load-test-errors.csv
+          rm -f "${askpass_script}"
+          exit 0
+        }
+        trap 'onerr' ERR
+
+        git clone "https://${FORK_REPO_USERNAME}@${FORK_REPO_HOST_AND_PATH}"
+        cd "${FORK_DIR}"
+        git remote add upstream "${UPSTREAM_REPO_URL}"
+        git fetch upstream "${UPSTREAM_REPO_BRANCH}"
+        git checkout -B "${UPSTREAM_REPO_BRANCH}" upstream/"${UPSTREAM_REPO_BRANCH}"
+
+        sed -i "s/^Name: libecpg$/Name: konflux-probe-libecpg/" libecpg.spec
+        sed -i "s/^Release: [0-9]\+%{?dist}$/Release: $(date --utc +%Y%m%d%H%M%S)%{?dist}/" libecpg.spec
+        git add libecpg.spec
+        git config user.email "loadtest@localhost"
+        git config user.name "Konflux Probes Kanary"
+        git commit -m "test: Alter package name and release so we can push to Brew"
+
+        git push -f origin "${UPSTREAM_REPO_BRANCH}"
+
+        rm -f "${askpass_script}"
+        echo "RPM mirror step completed successfully"
     - name: run-test
       image: quay.io/redhat-user-workloads/konflux-perfscale-tenant/loadtest
       volumeMounts:

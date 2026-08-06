@@ -54,6 +54,19 @@ spec:
     - name: test-scenario-git-url
       type: string
       default: ""
+    # RPM mirror workaround only. Leave empty for container test types.
+    - name: upstream-repo-url
+      type: string
+      default: ""
+    - name: upstream-repo-branch
+      type: string
+      default: ""
+    - name: fork-repo-host-and-path
+      type: string
+      default: ""
+    - name: fork-repo-username
+      type: string
+      default: "jhutar"
   tasks:
     - name: run-kanary-tests
       timeout: "1h0m0s"
@@ -95,6 +108,14 @@ spec:
           value: $(params.pipeline-image-pull-secrets)
         - name: test-scenario-git-url
           value: $(params.test-scenario-git-url)
+        - name: upstream-repo-url
+          value: $(params.upstream-repo-url)
+        - name: upstream-repo-branch
+          value: $(params.upstream-repo-branch)
+        - name: fork-repo-host-and-path
+          value: $(params.fork-repo-host-and-path)
+        - name: fork-repo-username
+          value: $(params.fork-repo-username)
   finally:
     - name: push-kanary-metrics
       taskRef:

@@ -1,0 +1,188 @@
+apiVersion: kueue.x-k8s.io/v1beta2
+kind: ClusterQueue
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
+  name: cluster-pipeline-queue
+spec:
+  flavorFungibility:
+    whenCanBorrow: MayStopSearch
+    whenCanPreempt: TryNextFlavor
+  namespaceSelector: {}
+  preemption:
+    borrowWithinCohort:
+      policy: Never
+    reclaimWithinCohort: Never
+    withinClusterQueue: Never
+  queueingStrategy: BestEffortFIFO
+  resourceGroups:
+  - coveredResources:
+    - tekton.dev/pipelineruns
+    - konflux-ci-dev-token
+    - cpu
+    - memory
+    - aws-ip
+    - mintmaker
+    - konflux-release
+    flavors:
+    - name: default-flavor
+      resources:
+      - name: tekton.dev/pipelineruns
+        nominalQuota: '600'
+      - name: konflux-ci-dev-token
+        nominalQuota: '500'
+      - name: cpu
+        nominalQuota: 1k
+      - name: memory
+        nominalQuota: 500Ti
+      - name: aws-ip
+        nominalQuota: '250'
+      - name: mintmaker
+        nominalQuota: '150'
+      - name: konflux-release
+        nominalQuota: '50'
+  - coveredResources:
+    - linux-amd64
+    - linux-arm64
+    - linux-c2xlarge-amd64
+    - linux-c2xlarge-arm64
+    - linux-c4xlarge-amd64
+    - linux-c4xlarge-arm64
+    - linux-c6gd2xlarge-arm64
+    - linux-c8xlarge-amd64
+    - linux-c8xlarge-arm64
+    - linux-cxlarge-amd64
+    - linux-cxlarge-arm64
+    - linux-d160-c8xlarge-amd64
+    - linux-d160-c8xlarge-arm64
+    - linux-g64xlarge-amd64
+    - linux-m2xlarge-amd64
+    - linux-m2xlarge-arm64
+    flavors:
+    - name: platform-group-1
+      resources:
+      - name: linux-amd64
+        nominalQuota: '250'
+      - name: linux-arm64
+        nominalQuota: '250'
+      - name: linux-c2xlarge-amd64
+        nominalQuota: '250'
+      - name: linux-c2xlarge-arm64
+        nominalQuota: '250'
+      - name: linux-c4xlarge-amd64
+        nominalQuota: '250'
+      - name: linux-c4xlarge-arm64
+        nominalQuota: '250'
+      - name: linux-c6gd2xlarge-arm64
+        nominalQuota: '250'
+      - name: linux-c8xlarge-amd64
+        nominalQuota: '250'
+      - name: linux-c8xlarge-arm64
+        nominalQuota: '250'
+      - name: linux-cxlarge-amd64
+        nominalQuota: '250'
+      - name: linux-cxlarge-arm64
+        nominalQuota: '250'
+      - name: linux-d160-c8xlarge-amd64
+        nominalQuota: '250'
+      - name: linux-d160-c8xlarge-arm64
+        nominalQuota: '250'
+      - name: linux-g64xlarge-amd64
+        nominalQuota: '250'
+      - name: linux-m2xlarge-amd64
+        nominalQuota: '250'
+      - name: linux-m2xlarge-arm64
+        nominalQuota: '250'
+  - coveredResources:
+    - linux-m4xlarge-amd64
+    - linux-m4xlarge-arm64
+    - linux-m8xlarge-amd64
+    - linux-m8xlarge-arm64
+    - linux-mlarge-amd64
+    - linux-mlarge-arm64
+    - linux-mxlarge-amd64
+    - linux-mxlarge-arm64
+    - linux-ppc64le
+    - linux-riscv64
+    - linux-root-amd64
+    - linux-root-arm64
+    - linux-s390x
+    - linux-x86-64
+    - local
+    - localhost
+    flavors:
+    - name: platform-group-2
+      resources:
+      - name: linux-m4xlarge-amd64
+        nominalQuota: '250'
+      - name: linux-m4xlarge-arm64
+        nominalQuota: '250'
+      - name: linux-m8xlarge-amd64
+        nominalQuota: '250'
+      - name: linux-m8xlarge-arm64
+        nominalQuota: '250'
+      - name: linux-mlarge-amd64
+        nominalQuota: '250'
+      - name: linux-mlarge-arm64
+        nominalQuota: '250'
+      - name: linux-mxlarge-amd64
+        nominalQuota: '250'
+      - name: linux-mxlarge-arm64
+        nominalQuota: '250'
+      - name: linux-ppc64le
+        nominalQuota: '2'
+      - name: linux-riscv64
+        nominalQuota: '2'
+      - name: linux-root-amd64
+        nominalQuota: '250'
+      - name: linux-root-arm64
+        nominalQuota: '250'
+      - name: linux-s390x
+        nominalQuota: '2'
+      - name: linux-x86-64
+        nominalQuota: 1k
+      - name: local
+        nominalQuota: 1k
+      - name: localhost
+        nominalQuota: 1k
+  - coveredResources:
+    - macos-mac2metal-arm64
+    - windows-4xlarge-amd64
+    flavors:
+    - name: platform-group-3
+      resources:
+      - name: macos-mac2metal-arm64
+        nominalQuota: '5'
+      - name: windows-4xlarge-amd64
+        nominalQuota: '5'
+---
+apiVersion: kueue.x-k8s.io/v1beta2
+kind: ResourceFlavor
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
+  name: default-flavor
+---
+apiVersion: kueue.x-k8s.io/v1beta2
+kind: ResourceFlavor
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
+  name: platform-group-1
+spec: {}
+---
+apiVersion: kueue.x-k8s.io/v1beta2
+kind: ResourceFlavor
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
+  name: platform-group-2
+spec: {}
+---
+apiVersion: kueue.x-k8s.io/v1beta2
+kind: ResourceFlavor
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
+  name: platform-group-3
+spec: {}
