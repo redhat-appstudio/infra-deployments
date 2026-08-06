@@ -129,7 +129,9 @@ spec:
         echo "Pre-cleanup done"
     - name: mirror-rpm-repo
       when:
-        - cel: "'$(params.test-type)' == 'rpm'"
+        - input: "$(params.test-type)"
+          operator: in
+          values: ["rpm"]
       image: quay.io/redhat-user-workloads/konflux-perfscale-tenant/loadtest
       volumeMounts:
         - name: artifacts
