@@ -59,6 +59,7 @@ build: fmt vet ## Build all binaries.
 	go build -o $(LOCALBIN)/env-detector ./cmd/env-detector
 	go build -o $(LOCALBIN)/render-diff ./cmd/render-diff
 	go build -o $(LOCALBIN)/changelog-generator ./cmd/changelog-generator
+	go build -o $(LOCALBIN)/overlay-app-collision-checker ./cmd/overlay-app-collision-checker
 
 .PHONY: clean
 clean: ## Remove build artifacts.
