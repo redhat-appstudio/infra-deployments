@@ -19,7 +19,7 @@ spec:
       description: "Test outcome from collect-results: passed, failed, or unknown"
   steps:
     - name: push-metrics
-      image: registry.redhat.io/ubi9/python-312:latest
+      image: quay.io/redhat-user-workloads/konflux-perfscale-tenant/loadtest
       env:
         - name: OTEL_ENDPOINT
           value: $(params.otel-endpoint)
@@ -32,15 +32,7 @@ spec:
       script: |
         #!/usr/bin/env python3
         import os
-        import subprocess
         import time
-
-        subprocess.check_call([
-            "pip", "install", "--quiet",
-            "opentelemetry-api",
-            "opentelemetry-sdk",
-            "opentelemetry-exporter-otlp-proto-http",
-        ])
 
         from opentelemetry import metrics
         from opentelemetry.sdk.metrics import MeterProvider
