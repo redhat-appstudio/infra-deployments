@@ -2,8 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - external-secrets
-  - monitoring
   - rbac
-  - services
   - namespace.yaml
-  - pipeline-metrics-exporter-deployment.yaml
+  - tekton-chains-controller-svc-monitor.yaml
+  - tekton-chains-service.yaml
