@@ -61,6 +61,9 @@ spec:
     - name: fork-repo-host-and-path
       type: string
       default: ""
+    - name: fork-repo-username
+      type: string
+      default: "jhutar"
   results:
     - name: test-outcome
       description: "Test outcome: passed, failed, or unknown"
@@ -138,6 +141,8 @@ spec:
           value: $(params.upstream-repo-branch)
         - name: FORK_REPO_HOST_AND_PATH
           value: $(params.fork-repo-host-and-path)
+        - name: FORK_REPO_USERNAME
+          value: $(params.fork-repo-username)
         - name: GITHUB_TOKEN
           valueFrom:
             secretKeyRef:
@@ -180,7 +185,7 @@ spec:
         }
         trap 'onerr' ERR
 
-        git clone "https://jhutar@${FORK_REPO_HOST_AND_PATH}"
+        git clone "https://${FORK_REPO_USERNAME}@${FORK_REPO_HOST_AND_PATH}"
         cd "${FORK_DIR}"
         git remote add upstream "${UPSTREAM_REPO_URL}"
         git fetch upstream "${UPSTREAM_REPO_BRANCH}"

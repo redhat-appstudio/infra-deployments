@@ -64,6 +64,9 @@ spec:
     - name: fork-repo-host-and-path
       type: string
       default: ""
+    - name: fork-repo-username
+      type: string
+      default: "jhutar"
   tasks:
     - name: run-kanary-tests
       timeout: "1h0m0s"
@@ -111,6 +114,8 @@ spec:
           value: $(params.upstream-repo-branch)
         - name: fork-repo-host-and-path
           value: $(params.fork-repo-host-and-path)
+        - name: fork-repo-username
+          value: $(params.fork-repo-username)
   finally:
     - name: push-kanary-metrics
       taskRef:
