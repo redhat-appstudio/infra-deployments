@@ -12,6 +12,11 @@ spec:
   - name: given-built-manifests-exists
     try:
     - script:
+        # use `bash` shell
+        shell: bash
+        # invoke `bash` with `-c`
+        shellArgs:
+        - -c
         content: |-
           #!/bin/bash
 
@@ -22,6 +27,11 @@ spec:
           kustomize build ../../../../ -o ../resources/manifests/
     cleanup:
     - script:
+        # use `bash` shell
+        shell: bash
+        # invoke `bash` with `-c`
+        shellArgs:
+        - -c
         content: |-
           #!/bin/bash
 
