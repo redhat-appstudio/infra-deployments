@@ -2,3 +2,11 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
 - base-snapshot
+configMapGenerator:
+  - name: config
+    literals:
+      - config=*
+generatorOptions:
+  labels:
+    app.kubernetes.io/name: repository-validator
+namespace: repository-validator
