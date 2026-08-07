@@ -9,6 +9,10 @@ resources:
 commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 
+images:
+  - name: registry.k8s.io/kube-state-metrics/kube-state-metrics
+    newTag: v2.19.1
+
 patches:
   - path: resource-patch.yaml
     target:
