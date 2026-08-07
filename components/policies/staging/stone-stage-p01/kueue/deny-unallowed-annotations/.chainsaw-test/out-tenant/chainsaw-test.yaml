@@ -3,10 +3,10 @@
 apiVersion: chainsaw.kyverno.io/v1alpha1
 kind: Test
 metadata:
-  name: in-tenant-deny-pipelinerun-with-validation-error
+  name: out-tenant-deny-pipelinerun-with-validation-error
 spec:
   description: |
-    denies a PipelineRun that has unallowed annotation in a tenant namespace
+    doesn't deny PipelineRuns in non-tenant namespaces
   concurrent: false
   steps:
   - name: given-built-manifests-exists
