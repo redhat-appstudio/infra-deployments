@@ -15,13 +15,13 @@ jobs:
     outputs:
       directories: ${{ steps.list-tests.outputs.directories }}
     steps:
-      - name: Checkout Git Repository
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+    - name: Checkout Git Repository
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
 
-      - id: list-tests
-        run: |
-          DIRS=$(find -name .chainsaw-test -type d | jq -R -s -c 'split("\n")[:-1]')
-          echo "directories=${DIRS}" >> $GITHUB_OUTPUT
+    - id: list-tests
+      run: |
+        DIRS=$(find -name .chainsaw-test -type d | jq -R -s -c 'split("\n")[:-1]')
+        echo "directories=${DIRS}" >> $GITHUB_OUTPUT
 
   chainsaw-test:
     name: Run Chainsaw tests
@@ -36,7 +36,8 @@ jobs:
     - name: Create k8s Kind Cluster
       uses: helm/kind-action@ef37e7f390d99f746eb8b610417061a60e82a6cc  # v1.14.0
 
-    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+    - name: Checkout Git Repository
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
 
     - name: Install Dependencies
       shell: bash
