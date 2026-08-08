@@ -11,7 +11,9 @@ resources:
   - github.com/minio/operator?ref=v5.0.15  # when updating the tag, update also the patches below
   - main-pipeline-service-configuration.yaml
   - dev-only-pipeline-service-storage-configuration.yaml
-  - ../base/rbac
+  - ../base/rbac/cluster-role
+  - ../base/rbac/openshift-pipelines
+  - ../base/rbac/tekton-logging
 
 patches:
   - target:
