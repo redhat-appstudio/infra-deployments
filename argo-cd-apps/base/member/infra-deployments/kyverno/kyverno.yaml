@@ -50,12 +50,12 @@ spec:
         namespace: konflux-kyverno
         server: '{{server}}'
       syncPolicy:
-        automated:
-          prune: true
-          selfHeal: true
-        syncOptions:
-          - CreateNamespace=true
-          - ServerSideApply=true
+        # automated:
+        #   prune: true
+        #   selfHeal: true
+        # syncOptions:
+        #   - CreateNamespace=true
+        #   - ServerSideApply=true
         retry:
           limit: 50
           backoff:
