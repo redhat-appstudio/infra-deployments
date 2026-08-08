@@ -33,12 +33,12 @@ gateway:
     limits:
       memory: 256Mi
   metrics:
-    resources:
-      requests:
-        cpu: 50m
-        memory: 64Mi
-      limits:
-        memory: 128Mi
+    enabled: true
+    image:
+      registry: quay.io
+      repository: kubearchive/access-log-exporter
+      tag: 0.4.6
+      pullPolicy: IfNotPresent
 
 # Basic Loki configuration with S3 storage
 loki:
@@ -73,6 +73,7 @@ loki:
       s3forcepathstyle: false
   # Configure ingestion limits to handle Vector's data volume
   limits_config:
+    deletion_mode: filter-only
     shard_streams:
       enabled: false
     retention_period: 744h  # 31 days retention
@@ -136,6 +137,14 @@ loki:
   query_range:
     # split_queries_by_interval deprecated in Loki 3.x - removed
     parallelise_shardable_queries: false
+  compactor:
+    working_directory: /var/loki/compactor
+    compaction_interval: 15m
+    retention_enabled: true
+    delete_request_store: s3
+    retention_delete_delay: 2h
+    retention_delete_worker_count: 150
+    delete_request_cancel_period: 24h
 
 # Distributed components configuration
 ingester:
@@ -223,9 +232,6 @@ distributor:
 
 compactor:
   replicas: 1
-  retention_enabled: true
-  retention_delete_delay: 2h
-  retention_delete_worker_count: 150
   resources:
     requests:
       cpu: 200m
@@ -250,10 +256,12 @@ indexGateway:
 chunksCache:
   enabled: true
   replicas: 1
-  batchSize: 256  # Batch size for sending/receiving chunks from cache
-  parallelism: 10  # Parallel threads for cache operations
-  maxItemMemory: 30  # MB - Increased from 10MB to handle chunks (3MB target + compression overhead + metadata)
-  defaultValidity: 12h  # How long cached chunks are stored
+  allocatedMemory: 512
+  allocatedCPU: 100m
+  batchSize: 256
+  parallelism: 10
+  maxItemMemory: 10
+  defaultValidity: 12h
   serviceAccount:
     create: false
     name: loki-memcached
@@ -263,50 +271,6 @@ resultsCache:
   replicas: 1
   maxItemMemory: 100  # MB - Increased from 10MB to handle large query results (can be much larger than chunks)
   defaultValidity: 12h  # How long cached query results are stored
-  serviceAccount:
-    create: false
-    name: loki-memcached
-
-memcached:
-  enabled: true
-  maxItemMemory: 30  # MB - Shared default for general memcached instances
-  serviceAccount:
-    create: false
-    name: loki-memcached
-
-# Shared memcached configuration (used as defaults for all memcached instances)
-# These don't deploy separate instances - they configure shared settings
-memcachedResults:
-  enabled: true
-  maxItemMemory: 100  # MB - For query result caching
-  serviceAccount:
-    create: false
-    name: loki-memcached
-
-memcachedChunks:
-  enabled: true
-  maxItemMemory: 30  # MB - For chunk caching
-  serviceAccount:
-    create: false
-    name: loki-memcached
-
-memcachedFrontend:
-  enabled: true
-  maxItemMemory: 100  # MB - Frontend cache can handle large query results
-  serviceAccount:
-    create: false
-    name: loki-memcached
-
-memcachedIndexQueries:
-  enabled: true
-  maxItemMemory: 50  # MB - Index queries can be large
-  serviceAccount:
-    create: false
-    name: loki-memcached
-
-memcachedIndexWrites:
-  enabled: true
-  maxItemMemory: 30  # MB - Index write operations
   serviceAccount:
     create: false
     name: loki-memcached

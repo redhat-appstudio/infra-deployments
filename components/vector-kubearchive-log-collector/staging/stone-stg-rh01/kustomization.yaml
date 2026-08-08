@@ -18,3 +18,26 @@ generators:
 - vector-helm-generator.yaml
 - loki-helm-generator.yaml
 - grafana-helm-generator.yaml
+
+patches:
+  # Fix ArgoCD sync drift caused by OpenShift SCC admission mutations on Loki workloads
+  - patch: |-
+      - op: add
+        path: /metadata/annotations/argocd.argoproj.io~1sync-options
+        value: ServerSideApply=true
+    target:
+      group: apps
+      version: v1
+      kind: Deployment
+      namespace: product-kubearchive-logging
+      labelSelector: app.kubernetes.io/name=loki
+  - patch: |-
+      - op: add
+        path: /metadata/annotations/argocd.argoproj.io~1sync-options
+        value: ServerSideApply=true
+    target:
+      group: apps
+      version: v1
+      kind: StatefulSet
+      namespace: product-kubearchive-logging
+      labelSelector: app.kubernetes.io/name=loki
