@@ -39,6 +39,12 @@ gateway:
       repository: kubearchive/access-log-exporter
       tag: 0.4.6
       pullPolicy: IfNotPresent
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        memory: 128Mi
 
 # Basic Loki configuration with S3 storage
 loki:
