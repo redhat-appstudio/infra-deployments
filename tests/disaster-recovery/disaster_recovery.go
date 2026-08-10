@@ -693,7 +693,11 @@ func logReleaseChainDiagnostics(tenants []Tenant) {
 	run := func(args ...string) string {
 		cmdCtx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 		defer cancel()
-		out, _ := exec.CommandContext(cmdCtx, "oc", args...).CombinedOutput() // #nosec G204
+		out, err := exec.CommandContext(cmdCtx, "oc", args...).CombinedOutput() // #nosec G204
+		if err != nil {
+			return fmt.Sprintf("ERROR: oc %v failed: %v (ctxErr=%v)\n%s",
+				args, err, cmdCtx.Err(), strings.TrimSpace(string(out)))
+		}
 		return strings.TrimSpace(string(out))
 	}
 
@@ -796,7 +800,11 @@ func collectPaCDiagnostics(tenants []Tenant) {
 	run := func(args ...string) string {
 		cmdCtx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 		defer cancel()
-		out, _ := exec.CommandContext(cmdCtx, "oc", args...).CombinedOutput() // #nosec G204
+		out, err := exec.CommandContext(cmdCtx, "oc", args...).CombinedOutput() // #nosec G204
+		if err != nil {
+			return fmt.Sprintf("ERROR: oc %v failed: %v (ctxErr=%v)\n%s",
+				args, err, cmdCtx.Err(), strings.TrimSpace(string(out)))
+		}
 		return strings.TrimSpace(string(out))
 	}
 
