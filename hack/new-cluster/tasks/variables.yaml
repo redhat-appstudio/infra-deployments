@@ -11,6 +11,11 @@
   fail:
     msg: "Variable 'awsaccount' must contain only digits, got: {{awsaccount}}"
   when: "awsaccount is defined and awsaccount != '' and not (awsaccount | string | regex_search('^[0-9]+$'))"
+- name: Make sure ring is sane
+  tags: [always]
+  fail:
+    msg: "Variable 'ring' must be one of {{allowed_rings}}, not {{ring}}"
+  when: "vars['env'] not in vars['allowed_envs']"
 - name: Make sure env is sane
   tags: [always]
   fail:
