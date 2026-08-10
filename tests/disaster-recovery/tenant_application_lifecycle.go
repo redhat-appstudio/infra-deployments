@@ -248,9 +248,11 @@ func waitForSucceededPRCount(ctx context.Context, fw *framework.Framework, names
 		}
 
 		return succeededCount
-	}, timeout, poll).Should(BeNumerically(">=", expectedCount),
-		"expected at least %d successful %s PipelineRuns in namespace %s",
-		expectedCount, displayType, namespace)
+	}, timeout, poll).Should(SatisfyAll(
+		BeNumerically(">=", expectedCount),
+		BeNumerically("<=", expectedCount*2),
+	), "expected %d–%d successful %s PipelineRuns in namespace %s (got overshoot beyond 2x tolerance)",
+		expectedCount, expectedCount*2, displayType, namespace)
 }
 
 // buildListOpts constructs the label-based list options shared by
