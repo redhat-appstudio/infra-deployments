@@ -817,8 +817,12 @@ func collectPaCDiagnostics(tenants []Tenant) {
 	GinkgoWriter.Printf("=== PaC services in %s ===\n%s\n\n",
 		pacNamespace, run("get", "services", "-n", pacNamespace, "-o", "wide"))
 
-	pods := strings.Fields(run("get", "pods", "-n", pacNamespace,
-		"-o", "jsonpath={.items[*].metadata.name}"))
+	podOutput := run("get", "pods", "-n", pacNamespace,
+		"-o", "jsonpath={.items[*].metadata.name}")
+	var pods []string
+	if !strings.HasPrefix(podOutput, "ERROR:") {
+		pods = strings.Fields(podOutput)
+	}
 	for _, pod := range pods {
 		if strings.Contains(pod, "controller") || strings.Contains(pod, "watcher") {
 			GinkgoWriter.Printf("=== Logs: %s (last 100 lines) ===\n%s\n\n",

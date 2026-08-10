@@ -24,6 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// PodLogTailLines is the number of log lines to capture from each failing step container.
 const PodLogTailLines int64 = 80
 
 // ---------------------------------------------------------------------------
