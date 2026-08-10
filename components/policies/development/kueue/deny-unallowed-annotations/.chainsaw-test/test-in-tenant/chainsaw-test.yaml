@@ -42,8 +42,7 @@ spec:
         expect:
           - check:
               ($error != null): true
-              ($error): |-
-                  pipelineruns.tekton.dev "pipelinerun-with-validation-error" is forbidden: ValidatingAdmissionPolicy 'deny-unallowed-annotations.kueue.konflux-ci.dev' with binding 'deny-unallowed-annotations.kueue.konflux-ci.dev' denied request: PipelineRun validation failed: one or more unexpected annotations found: my/prefix1-unallowed, my/prefix2-unallowed
+              '(regex_match(''^pipelineruns.tekton.dev \"pipelinerun-with-validation-error\" is forbidden: ValidatingAdmissionPolicy \''deny-unallowed-annotations.kueue.konflux-ci.dev\'' with binding \''deny-unallowed-annotations.kueue.konflux-ci.dev\'' denied request: PipelineRun validation failed: one or more unexpected annotations found: (my/prefix2-unallowed, my/prefix1-unallowed|my/prefix1-unallowed, my/prefix2-unallowed)$'', $error))': true
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
 apiVersion: chainsaw.kyverno.io/v1alpha1
