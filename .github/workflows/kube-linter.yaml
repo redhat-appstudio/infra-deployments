@@ -12,7 +12,7 @@ jobs:
     permissions: write-all
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       # This prepares directory where github/codeql-action/upload-sarif@v1 looks up report files by default.
       - name: Create ../results directory for SARIF report files
@@ -45,7 +45,7 @@ jobs:
             xargs -I {} -n1 -P8  bash -c 'dir=$(dirname "{}"); output_file=$(echo "$dir" | tr / -)-kustomization.yaml; ./hack/kustomize-build-with-retry.sh "$dir" -o "kustomizedfiles/$output_file"'
 
       - name: Scan yaml files with kube-linter
-        uses: stackrox/kube-linter-action@v1.0.4
+        uses: stackrox/kube-linter-action@ca0d55b925470deb5b04b556e6c4276ea94d03c3 # v1.0.4
         id: kube-linter-action-scan
         with:
           version: v0.7.6
@@ -57,11 +57,11 @@ jobs:
           output-file: ../results/kube-linter.sarif
 
       - name: Upload SARIF report files to GitHub
-        uses: github/codeql-action/upload-sarif@v4
+        uses: github/codeql-action/upload-sarif@5595ccaf912efad79be6eef63a5619ff05969be3 # v4
         if: always()
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: failure() && steps.kube-linter-action-scan.outcome == 'failure'
         with:
           name: kustomize-manifests
