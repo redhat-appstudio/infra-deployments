@@ -16,7 +16,7 @@ jobs:
       directories: ${{ steps.list-tests.outputs.directories }}
     steps:
       - name: Checkout Git Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - id: list-tests
         run: |
@@ -34,9 +34,9 @@ jobs:
 
     steps:
     - name: Create k8s Kind Cluster
-      uses: helm/kind-action@v1
+      uses: helm/kind-action@ef37e7f390d99f746eb8b610417061a60e82a6cc # v1
 
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
     - name: Install Dependencies
       shell: bash
