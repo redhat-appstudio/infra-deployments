@@ -22,12 +22,13 @@ This automation creates yaml files in the infra-deployments repo locally.
 * `cutename` - Example: `rh09`
 * `env` - One of `production` or `staging`.
 * `network` - One of `public` or `private`.
+* `ring` - One of `ring-1`, `ring-2`, `ring-3`, or `ring-4`
 
 4. You are connected to the VPN.
 
 ## Procedure
 
-**Run the playbook**, which will prompt you for the five variables above:
+**Run the playbook**, which will prompt you for the six variables above:
 
 ```
 ❯ ansible-playbook hack/new-cluster/playbook.yaml
@@ -50,13 +51,13 @@ If you do not want to run all steps, but only a subset **you can use tags** to r
 If you don't want to specify the variables at prompts, you can **specify variables when invoking the CLI**, like this:
 
 ```
-❯ ansible-playbook hack/new-cluster/playbook.yaml -e 'cutename=rh09 shortname=kflux-prd-rh09 longname=kflux-prd-rh09.abe9.p1 env=production network=public'
+❯ ansible-playbook hack/new-cluster/playbook.yaml -e 'cutename=rh09 shortname=kflux-prd-rh09 longname=kflux-prd-rh09.abe9.p1 ring=ring-3 env=production network=public'
 ```
 
 If you are **nervous about drift** between the current application manifests and those produced by this automation, you can inspect the different by running this automation and requesting it to produce the config **for an existing cluster**, and then investigate what changes it may have made by looking at `git diff`, like this.
 
 ```
-❯ ansible-playbook hack/new-cluster/playbook.yaml --skip-tags vault,chains,github -e 'cutename=rh03 shortname=kflux-prd-rh03 longname=kflux-prd-rh03.nnv1.p1 env=production network=public'
+❯ ansible-playbook hack/new-cluster/playbook.yaml --skip-tags vault,chains,github -e 'cutename=rh03 shortname=kflux-prd-rh03 longname=kflux-prd-rh03.nnv1.p1 ring=ring-2 env=production network=public'
 ❯ git diff
 ```
 
