@@ -24,7 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const podLogTailLines int64 = 80
+const PodLogTailLines int64 = 80
 
 // ---------------------------------------------------------------------------
 // Core PipelineRun counting and waiting — all other helpers build on these two
@@ -119,7 +119,7 @@ func logFailedStepContainers(ctx context.Context, fw *framework.Framework, names
 	}
 
 	kubeClient := fw.AsKubeAdmin.CommonController.KubeInterface()
-	tailLines := podLogTailLines
+	tailLines := PodLogTailLines
 
 	for _, containerName := range failedContainers {
 		GinkgoWriter.Printf("    --- container logs: %s/%s (container: %s) ---\n", namespace, podName, containerName)

@@ -691,7 +691,9 @@ func ensurePullSecretsOnSA(fw *framework.Framework, tenants []Tenant) {
 // to avoid importing Snapshot types.
 func logReleaseChainDiagnostics(tenants []Tenant) {
 	run := func(args ...string) string {
-		out, _ := exec.Command("oc", args...).CombinedOutput() // #nosec G204
+		cmdCtx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+		defer cancel()
+		out, _ := exec.CommandContext(cmdCtx, "oc", args...).CombinedOutput() // #nosec G204
 		return strings.TrimSpace(string(out))
 	}
 
@@ -792,7 +794,9 @@ func collectPaCDiagnostics(tenants []Tenant) {
 	By("Collecting PaC controller diagnostics")
 
 	run := func(args ...string) string {
-		out, _ := exec.Command("oc", args...).CombinedOutput() // #nosec G204
+		cmdCtx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+		defer cancel()
+		out, _ := exec.CommandContext(cmdCtx, "oc", args...).CombinedOutput() // #nosec G204
 		return strings.TrimSpace(string(out))
 	}
 
