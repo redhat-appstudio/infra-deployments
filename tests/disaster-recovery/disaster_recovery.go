@@ -472,9 +472,20 @@ func validateDockerConfigSecret(fw *framework.Framework, namespace, secretName, 
 				label, namespace, secretName, registry, err)
 			return false
 		}
-		if !strings.Contains(string(decoded), ":") {
+		username, password, ok := strings.Cut(string(decoded), ":")
+		if !ok {
 			GinkgoWriter.Printf("  %s secret %s/%s: auth for %s decoded but missing colon separator\n",
 				label, namespace, secretName, registry)
+			return false
+		}
+		if username == "" || password == "" {
+			GinkgoWriter.Printf("  %s secret %s/%s: auth for %s has empty username or password\n",
+				label, namespace, secretName, registry)
+			return false
+		}
+		if robotAccountName != "" && username != robotAccountName {
+			GinkgoWriter.Printf("  %s secret %s/%s: auth username %q does not match expected robot account %q\n",
+				label, namespace, secretName, username, robotAccountName)
 			return false
 		}
 	}
@@ -781,7 +792,7 @@ func collectPaCDiagnostics(tenants []Tenant) {
 	By("Collecting PaC controller diagnostics")
 
 	run := func(args ...string) string {
-		out, _ := exec.Command("oc", args...).CombinedOutput()
+		out, _ := exec.Command("oc", args...).CombinedOutput() // #nosec G204
 		return strings.TrimSpace(string(out))
 	}
 
@@ -949,15 +960,34 @@ func stripFinalizers(ctx context.Context, restClient client.Client, namespace st
 			continue
 		}
 		GinkgoWriter.Printf("  %s/%s: removing finalizers %v\n", kind, obj.GetName(), obj.GetFinalizers())
-		obj.SetFinalizers(nil)
-		err := restClient.Update(ctx, obj)
-		if err != nil {
+
+		const maxConflictRetries = 5
+		var updateErr error
+		for attempt := 0; attempt < maxConflictRetries; attempt++ {
+			if attempt > 0 {
+				if err := restClient.Get(ctx, client.ObjectKeyFromObject(obj), obj); err != nil {
+					if k8sErrors.IsNotFound(err) {
+						updateErr = nil
+						break
+					}
+					updateErr = err
+					break
+				}
+			}
+			obj.SetFinalizers(nil)
+			updateErr = restClient.Update(ctx, obj)
+			if updateErr == nil || !k8sErrors.IsConflict(updateErr) {
+				break
+			}
+			GinkgoWriter.Printf("  %s/%s: conflict on attempt %d, retrying\n", kind, obj.GetName(), attempt+1)
+		}
+		if updateErr != nil {
 			if isBestEffort {
 				GinkgoWriter.Printf("  WARNING: failed to strip finalizers from %s %s/%s: %v\n",
-					kind, namespace, obj.GetName(), err)
+					kind, namespace, obj.GetName(), updateErr)
 				continue
 			}
-			Expect(err).ShouldNot(HaveOccurred(),
+			Expect(updateErr).ShouldNot(HaveOccurred(),
 				"failed to strip finalizers from %s %s/%s", kind, namespace, obj.GetName())
 		}
 		stripped++

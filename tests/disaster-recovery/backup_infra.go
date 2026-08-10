@@ -356,10 +356,8 @@ func listSATokenSecrets(ctx context.Context, fw *framework.Framework, namespace 
 // invalid. Deleting the stale tokens forces the token controller to mint new
 // ones that match the current SA UIDs. See:
 // https://konflux-ci.dev/docs/troubleshooting/service-accounts/
-func rotateSATokens(fw *framework.Framework, namespace string) {
+func rotateSATokens(ctx context.Context, fw *framework.Framework, namespace string) {
 	GinkgoHelper()
-
-	ctx := context.Background()
 
 	By(fmt.Sprintf("Rotating ServiceAccount tokens in namespace %s", namespace))
 
@@ -394,8 +392,7 @@ func rotateSATokens(fw *framework.Framework, namespace string) {
 // cleanupDanglingNamespaces finds and removes any dr-test-* namespaces left
 // behind by previous failed test runs. Finalizers are stripped from known
 // resource types before deletion to prevent controller-driven stalls.
-func cleanupDanglingNamespaces(fw *framework.Framework) {
-	ctx := context.Background()
+func cleanupDanglingNamespaces(ctx context.Context, fw *framework.Framework) {
 	kubeClient := fw.AsKubeAdmin.CommonController.KubeInterface()
 	restClient := fw.AsKubeAdmin.CommonController.KubeRest()
 
@@ -405,8 +402,7 @@ func cleanupDanglingNamespaces(fw *framework.Framework) {
 		return
 	}
 
-	for i := range nsList.Items {
-		ns := &nsList.Items[i]
+	for _, ns := range nsList.Items {
 		if !strings.HasPrefix(ns.Name, "dr-test-") {
 			continue
 		}

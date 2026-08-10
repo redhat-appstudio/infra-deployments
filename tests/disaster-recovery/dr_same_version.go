@@ -8,6 +8,7 @@
 package disaster_recovery
 
 import (
+	"context"
 	"sync"
 
 	"github.com/konflux-ci/e2e-tests/pkg/framework"
@@ -62,7 +63,7 @@ func defineSameVersionSpecs() {
 			})
 
 			It("should wait for all pipeline chains to succeed", func() {
-				waitForPipelineChains(fw, svTenants, nil, nil)
+				waitForPipelineChains(context.Background(), fw, svTenants, nil, nil)
 			})
 		})
 
@@ -115,7 +116,7 @@ func defineSameVersionSpecs() {
 		When("performing post-restore recovery", func() {
 			It("should rotate SA tokens on both tenants", func() {
 				for _, t := range svTenants {
-					rotateSATokens(fw, t.Namespace)
+					rotateSATokens(context.Background(), fw, t.Namespace)
 				}
 			})
 
@@ -143,7 +144,7 @@ func defineSameVersionSpecs() {
 			})
 
 			It("should confirm functional pipeline execution after restore", func() {
-				triggerBuildsAndVerify(fw, svTenants)
+				triggerBuildsAndVerify(context.Background(), fw, svTenants)
 			})
 		})
 
@@ -154,7 +155,7 @@ func defineSameVersionSpecs() {
 			} else {
 				cleanupTestResources(fw, svTenants)
 			}
-			cleanupDanglingNamespaces(fw)
+			cleanupDanglingNamespaces(context.Background(), fw)
 		})
 	})
 }

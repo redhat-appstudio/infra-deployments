@@ -11,6 +11,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"path"
 	"strings"
 	"sync"
 	"time"
@@ -23,6 +24,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const podLogTailLines int64 = 80
+
 // ---------------------------------------------------------------------------
 // Core PipelineRun counting and waiting — all other helpers build on these two
 // ---------------------------------------------------------------------------
@@ -34,12 +37,12 @@ import (
 //
 // Pass empty strings to skip either filter (e.g., empty pipelineType counts
 // all PRs, used for the managed namespace where every PR is a release pipeline).
-func countSucceededPRs(fw *framework.Framework, namespace, pipelineType, componentName string) int {
+func countSucceededPRs(ctx context.Context, fw *framework.Framework, namespace, pipelineType, componentName string) int {
 	listOpts := buildListOpts(namespace, pipelineType, componentName)
 
 	prList := &pipeline.PipelineRunList{}
 	if err := fw.AsKubeAdmin.CommonController.KubeRest().List(
-		context.Background(), prList, listOpts...); err != nil {
+		ctx, prList, listOpts...); err != nil {
 		return 0
 	}
 
@@ -60,8 +63,7 @@ func countSucceededPRs(fw *framework.Framework, namespace, pipelineType, compone
 // container logs from the failing step. The container logs are critical for
 // diagnosing OCI-TA and other step-level failures where the condition message
 // only says "exited with code 1: Error".
-func logFailedTaskRuns(fw *framework.Framework, namespace, prName string) {
-	ctx := context.Background()
+func logFailedTaskRuns(ctx context.Context, fw *framework.Framework, namespace, prName string) {
 
 	trList := &pipeline.TaskRunList{}
 	if err := fw.AsKubeAdmin.CommonController.KubeRest().List(
@@ -81,7 +83,7 @@ func logFailedTaskRuns(fw *framework.Framework, namespace, prName string) {
 					taskName := tr.Labels["tekton.dev/pipelineTask"]
 					GinkgoWriter.Printf("  FAILED TaskRun %s (task: %s) in PipelineRun %s: %s\n",
 						tr.Name, taskName, prName, c.Message)
-					logFailedStepContainers(fw, namespace, tr)
+					logFailedStepContainers(ctx, fw, namespace, tr)
 				}
 				break
 			}
@@ -92,7 +94,7 @@ func logFailedTaskRuns(fw *framework.Framework, namespace, prName string) {
 // logFailedStepContainers reads the container logs from the pod backing a
 // failed TaskRun. It identifies which step(s) failed from the TaskRun status
 // and fetches the last 80 lines of each failing container's logs.
-func logFailedStepContainers(fw *framework.Framework, namespace string, tr *pipeline.TaskRun) {
+func logFailedStepContainers(ctx context.Context, fw *framework.Framework, namespace string, tr *pipeline.TaskRun) {
 	podName := tr.Status.PodName
 	if podName == "" {
 		GinkgoWriter.Printf("    no pod name in TaskRun %s status — cannot read container logs\n", tr.Name)
@@ -117,7 +119,7 @@ func logFailedStepContainers(fw *framework.Framework, namespace string, tr *pipe
 	}
 
 	kubeClient := fw.AsKubeAdmin.CommonController.KubeInterface()
-	tailLines := int64(80)
+	tailLines := podLogTailLines
 
 	for _, containerName := range failedContainers {
 		GinkgoWriter.Printf("    --- container logs: %s/%s (container: %s) ---\n", namespace, podName, containerName)
@@ -126,8 +128,10 @@ func logFailedStepContainers(fw *framework.Framework, namespace string, tr *pipe
 			Container: containerName,
 			TailLines: &tailLines,
 		})
-		stream, err := logReq.Stream(context.Background())
+		logCtx, logCancel := context.WithTimeout(ctx, 30*time.Second)
+		stream, err := logReq.Stream(logCtx)
 		if err != nil {
+			logCancel()
 			GinkgoWriter.Printf("    ERROR reading logs for %s/%s container %s: %v\n",
 				namespace, podName, containerName, err)
 			continue
@@ -135,6 +139,7 @@ func logFailedStepContainers(fw *framework.Framework, namespace string, tr *pipe
 
 		logBytes, err := io.ReadAll(stream)
 		stream.Close()
+		logCancel()
 		if err != nil {
 			GinkgoWriter.Printf("    ERROR reading log stream for %s/%s container %s: %v\n",
 				namespace, podName, containerName, err)
@@ -173,7 +178,7 @@ func findFailedStepContainers(tr *pipeline.TaskRun) []string {
 //
 // Filters follow the same rules as countSucceededPRs: empty pipelineType or
 // componentName skips that filter.
-func waitForSucceededPRCount(fw *framework.Framework, namespace, pipelineType, componentName string, expectedCount int, timeout, poll time.Duration) {
+func waitForSucceededPRCount(ctx context.Context, fw *framework.Framework, namespace, pipelineType, componentName string, expectedCount int, timeout, poll time.Duration) {
 	GinkgoHelper()
 
 	componentLabel := "appstudio.openshift.io/component"
@@ -188,7 +193,7 @@ func waitForSucceededPRCount(fw *framework.Framework, namespace, pipelineType, c
 	Eventually(func() int {
 		prList := &pipeline.PipelineRunList{}
 		if err := fw.AsKubeAdmin.CommonController.KubeRest().List(
-			context.Background(), prList, listOpts...); err != nil {
+			ctx, prList, listOpts...); err != nil {
 			GinkgoWriter.Printf("error listing %s PipelineRuns in %s: %v\n",
 				displayType, namespace, err)
 			return 0
@@ -209,7 +214,7 @@ func waitForSucceededPRCount(fw *framework.Framework, namespace, pipelineType, c
 							namespace, c.Message)
 						if !loggedFailures[pr.Name] {
 							loggedFailures[pr.Name] = true
-							logFailedTaskRuns(fw, namespace, pr.Name)
+							logFailedTaskRuns(ctx, fw, namespace, pr.Name)
 						}
 					}
 					break
@@ -285,7 +290,7 @@ type pipelineRunBaseCounts struct {
 // baseBuildTest provides per-component starting counts keyed by
 // "namespace/componentName". baseRelease provides aggregate starting counts
 // keyed by managed namespace. Pass nil for both on the first run (base of 0).
-func waitForPipelineChains(fw *framework.Framework, tenants []Tenant,
+func waitForPipelineChains(ctx context.Context, fw *framework.Framework, tenants []Tenant,
 	baseBuildTest map[string]pipelineRunBaseCounts, baseRelease map[string]int) {
 	GinkgoHelper()
 
@@ -304,12 +309,12 @@ func waitForPipelineChains(fw *framework.Framework, tenants []Tenant,
 
 				By(fmt.Sprintf("Waiting for build PipelineRun for %s in %s (base: %d)",
 					component.Name, tenant.Namespace, base.build))
-				waitForSucceededPRCount(fw, tenant.Namespace, "build", component.Name,
+				waitForSucceededPRCount(ctx, fw, tenant.Namespace, "build", component.Name,
 					base.build+1, PipelineTimeout, PipelinePoll)
 
 				By(fmt.Sprintf("Waiting for test PipelineRun for %s in %s (base: %d)",
 					component.Name, tenant.Namespace, base.test))
-				waitForSucceededPRCount(fw, tenant.Namespace, "test", component.Name,
+				waitForSucceededPRCount(ctx, fw, tenant.Namespace, "test", component.Name,
 					base.test+1, PipelineTimeout, PipelinePoll)
 			}(t, comp)
 		}
@@ -325,7 +330,7 @@ func waitForPipelineChains(fw *framework.Framework, tenants []Tenant,
 		expected := releaseBase + ComponentsPerTenant
 		By(fmt.Sprintf("Waiting for %d release PipelineRuns in %s (base: %d)",
 			expected, t.ManagedNamespace, releaseBase))
-		waitForSucceededPRCount(fw, t.ManagedNamespace, "", "", expected,
+		waitForSucceededPRCount(ctx, fw, t.ManagedNamespace, "", "", expected,
 			ReleaseChainTimeout, ReleaseChainPoll)
 	}
 }
@@ -342,7 +347,7 @@ func waitForPipelineChains(fw *framework.Framework, tenants []Tenant,
 //     the default branch (matching PaC .pathChanged() filters).
 //  3. Waits for new build and test PipelineRuns per component (parallel).
 //  4. Waits for new release PipelineRuns (aggregate).
-func triggerBuildsAndVerify(fw *framework.Framework, tenants []Tenant) {
+func triggerBuildsAndVerify(ctx context.Context, fw *framework.Framework, tenants []Tenant) {
 	GinkgoHelper()
 
 	By("Snapshotting current per-component PipelineRun counts before triggering")
@@ -354,13 +359,13 @@ func triggerBuildsAndVerify(fw *framework.Framework, tenants []Tenant) {
 		for _, comp := range Components {
 			key := t.Namespace + "/" + comp.Name
 			initialPerComp[key] = pipelineRunBaseCounts{
-				build: countSucceededPRs(fw, t.Namespace, "build", comp.Name),
-				test:  countSucceededPRs(fw, t.Namespace, "test", comp.Name),
+				build: countSucceededPRs(ctx, fw, t.Namespace, "build", comp.Name),
+				test:  countSucceededPRs(ctx, fw, t.Namespace, "test", comp.Name),
 			}
 			GinkgoWriter.Printf("initial counts for %s: build=%d, test=%d\n",
 				key, initialPerComp[key].build, initialPerComp[key].test)
 		}
-		initialRelease[t.ManagedNamespace] = countSucceededPRs(fw, t.ManagedNamespace, "", "")
+		initialRelease[t.ManagedNamespace] = countSucceededPRs(ctx, fw, t.ManagedNamespace, "", "")
 		GinkgoWriter.Printf("initial release count for %s: %d\n",
 			t.ManagedNamespace, initialRelease[t.ManagedNamespace])
 	}
@@ -369,7 +374,7 @@ func triggerBuildsAndVerify(fw *framework.Framework, tenants []Tenant) {
 	for _, t := range tenants {
 		allPRs := &pipeline.PipelineRunList{}
 		Expect(fw.AsKubeAdmin.CommonController.KubeRest().List(
-			context.Background(), allPRs,
+			ctx, allPRs,
 			client.InNamespace(t.Namespace),
 		)).Should(Succeed(), "failed to list all PipelineRuns in %s", t.Namespace)
 		initialTotalPRs[t.Namespace] = len(allPRs.Items)
@@ -387,7 +392,7 @@ func triggerBuildsAndVerify(fw *framework.Framework, tenants []Tenant) {
 			t.ForkRepoName, MathWizzDefaultBranch, t.Namespace))
 
 		for _, comp := range Components {
-			dfPath := comp.ContextDir + "/Dockerfile"
+			dfPath := path.Join(comp.ContextDir, "Dockerfile")
 			dfFile, err := ghClient.GetFile(t.ForkRepoName, dfPath, MathWizzDefaultBranch)
 			Expect(err).ShouldNot(HaveOccurred(),
 				"failed to get %s from %s in %s", dfPath, MathWizzDefaultBranch, t.ForkRepoName)
@@ -407,32 +412,28 @@ func triggerBuildsAndVerify(fw *framework.Framework, tenants []Tenant) {
 	}
 
 	By("Verifying PaC webhook delivery — expecting new PipelineRuns within 5 minutes")
-	Eventually(func() bool {
-		allHaveNew := true
+	Eventually(func(g Gomega) {
 		for _, t := range tenants {
 			allPRs := &pipeline.PipelineRunList{}
-			if err := fw.AsKubeAdmin.CommonController.KubeRest().List(
-				context.Background(), allPRs,
-				client.InNamespace(t.Namespace),
-			); err != nil {
+			err := fw.AsKubeAdmin.CommonController.KubeRest().List(
+				ctx, allPRs, client.InNamespace(t.Namespace))
+			if err != nil {
 				GinkgoWriter.Printf("DIAGNOSTIC: error listing PipelineRuns in %s: %v\n",
 					t.Namespace, err)
-				allHaveNew = false
-				continue
 			}
+			g.Expect(err).ShouldNot(HaveOccurred(),
+				"failed to list PipelineRuns in %s", t.Namespace)
 			newCount := len(allPRs.Items) - initialTotalPRs[t.Namespace]
 			GinkgoWriter.Printf("DIAGNOSTIC: PipelineRuns in %s — total: %d, baseline: %d, new: %d\n",
 				t.Namespace, len(allPRs.Items), initialTotalPRs[t.Namespace], newCount)
-			if newCount <= 0 {
-				allHaveNew = false
-			}
+			g.Expect(newCount).Should(BeNumerically(">", 0),
+				"no new PipelineRuns in %s after push trigger", t.Namespace)
 		}
-		return allHaveNew
-	}, WebhookDeliveryTimeout, WebhookDeliveryPoll).Should(BeTrue(),
+	}, WebhookDeliveryTimeout, WebhookDeliveryPoll).Should(Succeed(),
 		"not all tenants received new PipelineRuns within %v of push triggers — "+
 			"PaC webhook delivery is broken post-restore; check PaC controller pods "+
 			"in openshift-pipelines namespace and SprayProxy route registration",
 		WebhookDeliveryTimeout)
 
-	waitForPipelineChains(fw, tenants, initialPerComp, initialRelease)
+	waitForPipelineChains(ctx, fw, tenants, initialPerComp, initialRelease)
 }
