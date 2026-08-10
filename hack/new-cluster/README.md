@@ -51,7 +51,7 @@ If you do not want to run all steps, but only a subset **you can use tags** to r
 If you don't want to specify the variables at prompts, you can **specify variables when invoking the CLI**, like this:
 
 ```
-❯ ansible-playbook hack/new-cluster/playbook.yaml -e 'cutename=rh09 shortname=kflux-prd-rh09 longname=kflux-prd-rh09.abe9.p1 ring=ring-3 env=production network=public'
+❯ ansible-playbook hack/new-cluster/playbook.yaml -e 'cutename=rh09 shortname=kflux-prd-rh09 longname=kflux-prd-rh09.abe9.p1 ring=ring-3 env=production network=public awsaccount=123456789000'
 ```
 
 If you are **nervous about drift** between the current application manifests and those produced by this automation, you can inspect the different by running this automation and requesting it to produce the config **for an existing cluster**, and then investigate what changes it may have made by looking at `git diff`, like this.

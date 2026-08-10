@@ -33,11 +33,11 @@
   vars:
     slug: "{{ item.slug }}"
     varname: "{{ item.varname }}"
-- name: Determine quay.io digest
-  tags: [always]
-  include_tasks: tasks/quay/find-digest.yaml
-  vars:
-    registry: quay.io
-    repo: konflux-ci/task-runner
-    tag: "{{ commit_id_build_definitions }}"
-    varname: quay_digest_build_definitions
+# - name: Determine quay.io digest
+#   tags: [always]
+#   include_tasks: tasks/quay/find-digest.yaml
+#   vars:
+#     registry: quay.io
+#     repo: konflux-ci/task-runner
+#     tag: "{{ commit_id_task_runner }}"
+#     varname: quay_digest_build_definitions
