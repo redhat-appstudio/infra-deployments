@@ -21,10 +21,10 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: multi-platform-controller
-  # Exclude stone-stage-p01 from Argo generation for services owned by the
-  # konflux-operator there. Orphan (do not prune) when Applications go away.
+  # Exclude operator-managed clusters from Argo generation for services owned
+  # by the konflux-operator. Orphan (do not prune) when Applications go away.
   # release stays on Argo with disable-auto-sync until monitor ownership is confirmed.
-  - path: exclude-stone-stage-p01-operator-owned.yaml
+  - path: exclude-operator-owned-clusters.yaml
     target:
       kind: ApplicationSet
       version: v1alpha1
@@ -34,7 +34,7 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: application-api
-  - path: exclude-stone-stage-p01-operator-owned.yaml
+  - path: exclude-operator-owned-clusters.yaml
     target:
       kind: ApplicationSet
       version: v1alpha1
@@ -44,7 +44,7 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: build-service
-  - path: exclude-stone-stage-p01-operator-owned.yaml
+  - path: exclude-operator-owned-clusters.yaml
     target:
       kind: ApplicationSet
       version: v1alpha1
@@ -54,7 +54,7 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: integration
-  - path: exclude-stone-stage-p01-operator-owned.yaml
+  - path: exclude-operator-owned-clusters.yaml
     target:
       kind: ApplicationSet
       version: v1alpha1
@@ -64,7 +64,7 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: image-controller
-  - path: exclude-stone-stage-p01-operator-owned.yaml
+  - path: exclude-operator-owned-clusters.yaml
     target:
       kind: ApplicationSet
       version: v1alpha1
@@ -74,7 +74,7 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: namespace-lister
-  - path: exclude-stone-stage-p01-operator-owned.yaml
+  - path: exclude-operator-owned-clusters.yaml
     target:
       kind: ApplicationSet
       version: v1alpha1
@@ -84,7 +84,7 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: konflux-info
-  - path: exclude-stone-stage-p01-operator-owned.yaml
+  - path: exclude-operator-owned-clusters.yaml
     target:
       kind: ApplicationSet
       version: v1alpha1
@@ -94,7 +94,7 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: konflux-ui
-  - path: exclude-stone-stage-p01-operator-owned.yaml
+  - path: exclude-operator-owned-clusters.yaml
     target:
       kind: ApplicationSet
       version: v1alpha1
@@ -104,7 +104,7 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: enterprise-contract
-  - path: exclude-stone-stage-p01-operator-owned.yaml
+  - path: exclude-operator-owned-clusters.yaml
     target:
       kind: ApplicationSet
       version: v1alpha1
