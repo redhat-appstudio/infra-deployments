@@ -11,6 +11,7 @@ PIPELINES_NAMESPACE="openshift-pipelines"
 SYNC_INTERVAL=10
 MAX_TEKTON_CRD_RETRIES=5
 MAX_SYNC_TIMEOUT=2700           # 45 minutes max for all apps to sync
+ROOT_APP_SYNC_TIMEOUT=600       # 10 minutes max for a root Application to become Healthy/Synced
 MAX_TEKTON_READY_TIMEOUT=900    # 15 minutes max for Tekton to become ready
 DETAILED_STATUS_INTERVAL=120    # Show detailed status every 2 minutes
 
@@ -530,7 +531,7 @@ apply_service_image_overrides() {
 }
 
 # Apply a root Application from a kustomize path and wait for it to become Healthy/Synced.
-# This is used both for the primary overlay's root Application, and (when applicable)
+# This is used both for the primary development overlay's root Application, and (when applicable)
 # for the rd-dev overlay's root Application, so that ApplicationSets/components living
 # in either directory get deployed and observed during e2e. See docs/ring-deployments/
 # for context on the development -> rd-dev migration.
@@ -542,14 +543,19 @@ apply_and_wait_for_root_application() {
     oc apply -k "$app_of_apps_path"
     log_success "Root Application '$app_name' created"
 
-    log_substep "Waiting for '$app_name' to become Healthy and Synced"
+    log_substep "Waiting for '$app_name' to become Healthy and Synced (timeout: ${ROOT_APP_SYNC_TIMEOUT}s)"
     local root_wait=0
     while true; do
         local root_status
-        root_status=$(oc get applications.argoproj.io "$app_name" -n $ARGOCD_NAMESPACE -o jsonpath='{.status.health.status} {.status.sync.status}')
+        root_status=$(oc get applications.argoproj.io "$app_name" -n $ARGOCD_NAMESPACE -o jsonpath='{.status.health.status} {.status.sync.status}' 2>/dev/null || true)
 
         if [ "$root_status" == "Healthy Synced" ]; then
             break
+        fi
+
+        if [ "$root_wait" -ge "$ROOT_APP_SYNC_TIMEOUT" ]; then
+            log_error "TIMEOUT: Root Application '$app_name' failed to become Healthy/Synced within $((ROOT_APP_SYNC_TIMEOUT / 60)) minutes (last status: '${root_status:-unknown}')"
+            exit 1
         fi
 
         root_wait=$((root_wait + 5))

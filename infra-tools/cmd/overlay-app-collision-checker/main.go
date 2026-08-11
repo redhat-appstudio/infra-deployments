@@ -8,12 +8,11 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
-
-	"flag"
 
 	"github.com/redhat-appstudio/infra-deployments/infra-tools/internal/collision"
 	"github.com/redhat-appstudio/infra-deployments/infra-tools/internal/git"

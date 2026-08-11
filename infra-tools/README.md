@@ -31,6 +31,34 @@ Key flags:
 - `--dry-run` — print results without calling GitHub
 - `--log-file` — write debug logs to a file
 
+### overlay-app-collision-checker
+
+Detects ArgoCD ApplicationSets that would template colliding generated
+Application names when their overlays are deployed together to the same
+cluster / ArgoCD control-plane namespace (e.g. during e2e bootstrap, or when
+one overlay imports another's ApplicationSets directly). Fails loudly at
+PR/CI time instead of letting the collision surface later as a flaky ArgoCD
+ownership conflict.
+
+```bash
+# Build the binary
+cd infra-tools
+make build
+
+# Check all known co-deployed overlay groups
+./bin/overlay-app-collision-checker
+
+# Explicit repo root (default: auto-detect via git)
+./bin/overlay-app-collision-checker --repo-root /path/to/infra-deployments
+```
+
+Key flags:
+- `--repo-root` — path to the repository root (default: auto-detect via `git`)
+
+The overlay groups checked are hardcoded in `internal/collision.DefaultGroups`;
+add a new entry there whenever a new pair of overlays gets co-deployed to the
+same cluster.
+
 ### render-diff
 
 Computes and displays the kustomize render delta for components affected by
@@ -102,10 +130,12 @@ markdown to stdout.
 ```
 infra-tools/
   cmd/
-    env-detector/        CLI entry point for env-detector
-    render-diff/         CLI entry point for render-diff
+    env-detector/                   CLI entry point for env-detector
+    overlay-app-collision-checker/  CLI entry point for overlay-app-collision-checker
+    render-diff/                    CLI entry point for render-diff
   internal/
     appset/              ArgoCD ApplicationSet YAML parser
+    collision/           Detects colliding generated Application names across co-deployed overlays
     deptree/             Kustomize dependency tree resolver
     detector/            Core detection logic (overlay building, file matching)
     git/                 Git operations (diff, worktree, merge-base)
@@ -115,10 +145,10 @@ infra-tools/
   Makefile               Build, test, lint targets
 ```
 
-The `internal/` packages are shared between both tools. The `detector` package
-provides the detection pipeline that both tools build on: it constructs
-ApplicationSet overlays, resolves kustomize dependency trees, and matches
-changed files to affected components.
+The `internal/` packages are shared across these tools. The `detector` package
+provides the detection pipeline that `env-detector` and `render-diff` build
+on: it constructs ApplicationSet overlays, resolves kustomize dependency
+trees, and matches changed files to affected components.
 
 ## Development
 
@@ -172,3 +202,7 @@ triggers on changes under `infra-tools/` and runs `make test` and `make lint`.
 The `render-diff` tool also runs in CI via
 `.github/workflows/pr-render-diff.yaml`, which posts a summary of kustomize
 render changes as a PR comment.
+
+The `overlay-app-collision-checker` tool runs in CI via
+`.github/workflows/check-overlay-app-collisions.yaml`, which fails the PR if
+any co-deployed overlays would template colliding generated Application names.
