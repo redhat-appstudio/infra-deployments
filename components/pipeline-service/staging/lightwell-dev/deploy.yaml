@@ -2024,56 +2024,6 @@ spec:
     deletionPolicy: Delete
     name: pipelines-as-code-secret
 ---
-apiVersion: external-secrets.io/v1
-kind: ExternalSecret
-metadata:
-  annotations:
-    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-    argocd.argoproj.io/sync-wave: "-1"
-  name: tekton-chains-public-key
-  namespace: openshift-pipelines
-spec:
-  data:
-  - remoteRef:
-      key: staging/pipeline-service/lightwell-dev/chains-signing-secret
-      property: cosign.pub
-    secretKey: cosign.pub
-  refreshInterval: 5m
-  secretStoreRef:
-    kind: ClusterSecretStore
-    name: appsre-stonesoup-vault
-  target:
-    creationPolicy: Orphan
-    name: public-key
-    template:
-      metadata:
-        annotations:
-          argocd.argoproj.io/sync-options: Prune=false
----
-apiVersion: external-secrets.io/v1
-kind: ExternalSecret
-metadata:
-  annotations:
-    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-    argocd.argoproj.io/sync-wave: "-1"
-  name: tekton-chains-signing-secret
-  namespace: openshift-pipelines
-spec:
-  dataFrom:
-  - extract:
-      key: staging/pipeline-service/lightwell-dev/chains-signing-secret
-  refreshInterval: 5m
-  secretStoreRef:
-    kind: ClusterSecretStore
-    name: appsre-stonesoup-vault
-  target:
-    creationPolicy: Orphan
-    name: signing-secrets
-    template:
-      metadata:
-        annotations:
-          argocd.argoproj.io/sync-options: Prune=false
----
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
