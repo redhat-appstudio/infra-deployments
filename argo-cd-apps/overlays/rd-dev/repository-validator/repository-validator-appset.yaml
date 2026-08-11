@@ -12,17 +12,14 @@ spec:
         generators:
           - clusters:
               selector:
-                  matchExpressions:
-                  - key: appstudio.redhat.com/select-none
-                    operator: Exists
-                  - key: appstudio.redhat.com/select-none
-                    operator: DoesNotExist
+                  matchLabels:
+                    appstudio.redhat.com/member-cluster: true
               values:
                 sourceRoot: components/repository-validator-rd
-                ring: "empty-base"
-                clusterDir: "empty-base"
+                ring: "ring-0"
+                clusterDir: "base"
           - list:
-              elements: [] 
+              elements: []
 
   template:
     metadata:
