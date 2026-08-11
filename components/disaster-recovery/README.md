@@ -107,3 +107,6 @@ Delete the kind cluster when you are done:
 ```bash
 kind delete cluster
 ```
+
+## Testing, testing, 123
+This is just a test to see if the DR e2e tests pass after all of the various code changes that happened during [#13320](https://github.com/redhat-appstudio/infra-deployments/pull/13320)
