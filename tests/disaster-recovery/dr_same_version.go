@@ -1,19 +1,14 @@
 // dr_same_version.go implements the same-version DR (Disaster Recovery) test
-// scenario. This test runs AFTER the backwards-compatibility test on the same
-// upgraded cluster, exercising a full backup/restore cycle on the current
-// Konflux version.
+// scenario, exercising a full backup/restore cycle on the current Konflux version.
 //
 // The test creates two tenants (SVTenant1 = KokoHazamar, SVTenant2 = MosheKipod),
 // backs them up, simulates a disaster by deleting their namespaces, restores
 // from backup using both SOP methods (Velero CLI and oc command), rotates
 // ServiceAccount tokens, and verifies structural and functional integrity.
-//
-// This proves that backup/restore works correctly within a single Konflux
-// version — complementing the backwards-compat test which proves cross-version
-// backup/restore.
 package disaster_recovery
 
 import (
+	"context"
 	"sync"
 
 	"github.com/konflux-ci/e2e-tests/pkg/framework"
@@ -44,6 +39,9 @@ func defineSameVersionSpecs() {
 		})
 
 		// Phase 1: Tenant creation and initial pipeline execution.
+		// PaC config PRs must be merged before waiting for pipeline chains because
+		// releases only trigger for push-event builds (merge commits on the default
+		// branch), not pull-request-event builds.
 		When("creating tenants and running initial pipelines", func() {
 			It("should create both tenants concurrently", func() {
 				var wg sync.WaitGroup
@@ -58,14 +56,14 @@ func defineSameVersionSpecs() {
 				wg.Wait()
 			})
 
-			It("should wait for all build PipelineRuns to succeed", func() {
-				waitForPipelineChains(fw, svTenants, nil, nil)
-			})
-
 			It("should merge PaC configuration PRs on forked repos", func() {
 				for _, t := range svTenants {
 					mergePaCConfigPRs(fw, t)
 				}
+			})
+
+			It("should wait for all pipeline chains to succeed", func() {
+				waitForPipelineChains(context.Background(), fw, svTenants, nil, nil)
 			})
 		})
 
@@ -86,11 +84,19 @@ func defineSameVersionSpecs() {
 		})
 
 		// Phase 3: Simulate disaster by deleting tenant namespaces.
+		//
+		// Real etcd loss destroys all resources instantly — no graceful
+		// deletion, no finalizer processing. `oc delete project` triggers
+		// graceful deletion instead, invoking every controller finalizer
+		// (application-service, image-controller, integration-service,
+		// release-service, pipelines-as-code). Any of these can stall
+		// namespace deletion past the 10-minute timeout.
+		//
+		// Strip all finalizers before deletion to match real-disaster
+		// semantics. See KFLUXINFRA-3954, STONEBLD-3714.
 		When("simulating disaster by deleting namespaces", func() {
-			It("should delete both tenant namespaces", func() {
-				for _, t := range svTenants {
-					deleteNamespace(fw, t.Namespace)
-				}
+			It("should strip finalizers and delete namespaces atomically", func() {
+				stripAndDeleteNamespaces(fw, svTenants)
 			})
 		})
 
@@ -105,11 +111,18 @@ func defineSameVersionSpecs() {
 			})
 		})
 
-		// Phase 5: Post-restore recovery — rotate stale SA tokens.
+		// Phase 5: Post-restore recovery — rotate stale SA tokens and
+		// verify PaC Repositories survived the backup/restore cycle.
 		When("performing post-restore recovery", func() {
 			It("should rotate SA tokens on both tenants", func() {
 				for _, t := range svTenants {
-					rotateSATokens(fw, t.Namespace)
+					rotateSATokens(context.Background(), fw, t.Namespace)
+				}
+			})
+
+			It("should verify PaC Repositories exist on both tenants", func() {
+				for _, t := range svTenants {
+					verifyPaCRepositories(fw, t)
 				}
 			})
 		})
@@ -122,8 +135,16 @@ func defineSameVersionSpecs() {
 				}
 			})
 
+			It("should confirm push secrets contain valid credentials before triggering builds", func() {
+				waitForPushSecretReadiness(fw, svTenants)
+			})
+
+			It("should link pull secrets to pipeline SA for EC verify tasks", func() {
+				ensurePullSecretsOnSA(fw, svTenants)
+			})
+
 			It("should confirm functional pipeline execution after restore", func() {
-				triggerBuildsAndVerify(fw, svTenants)
+				triggerBuildsAndVerify(context.Background(), fw, svTenants)
 			})
 		})
 
@@ -134,6 +155,7 @@ func defineSameVersionSpecs() {
 			} else {
 				cleanupTestResources(fw, svTenants)
 			}
+			cleanupDanglingNamespaces(context.Background(), fw)
 		})
 	})
 }
