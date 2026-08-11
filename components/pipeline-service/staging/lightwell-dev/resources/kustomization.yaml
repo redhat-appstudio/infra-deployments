@@ -25,3 +25,25 @@ patches:
     target:
       kind: TektonConfig
       name: config
+  - patch: |
+      $patch: delete
+      apiVersion: external-secrets.io/v1
+      kind: ExternalSecret
+      metadata:
+        name: tekton-results-database
+    target:
+      name: tekton-results-database
+      group: external-secrets.io
+      version: v1
+      kind: ExternalSecret
+  - patch: |
+      $patch: delete
+      apiVersion: external-secrets.io/v1
+      kind: ExternalSecret
+      metadata:
+        name: tekton-results-s3
+    target:
+      name: tekton-results-s3
+      group: external-secrets.io
+      version: v1
+      kind: ExternalSecret
