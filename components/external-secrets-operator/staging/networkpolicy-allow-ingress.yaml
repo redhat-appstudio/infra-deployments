@@ -22,10 +22,13 @@ spec:
     # is NATed and comes from a pod IP assigned to interface ovn-k8s-mp0
     # - 192.168.0.0/16 (pod CIDR in most clusters)
     # - 10.128.0.0/14 (pod CIDR in stg-rh01, prd-rh01 and prd-p01 clusters)
+    # - 172.17.0.0/18 (pod CIDR on IBM Cloud ROKS clusters, e.g. lightwell-dev)
     - ipBlock:
         cidr: 10.128.0.0/14
     - ipBlock:
         cidr: 192.168.0.0/16
+    - ipBlock:
+        cidr: 172.17.0.0/18
     ports:
     - protocol: TCP
       port: 10250 # Webhook port
@@ -87,6 +90,8 @@ spec:
         cidr: 10.128.0.0/14
     - ipBlock:
         cidr: 192.168.0.0/16
+    - ipBlock:
+        cidr: 172.17.0.0/18
     ports:
     - protocol: TCP
       port: 8081
