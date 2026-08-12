@@ -1,0 +1,158 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../base
+  - kubearchive-routes.yaml
+  - database-secret.yaml
+
+namespace: product-kubearchive
+
+configMapGenerator:
+  - name: kubearchive-api-url
+    options:
+      disableNameSuffixHash: true
+    literals:
+      - URL=https://kubearchive-api-server-product-kubearchive.lightwell-dev-3d9eec70183348a345ccd3ce3bdd95b9-0000.us-east.containers.appdomain.cloud
+  - name: otel-collector-conf
+    behavior: replace
+    namespace: product-kubearchive
+    files:
+      - otel-collector-config.yaml
+
+patches:
+  - patch: |-
+      $patch: delete
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: kubearchive-database-credentials
+        namespace: kubearchive
+  - patch: |-
+      $patch: delete
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: postgresql
+  - patch: |-
+      $patch: delete
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: postgresql
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: kubearchive-sink
+        namespace: kubearchive
+      spec:
+        template:
+          spec:
+            volumes:
+              - name: db-ca-cert
+                secret:
+                  secretName: kubearchive-database-credentials
+                  items:
+                    - key: DATABASE_CA_CERT
+                      path: ca.crt
+            containers:
+              - name: kubearchive-sink
+                env:
+                - name: KUBEARCHIVE_OTEL_MODE
+                  value: delegated
+                resources:
+                  limits:
+                    cpu: 200m
+                    memory: 128Mi
+                  requests:
+                    cpu: 200m
+                    memory: 128Mi
+                volumeMounts:
+                  - name: db-ca-cert
+                    mountPath: /etc/ssl/certs/db-ca.crt
+                    subPath: ca.crt
+                    readOnly: true
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: kubearchive-api-server
+        namespace: kubearchive
+      spec:
+        template:
+          spec:
+            volumes:
+              - name: db-ca-cert
+                secret:
+                  secretName: kubearchive-database-credentials
+                  items:
+                    - key: DATABASE_CA_CERT
+                      path: ca.crt
+            containers:
+              - name: kubearchive-api-server
+                env:
+                - name: KUBEARCHIVE_OTEL_MODE
+                  value: delegated
+                - name: GOMEMLIMIT
+                  valueFrom:
+                    resourceFieldRef:
+                      resource: requests.memory
+                resources:
+                  limits:
+                    memory: 512Mi
+                  requests:
+                    memory: 460Mi
+                volumeMounts:
+                  - name: db-ca-cert
+                    mountPath: /etc/ssl/certs/db-ca.crt
+                    subPath: ca.crt
+                    readOnly: true
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: kubearchive-operator
+        namespace: kubearchive
+      spec:
+        template:
+          spec:
+            containers:
+              - name: manager
+                resources:
+                  limits:
+                    cpu: 1
+                    memory: 15Gi
+                  requests:
+                    cpu: 1
+                    memory: 15Gi
+                env:
+                - name: GOMEMLIMIT
+                  value: 10GiB
+                  valueFrom: null
+                - name: KUBEARCHIVE_OTEL_MODE
+                  value: delegated
+  # Mount DB CA cert for schema migration job
+  - patch: |-
+      apiVersion: batch/v1
+      kind: Job
+      metadata:
+        name: kubearchive-schema-migration
+        namespace: kubearchive
+      spec:
+        template:
+          spec:
+            volumes:
+              - name: db-ca-cert
+                secret:
+                  secretName: kubearchive-database-credentials
+                  items:
+                    - key: DATABASE_CA_CERT
+                      path: ca.crt
+            containers:
+              - name: migration
+                volumeMounts:
+                  - name: db-ca-cert
+                    mountPath: /etc/ssl/certs/db-ca.crt
+                    subPath: ca.crt
+                    readOnly: true
