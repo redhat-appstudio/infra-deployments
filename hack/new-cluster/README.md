@@ -61,8 +61,8 @@ If you are **nervous about drift** between the current application manifests and
 ❯ git diff
 ```
 
-The playbook attempts to determine the correct version of some services by inspecting the `main` branch of their git repos. You can override this by setting commit ids specifically, like this:
+The playbook attempts to determine the correct version of some services by inspecting the `main` branch of their git repos and the latest semver tag from quay.io. You can override this by setting commit ids or tag/digest values specifically, like this:
 
 ```
-❯ ansible-playbook hack/new-cluster/playbook.yaml -e 'commit_id_multi_platform_controller=ec950d0cfb87bcfd6e3a79fc2b5ee40989126123 commit_id_build_definitions=ab6b0b8e40e440158e7288c73aff1cf83a2cc8a9 commit_id_tektoncd_results_for_konflux=425fcd0988b50965139238038e0d3bd3cb4f8bbc commit_id_pipeline_service_exporter=9d2439c8a77d2ce0527cc5aea3fc6561b7671b48'
+❯ ansible-playbook hack/new-cluster/playbook.yaml -e 'commit_id_multi_platform_controller=ec950d0cfb87bcfd6e3a79fc2b5ee40989126123 commit_id_tektoncd_results_for_konflux=425fcd0988b50965139238038e0d3bd3cb4f8bbc commit_id_pipeline_service_exporter=9d2439c8a77d2ce0527cc5aea3fc6561b7671b48 task_runner_tag=3.1.1 task_runner_digest=sha256:790df1bb5ea7a9ce4c1717ff341398ff72c99faed1c2e939a3b4a15ff8f4a493'
 ```

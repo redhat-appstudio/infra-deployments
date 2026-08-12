@@ -1,0 +1,28 @@
+- name: Fetch tags from quay.io for {{ repo }}
+  tags: [always]
+  uri:
+    url: "https://quay.io/api/v1/repository/{{ repo }}/tag/?limit=100&onlyActiveTags=true"
+    method: GET
+    return_content: yes
+    headers:
+      Accept: "application/json"
+  register: quay_tags_response
+  when: "vars[varname_tag] is undefined or vars[varname_tag] == ''"
+
+- name: Set {{ varname_tag }} and {{ varname_digest }} from latest semver tag
+  tags: [always]
+  vars:
+    semver_tags: >-
+      {{ quay_tags_response.json.tags
+         | selectattr('name', 'match', '^\d+\.\d+\.\d+$')
+         | sort(attribute='start_ts', reverse=true)
+         | list }}
+  set_fact:
+    "{{ varname_tag }}": "{{ semver_tags[0].name }}"
+    "{{ varname_digest }}": "{{ semver_tags[0].manifest_digest }}"
+  when: "vars[varname_tag] is undefined or vars[varname_tag] == ''"
+
+- name: Show selected tag for {{ repo }}
+  tags: [always]
+  debug:
+    msg: "Selected {{ repo }} tag: {{ vars[varname_tag] }} digest: {{ vars[varname_digest] }}"
