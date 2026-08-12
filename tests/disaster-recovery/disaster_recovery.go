@@ -483,7 +483,7 @@ func validateDockerConfigSecret(fw *framework.Framework, namespace, secretName, 
 				label, namespace, secretName, registry)
 			return false
 		}
-		if robotAccountName != "" && username != robotAccountName {
+		if robotAccountName != "" && username != robotAccountName && !strings.HasSuffix(username, "+"+robotAccountName) {
 			GinkgoWriter.Printf("  %s secret %s/%s: auth username %q does not match expected robot account %q\n",
 				label, namespace, secretName, username, robotAccountName)
 			return false
