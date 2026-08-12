@@ -11,7 +11,6 @@ PIPELINES_NAMESPACE="openshift-pipelines"
 SYNC_INTERVAL=10
 MAX_TEKTON_CRD_RETRIES=5
 MAX_SYNC_TIMEOUT=2700           # 45 minutes max for all apps to sync
-ROOT_APP_SYNC_TIMEOUT=600       # 10 minutes max for a root Application to become Healthy/Synced
 MAX_TEKTON_READY_TIMEOUT=900    # 15 minutes max for Tekton to become ready
 DETAILED_STATUS_INTERVAL=120    # Show detailed status every 2 minutes
 
@@ -262,17 +261,23 @@ print_help() {
     echo "  --obo        (only in preview mode) Install Observability operator and Prometheus instance for federation"
     echo "  --grafana    (only in preview mode) Enable Grafana dashboard (removed by default in dev)"
     echo "  --eaas       (only in preview mode) Install environment as a service components"
-    echo "  --operator-overlay  (preview mode) Use the development-operator Argo overlay: same platform apps as"
-    echo "                       development, but ApplicationSets for legacy Konflux microservices are removed."
+    echo "  --operator-overlay  (preview mode) Use the development-operator Argo overlay instead of the default"
+    echo "                       rd-dev overlay: same platform apps as development, but ApplicationSets for"
+    echo "                       legacy Konflux microservices are removed."
     echo
-    echo "  With --operator-overlay, preview always waits for the Konflux operator controller Deployment to finish"
-    echo "  rolling out (namespace konflux-operator). That is independent of the Konflux CR Ready status."
+    echo "  By default (no --operator-overlay), preview targets the rd-dev overlay, which already reuses"
+    echo "  ../development and layers the ring-based components (etcd-shield, konflux-operator, kueue) on top,"
+    echo "  removing the legacy per-microservice ApplicationSets that konflux-operator now owns."
+    echo
+    echo "  Both rd-dev (default) and --operator-overlay deploy the Konflux operator, so preview always waits"
+    echo "  for the operator controller Deployment to finish rolling out (namespace konflux-operator). That is"
+    echo "  independent of the Konflux CR Ready status."
     echo
     echo "Environment (optional):"
-    echo "  PREVIEW_WAIT_KONFLUX_CR_READY=true  When using --operator-overlay, additionally wait for the Konflux"
-    echo "                       custom resource konflux to exist and report Ready=True (off by default)."
-    echo "  IMAGE_CONTROLLER_QUAY_ORG, IMAGE_CONTROLLER_QUAY_TOKEN  With --operator-overlay, both must be set in"
-    echo "                       hack/preview.env to enable image-controller on the Konflux CR (off by default)."
+    echo "  PREVIEW_WAIT_KONFLUX_CR_READY=true  Additionally wait for the Konflux custom resource konflux to"
+    echo "                       exist and report Ready=True (off by default)."
+    echo "  IMAGE_CONTROLLER_QUAY_ORG, IMAGE_CONTROLLER_QUAY_TOKEN  Both must be set in hack/preview.env to"
+    echo "                       enable image-controller on the Konflux CR (off by default)."
     echo
     echo "Example: \`$0 preview --obo --grafana --eaas\`"
 }
@@ -318,20 +323,19 @@ label_cluster_nodes() {
 
 # Filter applications based on DEPLOY_ONLY environment variable
 configure_deploy_only() {
-    [ "$TARGET_PREVIEW_OVERLAY" != "development" ] && [ "$TARGET_PREVIEW_OVERLAY" != "development-operator" ] && return
     [ -z "$DEPLOY_ONLY" ] && return
 
     log_step "Configuring selective deployment (DEPLOY_ONLY mode)"
     log_info "DEPLOY_ONLY is set, filtering applications to deploy only: $DEPLOY_ONLY"
 
-    local applications deleted app
-    local delete_file="$TARGET_DELETE_FILE"
+    local applications delete_list app
+    local delete_file="$TARGET_OVERLAY_DELETE_FILE"
 
     applications=$(oc kustomize "$TARGET_OVERLAY_PATH" | yq e --no-doc 'select(.kind == "ApplicationSet") | .metadata.name')
-    deleted=$(yq e --no-doc .metadata.name "$delete_file")
+    delete_list=$(yq e --no-doc .metadata.name "$delete_file")
 
     for app in $applications; do
-        if ! grep -q "\b$app\b" <<< $DEPLOY_ONLY && ! grep -q "\b$app\b" <<< $deleted; then
+        if ! grep -q "\b$app\b" <<< $DEPLOY_ONLY && ! grep -q "\b$app\b" <<< $delete_list; then
             log_substep "Disabling ApplicationSet '$app' (not in DEPLOY_ONLY list)"
             echo '---' >> "$delete_file"
             yq e -n ".apiVersion=\"argoproj.io/v1alpha1\"
@@ -346,7 +350,6 @@ configure_deploy_only() {
 
 # Disable Kueue for OCP versions < 4.16
 configure_kueue_for_ocp_version() {
-    [ "$TARGET_PREVIEW_OVERLAY" != "development" ] && [ "$TARGET_PREVIEW_OVERLAY" != "development-operator" ] && return
     log_step "Checking OCP version for Kueue compatibility"
 
     local ocp_version ocp_minor delete_file
@@ -363,10 +366,10 @@ configure_kueue_for_ocp_version() {
 
     log_warn "OCP version $ocp_version is below 4.16 - Kueue will be disabled"
 
-    delete_file="$TARGET_DELETE_FILE"
+    delete_file="$TARGET_OVERLAY_DELETE_FILE"
 
     if ! grep -q "name: kueue" "$delete_file"; then
-        log_substep "Adding Kueue to delete-applications.yaml"
+        log_substep "Adding Kueue to $TARGET_PREVIEW_OVERLAY's delete-applications.yaml"
         echo '---' >> "$delete_file"
         yq e -n ".apiVersion=\"argoproj.io/v1alpha1\"
                   | .kind=\"ApplicationSet\"
@@ -381,10 +384,8 @@ configure_kueue_for_ocp_version() {
     log_success "Kueue disabled for OCP version $ocp_version"
 }
 
-# Enable Konflux CR image-controller only when Quay credentials are provided (operator overlay).
+# Enable Konflux CR image-controller only when Quay credentials are provided.
 configure_operator_image_controller() {
-    [ "$TARGET_PREVIEW_OVERLAY" != "development-operator" ] && return
-
     local cr_patch="$ROOT/components/konflux-operator/rings/ring-0/base/cr/image-controller/image-controller.yaml"
     local ring_kust="$ROOT/components/konflux-operator/rings/ring-0/base/kustomization.yaml"
 
@@ -530,41 +531,6 @@ apply_service_image_overrides() {
     fi
 }
 
-# Apply a root Application from a kustomize path and wait for it to become Healthy/Synced.
-# This is used both for the primary development overlay's root Application, and (when applicable)
-# for the rd-dev overlay's root Application, so that ApplicationSets/components living
-# in either directory get deployed and observed during e2e. See docs/ring-deployments/
-# for context on the development -> rd-dev migration.
-apply_and_wait_for_root_application() {
-    local app_of_apps_path=$1
-    local app_name=$2
-
-    log_substep "Applying root Application '$app_name' from: $app_of_apps_path"
-    oc apply -k "$app_of_apps_path"
-    log_success "Root Application '$app_name' created"
-
-    log_substep "Waiting for '$app_name' to become Healthy and Synced (timeout: ${ROOT_APP_SYNC_TIMEOUT}s)"
-    local root_wait=0
-    while true; do
-        local root_status
-        root_status=$(oc get applications.argoproj.io "$app_name" -n $ARGOCD_NAMESPACE -o jsonpath='{.status.health.status} {.status.sync.status}' 2>/dev/null || true)
-
-        if [ "$root_status" == "Healthy Synced" ]; then
-            break
-        fi
-
-        if [ "$root_wait" -ge "$ROOT_APP_SYNC_TIMEOUT" ]; then
-            log_error "TIMEOUT: Root Application '$app_name' failed to become Healthy/Synced within $((ROOT_APP_SYNC_TIMEOUT / 60)) minutes (last status: '${root_status:-unknown}')"
-            exit 1
-        fi
-
-        root_wait=$((root_wait + 5))
-        log_wait "Root application '$app_name' status: '$root_status' (target: 'Healthy Synced') - ${root_wait}s elapsed"
-        sleep 5
-    done
-    log_success "Root application '$app_name' is Healthy and Synced"
-}
-
 # Deploy ArgoCD applications and wait for sync
 deploy_and_wait_for_argocd() {
     log_step "Deploying ArgoCD applications"
@@ -572,16 +538,27 @@ deploy_and_wait_for_argocd() {
     local apps app state not_done unknown error
     local total_apps synced_apps pending_apps iteration=0
 
-    # Create the primary root Application (points at $TARGET_OVERLAY_PATH)
-    apply_and_wait_for_root_application "$TARGET_APP_OF_APPS_PATH" "all-application-sets"
+    # Create the root Application
+    log_substep "Applying root Application from: $TARGET_APP_OF_APPS_PATH"
+    oc apply -k "$TARGET_APP_OF_APPS_PATH"
+    log_success "Root Application 'all-application-sets' created"
 
-    # Additionally deploy the rd-dev root Application, when applicable. Components are
-    # being migrated incrementally from argo-cd-apps/overlays/development into the
-    # ring-based argo-cd-apps/overlays/rd-dev; deploying both roots during e2e ensures
-    # a component isn't silently dropped from test coverage mid-migration.
-    if [ -n "$TARGET_APP_OF_APPS_PATH_RD_DEV" ]; then
-        apply_and_wait_for_root_application "$TARGET_APP_OF_APPS_PATH_RD_DEV" "all-application-sets-rd-dev"
-    fi
+    # Wait for root application to sync
+    log_substep "Waiting for 'all-application-sets' to become Healthy and Synced"
+    local root_wait=0
+    while true; do
+        local root_status
+        root_status=$(oc get applications.argoproj.io all-application-sets -n $ARGOCD_NAMESPACE -o jsonpath='{.status.health.status} {.status.sync.status}')
+
+        if [ "$root_status" == "Healthy Synced" ]; then
+            break
+        fi
+
+        root_wait=$((root_wait + 5))
+        log_wait "Root application status: '$root_status' (target: 'Healthy Synced') - ${root_wait}s elapsed"
+        sleep 5
+    done
+    log_success "Root application 'all-application-sets' is Healthy and Synced"
 
     # Trigger hard refresh of all apps
     log_substep "Triggering hard refresh on all ArgoCD applications"
@@ -974,27 +951,17 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-TARGET_PREVIEW_OVERLAY="development"
+TARGET_PREVIEW_OVERLAY="rd-dev"
 if $OPERATOR_OVERLAY; then
     TARGET_PREVIEW_OVERLAY="development-operator"
 fi
 TARGET_APP_OF_APPS_PATH="$ROOT/argo-cd-apps/app-of-app-sets/$TARGET_PREVIEW_OVERLAY"
-TARGET_OVERLAY_PATH="argo-cd-apps/overlays/$TARGET_PREVIEW_OVERLAY"
-TARGET_DELETE_FILE="$ROOT/argo-cd-apps/overlays/$TARGET_PREVIEW_OVERLAY/delete-applications.yaml"
-# development-operator kustomization inherits ../development; shared delete list.
-if [ "$TARGET_PREVIEW_OVERLAY" = "development-operator" ]; then
-    TARGET_DELETE_FILE="$ROOT/argo-cd-apps/overlays/development/delete-applications.yaml"
-fi
-
-# Components are being migrated incrementally from argo-cd-apps/overlays/development
-# into the ring-based argo-cd-apps/overlays/rd-dev. Deploy the rd-dev root Application
-# alongside "development" so components living in either directory get e2e coverage.
-# Only for the plain "development" overlay: development-operator already imports
-# individual rd-dev/<component> directories directly (see its kustomization.yaml),
-# so applying the whole rd-dev root there would double-deploy those components.
-TARGET_APP_OF_APPS_PATH_RD_DEV=""
-if [ "$TARGET_PREVIEW_OVERLAY" = "development" ]; then
-    TARGET_APP_OF_APPS_PATH_RD_DEV="$ROOT/argo-cd-apps/app-of-app-sets/rd-dev"
+TARGET_OVERLAY_PATH="$ROOT/argo-cd-apps/overlays/$TARGET_PREVIEW_OVERLAY"
+# If the delete file does not exist, create it and wire it into the overlay's Kustomize file
+TARGET_OVERLAY_DELETE_FILE="$TARGET_OVERLAY_PATH/delete-applications.yaml"
+if [ ! -f "$TARGET_OVERLAY_DELETE_FILE" ]; then
+    touch "$TARGET_OVERLAY_DELETE_FILE"
+    yq -i '.patchesStrategicMerge += ["delete-applications.yaml"]' "$TARGET_OVERLAY_PATH/kustomization.yaml"
 fi
 
 # =============================================================================
@@ -1090,37 +1057,25 @@ log_success "All ArgoCD patch files updated"
 # Optional Components
 # =============================================================================
 if $OBO; then
-    if [ "$TARGET_PREVIEW_OVERLAY" != "development" ] && [ "$TARGET_PREVIEW_OVERLAY" != "development-operator" ]; then
-        log_warn "Ignoring --obo for overlay '$TARGET_PREVIEW_OVERLAY'"
-    else
     log_step "Enabling Observability (OBO) components"
     log_info "Adding Observability operator and Prometheus for federation"
     yq -i '.resources += ["federation/"]' $ROOT/components/monitoring/prometheus/development/kustomization.yaml
     log_success "Observability components enabled"
-    fi
 fi
 
 if $GRAFANA; then
-    if [ "$TARGET_PREVIEW_OVERLAY" != "development" ] && [ "$TARGET_PREVIEW_OVERLAY" != "development-operator" ]; then
-        log_warn "Ignoring --grafana for overlay '$TARGET_PREVIEW_OVERLAY'"
-    else
     log_step "Enabling Grafana dashboard"
     log_info "Removing monitoring-workload-grafana from delete-applications.yaml"
-    yq -i 'select(.metadata.name != "monitoring-workload-grafana")' "$TARGET_DELETE_FILE"
+    yq -i 'select(.metadata.name != "monitoring-workload-grafana")' "$TARGET_OVERLAY_DELETE_FILE"
     log_success "Grafana enabled: monitoring-workload-grafana will be deployed"
-    fi
 fi
 
 if $EAAS; then
-    if [ "$TARGET_PREVIEW_OVERLAY" != "development" ] && [ "$TARGET_PREVIEW_OVERLAY" != "development-operator" ]; then
-        log_warn "Ignoring --eaas for overlay '$TARGET_PREVIEW_OVERLAY'"
-    else
     log_step "Enabling Environment-as-a-Service (EaaS) components"
     log_info "Enabling EaaS cluster role assignment"
     yq -i '.components += ["../../../k-components/assign-eaas-role-to-local-cluster"]' \
         $ROOT/argo-cd-apps/base/local-cluster-secret/all-in-one/kustomization.yaml
     log_success "EaaS components enabled"
-    fi
 fi
 
 # =============================================================================
@@ -1128,33 +1083,29 @@ fi
 # =============================================================================
 label_cluster_nodes
 
-if [ "$TARGET_PREVIEW_OVERLAY" = "development" ] || [ "$TARGET_PREVIEW_OVERLAY" = "development-operator" ]; then
-    configure_deploy_only
-    configure_kueue_for_ocp_version
-    configure_operator_image_controller
+configure_deploy_only
+configure_kueue_for_ocp_version
+configure_operator_image_controller
 
-    # Configure GitHub org
-    log_step "Configuring GitHub organization"
-    log_info "Setting GitHub org to: $MY_GITHUB_ORG"
-    $ROOT/hack/util-set-github-org $MY_GITHUB_ORG
-    log_success "GitHub organization configured"
+# Configure GitHub org
+log_step "Configuring GitHub organization"
+log_info "Setting GitHub org to: $MY_GITHUB_ORG"
+$ROOT/hack/util-set-github-org $MY_GITHUB_ORG
+log_success "GitHub organization configured"
 
-    # Configure Rekor server hostname
-    log_step "Configuring Rekor server hostname"
-    domain=$(oc get ingresses.config.openshift.io cluster --template={{.spec.domain}})
-    rekor_server="rekor.$domain"
-    log_info "Cluster domain: $domain"
-    log_info "Rekor server hostname: $rekor_server"
-    sed -i.bak "s/rekor-server.enterprise-contract-service.svc/$rekor_server/" $ROOT/argo-cd-apps/base/member/optional/helm/rekor/rekor.yaml && rm $ROOT/argo-cd-apps/base/member/optional/helm/rekor/rekor.yaml.bak
-    log_success "Rekor server hostname configured"
+# Configure Rekor server hostname
+log_step "Configuring Rekor server hostname"
+domain=$(oc get ingresses.config.openshift.io cluster --template={{.spec.domain}})
+rekor_server="rekor.$domain"
+log_info "Cluster domain: $domain"
+log_info "Rekor server hostname: $rekor_server"
+sed -i.bak "s/rekor-server.enterprise-contract-service.svc/$rekor_server/" $ROOT/argo-cd-apps/base/member/optional/helm/rekor/rekor.yaml && rm $ROOT/argo-cd-apps/base/member/optional/helm/rekor/rekor.yaml.bak
+log_success "Rekor server hostname configured"
 
-    # =============================================================================
-    # Service Image Overrides
-    # =============================================================================
-    apply_service_image_overrides
-else
-    log_info "Skipping full development overlay customizations for '$TARGET_PREVIEW_OVERLAY'"
-fi
+# =============================================================================
+# Service Image Overrides
+# =============================================================================
+apply_service_image_overrides
 
 # =============================================================================
 # Commit and Push - INLINE (not in function) as per original script
@@ -1174,15 +1125,13 @@ fi
 deploy_and_wait_for_argocd
 
 # =============================================================================
-# Wait for Konflux CR (development-operator overlay on OpenShift)
+# Wait for Konflux CR (development-operator and rd-dev overlays both deploy the operator)
 # =============================================================================
-if [ "$TARGET_PREVIEW_OVERLAY" = "development-operator" ]; then
-    wait_for_konflux_operator_controller_ready
-    if [ "${PREVIEW_WAIT_KONFLUX_CR_READY:-}" = "true" ]; then
-        wait_for_konflux_cr_ready
-    else
-        log_info "Skipping wait for Konflux CR Ready=True (set PREVIEW_WAIT_KONFLUX_CR_READY=true to gate preview on the instance)"
-    fi
+wait_for_konflux_operator_controller_ready
+if [ "${PREVIEW_WAIT_KONFLUX_CR_READY:-}" = "true" ]; then
+    wait_for_konflux_cr_ready
+else
+    log_info "Skipping wait for Konflux CR Ready=True (set PREVIEW_WAIT_KONFLUX_CR_READY=true to gate preview on the instance)"
 fi
 
 # =============================================================================
@@ -1194,13 +1143,9 @@ wait_for_tekton_crds
 # =============================================================================
 # Final Configuration
 # =============================================================================
-if [ "$TARGET_PREVIEW_OVERLAY" = "development" ] || [ "$TARGET_PREVIEW_OVERLAY" = "development-operator" ]; then
-    log_step "Configuring Pipelines as Code integration"
-    TARGET_PREVIEW_OVERLAY="$TARGET_PREVIEW_OVERLAY" "$ROOT/hack/build/setup-pac-integration.sh"
-    log_success "Pipelines as Code configured"
-else
-    log_info "Skipping Pipelines as Code integration for '$TARGET_PREVIEW_OVERLAY'"
-fi
+log_step "Configuring Pipelines as Code integration"
+TARGET_PREVIEW_OVERLAY="$TARGET_PREVIEW_OVERLAY" "$ROOT/hack/build/setup-pac-integration.sh"
+log_success "Pipelines as Code configured"
 
 # =============================================================================
 # Complete

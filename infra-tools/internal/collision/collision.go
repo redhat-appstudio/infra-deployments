@@ -15,10 +15,13 @@
 // and that Application gets stuck/flapping.
 //
 // This matters during the argo-cd-apps/overlays/development ->
-// argo-cd-apps/overlays/rd-dev ring-based migration: a component can
-// temporarily exist in both trees while being migrated, and both overlays
-// are deployed to the same cluster during e2e (see the dual
-// apply_and_wait_for_root_application calls in hack/preview.sh).
+// argo-cd-apps/overlays/rd-dev ring-based migration: rd-dev and
+// development-operator both pull in the development overlay as a nested kustomize
+// resource, so a component that temporarily exists both in development and
+// directly in rd-dev (e.g. mid-migration, before the old ApplicationSet is
+// deleted via delete-legacy-konflux-member-appsets.yaml) will template a
+// colliding Application name within that single overlay's own build output and cause
+// e2e tests to fail.
 package collision
 
 import (
@@ -40,16 +43,14 @@ import (
 // overlay importing another's ApplicationSets directly), and therefore must
 // not template colliding generated Application names.
 type OverlayGroup struct {
-	// OverlayPaths are paths (relative to the repo root) to the overlays that
-	// are co-deployed.
-	OverlayPaths []string
+	OverlayPaths []string // relative to the repo root; e.g. "argo-cd-apps/overlays/my-overlay"
 }
 
 // DefaultGroups lists the known sets of overlays that are deployed together.
-// Add new pairings here if new overlays are wired into shared bootstrap
-// targets.
+// Add new groups here if new overlays are wired into shared bootstrap
+// targets or if an overlay imports another's ApplicationSets directly.
 var DefaultGroups = []OverlayGroup{
-	{OverlayPaths: []string{"argo-cd-apps/overlays/development", "argo-cd-apps/overlays/rd-dev"}},
+	{OverlayPaths: []string{"argo-cd-apps/overlays/rd-dev"}},
 	{OverlayPaths: []string{"argo-cd-apps/overlays/development-operator"}},
 }
 
