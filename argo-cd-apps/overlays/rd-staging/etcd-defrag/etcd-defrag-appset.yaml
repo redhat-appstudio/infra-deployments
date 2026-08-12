@@ -1,0 +1,56 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: etcd-defrag
+  labels: # Helps k-components detect this appset to apply the correct patches
+    appstudio.redhat.com/deployment-clusters: "tenant"
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              selector:
+                  matchExpressions: # Ensures that no clusters are selected; k-components will replace this with the correct selector
+                  - key: appstudio.redhat.com/select-none
+                    operator: Exists
+                  - key: appstudio.redhat.com/select-none
+                    operator: DoesNotExist
+              values:
+                sourceRoot: configs/etcd-defrag
+                ring: "empty-base"
+                clusterDir: "empty-base"
+          - list:
+              elements:
+                - nameNormalized: stone-stage-p01
+                  values.ring: ring-1
+                  values.clusterDir: stone-stage-p01
+                - nameNormalized: stone-stg-rh01
+                  values.ring: ring-1
+                  values.clusterDir: stone-stg-rh01
+
+  template:
+    metadata:
+      name: etcd-defrag-{{nameNormalized}}
+    spec:
+      project: default
+      source:
+        path: '{{values.sourceRoot}}/rings/{{values.ring}}/{{values.clusterDir}}'
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+        targetRevision: main
+      destination:
+        namespace: etcd-maintenance
+        server: '{{server}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+        - CreateNamespace=true
+        retry:
+          limit: -1
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 3m

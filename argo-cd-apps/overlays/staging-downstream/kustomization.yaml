@@ -16,6 +16,16 @@ patchesStrategicMerge:
   - delete-applications.yaml
 
 patches:
+  - path: preserve-resources-on-deletion.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: etcd-defrag
+  - path: disable-auto-sync.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: etcd-defrag
   - path: staging-downstream-overlay-patch.yaml
     target:
       kind: ApplicationSet
