@@ -5,11 +5,19 @@ namespace: openshift-gitops
 nameSuffix: -ring-0
 
 resources:
+  - ../development # Include until all Konflux microservices are migrated to rd-dev
   - artifact-registry-proxy
   - container-image-proxy
   - etcd-shield
   - konflux-operator
   - kueue
 
-# No patches until those applications are onboarded to the new standards
-patches: []
+patchesStrategicMerge:  
+  - patches/delete-legacy-konflux-member-appsets.yaml
+
+patches:
+  - path: patches/pipeline-service-env-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: pipeline-service
