@@ -1,7 +1,6 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-- catalog-source.yaml
 - base-snapshot
 - external-repo
 
@@ -20,11 +19,6 @@ generatorOptions:
   disableNameSuffixHash: true
 
 patches:
-  - path: patches/subscription-source-patch.yaml
-    target:
-      kind: Subscription
-      name: openshift-kueue-operator
-      namespace: openshift-kueue-operator
   - target:
       kind: Namespace
       name: tekton-kueue
