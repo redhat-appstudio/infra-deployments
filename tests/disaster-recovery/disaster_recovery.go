@@ -483,6 +483,7 @@ func validateDockerConfigSecret(fw *framework.Framework, namespace, secretName, 
 				label, namespace, secretName, registry)
 			return false
 		}
+		// In Quay's standard robot account naming convention, credentials are stored as 'orgname+robotname', though in other places they're only 'robotname'
 		if robotAccountName != "" && username != robotAccountName && !strings.HasSuffix(username, "+"+robotAccountName) {
 			GinkgoWriter.Printf("  %s secret %s/%s: auth username %q does not match expected robot account %q\n",
 				label, namespace, secretName, username, robotAccountName)
