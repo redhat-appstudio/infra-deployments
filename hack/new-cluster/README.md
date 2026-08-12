@@ -65,3 +65,35 @@ The playbook attempts to determine the correct version of some services by inspe
 ```
 ❯ ansible-playbook hack/new-cluster/playbook.yaml -e 'commit_id_multi_platform_controller=ec950d0cfb87bcfd6e3a79fc2b5ee40989126123 commit_id_build_definitions=ab6b0b8e40e440158e7288c73aff1cf83a2cc8a9 commit_id_tektoncd_results_for_konflux=425fcd0988b50965139238038e0d3bd3cb4f8bbc commit_id_pipeline_service_exporter=9d2439c8a77d2ce0527cc5aea3fc6561b7671b48'
 ```
+
+## Standalone: Create a Tekton Chains signing key
+
+If you only need to create (or verify) a Tekton Chains cosign signing key in Vault — without running the full new-cluster playbook — use `chains-key-playbook.yaml`.
+
+### Prerequisites
+
+* ansible CLI
+* vault CLI
+* cosign (`go install github.com/sigstore/cosign/v2/cmd/cosign@latest`)
+* VPN connection
+
+### Usage
+
+```
+❯ ansible-playbook hack/new-cluster/chains-key-playbook.yaml \
+    -e 'vault_secret_path=staging/pipeline-service/lightwell-dev/chains-signing-secret'
+```
+
+Or interactively (the playbook will prompt for the path):
+
+```
+❯ ansible-playbook hack/new-cluster/chains-key-playbook.yaml
+```
+
+The `vault_secret_path` is relative to the `stonesoup/` Vault KV mount. The playbook will:
+
+1. Log in to Vault via OIDC
+2. Check if the secret already exists (skip if it does)
+3. Generate a cosign keypair with a random password
+4. Store `cosign.password`, `cosign.key`, and `cosign.pub` in Vault
+5. Verify the secret and clean up local files
