@@ -31,6 +31,34 @@ Key flags:
 - `--dry-run` — print results without calling GitHub
 - `--log-file` — write debug logs to a file
 
+### overlay-app-collision-checker
+
+Detects ArgoCD ApplicationSets that would template colliding generated
+Application names when their overlays are deployed together to the same
+cluster / ArgoCD control-plane namespace (e.g. during e2e bootstrap, or when
+one overlay imports another's ApplicationSets directly). Fails loudly at
+PR/CI time instead of letting the collision surface later as a flaky ArgoCD
+ownership conflict.
+
+```bash
+# Build the binary
+cd infra-tools
+make build
+
+# Check all known co-deployed overlay groups
+./bin/overlay-app-collision-checker
+
+# Explicit repo root (default: auto-detect via git)
+./bin/overlay-app-collision-checker --repo-root /path/to/infra-deployments
+```
+
+Key flags:
+- `--repo-root` — path to the repository root (default: auto-detect via `git`)
+
+The overlay groups checked are hardcoded in `internal/collision.DefaultGroups`;
+add a new entry there whenever a new pair of overlays gets co-deployed to the
+same cluster.
+
 ### render-diff
 
 Computes and displays the kustomize render delta for components affected by
