@@ -321,6 +321,28 @@ label_cluster_nodes() {
     fi
 }
 
+# Append a $patch: delete entry for the given ApplicationSet name to the target
+# overlay's delete-applications.yaml, creating the file and wiring it into the
+# overlay's patchesStrategicMerge on first use. Wiring only happens here, at the
+# point a patch document is actually about to be written, so the registered file
+# is never empty (Kustomize rejects an empty strategic-merge patch file). The
+# wiring itself is idempotent (dedup'd via `unique`), so calling this repeatedly
+# for the same overlay is safe.
+add_overlay_delete_entry() {
+    local app="$1"
+    local delete_file="$TARGET_OVERLAY_DELETE_FILE"
+
+    [ -f "$delete_file" ] || touch "$delete_file"
+    yq -i '.patchesStrategicMerge = ((.patchesStrategicMerge // []) + ["delete-applications.yaml"] | unique)' \
+        "$TARGET_OVERLAY_PATH/kustomization.yaml"
+
+    echo '---' >> "$delete_file"
+    yq e -n ".apiVersion=\"argoproj.io/v1alpha1\"
+             | .kind=\"ApplicationSet\"
+             | .metadata.name = \"$app\"
+             | .\$patch = \"delete\"" >> "$delete_file"
+}
+
 # Filter applications based on DEPLOY_ONLY environment variable
 configure_deploy_only() {
     [ "$TARGET_PREVIEW_OVERLAY" != "rd-dev" ] && [ "$TARGET_PREVIEW_OVERLAY" != "development-operator" ] && return
@@ -330,19 +352,15 @@ configure_deploy_only() {
     log_info "DEPLOY_ONLY is set, filtering applications to deploy only: $DEPLOY_ONLY"
 
     local applications delete_list app
-    local delete_file="$TARGET_OVERLAY_DELETE_FILE"
 
     applications=$(oc kustomize "$TARGET_OVERLAY_PATH" | yq e --no-doc 'select(.kind == "ApplicationSet") | .metadata.name')
-    delete_list=$(yq e --no-doc .metadata.name "$delete_file")
+    delete_list=""
+    [ -f "$TARGET_OVERLAY_DELETE_FILE" ] && delete_list=$(yq e --no-doc .metadata.name "$TARGET_OVERLAY_DELETE_FILE")
 
     for app in $applications; do
         if ! grep -q "\b$app\b" <<< $DEPLOY_ONLY && ! grep -q "\b$app\b" <<< $delete_list; then
             log_substep "Disabling ApplicationSet '$app' (not in DEPLOY_ONLY list)"
-            echo '---' >> "$delete_file"
-            yq e -n ".apiVersion=\"argoproj.io/v1alpha1\"
-                     | .kind=\"ApplicationSet\"
-                     | .metadata.name = \"$app\"
-                     | .\$patch = \"delete\"" >> "$delete_file"
+            add_overlay_delete_entry "$app"
         fi
     done
 
@@ -354,7 +372,7 @@ configure_kueue_for_ocp_version() {
     [ "$TARGET_PREVIEW_OVERLAY" != "rd-dev" ] && [ "$TARGET_PREVIEW_OVERLAY" != "development-operator" ] && return
     log_step "Checking OCP version for Kueue compatibility"
 
-    local ocp_version ocp_minor delete_file
+    local ocp_version ocp_minor
 
     ocp_version=$(oc get clusterversion version -o jsonpath='{.status.desired.version}')
     ocp_minor=$(echo "$ocp_version" | cut -d. -f2)
@@ -368,18 +386,12 @@ configure_kueue_for_ocp_version() {
 
     log_warn "OCP version $ocp_version is below 4.16 - Kueue will be disabled"
 
-    delete_file="$TARGET_OVERLAY_DELETE_FILE"
-
-    if ! grep -q "name: kueue" "$delete_file"; then
-        log_substep "Adding Kueue to $TARGET_PREVIEW_OVERLAY's delete-applications.yaml"
-        echo '---' >> "$delete_file"
-        yq e -n ".apiVersion=\"argoproj.io/v1alpha1\"
-                  | .kind=\"ApplicationSet\"
-                  | .metadata.name = \"kueue\"
-                  | .\$patch = \"delete\"" >> "$delete_file"
-        log_success "Kueue ApplicationSet marked for deletion"
-    else
+    if [ -f "$TARGET_OVERLAY_DELETE_FILE" ] && grep -q "name: kueue" "$TARGET_OVERLAY_DELETE_FILE"; then
         log_info "Kueue already exists in delete-applications.yaml, skipping"
+    else
+        log_substep "Adding Kueue to $TARGET_PREVIEW_OVERLAY's delete-applications.yaml"
+        add_overlay_delete_entry "kueue"
+        log_success "Kueue ApplicationSet marked for deletion"
     fi
 
     yq -i 'del(.resources[] | select(test("^kueue/?$")))' "$ROOT/components/policies/development/kustomization.yaml"
@@ -388,7 +400,7 @@ configure_kueue_for_ocp_version() {
 
 # Enable Konflux CR image-controller only when Quay credentials are provided.
 configure_operator_image_controller() {
-    [ "$TARGET_PREVIEW_OVERLAY" != "development-operator" ] && return
+    [ "$TARGET_PREVIEW_OVERLAY" != "development-operator" ] &&  [ "$TARGET_PREVIEW_OVERLAY" != "rd-dev" ] && return
 
     local cr_patch="$ROOT/components/konflux-operator/rings/ring-0/base/cr/image-controller/image-controller.yaml"
     local ring_kust="$ROOT/components/konflux-operator/rings/ring-0/base/kustomization.yaml"
@@ -962,11 +974,11 @@ fi
 TARGET_APP_OF_APPS_PATH="$ROOT/argo-cd-apps/app-of-app-sets/$TARGET_PREVIEW_OVERLAY"
 TARGET_OVERLAY_PATH="$ROOT/argo-cd-apps/overlays/$TARGET_PREVIEW_OVERLAY"
 TARGET_OVERLAY_DELETE_FILE="$TARGET_OVERLAY_PATH/delete-applications.yaml"
-# If the delete file does not exist, create it and wire it into the overlay's Kustomize file
-if [ ! -f "$TARGET_OVERLAY_DELETE_FILE" ]; then
-    touch "$TARGET_OVERLAY_DELETE_FILE"
-    yq -i '.patchesStrategicMerge += ["delete-applications.yaml"]' "$TARGET_OVERLAY_PATH/kustomization.yaml"
-fi
+# NOTE: the delete file itself is created/wired further below, only after the
+# "uncommitted changes" git gate and the $PREVIEW_BRANCH checkout - creating
+# it here would modify a tracked file (kustomization.yaml) on $MY_GIT_BRANCH
+# before that gate runs, and the gate would then fail on every run (even from
+# a clean checkout) by tripping over the script's own edit.
 
 # =============================================================================
 # Main Execution
@@ -1033,6 +1045,13 @@ if git rev-parse --verify $PREVIEW_BRANCH &> /dev/null; then
 fi
 git checkout -b $PREVIEW_BRANCH
 
+# NOTE: $TARGET_OVERLAY_DELETE_FILE is intentionally NOT created/wired into
+# patchesStrategicMerge here. It's created by add_overlay_delete_entry, only at
+# the point a patch document is actually about to be written - registering an
+# empty file in patchesStrategicMerge makes Kustomize fail with "patch appears
+# to be empty" if no delete entry ever gets appended (e.g. DEPLOY_ONLY unset
+# and OCP version >= 4.16, so neither function has anything to delete).
+
 log_success "Git environment initialized"
 log_info "  - Repository URL: $MY_GIT_REPO_URL"
 log_info "  - Source branch: $MY_GIT_BRANCH"
@@ -1077,7 +1096,9 @@ if $GRAFANA; then
     else
     log_step "Enabling Grafana dashboard"
     log_info "Removing monitoring-workload-grafana from delete-applications.yaml"
-    yq -i 'select(.metadata.name != "monitoring-workload-grafana")' "$TARGET_OVERLAY_DELETE_FILE"
+    # delete-applications.yaml is created lazily (see add_overlay_delete_entry) and may
+    # not exist yet if nothing else has been added to it.
+    [ -f "$TARGET_OVERLAY_DELETE_FILE" ] && yq -i 'select(.metadata.name != "monitoring-workload-grafana")' "$TARGET_OVERLAY_DELETE_FILE"
     log_success "Grafana enabled: monitoring-workload-grafana will be deployed"
     fi
 fi

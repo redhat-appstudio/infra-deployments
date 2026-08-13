@@ -76,10 +76,15 @@ the invariant from the ring you trust, and copy or adapt `cr/` patches and `rele
 
 ## Preview script and `Konflux` readiness
 
-`hack/preview.sh` supports **`--operator-overlay`** (OpenShift preview using the
-`development-operator` Argo overlay). **By default it does not wait** for the cluster
-`Konflux` object `konflux` to become ready, so preview can finish after Argo CD sync
-while the operator and instance are still converging.
+`hack/preview.sh` targets the **`rd-dev`** Argo overlay by default, which reuses
+`../development`, deletes the legacy per-microservice Konflux ApplicationSets it
+supersedes, and layers this component's ring-based resources on top — so a default
+preview run already installs the operator. **`--operator-overlay`** switches to the 
+narrower `development-operator` overlay instead, which deploys the same operator 
+(and the same legacy-appset removal) without the ring-based components, for 
+operator-focused testing. Either way, **by default preview does not wait** for 
+the cluster `Konflux` object `konflux` to become ready, so preview can finish after
+Argo CD sync while the operator and instance are still converging.
 
 To **gate** preview on a healthy instance (same checks as
 `konflux-ci/scripts/deploy-local.sh`), set **`PREVIEW_WAIT_KONFLUX_CR_READY=true`**

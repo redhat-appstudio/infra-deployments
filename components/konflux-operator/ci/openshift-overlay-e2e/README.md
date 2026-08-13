@@ -3,7 +3,7 @@
 Scripts for the optional, on-demand Prow job
 `appstudio-operator-overlay-e2e-tests` (openshift/release).
 
-Legacy `appstudio-e2e-tests` (`development` overlay) is unchanged and uses separate
+Legacy `appstudio-e2e-tests` (`rd-dev` overlay) is unchanged and uses separate
 step refs (`konflux-ci-install-konflux`, `redhat-appstudio-conformance-tests`).
 
 ## Layout

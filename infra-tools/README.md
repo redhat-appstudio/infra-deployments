@@ -130,10 +130,12 @@ markdown to stdout.
 ```
 infra-tools/
   cmd/
-    env-detector/        CLI entry point for env-detector
-    render-diff/         CLI entry point for render-diff
+    env-detector/                   CLI entry point for env-detector
+    overlay-app-collision-checker/  CLI entry point for overlay-app-collision-checker
+    render-diff/                    CLI entry point for render-diff
   internal/
     appset/              ArgoCD ApplicationSet YAML parser
+    collision/           ArgoCD ApplicationSet app name collision detection
     deptree/             Kustomize dependency tree resolver
     detector/            Core detection logic (overlay building, file matching)
     git/                 Git operations (diff, worktree, merge-base)
@@ -143,9 +145,9 @@ infra-tools/
   Makefile               Build, test, lint targets
 ```
 
-The `internal/` packages are shared between both tools. The `detector` package
-provides the detection pipeline that both tools build on: it constructs
-ApplicationSet overlays, resolves kustomize dependency trees, and matches
+The `internal/` packages are shared between all tools. The `detector` package
+provides the detection pipeline that the `render-diff` and `env-detector` tools build on: 
+it constructs ApplicationSet overlays, resolves kustomize dependency trees, and matches
 changed files to affected components.
 
 ## Development

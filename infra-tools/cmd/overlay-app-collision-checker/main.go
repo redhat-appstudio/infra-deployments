@@ -11,8 +11,10 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"syscall"
 
 	"github.com/redhat-appstudio/infra-deployments/infra-tools/internal/collision"
 	"github.com/redhat-appstudio/infra-deployments/infra-tools/internal/git"
@@ -22,9 +24,13 @@ func main() {
 	repoRoot := flag.String("repo-root", "", "Path to the repository root (default: auto-detect via git)")
 	flag.Parse()
 
+	// Set up a context that is cancelled on SIGINT / SIGTERM.
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
 	root := *repoRoot
 	if root == "" {
-		detected, err := git.TopLevel(context.Background())
+		detected, err := git.TopLevel(ctx)
 		if err != nil {
 			fatal("auto-detecting repo root; use --repo-root to specify explicitly: %v", err)
 		}
