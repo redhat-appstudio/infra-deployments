@@ -31,8 +31,7 @@ loki:
     # How long to continue gossiping to dead nodes (helps propagate death info)
     gossip_to_dead_nodes_time: 15s
     # How long to wait for an ingester to gracefully leave before considering it dead
-    # This should be longer than terminationGracePeriodSeconds to allow graceful shutdown
-    left_ingesters_timeout: 150s
+    left_ingesters_timeout: 150s # 30s buffer after terminationGracePeriodSeconds (120s)
   # Required storage configuration for Helm chart
   storage:
     type: s3
