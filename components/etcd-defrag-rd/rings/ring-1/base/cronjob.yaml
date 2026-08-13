@@ -6,9 +6,11 @@ metadata:
   namespace: etcd-maintenance
 spec:
   schedule: "*/10 * * * *"
+  concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 50
   jobTemplate:
     spec:
+      activeDeadlineSeconds: 600
       template:
         spec:
           serviceAccountName: etcd-maintenance
@@ -30,8 +32,8 @@ spec:
                 - /bin/sh
                 - -c
                 - |
-                  etcd_pod=$(oc get pod -l app=etcd -oname -n openshift-etcd | awk -F"/" 'NR==1{ print $2 }')
-                  oc -n openshift-etcd debug pod/${etcd_pod} \
+                  etcd_pod=$(timeout 30s oc get pod -l app=etcd -oname -n openshift-etcd | awk -F"/" 'NR==1{ print $2 }')
+                  timeout 9m oc -n openshift-etcd debug pod/${etcd_pod} \
                     fragmentationThreshold="${FRAGMENTATION_THRESHOLD}" \
                     diskUsageThreshold="${DISK_USAGE_THRESHOLD}" \
                     reclaimSpaceThreshold="${RECLAIM_SPACE_THRESHOLD}" \
