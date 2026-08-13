@@ -6,6 +6,11 @@
     msg: "Required variable '{{ item }}' has not been provided via prompt or variable file"
   when: "vars[item] is undefined or vars[item] == ''"
   loop: "{{ required_vars }}"
+- name: Make sure shortname contains only valid characters
+  tags: [always]
+  fail:
+    msg: "Variable 'shortname' must match ^[a-z0-9-]+$, got: {{shortname}}"
+  when: "not (shortname | regex_search('^[a-z0-9-]+$'))"
 - name: Make sure awsaccount is a string of numbers
   tags: [always]
   fail:

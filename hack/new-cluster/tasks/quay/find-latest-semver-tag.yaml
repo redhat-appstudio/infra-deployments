@@ -1,3 +1,9 @@
+- name: Fail if digest is provided without tag for {{ repo }}
+  tags: [always]
+  fail:
+    msg: "{{ varname_digest }} was provided without {{ varname_tag }}. Both must be set together."
+  when: "(vars[varname_tag] is undefined or vars[varname_tag] == '') and vars[varname_digest] is defined and vars[varname_digest] != ''"
+
 - name: Fetch tags from quay.io for {{ repo }}
   tags: [always]
   uri:
@@ -21,8 +27,37 @@
     "{{ varname_tag }}": "{{ semver_tags[0].name }}"
     "{{ varname_digest }}": "{{ semver_tags[0].manifest_digest }}"
   when: "vars[varname_tag] is undefined or vars[varname_tag] == ''"
+  failed_when: "semver_tags | length == 0"
+
+- name: Look up digest for provided tag {{ varname_tag }}
+  tags: [always]
+  uri:
+    url: "https://quay.io/api/v1/repository/{{ repo }}/tag/?specificTag={{ vars[varname_tag] }}&onlyActiveTags=true"
+    method: GET
+    return_content: yes
+    headers:
+      Accept: "application/json"
+  register: quay_specific_tag_response
+  when: "vars[varname_tag] is defined and vars[varname_tag] != '' and (vars[varname_digest] is undefined or vars[varname_digest] == '')"
+
+- name: Set {{ varname_digest }} from provided tag
+  tags: [always]
+  vars:
+    tag_obj: "{{ quay_specific_tag_response.json.tags | default([]) | first | default({}) }}"
+  fail:
+    msg: "Tag '{{ vars[varname_tag] }}' not found in quay.io/{{ repo }}"
+  when: "vars[varname_tag] is defined and vars[varname_tag] != '' and (vars[varname_digest] is undefined or vars[varname_digest] == '') and tag_obj == {}"
+
+- name: Set {{ varname_digest }} from provided tag
+  tags: [always]
+  vars:
+    tag_obj: "{{ quay_specific_tag_response.json.tags | default([]) | first | default({}) }}"
+  set_fact:
+    "{{ varname_digest }}": "{{ tag_obj.manifest_digest }}"
+  when: "vars[varname_tag] is defined and vars[varname_tag] != '' and (vars[varname_digest] is undefined or vars[varname_digest] == '') and tag_obj != {}"
 
 - name: Show selected tag for {{ repo }}
   tags: [always]
   debug:
     msg: "Selected {{ repo }} tag: {{ vars[varname_tag] }} digest: {{ vars[varname_digest] }}"
+  when: "vars[varname_tag] is defined and vars[varname_digest] is defined"

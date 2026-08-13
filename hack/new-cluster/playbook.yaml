@@ -181,7 +181,7 @@
       loop_control:
         loop_var: filename
       when: network == 'private'
-    
+
     - name: Add cluster to k-components for patching ring-deployment ApplicationSets
       tags: [applicationsets]
       include_tasks: tasks/k-components.yaml
@@ -192,7 +192,7 @@
       loop: "{{ templated_components }}"
       loop_control:
         loop_var: component
-    
+
     - name: Copy cluster-specific ring-deployment component manifests
       tags: [components]
       include_tasks: tasks/components.yaml
