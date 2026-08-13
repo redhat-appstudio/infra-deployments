@@ -26,6 +26,16 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: multi-platform-controller
+  - path: kubearchive-tenant-cluster-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: kubearchive
+  - path: vector-kubearchive-tenant-cluster-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: vector-kubearchive-log-collector
   # Exclude operator-managed clusters from Argo generation for services owned
   # by the konflux-operator. Orphan (do not prune) when Applications go away.
   # release stays on Argo with disable-auto-sync until monitor ownership is confirmed.

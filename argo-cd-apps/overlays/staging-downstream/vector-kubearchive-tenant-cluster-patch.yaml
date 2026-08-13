@@ -1,0 +1,12 @@
+---
+- op: add
+  path: /spec/generators/0/merge/generators/1
+  value:
+    clusters:
+      selector:
+        matchLabels:
+          appstudio.redhat.com/cluster-type: "tenant"
+      values:
+        sourceRoot: components/vector-kubearchive-log-collector
+        environment: staging
+        clusterDir: empty-base
