@@ -103,13 +103,13 @@ spec:
     - linux-mxlarge-amd64
     - linux-mxlarge-arm64
     - linux-ppc64le
-    - linux-riscv64
     - linux-root-amd64
     - linux-root-arm64
     - linux-s390x
     - linux-x86-64
     - local
     - localhost
+    - macos-mac2metal-arm64
     flavors:
     - name: platform-group-2
       resources:
@@ -131,8 +131,6 @@ spec:
         nominalQuota: '250'
       - name: linux-ppc64le
         nominalQuota: '2'
-      - name: linux-riscv64
-        nominalQuota: '2'
       - name: linux-root-amd64
         nominalQuota: '250'
       - name: linux-root-arm64
@@ -145,14 +143,13 @@ spec:
         nominalQuota: 1k
       - name: localhost
         nominalQuota: 1k
+      - name: macos-mac2metal-arm64
+        nominalQuota: '5'
   - coveredResources:
-    - macos-mac2metal-arm64
     - windows-4xlarge-amd64
     flavors:
     - name: platform-group-3
       resources:
-      - name: macos-mac2metal-arm64
-        nominalQuota: '5'
       - name: windows-4xlarge-amd64
         nominalQuota: '5'
 ---
