@@ -28,7 +28,6 @@ patches:
       name: multi-platform-controller
   # Exclude operator-managed clusters from Argo generation for services owned
   # by the konflux-operator. Orphan (do not prune) when Applications go away.
-  # release stays on Argo with disable-auto-sync until monitor ownership is confirmed.
   - path: exclude-operator-owned-clusters.yaml
     target:
       kind: ApplicationSet
@@ -119,58 +118,67 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: konflux-rbac
-  # Keep auto-sync/self-heal off for release on all staging members until
-  # release-service-monitor ownership is confirmed for stone-stage-p01.
+  - path: exclude-operator-owned-clusters.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: release
+  - path: preserve-resources-on-deletion.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: release
+  # Disable auto-sync for remaining staging members (e.g. stone-stg-rh01)
+  # while operator rollout targets stone-stage-p01 and lightwell-dev only.
+  # Harmless on operator-owned clusters once the Applications are no longer
+  # generated.
+  - path: disable-auto-sync.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: application-api
+  - path: disable-auto-sync.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: build-service
+  - path: disable-auto-sync.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: integration
+  - path: disable-auto-sync.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: image-controller
+  - path: disable-auto-sync.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: namespace-lister
+  - path: disable-auto-sync.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: konflux-info
+  - path: disable-auto-sync.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: konflux-ui
+  - path: disable-auto-sync.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: enterprise-contract
+  - path: disable-auto-sync.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: konflux-rbac
   - path: disable-auto-sync.yaml
     target:
       kind: ApplicationSet
       version: v1alpha1
       name: release
-  # Remaining disable-auto-sync for other staging members (e.g. stone-stg-rh01)
-  # while operator rollout is stone-stage-p01-only. Harmless on p01 once the
-  # Applications are no longer generated.
-  - path: disable-auto-sync.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: application-api
-  - path: disable-auto-sync.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: build-service
-  - path: disable-auto-sync.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: integration
-  - path: disable-auto-sync.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: image-controller
-  - path: disable-auto-sync.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: namespace-lister
-  - path: disable-auto-sync.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: konflux-info
-  - path: disable-auto-sync.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: konflux-ui
-  - path: disable-auto-sync.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: enterprise-contract
-  - path: disable-auto-sync.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: konflux-rbac
