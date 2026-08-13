@@ -5,3 +5,21 @@ resources:
 components:
   - ../../../../k-components/inject-infra-deployments-repo-details
   - ../../../../k-components/deploy-to-member-cluster-merge-generator
+patches:
+  - target:
+      group: argoproj.io
+      version: v1alpha1
+      kind: ApplicationSet
+      name: vector-kubearchive-log-collector
+    patch: |-
+      - op: add
+        path: /spec/generators/0/merge/generators/1
+        value:
+          clusters:
+            selector:
+              matchLabels:
+                appstudio.redhat.com/cluster-type: "tenant"
+            values:
+              sourceRoot: components/vector-kubearchive-log-collector
+              environment: staging
+              clusterDir: empty-base
