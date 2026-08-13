@@ -1,0 +1,45 @@
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: appstudio-pipelines-scc-roks
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "0"
+    description: >-
+      Temporary supplemental SCC for ROKS buildah builds. Extends
+      appstudio-pipelines-scc with SYS_CHROOT for layer unpacking.
+      Will be removed once the pipeline-service team adds SYS_CHROOT
+      to the global appstudio-pipelines-scc.
+allowHostDirVolumePlugin: false
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: false
+allowHostPorts: false
+allowPrivilegeEscalation: false
+allowPrivilegedContainer: false
+allowedCapabilities:
+- SETFCAP
+- SYS_CHROOT
+defaultAddCapabilities: null
+fsGroup:
+  type: MustRunAs
+groups:
+- system:serviceaccounts
+priority: 11
+readOnlyRootFilesystem: false
+requiredDropCapabilities:
+- MKNOD
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: MustRunAs
+supplementalGroups:
+  type: RunAsAny
+users: []
+volumes:
+- configMap
+- downwardAPI
+- emptyDir
+- persistentVolumeClaim
+- projected
+- secret
