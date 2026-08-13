@@ -31,6 +31,9 @@ requiredDropCapabilities:
 - MKNOD
 runAsUser:
   type: RunAsAny
+seccompProfiles:
+- localhost/profiles/unshare.json
+- runtime/default
 seLinuxContext:
   type: MustRunAs
 supplementalGroups:
