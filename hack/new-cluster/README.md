@@ -23,12 +23,13 @@ This automation creates yaml files in the infra-deployments repo locally.
 * `env` - One of `production` or `staging`.
 * `network` - One of `public` or `private`.
 * `ring` - One of `ring-1`, `ring-2`, `ring-3`, or `ring-4`
+* `awsaccount` - The 12-digit AWS account ID for the cluster
 
 4. You are connected to the VPN.
 
 ## Procedure
 
-**Run the playbook**, which will prompt you for the six variables above:
+**Run the playbook**, which will prompt you for the seven variables above:
 
 ```
 ❯ ansible-playbook hack/new-cluster/playbook.yaml

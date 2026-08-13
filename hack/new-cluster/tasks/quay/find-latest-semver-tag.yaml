@@ -15,6 +15,18 @@
   register: quay_tags_response
   when: "vars[varname_tag] is undefined or vars[varname_tag] == ''"
 
+- name: Find semver tags for {{ repo }}
+  tags: [always]
+  vars:
+    semver_tags: >-
+      {{ quay_tags_response.json.tags
+         | selectattr('name', 'match', '^\d+\.\d+\.\d+$')
+         | sort(attribute='start_ts', reverse=true)
+         | list }}
+  fail:
+    msg: "No semver tags found in quay.io/{{ repo }}"
+  when: "(vars[varname_tag] is undefined or vars[varname_tag] == '') and semver_tags | length == 0"
+
 - name: Set {{ varname_tag }} and {{ varname_digest }} from latest semver tag
   tags: [always]
   vars:
@@ -27,7 +39,6 @@
     "{{ varname_tag }}": "{{ semver_tags[0].name }}"
     "{{ varname_digest }}": "{{ semver_tags[0].manifest_digest }}"
   when: "vars[varname_tag] is undefined or vars[varname_tag] == ''"
-  failed_when: "semver_tags | length == 0"
 
 - name: Look up digest for provided tag {{ varname_tag }}
   tags: [always]
@@ -40,7 +51,7 @@
   register: quay_specific_tag_response
   when: "vars[varname_tag] is defined and vars[varname_tag] != '' and (vars[varname_digest] is undefined or vars[varname_digest] == '')"
 
-- name: Set {{ varname_digest }} from provided tag
+- name: Fail if provided tag not found for {{ repo }}
   tags: [always]
   vars:
     tag_obj: "{{ quay_specific_tag_response.json.tags | default([]) | first | default({}) }}"
