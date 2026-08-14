@@ -133,7 +133,7 @@ ingester:
     hard: {}
   # Graceful shutdown configuration to prevent stale ring instances
   # Give Loki time to flush chunks and leave the ring gracefully
-  terminationGracePeriodSeconds: 120  # 2 minutes - longer than left_ingesters_timeout
+  terminationGracePeriodSeconds: 120
   lifecycle:
     preStop:
       exec:
