@@ -1,0 +1,11 @@
+---
+# Exclude lightwell-dev from the legacy kueue ApplicationSet.
+# lightwell-dev uses the ring deployment strategy via kueue-rd (rd-staging).
+- op: add
+  path: /spec/generators/0/selector
+  value:
+    matchExpressions:
+      - key: nameNormalized
+        operator: NotIn
+        values:
+          - lightwell-dev
