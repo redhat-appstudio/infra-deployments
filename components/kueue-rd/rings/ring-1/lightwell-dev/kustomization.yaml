@@ -3,3 +3,10 @@ kind: Kustomization
 resources:
 - cluster-queue.yaml
 - ../base
+
+patches:
+- path: controller-manager-memory-patch.yaml
+  target:
+    kind: Deployment
+    name: tekton-kueue-controller-manager
+    namespace: tekton-kueue
