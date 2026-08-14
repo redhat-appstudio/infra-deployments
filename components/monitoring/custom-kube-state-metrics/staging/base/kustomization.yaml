@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+  - rbac.yaml
+  - custom-resource-state-config.yaml
+
+commonAnnotations:
+  argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+
+images:
+  - name: registry.k8s.io/kube-state-metrics/kube-state-metrics
+    newTag: v2.19.1
