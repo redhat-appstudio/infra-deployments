@@ -156,3 +156,48 @@ patches:
                     mountPath: /etc/ssl/certs/db-ca.crt
                     subPath: ca.crt
                     readOnly: true
+  # Pin the vacuum containers to a non-root UID so they don't rely on
+  # whichever SCC ends up admitting them to assign one; the vacuum image
+  # defaults to root, which fails runAsNonRoot admission otherwise.
+  - patch: |-
+      apiVersion: batch/v1
+      kind: CronJob
+      metadata:
+        name: vacuum-all
+      spec:
+        jobTemplate:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: vacuum
+                    securityContext:
+                      runAsUser: 1000
+  - patch: |-
+      apiVersion: batch/v1
+      kind: CronJob
+      metadata:
+        name: pipelines-vacuum
+      spec:
+        jobTemplate:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: vacuum
+                    securityContext:
+                      runAsUser: 1000
+  - patch: |-
+      apiVersion: batch/v1
+      kind: CronJob
+      metadata:
+        name: releases-vacuum
+      spec:
+        jobTemplate:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: vacuum
+                    securityContext:
+                      runAsUser: 1000
