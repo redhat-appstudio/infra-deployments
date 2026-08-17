@@ -11,6 +11,7 @@ PIPELINES_NAMESPACE="openshift-pipelines"
 SYNC_INTERVAL=10
 MAX_TEKTON_CRD_RETRIES=5
 MAX_SYNC_TIMEOUT=2700           # 45 minutes max for all apps to sync
+MAX_TRANSIENT_REFRESHES=3       # Soft-refresh attempts per app before an Unknown state is treated as non-transient
 MAX_TEKTON_READY_TIMEOUT=900    # 15 minutes max for Tekton to become ready
 DETAILED_STATUS_INTERVAL=120    # Show detailed status every 2 minutes
 
@@ -602,6 +603,10 @@ deploy_and_wait_for_argocd() {
     sync_start_time=$(date +%s)
     last_detailed_status_time=$sync_start_time
 
+    # Bound the soft-refresh recovery per app so a permanent failure that merely
+    # matches a transient message can't loop until MAX_SYNC_TIMEOUT.
+    local -A transient_refresh_count
+
     while :; do
         iteration=$((iteration + 1))
         local current_time=$(date +%s)
@@ -664,13 +669,17 @@ deploy_and_wait_for_argocd() {
             for app in $unknown; do
                 error=$(oc get -n $ARGOCD_NAMESPACE applications.argoproj.io $app -o jsonpath='{.status.conditions}' 2>/dev/null || echo "")
 
-                # Transient conditions that clear on the next reconcile: repo-server
-                # timeouts and kustomize+helm render flakes (e.g. the Loki chart's
-                # `helm pull --untar ... already exists` collision). Soft-refresh and
-                # keep waiting instead of surfacing them as hard failures.
-                transient_errors='context deadline exceeded|ComparisonError|failed to untar|error reading from server|rpc error'
-                if echo "$error" | grep -qE "$transient_errors"; then
-                    log_warn "Application '$app' hit a transient error, attempting soft refresh"
+                # Known transient conditions that clear on the next reconcile: the
+                # repo-server manifest-generation timeout and the kustomize+helm
+                # render collision (Loki chart `helm pull --untar ... already
+                # exists`). Kept deliberately narrow — broad substrings like
+                # `rpc error` also appear in permanent auth/RBAC/repo failures,
+                # which must reach the diagnostics path rather than soft-refresh.
+                local transient_errors='context deadline exceeded|failed to untar'
+                local refresh_count=${transient_refresh_count[$app]:-0}
+                if echo "$error" | grep -qE "$transient_errors" && [ "$refresh_count" -lt "$MAX_TRANSIENT_REFRESHES" ]; then
+                    transient_refresh_count[$app]=$((refresh_count + 1))
+                    log_warn "Application '$app' hit a transient error, attempting soft refresh (${transient_refresh_count[$app]}/$MAX_TRANSIENT_REFRESHES)"
                     oc patch applications.argoproj.io $app -n $ARGOCD_NAMESPACE --type merge -p='{"metadata": {"annotations":{"argocd.argoproj.io/refresh": "soft"}}}' 2>/dev/null || true
 
                     local refresh_wait=0
@@ -686,15 +695,15 @@ deploy_and_wait_for_argocd() {
                     continue 2
                 fi
 
-                # Unknown without a recognised cause — soft-refresh once, then just warn on subsequent iterations.
-                if echo "$unknown_refreshed" | grep -qw "$app"; then
-                    log_warn "Application '$app' still in Unknown state (already refreshed), waiting for recovery"
+                # Not a known transient, or the soft-refresh budget is exhausted:
+                # surface actionable diagnostics now instead of waiting out the
+                # global timeout.
+                if [ "$refresh_count" -ge "$MAX_TRANSIENT_REFRESHES" ]; then
+                    log_error "Application '$app' still Unknown after $MAX_TRANSIENT_REFRESHES soft refreshes, treating as non-transient"
                 else
-                    log_warn "Application '$app' is in Unknown state, attempting one-shot soft refresh"
-                    oc patch applications.argoproj.io $app -n $ARGOCD_NAMESPACE --type merge -p='{"metadata": {"annotations":{"argocd.argoproj.io/refresh": "soft"}}}' 2>/dev/null || true
-                    unknown_refreshed="$unknown_refreshed $app"
-                    show_app_details "$app"
+                    log_error "Application '$app' is in Unknown state with a non-transient error"
                 fi
+                show_app_details "$app"
             done
         fi
 
