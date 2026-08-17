@@ -11,6 +11,16 @@
   fail:
     msg: "Variable 'shortname' must match ^[a-z0-9-]+$, got: {{shortname}}"
   when: "not (shortname | regex_search('^[a-z0-9-]+$'))"
+- name: Make sure longname contains only valid characters
+  tags: [always]
+  fail:
+    msg: "Variable 'longname' must match ^[a-z0-9.-]+$, got: {{longname}}"
+  when: "not (longname | regex_search('^[a-z0-9.-]+$'))"
+- name: Make sure cutename contains only valid characters
+  tags: [always]
+  fail:
+    msg: "Variable 'cutename' must match ^[a-z0-9]+$, got: {{cutename}}"
+  when: "not (cutename | regex_search('^[a-z0-9]+$'))"
 - name: Make sure awsaccount is a string of numbers
   tags: [always]
   fail:
