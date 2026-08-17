@@ -2,6 +2,8 @@ apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
   name: disaster-recovery
+  labels: # Helps k-components detect this appset to apply the correct patches
+    appstudio.redhat.com/deployment-clusters: "tenant"
 spec:
   generators:
     - merge:
@@ -10,24 +12,25 @@ spec:
         generators:
           - clusters:
               selector:
-                matchExpressions:
+                matchExpressions: # Ensures that no clusters are selected; k-components will replace this with the correct selector
                   - key: appstudio.redhat.com/select-none
                     operator: Exists
                   - key: appstudio.redhat.com/select-none
                     operator: DoesNotExist
               values:
                 sourceRoot: components/disaster-recovery
-                environment: staging
+                ring: "empty-base"
                 clusterDir: "empty-base"
           - list:
-              elements: []
+              elements: [] # Populated via k-components (or manually if the cluster list is unusual)
+
   template:
     metadata:
       name: disaster-recovery-{{nameNormalized}}
     spec:
       project: default
       source:
-        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
+        path: '{{values.sourceRoot}}/rings/{{values.ring}}/{{values.clusterDir}}'
         repoURL: https://github.com/redhat-appstudio/infra-deployments.git
         targetRevision: main
       destination:
