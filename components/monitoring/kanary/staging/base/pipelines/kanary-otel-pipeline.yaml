@@ -54,6 +54,9 @@ spec:
     - name: test-scenario-git-url
       type: string
       default: ""
+    - name: release-policy
+      type: string
+      default: "tmp-onboard-policy"
     # RPM mirror workaround only. Leave empty for container test types.
     - name: upstream-repo-url
       type: string
@@ -108,6 +111,8 @@ spec:
           value: $(params.pipeline-image-pull-secrets)
         - name: test-scenario-git-url
           value: $(params.test-scenario-git-url)
+        - name: release-policy
+          value: $(params.release-policy)
         - name: upstream-repo-url
           value: $(params.upstream-repo-url)
         - name: upstream-repo-branch
