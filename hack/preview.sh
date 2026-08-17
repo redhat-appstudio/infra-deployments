@@ -603,8 +603,10 @@ deploy_and_wait_for_argocd() {
     last_detailed_status_time=$sync_start_time
 
     # Bound the soft-refresh recovery per app so a permanent failure that merely
-    # matches a transient message can't loop until MAX_SYNC_TIMEOUT.
-    local -A transient_refresh_count
+    # matches a transient message can't loop until MAX_SYNC_TIMEOUT. Counts are
+    # kept in per-app dynamic variables (see the sync loop below) rather than an
+    # associative array, which would require Bash 4+ (absent on e.g. macOS's
+    # /bin/bash 3.2).
 
     while :; do
         iteration=$((iteration + 1))
@@ -672,10 +674,16 @@ deploy_and_wait_for_argocd() {
                 # `rpc error` also appear in permanent auth/RBAC/repo failures,
                 # which must reach the diagnostics path rather than soft-refresh.
                 local transient_errors='context deadline exceeded|failed to untar'
-                local refresh_count=${transient_refresh_count[$app]:-0}
+                # Per-app soft-refresh counter without associative arrays (Bash 3.x
+                # safe). App names are DNS-1123 (lowercase alnum + '-'), so mapping
+                # every non-alphanumeric char to '_' yields a unique, valid
+                # variable-name suffix that persists across sync-loop iterations.
+                local refresh_var="transient_refresh_${app//[^a-zA-Z0-9]/_}"
+                local refresh_count=${!refresh_var:-0}
                 if echo "$error" | grep -qE "$transient_errors" && [ "$refresh_count" -lt "$MAX_TRANSIENT_REFRESHES" ]; then
-                    transient_refresh_count[$app]=$((refresh_count + 1))
-                    log_warn "Application '$app' hit a transient error, attempting soft refresh (${transient_refresh_count[$app]}/$MAX_TRANSIENT_REFRESHES)"
+                    refresh_count=$((refresh_count + 1))
+                    printf -v "$refresh_var" '%s' "$refresh_count"
+                    log_warn "Application '$app' hit a transient error, attempting soft refresh ($refresh_count/$MAX_TRANSIENT_REFRESHES)"
                     oc patch applications.argoproj.io $app -n $ARGOCD_NAMESPACE --type merge -p='{"metadata": {"annotations":{"argocd.argoproj.io/refresh": "soft"}}}' 2>/dev/null || true
 
                     local refresh_wait=0
