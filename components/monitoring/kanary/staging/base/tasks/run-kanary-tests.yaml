@@ -51,6 +51,9 @@ spec:
     - name: test-scenario-git-url
       type: string
       default: ""
+    - name: release-policy
+      type: string
+      default: "tmp-onboard-policy"
     # RPM mirror workaround only. Leave empty for container test types.
     - name: upstream-repo-url
       type: string
@@ -236,7 +239,7 @@ spec:
         - name: PIPELINE_REPO_TEMPLATING_SOURCE_DIR
           value: $(params.pipeline-repo-templating-source-dir)
         - name: RELEASE_POLICY
-          value: "tmp-onboard-policy"
+          value: $(params.release-policy)
         - name: RELEASE_PIPELINE_URL
           value: "https://github.com/konflux-ci/release-service-catalog.git"
         - name: RELEASE_PIPELINE_REVISION
