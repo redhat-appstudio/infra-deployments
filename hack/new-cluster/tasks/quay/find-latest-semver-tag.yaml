@@ -15,29 +15,34 @@
   register: quay_tags_response
   when: "vars[varname_tag] is undefined or vars[varname_tag] == ''"
 
-- name: Find semver tags for {{ repo }}
+- name: Filter semver tags for {{ repo }}
   tags: [always]
-  vars:
-    semver_tags: >-
+  set_fact:
+    _semver_tags: >-
       {{ quay_tags_response.json.tags
          | selectattr('name', 'match', '^\d+\.\d+\.\d+$')
-         | sort(attribute='start_ts', reverse=true)
          | list }}
+  when: "vars[varname_tag] is undefined or vars[varname_tag] == ''"
+
+- name: Fail if no semver tags found for {{ repo }}
+  tags: [always]
   fail:
     msg: "No semver tags found in quay.io/{{ repo }}"
-  when: "(vars[varname_tag] is undefined or vars[varname_tag] == '') and semver_tags | length == 0"
+  when: "(vars[varname_tag] is undefined or vars[varname_tag] == '') and _semver_tags | length == 0"
 
-- name: Set {{ varname_tag }} and {{ varname_digest }} from latest semver tag
+- name: Find highest semver tag for {{ repo }}
   tags: [always]
-  vars:
-    semver_tags: >-
-      {{ quay_tags_response.json.tags
-         | selectattr('name', 'match', '^\d+\.\d+\.\d+$')
-         | sort(attribute='start_ts', reverse=true)
-         | list }}
   set_fact:
-    "{{ varname_tag }}": "{{ semver_tags[0].name }}"
-    "{{ varname_digest }}": "{{ semver_tags[0].manifest_digest }}"
+    _best_tag: "{{ item }}"
+  loop: "{{ _semver_tags | default([]) }}"
+  when: "(vars[varname_tag] is undefined or vars[varname_tag] == '') and (_best_tag is undefined or item.name is version(_best_tag.name, '>'))"
+  no_log: true
+
+- name: Set {{ varname_tag }} and {{ varname_digest }} from highest semver tag
+  tags: [always]
+  set_fact:
+    "{{ varname_tag }}": "{{ _best_tag.name }}"
+    "{{ varname_digest }}": "{{ _best_tag.manifest_digest }}"
   when: "vars[varname_tag] is undefined or vars[varname_tag] == ''"
 
 - name: Look up digest for provided tag {{ varname_tag }}
