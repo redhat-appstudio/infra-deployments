@@ -65,7 +65,7 @@ kubectl wait --for=condition=Available deployment --all --timeout 300s -n tekton
 Apply manifests:
 
 ```bash
-kustomize build components/disaster-recovery/development/ | kubectl apply -f -
+kustomize build --enable-helm components/disaster-recovery/rings/ring-0/base/ | kubectl apply -f -
 ```
 
 ## Test Locally
