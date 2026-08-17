@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
   - ../base
   - ../base/monitor/production
+  - external-secrets/release-service-github-token.yaml
   - https://github.com/konflux-ci/release-service/config/default?ref=f3ac0e4aa928ff7c4fdac1846de3268afd9c9ae5
   - release_service_config.yaml
   - signing_configs.yaml

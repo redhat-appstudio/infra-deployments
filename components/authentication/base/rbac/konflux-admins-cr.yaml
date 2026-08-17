@@ -41,6 +41,13 @@ rules:
       - spifilecontentrequests
     verbs:
       - '*'
+  - apiGroups:
+      - konflux-ci.dev
+    resources:
+      - components
+      - imagerepositories
+    verbs:
+      - '*'
   # Grant READ-ONLY access (plus delete) to API groups that can create pods
   # These can be used to create pods which could access secrets
   # Delete/patch is allowed for cleanup, but create/update are blocked

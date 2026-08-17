@@ -51,20 +51,6 @@ main() {
         log_warn "Without Docker Hub credentials, you may experience rate limiting"
     fi
     
-    # Setup DORA metrics exporter secrets
-    log_substep "Configuring DORA metrics exporter secrets"
-    if [[ -n "$GITHUB_TOKEN" ]]; then
-        if "${ROOT}/secret-creator/create-dora-metrics-exporter-secrets.sh" "$GITHUB_TOKEN"; then
-            log_success "DORA metrics exporter secrets configured"
-        else
-            log_warn "Failed to configure DORA metrics exporter secrets"
-        fi
-    else
-        log_info "GITHUB_TOKEN not set - DORA metrics exporter may have limited functionality"
-        # Still call the script as it may create placeholder secrets
-        "${ROOT}/secret-creator/create-dora-metrics-exporter-secrets.sh" "" 2>/dev/null || true
-    fi
-    
     log_success "Common cluster bootstrap complete"
 }
 

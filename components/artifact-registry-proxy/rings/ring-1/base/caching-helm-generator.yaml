@@ -1,0 +1,58 @@
+apiVersion: builtin
+kind: HelmChartInflationGenerator
+metadata:
+  name: caching-helm
+name: caching-helm
+repo: oci://quay.io/konflux-ci/caching
+version: 0.1.1836+6dabb5a
+valuesInline:
+  squid:
+    enabled: false
+  nginx:
+    enabled: true
+    namespace: artifact-registry-proxy
+    replicaCount: 3
+    name: artifact-registry-proxy
+    tls:
+      enabled: true
+      secretName: artifact-registry-proxy-tls
+    service:
+      port: 443
+      trafficDistribution: PreferClose
+      annotations:
+        service.beta.openshift.io/serving-cert-secret-name: artifact-registry-proxy-tls
+    upstream:
+      url: https://red-hat.repo.sonatype.app
+    auth:
+      enabled: true
+      secretName: artifact-registry-credentials
+    cache:
+      allowList:
+        - ^/repository/
+      size: 102400
+      ttl: 30d
+    resources:
+      requests:
+        cpu: "2"
+        memory: 2Gi
+      limits:
+        cpu: "2"
+        memory: 2Gi
+  installCertManagerComponents: false
+  cert-manager:
+    enabled: false
+  selfsigned-certificate:
+    enabled: false
+  selfsigned-bundle:
+    enabled: false
+  mirrord:
+    enabled: false
+  test:
+    enabled: false
+  environment: release
+  prometheus:
+    serviceMonitor:
+      nginxTLS:
+        ca:
+          configMapName: openshift-service-ca.crt
+          key: service-ca.crt
