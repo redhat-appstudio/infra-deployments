@@ -167,7 +167,10 @@ show_app_details() {
     local sync_status health_status message resources_summary
     sync_status=$(echo "$app_json" | jq -r '.status.sync.status // "Unknown"')
     health_status=$(echo "$app_json" | jq -r '.status.health.status // "Unknown"')
-    message=$(echo "$app_json" | jq -r '.status.conditions[0].message // "No message"' | head -c 200)
+    # Truncate inside jq: piping to `head` closes the pipe early and, under
+    # `set -e` + `pipefail`, the SIGPIPE it sends to jq (exit 141) would abort
+    # the whole bootstrap. jq-native slicing keeps this diagnostic non-fatal.
+    message=$(echo "$app_json" | jq -r '(.status.conditions[0].message // "No message")[0:200]')
 
     log_info "  ├─ App: $app_name"
     log_info "  │  ├─ Sync Status: $sync_status"
@@ -191,7 +194,9 @@ show_app_details() {
 
     # Show conditions/errors
     local conditions
-    conditions=$(echo "$app_json" | jq -r '.status.conditions[]? | "[\(.type)] \(.message // "No message")"' 2>/dev/null | head -3)
+    # Limit to 3 conditions inside jq rather than `| head -3` (see note above:
+    # a closed `head` pipe would SIGPIPE jq and abort the script under pipefail).
+    conditions=$(echo "$app_json" | jq -r '[.status.conditions[]?][0:3][] | "[\(.type)] \(.message // "No message")"' 2>/dev/null)
     if [ -n "$conditions" ]; then
         log_warn "  │  └─ Conditions:"
         echo "$conditions" | while IFS= read -r line; do
@@ -659,8 +664,13 @@ deploy_and_wait_for_argocd() {
             for app in $unknown; do
                 error=$(oc get -n $ARGOCD_NAMESPACE applications.argoproj.io $app -o jsonpath='{.status.conditions}' 2>/dev/null || echo "")
 
-                if echo "$error" | grep -q 'context deadline exceeded'; then
-                    log_warn "Application '$app' hit context deadline, attempting soft refresh"
+                # Transient conditions that clear on the next reconcile: repo-server
+                # timeouts and kustomize+helm render flakes (e.g. the Loki chart's
+                # `helm pull --untar ... already exists` collision). Soft-refresh and
+                # keep waiting instead of surfacing them as hard failures.
+                transient_errors='context deadline exceeded|ComparisonError|failed to untar|error reading from server|rpc error'
+                if echo "$error" | grep -qE "$transient_errors"; then
+                    log_warn "Application '$app' hit a transient error, attempting soft refresh"
                     oc patch applications.argoproj.io $app -n $ARGOCD_NAMESPACE --type merge -p='{"metadata": {"annotations":{"argocd.argoproj.io/refresh": "soft"}}}' 2>/dev/null || true
 
                     local refresh_wait=0
