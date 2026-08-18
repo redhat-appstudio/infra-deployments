@@ -1,0 +1,44 @@
+# RoleBindings granting the conformance-verification-sa permissions in both
+# tenant and managed namespaces via existing ClusterRoles.
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: conformance-verification-admin
+  namespace: conformance-tenant
+subjects:
+  - kind: ServiceAccount
+    name: conformance-verification-sa
+    namespace: conformance-managed-tenant
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: konflux-admin-user-actions
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: conformance-verification-managed-admin
+  namespace: conformance-managed-tenant
+subjects:
+  - kind: ServiceAccount
+    name: conformance-verification-sa
+    namespace: conformance-managed-tenant
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: konflux-admin-user-actions
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: conformance-verification-release-pipeline
+  namespace: conformance-managed-tenant
+subjects:
+  - kind: ServiceAccount
+    name: conformance-verification-sa
+    namespace: conformance-managed-tenant
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: release-pipeline-resource-role
