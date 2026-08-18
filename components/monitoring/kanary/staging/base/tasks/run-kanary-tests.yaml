@@ -70,6 +70,8 @@ spec:
   results:
     - name: test-outcome
       description: "Test outcome: passed, failed, or unknown"
+    - name: failure-cause
+      description: "Error cause from loadtest error_caused_by_simple (comma-separated if multiple). Empty on pass or when collect-results did not run."
   volumes:
     - name: artifacts
       emptyDir: {}
@@ -288,6 +290,7 @@ spec:
         #!/usr/bin/env bash
         set -euo pipefail
         echo -n "unknown" > $(results.test-outcome.path)
+        echo -n "" > $(results.failure-cause.path)
         if [[ ! -s /opt/users-secret/token ]]; then
           echo "ERROR: /opt/users-secret/token is missing or empty" >&2
           exit 1
@@ -329,3 +332,8 @@ spec:
         elif [[ "$exit_code" -eq "$KANARY_FAIL_CODE" ]]; then
           echo -n "failed" > $(results.test-outcome.path)
         fi
+        # Write the full error_caused_by_simple string as-is (may be comma-separated).
+        # push-kanary-metrics will split and take the first value for the metric label.
+        caused_by=$(jq -r '.results.errors.error_caused_by_simple // ""' \
+          /tmp/artifacts/results/load-test.json 2>/dev/null || true)
+        echo -n "${caused_by}" > $(results.failure-cause.path)
