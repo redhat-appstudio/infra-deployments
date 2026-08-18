@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cluster-monitoring-config
+  namespace: openshift-monitoring
+data:
+  config.yaml: |
+    enableUserWorkload: true
+    prometheusK8s:
+      retentionSize: 10GB
+      nodeSelector:
+        konflux-ci.dev/workload: konflux-tenants
+      tolerations:
+        - key: "konflux-ci.dev/workload"
+          value: "konflux-tenants"
+          effect: "NoSchedule"
+          operator: "Equal"
+    alertmanagerMain:
+      nodeSelector:
+        konflux-ci.dev/workload: konflux-tenants
+      tolerations:
+        - key: "konflux-ci.dev/workload"
+          value: "konflux-tenants"
+          effect: "NoSchedule"
+          operator: "Equal"
+    thanosQuerier:
+      nodeSelector:
+        konflux-ci.dev/workload: konflux-tenants
+      tolerations:
+        - key: "konflux-ci.dev/workload"
+          value: "konflux-tenants"
+          effect: "NoSchedule"
+          operator: "Equal"
+    prometheusOperator:
+      nodeSelector:
+        konflux-ci.dev/workload: konflux-tenants
+      tolerations:
+        - key: "konflux-ci.dev/workload"
+          value: "konflux-tenants"
+          effect: "NoSchedule"
+          operator: "Equal"
