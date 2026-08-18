@@ -679,24 +679,28 @@ deploy_and_wait_for_argocd() {
                 # every non-alphanumeric char to '_' yields a unique, valid
                 # variable-name suffix that persists across sync-loop iterations.
                 local refresh_var="transient_refresh_${app//[^a-zA-Z0-9]/_}"
+                local "$refresh_var"   # ensures the counter is scoped to this function
                 local refresh_count=${!refresh_var:-0}
                 if echo "$error" | grep -qE "$transient_errors" && [ "$refresh_count" -lt "$MAX_TRANSIENT_REFRESHES" ]; then
-                    refresh_count=$((refresh_count + 1))
-                    printf -v "$refresh_var" '%s' "$refresh_count"
-                    log_warn "Application '$app' hit a transient error, attempting soft refresh ($refresh_count/$MAX_TRANSIENT_REFRESHES)"
-                    oc patch applications.argoproj.io $app -n $ARGOCD_NAMESPACE --type merge -p='{"metadata": {"annotations":{"argocd.argoproj.io/refresh": "soft"}}}' 2>/dev/null || true
-
-                    local refresh_wait=0
-                    while [ -n "$(oc get applications.argoproj.io -n $ARGOCD_NAMESPACE $app -o jsonpath='{.metadata.annotations.argocd\.argoproj\.io/refresh}' 2>/dev/null)" ]; do
-                        refresh_wait=$((refresh_wait + 5))
-                        if [ "$refresh_wait" -gt 60 ]; then
-                            log_warn "Soft refresh of '$app' timed out after 60s, continuing anyway"
-                            break
-                        fi
-                        sleep 5
-                    done
-                    log_success "Soft refresh of '$app' completed, continuing sync check"
-                    continue 2
+                    if oc patch applications.argoproj.io "$app" -n "$ARGOCD_NAMESPACE" --type merge \
+                        -p='{"metadata": {"annotations":{"argocd.argoproj.io/refresh": "soft"}}}' 2>/dev/null; then
+                        refresh_count=$((refresh_count + 1))
+                        printf -v "$refresh_var" '%s' "$refresh_count"
+                        log_warn "Application '$app' hit a transient error, attempting soft refresh ($refresh_count/$MAX_TRANSIENT_REFRESHES)"
+                        local refresh_wait=0
+                        while [ -n "$(oc get applications.argoproj.io -n $ARGOCD_NAMESPACE $app -o jsonpath='{.metadata.annotations.argocd\.argoproj\.io/refresh}' 2>/dev/null)" ]; do
+                            refresh_wait=$((refresh_wait + 5))
+                            if [ "$refresh_wait" -gt 60 ]; then
+                                log_warn "Soft refresh of '$app' timed out after 60s, continuing anyway"
+                                break
+                            fi
+                            sleep 5
+                        done
+                        log_success "Soft refresh of '$app' completed, continuing sync check"
+                        continue 2
+                    else
+                        log_warn "Soft refresh patch for '$app' failed; not counting toward refresh budget"
+                    fi
                 fi
 
                 # Not a known transient, or the soft-refresh budget is exhausted:
