@@ -337,10 +337,12 @@ spec:
         fi
         # Write the full error_caused_by_simple string as-is (may be comma-separated).
         # push-kanary-metrics will split and take the first value for the metric label.
-        caused_by=$(jq -r '.results.errors.error_caused_by_simple // ""' \
-          /tmp/artifacts/results/load-test.json 2>/dev/null || true)
-        echo -n "${caused_by}" > $(results.failure-cause.path)
         # Write the phase (loadtest function) where the earliest failure occurred.
-        failed_phase=$(jq -r '.results.measurements.KPI.failed_phase // ""' \
-          /tmp/artifacts/results/load-test.json 2>/dev/null || true)
-        echo -n "${failed_phase}" > $(results.failure-phase.path)
+        if [[ -s /tmp/artifacts/results/load-test.json ]]; then
+          jq -r '.results.errors.error_caused_by_simple // ""' \
+            /tmp/artifacts/results/load-test.json > $(results.failure-cause.path)
+          jq -r '.results.measurements.KPI.failed_phase // ""' \
+            /tmp/artifacts/results/load-test.json > $(results.failure-phase.path)
+        else
+          echo "WARN: load-test.json not found or empty, failure-cause and failure-phase will be empty" >&2
+        fi
