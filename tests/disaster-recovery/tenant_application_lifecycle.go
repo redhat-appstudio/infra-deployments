@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/konflux-ci/e2e-tests/pkg/framework"
+	releaseapi "github.com/konflux-ci/release-service/api/v1alpha1"
 	. "github.com/onsi/ginkgo/v2" //nolint:staticcheck
 	. "github.com/onsi/gomega"    //nolint:staticcheck
 	pipeline "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
@@ -272,6 +273,64 @@ func buildListOpts(namespace, pipelineType, componentName string) []client.ListO
 }
 
 // ---------------------------------------------------------------------------
+// Release CR counting — release-service deletes completed PipelineRuns from
+// the managed namespace, so release success must be verified via Release CRs
+// (which persist in the tenant namespace) rather than PipelineRuns.
+// ---------------------------------------------------------------------------
+
+func countReleasedReleases(ctx context.Context, fw *framework.Framework, namespace string) int {
+	releases := &releaseapi.ReleaseList{}
+	if err := fw.AsKubeAdmin.CommonController.KubeRest().List(
+		ctx, releases, client.InNamespace(namespace)); err != nil {
+		GinkgoWriter.Printf("error listing Releases in %s: %v\n", namespace, err)
+		return 0
+	}
+	count := 0
+	for i := range releases.Items {
+		if releases.Items[i].IsReleased() {
+			count++
+		}
+	}
+	return count
+}
+
+func waitForReleasedCount(ctx context.Context, fw *framework.Framework, namespace string, expectedCount int, timeout, poll time.Duration) {
+	GinkgoHelper()
+
+	Eventually(func() int {
+		releases := &releaseapi.ReleaseList{}
+		if err := fw.AsKubeAdmin.CommonController.KubeRest().List(
+			ctx, releases, client.InNamespace(namespace)); err != nil {
+			GinkgoWriter.Printf("error listing Releases in %s: %v\n", namespace, err)
+			return 0
+		}
+
+		releasedCount := 0
+		for i := range releases.Items {
+			r := &releases.Items[i]
+			if r.IsReleased() {
+				releasedCount++
+			} else {
+				for _, c := range r.Status.Conditions {
+					if c.Type == "Released" {
+						GinkgoWriter.Printf("Release %s in %s: Released=%s Reason=%s\n",
+							r.Name, namespace, c.Status, c.Reason)
+						break
+					}
+				}
+			}
+		}
+
+		GinkgoWriter.Printf("namespace %s: %d/%d Releases released (total: %d)\n",
+			namespace, releasedCount, expectedCount, len(releases.Items))
+
+		return releasedCount
+	}, timeout, poll).Should(BeNumerically(">=", expectedCount),
+		"expected at least %d released Releases in namespace %s",
+		expectedCount, namespace)
+}
+
+// ---------------------------------------------------------------------------
 // High-level lifecycle helpers
 // ---------------------------------------------------------------------------
 
@@ -326,14 +385,14 @@ func waitForPipelineChains(ctx context.Context, fw *framework.Framework, tenants
 
 	logReleaseChainDiagnostics(tenants)
 
-	// Release PipelineRuns run in the managed namespace and may not map 1:1
-	// to components, so wait for them in aggregate after all builds/tests pass.
+	// Release CRs live in the tenant namespace and persist after release-service
+	// cleans up completed PipelineRuns from the managed namespace.
 	for _, t := range tenants {
-		releaseBase := baseRelease[t.ManagedNamespace] // zero if nil map or missing key
+		releaseBase := baseRelease[t.Namespace] // zero if nil map or missing key
 		expected := releaseBase + ComponentsPerTenant
-		By(fmt.Sprintf("Waiting for %d release PipelineRuns in %s (base: %d)",
-			expected, t.ManagedNamespace, releaseBase))
-		waitForSucceededPRCount(ctx, fw, t.ManagedNamespace, "", "", expected,
+		By(fmt.Sprintf("Waiting for %d released Releases in %s (base: %d)",
+			expected, t.Namespace, releaseBase))
+		waitForReleasedCount(ctx, fw, t.Namespace, expected,
 			ReleaseChainTimeout, ReleaseChainPoll)
 	}
 }
@@ -345,11 +404,11 @@ func waitForPipelineChains(ctx context.Context, fw *framework.Framework, tenants
 // only auto-releases Snapshots with push event type.
 //
 // The method:
-//  1. Snapshots current per-component PipelineRun counts.
+//  1. Snapshots current per-component PipelineRun counts and Release CR counts.
 //  2. For each tenant: pushes a Dockerfile change per component directly to
 //     the default branch (matching PaC .pathChanged() filters).
 //  3. Waits for new build and test PipelineRuns per component (parallel).
-//  4. Waits for new release PipelineRuns (aggregate).
+//  4. Waits for new released Release CRs (aggregate, in tenant namespace).
 func triggerBuildsAndVerify(ctx context.Context, fw *framework.Framework, tenants []Tenant) {
 	GinkgoHelper()
 
@@ -368,9 +427,9 @@ func triggerBuildsAndVerify(ctx context.Context, fw *framework.Framework, tenant
 			GinkgoWriter.Printf("initial counts for %s: build=%d, test=%d\n",
 				key, initialPerComp[key].build, initialPerComp[key].test)
 		}
-		initialRelease[t.ManagedNamespace] = countSucceededPRs(ctx, fw, t.ManagedNamespace, "", "")
-		GinkgoWriter.Printf("initial release count for %s: %d\n",
-			t.ManagedNamespace, initialRelease[t.ManagedNamespace])
+		initialRelease[t.Namespace] = countReleasedReleases(ctx, fw, t.Namespace)
+		GinkgoWriter.Printf("initial released count for %s: %d\n",
+			t.Namespace, initialRelease[t.Namespace])
 	}
 
 	initialTotalPRs := make(map[string]int)
