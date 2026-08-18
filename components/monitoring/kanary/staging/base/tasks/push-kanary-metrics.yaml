@@ -108,7 +108,7 @@ spec:
         else:
             print(f"Test outcome: {test_outcome}, reporting kanary-pipeline-error")
             kanary_up.set(1, labels_up)
-            kanary_error.set(1, {"tested_cluster": tested_cluster, "type": test_type, "caused_by": "kanary-pipeline-error", "phase": ""})
+            kanary_error.set(1, {"tested_cluster": tested_cluster, "type": test_type, "caused_by": "kanary-pipeline-error", "phase": "kanary-pipeline"})
 
         kanary_timestamp.set(time.time(), {"tested_cluster": tested_cluster, "type": test_type})
 
