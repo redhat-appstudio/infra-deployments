@@ -102,9 +102,9 @@ spec:
             kanary_up.set(1, labels_up)
             # kanary_error is not emitted on success — kanary_up=1 is sufficient
         elif test_outcome == "failed":
-            print(f"Test outcome: failed, reason={reason or 'UNKNOWN'}, phase={failure_phase}")
+            print(f"Test outcome: failed, reason={reason}, phase={failure_phase}")
             kanary_up.set(0, labels_up)
-            kanary_error.set(1, {"tested_cluster": tested_cluster, "type": test_type, "reason": reason or "UNKNOWN", "phase": failure_phase})
+            kanary_error.set(1, {"tested_cluster": tested_cluster, "type": test_type, "reason": reason, "phase": failure_phase})
         else:
             print(f"Test outcome: {test_outcome}, reporting kanary-pipeline-error")
             kanary_up.set(1, labels_up)
