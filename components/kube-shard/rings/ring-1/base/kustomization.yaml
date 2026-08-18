@@ -9,3 +9,13 @@ images:
 - name: localhost/controller
   newName: quay.io/konflux-ci/kube-shard
   newTag: b22f23824e856985564663c1e1d037521addc9dd
+
+patches:
+- target:
+    kind: Deployment
+    name: operator-controller-manager
+    namespace: kube-shard-operator
+  patch: |
+    - op: add
+      path: /spec/template/spec/containers/0/securityContext/readOnlyRootFilesystem
+      value: true
