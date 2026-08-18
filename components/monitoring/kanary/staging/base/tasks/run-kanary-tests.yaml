@@ -72,6 +72,8 @@ spec:
       description: "Test outcome: passed, failed, or unknown"
     - name: failure-cause
       description: "Error cause from loadtest error_caused_by_simple (comma-separated if multiple). Empty on pass or when collect-results did not run."
+    - name: failure-phase
+      description: "Loadtest phase where the earliest failure occurred (e.g. waitForImageRepositoryReady). Empty on pass or when collect-results did not run."
   volumes:
     - name: artifacts
       emptyDir: {}
@@ -291,6 +293,7 @@ spec:
         set -euo pipefail
         echo -n "unknown" > $(results.test-outcome.path)
         echo -n "" > $(results.failure-cause.path)
+        echo -n "" > $(results.failure-phase.path)
         if [[ ! -s /opt/users-secret/token ]]; then
           echo "ERROR: /opt/users-secret/token is missing or empty" >&2
           exit 1
@@ -337,3 +340,7 @@ spec:
         caused_by=$(jq -r '.results.errors.error_caused_by_simple // ""' \
           /tmp/artifacts/results/load-test.json 2>/dev/null || true)
         echo -n "${caused_by}" > $(results.failure-cause.path)
+        # Write the phase (loadtest function) where the earliest failure occurred.
+        failed_phase=$(jq -r '.results.measurements.KPI.failed_phase // ""' \
+          /tmp/artifacts/results/load-test.json 2>/dev/null || true)
+        echo -n "${failed_phase}" > $(results.failure-phase.path)

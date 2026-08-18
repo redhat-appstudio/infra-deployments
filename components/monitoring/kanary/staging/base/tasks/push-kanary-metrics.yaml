@@ -21,6 +21,10 @@ spec:
       type: string
       default: ""
       description: "Raw error_caused_by_simple from loadtest (may be comma-separated). Empty when test passed or kanary mechanism failed."
+    - name: failure-phase
+      type: string
+      default: ""
+      description: "Loadtest phase where earliest failure occurred (e.g. waitForImageRepositoryReady). Empty when test passed or kanary mechanism failed."
   steps:
     - name: push-metrics
       image: quay.io/redhat-user-workloads/konflux-perfscale-tenant/loadtest
@@ -35,6 +39,8 @@ spec:
           value: $(params.test-outcome)
         - name: FAILURE_CAUSE
           value: $(params.failure-cause)
+        - name: FAILURE_PHASE
+          value: $(params.failure-phase)
       script: |
         #!/usr/bin/env python3
         import os
@@ -51,6 +57,7 @@ spec:
         test_type = os.environ["TEST_TYPE"]
         test_outcome = os.environ["TEST_OUTCOME"]
         failure_cause_raw = os.environ["FAILURE_CAUSE"].strip()
+        failure_phase = os.environ["FAILURE_PHASE"].strip()
 
         # Take the first value from comma-separated error_caused_by_simple.
         # The full string is preserved in the TaskRun result for debugging.
@@ -62,7 +69,7 @@ spec:
         print(f"Pushing kanary metrics to: {endpoint}")
         print(f"  tested_cluster={tested_cluster}, type={test_type}, test_outcome={test_outcome}")
         if caused_by:
-            print(f"  failure_cause={failure_cause_raw}, caused_by={caused_by}")
+            print(f"  failure_cause={failure_cause_raw}, caused_by={caused_by}, phase={failure_phase}")
 
         resource = Resource.create({
             "service.name": "kanary",
@@ -95,13 +102,13 @@ spec:
             kanary_up.set(1, labels_up)
             # kanary_error is not emitted on success — kanary_up=1 is sufficient
         elif test_outcome == "failed":
-            print(f"Test outcome: failed, caused_by={caused_by or 'UNKNOWN'}")
+            print(f"Test outcome: failed, caused_by={caused_by or 'UNKNOWN'}, phase={failure_phase}")
             kanary_up.set(0, labels_up)
-            kanary_error.set(1, {"tested_cluster": tested_cluster, "type": test_type, "caused_by": caused_by or "UNKNOWN"})
+            kanary_error.set(1, {"tested_cluster": tested_cluster, "type": test_type, "caused_by": caused_by or "UNKNOWN", "phase": failure_phase})
         else:
             print(f"Test outcome: {test_outcome}, reporting kanary-pipeline-error")
             kanary_up.set(1, labels_up)
-            kanary_error.set(1, {"tested_cluster": tested_cluster, "type": test_type, "caused_by": "kanary-pipeline-error"})
+            kanary_error.set(1, {"tested_cluster": tested_cluster, "type": test_type, "caused_by": "kanary-pipeline-error", "phase": ""})
 
         kanary_timestamp.set(time.time(), {"tested_cluster": tested_cluster, "type": test_type})
 
