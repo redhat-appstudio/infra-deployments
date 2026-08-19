@@ -2,6 +2,8 @@ apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
   name: konflux-verifications-rd
+  labels:
+    appstudio.redhat.com/deployment-clusters: "tenant"
 spec:
   generators:
     - merge:
@@ -9,12 +11,18 @@ spec:
           - nameNormalized
         generators:
           - clusters:
+              selector:
+                matchExpressions:
+                  - key: appstudio.redhat.com/select-none
+                    operator: Exists
+                  - key: appstudio.redhat.com/select-none
+                    operator: DoesNotExist
               values:
                 sourceRoot: components/konflux-verifications-rd
-                ring: empty-base
+                ring: "empty-base"
                 clusterDir: "empty-base"
           - list:
-              elements: []
+              elements: [] # Populated via k-components
   template:
     metadata:
       name: konflux-verifications-rd-{{nameNormalized}}
@@ -31,10 +39,9 @@ spec:
         automated:
           prune: true
           selfHeal: true
-        preserveResourcesOnDeletion: true
+        syncOptions:
+          - CreateNamespace=true
         retry:
-          limit: -1
+          limit: 50
           backoff:
-            duration: 10s
-            factor: 2
-            maxDuration: 3m
+            duration: 15s
