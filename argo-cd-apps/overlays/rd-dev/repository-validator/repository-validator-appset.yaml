@@ -2,6 +2,8 @@ apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
   name: repository-validator
+  labels:
+    appstudio.redhat.com/deployment-clusters: tenant
 spec:
   generators:
     - merge:
@@ -9,33 +11,35 @@ spec:
           - nameNormalized
         generators:
           - clusters:
-              values:
-                sourceRoot: components/repository-validator
-                environment: staging
-                clusterDir: ""
               selector:
-                matchLabels:
-                  appstudio.redhat.com/internal-member-cluster: "true"
+                  matchLabels:
+                    appstudio.redhat.com/member-cluster: "true"
+              values:
+                sourceRoot: components/repository-validator-rd
+                ring: "ring-0"
+                clusterDir: "base"
           - list:
               elements: []
+
   template:
     metadata:
       name: repository-validator-{{nameNormalized}}
     spec:
       project: default
       source:
-        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
+        path: '{{values.sourceRoot}}/rings/{{values.ring}}/{{values.clusterDir}}'
         repoURL: https://github.com/redhat-appstudio/infra-deployments.git
         targetRevision: main
       destination:
         namespace: repository-validator
         server: '{{server}}'
       syncPolicy:
+        # automated:
+        #   prune: true
+        #   selfHeal: true
         syncOptions:
-          - CreateNamespace=false
+        - CreateNamespace=true
         retry:
-          limit: -1
+          limit: 50
           backoff:
-            duration: 10s
-            factor: 2
-            maxDuration: 3m
+            duration: 15s
