@@ -39,13 +39,13 @@ const PodLogTailLines int64 = 80
 //
 // Pass empty strings to skip either filter (e.g., empty pipelineType counts
 // all PRs, used for the managed namespace where every PR is a release pipeline).
-func countSucceededPRs(ctx context.Context, fw *framework.Framework, namespace, pipelineType, componentName string) int {
+func countSucceededPRs(ctx context.Context, fw *framework.Framework, namespace, pipelineType, componentName string) (int, error) {
 	listOpts := buildListOpts(namespace, pipelineType, componentName)
 
 	prList := &pipeline.PipelineRunList{}
 	if err := fw.AsKubeAdmin.CommonController.KubeRest().List(
 		ctx, prList, listOpts...); err != nil {
-		return 0
+		return 0, fmt.Errorf("listing PipelineRuns in %s: %w", namespace, err)
 	}
 
 	count := 0
@@ -57,7 +57,7 @@ func countSucceededPRs(ctx context.Context, fw *framework.Framework, namespace, 
 			}
 		}
 	}
-	return count
+	return count, nil
 }
 
 // logFailedTaskRuns lists TaskRuns belonging to a failed PipelineRun and logs
@@ -278,12 +278,11 @@ func buildListOpts(namespace, pipelineType, componentName string) []client.ListO
 // (which persist in the tenant namespace) rather than PipelineRuns.
 // ---------------------------------------------------------------------------
 
-func countReleasedReleases(ctx context.Context, fw *framework.Framework, namespace string) int {
+func countReleasedReleases(ctx context.Context, fw *framework.Framework, namespace string) (int, error) {
 	releases := &releaseapi.ReleaseList{}
 	if err := fw.AsKubeAdmin.CommonController.KubeRest().List(
 		ctx, releases, client.InNamespace(namespace)); err != nil {
-		GinkgoWriter.Printf("error listing Releases in %s: %v\n", namespace, err)
-		return 0
+		return 0, fmt.Errorf("listing Releases in %s: %w", namespace, err)
 	}
 	count := 0
 	for i := range releases.Items {
@@ -291,7 +290,7 @@ func countReleasedReleases(ctx context.Context, fw *framework.Framework, namespa
 			count++
 		}
 	}
-	return count
+	return count, nil
 }
 
 func waitForReleasedCount(ctx context.Context, fw *framework.Framework, namespace string, expectedCount int, timeout, poll time.Duration) {
@@ -324,10 +323,22 @@ func waitForReleasedCount(ctx context.Context, fw *framework.Framework, namespac
 		GinkgoWriter.Printf("namespace %s: %d/%d Releases released (total: %d)\n",
 			namespace, releasedCount, expectedCount, len(releases.Items))
 
+		if releasedCount > expectedCount {
+			GinkgoWriter.Printf("OVERSHOOT DETECTED: %d/%d released Releases in %s — dumping diagnostics:\n",
+				releasedCount, expectedCount, namespace)
+			for i := range releases.Items {
+				r := &releases.Items[i]
+				GinkgoWriter.Printf("  Release: %s | created: %s | released: %v\n",
+					r.Name, r.CreationTimestamp.Format("15:04:05"), r.IsReleased())
+			}
+		}
+
 		return releasedCount
-	}, timeout, poll).Should(BeNumerically(">=", expectedCount),
-		"expected at least %d released Releases in namespace %s",
-		expectedCount, namespace)
+	}, timeout, poll).Should(SatisfyAll(
+		BeNumerically(">=", expectedCount),
+		BeNumerically("<=", expectedCount*2),
+	), "expected %d–%d released Releases in namespace %s (got overshoot beyond 2x tolerance)",
+		expectedCount, expectedCount*2, namespace)
 }
 
 // ---------------------------------------------------------------------------
@@ -346,12 +357,12 @@ type pipelineRunBaseCounts struct {
 // release) to complete for every component across all tenants. Each
 // component's chain runs in its own goroutine so that a slow component
 // doesn't block faster ones from progressing through subsequent stages.
-// Release PipelineRuns are waited for after all build/test chains complete,
-// since release PRs may not be per-component.
+// Release CRs are waited for after all build/test chains complete,
+// since releases may not be per-component.
 //
 // baseBuildTest provides per-component starting counts keyed by
 // "namespace/componentName". baseRelease provides aggregate starting counts
-// keyed by managed namespace. Pass nil for both on the first run (base of 0).
+// keyed by tenant namespace. Pass nil for both on the first run (base of 0).
 func waitForPipelineChains(ctx context.Context, fw *framework.Framework, tenants []Tenant,
 	baseBuildTest map[string]pipelineRunBaseCounts, baseRelease map[string]int) {
 	GinkgoHelper()
@@ -420,14 +431,20 @@ func triggerBuildsAndVerify(ctx context.Context, fw *framework.Framework, tenant
 	for _, t := range tenants {
 		for _, comp := range Components {
 			key := t.Namespace + "/" + comp.Name
+			buildCount, err := countSucceededPRs(ctx, fw, t.Namespace, "build", comp.Name)
+			Expect(err).ShouldNot(HaveOccurred(), "baseline build count for %s", key)
+			testCount, err := countSucceededPRs(ctx, fw, t.Namespace, "test", comp.Name)
+			Expect(err).ShouldNot(HaveOccurred(), "baseline test count for %s", key)
 			initialPerComp[key] = pipelineRunBaseCounts{
-				build: countSucceededPRs(ctx, fw, t.Namespace, "build", comp.Name),
-				test:  countSucceededPRs(ctx, fw, t.Namespace, "test", comp.Name),
+				build: buildCount,
+				test:  testCount,
 			}
 			GinkgoWriter.Printf("initial counts for %s: build=%d, test=%d\n",
 				key, initialPerComp[key].build, initialPerComp[key].test)
 		}
-		initialRelease[t.Namespace] = countReleasedReleases(ctx, fw, t.Namespace)
+		releaseCount, err := countReleasedReleases(ctx, fw, t.Namespace)
+		Expect(err).ShouldNot(HaveOccurred(), "baseline release count for %s", t.Namespace)
+		initialRelease[t.Namespace] = releaseCount
 		GinkgoWriter.Printf("initial released count for %s: %d\n",
 			t.Namespace, initialRelease[t.Namespace])
 	}
