@@ -5,11 +5,11 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: conformance-verification-admin
-  namespace: conformance-tenant
+  namespace: konflux-conformance-tests
 subjects:
   - kind: ServiceAccount
     name: conformance-verification-sa
-    namespace: conformance-managed-tenant
+    namespace: konflux-managed-tests
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -19,11 +19,11 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: conformance-verification-managed-admin
-  namespace: conformance-managed-tenant
+  namespace: konflux-managed-tests
 subjects:
   - kind: ServiceAccount
     name: conformance-verification-sa
-    namespace: conformance-managed-tenant
+    namespace: konflux-managed-tests
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -33,11 +33,11 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: conformance-verification-release-pipeline
-  namespace: conformance-managed-tenant
+  namespace: konflux-managed-tests
 subjects:
   - kind: ServiceAccount
     name: conformance-verification-sa
-    namespace: conformance-managed-tenant
+    namespace: konflux-managed-tests
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
