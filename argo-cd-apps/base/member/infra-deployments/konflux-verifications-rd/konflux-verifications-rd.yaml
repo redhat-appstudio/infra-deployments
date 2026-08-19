@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: conformance-verification
+  name: konflux-verifications-rd
 spec:
   generators:
     - merge:
@@ -10,7 +10,7 @@ spec:
         generators:
           - clusters:
               values:
-                sourceRoot: components/conformance-verification
+                sourceRoot: components/konflux-verifications-rd
                 environment: staging
                 clusterDir: "empty-base"
           - list:
@@ -19,7 +19,7 @@ spec:
                   values.clusterDir: stone-stage-p01
   template:
     metadata:
-      name: conformance-verification-{{nameNormalized}}
+      name: konflux-verifications-rd-{{nameNormalized}}
     spec:
       project: default
       source:
