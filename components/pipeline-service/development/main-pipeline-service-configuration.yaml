@@ -2267,6 +2267,12 @@ spec:
     env:
       - name: AUTOINSTALL_COMPONENTS
         value: "false"
+      - name: IMAGE_PIPELINES_TEKTON_PIPELINES_CONTROLLER
+        value: "quay.io/openshift-pipeline/pipelines-controller-rhel9@sha256:825e9f059e3e3b69a180a7c12c60a9194852241d51efa344c411c9650472fc37"
+      - name: IMAGE_PIPELINES_WEBHOOK
+        value: "quay.io/openshift-pipeline/pipelines-webhook-rhel9@sha256:95fdd592e00c7be5e610d4f8e803f78e5a4485a6129f3360d4ac60cb109098ab"
+      - name: IMAGE_PIPELINES_CONTROLLER
+        value: "quay.io/openshift-pipeline/pipelines-resolvers-rhel9@sha256:c89b7c3e91b8147a441c7d31890a7da45188ce2018f992dab8803129d8ce231b"
 ---
 apiVersion: route.openshift.io/v1
 kind: Route
