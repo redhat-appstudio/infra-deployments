@@ -51,6 +51,12 @@ main() {
   local -A queue_configs=(
       ["components/kueue/staging/stone-stage-p01"]="components/policies/staging/stone-stage-p01/kueue/deny-unallowed-annotations/"
       ["components/kueue/staging/stone-stg-rh01"]="components/policies/staging/stone-stg-rh01/kueue/deny-unallowed-annotations/"
+      ["components/kueue/production/kflux-fedora-01"]="components/policies/production/kflux-fedora-01/kueue/deny-unallowed-annotations/"
+      ["components/kueue/production/kflux-lw-p01"]="components/policies/production/kflux-lw-p01/kueue/deny-unallowed-annotations/"
+      ["components/kueue/production/kflux-ocp-p01"]="components/policies/production/kflux-ocp-p01/kueue/deny-unallowed-annotations/"
+      ["components/kueue/production/kflux-osp-p01"]="components/policies/production/kflux-osp-p01/kueue/deny-unallowed-annotations/"
+      ["components/kueue/production/kflux-rhel-p01"]="components/policies/production/kflux-rhel-p01/kueue/deny-unallowed-annotations/"
+      ["components/kueue/production/stone-prod-p01"]="components/policies/production/stone-prod-p01/kueue/deny-unallowed-annotations/"
   )
 
   for input_folder in "${!queue_configs[@]}"; do
