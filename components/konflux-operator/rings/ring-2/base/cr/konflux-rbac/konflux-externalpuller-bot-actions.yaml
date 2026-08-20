@@ -1,0 +1,13 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: konflux-externalpuller-bot-actions
+rules:
+- apiGroups:
+  - appstudio.redhat.com
+  resources:
+  - imagerepositories
+  verbs:
+  - get
+  - list
+  - watch
