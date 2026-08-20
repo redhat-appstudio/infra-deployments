@@ -15,6 +15,21 @@ patchesStrategicMerge:
   - delete-applications.yaml
 
 patches:
+  - path: cluster-secret-store-select-none-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: cluster-secret-store
+  - path: preserve-resources-on-deletion.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: cluster-secret-store
+  - path: disable-auto-sync.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: cluster-secret-store
   - path: staging-downstream-overlay-patch.yaml
     target:
       kind: ApplicationSet
