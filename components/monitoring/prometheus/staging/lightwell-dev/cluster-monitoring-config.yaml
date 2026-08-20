@@ -9,33 +9,29 @@ data:
     prometheusK8s:
       retentionSize: 10GB
       nodeSelector:
-        konflux-ci.dev/workload: konflux-tenants
+        node-role.kubernetes.io/infra: ""
       tolerations:
-        - key: "konflux-ci.dev/workload"
-          value: "konflux-tenants"
+        - key: "node-role.kubernetes.io/infra"
           effect: "NoSchedule"
-          operator: "Equal"
+          operator: "Exists"
     alertmanagerMain:
       nodeSelector:
-        konflux-ci.dev/workload: konflux-tenants
+        node-role.kubernetes.io/infra: ""
       tolerations:
-        - key: "konflux-ci.dev/workload"
-          value: "konflux-tenants"
+        - key: "node-role.kubernetes.io/infra"
           effect: "NoSchedule"
-          operator: "Equal"
+          operator: "Exists"
     thanosQuerier:
       nodeSelector:
-        konflux-ci.dev/workload: konflux-tenants
+        node-role.kubernetes.io/infra: ""
       tolerations:
-        - key: "konflux-ci.dev/workload"
-          value: "konflux-tenants"
+        - key: "node-role.kubernetes.io/infra"
           effect: "NoSchedule"
-          operator: "Equal"
+          operator: "Exists"
     prometheusOperator:
       nodeSelector:
-        konflux-ci.dev/workload: konflux-tenants
+        node-role.kubernetes.io/infra: ""
       tolerations:
-        - key: "konflux-ci.dev/workload"
-          value: "konflux-tenants"
+        - key: "node-role.kubernetes.io/infra"
           effect: "NoSchedule"
-          operator: "Equal"
+          operator: "Exists"
