@@ -8,6 +8,12 @@ data:
     enableUserWorkload: true
     prometheusK8s:
       retentionSize: 10GB
+      volumeClaimTemplate:
+        spec:
+          storageClassName: ibmc-vpc-block-metro-retain-10iops-tier
+          resources:
+            requests:
+              storage: 100Gi
       nodeSelector:
         node-role.kubernetes.io/infra: ""
       tolerations:
