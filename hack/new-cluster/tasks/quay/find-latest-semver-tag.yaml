@@ -1,3 +1,8 @@
+# Resolves an image tag and digest for {{ repo }} from quay.io, using these inputs:
+#   - Neither tag nor digest provided: pick the highest semver tag (X.Y.Z) and its digest.
+#   - Tag provided without digest: look up the digest for that specific tag.
+#   - Digest provided without tag: fail (a digest alone is ambiguous).
+#   - Both provided: use them as-is (no lookup).
 - name: Fail if digest is provided without tag for {{ repo }}
   tags: [always]
   fail:
