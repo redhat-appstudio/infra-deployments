@@ -57,6 +57,12 @@ main() {
   local -A configmap_configs=(
       ["components/kueue/rings/ring-1/stone-stage-p01"]="components/policies-rd/rings/ring-1/stone-stage-p01/kueue-config/"
       ["components/kueue/rings/ring-1/stone-stg-rh01"]="components/policies-rd/rings/ring-1/stone-stg-rh01/kueue-config/"
+      ["components/kueue/rings/ring-2/kflux-fedora-01"]="components/policies/production/kflux-fedora-01/kueue/deny-unallowed-annotations/"
+      ["components/kueue/rings/ring-2/kflux-lw-p01"]="components/policies/production/kflux-lw-p01/kueue/deny-unallowed-annotations/"
+      ["components/kueue/rings/ring-2/kflux-ocp-p01"]="components/policies/production/kflux-ocp-p01/kueue/deny-unallowed-annotations/"
+      ["components/kueue/rings/ring-2/kflux-osp-p01"]="components/policies/production/kflux-osp-p01/kueue/deny-unallowed-annotations/"
+      ["components/kueue/rings/ring-2/kflux-rhel-p01"]="components/policies/production/kflux-rhel-p01/kueue/deny-unallowed-annotations/"
+      ["components/kueue/rings/ring-2/stone-prod-p01"]="components/policies/production/stone-prod-p01/kueue/deny-unallowed-annotations/"
   )
 
   # Ring-level chainsaw test fixture destinations.
@@ -67,6 +73,12 @@ main() {
   # Value: exact path to the ring's .chainsaw-test/resources/ dir
   local -A test_fixture_configs=(
       ["components/kueue/rings/ring-1/stone-stg-rh01"]="components/policies-rd/rings/ring-1/base/kueue/deny-unallowed-annotations/.chainsaw-test/resources/"
+      ["components/kueue/rings/ring-2/kflux-fedora-01"]="components/policies/production/kflux-fedora-01/kueue/deny-unallowed-annotations/.chainsaw-test/resources/"
+      ["components/kueue/rings/ring-2/kflux-lw-p01"]="components/policies/production/kflux-lw-p01/kueue/deny-unallowed-annotations/.chainsaw-test/resources/"
+      ["components/kueue/rings/ring-2/kflux-ocp-p01"]="components/policies/production/kflux-ocp-p01/kueue/deny-unallowed-annotations/.chainsaw-test/resources/"
+      ["components/kueue/rings/ring-2/kflux-osp-p01"]="components/policies/production/kflux-osp-p01/kueue/deny-unallowed-annotations/.chainsaw-test/resources/"
+      ["components/kueue/rings/ring-2/kflux-rhel-p01"]="components/policies/production/kflux-rhel-p01/kueue/deny-unallowed-annotations/.chainsaw-test/resources/"
+      ["components/kueue/rings/ring-2/stone-prod-p01"]="components/policies/production/stone-prod-p01/kueue/deny-unallowed-annotations/.chainsaw-test/resources/"
   )
 
   # Update per-cluster ConfigMaps
