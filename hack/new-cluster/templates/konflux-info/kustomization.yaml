@@ -4,11 +4,15 @@ resources:
   - ../../base
 
 generatorOptions:
- disableNameSuffixHash: true
+  disableNameSuffixHash: true
 
 configMapGenerator:
   - name: konflux-public-info
     files:
       - info.json
+  # TODO: konflux-banner-configmap (banner-content.yaml, added in PR #7326) and
+  # cluster-config (cluster-config.env with proxy settings, added in PR #9617)
+  # are present on all production and staging clusters but not yet in this template.
+  # Adding them requires also templating the corresponding files.
 
 namespace: konflux-info

@@ -9,6 +9,12 @@
     subdir: "{{ env }}-downstream"
   when: network == 'private' and component == 'multi-platform-controller'
 
+- name: Adjust subdir for ring-deployment (templated_rd_components) components
+  tags: [components]
+  set_fact:
+    subdir: "rings/{{ ring }}"
+  when: component in templated_rd_components
+
 - name: "Create the components/{{ component }}/{{ subdir }}/{{ shortname }}/ directory if it does not exist"
   tags: [components]
   file:
