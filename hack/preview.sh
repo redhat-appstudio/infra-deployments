@@ -311,7 +311,7 @@ label_cluster_nodes() {
     done
 
     log_substep "Verifying labels on all nodes..."
-    labeled_count=$(kubectl get nodes --show-labels | grep -c "konflux-ci.dev/workload=konflux-tenants" || echo "0")
+    labeled_count=$(kubectl get nodes --show-labels | grep -c "konflux-ci.dev/workload=konflux-tenants" || true)
 
     if [ "$node_count" -eq "$labeled_count" ]; then
         log_success "All $node_count nodes labeled and verified successfully"
@@ -635,10 +635,13 @@ deploy_and_wait_for_argocd() {
         local skip_apps_pattern="container-image-proxy"
 
         state=$(oc get apps -n $ARGOCD_NAMESPACE --no-headers 2>/dev/null || echo "")
-        total_apps=$(echo "$state" | grep -c "." || echo "0")
-        synced_apps=$(echo "$state" | grep -c "Synced[[:blank:]]*Healthy" || echo "0")
-        not_done=$(echo "$state" | grep -v "Synced[[:blank:]]*Healthy" | grep -v "$skip_apps_pattern" || true)
-        pending_apps=$(echo "$not_done" | grep -c "." || echo "0")
+        # grep -c already prints the count (including 0); a `|| echo 0` fallback
+        # would append a second line and break the arithmetic below when $state is
+        # empty (e.g. a transient `oc get` failure). Swallow the exit status only.
+        total_apps=$(echo "$state" | grep -c "." || true)
+        synced_apps=$(echo "$state" | grep -c "Synced[[:blank:]]*Healthy" || true)
+        pending_apps=$((total_apps - synced_apps))
+        not_done=$(echo "$state" | grep -v "Synced[[:blank:]]*Healthy" || true)
 
         local elapsed_min=$((elapsed_time / 60))
         local elapsed_sec=$((elapsed_time % 60))
