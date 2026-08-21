@@ -631,13 +631,22 @@ deploy_and_wait_for_argocd() {
             exit 1
         fi
 
-        # Applications known to be non-blocking for rd-dev (pre-existing infra issues).
-        local skip_apps_pattern="container-image-proxy"
-
-        state=$(oc get apps -n $ARGOCD_NAMESPACE --no-headers 2>/dev/null || echo "")
+        # A transient `oc get` failure must not be mistaken for "0 apps synced":
+        # with an empty $state the grep -c counts below would yield
+        # total_apps=0/not_done="" and trip the success branch. Retry instead.
+        if ! state=$(oc get apps -n $ARGOCD_NAMESPACE --no-headers 2>/dev/null); then
+            log_warn "oc get apps failed; retrying in $SYNC_INTERVAL seconds"
+            sleep $SYNC_INTERVAL
+            continue
+        fi
+        if [ -z "$state" ]; then
+            log_warn "oc get apps returned no applications; retrying in $SYNC_INTERVAL seconds"
+            sleep $SYNC_INTERVAL
+            continue
+        fi
         # grep -c already prints the count (including 0); a `|| echo 0` fallback
-        # would append a second line and break the arithmetic below when $state is
-        # empty (e.g. a transient `oc get` failure). Swallow the exit status only.
+        # would append a second line and break the arithmetic below. Swallow the
+        # exit status only.
         total_apps=$(echo "$state" | grep -c "." || true)
         synced_apps=$(echo "$state" | grep -c "Synced[[:blank:]]*Healthy" || true)
         pending_apps=$((total_apps - synced_apps))
