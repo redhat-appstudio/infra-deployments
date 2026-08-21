@@ -11,6 +11,7 @@ PIPELINES_NAMESPACE="openshift-pipelines"
 SYNC_INTERVAL=10
 MAX_TEKTON_CRD_RETRIES=5
 MAX_SYNC_TIMEOUT=2700           # 45 minutes max for all apps to sync
+MAX_TRANSIENT_REFRESHES=3       # Soft-refresh attempts per app before an Unknown state is treated as non-transient
 MAX_TEKTON_READY_TIMEOUT=900    # 15 minutes max for Tekton to become ready
 DETAILED_STATUS_INTERVAL=120    # Show detailed status every 2 minutes
 
@@ -167,7 +168,10 @@ show_app_details() {
     local sync_status health_status message resources_summary
     sync_status=$(echo "$app_json" | jq -r '.status.sync.status // "Unknown"')
     health_status=$(echo "$app_json" | jq -r '.status.health.status // "Unknown"')
-    message=$(echo "$app_json" | jq -r '.status.conditions[0].message // "No message"' | head -c 200)
+    # Truncate inside jq: piping to `head` closes the pipe early and, under
+    # `set -e` + `pipefail`, the SIGPIPE it sends to jq (exit 141) would abort
+    # the whole bootstrap. jq-native slicing keeps this diagnostic non-fatal.
+    message=$(echo "$app_json" | jq -r '(.status.conditions[0].message // "No message")[0:200]')
 
     log_info "  ├─ App: $app_name"
     log_info "  │  ├─ Sync Status: $sync_status"
@@ -191,7 +195,9 @@ show_app_details() {
 
     # Show conditions/errors
     local conditions
-    conditions=$(echo "$app_json" | jq -r '.status.conditions[]? | "[\(.type)] \(.message // "No message")"' 2>/dev/null | head -3)
+    # Limit to 3 conditions inside jq rather than `| head -3` (see note above:
+    # a closed `head` pipe would SIGPIPE jq and abort the script under pipefail).
+    conditions=$(echo "$app_json" | jq -r '[.status.conditions[]?][0:3][] | "[\(.type)] \(.message // "No message")"' 2>/dev/null)
     if [ -n "$conditions" ]; then
         log_warn "  │  └─ Conditions:"
         echo "$conditions" | while IFS= read -r line; do
@@ -305,7 +311,7 @@ label_cluster_nodes() {
     done
 
     log_substep "Verifying labels on all nodes..."
-    labeled_count=$(kubectl get nodes --show-labels | grep -c "konflux-ci.dev/workload=konflux-tenants" || echo "0")
+    labeled_count=$(kubectl get nodes --show-labels | grep -c "konflux-ci.dev/workload=konflux-tenants" || true)
 
     if [ "$node_count" -eq "$labeled_count" ]; then
         log_success "All $node_count nodes labeled and verified successfully"
@@ -596,6 +602,12 @@ deploy_and_wait_for_argocd() {
     sync_start_time=$(date +%s)
     last_detailed_status_time=$sync_start_time
 
+    # Bound the soft-refresh recovery per app so a permanent failure that merely
+    # matches a transient message can't loop until MAX_SYNC_TIMEOUT. Counts are
+    # kept in per-app dynamic variables (see the sync loop below) rather than an
+    # associative array, which would require Bash 4+ (absent on e.g. macOS's
+    # /bin/bash 3.2).
+
     while :; do
         iteration=$((iteration + 1))
         local current_time=$(date +%s)
@@ -618,9 +630,24 @@ deploy_and_wait_for_argocd() {
             exit 1
         fi
 
-        state=$(oc get apps -n $ARGOCD_NAMESPACE --no-headers 2>/dev/null || echo "")
-        total_apps=$(echo "$state" | grep -c "." || echo "0")
-        synced_apps=$(echo "$state" | grep -c "Synced[[:blank:]]*Healthy" || echo "0")
+        # A transient `oc get` failure must not be mistaken for "0 apps synced":
+        # with an empty $state the grep -c counts below would yield
+        # total_apps=0/not_done="" and trip the success branch. Retry instead.
+        if ! state=$(oc get apps -n $ARGOCD_NAMESPACE --no-headers 2>/dev/null); then
+            log_warn "oc get apps failed; retrying in $SYNC_INTERVAL seconds"
+            sleep $SYNC_INTERVAL
+            continue
+        fi
+        if [ -z "$state" ]; then
+            log_warn "oc get apps returned no applications; retrying in $SYNC_INTERVAL seconds"
+            sleep $SYNC_INTERVAL
+            continue
+        fi
+        # grep -c already prints the count (including 0); a `|| echo 0` fallback
+        # would append a second line and break the arithmetic below. Swallow the
+        # exit status only.
+        total_apps=$(echo "$state" | grep -c "." || true)
+        synced_apps=$(echo "$state" | grep -c "Synced[[:blank:]]*Healthy" || true)
         pending_apps=$((total_apps - synced_apps))
         not_done=$(echo "$state" | grep -v "Synced[[:blank:]]*Healthy" || true)
 
@@ -655,25 +682,50 @@ deploy_and_wait_for_argocd() {
             for app in $unknown; do
                 error=$(oc get -n $ARGOCD_NAMESPACE applications.argoproj.io $app -o jsonpath='{.status.conditions}' 2>/dev/null || echo "")
 
-                if echo "$error" | grep -q 'context deadline exceeded'; then
-                    log_warn "Application '$app' hit context deadline, attempting soft refresh"
-                    oc patch applications.argoproj.io $app -n $ARGOCD_NAMESPACE --type merge -p='{"metadata": {"annotations":{"argocd.argoproj.io/refresh": "soft"}}}' 2>/dev/null || true
-
-                    local refresh_wait=0
-                    while [ -n "$(oc get applications.argoproj.io -n $ARGOCD_NAMESPACE $app -o jsonpath='{.metadata.annotations.argocd\.argoproj\.io/refresh}' 2>/dev/null)" ]; do
-                        refresh_wait=$((refresh_wait + 5))
-                        if [ "$refresh_wait" -gt 60 ]; then
-                            log_warn "Soft refresh of '$app' timed out after 60s, continuing anyway"
-                            break
-                        fi
-                        sleep 5
-                    done
-                    log_success "Soft refresh of '$app' completed, continuing sync check"
-                    continue 2
+                # Known transient conditions that clear on the next reconcile: the
+                # repo-server manifest-generation timeout and the kustomize+helm
+                # render collision (Loki chart `helm pull --untar ... already
+                # exists`). Kept deliberately narrow — broad substrings like
+                # `rpc error` also appear in permanent auth/RBAC/repo failures,
+                # which must reach the diagnostics path rather than soft-refresh.
+                local transient_errors='context deadline exceeded|failed to untar'
+                # Per-app soft-refresh counter without associative arrays (Bash 3.x
+                # safe). App names are DNS-1123 (lowercase alnum + '-'), so mapping
+                # every non-alphanumeric char to '_' yields a unique, valid
+                # variable-name suffix that persists across sync-loop iterations.
+                local refresh_var="transient_refresh_${app//[^a-zA-Z0-9]/_}"
+                local "$refresh_var"   # ensures the counter is scoped to this function
+                local refresh_count=${!refresh_var:-0}
+                if echo "$error" | grep -qE "$transient_errors" && [ "$refresh_count" -lt "$MAX_TRANSIENT_REFRESHES" ]; then
+                    if oc patch applications.argoproj.io "$app" -n "$ARGOCD_NAMESPACE" --type merge \
+                        -p='{"metadata": {"annotations":{"argocd.argoproj.io/refresh": "soft"}}}' 2>/dev/null; then
+                        refresh_count=$((refresh_count + 1))
+                        printf -v "$refresh_var" '%s' "$refresh_count"
+                        log_warn "Application '$app' hit a transient error, attempting soft refresh ($refresh_count/$MAX_TRANSIENT_REFRESHES)"
+                        local refresh_wait=0
+                        while [ -n "$(oc get applications.argoproj.io -n $ARGOCD_NAMESPACE $app -o jsonpath='{.metadata.annotations.argocd\.argoproj\.io/refresh}' 2>/dev/null)" ]; do
+                            refresh_wait=$((refresh_wait + 5))
+                            if [ "$refresh_wait" -gt 60 ]; then
+                                log_warn "Soft refresh of '$app' timed out after 60s, continuing anyway"
+                                break
+                            fi
+                            sleep 5
+                        done
+                        log_success "Soft refresh of '$app' completed, continuing sync check"
+                        continue 2
+                    else
+                        log_warn "Soft refresh patch for '$app' failed; not counting toward refresh budget"
+                    fi
                 fi
 
-                # Show detailed error for this app
-                log_error "Application '$app' is in Unknown state without 'context deadline exceeded'"
+                # Not a known transient, or the soft-refresh budget is exhausted:
+                # surface actionable diagnostics now instead of waiting out the
+                # global timeout.
+                if [ "$refresh_count" -ge "$MAX_TRANSIENT_REFRESHES" ]; then
+                    log_error "Application '$app' still Unknown after $MAX_TRANSIENT_REFRESHES soft refreshes, treating as non-transient"
+                else
+                    log_error "Application '$app' is in Unknown state with a non-transient error"
+                fi
                 show_app_details "$app"
             done
         fi
