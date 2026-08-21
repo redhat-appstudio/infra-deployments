@@ -36,9 +36,11 @@ spec:
           prune: true
           selfHeal: true
         syncOptions:
-        - CreateNamespace=true
-        - ServerSideApply=true
+          - CreateNamespace=true
+          - ServerSideApply=true
         retry:
           limit: 50
           backoff:
-            duration: 15s
+            duration: 10s
+            factor: 2
+            maxDuration: 3m
