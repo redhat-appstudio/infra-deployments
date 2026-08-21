@@ -11,19 +11,17 @@ spec:
           - clusters:
               values:
                 sourceRoot: components/konflux-verifications-rd
-                environment: staging
+                ring: empty-base
                 clusterDir: "empty-base"
           - list:
-              elements:
-                - nameNormalized: stone-stage-p01
-                  values.clusterDir: stone-stage-p01
+              elements: []
   template:
     metadata:
       name: konflux-verifications-rd-{{nameNormalized}}
     spec:
       project: default
       source:
-        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
+        path: '{{values.sourceRoot}}/rings/{{values.ring}}/{{values.clusterDir}}'
         repoURL: https://github.com/redhat-appstudio/infra-deployments.git
         targetRevision: main
       destination:
@@ -33,6 +31,7 @@ spec:
         automated:
           prune: true
           selfHeal: true
+        preserveResourcesOnDeletion: true
         retry:
           limit: -1
           backoff:
