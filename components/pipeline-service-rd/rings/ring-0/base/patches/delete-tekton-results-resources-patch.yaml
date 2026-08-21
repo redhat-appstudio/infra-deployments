@@ -1,0 +1,22 @@
+---
+$patch: delete
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rds-root-crt
+  namespace: tekton-results
+---
+$patch: delete
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: tekton-results-database
+  namespace: tekton-results
+---
+$patch: delete
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: tekton-results-s3
+  namespace: tekton-results
+---

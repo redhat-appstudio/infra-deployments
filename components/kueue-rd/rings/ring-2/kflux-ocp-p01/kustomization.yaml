@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- cluster-queue.yaml
+- workload-priority-classes.yaml
+- ../base
+
+configMapGenerator:
+  - name: tekton-kueue-config
+    namespace: tekton-kueue
+    behavior: replace
+    files:
+      - config.yaml
+generatorOptions:
+  disableNameSuffixHash: true

@@ -4,7 +4,7 @@ metadata:
   name: caching-helm
 name: caching-helm
 repo: oci://quay.io/konflux-ci/caching
-version: 0.1.1775+d865e45
+version: 0.1.1889+ca96506
 valuesInline:
   squid:
     enabled: true
@@ -28,6 +28,13 @@ valuesInline:
     auth:
       enabled: true
       secretName: artifact-registry-credentials
+    subFilters:
+      - location: '^/repository/cargo-proxy/config\.json$'
+        types:
+          - application/json
+        filters:
+          - string: '"auth-required":true'
+            replacement: '"auth-required":false'
     cache:
       allowList:
         # Cache all traffic to nexus repositories
