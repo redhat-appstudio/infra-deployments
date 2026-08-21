@@ -14,7 +14,9 @@ spec:
                 environment: staging
                 clusterDir: ""
           - list:
-              elements: []
+              elements:
+                - nameNormalized: lightwell-dev
+                  values.clusterDir: lightwell-dev
   template:
     metadata:
       name: monitoring-workload-custom-kube-state-metrics-{{nameNormalized}}
