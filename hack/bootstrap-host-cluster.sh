@@ -38,14 +38,6 @@ main() {
     
     load_global_vars
     
-    # Setup Quality Dashboard secrets
-    log_substep "Configuring Quality Dashboard secrets"
-    if "${ROOT}/secret-creator/quality-dashboard/create-quality-dashboard-secrets.sh"; then
-        log_success "Quality Dashboard secrets configured"
-    else
-        log_warn "Failed to configure Quality Dashboard secrets (dashboard may have limited functionality)"
-    fi
-    
     log_success "Host cluster bootstrap complete"
 }
 

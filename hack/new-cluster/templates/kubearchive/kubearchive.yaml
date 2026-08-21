@@ -941,10 +941,22 @@ kind: ConfigMap
 metadata:
   labels:
     app.kubernetes.io/component: logging
-    app.kubernetes.io/name: kubearchive-logging
+    app.kubernetes.io/name: kubearchive-logging-reader
     app.kubernetes.io/part-of: kubearchive
     app.kubernetes.io/version: v1.22.2
-  name: kubearchive-logging
+  name: kubearchive-logging-reader
+  namespace: kubearchive
+---
+apiVersion: v1
+data: null
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/component: logging
+    app.kubernetes.io/name: kubearchive-logging-writer
+    app.kubernetes.io/part-of: kubearchive
+    app.kubernetes.io/version: v1.22.2
+  name: kubearchive-logging-writer
   namespace: kubearchive
 ---
 apiVersion: v1
@@ -985,11 +997,7 @@ metadata:
   namespace: kubearchive
 type: Opaque
 ---
-# '# notsecret' added to exclude this fake credential from rh-pre-commit.
-# It gets deleted in the kustomization.yaml as well.
 apiVersion: v1
-data:
-  Authorization: QmFzaWMgWVdSdGFXNDZjR0Z6YzNkdmNtUT0= # notasecret
 kind: Secret
 metadata:
   labels:
@@ -999,6 +1007,8 @@ metadata:
     app.kubernetes.io/version: v1.22.2
   name: kubearchive-logging
   namespace: kubearchive
+stringData:
+  HEADERS: ""
 type: Opaque
 ---
 apiVersion: v1
@@ -1153,15 +1163,19 @@ spec:
               name: tls-secret
               readOnly: true
             - mountPath: /data/logging
-              name: logging-secret
+              name: logging-config
       serviceAccountName: kubearchive-api-server
       volumes:
         - name: tls-secret
           secret:
             secretName: kubearchive-api-server-tls
-        - name: logging-secret
-          secret:
-            secretName: kubearchive-logging
+        - name: logging-config
+          projected:
+            sources:
+              - configMap:
+                  name: kubearchive-logging-reader
+              - secret:
+                  name: kubearchive-logging
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -1282,7 +1296,7 @@ metadata:
     app.kubernetes.io/component: sink
     app.kubernetes.io/name: kubearchive-sink
     app.kubernetes.io/part-of: kubearchive
-    app.kubernetes.io/version: v.1.22.2
+    app.kubernetes.io/version: v1.22.2
   name: kubearchive-sink
   namespace: kubearchive
 spec:
@@ -1365,7 +1379,7 @@ spec:
       serviceAccountName: kubearchive-sink
       volumes:
         - configMap:
-            name: kubearchive-logging
+            name: kubearchive-logging-writer
           name: logging-config
 ---
 apiVersion: batch/v1
@@ -1420,7 +1434,10 @@ spec:
   template:
     spec:
       containers:
-        - envFrom:
+        - env:
+            - name: MIGRATION_VERSION
+              value: ""
+          envFrom:
             - secretRef:
                 name: kubearchive-database-credentials
           image: quay.io/kubearchive/postgresql:v1.22.2@sha256:c8068879b345360213123aa03b6eeb7f9f1e22e58f6e2d258c751dafc6a4f7d4

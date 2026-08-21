@@ -1,0 +1,33 @@
+name: Verify Deny Unallowed Annotations ConfigMaps
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'components/kueue/**'
+      - 'components/policies/**'
+      - 'hack/kueue-allowed-vms/generate-allowed-annotations.sh'
+      - '.github/workflows/test-deny-unallowed-annotation-configmap.yaml'
+
+jobs:
+  test-deny-unallowed-annotations-configmaps:
+    name: Test Deny Unallowed Annotations ConfigMaps
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Run Generate Allowed Annotations
+        run: |
+          ./hack/kueue-allowed-vms/generate-allowed-annotations.sh
+
+      - name: Check nothing changes
+        run: |
+          # Check if git working directory is clean
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "Error: Working tree is dirty. The script modified files:"
+            git status
+            exit 1
+          else
+            echo "Clean! No changes detected."
+          fi

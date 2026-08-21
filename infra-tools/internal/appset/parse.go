@@ -4,6 +4,7 @@ package appset
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -30,6 +31,86 @@ type ParseResult struct {
 	// Clusters maps cluster names found in list.elements[].nameNormalized.
 	// Key: cluster name, Value: list of component paths for that cluster.
 	Clusters map[string][]string
+}
+
+// AppSetsByName parses rendered YAML (multi-document) and returns all
+// ApplicationSet resources keyed by metadata.name for change detection.
+func AppSetsByName(renderedYAML []byte) (map[string]map[string]interface{}, error) {
+	result := make(map[string]map[string]interface{})
+	if len(renderedYAML) == 0 {
+		return result, nil
+	}
+	decoder := yaml.NewDecoder(bytes.NewReader(renderedYAML))
+	for {
+		var doc map[string]interface{}
+		err := decoder.Decode(&doc)
+		if errors.Is(err, io.EOF) {
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("decoding YAML document: %w", err)
+		}
+		if doc == nil {
+			continue
+		}
+		if kind, _ := doc["kind"].(string); kind != "ApplicationSet" {
+			continue
+		}
+		name := ""
+		if md, ok := doc["metadata"].(map[string]interface{}); ok {
+			name, _ = md["name"].(string)
+		}
+		if name != "" {
+			result[name] = doc
+		}
+	}
+	return result, nil
+}
+
+// EnvironmentFromAppSet extracts the environment value from an ApplicationSet's
+// generator configuration. It looks for a clusters generator (direct or nested
+// inside a merge generator) with a values.environment field.
+// Returns the environment string and true if an explicit environment is found.
+func EnvironmentFromAppSet(doc map[string]interface{}) (string, bool) {
+	spec, ok := doc["spec"].(map[string]interface{})
+	if !ok {
+		return "", false
+	}
+	generators, _ := spec["generators"].([]interface{})
+	for _, gen := range generators {
+		genMap, ok := gen.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		if env, ok := envFromClusters(genMap["clusters"]); ok {
+			return env, true
+		}
+		merge, _ := genMap["merge"].(map[string]interface{})
+		subGens, _ := merge["generators"].([]interface{})
+		for _, sg := range subGens {
+			sgMap, ok := sg.(map[string]interface{})
+			if !ok {
+				continue
+			}
+			if env, ok := envFromClusters(sgMap["clusters"]); ok {
+				return env, true
+			}
+		}
+	}
+	return "", false
+}
+
+func envFromClusters(v interface{}) (string, bool) {
+	clusters, ok := v.(map[string]interface{})
+	if !ok {
+		return "", false
+	}
+	values, _ := clusters["values"].(map[string]interface{})
+	env, _ := values["environment"].(string)
+	if env == "" {
+		return "", false
+	}
+	return env, true
 }
 
 // ParseApplicationSets parses rendered YAML (multi-document) and extracts

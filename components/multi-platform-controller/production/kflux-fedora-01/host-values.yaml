@@ -80,9 +80,67 @@ dynamicConfigs:
 
   linux-g6xlarge-amd64: {}
 
-  linux-root-arm64: {}
+  linux-root-arm64:
+    instance-type: "m6g.2xlarge"
+    sudo-commands: "/usr/bin/podman, /usr/bin/rm /usr/share/containers/mounts.conf"
+    ami: "ami-0f8ec1601c3fe1115"
+    user-data: |-
+      Content-Type: multipart/mixed; boundary="//"
+      MIME-Version: 1.0
 
-  linux-root-amd64: {}
+      --//
+      Content-Type: text/cloud-config; charset="us-ascii"
+      MIME-Version: 1.0
+      Content-Transfer-Encoding: 7bit
+      Content-Disposition: attachment; filename="cloud-config.txt"
+
+      #cloud-config
+      cloud_final_modules:
+        - [scripts-user, always]
+
+      --//
+      Content-Type: text/x-shellscript; charset="us-ascii"
+      MIME-Version: 1.0
+      Content-Transfer-Encoding: 7bit
+      Content-Disposition: attachment; filename="userdata.txt"
+
+      #!/bin/bash -ex
+
+      # Install jq and yq
+      dnf install -y jq yq
+
+      --//--
+
+  linux-root-amd64:
+    sudo-commands: "/usr/bin/podman, /usr/bin/rm /usr/share/containers/mounts.conf"
+    ami: "ami-08c28532356e3b2b4"
+    # Overrides base/host-config-chart/files/linux-root-amd64-init.sh
+    user-data: |-
+      Content-Type: multipart/mixed; boundary="//"
+      MIME-Version: 1.0
+
+      --//
+      Content-Type: text/cloud-config; charset="us-ascii"
+      MIME-Version: 1.0
+      Content-Transfer-Encoding: 7bit
+      Content-Disposition: attachment; filename="cloud-config.txt"
+
+      #cloud-config
+      cloud_final_modules:
+        - [scripts-user, always]
+
+      --//
+      Content-Type: text/x-shellscript; charset="us-ascii"
+      MIME-Version: 1.0
+      Content-Transfer-Encoding: 7bit
+      Content-Disposition: attachment; filename="userdata.txt"
+
+      #!/bin/bash -ex
+
+      # Install jq and yq
+      dnf install -y jq yq
+
+      --//--
 
   linux-fast-amd64: {}
 

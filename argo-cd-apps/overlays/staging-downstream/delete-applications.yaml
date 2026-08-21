@@ -1,10 +1,4 @@
 ---
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
-  name: quality-dashboard
-$patch: delete
----
 # Tempo is excluded from the staging
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
@@ -16,4 +10,10 @@ apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
   name: nvme-storage-configurator
+$patch: delete
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: kueue
 $patch: delete
