@@ -261,7 +261,7 @@ print_help() {
     echo "  --obo        (only in preview mode) Install Observability operator and Prometheus instance for federation"
     echo "  --grafana    (only in preview mode) Enable Grafana dashboard (removed by default in dev)"
     echo "  --eaas       (only in preview mode) Install environment as a service components"
-    echo "  --operator-overlay  (preview mode) Use the development-operator Argo overlay: same platform apps as"
+    echo "  --operator-overlay  (preview mode) Use the rd-dev Argo overlay: same platform apps as"
     echo "                       development, but ApplicationSets for legacy Konflux microservices are removed."
     echo
     echo "  With --operator-overlay, preview always waits for the Konflux operator controller Deployment to finish"
@@ -317,7 +317,7 @@ label_cluster_nodes() {
 
 # Filter applications based on DEPLOY_ONLY environment variable
 configure_deploy_only() {
-    [ "$TARGET_PREVIEW_OVERLAY" != "development" ] && [ "$TARGET_PREVIEW_OVERLAY" != "development-operator" ] && return
+    [ "$TARGET_PREVIEW_OVERLAY" != "development" ] && [ "$TARGET_PREVIEW_OVERLAY" != "rd-dev" ] && return
     [ -z "$DEPLOY_ONLY" ] && return
 
     log_step "Configuring selective deployment (DEPLOY_ONLY mode)"
@@ -345,7 +345,7 @@ configure_deploy_only() {
 
 # Disable Kueue for OCP versions < 4.16
 configure_kueue_for_ocp_version() {
-    [ "$TARGET_PREVIEW_OVERLAY" != "development" ] && [ "$TARGET_PREVIEW_OVERLAY" != "development-operator" ] && return
+    [ "$TARGET_PREVIEW_OVERLAY" != "development" ] && [ "$TARGET_PREVIEW_OVERLAY" != "rd-dev" ] && return
     log_step "Checking OCP version for Kueue compatibility"
 
     local ocp_version ocp_minor delete_file
@@ -382,7 +382,7 @@ configure_kueue_for_ocp_version() {
 
 # Enable Konflux CR image-controller only when Quay credentials are provided (operator overlay).
 configure_operator_image_controller() {
-    [ "$TARGET_PREVIEW_OVERLAY" != "development-operator" ] && return
+    [ "$TARGET_PREVIEW_OVERLAY" != "rd-dev" ] && return
 
     local cr_patch="$ROOT/components/konflux-operator/rings/ring-0/base/cr/image-controller/image-controller.yaml"
     local ring_kust="$ROOT/components/konflux-operator/rings/ring-0/base/kustomization.yaml"
@@ -951,13 +951,13 @@ done
 
 TARGET_PREVIEW_OVERLAY="development"
 if $OPERATOR_OVERLAY; then
-    TARGET_PREVIEW_OVERLAY="development-operator"
+    TARGET_PREVIEW_OVERLAY="rd-dev"
 fi
 TARGET_APP_OF_APPS_PATH="$ROOT/argo-cd-apps/app-of-app-sets/$TARGET_PREVIEW_OVERLAY"
 TARGET_OVERLAY_PATH="argo-cd-apps/overlays/$TARGET_PREVIEW_OVERLAY"
 TARGET_DELETE_FILE="$ROOT/argo-cd-apps/overlays/$TARGET_PREVIEW_OVERLAY/delete-applications.yaml"
-# development-operator kustomization inherits ../development; shared delete list.
-if [ "$TARGET_PREVIEW_OVERLAY" = "development-operator" ]; then
+# rd-dev kustomization inherits ../development; shared delete list.
+if [ "$TARGET_PREVIEW_OVERLAY" = "rd-dev" ]; then
     TARGET_DELETE_FILE="$ROOT/argo-cd-apps/overlays/development/delete-applications.yaml"
 fi
 
@@ -1054,7 +1054,7 @@ log_success "All ArgoCD patch files updated"
 # Optional Components
 # =============================================================================
 if $OBO; then
-    if [ "$TARGET_PREVIEW_OVERLAY" != "development" ] && [ "$TARGET_PREVIEW_OVERLAY" != "development-operator" ]; then
+    if [ "$TARGET_PREVIEW_OVERLAY" != "development" ] && [ "$TARGET_PREVIEW_OVERLAY" != "rd-dev" ]; then
         log_warn "Ignoring --obo for overlay '$TARGET_PREVIEW_OVERLAY'"
     else
     log_step "Enabling Observability (OBO) components"
@@ -1065,7 +1065,7 @@ if $OBO; then
 fi
 
 if $GRAFANA; then
-    if [ "$TARGET_PREVIEW_OVERLAY" != "development" ] && [ "$TARGET_PREVIEW_OVERLAY" != "development-operator" ]; then
+    if [ "$TARGET_PREVIEW_OVERLAY" != "development" ] && [ "$TARGET_PREVIEW_OVERLAY" != "rd-dev" ]; then
         log_warn "Ignoring --grafana for overlay '$TARGET_PREVIEW_OVERLAY'"
     else
     log_step "Enabling Grafana dashboard"
@@ -1076,7 +1076,7 @@ if $GRAFANA; then
 fi
 
 if $EAAS; then
-    if [ "$TARGET_PREVIEW_OVERLAY" != "development" ] && [ "$TARGET_PREVIEW_OVERLAY" != "development-operator" ]; then
+    if [ "$TARGET_PREVIEW_OVERLAY" != "development" ] && [ "$TARGET_PREVIEW_OVERLAY" != "rd-dev" ]; then
         log_warn "Ignoring --eaas for overlay '$TARGET_PREVIEW_OVERLAY'"
     else
     log_step "Enabling Environment-as-a-Service (EaaS) components"
@@ -1092,7 +1092,7 @@ fi
 # =============================================================================
 label_cluster_nodes
 
-if [ "$TARGET_PREVIEW_OVERLAY" = "development" ] || [ "$TARGET_PREVIEW_OVERLAY" = "development-operator" ]; then
+if [ "$TARGET_PREVIEW_OVERLAY" = "development" ] || [ "$TARGET_PREVIEW_OVERLAY" = "rd-dev" ]; then
     configure_deploy_only
     configure_kueue_for_ocp_version
     configure_operator_image_controller
@@ -1138,9 +1138,9 @@ fi
 deploy_and_wait_for_argocd
 
 # =============================================================================
-# Wait for Konflux CR (development-operator overlay on OpenShift)
+# Wait for Konflux CR (rd-dev overlay on OpenShift)
 # =============================================================================
-if [ "$TARGET_PREVIEW_OVERLAY" = "development-operator" ]; then
+if [ "$TARGET_PREVIEW_OVERLAY" = "rd-dev" ]; then
     wait_for_konflux_operator_controller_ready
     if [ "${PREVIEW_WAIT_KONFLUX_CR_READY:-}" = "true" ]; then
         wait_for_konflux_cr_ready
@@ -1158,7 +1158,7 @@ wait_for_tekton_crds
 # =============================================================================
 # Final Configuration
 # =============================================================================
-if [ "$TARGET_PREVIEW_OVERLAY" = "development" ] || [ "$TARGET_PREVIEW_OVERLAY" = "development-operator" ]; then
+if [ "$TARGET_PREVIEW_OVERLAY" = "development" ] || [ "$TARGET_PREVIEW_OVERLAY" = "rd-dev" ]; then
     log_step "Configuring Pipelines as Code integration"
     TARGET_PREVIEW_OVERLAY="$TARGET_PREVIEW_OVERLAY" "$ROOT/hack/build/setup-pac-integration.sh"
     log_success "Pipelines as Code configured"
