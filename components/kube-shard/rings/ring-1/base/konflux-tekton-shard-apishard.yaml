@@ -1,0 +1,77 @@
+apiVersion: kube-shard.konflux-ci.dev/v1alpha1
+kind: APIShard
+metadata:
+  name: konflux-tekton-shard
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  apiGroups:
+  - group: tekton.dev
+    versions:
+    - v1
+    - v1beta1
+    - v1alpha1
+  - group: resolution.tekton.dev
+    versions:
+    - v1beta1
+  - group: triggers.tekton.dev
+    versions:
+    - v1alpha1
+    - v1beta1
+  colocateComponents: true
+  kine:
+    compaction:
+      batchSize: 500
+      interval: 0s
+      minRetain: 1000
+      timeout: 30s
+    connectionPool:
+      maxIdleConnections: 10
+      maxLifetime: 30m
+      maxOpenConnections: 25
+    nodeSelector:
+      konflux-ci.dev/workload: tekton-api-shard
+    replicas: 3
+    resources:
+      limits:
+        cpu: "2"
+        memory: 16Gi
+      requests:
+        cpu: "2"
+        memory: 16Gi
+    tolerations:
+    - effect: NoSchedule
+      key: konflux-ci.dev/workload
+      value: tekton-api-shard
+  namespaceSync:
+    labelSelector:
+      matchLabels: {}
+  secondary:
+    nodeSelector:
+      konflux-ci.dev/workload: tekton-api-shard
+    replicas: 3
+    resources:
+      limits:
+        cpu: "4"
+        memory: 32Gi
+      requests:
+        cpu: "4"
+        memory: 32Gi
+    tolerations:
+    - effect: NoSchedule
+      key: konflux-ci.dev/workload
+      value: tekton-api-shard
+  storage:
+    inCluster:
+      persistence:
+        size: 100Gi
+      resources:
+        limits:
+          cpu: "2"
+          memory: 12Gi
+        requests:
+          cpu: "2"
+          memory: 12Gi
+    type: InClusterPostgreSQL
+  targetNamespace: kube-shard-operator-tekton

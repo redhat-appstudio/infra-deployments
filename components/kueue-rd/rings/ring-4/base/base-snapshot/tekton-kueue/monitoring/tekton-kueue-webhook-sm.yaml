@@ -1,0 +1,26 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: tekton-kueue-webhook
+  annotations:
+    argocd.argoproj.io/sync-wave: "11"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  endpoints:
+  - path: /metrics
+    interval: 15s
+    port: metrics-server
+    scheme: https
+    bearerTokenSecret:
+      name: "metrics-reader"
+      key: token
+    tlsConfig:
+      serverName: tekton-kueue-webhook-service.tekton-kueue.svc.cluster.local
+      insecureSkipVerify: false
+      ca:
+        secret:
+          name: webhook-metrics-server-cert
+          key: ca.crt
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: tekton-kueue-webhook

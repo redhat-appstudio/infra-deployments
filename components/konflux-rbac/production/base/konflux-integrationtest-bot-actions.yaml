@@ -1,0 +1,17 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: konflux-integrationtest-bot-actions
+rules:
+- apiGroups:
+  - appstudio.redhat.com
+  resources:
+  - integrationtestscenarios
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete

@@ -20,26 +20,6 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: cluster-secret-store
-  - path: preserve-resources-on-deletion.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: cluster-secret-store
-  - path: disable-auto-sync.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: cluster-secret-store
-  - path: staging-downstream-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: multi-platform-controller
-  - path: mpc-lightwell-dev-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: multi-platform-controller
   # Exclude operator-managed clusters from Argo generation for services owned
   # by the konflux-operator. Orphan (do not prune) when Applications go away.
   - path: exclude-operator-owned-clusters.yaml
@@ -196,3 +176,8 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: release
+  - path: disable-auto-sync.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: konflux-verifications-rd
