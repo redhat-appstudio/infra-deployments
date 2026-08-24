@@ -129,3 +129,7 @@ spec:
           value: $(params.test-type)
         - name: test-outcome
           value: $(tasks.run-kanary-tests.results.test-outcome)
+        - name: failure-cause
+          value: $(tasks.run-kanary-tests.results.failure-cause)
+        - name: failure-phase
+          value: $(tasks.run-kanary-tests.results.failure-phase)

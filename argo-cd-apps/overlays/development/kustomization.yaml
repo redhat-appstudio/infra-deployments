@@ -44,6 +44,16 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: multi-platform-controller
+  - path: delete-preserve-resources-flag-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: multi-platform-controller
+  - path: dev-application-auto-sync-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: multi-platform-controller
   - path: development-overlay-patch.yaml
     target:
       kind: ApplicationSet
@@ -156,6 +166,11 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: kueue
+  - path: delete-preserve-resources-flag-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: kueue
   - path: dev-application-auto-sync-patch.yaml
     target:
       kind: ApplicationSet
@@ -242,4 +257,13 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: policies
-
+  - path: dev-application-sync-wave-disaster-recovery.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: disaster-recovery
+  - path: delete-preserve-resources-flag-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: konflux-verifications-rd

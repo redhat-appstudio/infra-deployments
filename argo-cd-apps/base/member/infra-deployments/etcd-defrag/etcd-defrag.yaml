@@ -18,6 +18,8 @@ spec:
                   values.clusterDir: stone-stg-rh01
                 - nameNormalized: stone-stage-p01
                   values.clusterDir: stone-stage-p01
+                - nameNormalized: lightwell-dev
+                  values.clusterDir: lightwell-dev
                 - nameNormalized: kflux-ocp-p01
                   values.clusterDir: kflux-ocp-p01
                 - nameNormalized: kflux-prd-rh02
@@ -36,6 +38,8 @@ spec:
                   values.clusterDir: kflux-osp-p01
                 - nameNormalized: kflux-fedora-01
                   values.clusterDir: kflux-fedora-01
+                - nameNormalized: kflux-lw-p01
+                  values.clusterDir: kflux-lw-p01
   template:
     metadata:
       name: etcd-defrag-{{nameNormalized}}
@@ -49,11 +53,8 @@ spec:
         namespace: etcd-maintenance
         server: '{{server}}'
       syncPolicy:
-        automated:
-          prune: true
-          selfHeal: true
         syncOptions:
-        - CreateNamespace=true
+          - CreateNamespace=true
         retry:
           limit: -1
           backoff:

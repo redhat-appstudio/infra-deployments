@@ -1,0 +1,47 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: kube-shard
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              selector:
+                matchLabels:
+                  appstudio.redhat.com/cluster-type: "tenant"
+                  appstudio.redhat.com/internal-cluster: "true"
+              values:
+                sourceRoot: components/kube-shard
+                ring: "empty-base"
+                clusterDir: "empty-base"
+          - list:
+              elements:
+                - values.ring: ring-1
+                  nameNormalized: lightwell-dev
+                  values.clusterDir: lightwell-dev
+
+  template:
+    metadata:
+      name: kube-shard-{{nameNormalized}}
+    spec:
+      project: default
+      source:
+        path: '{{values.sourceRoot}}/rings/{{values.ring}}/{{values.clusterDir}}'
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+        targetRevision: main
+      destination:
+        namespace: kube-shard-operator
+        server: '{{server}}'
+      syncPolicy:
+        syncOptions:
+          - CreateNamespace=true
+          - SkipDryRunOnMissingResource=true
+        retry:
+          limit: -1
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 3m
