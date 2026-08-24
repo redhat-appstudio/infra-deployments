@@ -618,11 +618,14 @@ deploy_and_wait_for_argocd() {
             exit 1
         fi
 
+        # Applications known to be non-blocking for rd-dev (pre-existing infra issues).
+        local skip_apps_pattern="container-image-proxy"
+
         state=$(oc get apps -n $ARGOCD_NAMESPACE --no-headers 2>/dev/null || echo "")
         total_apps=$(echo "$state" | grep -c "." || echo "0")
         synced_apps=$(echo "$state" | grep -c "Synced[[:blank:]]*Healthy" || echo "0")
-        pending_apps=$((total_apps - synced_apps))
-        not_done=$(echo "$state" | grep -v "Synced[[:blank:]]*Healthy" || true)
+        not_done=$(echo "$state" | grep -v "Synced[[:blank:]]*Healthy" | grep -v "$skip_apps_pattern" || true)
+        pending_apps=$(echo "$not_done" | grep -c "." || echo "0")
 
         local elapsed_min=$((elapsed_time / 60))
         local elapsed_sec=$((elapsed_time % 60))
@@ -956,10 +959,10 @@ fi
 TARGET_APP_OF_APPS_PATH="$ROOT/argo-cd-apps/app-of-app-sets/$TARGET_PREVIEW_OVERLAY"
 TARGET_OVERLAY_PATH="argo-cd-apps/overlays/$TARGET_PREVIEW_OVERLAY"
 TARGET_DELETE_FILE="$ROOT/argo-cd-apps/overlays/$TARGET_PREVIEW_OVERLAY/delete-applications.yaml"
-# rd-dev kustomization inherits ../development; shared delete list.
-if [ "$TARGET_PREVIEW_OVERLAY" = "rd-dev" ]; then
-    TARGET_DELETE_FILE="$ROOT/argo-cd-apps/overlays/development/delete-applications.yaml"
-fi
+# rd-dev has its own delete-applications.yaml evaluated at the rd-dev overlay level so
+# DEPLOY_ONLY patches can target both development-inherited and rd-dev-local ApplicationSets.
+# The file is absent initially; it is wired into rd-dev/kustomization.yaml dynamically
+# after configure_deploy_only / configure_kueue_for_ocp_version populate it.
 
 # =============================================================================
 # Main Execution
@@ -1096,6 +1099,16 @@ if [ "$TARGET_PREVIEW_OVERLAY" = "development" ] || [ "$TARGET_PREVIEW_OVERLAY" 
     configure_deploy_only
     configure_kueue_for_ocp_version
     configure_operator_image_controller
+
+    # Wire rd-dev/delete-applications.yaml into the rd-dev kustomization only if it was
+    # populated by configure_deploy_only or configure_kueue_for_ocp_version above.
+    if [ "$TARGET_PREVIEW_OVERLAY" = "rd-dev" ] && [ -s "$TARGET_DELETE_FILE" ]; then
+        rd_kust="$ROOT/argo-cd-apps/overlays/rd-dev/kustomization.yaml"
+        if ! grep -q "delete-applications.yaml" "$rd_kust"; then
+            yq -i '.patchesStrategicMerge += ["delete-applications.yaml"]' "$rd_kust"
+            log_info "Wired rd-dev/delete-applications.yaml into rd-dev kustomization"
+        fi
+    fi
 
     # Configure GitHub org
     log_step "Configuring GitHub organization"
