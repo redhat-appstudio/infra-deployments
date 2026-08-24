@@ -535,6 +535,7 @@ deploy_and_wait_for_argocd() {
 
     local apps app state not_done unknown error
     local total_apps synced_apps pending_apps iteration=0
+    local unknown_refreshed=""  # space-separated list of apps already soft-refreshed for Unknown state
 
     # Create the root Application
     log_substep "Applying root Application from: $TARGET_APP_OF_APPS_PATH"
@@ -675,10 +676,15 @@ deploy_and_wait_for_argocd() {
                     continue 2
                 fi
 
-                # Unknown without a recognised cause — soft-refresh and keep waiting.
-                log_warn "Application '$app' is in Unknown state, attempting soft refresh"
-                oc patch applications.argoproj.io $app -n $ARGOCD_NAMESPACE --type merge -p='{"metadata": {"annotations":{"argocd.argoproj.io/refresh": "soft"}}}' 2>/dev/null || true
-                show_app_details "$app"
+                # Unknown without a recognised cause — soft-refresh once, then just warn on subsequent iterations.
+                if echo "$unknown_refreshed" | grep -qw "$app"; then
+                    log_warn "Application '$app' still in Unknown state (already refreshed), waiting for recovery"
+                else
+                    log_warn "Application '$app' is in Unknown state, attempting one-shot soft refresh"
+                    oc patch applications.argoproj.io $app -n $ARGOCD_NAMESPACE --type merge -p='{"metadata": {"annotations":{"argocd.argoproj.io/refresh": "soft"}}}' 2>/dev/null || true
+                    unknown_refreshed="$unknown_refreshed $app"
+                    show_app_details "$app"
+                fi
             done
         fi
 
