@@ -675,8 +675,9 @@ deploy_and_wait_for_argocd() {
                     continue 2
                 fi
 
-                # Show detailed error for this app
-                log_error "Application '$app' is in Unknown state without 'context deadline exceeded'"
+                # Unknown without a recognised cause — soft-refresh and keep waiting.
+                log_warn "Application '$app' is in Unknown state, attempting soft refresh"
+                oc patch applications.argoproj.io $app -n $ARGOCD_NAMESPACE --type merge -p='{"metadata": {"annotations":{"argocd.argoproj.io/refresh": "soft"}}}' 2>/dev/null || true
                 show_app_details "$app"
             done
         fi
