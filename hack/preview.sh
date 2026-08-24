@@ -12,6 +12,7 @@ SYNC_INTERVAL=10
 MAX_TEKTON_CRD_RETRIES=5
 MAX_SYNC_TIMEOUT=2700           # 45 minutes max for all apps to sync
 MAX_TRANSIENT_REFRESHES=3       # Soft-refresh attempts per app before an Unknown state is treated as non-transient
+MAX_SYNC_GET_FAILURES=6         # Consecutive `oc get apps` failures before failing fast (permanent RBAC/auth/API errors)
 MAX_TEKTON_READY_TIMEOUT=900    # 15 minutes max for Tekton to become ready
 DETAILED_STATUS_INTERVAL=120    # Show detailed status every 2 minutes
 
@@ -602,6 +603,7 @@ deploy_and_wait_for_argocd() {
     local sync_start_time last_detailed_status_time elapsed_time
     sync_start_time=$(date +%s)
     last_detailed_status_time=$sync_start_time
+    local consecutive_get_failures=0
 
     # Bound the soft-refresh recovery per app so a permanent failure that merely
     # matches a transient message can't loop until MAX_SYNC_TIMEOUT. Counts are
@@ -634,11 +636,25 @@ deploy_and_wait_for_argocd() {
         # A transient `oc get` failure must not be mistaken for "0 apps synced":
         # with an empty $state the grep -c counts below would yield
         # total_apps=0/not_done="" and trip the success branch. Retry instead.
-        if ! state=$(oc get apps -n $ARGOCD_NAMESPACE --no-headers 2>/dev/null); then
-            log_warn "oc get apps failed; retrying in $SYNC_INTERVAL seconds"
+        # Capture stderr so a permanent failure (RBAC/auth/namespace) is visible
+        # in the log rather than silently retried until MAX_SYNC_TIMEOUT, and fail
+        # fast once the failures are clearly not transient.
+        local get_err
+        get_err=$(mktemp)
+        if ! state=$(oc get apps -n $ARGOCD_NAMESPACE --no-headers 2>"$get_err"); then
+            consecutive_get_failures=$((consecutive_get_failures + 1))
+            log_warn "oc get apps failed ($consecutive_get_failures/$MAX_SYNC_GET_FAILURES): $(<"$get_err")"
+            rm -f "$get_err"
+            if [ "$consecutive_get_failures" -ge "$MAX_SYNC_GET_FAILURES" ]; then
+                log_error "oc get apps failed $consecutive_get_failures times in a row; treating as a permanent failure"
+                print_execution_summary "failed" "ARGOCD_GET_FAILED: oc get apps failed $consecutive_get_failures consecutive times"
+                exit 1
+            fi
             sleep $SYNC_INTERVAL
             continue
         fi
+        rm -f "$get_err"
+        consecutive_get_failures=0
         if [ -z "$state" ]; then
             log_warn "oc get apps returned no applications; retrying in $SYNC_INTERVAL seconds"
             sleep $SYNC_INTERVAL
