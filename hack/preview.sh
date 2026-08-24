@@ -965,7 +965,8 @@ TARGET_DELETE_FILE="$ROOT/argo-cd-apps/overlays/$TARGET_PREVIEW_OVERLAY/delete-a
 # the --grafana handler never hit a missing-file error. The file stays empty unless those
 # handlers actually append content; only then is it wired into rd-dev/kustomization.yaml.
 if [ "$TARGET_PREVIEW_OVERLAY" = "rd-dev" ]; then
-    touch "$TARGET_DELETE_FILE"
+    # Truncate (or create) the file so stale content from a previous aborted run is cleared.
+    > "$TARGET_DELETE_FILE"
 fi
 
 # =============================================================================
@@ -1078,6 +1079,11 @@ if $GRAFANA; then
     log_step "Enabling Grafana dashboard"
     log_info "Removing monitoring-workload-grafana from delete-applications.yaml"
     yq -i 'select(.metadata.name != "monitoring-workload-grafana")' "$TARGET_DELETE_FILE"
+    # For rd-dev the Grafana deletion lives in the inherited development overlay, not TARGET_DELETE_FILE.
+    if [ "$TARGET_PREVIEW_OVERLAY" = "rd-dev" ]; then
+        yq -i 'select(.metadata.name != "monitoring-workload-grafana")' \
+            "$ROOT/argo-cd-apps/overlays/development/delete-applications.yaml"
+    fi
     log_success "Grafana enabled: monitoring-workload-grafana will be deployed"
     fi
 fi
