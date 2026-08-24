@@ -17,26 +17,25 @@ spec:
                     operator: DoesNotExist
               values:
                 sourceRoot: components/disaster-recovery
-                environment: staging
+                ring: empty-base
                 clusterDir: "empty-base"
           - list:
               elements: []
+  syncPolicy:
+    preserveResourcesOnDeletion: true
   template:
     metadata:
       name: disaster-recovery-{{nameNormalized}}
     spec:
       project: default
       source:
-        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
+        path: '{{values.sourceRoot}}/rings/{{values.ring}}/{{values.clusterDir}}'
         repoURL: https://github.com/redhat-appstudio/infra-deployments.git
         targetRevision: main
       destination:
         namespace: konflux-disaster-recovery
         server: '{{server}}'
       syncPolicy:
-        automated:
-          prune: true
-          selfHeal: true
         syncOptions:
           - CreateNamespace=true
         retry:
