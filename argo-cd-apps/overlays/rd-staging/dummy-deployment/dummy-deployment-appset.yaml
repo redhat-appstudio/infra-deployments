@@ -9,12 +9,21 @@ spec:
           - nameNormalized
         generators:
           - clusters:
+              selector:
+                matchLabels:
+                  appstudio.redhat.com/cluster-type: "tenant"
               values:
                 sourceRoot: components/dummy-deployment-rd
-                ring: empty-base
+                ring: "empty-base"
                 clusterDir: "empty-base"
           - list:
-              elements: []
+              elements:
+                - nameNormalized: stone-stage-p01
+                  values.ring: ring-1
+                  values.clusterDir: stone-stage-p01
+                - nameNormalized: stone-stg-rh01
+                  values.ring: ring-1
+                  values.clusterDir: stone-stg-rh01
   template:
     metadata:
       name: dummy-deployment-{{nameNormalized}}
@@ -31,12 +40,9 @@ spec:
         automated:
           prune: true
           selfHeal: true
-        preserveResourcesOnDeletion: true
         syncOptions:
           - CreateNamespace=true
         retry:
-          limit: -1
+          limit: 50
           backoff:
-            duration: 10s
-            factor: 2
-            maxDuration: 3m
+            duration: 15s
