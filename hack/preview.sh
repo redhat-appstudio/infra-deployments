@@ -961,8 +961,12 @@ TARGET_OVERLAY_PATH="argo-cd-apps/overlays/$TARGET_PREVIEW_OVERLAY"
 TARGET_DELETE_FILE="$ROOT/argo-cd-apps/overlays/$TARGET_PREVIEW_OVERLAY/delete-applications.yaml"
 # rd-dev has its own delete-applications.yaml evaluated at the rd-dev overlay level so
 # DEPLOY_ONLY patches can target both development-inherited and rd-dev-local ApplicationSets.
-# The file is absent initially; it is wired into rd-dev/kustomization.yaml dynamically
-# after configure_deploy_only / configure_kueue_for_ocp_version populate it.
+# Touch it now so yq reads in configure_deploy_only / configure_kueue_for_ocp_version and
+# the --grafana handler never hit a missing-file error. The file stays empty unless those
+# handlers actually append content; only then is it wired into rd-dev/kustomization.yaml.
+if [ "$TARGET_PREVIEW_OVERLAY" = "rd-dev" ]; then
+    touch "$TARGET_DELETE_FILE"
+fi
 
 # =============================================================================
 # Main Execution
@@ -1137,7 +1141,11 @@ fi
 # Commit and Push - INLINE (not in function) as per original script
 # =============================================================================
 log_step "Committing and pushing preview changes"
-if ! git diff --exit-code --quiet; then
+# Stage the dynamically created rd-dev delete file if it was populated and wired in.
+if [ "$TARGET_PREVIEW_OVERLAY" = "rd-dev" ] && [ -s "$TARGET_DELETE_FILE" ]; then
+    git add "$TARGET_DELETE_FILE"
+fi
+if ! git diff --exit-code --quiet || ! git diff --cached --exit-code --quiet; then
     git commit -a -m "Preview mode, do not merge into main"
     git push -f --set-upstream $MY_GIT_FORK_REMOTE $PREVIEW_BRANCH
     log_success "Preview changes committed and pushed to $MY_GIT_FORK_REMOTE/$PREVIEW_BRANCH"
