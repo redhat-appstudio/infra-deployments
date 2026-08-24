@@ -8,6 +8,14 @@ configMapGenerator:
   - name: dex
     files:
       - dex-config.yaml
+  - name: ui-runtime-env-variables
+    literals:
+      - MONITORING_ENABLED=true
+      - MONITORING_DSN=https://2d1bbbd05a2ff473d916df439cfc363e@o490301.ingest.us.sentry.io/4510260965408768
+      - MONITORING_ENVIRONMENT=production
+      - MONITORING_CLUSTER=kflux-osp-p01
+      - MONITORING_SAMPLE_RATE_ERRORS=1
+      - MONITORING_SAMPLE_RATE_TRACES=0.2
 
 patches:
   - path: add-service-certs-patch.yaml
