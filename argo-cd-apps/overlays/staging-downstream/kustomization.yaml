@@ -19,6 +19,25 @@ patches:
     target:
       kind: ApplicationSet
       version: v1alpha1
+  # Exclude the local common cluster from generated deployment targets. Split
+  # across 3 files/targets (via labelSelector) so we never crash on or
+  # replace an ApplicationSet's existing clusters.selector - see comments in
+  # each patch file for details.
+  - path: remove-local-common-cluster-patches/specific-clusters-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      labelSelector: "!appstudio.redhat.com/direct-cluster-generator,!appstudio.redhat.com/deployment-clusters"
+  - path: remove-local-common-cluster-patches/all-clusters-group-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      labelSelector: "appstudio.redhat.com/deployment-clusters=all"
+  - path: remove-local-common-cluster-patches/direct-generator-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      labelSelector: "appstudio.redhat.com/direct-cluster-generator=true"
   # Exclude operator-managed clusters from Argo generation for services owned
   # by the konflux-operator. Orphan (do not prune) when Applications go away.
   - path: exclude-operator-owned-clusters.yaml

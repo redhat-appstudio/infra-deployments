@@ -1,0 +1,11 @@
+# Same exclusion as specific-clusters-patch.yaml, but for
+# ApplicationSets that already have a clusters.selector.matchExpressions
+# array (labelSelector: appstudio.redhat.com/deployment-clusters=all, set by
+# argo-cd-apps/base/all-clusters/kustomization.yaml). Appending with `/-`
+# preserves every existing matchExpressions entry instead of replacing them.
+- op: add
+  path: /spec/generators/0/merge/generators/0/clusters/selector/matchExpressions/-
+  value:
+    key: app.kubernetes.io/name
+    operator: NotIn
+    values: [argocd-internal-appsre-default-cluster-config]

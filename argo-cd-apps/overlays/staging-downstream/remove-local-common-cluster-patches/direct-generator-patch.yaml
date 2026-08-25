@@ -1,0 +1,16 @@
+# Same exclusion as specific-clusters-patch.yaml, but for
+# ApplicationSets using a bare `clusters: {}` generator instead of the usual
+# merge+clusters+list pattern (labelSelector:
+# appstudio.redhat.com/direct-cluster-generator=true, currently only
+# enterprise-contract). The path has no /merge/generators/0/ prefix.
+#
+# Additive-only
+- op: add
+  path: /spec/generators/0/clusters/selector/matchLabels/argocd.argoproj.io~1secret-type
+  value: cluster
+- op: add
+  path: /spec/generators/0/clusters/selector/matchExpressions
+  value:
+    - key: app.kubernetes.io/name
+      operator: NotIn
+      values: [argocd-internal-appsre-default-cluster-config]

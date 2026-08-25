@@ -1,0 +1,17 @@
+# Exclude the local common cluster (the internal staging cluster hosting this
+# ArgoCD instance) from generated deployment targets.
+#
+# This file only targets ApplicationSets that don't yet have a
+# clusters.selector.matchExpressions (see kustomization.yaml's labelSelector);
+# ApplicationSets that already have one (appstudio.redhat.com/deployment-clusters=all)
+# or use a non-merge cluster generator (appstudio.redhat.com/direct-cluster-generator)
+# are handled by the sibling patch files.
+- op: add
+  path: /spec/generators/0/merge/generators/0/clusters/selector/matchLabels/argocd.argoproj.io~1secret-type
+  value: cluster
+- op: add
+  path: /spec/generators/0/merge/generators/0/clusters/selector/matchExpressions
+  value:
+    - key: app.kubernetes.io/name
+      operator: NotIn
+      values: [argocd-internal-appsre-default-cluster-config]

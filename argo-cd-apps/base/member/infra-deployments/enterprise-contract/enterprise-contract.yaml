@@ -3,6 +3,13 @@ apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
   name: enterprise-contract
+  labels:
+    # Unlike every other ApplicationSet in this repo, this uses a bare
+    # `clusters: {}` generator instead of the merge+clusters+list pattern, so
+    # it has no /spec/generators/0/merge/... path for overlay patches to
+    # target. This label lets such patches exclude (or specifically target)
+    # this ApplicationSet without an unsafe blanket kind/version match.
+    appstudio.redhat.com/direct-cluster-generator: "true"
 spec:
   generators:
     - clusters: {}

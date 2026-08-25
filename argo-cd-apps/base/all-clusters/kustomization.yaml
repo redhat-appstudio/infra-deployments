@@ -6,3 +6,11 @@ resources:
 components:
   - ../../k-components/inject-argocd-namespace
   - ../../k-components/deploy-to-all-clusters
+
+# Marks every ApplicationSet defined here as already having a
+# `clusters.selector` (matchLabels + matchExpressions) via the
+# deploy-to-all-clusters component above. Lets overlay-level patches target
+# "has a selector already" vs "selector-less" ApplicationSets without
+# enumerating names, e.g. to safely extend the selector's matchExpressions.
+commonLabels:
+  appstudio.redhat.com/deployment-clusters: "all"
