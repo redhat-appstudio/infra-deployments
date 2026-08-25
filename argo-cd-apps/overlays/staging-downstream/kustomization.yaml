@@ -15,6 +15,10 @@ patchesStrategicMerge:
   - delete-applications.yaml
 
 patches:
+  - path: disable-auto-sync.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
   # Exclude operator-managed clusters from Argo generation for services owned
   # by the konflux-operator. Orphan (do not prune) when Applications go away.
   - path: exclude-operator-owned-clusters.yaml
@@ -117,62 +121,3 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: release
-  # Disable auto-sync for remaining staging members (e.g. stone-stg-rh01)
-  # while operator rollout targets stone-stage-p01 and lightwell-dev only.
-  # Harmless on operator-owned clusters once the Applications are no longer
-  # generated.
-  - path: disable-auto-sync.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: application-api
-  - path: disable-auto-sync.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: build-service
-  - path: disable-auto-sync.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: integration
-  - path: disable-auto-sync.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: image-controller
-  - path: disable-auto-sync.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: namespace-lister
-  - path: disable-auto-sync.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: konflux-info
-  - path: disable-auto-sync.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: konflux-ui
-  - path: disable-auto-sync.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: enterprise-contract
-  - path: disable-auto-sync.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: konflux-rbac
-  - path: disable-auto-sync.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: release
-  - path: disable-auto-sync.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: konflux-verifications-rd

@@ -1,7 +1,20 @@
----
 # Remove automated sync (auto-sync + self-heal) from ApplicationSet templates.
 # Kept for staging member clusters that are not yet on the konflux-operator
 # (e.g. stone-stg-rh01).
 # Scoped to staging-downstream only.
-- op: remove
-  path: /spec/template/spec/syncPolicy/automated
+#
+# Strategic-merge patch (not JSON6902): setting a field to `null` removes it
+# where present and is a safe no-op on ApplicationSets (e.g. etcd-defrag) that
+# never had `syncPolicy.automated` set, unlike a JSON6902 `remove`, which
+# errors on a missing path. metadata.name below is irrelevant since the
+# untargeted `target:` selector in kustomization.yaml (kind/version only)
+# applies this patch to every ApplicationSet.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: unused
+spec:
+  template:
+    spec:
+      syncPolicy:
+        automated: null
