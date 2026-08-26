@@ -28,7 +28,13 @@ images:
 
 # set resources to jobs
 patches:
-  - path: job_resources.yaml
+  - path: requests-patch.yaml
+    target:
+      group: batch
+      version: v1
+      kind: Job
+      name: konflux-kyverno-migrate-resources
+  - path: limits-patch.yaml
     target:
       group: batch
       version: v1
