@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- base-snapshot
+- environment-config.yaml
+- https://github.com/konflux-ci/crossplane-control-plane/crossplane?ref=0ddd632c30dfd7f2bbcf229299f1fe7186d0adb7
+- https://github.com/konflux-ci/crossplane-control-plane/config?ref=0ddd632c30dfd7f2bbcf229299f1fe7186d0adb7
+- https://github.com/konflux-ci/crossplane-control-plane/examples/provider-kubernetes-in-cluster?ref=0ddd632c30dfd7f2bbcf229299f1fe7186d0adb7
+
+images:
+  - name: quay.io/konflux-ci/task-runner
+    newTag: v1
+    digest: sha256:b9ef0479b57a494368a12a02886c650314c9ac7391c6228f21065865aab71c9e
+
+components:
+  - ../../../k-components/crossplane-resources
