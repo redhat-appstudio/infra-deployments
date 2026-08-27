@@ -25,25 +25,24 @@ patches:
     target:
       kind: TektonConfig
       name: config
-  - patch: |
-      $patch: delete
-      apiVersion: external-secrets.io/v1
-      kind: ExternalSecret
-      metadata:
-        name: tekton-results-database
+  # tekton-results is not deployed on this cluster — delete all its resources
+  - path: delete-tekton-results-namespace.yaml
     target:
-      name: tekton-results-database
-      group: external-secrets.io
-      version: v1
-      kind: ExternalSecret
-  - patch: |
-      $patch: delete
-      apiVersion: external-secrets.io/v1
-      kind: ExternalSecret
-      metadata:
-        name: tekton-results-s3
+      name: tekton-results
+      kind: Namespace
+  - path: delete-tekton-results-namespaced.yaml
     target:
-      name: tekton-results-s3
+      namespace: tekton-results
+  - path: delete-tekton-results-cluster-rbac.yaml
+    target:
+      name: "(tekton-results|prometheus-tekton-results).*"
+      kind: "Cluster(Role|RoleBinding)"
+  - path: delete-tekton-results-test-resources.yaml
+    target:
+      namespace: plnsvc-tests
+      name: "(tekton-results-tests|pipeline-service-admin)"
+  - path: delete-tekton-results-external-secrets.yaml
+    target:
+      name: "tekton-results-.*"
       group: external-secrets.io
-      version: v1
       kind: ExternalSecret

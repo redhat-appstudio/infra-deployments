@@ -1,0 +1,11 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: appstudio-pipelines-scc-roks-use
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+rules:
+- apiGroups: ["security.openshift.io"]
+  resources: ["securitycontextconstraints"]
+  resourceNames: ["appstudio-pipelines-scc-roks"]
+  verbs: ["use"]

@@ -1,0 +1,33 @@
+environment: production
+
+#localPlatforms:
+#  - "linux/amd64"
+#  - "linux/x86_64"
+#  - "local"
+#  - "localhost"
+
+instanceTag: "lw-p01"
+
+additionalInstanceTags:
+  service-phase: "Production"
+
+archDefaults:
+  arm64:
+    ami: "ami-06f37afe6d4f43c47"
+    key-name: "kflux-lwp01-key-pair"
+    security-group-id: "SG_ID"
+    subnet-id: "SUBNET_ID"
+
+  amd64:
+    ami: "ami-01aaf1c29c7e0f0af"
+    key-name: "kflux-lwp01-key-pair"
+    security-group-id: "SG_ID"
+    subnet-id: "SUBNET_ID"
+
+dynamicConfigs:
+  linux-arm64: {}
+
+  linux-amd64: {}
+
+# Static hosts configuration
+staticHosts:

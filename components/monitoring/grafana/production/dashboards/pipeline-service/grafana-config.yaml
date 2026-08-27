@@ -4150,7 +4150,7 @@ data:
                 {
                   "editorMode": "code",
                   "exemplar": true,
-                  "expr": "sum(watcher_workqueue_depth{container='tekton-chains-controller',app='tekton-chains-controller'})",
+                  "expr": "sum(kn_workqueue_depth{container='tekton-chains-controller',app='tekton-chains-controller',job='tekton-chains'})",
                   "interval": "",
                   "intervalFactor": 1,
                   "legendFormat": "Queue Depth",
@@ -4180,7 +4180,7 @@ data:
                       }
                     ]
                   },
-                  "unit": "ms"
+                  "unit": "s"
                 },
                 "overrides": []
               },
@@ -4212,7 +4212,7 @@ data:
                 {
                   "editorMode": "code",
                   "exemplar": true,
-                  "expr": "histogram_quantile(0.99, sum(rate(watcher_reconcile_latency_bucket{job=\"tekton-chains\"}[2m])) by (le) ) / 1000",
+                  "expr": "histogram_quantile(0.99, sum(rate(kn_workqueue_process_duration_seconds_bucket{job=\"tekton-chains\"}[2m])) by (le) )",
                   "interval": "",
                   "intervalFactor": 4,
                   "legendFormat": "Latency",
@@ -4220,7 +4220,7 @@ data:
                   "refId": "reconcile latency"
                 }
               ],
-              "title": "Tekton Chains Reconcile Latency",
+              "title": "Tekton Chains Workqueue Processing Latency",
               "type": "stat"
             },
             {
@@ -4268,10 +4268,11 @@ data:
                       },
                       {
                         "color": "red",
-                        "value": 80
+                        "value": 0.05
                       }
                     ]
-                  }
+                  },
+                  "unit": "percentunit"
                 },
                 "overrides": []
               },
@@ -4296,14 +4297,14 @@ data:
               },
               "targets": [
                 {
-                  "editorMode": "builder",
-                  "expr": "rate(watcher_go_gc_cpu_fraction{app=\"tekton-chains-controller\"}[5m])",
-                  "legendFormat": "__auto",
+                  "editorMode": "code",
+                  "expr": "rate(go_gc_duration_seconds_sum{app=\"tekton-chains-controller\",job=\"tekton-chains\"}[5m])",
+                  "legendFormat": "{{pod}}",
                   "range": true,
                   "refId": "A"
                 }
               ],
-              "title": "Tekton Chains CPU Fraction Use",
+              "title": "Tekton Chains GC Duration Rate",
               "type": "timeseries"
             },
             {
@@ -4351,10 +4352,11 @@ data:
                       },
                       {
                         "color": "red",
-                        "value": 80
+                        "value": 1
                       }
                     ]
-                  }
+                  },
+                  "unit": "s"
                 },
                 "overrides": []
               },
@@ -4362,7 +4364,7 @@ data:
                 "h": 8,
                 "w": 12,
                 "x": 12,
-                "y": 67
+                "y": 73
               },
               "id": 83,
               "options": {
@@ -4379,14 +4381,14 @@ data:
               },
               "targets": [
                 {
-                  "editorMode": "builder",
-                  "expr": "rate(watcher_workqueue_longest_running_processor_seconds_count{app=\"tekton-chains-controller\"}[5m])",
-                  "legendFormat": "__auto",
+                  "editorMode": "code",
+                  "expr": "histogram_quantile(0.99, sum(rate(kn_workqueue_process_duration_seconds_bucket{job=\"tekton-chains\"}[5m])) by (le))",
+                  "legendFormat": "p99",
                   "range": true,
                   "refId": "A"
                 }
               ],
-              "title": "Tekton Chains Workqueue Rate",
+              "title": "Tekton Chains Workqueue Processing Time (p99)",
               "type": "timeseries"
             }
           ],

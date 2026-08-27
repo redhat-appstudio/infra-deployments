@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"path/filepath"
+	"reflect"
 	"strings"
 
 	"golang.org/x/sync/errgroup"
@@ -258,13 +259,62 @@ func (d *Detector) detectRemovedAppSetOverlays(result *Result) {
 
 // detectOverlayDiffs marks environments as affected when the rendered overlay
 // YAML differs between HEAD and the base-ref (i.e. the ArgoCD config changed).
+// When an ApplicationSet has an explicit environment in its generator, that
+// environment is used instead of the overlay's environment. This prevents base
+// changes (included by all overlays) from spuriously marking every environment.
 func detectOverlayDiffs(builds []overlayBuild, result *Result) {
 	for _, ob := range builds {
-		if string(ob.headYAML) != string(ob.baseYAML) {
+		if string(ob.headYAML) == string(ob.baseYAML) {
+			continue
+		}
+		slog.Info("Overlay diff detected", "overlay", ob.name)
+
+		headSets, headErr := appset.AppSetsByName(ob.headYAML)
+		baseSets, baseErr := appset.AppSetsByName(ob.baseYAML)
+		if headErr != nil || baseErr != nil {
+			// Can't parse ApplicationSets; conservatively mark overlay environment.
+			slog.Warn("Failed to parse ApplicationSets, falling back to overlay env",
+				"overlay", ob.name, "headErr", headErr, "baseErr", baseErr)
 			result.AffectedEnvironments[ob.env] = true
-			slog.Info("Overlay diff detected", "overlay", ob.name, "env", ob.env)
+			continue
+		}
+
+		attributed := false
+		for name, headDoc := range headSets {
+			if baseDoc, existed := baseSets[name]; existed {
+				if reflect.DeepEqual(headDoc, baseDoc) {
+					continue // this ApplicationSet is unchanged
+				}
+			}
+			env := appSetEnv(headDoc, ob.env)
+			result.AffectedEnvironments[env] = true
+			slog.Info("AppSet added/modified", "overlay", ob.name, "appset", name, "env", env)
+			attributed = true
+		}
+		for name, baseDoc := range baseSets {
+			if _, exists := headSets[name]; !exists {
+				env := appSetEnv(baseDoc, ob.env)
+				result.AffectedEnvironments[env] = true
+				slog.Info("AppSet removed", "overlay", ob.name, "appset", name, "env", env)
+				attributed = true
+			}
+		}
+		if !attributed {
+			// YAML changed but no ApplicationSet changes found (e.g. namespace patch).
+			result.AffectedEnvironments[ob.env] = true
 		}
 	}
+}
+
+// appSetEnv extracts the environment from an ApplicationSet's generator. Falls
+// back to overlayEnv when no explicit environment is set.
+func appSetEnv(doc map[string]interface{}, overlayEnv Environment) Environment {
+	if envStr, ok := appset.EnvironmentFromAppSet(doc); ok {
+		if e := Environment(envStr); e == Development || e == Staging || e == Production {
+			return e
+		}
+	}
+	return overlayEnv
 }
 
 // extractPathsFromOverlays parses ApplicationSets from the HEAD builds and

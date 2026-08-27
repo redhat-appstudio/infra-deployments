@@ -1759,7 +1759,7 @@ spec:
             default-imagepullbackoff-timeout: "15m"
         config-leader-election-resolvers:
           data:
-            buckets: "8"
+            buckets: "4"
         bundleresolver-config:
           data:
             fetch-timeout: "2m"
@@ -1804,11 +1804,6 @@ spec:
               spec:
                 containers:
                   - name: pac-controller
-                    env:
-                      - name: OTEL_EXPORTER_OTLP_ENDPOINT
-                        value: "http://open-telemetry-opentelemetry-collector.konflux-otel.svc.cluster.local:4317"
-                      - name: OTEL_TRACES_SAMPLER
-                        value: "parentbased_always_on"
                     resources:
                       limits:
                         cpu: 500m
@@ -1822,11 +1817,6 @@ spec:
               spec:
                 containers:
                   - name: pac-watcher
-                    env:
-                      - name: OTEL_EXPORTER_OTLP_ENDPOINT
-                        value: "http://open-telemetry-opentelemetry-collector.konflux-otel.svc.cluster.local:4317"
-                      - name: OTEL_TRACES_SAMPLER
-                        value: "parentbased_always_on"
                     resources:
                       limits:
                         cpu: 250m
@@ -2015,9 +2005,29 @@ spec:
         enable: true
         options:
           deployments:
+            pipelines-as-code-controller:
+              spec:
+                template:
+                  spec:
+                    containers:
+                    - env:
+                      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+                        value: "http://open-telemetry-opentelemetry-collector.konflux-otel.svc.cluster.local:4317"
+                      - name: OTEL_TRACES_SAMPLER
+                        value: "parentbased_always_on"
+                      name: pac-controller
             pipelines-as-code-watcher:
               spec:
                 replicas: 2
+                template:
+                  spec:
+                    containers:
+                    - env:
+                      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+                        value: "http://open-telemetry-opentelemetry-collector.konflux-otel.svc.cluster.local:4317"
+                      - name: OTEL_TRACES_SAMPLER
+                        value: "parentbased_always_on"
+                      name: pac-watcher
             pipelines-as-code-webhook:
               spec:
                 replicas: 2
@@ -2088,7 +2098,7 @@ metadata:
   namespace: openshift-marketplace
 spec:
   displayName: custom-operators
-  image: quay.io/openshift-pipeline/pipelines-index-4.19@sha256:bd598786408b16bc1171c79907db124013189d57677e8bfbec1feccc55523ccd
+  image: quay.io/openshift-pipeline/pipelines-index-4.19@sha256:8c6152d2924f608960a4cec0faca33a1807bce19085e86d1daeeaa698fce146d
   sourceType: grpc
   updateStrategy:
     registryPoll:

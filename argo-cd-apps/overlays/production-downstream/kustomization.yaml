@@ -4,7 +4,6 @@ resources:
   - ../../base/member
   - ../../base/all-clusters
   - ../../base/backup
-  - ../../base/quality-dashboard
   - ../../base/eaas
   - ../../base/monitoring-blackbox
   - ../../base/smee-client
@@ -40,11 +39,6 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: has
-  - path: production-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: dora-metrics
   - path: production-overlay-patch.yaml
     target:
       kind: ApplicationSet
@@ -235,11 +229,6 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: cert-manager
-  - path: production-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: kueue
   - path: production-overlay-patch.yaml
     target:
       kind: ApplicationSet
