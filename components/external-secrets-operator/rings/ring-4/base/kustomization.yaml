@@ -1,0 +1,9 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - base-snapshot
+
+images:
+  - name: ghcr.io/external-secrets/external-secrets
+    newName: quay.io/konflux-ci/external-secrets-operator
+    newTag: 81c0813fffc8a65f05376d7d80e1cfd39676a6a3
