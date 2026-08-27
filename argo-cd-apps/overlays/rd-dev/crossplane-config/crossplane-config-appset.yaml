@@ -9,26 +9,32 @@ spec:
           - nameNormalized
         generators:
           - clusters:
+              selector:
+                matchLabels:
+                  appstudio.redhat.com/eaas-cluster: "true"
               values:
-                sourceRoot: components/crossplane-config
-                environment: staging
-                clusterDir: ""
+                sourceRoot: components/crossplane-config-rd
+                ring: "ring-0"
+                clusterDir: base
           - list:
               elements: []
+
   template:
     metadata:
       name: crossplane-config-{{nameNormalized}}
     spec:
       project: default
       source:
-        path: "{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}"
+        path: '{{values.sourceRoot}}/rings/{{values.ring}}/{{values.clusterDir}}'
         repoURL: https://github.com/redhat-appstudio/infra-deployments.git
         targetRevision: main
       destination:
         namespace: crossplane-config
-        server: "{{server}}"
+        server: '{{server}}'
       syncPolicy:
-        preserveResourcesOnDeletion: true
+        automated:
+          prune: true
+          selfHeal: true
         syncOptions:
           - CreateNamespace=true
         retry:
