@@ -725,12 +725,7 @@ spec:
             template:
               spec:
                 containers:
-                - env:
-                  - name: OTEL_EXPORTER_OTLP_ENDPOINT
-                    value: http://open-telemetry-opentelemetry-collector.konflux-otel.svc.cluster.local:4317
-                  - name: OTEL_TRACES_SAMPLER
-                    value: parentbased_always_on
-                  name: pac-controller
+                - name: pac-controller
                   resources:
                     limits:
                       cpu: 500m
@@ -743,12 +738,7 @@ spec:
             template:
               spec:
                 containers:
-                - env:
-                  - name: OTEL_EXPORTER_OTLP_ENDPOINT
-                    value: http://open-telemetry-opentelemetry-collector.konflux-otel.svc.cluster.local:4317
-                  - name: OTEL_TRACES_SAMPLER
-                    value: parentbased_always_on
-                  name: pac-watcher
+                - name: pac-watcher
                   resources:
                     limits:
                       cpu: 250m
@@ -964,9 +954,29 @@ spec:
         enable: true
         options:
           deployments:
+            pipelines-as-code-controller:
+              spec:
+                template:
+                  spec:
+                    containers:
+                    - env:
+                      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+                        value: http://open-telemetry-opentelemetry-collector.konflux-otel.svc.cluster.local:4317
+                      - name: OTEL_TRACES_SAMPLER
+                        value: parentbased_always_on
+                      name: pac-controller
             pipelines-as-code-watcher:
               spec:
                 replicas: 2
+                template:
+                  spec:
+                    containers:
+                    - env:
+                      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+                        value: http://open-telemetry-opentelemetry-collector.konflux-otel.svc.cluster.local:4317
+                      - name: OTEL_TRACES_SAMPLER
+                        value: parentbased_always_on
+                      name: pac-watcher
             pipelines-as-code-webhook:
               spec:
                 replicas: 2
