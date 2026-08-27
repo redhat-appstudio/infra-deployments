@@ -16,6 +16,8 @@ admissionController:
       allowPrivilegeEscalation: false
       readOnlyRootFilesystem: true
       runAsNonRoot: true
+      runAsUser: null
+      runAsGroup: null
       capabilities:
         drop:
         - "ALL"
@@ -33,6 +35,8 @@ admissionController:
       allowPrivilegeEscalation: false
       readOnlyRootFilesystem: true
       runAsNonRoot: true
+      runAsUser: null
+      runAsGroup: null
       capabilities:
         drop:
         - "ALL"
@@ -62,6 +66,8 @@ backgroundController:
     allowPrivilegeEscalation: false
     readOnlyRootFilesystem: true
     runAsNonRoot: true
+    runAsUser: null
+    runAsGroup: null
     capabilities:
       drop:
       - "ALL"
@@ -91,6 +97,8 @@ cleanupController:
     allowPrivilegeEscalation: false
     readOnlyRootFilesystem: true
     runAsNonRoot: true
+    runAsUser: null
+    runAsGroup: null
     capabilities:
       drop:
       - "ALL"
@@ -112,6 +120,8 @@ policyReportsCleanup:
 webhooksCleanup:
   enabled: false
 crds:
+  annotations:
+    argocd.argoproj.io/sync-options: "Replace=true"
   migration:
     securityContext:
       allowPrivilegeEscalation: false
@@ -137,3 +147,6 @@ features:
     mutateExisting: false
     imageVerify: false
     generate: false
+kyverno-api:
+  annotations:
+    argocd.argoproj.io/sync-options: "Replace=true"
