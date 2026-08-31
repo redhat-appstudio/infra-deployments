@@ -14,6 +14,10 @@ patchesStrategicMerge:
   - delete-applications.yaml
 namespace: argocd
 patches:
+  - path: disable-auto-sync.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
   - path: production-downstream-overlay-patch.yaml
     target:
       kind: ApplicationSet
@@ -229,11 +233,6 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: cert-manager
-  - path: production-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: kueue
   - path: production-overlay-patch.yaml
     target:
       kind: ApplicationSet

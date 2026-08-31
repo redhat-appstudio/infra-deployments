@@ -261,7 +261,7 @@ print_help() {
     echo "  --obo        (only in preview mode) Install Observability operator and Prometheus instance for federation"
     echo "  --grafana    (only in preview mode) Enable Grafana dashboard (removed by default in dev)"
     echo "  --eaas       (only in preview mode) Install environment as a service components"
-    echo "  --operator-overlay  (preview mode) Use the development-operator Argo overlay: same platform apps as"
+    echo "  --operator-overlay  (preview mode) Use the rd-dev Argo overlay: same platform apps as"
     echo "                       development, but ApplicationSets for legacy Konflux microservices are removed."
     echo
     echo "  With --operator-overlay, preview always waits for the Konflux operator controller Deployment to finish"
@@ -317,7 +317,7 @@ label_cluster_nodes() {
 
 # Filter applications based on DEPLOY_ONLY environment variable
 configure_deploy_only() {
-    [ "$TARGET_PREVIEW_OVERLAY" != "development" ] && [ "$TARGET_PREVIEW_OVERLAY" != "development-operator" ] && return
+    [ "$TARGET_PREVIEW_OVERLAY" != "development" ] && [ "$TARGET_PREVIEW_OVERLAY" != "rd-dev" ] && return
     [ -z "$DEPLOY_ONLY" ] && return
 
     log_step "Configuring selective deployment (DEPLOY_ONLY mode)"
@@ -345,7 +345,7 @@ configure_deploy_only() {
 
 # Disable Kueue for OCP versions < 4.16
 configure_kueue_for_ocp_version() {
-    [ "$TARGET_PREVIEW_OVERLAY" != "development" ] && [ "$TARGET_PREVIEW_OVERLAY" != "development-operator" ] && return
+    [ "$TARGET_PREVIEW_OVERLAY" != "development" ] && [ "$TARGET_PREVIEW_OVERLAY" != "rd-dev" ] && return
     log_step "Checking OCP version for Kueue compatibility"
 
     local ocp_version ocp_minor delete_file
@@ -382,7 +382,7 @@ configure_kueue_for_ocp_version() {
 
 # Enable Konflux CR image-controller only when Quay credentials are provided (operator overlay).
 configure_operator_image_controller() {
-    [ "$TARGET_PREVIEW_OVERLAY" != "development-operator" ] && return
+    [ "$TARGET_PREVIEW_OVERLAY" != "rd-dev" ] && return
 
     local cr_patch="$ROOT/components/konflux-operator/rings/ring-0/base/cr/image-controller/image-controller.yaml"
     local ring_kust="$ROOT/components/konflux-operator/rings/ring-0/base/kustomization.yaml"
@@ -535,6 +535,7 @@ deploy_and_wait_for_argocd() {
 
     local apps app state not_done unknown error
     local total_apps synced_apps pending_apps iteration=0
+    local unknown_refreshed=""  # space-separated list of apps already soft-refreshed for Unknown state
 
     # Create the root Application
     log_substep "Applying root Application from: $TARGET_APP_OF_APPS_PATH"
@@ -618,11 +619,14 @@ deploy_and_wait_for_argocd() {
             exit 1
         fi
 
+        # Applications known to be non-blocking for rd-dev (pre-existing infra issues).
+        local skip_apps_pattern="container-image-proxy"
+
         state=$(oc get apps -n $ARGOCD_NAMESPACE --no-headers 2>/dev/null || echo "")
         total_apps=$(echo "$state" | grep -c "." || echo "0")
         synced_apps=$(echo "$state" | grep -c "Synced[[:blank:]]*Healthy" || echo "0")
-        pending_apps=$((total_apps - synced_apps))
-        not_done=$(echo "$state" | grep -v "Synced[[:blank:]]*Healthy" || true)
+        not_done=$(echo "$state" | grep -v "Synced[[:blank:]]*Healthy" | grep -v "$skip_apps_pattern" || true)
+        pending_apps=$(echo "$not_done" | grep -c "." || echo "0")
 
         local elapsed_min=$((elapsed_time / 60))
         local elapsed_sec=$((elapsed_time % 60))
@@ -672,9 +676,15 @@ deploy_and_wait_for_argocd() {
                     continue 2
                 fi
 
-                # Show detailed error for this app
-                log_error "Application '$app' is in Unknown state without 'context deadline exceeded'"
-                show_app_details "$app"
+                # Unknown without a recognised cause — soft-refresh once, then just warn on subsequent iterations.
+                if echo "$unknown_refreshed" | grep -qw "$app"; then
+                    log_warn "Application '$app' still in Unknown state (already refreshed), waiting for recovery"
+                else
+                    log_warn "Application '$app' is in Unknown state, attempting one-shot soft refresh"
+                    oc patch applications.argoproj.io $app -n $ARGOCD_NAMESPACE --type merge -p='{"metadata": {"annotations":{"argocd.argoproj.io/refresh": "soft"}}}' 2>/dev/null || true
+                    unknown_refreshed="$unknown_refreshed $app"
+                    show_app_details "$app"
+                fi
             done
         fi
 
@@ -951,14 +961,19 @@ done
 
 TARGET_PREVIEW_OVERLAY="development"
 if $OPERATOR_OVERLAY; then
-    TARGET_PREVIEW_OVERLAY="development-operator"
+    TARGET_PREVIEW_OVERLAY="rd-dev"
 fi
 TARGET_APP_OF_APPS_PATH="$ROOT/argo-cd-apps/app-of-app-sets/$TARGET_PREVIEW_OVERLAY"
 TARGET_OVERLAY_PATH="argo-cd-apps/overlays/$TARGET_PREVIEW_OVERLAY"
 TARGET_DELETE_FILE="$ROOT/argo-cd-apps/overlays/$TARGET_PREVIEW_OVERLAY/delete-applications.yaml"
-# development-operator kustomization inherits ../development; shared delete list.
-if [ "$TARGET_PREVIEW_OVERLAY" = "development-operator" ]; then
-    TARGET_DELETE_FILE="$ROOT/argo-cd-apps/overlays/development/delete-applications.yaml"
+# rd-dev has its own delete-applications.yaml evaluated at the rd-dev overlay level so
+# DEPLOY_ONLY patches can target both development-inherited and rd-dev-local ApplicationSets.
+# Touch it now so yq reads in configure_deploy_only / configure_kueue_for_ocp_version and
+# the --grafana handler never hit a missing-file error. The file stays empty unless those
+# handlers actually append content; only then is it wired into rd-dev/kustomization.yaml.
+if [ "$TARGET_PREVIEW_OVERLAY" = "rd-dev" ]; then
+    # Truncate (or create) the file so stale content from a previous aborted run is cleared.
+    > "$TARGET_DELETE_FILE"
 fi
 
 # =============================================================================
@@ -1054,7 +1069,7 @@ log_success "All ArgoCD patch files updated"
 # Optional Components
 # =============================================================================
 if $OBO; then
-    if [ "$TARGET_PREVIEW_OVERLAY" != "development" ] && [ "$TARGET_PREVIEW_OVERLAY" != "development-operator" ]; then
+    if [ "$TARGET_PREVIEW_OVERLAY" != "development" ] && [ "$TARGET_PREVIEW_OVERLAY" != "rd-dev" ]; then
         log_warn "Ignoring --obo for overlay '$TARGET_PREVIEW_OVERLAY'"
     else
     log_step "Enabling Observability (OBO) components"
@@ -1065,18 +1080,23 @@ if $OBO; then
 fi
 
 if $GRAFANA; then
-    if [ "$TARGET_PREVIEW_OVERLAY" != "development" ] && [ "$TARGET_PREVIEW_OVERLAY" != "development-operator" ]; then
+    if [ "$TARGET_PREVIEW_OVERLAY" != "development" ] && [ "$TARGET_PREVIEW_OVERLAY" != "rd-dev" ]; then
         log_warn "Ignoring --grafana for overlay '$TARGET_PREVIEW_OVERLAY'"
     else
     log_step "Enabling Grafana dashboard"
     log_info "Removing monitoring-workload-grafana from delete-applications.yaml"
     yq -i 'select(.metadata.name != "monitoring-workload-grafana")' "$TARGET_DELETE_FILE"
+    # For rd-dev the Grafana deletion lives in the inherited development overlay, not TARGET_DELETE_FILE.
+    if [ "$TARGET_PREVIEW_OVERLAY" = "rd-dev" ]; then
+        yq -i 'select(.metadata.name != "monitoring-workload-grafana")' \
+            "$ROOT/argo-cd-apps/overlays/development/delete-applications.yaml"
+    fi
     log_success "Grafana enabled: monitoring-workload-grafana will be deployed"
     fi
 fi
 
 if $EAAS; then
-    if [ "$TARGET_PREVIEW_OVERLAY" != "development" ] && [ "$TARGET_PREVIEW_OVERLAY" != "development-operator" ]; then
+    if [ "$TARGET_PREVIEW_OVERLAY" != "development" ] && [ "$TARGET_PREVIEW_OVERLAY" != "rd-dev" ]; then
         log_warn "Ignoring --eaas for overlay '$TARGET_PREVIEW_OVERLAY'"
     else
     log_step "Enabling Environment-as-a-Service (EaaS) components"
@@ -1092,10 +1112,20 @@ fi
 # =============================================================================
 label_cluster_nodes
 
-if [ "$TARGET_PREVIEW_OVERLAY" = "development" ] || [ "$TARGET_PREVIEW_OVERLAY" = "development-operator" ]; then
+if [ "$TARGET_PREVIEW_OVERLAY" = "development" ] || [ "$TARGET_PREVIEW_OVERLAY" = "rd-dev" ]; then
     configure_deploy_only
     configure_kueue_for_ocp_version
     configure_operator_image_controller
+
+    # Wire rd-dev/delete-applications.yaml into the rd-dev kustomization only if it was
+    # populated by configure_deploy_only or configure_kueue_for_ocp_version above.
+    if [ "$TARGET_PREVIEW_OVERLAY" = "rd-dev" ] && [ -s "$TARGET_DELETE_FILE" ]; then
+        rd_kust="$ROOT/argo-cd-apps/overlays/rd-dev/kustomization.yaml"
+        if ! grep -q "delete-applications.yaml" "$rd_kust"; then
+            yq -i '.patchesStrategicMerge += ["delete-applications.yaml"]' "$rd_kust"
+            log_info "Wired rd-dev/delete-applications.yaml into rd-dev kustomization"
+        fi
+    fi
 
     # Configure GitHub org
     log_step "Configuring GitHub organization"
@@ -1124,7 +1154,11 @@ fi
 # Commit and Push - INLINE (not in function) as per original script
 # =============================================================================
 log_step "Committing and pushing preview changes"
-if ! git diff --exit-code --quiet; then
+# Stage the dynamically created rd-dev delete file if it was populated and wired in.
+if [ "$TARGET_PREVIEW_OVERLAY" = "rd-dev" ] && [ -s "$TARGET_DELETE_FILE" ]; then
+    git add "$TARGET_DELETE_FILE"
+fi
+if ! git diff --exit-code --quiet || ! git diff --cached --exit-code --quiet; then
     git commit -a -m "Preview mode, do not merge into main"
     git push -f --set-upstream $MY_GIT_FORK_REMOTE $PREVIEW_BRANCH
     log_success "Preview changes committed and pushed to $MY_GIT_FORK_REMOTE/$PREVIEW_BRANCH"
@@ -1138,9 +1172,9 @@ fi
 deploy_and_wait_for_argocd
 
 # =============================================================================
-# Wait for Konflux CR (development-operator overlay on OpenShift)
+# Wait for Konflux CR (rd-dev overlay on OpenShift)
 # =============================================================================
-if [ "$TARGET_PREVIEW_OVERLAY" = "development-operator" ]; then
+if [ "$TARGET_PREVIEW_OVERLAY" = "rd-dev" ]; then
     wait_for_konflux_operator_controller_ready
     if [ "${PREVIEW_WAIT_KONFLUX_CR_READY:-}" = "true" ]; then
         wait_for_konflux_cr_ready
@@ -1158,7 +1192,7 @@ wait_for_tekton_crds
 # =============================================================================
 # Final Configuration
 # =============================================================================
-if [ "$TARGET_PREVIEW_OVERLAY" = "development" ] || [ "$TARGET_PREVIEW_OVERLAY" = "development-operator" ]; then
+if [ "$TARGET_PREVIEW_OVERLAY" = "development" ] || [ "$TARGET_PREVIEW_OVERLAY" = "rd-dev" ]; then
     log_step "Configuring Pipelines as Code integration"
     TARGET_PREVIEW_OVERLAY="$TARGET_PREVIEW_OVERLAY" "$ROOT/hack/build/setup-pac-integration.sh"
     log_success "Pipelines as Code configured"
