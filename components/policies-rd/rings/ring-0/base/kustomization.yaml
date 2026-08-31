@@ -5,8 +5,8 @@ resources:
 - base-snapshot
 - taskruns-cluster-policy.yaml
 - restrict-docker-io/
-# - cost-management/
 - konflux-rbac/
-- integration/
-- kubearchive/
 - kueue/
+
+patches:
+- path: delete-prod-only-policies.yaml
