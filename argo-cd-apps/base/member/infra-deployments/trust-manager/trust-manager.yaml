@@ -15,9 +15,11 @@ spec:
               values:
                 sourceRoot: components/trust-manager
                 environment: staging
-                clusterDir: ""
+                clusterDir: base
           - list:
-              elements: []
+              elements:
+                - nameNormalized: kflux-lw-p01
+                  values.clusterDir: kflux-lw-p01
   template:
     metadata:
       name: trust-manager-{{nameNormalized}}
