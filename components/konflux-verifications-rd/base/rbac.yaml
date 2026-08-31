@@ -1,4 +1,4 @@
-# RoleBindings granting the conformance-verification-sa permissions in both
+# RoleBindings granting the konflux-bot-0 SA permissions in both
 # tenant and managed namespaces via existing ClusterRoles.
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -8,7 +8,7 @@ metadata:
   namespace: konflux-conformance-tests
 subjects:
   - kind: ServiceAccount
-    name: conformance-verification-sa
+    name: konflux-bot-0
     namespace: konflux-managed-tests
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -22,7 +22,7 @@ metadata:
   namespace: konflux-managed-tests
 subjects:
   - kind: ServiceAccount
-    name: conformance-verification-sa
+    name: konflux-bot-0
     namespace: konflux-managed-tests
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -36,7 +36,7 @@ metadata:
   namespace: konflux-managed-tests
 subjects:
   - kind: ServiceAccount
-    name: conformance-verification-sa
+    name: konflux-bot-0
     namespace: konflux-managed-tests
 roleRef:
   apiGroup: rbac.authorization.k8s.io
