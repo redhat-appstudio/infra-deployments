@@ -69,6 +69,20 @@ ring_env() {
   esac
 }
 
+# ring_clusters <ring-name> -> canonical clusters assigned to a ring.
+# Used to detect clusters whose RD overlay was never created (missed migration).
+# Intersected at call site with the clusters the original component actually
+# deploys, so a component that targets only a subset is not false-flagged.
+ring_clusters() {
+  case "$1" in
+    ring-1) echo "stone-stg-rh01 stone-stage-p01 lightwell-dev kflux-stg-es01" ;;
+    ring-2) echo "kflux-prd-rh03 kflux-prd-es01 stone-prod-p01 kflux-ocp-p01 kflux-osp-p01 kflux-rhel-p01 kflux-fedora-01 kflux-lw-p01" ;;
+    ring-3) echo "stone-prod-p02 stone-prd-rh01" ;;
+    ring-4) echo "kflux-prd-rh02" ;;
+    *) echo "" ;;
+  esac
+}
+
 # env_top <env> -> deployment-level overlay dir for a non-per-cluster env (dev).
 # Some components place the top-level kustomization at <env>/base, others at <env>.
 # Prints the resolved path, or empty if neither has a kustomization.yaml.
@@ -187,6 +201,21 @@ check_ring() {
     echo "FAIL: $ring - no cluster overlays found (only base/base-snapshot)"
     FAIL=$((FAIL + 1))
   fi
+
+  # Detect expected clusters (canonical ring assignment intersected with the
+  # clusters the original component actually deploys) whose RD overlay is absent
+  # - i.e. a cluster that was never migrated into this ring.
+  local c expected
+  read -ra expected <<< "$(ring_clusters "$ring")"
+  for c in "${expected[@]}"; do
+    [ -n "$c" ] || continue
+    [ -d "$ORIG_DIR/$env/$c" ] || continue   # component does not deploy here
+    if [ ! -d "$ring_dir/$c" ]; then
+      echo "FAIL: $ring/$c ($env) - expected RD overlay missing: $ring_dir/$c"
+      echo "      original overlay exists ($ORIG_DIR/$env/$c) but was not migrated"
+      FAIL=$((FAIL + 1))
+    fi
+  done
 }
 
 # rings_present -> sorted list of ring-* dirs actually present.
