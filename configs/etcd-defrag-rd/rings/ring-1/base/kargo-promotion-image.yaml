@@ -1,0 +1,14 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: etcd-maintenance
+spec:
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: etcd-maintenance
+            env:
+            - name: IMAGE
+              value: quay.io/konflux-ci/etcd-defrag@sha256:7a19f7b9b7bbdeb4f8d51e06d3319ac5c0555094fcbf2093d6e4d71f136afb55
