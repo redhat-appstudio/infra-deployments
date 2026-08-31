@@ -8,3 +8,22 @@ resources:
 - buildah-roks-scc.yaml
 - buildah-roks-scc-clusterrole.yaml
 - buildah-roks-scc-clusterrolebinding.yaml
+
+# On ROKS HCP the Proxy CR trustedCA field cannot be set, so OpenShift's
+# inject-trusted-cabundle mechanism does not distribute the RH internal CA.
+# The empty trusted-ca ConfigMap created by this policy is useless on ROKS
+# and conflicts with trust-manager which distributes the CA via a Bundle
+# resource (see the roks-trusted-ca component overlay for this cluster).
+# This patch disables the rule by setting a label selector that never
+# matches. We cannot delete the policy because it inherits Prune=false,
+# so ArgoCD would retain the live resource and Kyverno would keep
+# generating empty trusted-ca ConfigMaps that compete with trust-manager.
+patches:
+- target:
+    kind: ClusterPolicy
+    name: konflux-rbac-bootstrap-tenant-namespace-rbcm
+  patch: |-
+    - op: replace
+      path: /spec/rules/0/match/any/0/resources/selector/matchLabels
+      value:
+        konflux-ci.dev/type: disabled-on-roks

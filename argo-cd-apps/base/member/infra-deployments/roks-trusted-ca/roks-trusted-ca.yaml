@@ -1,0 +1,58 @@
+# Distributes the RH internal CA bundle to tenant namespaces on ROKS HCP
+# clusters via trust-manager. Only deployed to clusters listed below —
+# ROKS clusters where the Proxy CR trustedCA cannot be set.
+#
+# This is a standalone component (not part of trust-manager) to avoid
+# Helm chart download conflicts in CI when multiple kustomize overlays
+# reference the same base with a HelmChartInflationGenerator.
+#
+# To add a new ROKS cluster: add an entry to the list generator below
+# and create a matching directory under components/roks-trusted-ca/.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: roks-trusted-ca
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              selector:
+                matchLabels:
+                  appstudio.redhat.com/member-cluster: "true"
+              values:
+                sourceRoot: components/roks-trusted-ca
+                environment: staging
+                clusterDir: empty-base
+          # Explicit list of ROKS clusters that need the CA bundle.
+          - list:
+              elements:
+                - nameNormalized: lightwell-dev
+                  values.clusterDir: lightwell-dev
+                  values.environment: staging
+  template:
+    metadata:
+      name: roks-trusted-ca-{{nameNormalized}}
+    spec:
+      project: default
+      source:
+        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+        targetRevision: main
+      destination:
+        namespace: cert-manager
+        server: '{{server}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=false
+        retry:
+          limit: -1
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 3m

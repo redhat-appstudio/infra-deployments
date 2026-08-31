@@ -1,0 +1,58 @@
+# Deploys the RH internal CA ConfigMap to the cert-manager namespace on ROKS
+# clusters. This ConfigMap is the source for the trust-manager Bundle defined
+# in the roks-trusted-ca component.
+#
+# The CA data is kept in internal-infra-deployments (private repo) because
+# it contains internal Red Hat certificates.
+#
+# To add a new ROKS cluster: add an entry to the list generator below
+# and create a matching directory under components/roks-trusted-ca-source/
+# in internal-infra-deployments.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: roks-trusted-ca-source
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              selector:
+                matchLabels:
+                  appstudio.redhat.com/internal-member-cluster: "true"
+              values:
+                sourceRoot: components/roks-trusted-ca-source
+                environment: staging
+                clusterDir: empty-base
+          # Explicit list of ROKS clusters that need the CA source ConfigMap.
+          - list:
+              elements:
+                - nameNormalized: lightwell-dev
+                  values.clusterDir: lightwell-dev
+                  values.environment: staging
+  template:
+    metadata:
+      name: roks-trusted-ca-source-{{nameNormalized}}
+    spec:
+      project: default
+      source:
+        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
+        repoURL: https://github.com/redhat-appstudio/internal-infra-deployments.git
+        targetRevision: main
+      destination:
+        namespace: cert-manager
+        server: '{{server}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=false
+        retry:
+          limit: -1
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 3m
