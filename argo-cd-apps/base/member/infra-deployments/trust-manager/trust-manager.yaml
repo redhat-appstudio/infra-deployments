@@ -15,9 +15,11 @@ spec:
               values:
                 sourceRoot: components/trust-manager
                 environment: staging
-                clusterDir: ""
+                clusterDir: base
           - list:
-              elements: []
+              elements:
+                - nameNormalized: lightwell-dev
+                  values.clusterDir: lightwell-dev
   template:
     metadata:
       name: trust-manager-{{nameNormalized}}

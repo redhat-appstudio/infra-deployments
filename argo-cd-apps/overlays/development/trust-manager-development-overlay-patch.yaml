@@ -1,0 +1,12 @@
+# trust-manager needs its own overlay patch because the shared
+# development-overlay-patch.yaml sets clusterDir to "" (root of the
+# environment directory). After restructuring trust-manager overlays
+# into base/ + per-cluster subdirectories, the Helm generator lives
+# in base/ — so clusterDir must be "base" for all environments.
+---
+- op: add
+  path: /spec/generators/0/merge/generators/0/clusters/values/environment
+  value: development
+- op: add
+  path: /spec/generators/0/merge/generators/0/clusters/values/clusterDir
+  value: base
