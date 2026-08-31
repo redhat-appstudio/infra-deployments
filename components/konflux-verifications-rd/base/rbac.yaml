@@ -8,6 +8,8 @@
 #   builder:         pipelineruns
 #   integrationtest: integrationtestscenarios
 #   viewer:          pods, serviceaccounts, pipelineruns (read)
+#   externalpuller:  imagerepositories (read)
+#   secrets:         secrets (CRUD)
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -82,6 +84,34 @@ roleRef:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
+  name: conformance-verification-externalpuller
+  namespace: konflux-conformance-tests
+subjects:
+  - kind: ServiceAccount
+    name: konflux-bot-0
+    namespace: konflux-managed-tests
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: konflux-externalpuller-bot-actions
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: conformance-verification-secrets
+  namespace: konflux-conformance-tests
+subjects:
+  - kind: ServiceAccount
+    name: konflux-bot-0
+    namespace: konflux-managed-tests
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: konflux-secrets-bot-actions
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
   name: conformance-verification-managed-model
   namespace: konflux-managed-tests
 subjects:
@@ -148,6 +178,34 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: konflux-viewer-bot-actions
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: conformance-verification-managed-externalpuller
+  namespace: konflux-managed-tests
+subjects:
+  - kind: ServiceAccount
+    name: konflux-bot-0
+    namespace: konflux-managed-tests
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: konflux-externalpuller-bot-actions
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: conformance-verification-managed-secrets
+  namespace: konflux-managed-tests
+subjects:
+  - kind: ServiceAccount
+    name: konflux-bot-0
+    namespace: konflux-managed-tests
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: konflux-secrets-bot-actions
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
