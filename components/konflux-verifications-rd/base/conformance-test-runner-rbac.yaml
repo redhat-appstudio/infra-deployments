@@ -57,6 +57,47 @@ subjects:
   namespace: konflux-managed-tests
 ---
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: conformance-test-runner-extra
+  namespace: konflux-conformance-tests
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - delete
+- apiGroups:
+  - batch
+  resources:
+  - jobs
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: conformance-test-runner-extra
+  namespace: konflux-conformance-tests
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: conformance-test-runner-extra
+subjects:
+- kind: ServiceAccount
+  name: conformance-test-runner
+  namespace: konflux-managed-tests
+---
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: conformance-test-runner-admin
