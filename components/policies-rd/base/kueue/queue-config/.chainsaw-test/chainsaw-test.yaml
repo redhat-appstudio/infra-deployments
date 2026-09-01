@@ -25,13 +25,15 @@ spec:
       Apply Kyverno RBAC so the policy engine can generate and reconcile LocalQueue resources.
     try:
     - apply:
-        file: ../kyverno-rbac.yaml
+        file: ../kyverno-admission-cluster-role.yaml
+    - apply:
+        file: ../kyverno-background-cluster-role.yaml
   - name: given-cluster-policy-is-ready
     description: |
       Apply the queue bootstrap ClusterPolicy and assert Kyverno reports the policy as ready before exercising generation.
     try:
     - apply:
-        file: ../cluster-policy.yaml
+        file: ../bootstrap-tenant-namespace-queue-cp.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: when-tenant-labeled-namespace-is-created
@@ -76,13 +78,15 @@ spec:
       Apply Kyverno RBAC so the policy engine can generate and reconcile LocalQueue resources.
     try:
     - apply:
-        file: ../kyverno-rbac.yaml
+        file: ../kyverno-admission-cluster-role.yaml
+    - apply:
+        file: ../kyverno-background-cluster-role.yaml
   - name: given-cluster-policy-is-ready
     description: |
       Apply the queue bootstrap ClusterPolicy and assert Kyverno reports the policy as ready before exercising generation.
     try:
     - apply:
-        file: ../cluster-policy.yaml
+        file: ../bootstrap-tenant-namespace-queue-cp.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: when-tenant-labeled-namespace-is-created
@@ -129,13 +133,15 @@ spec:
       Apply Kyverno RBAC so the policy engine can generate and reconcile LocalQueue resources.
     try:
     - apply:
-        file: ../kyverno-rbac.yaml
+        file: ../kyverno-admission-cluster-role.yaml
+    - apply:
+        file: ../kyverno-background-cluster-role.yaml
   - name: given-cluster-policy-is-ready
     description: |
       Apply the queue bootstrap ClusterPolicy and assert Kyverno reports the policy as ready before exercising generation.
     try:
     - apply:
-        file: ../cluster-policy.yaml
+        file: ../bootstrap-tenant-namespace-queue-cp.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: when-tenant-labeled-namespace-is-created-paused
@@ -195,13 +201,15 @@ spec:
       Apply Kyverno RBAC so the policy engine can generate and reconcile LocalQueue resources.
     try:
     - apply:
-        file: ../kyverno-rbac.yaml
+        file: ../kyverno-admission-cluster-role.yaml
+    - apply:
+        file: ../kyverno-background-cluster-role.yaml
   - name: given-cluster-policy-is-ready
     description: |
       Apply the queue bootstrap ClusterPolicy and assert Kyverno reports the policy as ready before exercising generation.
     try:
     - apply:
-        file: ../cluster-policy.yaml
+        file: ../bootstrap-tenant-namespace-queue-cp.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: when-tenant-labeled-namespace-is-created
@@ -260,13 +268,15 @@ spec:
       Apply Kyverno RBAC so the policy engine can generate and reconcile LocalQueue resources.
     try:
     - apply:
-        file: ../kyverno-rbac.yaml
+        file: ../kyverno-admission-cluster-role.yaml
+    - apply:
+        file: ../kyverno-background-cluster-role.yaml
   - name: given-cluster-policy-is-ready
     description: |
       Apply the queue bootstrap ClusterPolicy and assert Kyverno reports the policy as ready before exercising generation.
     try:
     - apply:
-        file: ../cluster-policy.yaml
+        file: ../bootstrap-tenant-namespace-queue-cp.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: when-tenant-labeled-namespace-is-created
@@ -310,13 +320,15 @@ spec:
       Apply Kyverno RBAC so the policy engine can generate and reconcile LocalQueue resources.
     try:
     - apply:
-        file: ../kyverno-rbac.yaml
+        file: ../kyverno-admission-cluster-role.yaml
+    - apply:
+        file: ../kyverno-background-cluster-role.yaml
   - name: given-cluster-policy-is-ready
     description: |
       Apply the queue bootstrap ClusterPolicy and assert Kyverno reports the policy as ready before exercising generation.
     try:
     - apply:
-        file: ../cluster-policy.yaml
+        file: ../bootstrap-tenant-namespace-queue-cp.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: when-unlabeled-namespace-is-created
@@ -371,13 +383,15 @@ spec:
       Apply Kyverno RBAC so the policy engine can generate and reconcile LocalQueue resources.
     try:
     - apply:
-        file: ../kyverno-rbac.yaml
+        file: ../kyverno-admission-cluster-role.yaml
+    - apply:
+        file: ../kyverno-background-cluster-role.yaml
   - name: given-cluster-policy-is-ready
     description: |
       Apply the queue bootstrap ClusterPolicy and assert Kyverno reports the policy as ready before exercising generation.
     try:
     - apply:
-        file: ../cluster-policy.yaml
+        file: ../bootstrap-tenant-namespace-queue-cp.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: given-unlabeled-namespace-exists
@@ -435,13 +449,15 @@ spec:
       Apply Kyverno RBAC so the policy engine can generate and reconcile LocalQueue resources.
     try:
     - apply:
-        file: ../kyverno-rbac.yaml
+        file: ../kyverno-admission-cluster-role.yaml
+    - apply:
+        file: ../kyverno-background-cluster-role.yaml
   - name: when-cluster-policy-is-ready
     description: |
       Apply the ClusterPolicy after the target namespace exists so generateExisting can backfill the LocalQueue.
     try:
     - apply:
-        file: ../cluster-policy.yaml
+        file: ../bootstrap-tenant-namespace-queue-cp.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: then-localqueue-is-created
@@ -482,13 +498,15 @@ spec:
       Apply Kyverno RBAC so the policy engine can generate and reconcile LocalQueue resources.
     try:
     - apply:
-        file: ../kyverno-rbac.yaml
+        file: ../kyverno-admission-cluster-role.yaml
+    - apply:
+        file: ../kyverno-background-cluster-role.yaml
   - name: when-cluster-policy-is-ready
     description: |
       Apply the ClusterPolicy after the target namespace exists so generateExisting can backfill the LocalQueue.
     try:
     - apply:
-        file: ../cluster-policy.yaml
+        file: ../bootstrap-tenant-namespace-queue-cp.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: then-localqueue-is-created
@@ -528,13 +546,15 @@ spec:
       Apply Kyverno RBAC so the policy engine can generate and reconcile LocalQueue resources.
     try:
     - apply:
-        file: ../kyverno-rbac.yaml
+        file: ../kyverno-admission-cluster-role.yaml
+    - apply:
+        file: ../kyverno-background-cluster-role.yaml
   - name: when-cluster-policy-is-ready
     description: |
       Apply the ClusterPolicy after the target namespace exists so generateExisting can backfill the LocalQueue.
     try:
     - apply:
-        file: ../cluster-policy.yaml
+        file: ../bootstrap-tenant-namespace-queue-cp.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: then-localqueue-is-created
@@ -567,13 +587,15 @@ spec:
       Apply Kyverno RBAC so the policy engine can generate and reconcile LocalQueue resources.
     try:
     - apply:
-        file: ../kyverno-rbac.yaml
+        file: ../kyverno-admission-cluster-role.yaml
+    - apply:
+        file: ../kyverno-background-cluster-role.yaml
   - name: given-cluster-policy-is-ready
     description: |
       Apply the queue bootstrap ClusterPolicy and assert Kyverno reports the policy as ready before exercising generation.
     try:
     - apply:
-        file: ../cluster-policy.yaml
+        file: ../bootstrap-tenant-namespace-queue-cp.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: when-mintmaker-namespace-is-created
@@ -612,13 +634,15 @@ spec:
       Apply Kyverno RBAC so the policy engine can generate and reconcile LocalQueue resources.
     try:
     - apply:
-        file: ../kyverno-rbac.yaml
+        file: ../kyverno-admission-cluster-role.yaml
+    - apply:
+        file: ../kyverno-background-cluster-role.yaml
   - name: given-cluster-policy-is-ready
     description: |
       Apply the queue bootstrap ClusterPolicy and assert Kyverno reports the policy as ready before exercising generation.
     try:
     - apply:
-        file: ../cluster-policy.yaml
+        file: ../bootstrap-tenant-namespace-queue-cp.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: when-kanary-namespace-is-created
@@ -659,13 +683,15 @@ spec:
       Apply Kyverno RBAC so the policy engine can generate and reconcile LocalQueue resources.
     try:
     - apply:
-        file: ../kyverno-rbac.yaml
+        file: ../kyverno-admission-cluster-role.yaml
+    - apply:
+        file: ../kyverno-background-cluster-role.yaml
   - name: given-cluster-policy-is-ready
     description: |
       Apply the queue bootstrap ClusterPolicy and assert Kyverno reports the policy as ready before exercising generation.
     try:
     - apply:
-        file: ../cluster-policy.yaml
+        file: ../bootstrap-tenant-namespace-queue-cp.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: when-tenant-labeled-namespace-is-created
@@ -687,7 +713,7 @@ spec:
       Remove the policy from the cluster.
     try:
     - delete:
-        file: ../cluster-policy.yaml
+        file: ../bootstrap-tenant-namespace-queue-cp.yaml
     - wait:
         apiVersion: kyverno.io/v1
         kind: ClusterPolicy

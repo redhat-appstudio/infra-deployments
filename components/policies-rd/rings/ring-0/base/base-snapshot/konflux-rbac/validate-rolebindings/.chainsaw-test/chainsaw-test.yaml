@@ -15,7 +15,7 @@ spec:
   - name: "Given cluster policy is ready"
     try:
     - apply:
-        file: ../invalid-subjects.yaml
+        file: ../invalid-subjects-cp.yaml
     - assert:
         file: ./chainsaw-assert-clusterpolicy.yaml
   - name: "When invalid rolebinding is applied, assert an error"
@@ -67,7 +67,7 @@ spec:
   - name: "Given cluster policy is ready"
     try:
     - apply:
-        file: ../invalid-subjects.yaml
+        file: ../invalid-subjects-cp.yaml
     - assert:
         file: ./chainsaw-assert-clusterpolicy.yaml
   - name: "When valid rolebinding is applied, assert no error"

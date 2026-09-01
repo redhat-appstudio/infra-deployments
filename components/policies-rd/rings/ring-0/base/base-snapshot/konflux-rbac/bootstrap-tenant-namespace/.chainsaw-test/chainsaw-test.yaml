@@ -20,21 +20,23 @@ spec:
   - name: given-kyverno-has-permission-on-resources
     try:
     - apply:
-        file: ../kyverno_rbac.yaml
+        file: ../kyverno-admission-cluster-role.yaml
+    - apply:
+        file: ../kyverno-background-cluster-role.yaml
   - name: given-cluster-policies-are-ready
     try:
     - apply:
-        file: ../bootstrap-tenant-namespace-np-ocpconsole-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-np-ocpconsole-cp.yaml
     - apply:
-        file: ../bootstrap-tenant-namespace-np-ocpingress-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-np-ocpingress-cp.yaml
     - apply:
-        file: ../bootstrap-tenant-namespace-np-ocpmonitoring-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-np-ocpmonitoring-cp.yaml
     - apply:
-        file: ../bootstrap-tenant-namespace-np-olm-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-np-olm-cp.yaml
     - apply:
-        file: ../bootstrap-tenant-namespace-np-samenamespace-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-np-samenamespace-cp.yaml
     - apply:
-        file: ../bootstrap-tenant-namespace-rbcm-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-rbcm-cp.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: when-konfluxcidev-labeled-namespace-is-created
@@ -70,21 +72,23 @@ spec:
   - name: given-kyverno-has-permission-on-resources
     try:
     - apply:
-        file: ../kyverno_rbac.yaml
+        file: ../kyverno-admission-cluster-role.yaml
+    - apply:
+        file: ../kyverno-background-cluster-role.yaml
   - name: given-cluster-policies-are-ready
     try:
     - apply:
-        file: ../bootstrap-tenant-namespace-np-ocpconsole-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-np-ocpconsole-cp.yaml
     - apply:
-        file: ../bootstrap-tenant-namespace-np-ocpingress-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-np-ocpingress-cp.yaml
     - apply:
-        file: ../bootstrap-tenant-namespace-np-ocpmonitoring-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-np-ocpmonitoring-cp.yaml
     - apply:
-        file: ../bootstrap-tenant-namespace-np-olm-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-np-olm-cp.yaml
     - apply:
-        file: ../bootstrap-tenant-namespace-np-samenamespace-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-np-samenamespace-cp.yaml
     - apply:
-        file: ../bootstrap-tenant-namespace-rbcm-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-rbcm-cp.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: given-unlabeled-namespace-exists
@@ -124,21 +128,23 @@ spec:
   - name: given-kyverno-has-permission-on-resources
     try:
     - apply:
-        file: ../kyverno_rbac.yaml
+        file: ../kyverno-admission-cluster-role.yaml
+    - apply:
+        file: ../kyverno-background-cluster-role.yaml
   - name: given-cluster-policies-are-ready
     try:
     - apply:
-        file: ../bootstrap-tenant-namespace-np-ocpconsole-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-np-ocpconsole-cp.yaml
     - apply:
-        file: ../bootstrap-tenant-namespace-np-ocpingress-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-np-ocpingress-cp.yaml
     - apply:
-        file: ../bootstrap-tenant-namespace-np-ocpmonitoring-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-np-ocpmonitoring-cp.yaml
     - apply:
-        file: ../bootstrap-tenant-namespace-np-olm-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-np-olm-cp.yaml
     - apply:
-        file: ../bootstrap-tenant-namespace-np-samenamespace-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-np-samenamespace-cp.yaml
     - apply:
-        file: ../bootstrap-tenant-namespace-rbcm-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-rbcm-cp.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: when-unlabeled-namespace-is-created
@@ -179,7 +185,9 @@ spec:
   - name: given-kyverno-has-permission-on-resources
     try:
     - apply:
-        file: ../kyverno_rbac.yaml
+        file: ../kyverno-admission-cluster-role.yaml
+    - apply:
+        file: ../kyverno-background-cluster-role.yaml
   - name: given-appstudio-pipeline-clusterrole-exists
     try:
     - apply:
@@ -187,17 +195,17 @@ spec:
   - name: when-cluster-policies-are-ready
     try:
     - apply:
-        file: ../bootstrap-tenant-namespace-np-ocpconsole-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-np-ocpconsole-cp.yaml
     - apply:
-        file: ../bootstrap-tenant-namespace-np-ocpingress-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-np-ocpingress-cp.yaml
     - apply:
-        file: ../bootstrap-tenant-namespace-np-ocpmonitoring-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-np-ocpmonitoring-cp.yaml
     - apply:
-        file: ../bootstrap-tenant-namespace-np-olm-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-np-olm-cp.yaml
     - apply:
-        file: ../bootstrap-tenant-namespace-np-samenamespace-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-np-samenamespace-cp.yaml
     - apply:
-        file: ../bootstrap-tenant-namespace-rbcm-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-rbcm-cp.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: then-resources-are-created
@@ -228,7 +236,9 @@ spec:
   - name: given-kyverno-has-permission-on-resources
     try:
     - apply:
-        file: ../kyverno_rbac.yaml
+        file: ../kyverno-admission-cluster-role.yaml
+    - apply:
+        file: ../kyverno-background-cluster-role.yaml
   - name: given-unlabeled-namespace-is-created
     try:
     - apply:
@@ -237,17 +247,17 @@ spec:
   - name: when-cluster-policies-are-ready
     try:
     - apply:
-        file: ../bootstrap-tenant-namespace-np-ocpconsole-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-np-ocpconsole-cp.yaml
     - apply:
-        file: ../bootstrap-tenant-namespace-np-ocpingress-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-np-ocpingress-cp.yaml
     - apply:
-        file: ../bootstrap-tenant-namespace-np-ocpmonitoring-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-np-ocpmonitoring-cp.yaml
     - apply:
-        file: ../bootstrap-tenant-namespace-np-olm-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-np-olm-cp.yaml
     - apply:
-        file: ../bootstrap-tenant-namespace-np-samenamespace-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-np-samenamespace-cp.yaml
     - apply:
-        file: ../bootstrap-tenant-namespace-rbcm-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-rbcm-cp.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: then-resources-are-not-created
@@ -292,21 +302,23 @@ spec:
   - name: given-kyverno-has-permission-on-resources
     try:
     - apply:
-        file: ../kyverno_rbac.yaml
+        file: ../kyverno-admission-cluster-role.yaml
+    - apply:
+        file: ../kyverno-background-cluster-role.yaml
   - name: when-cluster-policies-are-ready
     try:
     - apply:
-        file: ../bootstrap-tenant-namespace-np-ocpconsole-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-np-ocpconsole-cp.yaml
     - apply:
-        file: ../bootstrap-tenant-namespace-np-ocpingress-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-np-ocpingress-cp.yaml
     - apply:
-        file: ../bootstrap-tenant-namespace-np-ocpmonitoring-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-np-ocpmonitoring-cp.yaml
     - apply:
-        file: ../bootstrap-tenant-namespace-np-olm-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-np-olm-cp.yaml
     - apply:
-        file: ../bootstrap-tenant-namespace-np-samenamespace-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-np-samenamespace-cp.yaml
     - apply:
-        file: ../bootstrap-tenant-namespace-rbcm-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-rbcm-cp.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: then-resources-are-not-changed
@@ -336,21 +348,23 @@ spec:
   - name: given-kyverno-has-permission-on-resources
     try:
     - apply:
-        file: ../kyverno_rbac.yaml
+        file: ../kyverno-admission-cluster-role.yaml
+    - apply:
+        file: ../kyverno-background-cluster-role.yaml
   - name: given-cluster-policies-are-ready
     try:
     - apply:
-        file: ../bootstrap-tenant-namespace-np-ocpconsole-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-np-ocpconsole-cp.yaml
     - apply:
-        file: ../bootstrap-tenant-namespace-np-ocpingress-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-np-ocpingress-cp.yaml
     - apply:
-        file: ../bootstrap-tenant-namespace-np-ocpmonitoring-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-np-ocpmonitoring-cp.yaml
     - apply:
-        file: ../bootstrap-tenant-namespace-np-olm-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-np-olm-cp.yaml
     - apply:
-        file: ../bootstrap-tenant-namespace-np-samenamespace-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-np-samenamespace-cp.yaml
     - apply:
-        file: ../bootstrap-tenant-namespace-rbcm-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-rbcm-cp.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: when-konfluxcidev-labeled-namespace-is-created
@@ -366,17 +380,17 @@ spec:
   - name: when-the-cluster-policy-is-deleted
     try:
     - delete:
-        file: ../bootstrap-tenant-namespace-np-ocpconsole-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-np-ocpconsole-cp.yaml
     - delete:
-        file: ../bootstrap-tenant-namespace-np-ocpingress-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-np-ocpingress-cp.yaml
     - delete:
-        file: ../bootstrap-tenant-namespace-np-ocpmonitoring-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-np-ocpmonitoring-cp.yaml
     - delete:
-        file: ../bootstrap-tenant-namespace-np-olm-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-np-olm-cp.yaml
     - delete:
-        file: ../bootstrap-tenant-namespace-np-samenamespace-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-np-samenamespace-cp.yaml
     - delete:
-        file: ../bootstrap-tenant-namespace-rbcm-clusterpolicy.yaml
+        file: ../bootstrap-tenant-namespace-rbcm-cp.yaml
     - wait:
         apiVersion: kyverno.io/v1
         kind: ClusterPolicy

@@ -20,11 +20,13 @@ spec:
   - name: given-kyverno-has-permission-on-resources
     try:
     - apply:
-        file: ../kyverno_rbac.yaml
+        file: ../kyverno-read-cluster-role.yaml
+    - apply:
+        file: ../kyverno-manage-cluster-role.yaml
   - name: given-cluster-policy-is-ready
     try:
     - apply:
-        file: ../bootstrap-namespace.yaml
+        file: ../bootstrap-namespace-cp.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: when-konfluxcidev-labeled-namespace-is-created
@@ -59,11 +61,13 @@ spec:
   - name: given-kyverno-has-permission-on-resources
     try:
     - apply:
-        file: ../kyverno_rbac.yaml
+        file: ../kyverno-read-cluster-role.yaml
+    - apply:
+        file: ../kyverno-manage-cluster-role.yaml
   - name: given-cluster-policy-is-ready
     try:
     - apply:
-        file: ../bootstrap-namespace.yaml
+        file: ../bootstrap-namespace-cp.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: when-unlabeled-namespace-is-created
@@ -102,7 +106,9 @@ spec:
   - name: given-kyverno-has-permission-on-resources
     try:
     - apply:
-        file: ../kyverno_rbac.yaml
+        file: ../kyverno-read-cluster-role.yaml
+    - apply:
+        file: ../kyverno-manage-cluster-role.yaml
   - name: given-konfluxci-labeled-namespace-is-created
     try:
     - apply:
@@ -111,7 +117,7 @@ spec:
   - name: when-cluster-policy-is-ready
     try:
     - apply:
-        file: ../bootstrap-namespace.yaml
+        file: ../bootstrap-namespace-cp.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: then-kubearchiveconfig-is-created
@@ -142,7 +148,9 @@ spec:
   - name: given-kyverno-has-permission-on-resources
     try:
     - apply:
-        file: ../kyverno_rbac.yaml
+        file: ../kyverno-read-cluster-role.yaml
+    - apply:
+        file: ../kyverno-manage-cluster-role.yaml
   - name: given-unlabeled-namespace-is-created
     try:
     - apply:
@@ -151,7 +159,7 @@ spec:
   - name: when-cluster-policy-is-ready
     try:
     - apply:
-        file: ../bootstrap-namespace.yaml
+        file: ../bootstrap-namespace-cp.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: then-kubearchiveconfig-is-created
@@ -186,7 +194,9 @@ spec:
   - name: given-kyverno-has-permission-on-resources
     try:
     - apply:
-        file: ../kyverno_rbac.yaml
+        file: ../kyverno-read-cluster-role.yaml
+    - apply:
+        file: ../kyverno-manage-cluster-role.yaml
   - name: given-konfluxcidev-labeled-namespace-is-created
     try:
     - apply:
@@ -200,7 +210,7 @@ spec:
   - name: when-cluster-policy-is-ready
     try:
     - apply:
-        file: ../bootstrap-namespace.yaml
+        file: ../bootstrap-namespace-cp.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: then-kubearchiveconfig-is-not-changed
@@ -230,11 +240,13 @@ spec:
   - name: given-kyverno-has-permission-on-resources
     try:
     - apply:
-        file: ../kyverno_rbac.yaml
+        file: ../kyverno-read-cluster-role.yaml
+    - apply:
+        file: ../kyverno-manage-cluster-role.yaml
   - name: given-cluster-policy-is-ready
     try:
     - apply:
-        file: ../bootstrap-namespace.yaml
+        file: ../bootstrap-namespace-cp.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: when-konfluxcidev-labeled-namespace-is-created
@@ -250,7 +262,7 @@ spec:
   - name: when-cluster-policy-is-deleted
     try:
     - delete:
-        file: ../bootstrap-namespace.yaml
+        file: ../bootstrap-namespace-cp.yaml
     - wait:
         apiVersion: kyverno.io/v1
         kind: ClusterPolicy

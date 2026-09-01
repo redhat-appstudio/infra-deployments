@@ -12,7 +12,9 @@ spec:
     - name: given-kyverno-has-permission-on-resources
       try:
         - apply:
-            file: ../kyverno_rbac.yaml
+            file: ../kyverno-admission-cluster-role.yaml
+        - apply:
+            file: ../kyverno-background-crb.yaml
     - name: given-viewer-clusterrole-exists
       try:
         - apply:
@@ -41,7 +43,7 @@ spec:
     - name: Apply Kyverno ClusterPolicy and assert it exists
       try:
         - apply:
-            file: ../generate-support-clusterrolebinding-clusterpolicy.yaml
+            file: ../generate-support-clusterrolebinding-cp.yaml
         - assert:
             file: chainsaw-assert-clusterpolicy.yaml
 ---
@@ -60,7 +62,9 @@ spec:
     - name: given-kyverno-has-permission-on-resources
       try:
         - apply:
-            file: ../kyverno_rbac.yaml
+            file: ../kyverno-admission-cluster-role.yaml
+        - apply:
+            file: ../kyverno-background-crb.yaml
     - name: given-viewer-clusterrole-exists
       try:
         - apply:
@@ -89,7 +93,7 @@ spec:
     - name: Apply Kyverno ClusterPolicy
       try:
         - apply:
-            file: ../generate-support-clusterrolebinding-clusterpolicy.yaml
+            file: ../generate-support-clusterrolebinding-cp.yaml
         - assert:
             file: chainsaw-assert-clusterpolicy.yaml
     - name: Create ai-konflux-user-support Group with users
@@ -162,7 +166,9 @@ spec:
     - name: given-kyverno-has-permission-on-resources
       try:
         - apply:
-            file: ../kyverno_rbac.yaml
+            file: ../kyverno-admission-cluster-role.yaml
+        - apply:
+            file: ../kyverno-background-crb.yaml
     - name: given-viewer-clusterrole-exists
       try:
         - apply:
@@ -191,7 +197,7 @@ spec:
     - name: Apply Kyverno ClusterPolicy
       try:
         - apply:
-            file: ../generate-support-clusterrolebinding-clusterpolicy.yaml
+            file: ../generate-support-clusterrolebinding-cp.yaml
         - assert:
             file: chainsaw-assert-clusterpolicy.yaml
     - name: Create ai-konflux-user-support Group with initial users
@@ -254,7 +260,9 @@ spec:
     - name: given-kyverno-has-permission-on-resources
       try:
         - apply:
-            file: ../kyverno_rbac.yaml
+            file: ../kyverno-admission-cluster-role.yaml
+        - apply:
+            file: ../kyverno-background-crb.yaml
     - name: given-viewer-clusterrole-exists
       try:
         - apply:
@@ -283,7 +291,7 @@ spec:
     - name: Apply Kyverno ClusterPolicy
       try:
         - apply:
-            file: ../generate-support-clusterrolebinding-clusterpolicy.yaml
+            file: ../generate-support-clusterrolebinding-cp.yaml
         - assert:
             file: chainsaw-assert-clusterpolicy.yaml
     - name: Create ai-konflux-user-support Group with multiple users
@@ -334,7 +342,9 @@ spec:
     - name: given-kyverno-has-permission-on-resources
       try:
         - apply:
-            file: ../kyverno_rbac.yaml
+            file: ../kyverno-admission-cluster-role.yaml
+        - apply:
+            file: ../kyverno-background-crb.yaml
     - name: given-viewer-clusterrole-exists
       try:
         - apply:
@@ -363,7 +373,7 @@ spec:
     - name: Apply Kyverno ClusterPolicy
       try:
         - apply:
-            file: ../generate-support-clusterrolebinding-clusterpolicy.yaml
+            file: ../generate-support-clusterrolebinding-cp.yaml
         - assert:
             file: chainsaw-assert-clusterpolicy.yaml
     - name: Create ai-konflux-user-support Group with no users
@@ -397,7 +407,9 @@ spec:
     - name: given-kyverno-has-permission-on-resources
       try:
         - apply:
-            file: ../kyverno_rbac.yaml
+            file: ../kyverno-admission-cluster-role.yaml
+        - apply:
+            file: ../kyverno-background-crb.yaml
     - name: given-viewer-clusterrole-exists
       try:
         - apply:
@@ -426,7 +438,7 @@ spec:
     - name: Apply Kyverno ClusterPolicy
       try:
         - apply:
-            file: ../generate-support-clusterrolebinding-clusterpolicy.yaml
+            file: ../generate-support-clusterrolebinding-cp.yaml
         - assert:
             file: chainsaw-assert-clusterpolicy.yaml
     - name: Create ai-konflux-user-support Group with users
@@ -488,7 +500,7 @@ spec:
     - name: Delete the cluster policy
       try:
         - delete:
-            file: ../generate-support-clusterrolebinding-clusterpolicy.yaml
+            file: ../generate-support-clusterrolebinding-cp.yaml
         - wait:
             apiVersion: kyverno.io/v1
             kind: ClusterPolicy

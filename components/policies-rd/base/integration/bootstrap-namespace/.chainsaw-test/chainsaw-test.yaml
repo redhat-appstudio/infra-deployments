@@ -20,11 +20,11 @@ spec:
   - name: given-kyverno-has-permission-on-resources
     try:
     - apply:
-        file: ../kyverno-rbac.yaml
+        file: ../kyverno-crb.yaml
   - name: given-cluster-policy-is-ready
     try:
     - apply:
-        file: ../bootstrap-namespace.yaml
+        file: ../bootstrap-namespace-cp.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: when-konfluxcidev-labeled-namespace-is-created
@@ -64,11 +64,11 @@ spec:
   - name: given-kyverno-has-permission-on-resources
     try:
     - apply:
-        file: ../kyverno-rbac.yaml
+        file: ../kyverno-crb.yaml
   - name: given-cluster-policy-is-ready
     try:
     - apply:
-        file: ../bootstrap-namespace.yaml
+        file: ../bootstrap-namespace-cp.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: when-unlabeled-namespace-is-created
@@ -115,7 +115,7 @@ spec:
   - name: given-kyverno-has-permission-on-resources
     try:
     - apply:
-        file: ../kyverno-rbac.yaml
+        file: ../kyverno-crb.yaml
   - name: given-konfluxci-labeled-namespace-is-created
     try:
     - apply:
@@ -124,7 +124,7 @@ spec:
   - name: when-cluster-policy-is-ready
     try:
     - apply:
-        file: ../bootstrap-namespace.yaml
+        file: ../bootstrap-namespace-cp.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: then-serviceaccount-is-created
@@ -161,7 +161,7 @@ spec:
   - name: given-kyverno-has-permission-on-resources
     try:
     - apply:
-        file: ../kyverno-rbac.yaml
+        file: ../kyverno-crb.yaml
   - name: given-unlabeled-namespace-is-created
     try:
     - apply:
@@ -170,7 +170,7 @@ spec:
   - name: when-cluster-policy-is-ready
     try:
     - apply:
-        file: ../bootstrap-namespace.yaml
+        file: ../bootstrap-namespace-cp.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: then-serviceaccount-is-not-created
@@ -212,7 +212,7 @@ spec:
   - name: given-kyverno-has-permission-on-resources
     try:
     - apply:
-        file: ../kyverno-rbac.yaml
+        file: ../kyverno-crb.yaml
   - name: given-unlabeled-namespace-is-created
     try:
     - apply:
@@ -221,7 +221,7 @@ spec:
   - name: given-cluster-policy-is-ready
     try:
     - apply:
-        file: ../bootstrap-namespace.yaml
+        file: ../bootstrap-namespace-cp.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: given-serviceaccount-is-not-created
@@ -278,7 +278,7 @@ spec:
   - name: given-kyverno-has-permission-on-resources
     try:
     - apply:
-        file: ../kyverno-rbac.yaml
+        file: ../kyverno-crb.yaml
   - name: given-unlabeled-namespace-is-created
     try:
     - apply:
@@ -287,7 +287,7 @@ spec:
   - name: given-cluster-policy-is-ready
     try:
     - apply:
-        file: ../bootstrap-namespace.yaml
+        file: ../bootstrap-namespace-cp.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: given-serviceaccount-is-not-created
@@ -349,11 +349,11 @@ spec:
   - name: given-kyverno-has-permission-on-resources
     try:
     - apply:
-        file: ../kyverno-rbac.yaml
+        file: ../kyverno-crb.yaml
   - name: given-cluster-policy-is-ready
     try:
     - apply:
-        file: ../bootstrap-namespace.yaml
+        file: ../bootstrap-namespace-cp.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: when-konfluxcidev-labeled-namespace-is-created
@@ -374,7 +374,7 @@ spec:
   - name: when-the-policy-is-deleted
     try:
     - delete:
-        file: ../bootstrap-namespace.yaml
+        file: ../bootstrap-namespace-cp.yaml
     - wait:
         apiVersion: kyverno.io/v1
         kind: ClusterPolicy

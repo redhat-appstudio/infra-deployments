@@ -14,11 +14,11 @@ spec:
   - name: given-kyverno-has-permission-on-resources
     try:
     - apply:
-        file: ../kyverno_rbac.yaml
+        file: ../kyverno-cluster-role.yaml
   - name: given-cluster-policy-is-ready
     try:
     - apply:
-        file: ../validate-restrict-binding-system-authenticated-releng-clusterpolicy.yaml
+        file: ../validate-restrict-binding-sysauth-releng-cp.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: given-tenant-namespace-exists
@@ -56,11 +56,11 @@ spec:
   - name: given-kyverno-has-permission-on-resources
     try:
     - apply:
-        file: ../kyverno_rbac.yaml
+        file: ../kyverno-cluster-role.yaml
   - name: when-cluster-policy-is-ready
     try:
     - apply:
-        file: ../validate-restrict-binding-system-authenticated-releng-clusterpolicy.yaml
+        file: ../validate-restrict-binding-sysauth-releng-cp.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: then-invalid-rolebindings-can-be-deleted
@@ -83,11 +83,11 @@ spec:
   - name: given-kyverno-has-permission-on-resources
     try:
     - apply:
-        file: ../kyverno_rbac.yaml
+        file: ../kyverno-cluster-role.yaml
   - name: given-cluster-policy-is-ready
     try:
     - apply:
-        file: ../validate-restrict-binding-system-authenticated-releng-clusterpolicy.yaml
+        file: ../validate-restrict-binding-sysauth-releng-cp.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: given-tenant-namespace-exists
@@ -117,11 +117,11 @@ spec:
   - name: given-kyverno-has-permission-on-resources
     try:
     - apply:
-        file: ../kyverno_rbac.yaml
+        file: ../kyverno-cluster-role.yaml
   - name: given-cluster-policy-is-ready
     try:
     - apply:
-        file: ../validate-restrict-binding-system-authenticated-releng-clusterpolicy.yaml
+        file: ../validate-restrict-binding-sysauth-releng-cp.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: then-rolebindings-can-be-created-in-a-nontenant-namespace
