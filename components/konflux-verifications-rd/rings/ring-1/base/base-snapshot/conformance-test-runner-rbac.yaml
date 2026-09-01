@@ -39,6 +39,17 @@ rules:
   - watch
   - create
   - delete
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - roles
+  - rolebindings
+  verbs:
+  - get
+  - list
+  - create
+  - update
+  - delete
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -79,6 +90,17 @@ rules:
   - list
   - watch
   - create
+  - delete
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - roles
+  - rolebindings
+  verbs:
+  - get
+  - list
+  - create
+  - update
   - delete
 ---
 apiVersion: rbac.authorization.k8s.io/v1
