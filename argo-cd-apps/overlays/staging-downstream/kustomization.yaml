@@ -15,6 +15,11 @@ patchesStrategicMerge:
   - delete-applications.yaml
 
 patches:
+  - path: base-clusterdir-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: ca-bundle
   # Exclude operator-managed clusters from Argo generation for services owned
   # by the konflux-operator. Orphan (do not prune) when Applications go away.
   - path: exclude-operator-owned-clusters.yaml
