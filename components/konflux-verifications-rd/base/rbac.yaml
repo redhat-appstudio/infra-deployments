@@ -1,116 +1,17 @@
-# RoleBindings granting konflux-bot-0 permissions for Kargo conformance verification.
-# Only ClusterRoles matching konflux-*-bot-actions are allowed by the
-# ValidatingAdmissionPolicy konflux-rbac-restrict-bindings-serviceaccounts-create.
+# RBAC for Kargo conformance verification.
 #
-# Required roles (from conformance test resource access):
-#   model:           applications, components, releaseplans
-#   releaser:        releases, snapshots
-#   builder:         pipelineruns
-#   integrationtest: integrationtestscenarios
-#   viewer:          pods, serviceaccounts, pipelineruns (read)
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: conformance-verification-model
-  namespace: konflux-conformance-tests
-subjects:
-  - kind: ServiceAccount
-    name: konflux-bot-0
-    namespace: konflux-managed-tests
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: konflux-model-bot-actions
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: conformance-verification-releaser
-  namespace: konflux-conformance-tests
-subjects:
-  - kind: ServiceAccount
-    name: konflux-bot-0
-    namespace: konflux-managed-tests
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: konflux-releaser-bot-actions
+# konflux-bot-0:
+#   Only needs builder-bot-actions to create PipelineRuns on the target
+#   cluster. The actual conformance tests run inside the PipelineRun as
+#   the conformance-test-runner SA (see conformance-test-runner-rbac.yaml).
+#
+# konflux-devprod-admins:
+#   Admin access for the devprod team in both namespaces.
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: conformance-verification-builder
-  namespace: konflux-conformance-tests
-subjects:
-  - kind: ServiceAccount
-    name: konflux-bot-0
-    namespace: konflux-managed-tests
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: konflux-builder-bot-actions
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: conformance-verification-integration
-  namespace: konflux-conformance-tests
-subjects:
-  - kind: ServiceAccount
-    name: konflux-bot-0
-    namespace: konflux-managed-tests
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: konflux-integrationtest-bot-actions
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: conformance-verification-viewer
-  namespace: konflux-conformance-tests
-subjects:
-  - kind: ServiceAccount
-    name: konflux-bot-0
-    namespace: konflux-managed-tests
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: konflux-viewer-bot-actions
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: conformance-verification-managed-model
-  namespace: konflux-managed-tests
-subjects:
-  - kind: ServiceAccount
-    name: konflux-bot-0
-    namespace: konflux-managed-tests
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: konflux-model-bot-actions
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: conformance-verification-managed-releaser
-  namespace: konflux-managed-tests
-subjects:
-  - kind: ServiceAccount
-    name: konflux-bot-0
-    namespace: konflux-managed-tests
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: konflux-releaser-bot-actions
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: conformance-verification-managed-builder
   namespace: konflux-managed-tests
 subjects:
   - kind: ServiceAccount
@@ -120,34 +21,6 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: konflux-builder-bot-actions
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: conformance-verification-managed-integration
-  namespace: konflux-managed-tests
-subjects:
-  - kind: ServiceAccount
-    name: konflux-bot-0
-    namespace: konflux-managed-tests
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: konflux-integrationtest-bot-actions
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: conformance-verification-managed-viewer
-  namespace: konflux-managed-tests
-subjects:
-  - kind: ServiceAccount
-    name: konflux-bot-0
-    namespace: konflux-managed-tests
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: konflux-viewer-bot-actions
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
