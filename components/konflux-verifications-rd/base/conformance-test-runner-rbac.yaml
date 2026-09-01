@@ -4,6 +4,8 @@ kind: RoleBinding
 metadata:
   name: conformance-test-runner-admin
   namespace: konflux-conformance-tests
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -18,6 +20,8 @@ kind: Role
 metadata:
   name: conformance-test-runner-extra
   namespace: konflux-managed-tests
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
 rules:
 - apiGroups:
   - ""
@@ -41,6 +45,8 @@ kind: RoleBinding
 metadata:
   name: conformance-test-runner-extra
   namespace: konflux-managed-tests
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -55,6 +61,8 @@ kind: RoleBinding
 metadata:
   name: conformance-test-runner-admin
   namespace: konflux-managed-tests
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
