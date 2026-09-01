@@ -1,0 +1,99 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  annotations:
+    policies.kyverno.io/description: |
+      This policy applies resource requests and limits to specific Tekton task pods:
+      - buildah-oci-ta (build-container)
+      - verify-enterprise-contract
+      - prefetch-dependencies
+      - clamav-scan
+      - clair-scan
+      Resources are only set when the container already has resources defined.
+  name: tekton-taskrun-resource-policy
+spec:
+  background: false
+  rules:
+  - match:
+      any:
+      - resources:
+          kinds:
+          - Pod
+          names:
+          - '*-pod'
+          operations:
+          - CREATE
+          selector:
+            matchLabels:
+              tekton.dev/task: buildah-oci-ta
+      - resources:
+          kinds:
+          - Pod
+          names:
+          - '*-pod'
+          operations:
+          - CREATE
+          selector:
+            matchLabels:
+              tekton.dev/task: verify-enterprise-contract
+      - resources:
+          kinds:
+          - Pod
+          names:
+          - '*-pod'
+          operations:
+          - CREATE
+          selector:
+            matchLabels:
+              tekton.dev/task: prefetch-dependencies
+      - resources:
+          kinds:
+          - Pod
+          names:
+          - '*-pod'
+          operations:
+          - CREATE
+          selector:
+            matchLabels:
+              tekton.dev/task: clamav-scan
+      - resources:
+          kinds:
+          - Pod
+          names:
+          - '*-pod'
+          operations:
+          - CREATE
+          selector:
+            matchLabels:
+              tekton.dev/task: clair-scan
+    mutate:
+      foreach:
+      - list: request.object.spec.containers
+        patchesJson6902: |-
+          - op: add
+            path: /spec/containers/{{elementIndex}}/resources/requests
+            value:
+              memory: 2Gi
+              cpu: 500m
+          - op: add
+            path: /spec/containers/{{elementIndex}}/resources/limits
+            value:
+              memory: 4Gi
+              cpu: 2
+        preconditions:
+          any:
+          - key: '{{ element.resources.requests.memory || '''' }}'
+            operator: NotEquals
+            value: ""
+          - key: '{{ element.resources.requests.cpu || '''' }}'
+            operator: NotEquals
+            value: ""
+      - list: request.object.spec.containers
+        patchesJson6902: |-
+          - op: remove
+            path: /spec/containers/{{elementIndex}}/imagePullPolicy
+          - op: add
+            path: /spec/containers/{{elementIndex}}/imagePullPolicy
+            value: IfNotPresent
+    name: set-task-resources
+    skipBackgroundRequests: true
