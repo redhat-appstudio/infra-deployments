@@ -1,0 +1,39 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  annotations:
+    policies.kyverno.io/description: |
+      This policy restricts the use of images from docker.io.
+      It blocks images that explicitly reference docker.io or index.docker.io,
+      as well as images without an explicit registry (e.g. ubuntu:latest),
+      which default to docker.io.
+  name: restrict-docker-io-images
+spec:
+  validationFailureAction: Enforce
+  background: false
+  rules:
+  - match:
+      any:
+      - resources:
+          kinds:
+          - Pod
+          operations:
+          - CREATE
+    name: restrict-docker-io-images
+    skipBackgroundRequests: true
+    validate:
+      message: "The \"docker.io\" and \"index.docker.io\" image registries should not be used."
+      foreach:
+      - list: request.object.spec.[initContainers, ephemeralContainers, containers][]
+        deny:
+          conditions:
+            any:
+            - key: "{{ element.image }}"
+              operator: Equals
+              value: "index.docker.io/*"
+            - key: "{{ element.image }}"
+              operator: Equals
+              value: "docker.io/*"
+            - key: "{{ element.image }}"
+              operator: NotEquals
+              value: "*/*"
