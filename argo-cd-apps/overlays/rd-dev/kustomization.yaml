@@ -4,10 +4,19 @@ kind: Kustomization
 namespace: openshift-gitops
 
 resources:
+  - ../development
   - artifact-registry-proxy
   - container-image-proxy
   - etcd-shield
   - konflux-operator
+  - kyverno
 
-# No patches until those applications are onboarded to the new standards
-patches: []
+patchesStrategicMerge:
+  - delete-legacy-konflux-member-appsets.yaml
+
+patches:
+  - path: pipeline-service-operator-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: pipeline-service

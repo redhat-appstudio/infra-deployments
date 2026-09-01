@@ -1,0 +1,136 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: conformance-test-runner-admin
+  namespace: konflux-conformance-tests
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: konflux-admin-user-actions
+subjects:
+- kind: ServiceAccount
+  name: conformance-test-runner
+  namespace: konflux-managed-tests
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: conformance-test-runner-extra
+  namespace: konflux-managed-tests
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - delete
+- apiGroups:
+  - batch
+  resources:
+  - jobs
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - delete
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - roles
+  - rolebindings
+  verbs:
+  - get
+  - list
+  - create
+  - update
+  - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: conformance-test-runner-extra
+  namespace: konflux-managed-tests
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: conformance-test-runner-extra
+subjects:
+- kind: ServiceAccount
+  name: conformance-test-runner
+  namespace: konflux-managed-tests
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: conformance-test-runner-extra
+  namespace: konflux-conformance-tests
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - delete
+- apiGroups:
+  - batch
+  resources:
+  - jobs
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - delete
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - roles
+  - rolebindings
+  verbs:
+  - get
+  - list
+  - create
+  - update
+  - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: conformance-test-runner-extra
+  namespace: konflux-conformance-tests
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: conformance-test-runner-extra
+subjects:
+- kind: ServiceAccount
+  name: conformance-test-runner
+  namespace: konflux-managed-tests
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: conformance-test-runner-admin
+  namespace: konflux-managed-tests
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: konflux-admin-user-actions
+subjects:
+- kind: ServiceAccount
+  name: conformance-test-runner
+  namespace: konflux-managed-tests

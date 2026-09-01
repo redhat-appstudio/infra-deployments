@@ -233,11 +233,6 @@ patches:
     target:
       kind: ApplicationSet
       version: v1alpha1
-      name: kueue
-  - path: production-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
       name: pulp-access-controller
   - path: squid-production-overlay-patch.yaml
     target:
@@ -304,3 +299,105 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: monitoring-cardinality
+  # Exclude operator-managed clusters from Argo generation for services owned
+  # by the konflux-operator (ring-2). Orphan (do not prune) when Applications go away.
+  - path: exclude-operator-owned-clusters.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: application-api
+  - path: preserve-resources-on-deletion.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: application-api
+  - path: exclude-operator-owned-clusters.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: build-service
+  - path: preserve-resources-on-deletion.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: build-service
+  - path: exclude-operator-owned-clusters.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: integration
+  - path: preserve-resources-on-deletion.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: integration
+  - path: exclude-operator-owned-clusters.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: image-controller
+  - path: preserve-resources-on-deletion.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: image-controller
+  - path: exclude-operator-owned-clusters.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: namespace-lister
+  - path: preserve-resources-on-deletion.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: namespace-lister
+  - path: exclude-operator-owned-clusters.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: konflux-info
+  - path: preserve-resources-on-deletion.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: konflux-info
+  - path: exclude-operator-owned-clusters.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: konflux-ui
+  - path: preserve-resources-on-deletion.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: konflux-ui
+  - path: exclude-operator-owned-clusters.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: enterprise-contract
+  - path: preserve-resources-on-deletion.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: enterprise-contract
+  - path: exclude-operator-owned-clusters.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: konflux-rbac
+  - path: preserve-resources-on-deletion.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: konflux-rbac
+  - path: exclude-operator-owned-clusters.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: release
+  - path: preserve-resources-on-deletion.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: release

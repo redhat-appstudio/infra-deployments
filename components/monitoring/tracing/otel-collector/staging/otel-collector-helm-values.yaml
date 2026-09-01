@@ -42,8 +42,18 @@ config:
       error_mode: ignore
       traces:
         span:
-          - resource.attributes["service.name"] == nil
-          - not(IsMatch(resource.attributes["service.name"], "^(pipelines-as-code|integration-service|release-service)$"))
+          - instrumentation_scope.name == nil
+          - not(IsMatch(instrumentation_scope.name, "^(pipelines-as-code|integration-service|release-service)$"))
+    transform/mttb-service-name:
+      error_mode: ignore
+      trace_statements:
+        - context: span
+          statements:
+            - >-
+              set(resource.attributes["service.name"], instrumentation_scope.name)
+              where instrumentation_scope.name != nil and
+              (resource.attributes["service.name"] == nil or
+              IsMatch(resource.attributes["service.name"], "^unknown_service"))
   connectors:
     spanmetrics/mttb:
       metrics_expiration: 1h
@@ -95,6 +105,7 @@ config:
         processors:
           - memory_limiter
           - filter/mttb
+          - transform/mttb-service-name
           - batch
         exporters:
           - spanmetrics/mttb

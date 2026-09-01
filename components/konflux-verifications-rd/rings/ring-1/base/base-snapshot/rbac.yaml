@@ -1,41 +1,51 @@
+# RBAC for Kargo conformance verification.
+#
+# konflux-bot-0:
+#   Only needs builder-bot-actions to create PipelineRuns on the target
+#   cluster. The actual conformance tests run inside the PipelineRun as
+#   the conformance-test-runner SA (see conformance-test-runner-rbac.yaml).
+#
+# konflux-devprod-admins:
+#   Admin access for the devprod team in both namespaces.
+---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: conformance-verification-admin
+  name: conformance-verification-builder
+  namespace: konflux-managed-tests
+subjects:
+  - kind: ServiceAccount
+    name: konflux-bot-0
+    namespace: konflux-managed-tests
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: konflux-builder-bot-actions
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: konflux-devprod-admins
   namespace: konflux-conformance-tests
 subjects:
-  - kind: ServiceAccount
-    name: conformance-verification-sa
-    namespace: konflux-managed-tests
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: konflux-devprod
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: konflux-admin-user-actions
+  name: admin
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: conformance-verification-managed-admin
+  name: konflux-devprod-admins
   namespace: konflux-managed-tests
 subjects:
-  - kind: ServiceAccount
-    name: conformance-verification-sa
-    namespace: konflux-managed-tests
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: konflux-devprod
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: konflux-admin-user-actions
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: conformance-verification-release-pipeline
-  namespace: konflux-managed-tests
-subjects:
-  - kind: ServiceAccount
-    name: conformance-verification-sa
-    namespace: konflux-managed-tests
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: release-pipeline-resource-role
+  name: admin

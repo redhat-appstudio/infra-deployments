@@ -1,0 +1,214 @@
+environment: production
+
+instanceTag: "kflux-fedora-01"
+
+archDefaults:
+  arm64:
+    ami: "ami-06f37afe6d4f43c47"
+    key-name: "kflux-fedora-01-key-pair"
+    security-group-id: "sg-01f736c7b3e3ae39a"
+    subnet-id: "subnet-0d21faa3eca7558ec"
+
+  amd64:
+    ami: "ami-01aaf1c29c7e0f0af"
+    key-name: "kflux-fedora-01-key-pair"
+    security-group-id: "sg-01f736c7b3e3ae39a"
+    subnet-id: "subnet-0d21faa3eca7558ec"
+
+dynamicConfigs:
+  linux-arm64: {}
+
+  linux-amd64: {}
+
+  linux-mlarge-arm64: {}
+
+  linux-mlarge-amd64: {}
+
+  linux-mxlarge-arm64: {}
+
+  linux-mxlarge-amd64: {}
+
+  linux-m2xlarge-arm64: {}
+
+  linux-m2xlarge-amd64: {}
+
+  linux-d160-m2xlarge-arm64: {}
+
+  linux-d160-m2xlarge-amd64: {}
+
+  linux-m4xlarge-arm64: {}
+
+  linux-m4xlarge-amd64: {}
+
+  linux-d160-m4xlarge-arm64: {}
+
+  linux-d160-m4xlarge-amd64: {}
+
+  linux-m8xlarge-arm64: {}
+
+  linux-m8xlarge-amd64: {}
+
+  linux-d160-m8xlarge-arm64: {}
+
+  linux-d160-m8xlarge-amd64: {}
+
+  linux-cxlarge-arm64: {}
+
+  linux-cxlarge-amd64: {}
+
+  linux-c2xlarge-arm64: {}
+
+  linux-c2xlarge-amd64: {}
+
+  linux-c4xlarge-arm64: {}
+
+  linux-c4xlarge-amd64: {}
+
+  linux-c8xlarge-arm64: {}
+
+  linux-c8xlarge-amd64: {}
+
+  linux-d160-c8xlarge-arm64: {}
+
+  linux-d160-c8xlarge-amd64: {}
+
+  linux-c6gd2xlarge-arm64: {}
+
+  linux-g4xlarge-amd64: {}
+
+  linux-g6xlarge-arm64: {}
+
+  linux-g6xlarge-amd64: {}
+
+  linux-root-arm64:
+    instance-type: "m6g.2xlarge"
+    sudo-commands: "/usr/bin/podman, /usr/bin/rm /usr/share/containers/mounts.conf"
+    ami: "ami-0f8ec1601c3fe1115"
+    user-data: |-
+      Content-Type: multipart/mixed; boundary="//"
+      MIME-Version: 1.0
+
+      --//
+      Content-Type: text/cloud-config; charset="us-ascii"
+      MIME-Version: 1.0
+      Content-Transfer-Encoding: 7bit
+      Content-Disposition: attachment; filename="cloud-config.txt"
+
+      #cloud-config
+      cloud_final_modules:
+        - [scripts-user, always]
+
+      --//
+      Content-Type: text/x-shellscript; charset="us-ascii"
+      MIME-Version: 1.0
+      Content-Transfer-Encoding: 7bit
+      Content-Disposition: attachment; filename="userdata.txt"
+
+      #!/bin/bash -ex
+
+      # Install jq and yq
+      dnf install -y jq yq
+
+      --//--
+
+  linux-root-amd64:
+    sudo-commands: "/usr/bin/podman, /usr/bin/rm /usr/share/containers/mounts.conf"
+    ami: "ami-08c28532356e3b2b4"
+    # Overrides base/host-config-chart/files/linux-root-amd64-init.sh
+    user-data: |-
+      Content-Type: multipart/mixed; boundary="//"
+      MIME-Version: 1.0
+
+      --//
+      Content-Type: text/cloud-config; charset="us-ascii"
+      MIME-Version: 1.0
+      Content-Transfer-Encoding: 7bit
+      Content-Disposition: attachment; filename="cloud-config.txt"
+
+      #cloud-config
+      cloud_final_modules:
+        - [scripts-user, always]
+
+      --//
+      Content-Type: text/x-shellscript; charset="us-ascii"
+      MIME-Version: 1.0
+      Content-Transfer-Encoding: 7bit
+      Content-Disposition: attachment; filename="userdata.txt"
+
+      #!/bin/bash -ex
+
+      # Install jq and yq
+      dnf install -y jq yq
+
+      --//--
+
+  linux-fast-amd64: {}
+
+  linux-extra-fast-amd64: {}
+
+# Static hosts configuration
+staticHosts:
+  # PPC (from kflux-fedora-01-konflux-workspace, eu-de-1)
+  ppc64le-pi-static-x0:
+    address: "10.212.1.47"
+    concurrency: "8"
+    platform: "linux/ppc64le"
+    secret: "ibm-ppc64le-ssh-key"
+    user: "root"
+
+  ppc64le-pi-static-x1:
+    address: "10.212.1.6"
+    concurrency: "8"
+    platform: "linux/ppc64le"
+    secret: "ibm-ppc64le-ssh-key"
+    user: "root"
+
+  ppc64le-pi-static-x2:
+    address: "10.212.1.41"
+    concurrency: "8"
+    platform: "linux/ppc64le"
+    secret: "ibm-ppc64le-ssh-key"
+    user: "root"
+
+  # s390x (from kflux-fedora-01-ibmz-vpc, eu-de, bz2-16x64)
+  s390x-static-0:
+    address: "10.212.0.13"
+    concurrency: "4"
+    platform: "linux/s390x"
+    secret: "ibm-s390x-ssh-key"
+    user: "cloud-user"
+
+  s390x-static-1:
+    address: "10.212.0.38"
+    concurrency: "4"
+    platform: "linux/s390x"
+    secret: "ibm-s390x-ssh-key"
+    user: "cloud-user"
+
+  s390x-static-2:
+    address: "10.212.0.70"
+    concurrency: "4"
+    platform: "linux/s390x"
+    secret: "ibm-s390x-ssh-key"
+    user: "cloud-user"
+
+  s390x-static-3:
+    address: "10.212.0.12"
+    concurrency: "4"
+    platform: "linux/s390x"
+    secret: "ibm-s390x-ssh-key"
+    user: "cloud-user"
+
+  s390x-static-4:
+    address: "10.212.0.39"
+    concurrency: "4"
+    platform: "linux/s390x"
+    secret: "ibm-s390x-ssh-key"
+    user: "cloud-user"
+
+  s390x-static-5:
+    address: "10.212.0.71"
+    concurrency: "4"
+    platform: "linux/s390x"
+    secret: "ibm-s390x-ssh-key"
+    user: "cloud-user"
