@@ -1,0 +1,18 @@
+---
+# Binds the SPRE telemetry SA to the standard read-only bot role.
+# Note: konflux-viewer-bot-actions covers core Konflux resources but is
+# narrower than the full telemetry surface (no config.openshift.io, MCPs,
+# nodes, Kueue). A new konflux-telemetry-bot-actions role has been proposed
+# to the Konflux RBAC team — this binding will be updated once it lands.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: spre-telemetry-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: konflux-viewer-bot-actions
+subjects:
+  - kind: ServiceAccount
+    name: konflux-bot-0
+    namespace: spre-telemetry
