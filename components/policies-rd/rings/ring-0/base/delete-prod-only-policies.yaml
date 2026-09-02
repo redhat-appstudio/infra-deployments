@@ -1,0 +1,30 @@
+# base-snapshot mirrors the full Tier-1 base/. Development does not deploy the
+# cost-management or namespace-lister policies, so strip them here to keep this
+# ring's render equal to components/policies/development.
+
+# Cost Management Resources
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kyverno-admission-propagate-cost-management-labels
+$patch: delete
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: propagate-cost-management-labels
+$patch: delete
+---
+apiVersion: kyverno.io/v2alpha1
+kind: GlobalContextEntry
+metadata:
+  name: namespaces
+$patch: delete
+# Namespace Lister Resources
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: namespace-lister-deny-virtual-domain
+$patch: delete

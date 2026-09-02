@@ -2083,7 +2083,7 @@ metadata:
 spec:
   dataFrom:
   - extract:
-      key: production/platform/terraform/generated/kflux-lw-p01/tekton-bucket
+      key: production/platform/terraform/generated/kflux-lw-p01/plnsvc-cos-credentials
   refreshInterval: 1h
   secretStoreRef:
     kind: ClusterSecretStore
@@ -2094,9 +2094,9 @@ spec:
     name: tekton-results-s3
     template:
       data:
-        aws_access_key_id: '{{ .aws_access_key_id }}'
-        aws_region: '{{ .aws_region }}'
-        aws_secret_access_key: '{{ .aws_secret_access_key }}'
+        aws_access_key_id: '{{ .access_key_id }}'
+        aws_region: '{{ .region }}'
+        aws_secret_access_key: '{{ .secret_access_key }}'
         bucket: '{{ .bucket }}'
         endpoint: https://{{ .endpoint }}
         s3_url: s3://{{ .bucket }}
@@ -2133,7 +2133,7 @@ metadata:
 spec:
   dataFrom:
   - extract:
-      key: production/platform/terraform/generated/kflux-lw-p01/tekton-bucket
+      key: production/platform/terraform/generated/kflux-lw-p01/plnsvc-cos-credentials
   refreshInterval: 1h
   secretStoreRef:
     kind: ClusterSecretStore
@@ -2144,9 +2144,9 @@ spec:
     name: tekton-results-s3
     template:
       data:
-        aws_access_key_id: '{{ .aws_access_key_id }}'
-        aws_region: '{{ .aws_region }}'
-        aws_secret_access_key: '{{ .aws_secret_access_key }}'
+        aws_access_key_id: '{{ .access_key_id }}'
+        aws_region: '{{ .region }}'
+        aws_secret_access_key: '{{ .secret_access_key }}'
         bucket: '{{ .bucket }}'
         endpoint: https://{{ .endpoint }}
         s3_url: s3://{{ .bucket }}
