@@ -26,6 +26,16 @@ valuesInline:
     auth:
       enabled: true
       secretName: artifact-registry-credentials
+    subFilters:
+      - location: '^/repository/cargo-proxy/config\.json$'
+        types:
+          - application/json
+        once: false
+        filters:
+          - string: '"auth-required":true'
+            replacement: '"auth-required":false'
+          - string: 'https://red-hat.repo.sonatype.app'
+            replacement: 'https://artifact-registry-proxy.artifact-registry-proxy.svc.cluster.local'
     cache:
       allowList:
         - ^/repository/
