@@ -1591,9 +1591,12 @@ spec:
             type: RuntimeDefault
       serviceAccountName: tekton-results-api
       volumes:
-      - configMap:
-          name: rds-root-crt
-        name: db-tls-ca
+      - name: db-tls-ca
+        secret:
+          items:
+          - key: tekton-results-db-ca.pem
+            path: tekton-results-db-ca.pem
+          secretName: tekton-results-database
       - configMap:
           name: tekton-results-api-config
         name: config
@@ -1786,9 +1789,12 @@ spec:
             type: RuntimeDefault
       serviceAccountName: tekton-results-api
       volumes:
-      - configMap:
-          name: rds-root-crt
-        name: db-tls-ca
+      - name: db-tls-ca
+        secret:
+          items:
+          - key: tekton-results-db-ca.pem
+            path: tekton-results-db-ca.pem
+          secretName: tekton-results-database
       - configMap:
           name: tekton-results-api-config
         name: config
@@ -2131,6 +2137,11 @@ spec:
     creationPolicy: Owner
     deletionPolicy: Delete
     name: tekton-results-database
+    template:
+      data:
+        tekton-results-db-ca.pem: '{{ index . "db.ca_cert" | b64dec }}'
+      engineVersion: v2
+      mergePolicy: Merge
 ---
 apiVersion: external-secrets.io/v1
 kind: ExternalSecret
