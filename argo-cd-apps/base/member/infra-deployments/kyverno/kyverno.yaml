@@ -44,6 +44,8 @@ spec:
   template:
     metadata:
       name: kyverno-{{nameNormalized}}
+      annotations:
+        argocd.argoproj.io/compare-options: ServerSideDiff=true,IncludeMutationWebhook=true
     spec:
       project: default
       source:
