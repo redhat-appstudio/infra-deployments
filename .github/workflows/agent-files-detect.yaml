@@ -1,0 +1,161 @@
+name: Detect Agent File Changes
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  merge_group:
+    types: [checks_requested]
+
+permissions:
+  contents: read
+
+jobs:
+  # Fails the PR if .claude/ or .cursor/ directories exist anywhere in the tree.
+  block-vendor-dirs:
+    name: Block vendor-specific agent directories
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+
+      - name: Check for vendor-specific directories
+        run: |
+          FOUND=0
+          while IFS= read -r -d '' match; do
+            if [ "${FOUND}" -eq 0 ]; then
+              echo "::error::Vendor-specific paths found in this repository. These are not allowed — use AGENTS.md and skills/ instead."
+              FOUND=1
+            fi
+            sanitized="${match//'%'/'%25'}"
+            sanitized="${sanitized//'::'/'%3A%3A'}"
+            sanitized="${sanitized//$'\n'/'%0A'}"
+            sanitized="${sanitized//$'\r'/'%0D'}"
+            echo "::error::Found: ${sanitized}"
+            if [ -d "${match}" ]; then
+              ls -la "${match}/"
+            fi
+          done < <(find . -path ./.git -prune -o \( -name '.claude' -o -name '.cursor' -o -name '.vscode' -o -name '.agents' \) -print0)
+          if [ "${FOUND}" -eq 1 ]; then
+            exit 1
+          fi
+          echo "No vendor-specific directories found."
+
+  # Diffs the PR for changes to protected agent files (direct and indirect).
+  # Computes two independent results:
+  #   - protected_changed (incremental): on synchronize, only the new push (before..after),
+  #     so previously-reviewed changes don't re-trigger labeling. Drives the ADD decision.
+  #   - net_protected_changed (net): the PR's current state vs. base (base...head), so a PR
+  #     that reverted its agent-file edits reads as clean. Drives the REMOVE decision.
+  # Uploads both results as an artifact for the enforce workflow.
+  # Skipped for merge_group — PR-level enforcement already ran.
+  detect-protected-changes:
+    if: github.event_name != 'merge_group'
+    name: Detect changes to protected agent files
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Fetch comparison refs
+        env:
+          INC_BASE_REF: ${{ github.event.action == 'synchronize' && github.event.before || github.event.pull_request.base.sha }}
+          INC_HEAD_REF: ${{ github.event.action == 'synchronize' && github.event.after || github.event.pull_request.head.sha }}
+          NET_BASE_REF: ${{ github.event.pull_request.base.sha }}
+          NET_HEAD_REF: ${{ github.event.pull_request.head.sha }}
+        # No --depth: the three-dot net diff needs the merge-base, which a shallow
+        # fetch may not include. The checkout above is already full (fetch-depth: 0).
+        run: git fetch origin "${INC_BASE_REF}" "${INC_HEAD_REF}" "${NET_BASE_REF}" "${NET_HEAD_REF}"
+
+      - name: Check for protected file changes
+        id: check
+        env:
+          INC_BASE_SHA: ${{ github.event.action == 'synchronize' && github.event.before || github.event.pull_request.base.sha }}
+          INC_HEAD_SHA: ${{ github.event.action == 'synchronize' && github.event.after || github.event.pull_request.head.sha }}
+          NET_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          NET_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          # Sets RANGE_RESULT ("true"/"false") for whether the given diff range touches
+          # protected agent files (direct path match) or references a protected path
+          # (indirect heuristic). Also sets DIRECT_MATCH to the matched paths, if any.
+          # Called directly (not via $(...)) so the globals propagate.
+          # $1 = diff range expression (e.g. "A..B" incremental or "A...B" net)
+          check_range() {
+            local range="$1"
+            local changed
+            changed=$(git diff --no-ext-diff --name-only "${range}")
+            DIRECT_MATCH=$(echo "${changed}" | grep -E '(^|/)(AGENTS\.md|CLAUDE\.md|GEMINI\.md)$|(^|/)skills/|^\.github/workflows/agent-files-(detect|enforce)\.yaml$' || true)
+            if [ -n "${DIRECT_MATCH}" ]; then
+              RANGE_RESULT="true"
+            elif git diff --no-ext-diff "${range}" | grep -qiE 'AGENTS\.md|CLAUDE\.md|GEMINI\.md|\.claude|\.cursor|\.vscode|\.agents|skills/'; then
+              RANGE_RESULT="true"
+            else
+              RANGE_RESULT="false"
+            fi
+          }
+
+          # Incremental (ADD signal) — two-dot, only the new push on synchronize.
+          check_range "${INC_BASE_SHA}..${INC_HEAD_SHA}"
+          INCREMENTAL="${RANGE_RESULT}"
+          if [ "${INCREMENTAL}" = "true" ] && [ -n "${DIRECT_MATCH}" ]; then
+            sanitized="${DIRECT_MATCH//'%'/'%25'}"
+            sanitized="${sanitized//'::'/'%3A%3A'}"
+            sanitized="${sanitized//$'\n'/'%0A'}"
+            sanitized="${sanitized//$'\r'/'%0D'}"
+            echo "::warning::Protected agent files changed in latest push: ${sanitized}"
+          elif [ "${INCREMENTAL}" = "true" ]; then
+            # Flagged by the indirect heuristic (no direct path match). Keep the message
+            # generic — the diff content is attacker-influenced, so don't echo it.
+            echo "::warning::Latest push indirectly references a protected agent path (e.g. a script writing to AGENTS.md/CLAUDE.md/GEMINI.md/skills/ or a vendor keyword in the diff)."
+          fi
+
+          # Net (REMOVE signal) — three-dot, the PR's current state vs. base.
+          check_range "${NET_BASE_SHA}...${NET_HEAD_SHA}"
+          NET="${RANGE_RESULT}"
+
+          echo "protected_changed=${INCREMENTAL}" >> "${GITHUB_OUTPUT}"
+          echo "net_protected_changed=${NET}" >> "${GITHUB_OUTPUT}"
+          echo "Incremental protected change: ${INCREMENTAL}; net protected change: ${NET}"
+
+      - name: Write detection result
+        env:
+          PROTECTED_CHANGED: ${{ steps.check.outputs.protected_changed }}
+          NET_PROTECTED_CHANGED: ${{ steps.check.outputs.net_protected_changed }}
+        run: |
+          mkdir -p /tmp/agent-detect
+          echo "${PROTECTED_CHANGED}" > /tmp/agent-detect/agent-check-result.txt
+          echo "${NET_PROTECTED_CHANGED}" > /tmp/agent-detect/agent-net-result.txt
+
+      - name: Upload detection result
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: agent-check-result
+          path: /tmp/agent-detect/
+          retention-days: 1
+          if-no-files-found: error
+
+  # Posts "Agent File Policy" success for merge queue commits.
+  # PR-level enforcement (required commit status) already gated entry to the queue.
+  merge-queue-policy-pass:
+    if: github.event_name == 'merge_group'
+    name: Agent File Policy (merge queue)
+    runs-on: ubuntu-latest
+    permissions:
+      statuses: write
+    steps:
+      - name: Post success status
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        with:
+          script: |
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.sha,
+              state: 'success',
+              context: 'Agent File Policy',
+              description: 'Merge queue — PR-level enforcement already passed.',
+            });

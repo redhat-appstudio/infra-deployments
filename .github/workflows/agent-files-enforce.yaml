@@ -1,0 +1,395 @@
+name: Enforce Agent File Policy
+
+on:
+  workflow_run:
+    workflows: ["Detect Agent File Changes"]
+    types: [completed]
+  pull_request_target:
+    types: [labeled, unlabeled]
+
+permissions: {}
+
+env:
+  REVIEW_LABEL: agent-config-review-required
+
+jobs:
+  resolve-pr:
+    name: Resolve PR number
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.event != 'merge_group'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      pr_number: ${{ steps.resolve.outputs.pr_number }}
+    steps:
+      - name: Resolve PR number from workflow run
+        id: resolve
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        with:
+          script: |
+            const run = context.payload.workflow_run;
+            if (run.pull_requests && run.pull_requests.length > 0) {
+              core.setOutput('pr_number', run.pull_requests[0].number.toString());
+              return;
+            }
+            const { data: prs } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              head: `${run.head_repository.owner.login}:${run.head_branch}`,
+            });
+            if (prs.length === 0) {
+              core.setFailed('Could not resolve PR number from workflow run.');
+              return;
+            }
+            core.setOutput('pr_number', prs[0].number.toString());
+
+  label-protected-changes:
+    name: Label PR when protected agent files change
+    if: github.event_name == 'workflow_run'
+    needs: resolve-pr
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      pull-requests: write
+    outputs:
+      label_action: ${{ steps.decide.outputs.label_action }}
+    steps:
+      # The detect workflow runs PR code (pull_request trigger), so if the PR modifies
+      # the workflow files, the artifact cannot be trusted. Check independently via API.
+      - name: Check for workflow file changes
+        id: workflow-check
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        env:
+          PR_NUMBER: ${{ needs.resolve-pr.outputs.pr_number }}
+        with:
+          script: |
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: parseInt(process.env.PR_NUMBER, 10),
+            });
+            const changed = files.some(f =>
+              f.filename === '.github/workflows/agent-files-detect.yaml' ||
+              f.filename === '.github/workflows/agent-files-enforce.yaml'
+            );
+            core.setOutput('changed', changed.toString());
+
+      # Skip labeling for PRs opened by trusted bots (Dependabot, Konflux). Identity is
+      # taken from the GitHub API (pull_request.user), never from spoofable commit metadata,
+      # and pinned by account id so a renamed/reused login can't impersonate. Every commit
+      # must also be verified-signed by that bot, so a write-access insider can't sneak an
+      # unsigned/human commit onto a bot PR to ride the skip.
+      - name: Check for trusted bot author
+        id: bot-check
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        env:
+          PR_NUMBER: ${{ needs.resolve-pr.outputs.pr_number }}
+        with:
+          script: |
+            // login -> id. Match BOTH; type must be "Bot".
+            const TRUSTED_BOTS = {
+              'dependabot[bot]': 49699333,
+              'red-hat-konflux[bot]': 126015336,
+            };
+            const prNumber = parseInt(process.env.PR_NUMBER, 10);
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber,
+            });
+            const u = pr.user || {};
+            const isTrustedOpener =
+              u.type === 'Bot' &&
+              Object.prototype.hasOwnProperty.call(TRUSTED_BOTS, u.login) &&
+              TRUSTED_BOTS[u.login] === u.id;
+
+            let trusted = false;
+            if (isTrustedOpener) {
+              const commits = await github.paginate(github.rest.pulls.listCommits, {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: prNumber,
+              });
+              // Every commit must be verified-signed AND authored by the same bot account.
+              trusted = commits.length > 0 && commits.every(c =>
+                c.commit?.verification?.verified === true &&
+                c.author && c.author.id === u.id
+              );
+            }
+            console.log(`PR opener: ${u.login} (id ${u.id}, type ${u.type}); trusted_bot=${trusted}`);
+            core.setOutput('trusted_bot', trusted.toString());
+
+      - name: Download detection artifact
+        id: download
+        continue-on-error: true
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: agent-check-result
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: /tmp/detect-result
+
+      - name: Decide detection result
+        id: decide
+        run: |
+          # Reads a validated boolean from an artifact file. Prints "true"/"false" on
+          # success; on missing/invalid content prints "invalid" (caller fails closed).
+          read_bool() {
+            local file="$1" value
+            if [ ! -f "${file}" ]; then
+              echo "invalid"
+              return
+            fi
+            value=$(tr -d '[:space:]' < "${file}")
+            if [ "${value}" != "true" ] && [ "${value}" != "false" ]; then
+              echo "invalid"
+              return
+            fi
+            echo "${value}"
+          }
+
+          # Trusted bot (verified identity + all commits verified-signed): never label.
+          if [ "${{ steps.bot-check.outputs.trusted_bot }}" = "true" ]; then
+            echo "PR opened by a trusted bot — skipping label."
+            echo "label_action=remove" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          # If workflow files were changed, always flag — regardless of artifact content.
+          # (The detect workflow runs PR code, so a tampered artifact cannot be trusted.)
+          if [ "${{ steps.workflow-check.outputs.changed }}" = "true" ]; then
+            echo "Workflow files modified — flagging for review."
+            echo "label_action=add" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          INCREMENTAL=$(read_bool /tmp/detect-result/agent-check-result.txt)
+          NET=$(read_bool /tmp/detect-result/agent-net-result.txt)
+
+          # Fail closed on any missing/invalid artifact value.
+          if [ "${INCREMENTAL}" = "invalid" ] || [ "${NET}" = "invalid" ]; then
+            echo "::error::Detection artifact missing or invalid. Failing closed."
+            echo "label_action=add" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          # ADD on new agent changes in the latest push (incremental); REMOVE when the
+          # PR's current state is clean (net=false); otherwise leave the label as-is so a
+          # reviewer's approval-removal survives unrelated pushes.
+          if [ "${NET}" = "false" ]; then
+            echo "label_action=remove" >> "${GITHUB_OUTPUT}"
+          elif [ "${INCREMENTAL}" = "true" ]; then
+            echo "label_action=add" >> "${GITHUB_OUTPUT}"
+          else
+            echo "label_action=neutral" >> "${GITHUB_OUTPUT}"
+          fi
+
+      - name: Delete detection artifact
+        if: steps.download.outcome == 'success'
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        with:
+          script: |
+            const runId = ${{ github.event.workflow_run.id }};
+            const { data: artifacts } = await github.rest.actions.listWorkflowRunArtifacts({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: runId,
+            });
+            const artifact = artifacts.artifacts.find(a => a.name === 'agent-check-result');
+            if (artifact) {
+              await github.rest.actions.deleteArtifact({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                artifact_id: artifact.id,
+              });
+            }
+
+      - name: Add review label
+        if: steps.decide.outputs.label_action == 'add'
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        env:
+          PR_NUMBER: ${{ needs.resolve-pr.outputs.pr_number }}
+        with:
+          script: |
+            const label = process.env.REVIEW_LABEL;
+            const prNumber = parseInt(process.env.PR_NUMBER, 10);
+            const labels = await github.rest.issues.listLabelsOnIssue({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+            });
+            if (!labels.data.some(l => l.name === label)) {
+              try {
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: prNumber,
+                  labels: [label],
+                });
+              } catch (e) {
+                if (e.status === 404) {
+                  try {
+                    await github.rest.issues.createLabel({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      name: label,
+                      color: 'e11d48',
+                      description: 'PR modifies protected agent config files — requires CODEOWNERS review',
+                    });
+                  } catch (createErr) {
+                    if (createErr.status !== 422) {
+                      core.setFailed(`Failed to create label '${label}': ${createErr.message}`);
+                      return;
+                    }
+                  }
+                  await github.rest.issues.addLabels({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: prNumber,
+                    labels: [label],
+                  });
+                } else {
+                  core.setFailed(`Failed to add label '${label}': ${e.message}`);
+                  return;
+                }
+              }
+            }
+
+      # Remove the label when the PR's current (net) state no longer touches protected
+      # agent files — e.g. the PR reverted its earlier agent-file changes.
+      - name: Remove review label
+        if: steps.decide.outputs.label_action == 'remove'
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        env:
+          PR_NUMBER: ${{ needs.resolve-pr.outputs.pr_number }}
+        with:
+          script: |
+            const label = process.env.REVIEW_LABEL;
+            const prNumber = parseInt(process.env.PR_NUMBER, 10);
+            try {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                name: label,
+              });
+              core.info(`Removed '${label}' label — PR no longer changes protected agent files.`);
+            } catch (e) {
+              // 404 = label not present on the PR (nothing to remove).
+              if (e.status !== 404) {
+                core.setFailed(`Failed to remove label '${label}': ${e.message}`);
+              }
+            }
+
+  block-on-label:
+    name: Block PR if review label is present
+    # Only run for workflow_run or our specific label — skip unrelated label events (lgtm, approved, etc.)
+    if: always() && (github.event_name == 'workflow_run' || github.event.label.name == 'agent-config-review-required')
+    permissions:
+      statuses: write
+      pull-requests: read
+      issues: read
+    needs: [resolve-pr, label-protected-changes]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Determine PR number
+        id: pr
+        env:
+          RESOLVE_PR_NUMBER: ${{ needs.resolve-pr.outputs.pr_number }}
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        with:
+          script: |
+            if (context.eventName === 'workflow_run') {
+              const resolved = process.env.RESOLVE_PR_NUMBER;
+              if (resolved) {
+                core.setOutput('number', resolved);
+              } else {
+                core.info('No PR number from resolve-pr — skipping label check.');
+              }
+            } else {
+              core.setOutput('number', context.issue.number.toString());
+            }
+
+      - name: Evaluate policy and post commit status
+        if: steps.pr.outputs.number
+        env:
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+          LABEL_JOB_RESULT: ${{ needs.label-protected-changes.result }}
+          LABEL_ACTION: ${{ needs.label-protected-changes.outputs.label_action }}
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        with:
+          script: |
+            const label = process.env.REVIEW_LABEL;
+            const prNumber = parseInt(process.env.PR_NUMBER, 10);
+            const statusContext = 'Agent File Policy';
+
+            // Fail-closed: if label management job didn't succeed, block the PR
+            if (context.eventName === 'workflow_run') {
+              const labelJobResult = process.env.LABEL_JOB_RESULT;
+              if (labelJobResult !== 'success') {
+                const pr = await github.rest.pulls.get({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number: prNumber,
+                });
+                await github.rest.repos.createCommitStatus({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  sha: pr.data.head.sha,
+                  state: 'failure',
+                  context: statusContext,
+                  description: `Label management did not succeed (${labelJobResult}). Blocking PR.`,
+                });
+                core.setFailed(`Label management job did not succeed (${labelJobResult}). Blocking the PR.`);
+                return;
+              }
+            }
+
+            const pr = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber,
+            });
+            const labels = await github.rest.issues.listLabelsOnIssue({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+            });
+            const hasLabel = labels.data.some(l => l.name === label);
+
+            if (hasLabel) {
+              await github.rest.repos.createCommitStatus({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                sha: pr.data.head.sha,
+                state: 'failure',
+                context: statusContext,
+                description: `PR has '${label}' label — write-access review required.`,
+              });
+              core.setFailed(
+                `PR has '${label}' label. A reviewer with write access must review the agent config changes and remove this label before merging.`
+              );
+            } else if (context.eventName === 'workflow_run' && process.env.LABEL_ACTION === 'add') {
+              // We intended to add the label but it isn't present — the add step failed.
+              // (A legitimate approved PR reads as 'neutral'/'remove', not 'add', so it is
+              // not blocked here.)
+              await github.rest.repos.createCommitStatus({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                sha: pr.data.head.sha,
+                state: 'failure',
+                context: statusContext,
+                description: 'Protected changes detected but label was not applied. Blocking PR.',
+              });
+              core.setFailed('Protected agent file changes were detected but the review label could not be applied. Blocking the PR.');
+            } else {
+              await github.rest.repos.createCommitStatus({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                sha: pr.data.head.sha,
+                state: 'success',
+                context: statusContext,
+                description: 'No agent config review required.',
+              });
+            }
