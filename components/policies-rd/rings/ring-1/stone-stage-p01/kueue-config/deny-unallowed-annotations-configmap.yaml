@@ -1,0 +1,13 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: deny-unallowed-annotations
+  namespace: tekton-kueue
+data:
+  message-expression: |-
+    "PipelineRun validation failed: the cluster doesn't provide the following resources: " +
+    variables.difference.map(k, k.replace("kueue.konflux-ci.dev/requests-", "")).join(", ")
+  annotation-prefixes: '["kueue.konflux-ci.dev/requests-"]'
+  # this field is generated via `hack/kueue-allowed-vms/generate-allowed-annotations.sh`
+  allowed-annotations: "[\"kueue.konflux-ci.dev/requests-aws-ip\", \"kueue.konflux-ci.dev/requests-cpu\", \"kueue.konflux-ci.dev/requests-konflux-ci-dev-token\", \"kueue.konflux-ci.dev/requests-konflux-release\", \"kueue.konflux-ci.dev/requests-linux-amd64\", \"kueue.konflux-ci.dev/requests-linux-arm64\", \"kueue.konflux-ci.dev/requests-linux-c2xlarge-amd64\", \"kueue.konflux-ci.dev/requests-linux-c2xlarge-arm64\", \"kueue.konflux-ci.dev/requests-linux-c4xlarge-amd64\", \"kueue.konflux-ci.dev/requests-linux-c4xlarge-arm64\", \"kueue.konflux-ci.dev/requests-linux-c6gd2xlarge-arm64\", \"kueue.konflux-ci.dev/requests-linux-c8xlarge-amd64\", \"kueue.konflux-ci.dev/requests-linux-c8xlarge-arm64\", \"kueue.konflux-ci.dev/requests-linux-cxlarge-amd64\", \"kueue.konflux-ci.dev/requests-linux-cxlarge-arm64\", \"kueue.konflux-ci.dev/requests-linux-d160-c8xlarge-amd64\", \"kueue.konflux-ci.dev/requests-linux-d160-c8xlarge-arm64\", \"kueue.konflux-ci.dev/requests-linux-g64xlarge-amd64\", \"kueue.konflux-ci.dev/requests-linux-m2xlarge-amd64\", \"kueue.konflux-ci.dev/requests-linux-m2xlarge-arm64\", \"kueue.konflux-ci.dev/requests-linux-m4xlarge-amd64\", \"kueue.konflux-ci.dev/requests-linux-m4xlarge-arm64\", \"kueue.konflux-ci.dev/requests-linux-m8xlarge-amd64\", \"kueue.konflux-ci.dev/requests-linux-m8xlarge-arm64\", \"kueue.konflux-ci.dev/requests-linux-mlarge-amd64\", \"kueue.konflux-ci.dev/requests-linux-mlarge-arm64\", \"kueue.konflux-ci.dev/requests-linux-mxlarge-amd64\", \"kueue.konflux-ci.dev/requests-linux-mxlarge-arm64\", \"kueue.konflux-ci.dev/requests-linux-ppc64le\", \"kueue.konflux-ci.dev/requests-linux-root-amd64\", \"kueue.konflux-ci.dev/requests-linux-root-arm64\", \"kueue.konflux-ci.dev/requests-linux-s390x\", \"kueue.konflux-ci.dev/requests-linux-x86-64\", \"kueue.konflux-ci.dev/requests-local\", \"kueue.konflux-ci.dev/requests-localhost\", \"kueue.konflux-ci.dev/requests-macos-mac2metal-arm64\", \"kueue.konflux-ci.dev/requests-memory\", \"kueue.konflux-ci.dev/requests-mintmaker\", \"kueue.konflux-ci.dev/requests-windows-4xlarge-amd64\"]"
