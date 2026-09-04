@@ -9,31 +9,35 @@ spec:
           - nameNormalized
         generators:
           - clusters:
+              selector:
+                matchLabels:
+                  appstudio.redhat.com/member-cluster: "true"
               values:
                 sourceRoot: components/multi-platform-controller
-                environment: staging
-                clusterDir: ""
+                ring: "ring-0"
+                clusterDir: base
           - list:
               elements: []
+
   template:
     metadata:
       name: multi-platform-controller-{{nameNormalized}}
     spec:
       project: default
       source:
-        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
+        path: '{{values.sourceRoot}}/rings/{{values.ring}}/{{values.clusterDir}}'
         repoURL: https://github.com/redhat-appstudio/infra-deployments.git
         targetRevision: main
       destination:
         namespace: multi-platform-controller
         server: '{{server}}'
       syncPolicy:
-        preserveResourcesOnDeletion: true
+        automated:
+          prune: true
+          selfHeal: true
         syncOptions:
-          - CreateNamespace=true
+        - CreateNamespace=true
         retry:
-          limit: -1
+          limit: 50
           backoff:
-            duration: 10s
-            factor: 2
-            maxDuration: 3m
+            duration: 15s

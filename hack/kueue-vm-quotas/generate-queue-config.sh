@@ -23,41 +23,20 @@ generate_host_config() {
     local input_file="$1"
     local input_dir="${input_file%/*}"
     local host_values_file="$input_dir/host-values.yaml"
-    
 
     # Check if host-values.yaml exists for helm template generation
     if [[ ! -f "$host_values_file" ]]; then
         echo "ERROR: Neither $input_file nor $host_values_file exists"
         return 1
     fi
-    
-    # Determine the relative path to the base chart
-    # Since we know the full path, we can calculate relative path directly
-    # Extract the part after components/multi-platform-controller/
-    local subpath="${input_dir#*components/multi-platform-controller/}"
-    
-    # Count directory levels to determine how many "../" we need
-    # If subpath is empty, we're directly in multi-platform-controller (depth=0)
-    # Otherwise, count slashes + 1 for the number of directory levels
-    local depth
-    if [[ -z "$subpath" ]]; then
-        depth=0
-    else
-        depth=$(echo "$subpath" | tr -cd '/' | wc -c)
-        depth=$((depth + 1))  # Add 1 because we're in at least one subdirectory
-    fi
-    
-    
-    # Build relative path to base
-    local relative_base="base/host-config-chart"
-    for ((i=0; i<depth; i++)); do
-        relative_base="../$relative_base"
-    done
-    
+
+    # Ring cluster overlays load the chart from the sibling ring base.
+    local relative_base="../base/host-config-chart"
+
     echo "Generating host-config.yaml using helm template: $input_file"
     echo "  Base path: $relative_base"
     echo "  Values file: $host_values_file"
-    
+
     # Generate host-config.yaml using helm template
     (
         cd "$input_dir"
@@ -65,12 +44,12 @@ generate_host_config() {
             --namespace multi-platform-controller \
             -f "$(basename "$host_values_file")" > "$(basename "$input_file")"
     )
-    
+
     if [[ $? -ne 0 ]]; then
         echo "ERROR: Failed to generate $input_file using helm template"
         return 1
     fi
-    
+
     echo "Successfully generated: $input_file"
     return 0  # Return 0 to indicate file was successfully generated
 }
@@ -99,25 +78,25 @@ main() {
     
     # Define input-output file pairs
     local -A queue_configs=(
-        ["components/multi-platform-controller/staging/host-config.yaml"]="components/kueue/staging/stone-stg-rh01/queue-config/cluster-queue.yaml"
+        ["components/multi-platform-controller/rings/ring-1/stone-stg-rh01/host-config.yaml"]="components/kueue/staging/stone-stg-rh01/queue-config/cluster-queue.yaml"
 
-        ["components/multi-platform-controller/staging-downstream/host-config.yaml"]="components/kueue/staging/stone-stage-p01/queue-config/cluster-queue.yaml"
+        ["components/multi-platform-controller/rings/ring-1/stone-stage-p01/host-config.yaml"]="components/kueue/staging/stone-stage-p01/queue-config/cluster-queue.yaml"
 
-        ["components/multi-platform-controller/production/kflux-prd-rh02/host-config.yaml"]="components/kueue/production/kflux-prd-rh02/queue-config/cluster-queue.yaml"
+        ["components/multi-platform-controller/rings/ring-4/kflux-prd-rh02/host-config.yaml"]="components/kueue/production/kflux-prd-rh02/queue-config/cluster-queue.yaml"
 
-        ["components/multi-platform-controller/production/kflux-prd-rh03/host-config.yaml"]="components/kueue/production/kflux-prd-rh03/queue-config/cluster-queue.yaml"
+        ["components/multi-platform-controller/rings/ring-2/kflux-prd-rh03/host-config.yaml"]="components/kueue/production/kflux-prd-rh03/queue-config/cluster-queue.yaml"
 
-        ["components/multi-platform-controller/production-downstream/kflux-ocp-p01/host-config.yaml"]="components/kueue/production/kflux-ocp-p01/queue-config/cluster-queue.yaml"
+        ["components/multi-platform-controller/rings/ring-2/kflux-ocp-p01/host-config.yaml"]="components/kueue/production/kflux-ocp-p01/queue-config/cluster-queue.yaml"
 
-        ["components/multi-platform-controller/production-downstream/kflux-rhel-p01/host-config.yaml"]="components/kueue/production/kflux-rhel-p01/queue-config/cluster-queue.yaml"
+        ["components/multi-platform-controller/rings/ring-2/kflux-rhel-p01/host-config.yaml"]="components/kueue/production/kflux-rhel-p01/queue-config/cluster-queue.yaml"
 
-        ["components/multi-platform-controller/production-downstream/kflux-osp-p01/host-config.yaml"]="components/kueue/production/kflux-osp-p01/queue-config/cluster-queue.yaml"
+        ["components/multi-platform-controller/rings/ring-2/kflux-osp-p01/host-config.yaml"]="components/kueue/production/kflux-osp-p01/queue-config/cluster-queue.yaml"
 
-        ["components/multi-platform-controller/production-downstream/stone-prod-p01/host-config.yaml"]="components/kueue/production/stone-prod-p01/queue-config/cluster-queue.yaml"
+        ["components/multi-platform-controller/rings/ring-2/stone-prod-p01/host-config.yaml"]="components/kueue/production/stone-prod-p01/queue-config/cluster-queue.yaml"
 
-        ["components/multi-platform-controller/production-downstream/stone-prod-p02/host-config.yaml"]="components/kueue/production/stone-prod-p02/queue-config/cluster-queue.yaml"
+        ["components/multi-platform-controller/rings/ring-3/stone-prod-p02/host-config.yaml"]="components/kueue/production/stone-prod-p02/queue-config/cluster-queue.yaml"
 
-        ["components/multi-platform-controller/production/stone-prd-rh01/host-config.yaml"]="components/kueue/production/stone-prd-rh01/queue-config/cluster-queue.yaml"
+        ["components/multi-platform-controller/rings/ring-3/stone-prd-rh01/host-config.yaml"]="components/kueue/production/stone-prd-rh01/queue-config/cluster-queue.yaml"
     )
     
     # Track generated files for cleanup
