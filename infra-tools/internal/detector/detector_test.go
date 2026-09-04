@@ -1188,10 +1188,11 @@ func TestExtractPathsFromOverlays_RingTemplateAttributedToOverlayEnv(t *testing.
 	envPaths, allClusters, err := extractPathsFromOverlays(builds)
 	g.Expect(err).NotTo(HaveOccurred())
 
-	var stagingPaths, productionPaths []string
+	stagingPaths := make([]string, 0, len(envPaths[Staging]))
 	for _, cp := range envPaths[Staging] {
 		stagingPaths = append(stagingPaths, cp.Path)
 	}
+	productionPaths := make([]string, 0, len(envPaths[Production]))
 	for _, cp := range envPaths[Production] {
 		productionPaths = append(productionPaths, cp.Path)
 	}
