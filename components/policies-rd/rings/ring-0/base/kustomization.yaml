@@ -8,5 +8,10 @@ resources:
 - konflux-rbac/
 - kueue/
 
+# One $patch: delete document per file. Argo CD's bundled kustomize panics on
+# multi-document strategic-merge patch files (kubernetes/kubernetes#131939).
 patches:
-- path: delete-prod-only-policies.yaml
+- path: delete-kyverno-admission-propagate-cost-management-labels.yaml
+- path: delete-propagate-cost-management-labels.yaml
+- path: delete-global-context-entry-namespaces.yaml
+- path: delete-namespace-lister-deny-virtual-domain.yaml
