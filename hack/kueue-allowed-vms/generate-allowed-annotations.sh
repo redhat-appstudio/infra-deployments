@@ -49,8 +49,8 @@ main() {
 
   # Define input-output file pairs
   local -A queue_configs=(
-      ["components/kueue/staging/stone-stage-p01"]="components/policies/staging/stone-stage-p01/kueue/deny-unallowed-annotations/"
-      ["components/kueue/staging/stone-stg-rh01"]="components/policies/staging/stone-stg-rh01/kueue/deny-unallowed-annotations/"
+      ["components/kueue/rings/ring-1/stone-stage-p01"]="components/policies-rd/rings/ring-1/stone-stage-p01/kueue-config/deny-unallowed-annotations/"
+      ["components/kueue/rings/ring-1/stone-stg-rh01"]="components/policies-rd/rings/ring-1/stone-stg-rh01/kueue-config/deny-unallowed-annotations/"
   )
 
   for input_folder in "${!queue_configs[@]}"; do
