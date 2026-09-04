@@ -18,7 +18,7 @@ spec:
                   - key: appstudio.redhat.com/select-none
                     operator: DoesNotExist
               values:
-                sourceRoot: components/kueue-rd
+                sourceRoot: components/kueue
                 ring: "empty-base"
                 clusterDir: "empty-base"
           - list:
@@ -36,9 +36,9 @@ spec:
       destination:
         server: '{{server}}'
       syncPolicy:
-        # automated:
-        #   prune: true
-        #   selfHeal: true
+        automated:
+          prune: true
+          selfHeal: true
         syncOptions:
         - CreateNamespace=true
         retry:
