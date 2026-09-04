@@ -69,6 +69,41 @@ spec:
         server: '{{server}}'
 `
 
+// appSetWithRing returns an ApplicationSet YAML that uses the ring-based path
+// template: sourceRoot/rings/ring/clusterDir.
+func appSetWithRing(root, defaultRing, defaultClusterDir, listRing, listCluster string) string {
+	return fmt.Sprintf(`apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: test-app
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              values:
+                sourceRoot: %s
+                ring: %q
+                clusterDir: %q
+          - list:
+              elements:
+                - nameNormalized: %s
+                  values.ring: %s
+                  values.clusterDir: %s
+  template:
+    metadata:
+      name: test-{{nameNormalized}}
+    spec:
+      source:
+        path: '{{values.sourceRoot}}/rings/{{values.ring}}/{{values.clusterDir}}'
+        repoURL: https://github.com/example/repo.git
+      destination:
+        server: '{{server}}'
+`, root, defaultRing, defaultClusterDir, listCluster, listRing, listCluster)
+}
+
 // appSetWithCluster returns an ApplicationSet YAML that uses a merge generator
 // with a cluster list, producing paths under <root>/<env> and <root>/<env>/<cluster>.
 func appSetWithCluster(root, env, cluster string) string {
@@ -627,6 +662,68 @@ func TestDetect_WithCluster(t *testing.T) {
 	g.Expect(result.AffectedClusters).To(HaveKey("stone-prod-p01"))
 }
 
+func TestDetect_RingPathsAttributedToOverlayEnv(t *testing.T) {
+	g := NewWithT(t)
+
+	stagingYAML := appSetWithRing(
+		"components/multi-platform-controller",
+		"empty-base", "empty-base",
+		"ring-1", "stone-stg-rh01",
+	)
+	productionYAML := appSetWithRing(
+		"components/multi-platform-controller",
+		"empty-base", "empty-base",
+		"ring-2", "kflux-lw-p01",
+	)
+	const stagingPath = "components/multi-platform-controller/rings/ring-1/stone-stg-rh01"
+	const productionPath = "components/multi-platform-controller/rings/ring-2/kflux-lw-p01"
+
+	head := &fakeRepo{
+		dirs: map[string][]string{"overlays": {"rd-staging", "rd-production"}},
+		yamls: map[string][]byte{
+			"overlays/rd-staging":    []byte(stagingYAML),
+			"overlays/rd-production": []byte(productionYAML),
+		},
+		exist: map[string]bool{
+			"overlays/rd-staging":    true,
+			"overlays/rd-production": true,
+			"components/multi-platform-controller/rings/empty-base/empty-base": true,
+			stagingPath:    true,
+			productionPath: true,
+		},
+		deps: map[string]map[string]bool{
+			stagingPath: {
+				stagingPath + "/host-config.yaml": true,
+			},
+			productionPath: {
+				productionPath + "/host-config.yaml": true,
+			},
+		},
+	}
+	base := &fakeRepo{
+		dirs: map[string][]string{"overlays": {"rd-staging", "rd-production"}},
+		yamls: map[string][]byte{
+			"overlays/rd-staging":    []byte(stagingYAML),
+			"overlays/rd-production": []byte(productionYAML),
+		},
+		exist: map[string]bool{
+			"overlays/rd-staging":    true,
+			"overlays/rd-production": true,
+		},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	result, err := d.Detect([]string{stagingPath + "/host-config.yaml"})
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.AffectedEnvironments).To(HaveKey(Staging))
+	g.Expect(result.AffectedEnvironments).NotTo(HaveKey(Production))
+	g.Expect(result.AffectedClusters).To(HaveKey("stone-stg-rh01"))
+	g.Expect(result.AffectedClusters).NotTo(HaveKey("kflux-lw-p01"))
+	g.Expect(result.AffectedClusters).NotTo(HaveKey("empty-base"))
+}
+
 func TestDetect_RemovedOverlay(t *testing.T) {
 	g := NewWithT(t)
 
@@ -751,6 +848,19 @@ func TestMatchClusters_ReservedDirBase(t *testing.T) {
 	// The path "components/foo/staging/base" doesn't match any cluster path,
 	// so no clusters should be added.
 	g.Expect(result.AffectedClusters).To(BeEmpty())
+}
+
+func TestMatchClusters_ReservedDirEmptyBase(t *testing.T) {
+	g := NewWithT(t)
+	result := &Result{AffectedClusters: make(map[string]bool)}
+	cp := appset.ComponentPath{
+		Path:       "components/foo/rings/empty-base/empty-base",
+		ClusterDir: "empty-base",
+	}
+
+	matchClusters(cp, nil, result)
+
+	g.Expect(result.AffectedClusters).NotTo(HaveKey("empty-base"))
 }
 
 func TestMatchClusters_ReservedDirOverlay(t *testing.T) {
@@ -1055,6 +1165,44 @@ func TestExtractPathsFromOverlays_Basic(t *testing.T) {
 
 	// Cluster should be extracted
 	g.Expect(allClusters).To(HaveKey("stone-prod-p01"))
+}
+
+func TestExtractPathsFromOverlays_RingTemplateAttributedToOverlayEnv(t *testing.T) {
+	g := NewWithT(t)
+
+	stagingYAML := appSetWithRing(
+		"components/multi-platform-controller",
+		"empty-base", "empty-base",
+		"ring-1", "stone-stg-rh01",
+	)
+	productionYAML := appSetWithRing(
+		"components/multi-platform-controller",
+		"empty-base", "empty-base",
+		"ring-2", "kflux-lw-p01",
+	)
+	builds := []overlayBuild{
+		{name: "rd-staging", env: Staging, headYAML: []byte(stagingYAML)},
+		{name: "rd-production", env: Production, headYAML: []byte(productionYAML)},
+	}
+
+	envPaths, allClusters, err := extractPathsFromOverlays(builds)
+	g.Expect(err).NotTo(HaveOccurred())
+
+	var stagingPaths, productionPaths []string
+	for _, cp := range envPaths[Staging] {
+		stagingPaths = append(stagingPaths, cp.Path)
+	}
+	for _, cp := range envPaths[Production] {
+		productionPaths = append(productionPaths, cp.Path)
+	}
+
+	g.Expect(stagingPaths).To(ContainElement("components/multi-platform-controller/rings/ring-1/stone-stg-rh01"))
+	g.Expect(stagingPaths).NotTo(ContainElement("components/multi-platform-controller/rings/ring-2/kflux-lw-p01"))
+	g.Expect(productionPaths).To(ContainElement("components/multi-platform-controller/rings/ring-2/kflux-lw-p01"))
+	g.Expect(productionPaths).NotTo(ContainElement("components/multi-platform-controller/rings/ring-1/stone-stg-rh01"))
+
+	g.Expect(allClusters).To(HaveKey("stone-stg-rh01"))
+	g.Expect(allClusters).To(HaveKey("kflux-lw-p01"))
 }
 
 func TestExtractPathsFromOverlays_MultipleEnvs(t *testing.T) {

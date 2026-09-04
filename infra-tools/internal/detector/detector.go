@@ -37,10 +37,12 @@ var OverlayEnvironment = map[string]Environment{
 }
 
 // kustomizeReservedDirs are directory names that are kustomize conventions and
-// should not be treated as cluster names.
+// should not be treated as cluster names. empty-base is the placeholder
+// clusterDir on ring-based ApplicationSets (not a real cluster).
 var kustomizeReservedDirs = map[string]bool{
-	"base":    true,
-	"overlay": true,
+	"base":       true,
+	"overlay":    true,
+	"empty-base": true,
 }
 
 // Result holds the detection output.
