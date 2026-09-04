@@ -23,20 +23,46 @@ generate_host_config() {
     local input_file="$1"
     local input_dir="${input_file%/*}"
     local host_values_file="$input_dir/host-values.yaml"
+    
 
     # Check if host-values.yaml exists for helm template generation
     if [[ ! -f "$host_values_file" ]]; then
         echo "ERROR: Neither $input_file nor $host_values_file exists"
         return 1
     fi
+    
+    # Determine the relative path to the base chart
+    # Since we know the full path, we can calculate relative path directly
+    # Extract the part after components/multi-platform-controller/
+    local subpath="${input_dir#*components/multi-platform-controller/}"
+    
+    # Count directory levels to determine how many "../" we need
+    # If subpath is empty, we're directly in multi-platform-controller (depth=0)
+    # Otherwise, count slashes + 1 for the number of directory levels
+    local depth
+    if [[ -z "$subpath" ]]; then
+        depth=0
+    else
+        depth=$(echo "$subpath" | tr -cd '/' | wc -c)
+        depth=$((depth + 1))  # Add 1 because we're in at least one subdirectory
+    fi
+    
+    
+    # Build relative path to base
+    local relative_base="base/host-config-chart"
+    for ((i=0; i<depth; i++)); do
+        relative_base="../$relative_base"
+    done
 
     # Ring cluster overlays load the chart from the sibling ring base.
-    local relative_base="../base/host-config-chart"
-
+    if [[ "$subpath" == rings/* ]]; then
+        relative_base="../base/host-config-chart"
+    fi
+    
     echo "Generating host-config.yaml using helm template: $input_file"
     echo "  Base path: $relative_base"
     echo "  Values file: $host_values_file"
-
+    
     # Generate host-config.yaml using helm template
     (
         cd "$input_dir"
@@ -44,12 +70,12 @@ generate_host_config() {
             --namespace multi-platform-controller \
             -f "$(basename "$host_values_file")" > "$(basename "$input_file")"
     )
-
+    
     if [[ $? -ne 0 ]]; then
         echo "ERROR: Failed to generate $input_file using helm template"
         return 1
     fi
-
+    
     echo "Successfully generated: $input_file"
     return 0  # Return 0 to indicate file was successfully generated
 }
