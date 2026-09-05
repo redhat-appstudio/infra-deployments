@@ -67,6 +67,10 @@ spec:
     - name: fork-repo-username
       type: string
       default: "jhutar"
+    # S3 artifact upload. Leave empty to skip upload.
+    - name: s3-bucket
+      type: string
+      default: ""
   results:
     - name: test-outcome
       description: "Test outcome: passed, failed, or unknown"
@@ -74,6 +78,8 @@ spec:
       description: "Error cause from loadtest error_caused_by_simple (comma-separated if multiple). Empty on pass or when collect-results did not run."
     - name: failure-phase
       description: "Loadtest phase where the earliest failure occurred (e.g. waitForImageRepositoryReady). Empty on pass or when collect-results did not run."
+    - name: s3-upload-failed
+      description: "true if artifact upload to S3 failed, false otherwise."
   volumes:
     - name: artifacts
       emptyDir: {}
@@ -294,6 +300,7 @@ spec:
         echo -n "unknown" > $(results.test-outcome.path)
         echo -n "" > $(results.failure-cause.path)
         echo -n "" > $(results.failure-phase.path)
+        echo -n "false" > $(results.s3-upload-failed.path)
         if [[ ! -s /opt/users-secret/token ]]; then
           echo "ERROR: /opt/users-secret/token is missing or empty" >&2
           exit 1
@@ -346,3 +353,72 @@ spec:
         else
           echo "WARN: load-test.json not found or empty, failure-cause and failure-phase will be empty" >&2
         fi
+    - name: upload-to-s3
+      image: quay.io/redhat-user-workloads/konflux-perfscale-tenant/loadtest
+      volumeMounts:
+        - name: artifacts
+          mountPath: /tmp/artifacts
+      env:
+        - name: TESTED_CLUSTER
+          value: $(params.tested-cluster)
+        - name: TEST_TYPE
+          value: $(params.test-type)
+        - name: S3_BUCKET
+          value: $(params.s3-bucket)
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: kanary-probe-credentials
+              key: aws_access_key_id
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: kanary-probe-credentials
+              key: aws_secret_access_key
+        - name: AWS_REGION
+          valueFrom:
+            secretKeyRef:
+              name: kanary-probe-credentials
+              key: aws_region
+      script: |
+        #!/usr/bin/env bash
+        set -uo pipefail
+
+        # Upload is non-fatal: mark failure and exit 0 so the TaskRun succeeds.
+        fail_upload() {
+          echo "ERROR: ${1}" >&2
+          echo -n "true" > "$(results.s3-upload-failed.path)"
+          exit 0
+        }
+
+        if [[ -z "${S3_BUCKET}" ]]; then
+          echo "No S3 bucket configured, skipping artifact upload"
+          exit 0
+        fi
+
+        if [[ ! -d /tmp/artifacts/results ]]; then
+          fail_upload "/tmp/artifacts/results not found, cannot create artifact tarball"
+        fi
+
+        timestamp=$(date -u +%Y%m%dT%H%M%SZ)
+        tarball="/tmp/run-${TESTED_CLUSTER}-${timestamp}.tar.gz"
+        s3_key="${TESTED_CLUSTER}/${TEST_TYPE}/run-${TESTED_CLUSTER}-${timestamp}.tar.gz"
+
+        # Remove the tarball on exit regardless of outcome.
+        trap 'rm -f "${tarball}"' EXIT
+
+        echo "Creating tarball from /tmp/artifacts/results/"
+        if ! tar -czf "${tarball}" -C /tmp/artifacts/results .; then
+          fail_upload "failed to create tarball ${tarball}"
+        fi
+
+        echo "Uploading to s3://${S3_BUCKET}/${s3_key}"
+        if ! python3 ci-scripts/s3-artifacts.py push \
+          --bucket "${S3_BUCKET}" \
+          --local "${tarball}" \
+          --remote "${s3_key}"; then
+          fail_upload "failed to upload ${tarball} to s3://${S3_BUCKET}/${s3_key}"
+        fi
+
+        echo "Upload complete: s3://${S3_BUCKET}/${s3_key}"
+        echo -n "false" > "$(results.s3-upload-failed.path)"

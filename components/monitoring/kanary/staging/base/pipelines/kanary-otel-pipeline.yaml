@@ -7,6 +7,10 @@ spec:
     - name: otel-endpoint
       type: string
       default: http://open-telemetry-opentelemetry-collector.konflux-otel.svc.cluster.local:4318
+    - name: s3-bucket
+      type: string
+      default: ""
+      description: "S3 bucket name for artifact upload. Leave empty to skip upload."
     - name: tested-cluster
       type: string
     - name: test-type
@@ -121,6 +125,8 @@ spec:
           value: $(params.fork-repo-host-and-path)
         - name: fork-repo-username
           value: $(params.fork-repo-username)
+        - name: s3-bucket
+          value: $(params.s3-bucket)
   finally:
     - name: push-kanary-metrics
       taskRef:
@@ -138,3 +144,5 @@ spec:
           value: $(tasks.run-kanary-tests.results.failure-cause)
         - name: failure-phase
           value: $(tasks.run-kanary-tests.results.failure-phase)
+        - name: s3-upload-failed
+          value: $(tasks.run-kanary-tests.results.s3-upload-failed)
