@@ -1,0 +1,31 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: deny-unallowed-annotations.kueue.konflux-ci.dev
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: ["tekton.dev"]
+        apiVersions: ["v1"]
+        operations: ["CREATE"]
+        resources: ["pipelineruns"]
+        scope: "Namespaced"
+  variables:
+  - name: "allowedAnnotations"
+    expression: '["my/prefix1-allowed", "my/prefix2-allowed"]'
+  - name: "annotationPrefixes"
+    expression: '["my/prefix1-", "my/prefix2-"]'
+  - name: "difference"
+    expression: |-
+      has(object.metadata.annotations) ?
+        object.metadata.annotations.
+          filter(i, variables.annotationPrefixes.exists(p, i.startsWith(p))).
+          filter(i, !(i in variables.allowedAnnotations)) : []
+  validations:
+    - expression: "size(variables.difference) == 0"
+      messageExpression: |-
+        "PipelineRun validation failed: one or more unexpected annotations found: " +
+        variables.difference.join(", ")
+      message: "PipelineRun validation failed: one or more unexpected annotations found"
