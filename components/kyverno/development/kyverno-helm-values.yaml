@@ -11,6 +11,8 @@ admissionController:
       allowPrivilegeEscalation: false
       readOnlyRootFilesystem: true
       runAsNonRoot: true
+      runAsUser: null
+      runAsGroup: null
       capabilities:
         drop:
         - "ALL"
@@ -21,6 +23,8 @@ admissionController:
       allowPrivilegeEscalation: false
       readOnlyRootFilesystem: true
       runAsNonRoot: true
+      runAsUser: null
+      runAsGroup: null
       capabilities:
         drop:
         - "ALL"
@@ -43,6 +47,8 @@ backgroundController:
     allowPrivilegeEscalation: false
     readOnlyRootFilesystem: true
     runAsNonRoot: true
+    runAsUser: null
+    runAsGroup: null
     capabilities:
       drop:
       - "ALL"
@@ -53,6 +59,15 @@ backgroundController:
     # kyverno doesn't seem to support HTTPS on metrics
     secure: false
 cleanupController:
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    runAsUser: null
+    runAsGroup: null
+    capabilities:
+      drop:
+      - "ALL"
   enabled: true
   extraArgs:
     leaderElectionRetryPeriod: 26s
