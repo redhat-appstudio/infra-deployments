@@ -8,6 +8,7 @@ resources:
   - ../../base/monitoring-blackbox
   - ../../base/smee-client
   - ../../base/ca-bundle
+  - ../../base/cert-manager-trusted-ca
   - ../../base/repository-validator
   - ../../base/cluster-secret-store-rh
 patchesStrategicMerge:
@@ -401,3 +402,8 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: release
+  - path: production-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: cert-manager-trusted-ca
