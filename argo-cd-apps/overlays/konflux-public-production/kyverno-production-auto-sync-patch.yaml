@@ -1,0 +1,9 @@
+# Preserve auto-sync for production kyverno during the ring-deployments migration.
+# The base appset's `automated` block was removed for the staging (Part 2) migration
+# (KFLUXINFRA-4286); production is not yet migrated, so re-enable it here.
+# Remove this patch when kyverno production is migrated to ring deployments.
+- op: add
+  path: /spec/template/spec/syncPolicy/automated
+  value:
+    prune: true
+    selfHeal: true
