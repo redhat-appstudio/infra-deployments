@@ -1,4 +1,11 @@
 ---
+# disaster-recovery staging/ path deleted; managed by rd-staging ring-1
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: disaster-recovery
+$patch: delete
+---
 # Tempo is excluded from the staging
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
