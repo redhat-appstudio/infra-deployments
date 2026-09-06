@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tekton-results-api
+  namespace: tekton-results
+spec:
+  template:
+    spec:
+      volumes:
+      - name: db-tls-ca
+        configMap:
+          $patch: delete
+        secret:
+          secretName: tekton-results-database
+          items:
+          - key: tekton-results-db-ca.pem
+            path: tekton-results-db-ca.pem
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tekton-results-api-for-watcher
+  namespace: tekton-results
+spec:
+  template:
+    spec:
+      volumes:
+      - name: db-tls-ca
+        configMap:
+          $patch: delete
+        secret:
+          secretName: tekton-results-database
+          items:
+          - key: tekton-results-db-ca.pem
+            path: tekton-results-db-ca.pem
