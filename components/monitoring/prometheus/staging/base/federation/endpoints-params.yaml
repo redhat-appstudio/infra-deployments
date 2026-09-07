@@ -148,6 +148,7 @@
     ## Container Metrics
     - '{__name__="kube_pod_container_status_waiting_reason", namespace!~".*-tenant|openshift-.*|kube-.*|mintmaker"}'
     - '{__name__="kube_pod_container_status_waiting_reason", namespace="mintmaker", pod!~"renovate.*"}'
+    - '{__name__="kube_pod_container_resource_requests", namespace="appstudio-grafana", resource="cpu"}'
     - '{__name__="kube_pod_container_resource_limits", namespace=~"release-service|rhtap-releng-tenant"}'
     - '{__name__="kube_pod_container_status_terminated_reason", namespace=~"release-service|openshift-etcd|openshift-kube-apiserver|build-service|image-controller|integration-service|konflux-ui|konflux-kite|product-kubearchive|product-kubearchive-logging|openshift-kueue-operator|tekton-kueue|multi-platform-controller|namespace-lister|openshift-pipelines|tekton-results|project-controller|smee|smee-client"}'
     - '{__name__="kube_pod_container_status_terminated_reason", namespace="mintmaker", pod!~"renovate.*"}'
@@ -155,7 +156,7 @@
     - '{__name__="kube_pod_container_status_last_terminated_reason", reason="OOMKilled"}'
     - '{__name__="kube_pod_container_status_last_terminated_reason", namespace="release-service"}'
     - '{__name__="kube_pod_container_status_ready", namespace=~"release-service"}'
-    - '{__name__="container_cpu_usage_seconds_total", namespace=~"release-service|openshift-etcd"}'
+    - '{__name__="container_cpu_usage_seconds_total", namespace=~"release-service|openshift-etcd|appstudio-grafana"}'
     - '{__name__="container_memory_usage_bytes", namespace=~"release-service|openshift-etcd|rhtap-releng-tenant"}'
     - '{__name__="kube_pod_container_status_restarts_total", namespace!~".*-tenant|mintmaker"}'
     - '{__name__="kube_pod_container_status_restarts_total", namespace="mintmaker", pod!~"renovate.*"}'
