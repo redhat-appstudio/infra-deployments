@@ -1,0 +1,10 @@
+apiVersion: konflux.konflux-ci.dev/v1alpha1
+kind: Konflux
+metadata:
+  name: konflux
+spec:
+  buildService:
+    spec:
+      webhookURLs:
+        "https://github.com": "{{ smee_webhook_url }}"
+        "https://gitlab.com": "{{ smee_webhook_url }}"
