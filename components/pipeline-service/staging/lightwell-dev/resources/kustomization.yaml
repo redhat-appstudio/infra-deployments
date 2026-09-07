@@ -25,6 +25,10 @@ patches:
     target:
       kind: TektonConfig
       name: config
+  - path: update-pipeline-metrics-exporter-resources.yaml
+    target:
+      kind: Deployment
+      name: pipeline-metrics-exporter
   # tekton-results is not deployed on this cluster — delete all its resources
   - path: delete-tekton-results-namespace.yaml
     target:
