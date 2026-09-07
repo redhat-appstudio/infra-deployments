@@ -1,0 +1,42 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - appsre-stonesoup-vault-secret-store.yaml
+  - appsre-vault-secret-store.yml
+patches:
+  - path: patches/rhtap-promotion-staging-patch.yaml
+    target:
+      name: appsre-stonesoup-vault
+      kind: ClusterSecretStore
+      group: external-secrets.io
+      version: v1
+  - path: patches/insights-approle-id-patch.yaml
+    target:
+      name: insights-appsre-vault
+      kind: ClusterSecretStore
+      group: external-secrets.io
+      version: v1
+  - path: patches/perfscale-namespaces-patch.yaml
+    target:
+      name: appsre-stonesoup-vault
+      kind: ClusterSecretStore
+      group: external-secrets.io
+      version: v1
+  - path: patches/observability-namespaces-patch.yaml
+    target:
+      name: appsre-stonesoup-vault
+      kind: ClusterSecretStore
+      group: external-secrets.io
+      version: v1
+  - path: patches/konflux-verifications-rd-namespaces-patch.yaml
+    target:
+      name: appsre-stonesoup-vault
+      kind: ClusterSecretStore
+      group: external-secrets.io
+      version: v1
+  - path: patches/konflux-release-service-namespaces-patch.yaml
+    target:
+      name: appsre-stonesoup-vault
+      kind: ClusterSecretStore
+      group: external-secrets.io
+      version: v1
