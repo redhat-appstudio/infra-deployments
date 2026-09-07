@@ -1,0 +1,8 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- tekton-kueue-webhook-sm.yaml
+- tekton-kueue-controller-sm.yaml
+- prometheus-rule.yaml
+
+namespace: tekton-kueue

@@ -1,0 +1,1 @@
+> Note: Until the tekton-kueue resources are deployed by the pipeline-service, Kueue is an exception to the standard component structure because it's image and external repository references live inside a ring's `base/tekton-kueue/kustomization.yaml` file.

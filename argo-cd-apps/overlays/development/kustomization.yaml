@@ -43,11 +43,6 @@ patches:
     target:
       kind: ApplicationSet
       version: v1alpha1
-      name: multi-platform-controller
-  - path: development-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
       name: monitoring-workload-prometheus
   - path: development-overlay-patch.yaml
     target:
@@ -70,6 +65,11 @@ patches:
       version: v1alpha1
       name: ca-bundle
   - path: development-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: repository-validator
+  - path: dev-application-auto-sync-patch.yaml
     target:
       kind: ApplicationSet
       version: v1alpha1
@@ -156,12 +156,22 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: kueue
+  - path: delete-preserve-resources-flag-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: kueue
   - path: dev-application-auto-sync-patch.yaml
     target:
       kind: ApplicationSet
       version: v1alpha1
       name: kueue
   - path: development-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: policies
+  - path: dev-application-auto-sync-patch.yaml
     target:
       kind: ApplicationSet
       version: v1alpha1
@@ -252,3 +262,8 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: disaster-recovery
+  - path: delete-preserve-resources-flag-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: konflux-verifications-rd

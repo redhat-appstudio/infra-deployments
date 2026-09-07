@@ -51,6 +51,9 @@ spec:
     - name: test-scenario-git-url
       type: string
       default: ""
+    - name: release-policy
+      type: string
+      default: "tmp-onboard-policy"
     # RPM mirror workaround only. Leave empty for container test types.
     - name: upstream-repo-url
       type: string
@@ -67,6 +70,10 @@ spec:
   results:
     - name: test-outcome
       description: "Test outcome: passed, failed, or unknown"
+    - name: failure-cause
+      description: "Error cause from loadtest error_caused_by_simple (comma-separated if multiple). Empty on pass or when collect-results did not run."
+    - name: failure-phase
+      description: "Loadtest phase where the earliest failure occurred (e.g. waitForImageRepositoryReady). Empty on pass or when collect-results did not run."
   volumes:
     - name: artifacts
       emptyDir: {}
@@ -236,7 +243,7 @@ spec:
         - name: PIPELINE_REPO_TEMPLATING_SOURCE_DIR
           value: $(params.pipeline-repo-templating-source-dir)
         - name: RELEASE_POLICY
-          value: "tmp-onboard-policy"
+          value: $(params.release-policy)
         - name: RELEASE_PIPELINE_URL
           value: "https://github.com/konflux-ci/release-service-catalog.git"
         - name: RELEASE_PIPELINE_REVISION
@@ -285,6 +292,8 @@ spec:
         #!/usr/bin/env bash
         set -euo pipefail
         echo -n "unknown" > $(results.test-outcome.path)
+        echo -n "" > $(results.failure-cause.path)
+        echo -n "" > $(results.failure-phase.path)
         if [[ ! -s /opt/users-secret/token ]]; then
           echo "ERROR: /opt/users-secret/token is missing or empty" >&2
           exit 1
@@ -325,4 +334,15 @@ spec:
           echo -n "passed" > $(results.test-outcome.path)
         elif [[ "$exit_code" -eq "$KANARY_FAIL_CODE" ]]; then
           echo -n "failed" > $(results.test-outcome.path)
+        fi
+        # Write the full error_caused_by_simple string as-is (may be comma-separated).
+        # push-kanary-metrics will split and take the first value for the metric label.
+        # Write the phase (loadtest function) where the earliest failure occurred.
+        if [[ -s /tmp/artifacts/results/load-test.json ]]; then
+          jq -r '.results.errors.error_caused_by_simple // ""' \
+            /tmp/artifacts/results/load-test.json > $(results.failure-cause.path)
+          jq -r '.results.measurements.KPI.failed_phase // ""' \
+            /tmp/artifacts/results/load-test.json > $(results.failure-phase.path)
+        else
+          echo "WARN: load-test.json not found or empty, failure-cause and failure-phase will be empty" >&2
         fi

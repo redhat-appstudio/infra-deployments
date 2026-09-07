@@ -1,0 +1,30 @@
+issuer: https://image-rbac-proxy.kflux-lw-p01-23c2640bcea594f87bc757d4116925b2-0000.us-east.containers.appdomain.cloud/idp
+storage:
+  type: kubernetes
+  config:
+    inCluster: true
+web:
+  https: 0.0.0.0:9443
+  tlsCert: /etc/dex/tls/tls.crt
+  tlsKey: /etc/dex/tls/tls.key
+oauth2:
+  skipApprovalScreen: true
+staticClients:
+- id: image-rbac-proxy
+  redirectURIs:
+  - https://image-rbac-proxy.kflux-lw-p01-23c2640bcea594f87bc757d4116925b2-0000.us-east.containers.appdomain.cloud/oauth/callback
+  name: 'image-rbac-proxy'
+  secretEnv: 'OAUTH2_CLIENT_SECRET'
+
+telemetry:
+  http: 0.0.0.0:5558
+
+connectors:
+  - type: openshift
+    id: openshift
+    name: OpenShift
+    config:
+      issuer: https://da837cbw0di4ab97asm0.vpe.private.us-east.containers.cloud.ibm.com:31533
+      clientID: system:serviceaccount:image-rbac-proxy:dex-client
+      clientSecret: $OPENSHIFT_OAUTH_CLIENT_SECRET
+      redirectURI: https://image-rbac-proxy.kflux-lw-p01-23c2640bcea594f87bc757d4116925b2-0000.us-east.containers.appdomain.cloud/idp/callback

@@ -71,8 +71,8 @@ customConfig:
         only_fields:
           - message
       structured_metadata:
-        pod_id: "{{`{{ pod_id }}`}}"
-        container: "{{`{{ container }}`}}"
+        pod_id: "{% raw %}{{`{{ pod_id }}`}}{% endraw %}"
+        container: "{% raw %}{{`{{ container }}`}}{% endraw %}"
       auth:
         strategy: "basic"
         user: "${LOKI_USERNAME}"
@@ -88,7 +88,7 @@ customConfig:
         timeout_secs: 30
       compression: "gzip"
       labels:
-        stream: "{{`{{ namespace }}`}}"
+        stream: "{% raw %}{{`{{ namespace }}`}}{% endraw %}"
       buffer:
         type: "memory"
         max_events: 10000
@@ -104,7 +104,7 @@ env:
       secretKeyRef:
         name: kubearchive-loki
         key: PASSWORD
-#Use preferred nodeSelector instead of required to allow scheduling on other nodes if needed
+# Use preferred nodeSelector instead of required to allow scheduling on other nodes if needed
 # This provides flexibility while still preferring konflux-tenants nodes
 affinity:
   nodeAffinity:

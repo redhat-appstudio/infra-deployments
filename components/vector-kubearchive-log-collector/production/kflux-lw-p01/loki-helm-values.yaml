@@ -1,0 +1,83 @@
+---
+# simplified Loki configuration for staging
+deploymentMode: Distributed
+
+ # This exposes the Loki gateway so it can be written to and queried externally
+gateway:
+  image:
+    registry: quay.io # Use Quay.io registry to prevent docker hub rate limit
+    repository: nginx/nginx-unprivileged
+    tag: 1.24-alpine
+  nginxConfig:
+    resolver: "dns-default.openshift-dns.svc.cluster.local."
+
+# Basic Loki configuration
+loki:
+  # Enable multi-tenancy to handle X-Scope-OrgID headers
+  auth_enabled: true
+  commonConfig:
+    path_prefix: /var/loki  # This directory will be writable via volume mount
+  storage:
+    type: s3
+  schemaConfig:
+    configs:
+      - from: "2024-04-01"
+        store: tsdb
+        object_store: s3
+        schema: v13
+        index:
+          prefix: loki_index_
+          period: 24h
+  # Configure compactor to use writable volumes
+  compactor:
+    working_directory: /var/loki/compactor
+
+# Security contexts for OpenShift
+podSecurityContext:
+  runAsNonRoot: false
+  allowPrivilegeEscalation: false
+
+containerSecurityContext:
+  runAsNonRoot: false
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true  # Keep read-only root filesystem for security
+
+# Disable test pods
+test:
+  enabled: false
+
+# Disable sidecar completely to avoid loki-sc-rules container
+sidecar:
+  rules:
+    enabled: false
+  datasources:
+    enabled: false
+
+# Zero out replica counts of other deployment modes
+
+singleBinary:
+  replicas: 0
+backend:
+  replicas: 0
+read:
+  replicas: 0
+write:
+  replicas: 0
+
+bloomPlanner:
+  replicas: 0
+bloomBuilder:
+  replicas: 0
+bloomGateway:
+  replicas: 0
+
+# Disable lokiCanary - not essential for core functionality
+lokiCanary:
+  enabled: false
+
+# Disable the ruler - not needed as we aren't using metrics
+ruler:
+  enabled: false

@@ -824,6 +824,113 @@ func TestDetectOverlayDiffs_NewOverlay(t *testing.T) {
 	g.Expect(result.AffectedEnvironments).To(HaveKey(Production))
 }
 
+// TestDetectOverlayDiffs_BaseAppSetWithExplicitEnv covers the case where a new
+// ApplicationSet with environment:staging is added to argo-cd-apps/base and
+// therefore appears in ALL overlays' rendered output.  Only staging should be
+// marked — not development or production.
+func TestDetectOverlayDiffs_BaseAppSetWithExplicitEnv(t *testing.T) {
+	g := NewWithT(t)
+
+	const stagingAppSet = `apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: kanary
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              values:
+                sourceRoot: components/monitoring/kanary
+                environment: staging
+                clusterDir: ""
+          - list:
+              elements:
+                - nameNormalized: lightwell-dev
+                  values.clusterDir: lightwell-dev
+  template:
+    metadata:
+      name: kanary-{{nameNormalized}}
+    spec:
+      source:
+        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
+        repoURL: https://github.com/example/repo.git
+      destination:
+        server: '{{server}}'
+`
+	result := &Result{AffectedEnvironments: make(map[Environment]bool)}
+	// Simulate base change: the new AppSet appears in all overlays (dev, staging, prod),
+	// but none of them had it before (baseYAML is empty).
+	builds := []overlayBuild{
+		{name: "development", env: Development, headYAML: []byte(stagingAppSet), baseYAML: []byte{}},
+		{name: "staging-downstream", env: Staging, headYAML: []byte(stagingAppSet), baseYAML: []byte{}},
+		{name: "production-downstream", env: Production, headYAML: []byte(stagingAppSet), baseYAML: []byte{}},
+	}
+	detectOverlayDiffs(builds, result)
+
+	g.Expect(result.AffectedEnvironments).To(HaveKey(Staging))
+	g.Expect(result.AffectedEnvironments).NotTo(HaveKey(Development))
+	g.Expect(result.AffectedEnvironments).NotTo(HaveKey(Production))
+}
+
+func TestDetectOverlayDiffs_RemovedBaseAppSetUsesGeneratorEnv(t *testing.T) {
+	g := NewWithT(t)
+
+	const stagingAppSet = `apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: kanary
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              values:
+                sourceRoot: components/monitoring/kanary
+                environment: staging
+                clusterDir: ""
+  template:
+    metadata:
+      name: kanary-{{nameNormalized}}
+    spec:
+      source:
+        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
+        repoURL: https://github.com/example/repo.git
+      destination:
+        server: '{{server}}'
+`
+	result := &Result{AffectedEnvironments: make(map[Environment]bool)}
+	// AppSet existed on base (all overlays) but was removed on HEAD.
+	builds := []overlayBuild{
+		{name: "development", env: Development, headYAML: []byte{}, baseYAML: []byte(stagingAppSet)},
+		{name: "staging-downstream", env: Staging, headYAML: []byte{}, baseYAML: []byte(stagingAppSet)},
+		{name: "production-downstream", env: Production, headYAML: []byte{}, baseYAML: []byte(stagingAppSet)},
+	}
+	detectOverlayDiffs(builds, result)
+
+	// Should use generator env (staging), not the overlay's env.
+	g.Expect(result.AffectedEnvironments).To(HaveKey(Staging))
+	g.Expect(result.AffectedEnvironments).NotTo(HaveKey(Development))
+	g.Expect(result.AffectedEnvironments).NotTo(HaveKey(Production))
+}
+
+func TestDetectOverlayDiffs_ParseErrorFallsBackToOverlayEnv(t *testing.T) {
+	g := NewWithT(t)
+
+	result := &Result{AffectedEnvironments: make(map[Environment]bool)}
+	// Invalid YAML on HEAD — parse fails, should fall back to overlay env.
+	builds := []overlayBuild{
+		{name: "staging-downstream", env: Staging, headYAML: []byte("not: valid: yaml: [}"), baseYAML: []byte{}},
+	}
+	detectOverlayDiffs(builds, result)
+
+	g.Expect(result.AffectedEnvironments).To(HaveKey(Staging))
+}
+
 func TestDetectOverlayDiffs_NoChanges(t *testing.T) {
 	g := NewWithT(t)
 	result := &Result{AffectedEnvironments: make(map[Environment]bool)}
@@ -835,6 +942,89 @@ func TestDetectOverlayDiffs_NoChanges(t *testing.T) {
 	detectOverlayDiffs(builds, result)
 
 	g.Expect(result.AffectedEnvironments).To(BeEmpty())
+}
+
+func TestDetectOverlayDiffs_BaseAppSetWithProductionEnv(t *testing.T) {
+	g := NewWithT(t)
+
+	const prodAppSet = `apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: my-prod-component
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              values:
+                sourceRoot: components/my-app
+                environment: production
+                clusterDir: ""
+          - list:
+              elements:
+                - nameNormalized: stone-prod-p01
+                  values.clusterDir: stone-prod-p01
+  template:
+    metadata:
+      name: prod-{{nameNormalized}}
+    spec:
+      source:
+        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
+        repoURL: https://github.com/example/repo.git
+      destination:
+        server: '{{server}}'
+`
+	result := &Result{AffectedEnvironments: make(map[Environment]bool)}
+	builds := []overlayBuild{
+		{name: "development", env: Development, headYAML: []byte(prodAppSet), baseYAML: []byte{}},
+		{name: "staging-downstream", env: Staging, headYAML: []byte(prodAppSet), baseYAML: []byte{}},
+		{name: "production-downstream", env: Production, headYAML: []byte(prodAppSet), baseYAML: []byte{}},
+	}
+	detectOverlayDiffs(builds, result)
+
+	g.Expect(result.AffectedEnvironments).To(HaveKey(Production))
+	g.Expect(result.AffectedEnvironments).NotTo(HaveKey(Development))
+	g.Expect(result.AffectedEnvironments).NotTo(HaveKey(Staging))
+}
+
+// TestDetectOverlayDiffs_MultiEnvWarning verifies that when a base AppSet has
+// no explicit environment (targets all clusters), all environments are marked —
+// which is the expected "multi-env" signal.
+func TestDetectOverlayDiffs_MultiEnvWarning(t *testing.T) {
+	g := NewWithT(t)
+
+	// AppSet with clusters: {} (no values.environment) targets all clusters.
+	const allEnvsAppSet = `apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: global-component
+spec:
+  generators:
+    - clusters: {}
+  template:
+    metadata:
+      name: global-{{nameNormalized}}
+    spec:
+      source:
+        path: components/global
+        repoURL: https://github.com/example/repo.git
+      destination:
+        server: '{{server}}'
+`
+	result := &Result{AffectedEnvironments: make(map[Environment]bool)}
+	builds := []overlayBuild{
+		{name: "development", env: Development, headYAML: []byte(allEnvsAppSet), baseYAML: []byte{}},
+		{name: "staging-downstream", env: Staging, headYAML: []byte(allEnvsAppSet), baseYAML: []byte{}},
+		{name: "production-downstream", env: Production, headYAML: []byte(allEnvsAppSet), baseYAML: []byte{}},
+	}
+	detectOverlayDiffs(builds, result)
+
+	// No explicit environment → each overlay falls back to its own env → multi-env.
+	g.Expect(result.AffectedEnvironments).To(HaveKey(Development))
+	g.Expect(result.AffectedEnvironments).To(HaveKey(Staging))
+	g.Expect(result.AffectedEnvironments).To(HaveKey(Production))
 }
 
 // ---------------------------------------------------------------------------

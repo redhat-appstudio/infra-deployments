@@ -59,7 +59,7 @@ spec:
                   export -f deleteAndLog
                   xargs -a ${INTERNAL_REQUESTS_FILE} -i -P ${MAX_PROCS} bash -c 'deleteAndLog "{}"'
               imagePullPolicy: IfNotPresent
-              image: quay.io/konflux-ci/release-service-utils:9089cafbf36bb889b4b73d8c2965613810f13736
+              image: quay.io/konflux-ci/release-service-utils@sha256:9db0cc6b09799f41c87d46589dcd2c1ba66edfcaab3b88b99e2fcbc0646424bf
               volumeMounts:
                 - mountPath: /var/tmp
                   name: temp-directory

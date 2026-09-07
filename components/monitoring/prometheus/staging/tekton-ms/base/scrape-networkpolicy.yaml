@@ -1,0 +1,30 @@
+# The Tekton Operator manages a default-deny NetworkPolicy plus a
+# `pipeline-controller` policy that only allows scraping port 9090 from
+# namespaces labeled `openshift.io/cluster-monitoring: "true"` (Platform
+# Prometheus). Our dedicated Prometheus lives in appstudio-tekton, so this
+# additive policy explicitly permits it to scrape the controller metrics.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: appstudio-tekton-ms-controller-scrape
+  namespace: openshift-pipelines
+  labels:
+    monitoring.rhobs/stack: appstudio-tekton-ms
+spec:
+  podSelector:
+    matchLabels:
+      app: tekton-pipelines-controller
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: appstudio-tekton
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus
+              app.kubernetes.io/instance: appstudio-tekton-ms
+      ports:
+        - protocol: TCP
+          port: 9090

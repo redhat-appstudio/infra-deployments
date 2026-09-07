@@ -1,0 +1,122 @@
+---
+apiVersion: kueue.x-k8s.io/v1beta2
+description: Priority level 1 (highest)
+kind: WorkloadPriorityClass
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "10"
+  name: build-priority-1
+value: 410
+---
+apiVersion: kueue.x-k8s.io/v1beta2
+description: Priority level 10 (lowest)
+kind: WorkloadPriorityClass
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "10"
+  name: build-priority-10
+value: 401
+---
+apiVersion: kueue.x-k8s.io/v1beta2
+description: Priority level 2
+kind: WorkloadPriorityClass
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "10"
+  name: build-priority-2
+value: 409
+---
+apiVersion: kueue.x-k8s.io/v1beta2
+description: Priority level 3
+kind: WorkloadPriorityClass
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "10"
+  name: build-priority-3
+value: 408
+---
+apiVersion: kueue.x-k8s.io/v1beta2
+description: Priority level 4
+kind: WorkloadPriorityClass
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "10"
+  name: build-priority-4
+value: 407
+---
+apiVersion: kueue.x-k8s.io/v1beta2
+description: Priority level 5
+kind: WorkloadPriorityClass
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "10"
+  name: build-priority-5
+value: 406
+---
+apiVersion: kueue.x-k8s.io/v1beta2
+description: Priority level 6
+kind: WorkloadPriorityClass
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "10"
+  name: build-priority-6
+value: 405
+---
+apiVersion: kueue.x-k8s.io/v1beta2
+description: Priority level 7
+kind: WorkloadPriorityClass
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "10"
+  name: build-priority-7
+value: 404
+---
+apiVersion: kueue.x-k8s.io/v1beta2
+description: Priority level 8
+kind: WorkloadPriorityClass
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "10"
+  name: build-priority-8
+value: 403
+---
+apiVersion: kueue.x-k8s.io/v1beta2
+description: Priority level 9
+kind: WorkloadPriorityClass
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "10"
+  name: build-priority-9
+value: 402
+---
+apiVersion: kueue.x-k8s.io/v1beta2
+description: High priority for OCP prod release pipelines which should supersede all
+  releases
+kind: WorkloadPriorityClass
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "10"
+  name: konflux-prod-release
+value: 950
+---
+apiVersion: kueue.x-k8s.io/v1beta2
+description: High priority for OCP stage release pipelines which should supersede
+  all other stage auto releases
+kind: WorkloadPriorityClass
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "10"
+  name: konflux-stage-release
+value: 925

@@ -1,0 +1,67 @@
+---
+fullnameOverride: konflux-kyverno
+namespaceOverride: konflux-kyverno
+config:
+  updateRequestThreshold: 1000
+  preserve: false
+admissionController:
+  replicas: 1
+  initContainer:
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+      capabilities:
+        drop:
+        - "ALL"
+  container:
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+      capabilities:
+        drop:
+        - "ALL"
+backgroundController:
+  replicas: 1
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    capabilities:
+      drop:
+      - "ALL"
+cleanupController:
+  enabled: false
+reportsController:
+  enabled: false
+policyReportsCleanup:
+  enabled: false
+webhooksCleanup:
+  enabled: false
+crds:
+  migration:
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+      runAsGroup: null
+      runAsUser: null
+      capabilities:
+        drop:
+        - "ALL"
+features:
+  admissionReports:
+    enabled: false
+  aggregateReports:
+    enabled: false
+  policyReports:
+    enabled: false
+  validatingAdmissionPolicyReports:
+    enabled: false
+  reporting:
+    validate: false
+    mutate: false
+    mutateExisting: false
+    imageVerify: false
+    generate: false

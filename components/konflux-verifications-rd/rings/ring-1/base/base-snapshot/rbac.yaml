@@ -1,0 +1,51 @@
+# RBAC for Kargo conformance verification.
+#
+# konflux-bot-0:
+#   Only needs builder-bot-actions to create PipelineRuns on the target
+#   cluster. The actual conformance tests run inside the PipelineRun as
+#   the conformance-test-runner SA (see conformance-test-runner-rbac.yaml).
+#
+# konflux-devprod-admins:
+#   Admin access for the devprod team in both namespaces.
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: conformance-verification-builder
+  namespace: konflux-managed-tests
+subjects:
+  - kind: ServiceAccount
+    name: konflux-bot-0
+    namespace: konflux-managed-tests
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: konflux-builder-bot-actions
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: konflux-devprod-admins
+  namespace: konflux-conformance-tests
+subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: konflux-devprod
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: admin
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: konflux-devprod-admins
+  namespace: konflux-managed-tests
+subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: konflux-devprod
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: admin

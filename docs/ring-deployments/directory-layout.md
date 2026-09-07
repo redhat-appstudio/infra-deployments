@@ -41,7 +41,17 @@ We adopt a **ring-based progressive delivery model**. Changes roll out through a
 
 A change must pass verification in Ring N before it is promoted to Ring N+1. Between rings, a **soak time** is enforced — a mandatory waiting period after verification passes, allowing the change to run in the current ring long enough to surface issues that tests alone cannot catch. The number of rings is not fixed. If verification fails at any ring, promotion stops — higher rings are never exposed to a change that broke a lower one.
 
----
+### Current Ring/Cluster Layout
+
+| Ring | Cluster(s) | Environment |
+|------|------------|-------------|
+| Ring 0 | N/A | Development |
+| Ring 1 | stone-stg-rh01, stone-stage-p01, lightwell-dev, klfux-stg-es01 | Staging |
+| Ring 2 | kflux-prd-rh03, kflux-prd-es01, stone-prod-p01, kflux-ocp-p01, kflux-osp-p01, kflux-rhel-p01, kflux-fedora-01, kflux-lw-p01* | Production (low impact) |
+| Ring 3 | stone-prod-p02, stone-prd-rh01 | Production (medium impact) |
+| Ring 4 | kflux-prd-rh02 | Production (high impact)
+
+*\*kflux-lw-p01 will eventually be moved to ring 4*
 
 ## 2. How It Works: Kargo + ArgoCD
 

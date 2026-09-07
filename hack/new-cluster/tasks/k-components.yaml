@@ -1,0 +1,18 @@
+# Add the cluster to all relevant k-components that patch ApplicationSets with the appropriate deploy target clusters.
+# This assumes that the new cluster is a tenant cluster since EaaS clusters are being decommissioned.
+
+- name: Add cluster to `deploy-to-all-{{ env }}-clusters` k-component
+  tags: [applicationsets]
+  command: |
+    yq -i eval '(.[0].value) += [{"values.ring": "{{ ring }}", "nameNormalized": "{{ shortname }}", "values.clusterDir": "{{ shortname }}"}]' {{ dst }}/argo-cd-apps/k-components/deploy-to-all-{{ env }}-clusters/all-clusters-list-patch.yaml
+
+- name: Add cluster to `deploy-to-{{ env }}-tenant-clusters` k-component
+  tags: [applicationsets]
+  command: |
+    yq -i eval '(.[0].value) += [{"values.ring": "{{ ring }}", "nameNormalized": "{{ shortname }}", "values.clusterDir": "{{ shortname }}"}]' {{ dst }}/argo-cd-apps/k-components/deploy-to-{{ env }}-tenant-clusters/tenant-clusters-list-patch.yaml
+
+- name: Add cluster to `deploy-to-{{ env }}-internal-tenant-clusters` k-component
+  tags: [applicationsets]
+  command: |
+    yq -i eval '(.[0].value) += [{"values.ring": "{{ ring }}", "nameNormalized": "{{ shortname }}", "values.clusterDir": "{{ shortname }}"}]' {{ dst }}/argo-cd-apps/k-components/deploy-to-{{ env }}-internal-tenant-clusters/internal-tenant-clusters-list-patch.yaml
+  when: network == 'private'

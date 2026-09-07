@@ -26,13 +26,17 @@ spec:
       archiveWhen: has(status.completionTime)
       keepLastWhen:
         - name: cleanup
-          when: 'has(status.completionTime) && timestamp(metadata.completionTime) < now() - duration("5m")'
+          when: 'has(status.completionTime) && timestamp(status.completionTime) < now() - duration("5m")'
           count: 0
       archiveOnDelete: 'true'
     - selector:
         apiVersion: tekton.dev/v1
         kind: TaskRun
       archiveWhen: has(status.completionTime)
+      keepLastWhen:
+        - name: cleanup
+          when: 'has(status.completionTime) && timestamp(status.completionTime) < now() - duration("5m")'
+          count: 0
       archiveOnDelete: 'true'
     - selector:
         apiVersion: v1
