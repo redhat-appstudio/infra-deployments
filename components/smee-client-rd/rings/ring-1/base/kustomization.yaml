@@ -1,0 +1,23 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - base-snapshot
+
+images:
+  - name: ghcr.io/chmouel/gosmee
+    newName: ghcr.io/chmouel/gosmee
+    newTag: v0.28.0
+  - name: quay.io/konflux-ci/smee-sidecar
+    newName: quay.io/konflux-ci/smee-sidecar
+    newTag: ff9f8ccd3cedaf21827ac2ef86c49847c970bab9
+
+patches:
+  - path: patches/server-url-patch.yaml
+    target:
+      name: gosmee-client
+      kind: Deployment
+  - path: patches/enable-pprof-patch.yaml
+    target:
+      name: gosmee-client
+      kind: Deployment
