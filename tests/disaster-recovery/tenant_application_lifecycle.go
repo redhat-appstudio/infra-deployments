@@ -202,14 +202,18 @@ func waitForSucceededPRCount(ctx context.Context, fw *framework.Framework, names
 		}
 
 		succeededCount := 0
+		allTerminal := len(prList.Items) > 0
 		for i := range prList.Items {
 			pr := &prList.Items[i]
+			terminal := false
 			for _, c := range pr.Status.Conditions {
 				if c.Type == "Succeeded" {
 					switch c.Status {
 					case "True":
 						succeededCount++
+						terminal = true
 					case "False":
+						terminal = true
 						GinkgoWriter.Printf(
 							"FAILED %s PipelineRun %s (component: %s) in %s: %s\n",
 							displayType, pr.Name, pr.Labels[componentLabel],
@@ -222,16 +226,15 @@ func waitForSucceededPRCount(ctx context.Context, fw *framework.Framework, names
 					break
 				}
 			}
+			if !terminal {
+				allTerminal = false
+			}
 		}
 
 		GinkgoWriter.Printf("namespace %s: %d/%d %s PipelineRuns succeeded (total: %d)\n",
 			namespace, succeededCount, expectedCount, displayType, len(prList.Items))
 
-		// TODO: integration-service has a crash-recovery bug where its PipelineRun
-		// dedup check relies on annotation state, not cluster state. A controller
-		// restart between PipelineRun creation and annotation write produces
-		// duplicates. DR amplifies this because ArgoCD resyncs restart pods.
-		// File bug against konflux-ci/integration-service; revert to Equal once fixed.
+		// This diagnostic block is kept as a regression alarm for STONEINTG-1732 — it should never fire again.
 		if succeededCount > expectedCount {
 			GinkgoWriter.Printf("OVERSHOOT DETECTED: %d/%d %s PipelineRuns in %s — dumping diagnostics:\n",
 				succeededCount, expectedCount, displayType, namespace)
@@ -249,12 +252,17 @@ func waitForSucceededPRCount(ctx context.Context, fw *framework.Framework, names
 			}
 		}
 
+		if succeededCount < expectedCount && allTerminal {
+			StopTrying(fmt.Sprintf(
+				"%s PipelineRun(s) for component %q in %s permanently failed: %d/%d succeeded, all %d PipelineRun(s) reached a terminal state, none still running",
+				displayType, componentName, namespace, succeededCount, expectedCount, len(prList.Items)),
+			).Now()
+		}
+
 		return succeededCount
-	}, timeout, poll).Should(SatisfyAll(
-		BeNumerically(">=", expectedCount),
-		BeNumerically("<=", expectedCount*2),
-	), "expected %d–%d successful %s PipelineRuns in namespace %s (got overshoot beyond 2x tolerance)",
-		expectedCount, expectedCount*2, displayType, namespace)
+	}, timeout, poll).Should(Equal(expectedCount),
+		"expected exactly %d successful %s PipelineRuns in namespace %s",
+		expectedCount, displayType, namespace)
 }
 
 // buildListOpts constructs the label-based list options shared by
@@ -305,24 +313,34 @@ func waitForReleasedCount(ctx context.Context, fw *framework.Framework, namespac
 		}
 
 		releasedCount := 0
+		allTerminal := len(releases.Items) > 0
 		for i := range releases.Items {
 			r := &releases.Items[i]
+			terminal := false
 			if r.IsReleased() {
 				releasedCount++
+				terminal = true
 			} else {
 				for _, c := range r.Status.Conditions {
 					if c.Type == "Released" {
 						GinkgoWriter.Printf("Release %s in %s: Released=%s Reason=%s\n",
 							r.Name, namespace, c.Status, c.Reason)
+						if c.Reason == "Failed" {
+							terminal = true
+						}
 						break
 					}
 				}
+			}
+			if !terminal {
+				allTerminal = false
 			}
 		}
 
 		GinkgoWriter.Printf("namespace %s: %d/%d Releases released (total: %d)\n",
 			namespace, releasedCount, expectedCount, len(releases.Items))
 
+		// Diagnostic dump kept as a regression alarm for STONEINTG-1732.
 		if releasedCount > expectedCount {
 			GinkgoWriter.Printf("OVERSHOOT DETECTED: %d/%d released Releases in %s — dumping diagnostics:\n",
 				releasedCount, expectedCount, namespace)
@@ -333,12 +351,17 @@ func waitForReleasedCount(ctx context.Context, fw *framework.Framework, namespac
 			}
 		}
 
+		if releasedCount < expectedCount && allTerminal {
+			StopTrying(fmt.Sprintf(
+				"Release(s) in %s permanently failed: %d/%d released, all %d Release(s) reached a terminal state, none still progressing",
+				namespace, releasedCount, expectedCount, len(releases.Items)),
+			).Now()
+		}
+
 		return releasedCount
-	}, timeout, poll).Should(SatisfyAll(
-		BeNumerically(">=", expectedCount),
-		BeNumerically("<=", expectedCount*2),
-	), "expected %d–%d released Releases in namespace %s (got overshoot beyond 2x tolerance)",
-		expectedCount, expectedCount*2, namespace)
+	}, timeout, poll).Should(Equal(expectedCount),
+		"expected exactly %d released Releases in namespace %s",
+		expectedCount, namespace)
 }
 
 // ---------------------------------------------------------------------------
