@@ -194,7 +194,7 @@ func findFailedStepContainers(tr *pipeline.TaskRun) []string {
 // internally would wrongly absorb that fast failure into "pre-existing",
 // masking it until the full timeout instead of failing fast on it.
 //
-// Filters follow the same rules as countSucceededPRs: empty pipelineType or
+// Filters follow the same rules as countPRs: empty pipelineType or
 // componentName skips that filter.
 func waitForSucceededPRCount(ctx context.Context, fw *framework.Framework, namespace, pipelineType, componentName string, baselineSucceeded, baselineTotal, expectedCount int, timeout, poll time.Duration) {
 	GinkgoHelper()
@@ -414,9 +414,6 @@ func waitForReleasedCount(ctx context.Context, fw *framework.Framework, namespac
 // High-level lifecycle helpers
 // ---------------------------------------------------------------------------
 
-// pipelineRunBaseCounts holds per-component build and test PipelineRun counts.
-// Used as a baseline for waitForPipelineChains so it can wait for counts
-// relative to an initial snapshot (e.g., after triggering a new build).
 // pipelineRunBaseCounts holds pre-trigger baseline counts for one component,
 // captured by the caller before whatever action is expected to create new
 // PipelineRuns. succeeded counts feed expectedCount; total counts (all
