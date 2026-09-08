@@ -292,7 +292,7 @@ func waitForSucceededPRCount(ctx context.Context, fw *framework.Framework, names
 }
 
 // buildListOpts constructs the label-based list options shared by
-// countSucceededPRs and waitForSucceededPRCount.
+// countPRs and waitForSucceededPRCount.
 func buildListOpts(namespace, pipelineType, componentName string) []client.ListOption {
 	opts := []client.ListOption{client.InNamespace(namespace)}
 	if pipelineType != "" {
