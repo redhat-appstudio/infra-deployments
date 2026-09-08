@@ -2,6 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
 - ../base
+- ../tekton-ms
 - cluster-monitoring-config.yaml
 patches:
   - path: cluster-id-label.yaml
@@ -13,6 +14,20 @@ patches:
   - path: writeRelabelConfigs.yaml
     target:
       name: appstudio-federate-ms
+      kind: MonitoringStack
+      group: monitoring.rhobs
+      version: v1alpha1
+  - path: cluster-id-label.yaml
+    target:
+      name: appstudio-tekton-ms
+      kind: MonitoringStack
+      group: monitoring.rhobs
+      version: v1alpha1
+  # ROKS uses IBM Cloud block storage; the shared tekton-ms overlay defaults
+  # to AWS gp3, which does not exist on this cluster (PVO11Y-5538).
+  - path: storage-class-patch.yaml
+    target:
+      name: appstudio-tekton-ms
       kind: MonitoringStack
       group: monitoring.rhobs
       version: v1alpha1
