@@ -174,9 +174,10 @@ func findFailedStepContainers(tr *pipeline.TaskRun) []string {
 	return failed
 }
 
-// waitForSucceededPRCount polls until at least expectedCount PipelineRuns with
-// Succeeded=True exist in the namespace. Overshoot (count > expected) is
-// tolerated with diagnostic logging — see TODO below.
+// waitForSucceededPRCount polls until exactly expectedCount PipelineRuns with
+// Succeeded=True exist in the namespace. Both overshoot (count > expected)
+// and a permanently-failed shortfall fail fast via StopTrying rather than
+// waiting out the full timeout — see below.
 //
 // Filters follow the same rules as countSucceededPRs: empty pipelineType or
 // componentName skips that filter.
@@ -191,6 +192,17 @@ func waitForSucceededPRCount(ctx context.Context, fw *framework.Framework, names
 
 	listOpts := buildListOpts(namespace, pipelineType, componentName)
 	loggedFailures := map[string]bool{}
+
+	// baselineTotal/baselineSucceeded capture the list as it looked on the
+	// first poll (i.e. before any new PipelineRun triggered by this wait can
+	// plausibly have appeared yet, since PaC webhook delivery is async and
+	// tenant-wide, not per-component). Fail-fast is only trusted once at
+	// least as many *new* items have appeared as this wait still needs —
+	// otherwise a component whose new PipelineRun simply hasn't been created
+	// yet would be misjudged as permanently stuck based on old, already
+	// terminal PipelineRuns from a previous wave alone.
+	baselineTotal := -1
+	baselineSucceeded := 0
 
 	Eventually(func() int {
 		prList := &pipeline.PipelineRunList{}
@@ -231,10 +243,20 @@ func waitForSucceededPRCount(ctx context.Context, fw *framework.Framework, names
 			}
 		}
 
+		if baselineTotal == -1 {
+			baselineTotal = len(prList.Items)
+			baselineSucceeded = succeededCount
+		}
+		newExpected := expectedCount - baselineSucceeded
+		newSeen := len(prList.Items) - baselineTotal
+
 		GinkgoWriter.Printf("namespace %s: %d/%d %s PipelineRuns succeeded (total: %d)\n",
 			namespace, succeededCount, expectedCount, displayType, len(prList.Items))
 
 		// This diagnostic block is kept as a regression alarm for STONEINTG-1732 — it should never fire again.
+		// Succeeded count is monotonically non-decreasing, so overshoot can
+		// never resolve back to exactly expectedCount — fail fast instead of
+		// spinning out the full timeout.
 		if succeededCount > expectedCount {
 			GinkgoWriter.Printf("OVERSHOOT DETECTED: %d/%d %s PipelineRuns in %s — dumping diagnostics:\n",
 				succeededCount, expectedCount, displayType, namespace)
@@ -250,12 +272,16 @@ func waitForSucceededPRCount(ctx context.Context, fw *framework.Framework, names
 					pr.Labels["pipelinesascode.tekton.dev/event-type"],
 				)
 			}
+			StopTrying(fmt.Sprintf(
+				"%s PipelineRun overshoot in %s: %d succeeded, expected exactly %d — this can never converge back to expected, see dumped diagnostics",
+				displayType, namespace, succeededCount, expectedCount),
+			).Now()
 		}
 
-		if succeededCount < expectedCount && allTerminal {
+		if succeededCount < expectedCount && allTerminal && newSeen >= newExpected {
 			StopTrying(fmt.Sprintf(
-				"%s PipelineRun(s) for component %q in %s permanently failed: %d/%d succeeded, all %d PipelineRun(s) reached a terminal state, none still running",
-				displayType, componentName, namespace, succeededCount, expectedCount, len(prList.Items)),
+				"%s PipelineRun(s) for component %q in %s permanently failed: %d/%d succeeded, all %d PipelineRun(s) reached a terminal state (including %d new since this wait started, as expected), none still running",
+				displayType, componentName, namespace, succeededCount, expectedCount, len(prList.Items), newSeen),
 			).Now()
 		}
 
@@ -304,6 +330,13 @@ func countReleasedReleases(ctx context.Context, fw *framework.Framework, namespa
 func waitForReleasedCount(ctx context.Context, fw *framework.Framework, namespace string, expectedCount int, timeout, poll time.Duration) {
 	GinkgoHelper()
 
+	// See the identical comment in waitForSucceededPRCount — a Release for a
+	// new component attempt can lag behind its siblings, so fail-fast must
+	// not trust "everything currently listed is terminal" until at least as
+	// many new Release CRs have appeared as this wait still needs.
+	baselineTotal := -1
+	baselineReleased := 0
+
 	Eventually(func() int {
 		releases := &releaseapi.ReleaseList{}
 		if err := fw.AsKubeAdmin.CommonController.KubeRest().List(
@@ -337,10 +370,20 @@ func waitForReleasedCount(ctx context.Context, fw *framework.Framework, namespac
 			}
 		}
 
+		if baselineTotal == -1 {
+			baselineTotal = len(releases.Items)
+			baselineReleased = releasedCount
+		}
+		newExpected := expectedCount - baselineReleased
+		newSeen := len(releases.Items) - baselineTotal
+
 		GinkgoWriter.Printf("namespace %s: %d/%d Releases released (total: %d)\n",
 			namespace, releasedCount, expectedCount, len(releases.Items))
 
-		// Diagnostic dump kept as a regression alarm for STONEINTG-1732.
+		// This diagnostic block is kept as a regression alarm for STONEINTG-1732 — it should never fire again.
+		// Released count is monotonically non-decreasing, so overshoot can
+		// never resolve back to exactly expectedCount — fail fast instead of
+		// spinning out the full timeout.
 		if releasedCount > expectedCount {
 			GinkgoWriter.Printf("OVERSHOOT DETECTED: %d/%d released Releases in %s — dumping diagnostics:\n",
 				releasedCount, expectedCount, namespace)
@@ -349,12 +392,16 @@ func waitForReleasedCount(ctx context.Context, fw *framework.Framework, namespac
 				GinkgoWriter.Printf("  Release: %s | created: %s | released: %v\n",
 					r.Name, r.CreationTimestamp.Format("15:04:05"), r.IsReleased())
 			}
+			StopTrying(fmt.Sprintf(
+				"Release overshoot in %s: %d released, expected exactly %d — this can never converge back to expected, see dumped diagnostics",
+				namespace, releasedCount, expectedCount),
+			).Now()
 		}
 
-		if releasedCount < expectedCount && allTerminal {
+		if releasedCount < expectedCount && allTerminal && newSeen >= newExpected {
 			StopTrying(fmt.Sprintf(
-				"Release(s) in %s permanently failed: %d/%d released, all %d Release(s) reached a terminal state, none still progressing",
-				namespace, releasedCount, expectedCount, len(releases.Items)),
+				"Release(s) in %s permanently failed: %d/%d released, all %d Release(s) reached a terminal state (including %d new since this wait started, as expected), none still progressing",
+				namespace, releasedCount, expectedCount, len(releases.Items), newSeen),
 			).Now()
 		}
 
