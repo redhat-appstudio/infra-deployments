@@ -15,4 +15,7 @@ spec:
       metricRelabelings:
         - sourceLabels: [__name__]
           regex: 'traces_span_metrics_.*'
-          action: keep
+          action: drop #from allow to drop due to high cardinality. Fix the cardinality or federation before allowing again.
+        - sourceLabels: [__name__]
+          regex: '.*'
+          action: drop
