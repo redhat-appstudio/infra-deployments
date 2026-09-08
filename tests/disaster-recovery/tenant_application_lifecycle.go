@@ -32,47 +32,37 @@ const PodLogTailLines int64 = 80
 // Core PipelineRun counting and waiting — all other helpers build on these two
 // ---------------------------------------------------------------------------
 
-// countSucceededPRs returns the number of PipelineRuns with Succeeded=True in
-// the given namespace. Filters are additive:
+// countPRs returns both the succeeded count and the total count (regardless
+// of status) of PipelineRuns matching the given filters, from a single List
+// call. Both numbers must come from the same observation: reading them via
+// two separate List calls lets a PipelineRun transition (or a new one
+// appear) between the calls, producing an inconsistent succeeded/total pair
+// that misleads waitForSucceededPRCount's baseline — see its doc comment.
+// Filters are additive:
 //   - pipelineType non-empty: filter by "pipelines.appstudio.openshift.io/type" label
 //   - componentName non-empty: filter by "appstudio.openshift.io/component" label
 //
 // Pass empty strings to skip either filter (e.g., empty pipelineType counts
 // all PRs, used for the managed namespace where every PR is a release pipeline).
-func countSucceededPRs(ctx context.Context, fw *framework.Framework, namespace, pipelineType, componentName string) (int, error) {
+func countPRs(ctx context.Context, fw *framework.Framework, namespace, pipelineType, componentName string) (succeeded, total int, err error) {
 	listOpts := buildListOpts(namespace, pipelineType, componentName)
 
 	prList := &pipeline.PipelineRunList{}
 	if err := fw.AsKubeAdmin.CommonController.KubeRest().List(
 		ctx, prList, listOpts...); err != nil {
-		return 0, fmt.Errorf("listing PipelineRuns in %s: %w", namespace, err)
+		return 0, 0, fmt.Errorf("listing PipelineRuns in %s: %w", namespace, err)
 	}
 
-	count := 0
+	total = len(prList.Items)
 	for i := range prList.Items {
 		for _, c := range prList.Items[i].Status.Conditions {
 			if c.Type == "Succeeded" && c.Status == "True" {
-				count++
+				succeeded++
 				break
 			}
 		}
 	}
-	return count, nil
-}
-
-// countTotalPRs returns the total number of PipelineRuns matching the given
-// filters, regardless of status. Used to capture a pre-trigger baseline for
-// waitForSucceededPRCount — see that function's doc comment for why a raw
-// total (not just the succeeded count) matters.
-func countTotalPRs(ctx context.Context, fw *framework.Framework, namespace, pipelineType, componentName string) (int, error) {
-	listOpts := buildListOpts(namespace, pipelineType, componentName)
-
-	prList := &pipeline.PipelineRunList{}
-	if err := fw.AsKubeAdmin.CommonController.KubeRest().List(
-		ctx, prList, listOpts...); err != nil {
-		return 0, fmt.Errorf("listing PipelineRuns in %s: %w", namespace, err)
-	}
-	return len(prList.Items), nil
+	return succeeded, total, nil
 }
 
 // logFailedTaskRuns lists TaskRuns belonging to a failed PipelineRun and logs
@@ -322,32 +312,23 @@ func buildListOpts(namespace, pipelineType, componentName string) []client.ListO
 // (which persist in the tenant namespace) rather than PipelineRuns.
 // ---------------------------------------------------------------------------
 
-func countReleasedReleases(ctx context.Context, fw *framework.Framework, namespace string) (int, error) {
+// countReleases returns both the released count and the total count
+// (regardless of status) of Release CRs in the namespace, from a single
+// List call — see countPRs for why both numbers must come from the same
+// observation.
+func countReleases(ctx context.Context, fw *framework.Framework, namespace string) (released, total int, err error) {
 	releases := &releaseapi.ReleaseList{}
 	if err := fw.AsKubeAdmin.CommonController.KubeRest().List(
 		ctx, releases, client.InNamespace(namespace)); err != nil {
-		return 0, fmt.Errorf("listing Releases in %s: %w", namespace, err)
+		return 0, 0, fmt.Errorf("listing Releases in %s: %w", namespace, err)
 	}
-	count := 0
+	total = len(releases.Items)
 	for i := range releases.Items {
 		if releases.Items[i].IsReleased() {
-			count++
+			released++
 		}
 	}
-	return count, nil
-}
-
-// countTotalReleases returns the total number of Release CRs in the
-// namespace, regardless of status. Used to capture a pre-trigger baseline
-// for waitForReleasedCount — see waitForSucceededPRCount's doc comment for
-// why a raw total (not just the released count) matters.
-func countTotalReleases(ctx context.Context, fw *framework.Framework, namespace string) (int, error) {
-	releases := &releaseapi.ReleaseList{}
-	if err := fw.AsKubeAdmin.CommonController.KubeRest().List(
-		ctx, releases, client.InNamespace(namespace)); err != nil {
-		return 0, fmt.Errorf("listing Releases in %s: %w", namespace, err)
-	}
-	return len(releases.Items), nil
+	return released, total, nil
 }
 
 // waitForReleasedCount polls until exactly expectedCount Release CRs with
@@ -536,14 +517,10 @@ func triggerBuildsAndVerify(ctx context.Context, fw *framework.Framework, tenant
 	for _, t := range tenants {
 		for _, comp := range Components {
 			key := t.Namespace + "/" + comp.Name
-			buildCount, err := countSucceededPRs(ctx, fw, t.Namespace, "build", comp.Name)
-			Expect(err).ShouldNot(HaveOccurred(), "baseline build count for %s", key)
-			buildTotal, err := countTotalPRs(ctx, fw, t.Namespace, "build", comp.Name)
-			Expect(err).ShouldNot(HaveOccurred(), "baseline build total for %s", key)
-			testCount, err := countSucceededPRs(ctx, fw, t.Namespace, "test", comp.Name)
-			Expect(err).ShouldNot(HaveOccurred(), "baseline test count for %s", key)
-			testTotal, err := countTotalPRs(ctx, fw, t.Namespace, "test", comp.Name)
-			Expect(err).ShouldNot(HaveOccurred(), "baseline test total for %s", key)
+			buildCount, buildTotal, err := countPRs(ctx, fw, t.Namespace, "build", comp.Name)
+			Expect(err).ShouldNot(HaveOccurred(), "baseline build counts for %s", key)
+			testCount, testTotal, err := countPRs(ctx, fw, t.Namespace, "test", comp.Name)
+			Expect(err).ShouldNot(HaveOccurred(), "baseline test counts for %s", key)
 			initialPerComp[key] = pipelineRunBaseCounts{
 				build:      buildCount,
 				test:       testCount,
@@ -554,10 +531,8 @@ func triggerBuildsAndVerify(ctx context.Context, fw *framework.Framework, tenant
 				key, initialPerComp[key].build, initialPerComp[key].buildTotal,
 				initialPerComp[key].test, initialPerComp[key].testTotal)
 		}
-		releaseCount, err := countReleasedReleases(ctx, fw, t.Namespace)
-		Expect(err).ShouldNot(HaveOccurred(), "baseline release count for %s", t.Namespace)
-		releaseTotal, err := countTotalReleases(ctx, fw, t.Namespace)
-		Expect(err).ShouldNot(HaveOccurred(), "baseline release total for %s", t.Namespace)
+		releaseCount, releaseTotal, err := countReleases(ctx, fw, t.Namespace)
+		Expect(err).ShouldNot(HaveOccurred(), "baseline release counts for %s", t.Namespace)
 		initialRelease[t.Namespace] = releaseBaseCounts{
 			released: releaseCount,
 			total:    releaseTotal,

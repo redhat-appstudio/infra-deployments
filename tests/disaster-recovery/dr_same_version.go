@@ -72,22 +72,18 @@ func defineSameVersionSpecs() {
 				for _, t := range svTenants {
 					for _, comp := range Components {
 						key := t.Namespace + "/" + comp.Name
-						buildCount, err := countSucceededPRs(ctx, fw, t.Namespace, "build", comp.Name)
-						Expect(err).ShouldNot(HaveOccurred(), "baseline build count for %s", key)
-						buildTotal, err := countTotalPRs(ctx, fw, t.Namespace, "build", comp.Name)
-						Expect(err).ShouldNot(HaveOccurred(), "baseline build total for %s", key)
-						testCount, err := countSucceededPRs(ctx, fw, t.Namespace, "test", comp.Name)
-						Expect(err).ShouldNot(HaveOccurred(), "baseline test count for %s", key)
-						testTotal, err := countTotalPRs(ctx, fw, t.Namespace, "test", comp.Name)
-						Expect(err).ShouldNot(HaveOccurred(), "baseline test total for %s", key)
+						buildCount, buildTotal, err := countPRs(ctx, fw, t.Namespace, "build", comp.Name)
+						Expect(err).ShouldNot(HaveOccurred(), "baseline build counts for %s", key)
+						testCount, testTotal, err := countPRs(ctx, fw, t.Namespace, "test", comp.Name)
+						Expect(err).ShouldNot(HaveOccurred(), "baseline test counts for %s", key)
 						initialPerComp[key] = pipelineRunBaseCounts{
 							build: buildCount, buildTotal: buildTotal,
 							test: testCount, testTotal: testTotal,
 						}
 					}
-					releaseTotal, err := countTotalReleases(ctx, fw, t.Namespace)
-					Expect(err).ShouldNot(HaveOccurred(), "baseline release total for %s", t.Namespace)
-					initialRelease[t.Namespace] = releaseBaseCounts{total: releaseTotal}
+					releaseCount, releaseTotal, err := countReleases(ctx, fw, t.Namespace)
+					Expect(err).ShouldNot(HaveOccurred(), "baseline release counts for %s", t.Namespace)
+					initialRelease[t.Namespace] = releaseBaseCounts{released: releaseCount, total: releaseTotal}
 				}
 
 				for _, t := range svTenants {
