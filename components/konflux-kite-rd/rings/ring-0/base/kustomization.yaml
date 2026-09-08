@@ -1,0 +1,36 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - base-snapshot
+  - postgresql.yaml
+
+namespace: konflux-kite
+
+images:
+  - name: quay.io/konflux-ci/kite-prod
+    newTag: a8f90611b6e50cd7fa53287cf409e5f7940d2de9
+  - name: quay.io/konflux-ci/kite-init
+    newTag: a8f90611b6e50cd7fa53287cf409e5f7940d2de9
+
+configMapGenerator:
+  - name: kite-config
+    namespace: konflux-kite
+    literals:
+      - KITE_PROJECT_ENV=staging
+      - KITE_HOST=0.0.0.0
+      - KITE_PORT=8443
+      - KITE_DB_SSL_MODE=disable
+      - KITE_LOG_LEVEL=debug
+      - KITE_LOG_FORMAT=text
+      - KITE_ENABLE_CORS=true
+      - KITE_FEATURE_NAMESPACE_CHECKING=false
+      - KITE_FEATURE_WEBHOOKS=true
+      - KITE_ALLOWED_ORIGINS=*
+      - KITE_RATE_LIMIT_RPS=1000
+      - KITE_FEATURE_METRICS=true
+      - KITE_READ_TIMEOUT=30s
+      - KITE_WRITE_TIMEOUT=30s
+      - KITE_IDLE_TIMEOUT=60s
+      - KITE_SHUTDOWN_TIMEOUT=10s
+      - AUTH_IMPERSONATE=true
+    behavior: replace
