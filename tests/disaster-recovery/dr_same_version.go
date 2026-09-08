@@ -77,8 +77,10 @@ func defineSameVersionSpecs() {
 						testCount, testTotal, err := countPRs(ctx, fw, t.Namespace, "test", comp.Name)
 						Expect(err).ShouldNot(HaveOccurred(), "baseline test counts for %s", key)
 						initialPerComp[key] = pipelineRunBaseCounts{
-							build: buildCount, buildTotal: buildTotal,
-							test: testCount, testTotal: testTotal,
+							build: buildCount, 
+							buildTotal: buildTotal,
+							test: testCount, 
+							testTotal: testTotal,
 						}
 					}
 					releaseCount, releaseTotal, err := countReleases(ctx, fw, t.Namespace)
