@@ -17,7 +17,9 @@ spec:
                 matchLabels:
                   appstudio.redhat.com/internal-member-cluster: "true"
           - list:
-              elements: []
+              elements:
+                - nameNormalized: kflux-lw-p01
+                  values.clusterDir: kflux-lw-p01
   template:
     metadata:
       name: ca-bundle-{{nameNormalized}}
