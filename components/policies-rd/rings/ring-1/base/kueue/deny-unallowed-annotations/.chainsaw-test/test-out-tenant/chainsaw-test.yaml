@@ -1,0 +1,88 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: out-tenant-allow-pipelinerun-with-validation-error
+spec:
+  description: |
+    allows a PipelineRun that has unallowed annotation in a non-tenant namespace
+  concurrent: false
+  steps:
+  - name: given-pipelineruns-crd-exists
+    try:
+    - apply:
+        file: ../resources/pipelineruns.tekton.dev_customresourcedefinition.yaml
+    - assert:
+        file: ../chainsaw-assert-pipelineruns-crd.yaml
+  - name: ensure-namespace-is-not-labeled
+    try:
+    - apply:
+        resource:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: ($namespace)
+            labels: {}
+  - name: given-validatingadmissionpolicy-is-installed
+    try:
+    - apply:
+        file: ../../deny-unallowed-annotations-validatingadmissionpolicy.yaml
+    - apply:
+        file: ../../deny-unallowed-annotations-validatingadmissionpolicybinding.yaml
+    - assert:
+        file: ../chainsaw-assert-policy.yaml
+    - sleep:
+        duration: 1s
+  - name: then-pipelinerun-with-unallowed-annotations-is-allowed
+    try:
+    - create:
+        file: ../resources/pipelinerun_with_unallowed_annotations.yaml
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: out-tenant-allow-valid-pipelineruns
+spec:
+  description: |
+    allows a PipelineRun that only have allowed annotations in a non-tenant namespace
+  concurrent: false
+  steps:
+  - name: given-pipelineruns-crd-exists
+    try:
+    - apply:
+        file: ../resources/pipelineruns.tekton.dev_customresourcedefinition.yaml
+    - assert:
+        file: ../chainsaw-assert-pipelineruns-crd.yaml
+  - name: ensure-namespace-is-not-labeled
+    try:
+    - apply:
+        resource:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: ($namespace)
+            labels: {}
+  - name: given-validatingadmissionpolicy-is-installed
+    try:
+    - apply:
+        file: ../../deny-unallowed-annotations-validatingadmissionpolicy.yaml
+    - apply:
+        file: ../../deny-unallowed-annotations-validatingadmissionpolicybinding.yaml
+    - assert:
+        file: ../chainsaw-assert-policy.yaml
+    - sleep:
+        duration: 1s
+  - name: then-pipelinerun-with-allowed-annotations-is-allowed
+    try:
+    - create:
+        file: ../resources/pipelinerun_with_allowed_annotations.yaml
+  - name: then-pipelinerun-without-annotations-is-allowed
+    try:
+    - create:
+        file: ../resources/pipelinerun_without_annotations.yaml
+  - name: then-pipelinerun-without-filtered-annotations-is-allowed
+    try:
+    - create:
+        file: ../resources/pipelinerun_without_filtered_annotations.yaml
