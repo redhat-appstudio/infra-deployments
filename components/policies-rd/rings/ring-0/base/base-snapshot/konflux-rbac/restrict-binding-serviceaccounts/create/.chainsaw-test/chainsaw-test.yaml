@@ -1,0 +1,239 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: in-tenant-invalid-rolebinding
+spec:
+  description: |
+    tests that the a invalid RoleBinding can NOT be created
+    in a tenant namespace
+  concurrent: false
+  namespace: 'invalid-serviceaccounts-rb-tenant-namespace'
+  steps:
+  - name: given-validatingadmissionpolicy-is-ready
+    try:
+    - apply:
+        file: ../restrict-binding-serviceaccounts-create-validatingadmissionpolicy.yaml
+    - apply:
+        file: ../restrict-binding-serviceaccounts-create-validatingadmissionpolicybinding.yaml
+    - sleep:
+        duration: 1s
+    - assert:
+        file: chainsaw-assert-validatingadmissionpolicy.yaml
+  - name: given-tenant-namespace-exists
+    try:
+    - apply:
+        file: ./resources/tenant-namespace.yaml
+  - name: then-invalid-rolebinding-can-not-be-created
+    try:
+    - create:
+        file: ./resources/invalid-serviceaccounts-rolebinding.yaml
+        expect:
+        - check:
+            ($error != null): true
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: in-tenant-delete-invalid-existing-rolebinding
+spec:
+  description: |
+    tests that the an existing invalid RoleBinding can be deleted
+    in a tenant namespace
+  concurrent: false
+  namespace: 'existing-invalid-serviceaccounts-rb-tenant-namespace'
+  steps:
+  - name: given-tenant-namespace-exists
+    try:
+    - apply:
+        file: ./resources/tenant-namespace.yaml
+  - name: given-invalid-rolebinding-exists
+    try:
+    - create:
+        file: ./resources/invalid-serviceaccounts-rolebinding.yaml
+  - name: when-validatingadmissionpolicy-is-ready
+    try:
+    - apply:
+        file: ../restrict-binding-serviceaccounts-create-validatingadmissionpolicy.yaml
+    - apply:
+        file: ../restrict-binding-serviceaccounts-create-validatingadmissionpolicybinding.yaml
+    - sleep:
+        duration: 1s
+    - assert:
+        file: chainsaw-assert-validatingadmissionpolicy.yaml
+  - name: then-invalid-rolebinding-can-be-deleted
+    try:
+    - delete:
+        file: ./resources/invalid-serviceaccounts-rolebinding.yaml
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: in-tenant-valid-rolebinding
+spec:
+  description: |
+    tests that the a valid RoleBinding can be created in a
+    tenant namespace
+  concurrent: false
+  namespace: 'valid-serviceaccounts-rb-tenant-namespace'
+  steps:
+  - name: given-validatingadmissionpolicy-is-ready
+    try:
+    - apply:
+        file: ../restrict-binding-serviceaccounts-create-validatingadmissionpolicy.yaml
+    - apply:
+        file: ../restrict-binding-serviceaccounts-create-validatingadmissionpolicybinding.yaml
+    - sleep:
+        duration: 1s
+    - assert:
+        file: chainsaw-assert-validatingadmissionpolicy.yaml
+  - name: given-tenant-namespace-exists
+    try:
+    - apply:
+        file: ./resources/tenant-namespace.yaml
+  - name: then-valid-rolebinding-can-be-created
+    try:
+    - apply:
+        file: ./resources/valid-serviceaccounts-rolebinding.yaml
+        expect:
+        - check:
+            ($error != null): false
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: out-of-tenant-rolebinding
+spec:
+  description: |
+    tests that the whatever RoleBinding can be created in a
+    non-tenant namespace
+  concurrent: false
+  namespace: 'valid-serviceaccounts-rb-namespace'
+  steps:
+  - name: given-validatingadmissionpolicy-is-ready
+    try:
+    - apply:
+        file: ../restrict-binding-serviceaccounts-create-validatingadmissionpolicy.yaml
+    - apply:
+        file: ../restrict-binding-serviceaccounts-create-validatingadmissionpolicybinding.yaml
+    - sleep:
+        duration: 1s
+    - assert:
+        file: chainsaw-assert-validatingadmissionpolicy.yaml
+  - name: then-rolebinding-can-be-created-in-a-nontenant-namespace
+    try:
+    - apply:
+        file: ./resources/valid-serviceaccounts-rolebinding.yaml
+        expect:
+        - check:
+            ($error != null): false
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: in-tenant-invalid-konflux-bot-role-rolebinding
+spec:
+  description: |
+    tests that a RoleBinding binding a konflux-bot- ServiceAccount to a
+    namespaced Role can NOT be created in a tenant namespace
+  concurrent: false
+  namespace: 'invalid-konflux-bot-role-rb-tenant-namespace'
+  steps:
+  - name: given-validatingadmissionpolicy-is-ready
+    try:
+    - apply:
+        file: ../restrict-binding-serviceaccounts-create-validatingadmissionpolicy.yaml
+    - apply:
+        file: ../restrict-binding-serviceaccounts-create-validatingadmissionpolicybinding.yaml
+    - sleep:
+        duration: 1s
+    - assert:
+        file: chainsaw-assert-validatingadmissionpolicy.yaml
+  - name: given-tenant-namespace-and-role-exist
+    try:
+    - apply:
+        file: ./resources/tenant-namespace.yaml
+    - apply:
+        file: ./resources/tenant-role.yaml
+  - name: then-invalid-konflux-bot-role-rolebinding-can-not-be-created
+    try:
+    - create:
+        file: ./resources/invalid-konflux-bot-role-rolebinding.yaml
+        expect:
+        - check:
+            ($error != null): true
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: in-tenant-valid-konflux-bot-allowed-clusterrole-rolebinding
+spec:
+  description: |
+    tests that a RoleBinding binding a konflux-bot- ServiceAccount to an
+    allowed ClusterRole can be created in a tenant namespace
+  concurrent: false
+  namespace: 'valid-konflux-bot-allowed-cr-rb-tenant-namespace'
+  steps:
+  - name: given-validatingadmissionpolicy-is-ready
+    try:
+    - apply:
+        file: ../restrict-binding-serviceaccounts-create-validatingadmissionpolicy.yaml
+    - apply:
+        file: ../restrict-binding-serviceaccounts-create-validatingadmissionpolicybinding.yaml
+    - sleep:
+        duration: 1s
+    - assert:
+        file: chainsaw-assert-validatingadmissionpolicy.yaml
+  - name: given-tenant-namespace-exists
+    try:
+    - apply:
+        file: ./resources/tenant-namespace.yaml
+  - name: then-valid-konflux-bot-allowed-clusterrole-rolebinding-can-be-created
+    try:
+    - apply:
+        file: ./resources/valid-konflux-bot-allowed-clusterrole-rolebinding.yaml
+        expect:
+        - check:
+            ($error != null): false
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: in-tenant-valid-non-konflux-bot-role-rolebinding
+spec:
+  description: |
+    tests that a RoleBinding binding a non-konflux-bot- ServiceAccount to a
+    namespaced Role can be created in a tenant namespace
+  concurrent: false
+  namespace: 'valid-non-konflux-bot-role-rb-tenant-namespace'
+  steps:
+  - name: given-validatingadmissionpolicy-is-ready
+    try:
+    - apply:
+        file: ../restrict-binding-serviceaccounts-create-validatingadmissionpolicy.yaml
+    - apply:
+        file: ../restrict-binding-serviceaccounts-create-validatingadmissionpolicybinding.yaml
+    - sleep:
+        duration: 1s
+    - assert:
+        file: chainsaw-assert-validatingadmissionpolicy.yaml
+  - name: given-tenant-namespace-and-role-exist
+    try:
+    - apply:
+        file: ./resources/tenant-namespace.yaml
+    - apply:
+        file: ./resources/tenant-role.yaml
+  - name: then-valid-non-konflux-bot-role-rolebinding-can-be-created
+    try:
+    - apply:
+        file: ./resources/valid-non-konflux-bot-role-rolebinding.yaml
+        expect:
+        - check:
+            ($error != null): false

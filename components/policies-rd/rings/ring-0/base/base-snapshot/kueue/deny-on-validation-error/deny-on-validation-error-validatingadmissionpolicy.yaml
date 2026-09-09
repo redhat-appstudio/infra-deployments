@@ -1,0 +1,19 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: deny-on-validation-error.kueue.konflux-ci.dev
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: ["tekton.dev"]
+        apiVersions: ["v1"]
+        operations: ["CREATE"]
+        resources: ["pipelineruns"]
+        scope: "Namespaced"
+  validations:
+    - expression: "!has(object.metadata.annotations) || !('kueue.konflux-ci.dev/validation-error' in object.metadata.annotations)"
+      messageExpression: |-
+        "PipelineRun validation failed: " + string(object.metadata.annotations["kueue.konflux-ci.dev/validation-error"])
+      message: "PipelineRun validation failed, inspect the 'kueue.konflux-ci.dev/validation-error' annotation for more info"

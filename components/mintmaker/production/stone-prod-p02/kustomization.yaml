@@ -10,4 +10,11 @@ patches:
       group: external-secrets.io
       version: v1
       kind: ExternalSecret
+  - path: ./patch_create-dependency-update-check_cron.yaml
+    target:
+      group: batch
+      kind: CronJob
+      name: create-dependencyupdatecheck
+      namespace: mintmaker
+      version: v1
   - path: manager_patch.yaml
