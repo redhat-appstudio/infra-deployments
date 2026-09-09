@@ -2,9 +2,6 @@ apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
   name: smee-client
-  labels:
-    appstudio.redhat.com/internal-only: "true"
-    appstudio.redhat.com/deployment-clusters: "tenant"
 spec:
   generators:
     - merge:
@@ -13,18 +10,23 @@ spec:
         generators:
           - clusters:
               selector:
-                matchExpressions: # k-components will replace this with the correct selector
-                  - key: appstudio.redhat.com/select-none
-                    operator: Exists
-                  - key: appstudio.redhat.com/select-none
-                    operator: DoesNotExist
+                matchLabels: # Get all tenant staging clusters for custom case
+                  appstudio.redhat.com/cluster-type: "tenant"
               values:
                 sourceRoot: components/smee-client-rd
                 ring: "empty-base"
                 clusterDir: "empty-base"
           - list:
-              elements: [] # Populated via k-components
-
+              elements: # Custom case: internal tenant clusters, but not lightwell-dev
+                - values.ring: ring-1
+                  nameNormalized: stone-stage-p01
+                  values.clusterDir: stone-stage-p01
+        selector: # Custom case: internal staging clusters, but not lightwell-dev
+          matchExpressions:
+            - key: nameNormalized
+              operator: In
+              values:
+                - stone-stage-p01
   template:
     metadata:
       name: smee-client-{{nameNormalized}}
