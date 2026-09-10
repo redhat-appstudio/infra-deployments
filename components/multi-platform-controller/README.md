@@ -1,55 +1,11 @@
-# Multi-Platform Controller Host Configuration
+# multi-platform-controller
 
-This directory contains the configuration for the multi-platform-controller, which manages dynamic and static hosts across different environments and clusters.
+Konflux multi-platform-controller overlays, organized by ring.
 
-## Overview
-
-The multi-platform-controller uses a Helm chart to generate host configuration from values files specific to each cluster. This approach provides:
-- Centralized template management in `base/host-config-chart/`
-- Environment-specific configuration through values files
-- Consistent configuration structure across all clusters
-- Easy AMI updates and configuration changes
-
-## Directory Structure
-
-```
-components/multi-platform-controller/
-├── base/
-│   ├── host-config-chart/          # Helm chart for generating host configs
-│   │   ├── Chart.yaml              # Chart metadata
-│   │   └── templates/
-│   │       └── host-config.yaml    # ConfigMap template
-│   └── ...
-├── production/
-│   ├── stone-prd-rh01/
-│   │   ├── host-values.yaml        # Values file for this cluster
-│   │   └── kustomization.yaml
-│   ├── kflux-prd-rh02/
-│   └── kflux-prd-rh03/
-├── staging/
-│   ├── host-values.yaml
-│   └── kustomization.yaml
-└── production-downstream/
-    └── ...
-```
-
-## Generating Host Configuration
-
-### Basic Command
-
-From within a cluster-specific directory (e.g., `production/stone-prd-rh01/`), run:
-
-```bash
-helm template ../../base/host-config-chart/ \
-  --namespace multi-platform-controller \
-  -f host-values.yaml > out.yaml
-```
-
-### Command Breakdown
-
-- `helm template` - Renders the chart locally without installing to a cluster
-- `../../base/host-config-chart/` - Path to the Helm chart directory
-- `--namespace multi-platform-controller` - Sets the namespace for the generated resources
-- `-f host-values.yaml` - Specifies the values file for this cluster
-- `> out.yaml` - Redirects output to a file for review
-
+| Ring | Clusters |
+|------|----------|
+| ring-0 | development |
+| ring-1 | `stone-stg-rh01`, `stone-stage-p01`, `lightwell-dev` |
+| ring-2 | `kflux-fedora-01`, `kflux-ocp-p01`, `kflux-osp-p01`, `kflux-prd-rh03`, `kflux-rhel-p01`, `stone-prod-p01`, `kflux-lw-p01` |
+| ring-3 | `stone-prd-rh01`, `stone-prod-p02` |
+| ring-4 | `kflux-prd-rh02` |

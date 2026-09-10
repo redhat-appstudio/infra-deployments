@@ -1,0 +1,12 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: pipelinerun-without-validation-error
+spec:
+  pipelineRef:
+    name: build-pipeline
+  params:
+    - name: build-platforms
+      value:
+        - "linux/amd64"
+        - "linux/arm64"
