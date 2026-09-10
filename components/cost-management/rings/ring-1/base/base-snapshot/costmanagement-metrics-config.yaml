@@ -1,0 +1,34 @@
+apiVersion: costmanagement-metrics-cfg.openshift.io/v1beta1
+kind: CostManagementMetricsConfig
+metadata:
+  name: costmanagementmetricsconfig
+  namespace: costmanagement-metrics-operator
+  labels:
+    app.kubernetes.io/instance: costmanagementmetricsconfig
+    app.kubernetes.io/name: costmanagementmetricsconfig
+    app.kubernetes.io/part-of: costmanagement-metrics-operator
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  authentication:
+    type: token
+  packaging:
+    max_reports_to_store: 30
+    max_size_MB: 100
+  prometheus_config:
+    collect_previous_data: true
+    context_timeout: 120
+    disable_metrics_collection_cost_management: false
+    disable_metrics_collection_resource_optimization: false
+    service_address: 'https://thanos-querier.openshift-monitoring.svc:9091'
+    skip_tls_verification: false
+  source:
+    check_cycle: 1440
+    create_source: true
+    name: 'konflux-cost-cluster'
+    sources_path: /api/sources/v1.0/
+  upload:
+    upload_cycle: 360
+    upload_toggle: true
+    ingress_path: /api/ingress/v1/upload
+    validate_cert: true
