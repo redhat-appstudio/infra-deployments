@@ -17,7 +17,9 @@ spec:
                 # This allows to gradually deploy to all the clusters.
                 clusterDir: empty-base
           - list:
-              elements: []
+              elements:
+                - nameNormalized: kflux-stg-p02
+                  values.clusterDir: kflux-stg-p02
   template:
     metadata:
       name: kueue-{{nameNormalized}}
