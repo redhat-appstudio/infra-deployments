@@ -1,0 +1,12 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: pipelinerun-with-validation-error
+  annotations:
+    kueue.konflux-ci.dev/validation-error: "build-platforms parameter must be an array of platform strings, got a non-array value"
+spec:
+  pipelineRef:
+    name: build-pipeline
+  params:
+    - name: build-platforms
+      value: "linux/amd64"

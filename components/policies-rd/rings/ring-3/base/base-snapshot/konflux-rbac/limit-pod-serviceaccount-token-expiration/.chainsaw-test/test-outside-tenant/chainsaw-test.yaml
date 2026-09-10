@@ -1,0 +1,32 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: outside-tenant-allows-long-projected-token
+spec:
+  description: |
+    In a namespace without the tenant label, a Pod with a long projected serviceAccountToken
+    expiration is allowed because the policy binding does not match.
+  concurrent: false
+  steps:
+  - name: given-pod-validatingadmissionpolicy-is-installed
+    try:
+    - apply:
+        file: ../../limit-pod-serviceaccount-token-expiration-validationadmissionpolicy.yaml
+    - apply:
+        file: ../../limit-pod-serviceaccount-token-expiration-validationadmissionpolicybinding.yaml
+    - assert:
+        file: ../chainsaw-assert-policy.yaml
+    - sleep:
+        # add a delay to make sure the APIServer successfully loaded the VAP
+        # so to reduce test flakiness
+        duration: 2s
+  - name: given-serviceaccount-exists
+    try:
+    - apply:
+        file: ../resources/serviceaccount.yaml
+  - name: then-long-projected-token-pod-is-allowed
+    try:
+    - create:
+        file: ../resources/pod_projected_token_invalid_long.yaml
