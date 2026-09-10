@@ -104,8 +104,6 @@ policyReportsCleanup:
     runAsNonRoot: true
     runAsUser: null
     runAsGroup: null
-    runAsGroup: null
-    runAsUser: null
     capabilities:
       drop:
       - "ALL"
@@ -118,8 +116,6 @@ webhooksCleanup:
     runAsNonRoot: true
     runAsUser: null
     runAsGroup: null
-    runAsGroup: null
-    runAsUser: null
     capabilities:
       drop:
       - "ALL"
@@ -130,14 +126,10 @@ test:
     runAsNonRoot: true
     runAsUser: null
     runAsGroup: null
-    runAsGroup: null
-    runAsUser: null
     capabilities:
       drop:
       - "ALL"
 crds:
-  annotations:
-    argocd.argoproj.io/sync-options: "Replace=true"
   migration:
     securityContext:
       allowPrivilegeEscalation: false
@@ -145,8 +137,6 @@ crds:
       runAsNonRoot: true
       runAsUser: null
       runAsGroup: null
-      runAsGroup: null
-      runAsUser: null
       capabilities:
         drop:
         - "ALL"
@@ -165,6 +155,3 @@ features:
     mutateExisting: false
     imageVerify: false
     generate: false
-kyverno-api:
-  annotations:
-    argocd.argoproj.io/sync-options: "Replace=true"
