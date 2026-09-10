@@ -1,0 +1,48 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: create-dependencyupdatecheck-ansible-tenant
+  namespace: mintmaker
+spec:
+  schedule: "0 */4 * * *" # every 4 hours
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            paas.redhat.com/appcode: MINT-001
+        spec:
+          restartPolicy: Never
+          serviceAccountName: mintmaker-controller-manager
+          containers:
+            - name: origin-cli
+              image: "quay.io/openshift/origin-cli:4.21"
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  echo 'apiVersion: appstudio.redhat.com/v1alpha1
+                  kind: DependencyUpdateCheck
+                  metadata:
+                    labels:
+                      app.kubernetes.io/name: dependencyupdatecheck
+                      app.kubernetes.io/part-of: mintmaker
+                      app.kubernetes.io/managed-by: kustomize
+                      app.kubernetes.io/created-by: mintmaker
+                    generateName: dependencyupdatecheck-ansible-tenant-
+                  spec:
+                    namespaces:
+                    - namespace: ansible-tenant
+                  ' | oc create -f-
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 10Mi
+                limits:
+                  cpu: 100m
+                  memory: 100Mi
+              securityContext:
+                runAsNonRoot: true
+                runAsUser: 1001120000
+                readOnlyRootFilesystem: true
