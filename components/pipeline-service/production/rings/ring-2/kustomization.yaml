@@ -8,4 +8,19 @@ kind: Kustomization
 resources:
   - ../../base
 
-patches: []
+patches:
+  # Hold back on build 854 until Ring 2 promotion
+  - target:
+      kind: CatalogSource
+      name: custom-operators
+    patch: |-
+      - op: replace
+        path: /spec/image
+        value: quay.io/openshift-pipeline/pipelines-index-4.19@sha256:bd598786408b16bc1171c79907db124013189d57677e8bfbec1feccc55523ccd
+  - target:
+      kind: TektonConfig
+      name: config
+    patch: |-
+      - op: replace
+        path: /spec/pipeline/options/configMaps/config-leader-election-resolvers/data/buckets
+        value: "8"

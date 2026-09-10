@@ -6,7 +6,9 @@ on:
     paths:
       - '.github/workflows/chainsaw-tests.yaml'
       - 'components/kyverno/**'
+      - 'components/kyverno-rd/**'
       - 'components/policies/**'
+      - 'components/policies-rd/**'
 
 jobs:
   find-chainsaw-tests:
@@ -20,7 +22,7 @@ jobs:
 
     - id: list-tests
       run: |
-        DIRS=$(find -name .chainsaw-test -type d | jq -R -s -c 'split("\n")[:-1]')
+        DIRS=$(find -name .chainsaw-test -type d -not -path "*/base-snapshot/*" | jq -R -s -c 'split("\n")[:-1]')
         echo "directories=${DIRS}" >> $GITHUB_OUTPUT
 
   chainsaw-test:
@@ -42,7 +44,7 @@ jobs:
     - name: Install Dependencies
       shell: bash
       run: |
-        kustomize build --enable-helm components/kyverno/chainsaw | \
+        kustomize build --enable-helm components/kyverno-rd/chainsaw | \
           kubectl apply -f - --server-side
 
     - name: Install Cosign

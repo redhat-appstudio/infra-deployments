@@ -8,17 +8,13 @@ resources:
   - ../../base/monitoring-blackbox
   - ../../base/smee-client
   - ../../base/ca-bundle
+  - ../../base/cert-manager-trusted-ca
   - ../../base/repository-validator
   - ../../base/cluster-secret-store-rh
 patchesStrategicMerge:
   - delete-applications.yaml
 namespace: argocd
 patches:
-  - path: production-downstream-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: multi-platform-controller
   - path: production-overlay-patch.yaml
     target:
       kind: ApplicationSet
@@ -219,6 +215,11 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: policies
+  - path: policies-production-auto-sync-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: policies
   - path: production-overlay-patch.yaml
     target:
       kind: ApplicationSet
@@ -401,3 +402,8 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: release
+  - path: production-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: cert-manager-trusted-ca

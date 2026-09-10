@@ -1160,33 +1160,34 @@ PIPELINERUN_DEFINITIONS: Dict[str, PipelineRunTestData] = {
 CONFIG_COMBINATIONS: Dict[str, ConfigCombination] = {
     "development": {
         "name": "Development config",
-        "config_file": "components/kueue/development/tekton-kueue/config.yaml",
-        "kustomization_file": "components/kueue/development/tekton-kueue/kustomization.yaml"
+        "config_file": "components/kueue/rings/ring-0/base/tekton-kueue/config.yaml",
+        "kustomization_file": "components/kueue/rings/ring-0/base/tekton-kueue/kustomization.yaml"
     },
     "staging": {
         "name": "Staging config",
-        "config_file": "components/kueue/staging/base/tekton-kueue/config.yaml",
-        "kustomization_file": "components/kueue/staging/base/tekton-kueue/kustomization.yaml"
+        "config_file": "components/kueue/rings/ring-1/base/tekton-kueue/config.yaml",
+        "kustomization_file": "components/kueue/rings/ring-1/base/tekton-kueue/kustomization.yaml"
     },
     "production": {
         "name": "Production config",
-        "config_file": "components/kueue/production/base/tekton-kueue/config.yaml",
-        "kustomization_file": "components/kueue/production/base/tekton-kueue/kustomization.yaml"
+        # Although this points to the stone-prd-rh01 cluster, it represents the general production config
+        "config_file": "components/kueue/rings/ring-3/stone-prd-rh01/config.yaml",
+        "kustomization_file": "components/kueue/rings/ring-3/base/tekton-kueue/kustomization.yaml"
     },
     "production-kflux-ocp-p01": {
-        "name": "Production config",
-        "config_file": "components/kueue/production/kflux-ocp-p01/config.yaml",
-        "kustomization_file": "components/kueue/production/base/tekton-kueue/kustomization.yaml"
+        "name": "Production OCP config",
+        "config_file": "components/kueue/rings/ring-2/kflux-ocp-p01/config.yaml",
+        "kustomization_file": "components/kueue/rings/ring-2/base/tekton-kueue/kustomization.yaml"
     },
     "production-stone-prod-p02": {
         "name": "Production p02 config",
-        "config_file": "components/kueue/production/stone-prod-p02/config.yaml",
-        "kustomization_file": "components/kueue/production/base/tekton-kueue/kustomization.yaml"
+        "config_file": "components/kueue/rings/ring-3/stone-prod-p02/config.yaml",
+        "kustomization_file": "components/kueue/rings/ring-3/base/tekton-kueue/kustomization.yaml"
     },
     "production-kflux-rhel-p01": {
         "name": "Production RHEL config",
-        "config_file": "components/kueue/production/kflux-rhel-p01/config.yaml",
-        "kustomization_file": "components/kueue/production/base/tekton-kueue/kustomization.yaml"
+        "config_file": "components/kueue/rings/ring-2/kflux-rhel-p01/config.yaml",
+        "kustomization_file": "components/kueue/rings/ring-2/base/tekton-kueue/kustomization.yaml"
     }
 }
 

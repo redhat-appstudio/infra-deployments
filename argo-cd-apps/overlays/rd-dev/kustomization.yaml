@@ -9,7 +9,12 @@ resources:
   - container-image-proxy
   - etcd-shield
   - konflux-operator
+# - kueue # TODO: Uncomment this once e2e tests use solely the rd-dev overlay
   - kyverno
+  - multi-platform-controller
+  - policies
+  - smee-client
+  - repository-validator
 
 patchesStrategicMerge:
   - delete-legacy-konflux-member-appsets.yaml

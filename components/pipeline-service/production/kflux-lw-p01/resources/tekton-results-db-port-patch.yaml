@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tekton-results-api
+  namespace: tekton-results
+spec:
+  template:
+    spec:
+      containers:
+      - name: api
+        env:
+        - name: DB_PORT
+          valueFrom:
+            secretKeyRef:
+              key: db.port
+              name: tekton-results-database
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tekton-results-api-for-watcher
+  namespace: tekton-results
+spec:
+  template:
+    spec:
+      containers:
+      - name: api
+        env:
+        - name: DB_PORT
+          valueFrom:
+            secretKeyRef:
+              key: db.port
+              name: tekton-results-database
