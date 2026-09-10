@@ -1,13 +1,9 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  # policies needs to be installed after
-  # * Kueue
-  # * Kyverno
-  # * pipeline-service
   annotations:
-    argocd.argoproj.io/sync-wave: "25"
-  name: policies-rd
+    argocd.argoproj.io/sync-wave: "-1"
+  name: kueue
 spec:
   generators:
     - merge:
@@ -19,7 +15,7 @@ spec:
                 matchLabels:
                   appstudio.redhat.com/member-cluster: "true"
               values:
-                sourceRoot: components/policies-rd
+                sourceRoot: components/kueue
                 ring: "ring-0"
                 clusterDir: base
           - list:
@@ -27,9 +23,7 @@ spec:
 
   template:
     metadata:
-      name: policies-{{nameNormalized}}
-      annotations:
-        argocd.argoproj.io/compare-options: ServerSideDiff=true,IncludeMutationWebhook=true
+      name: kueue-{{nameNormalized}}
     spec:
       project: default
       source:
@@ -37,7 +31,6 @@ spec:
         repoURL: https://github.com/redhat-appstudio/infra-deployments.git
         targetRevision: main
       destination:
-        namespace: konflux-policies
         server: '{{server}}'
       syncPolicy:
         automated:
