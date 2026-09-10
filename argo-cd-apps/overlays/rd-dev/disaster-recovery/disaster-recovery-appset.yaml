@@ -1,7 +1,9 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: disaster-recovery
+  name: disaster-recovery-rd
+  annotations:
+    argocd.argoproj.io/sync-wave: "25"
 spec:
   generators:
     - merge:
@@ -9,35 +11,35 @@ spec:
           - nameNormalized
         generators:
           - clusters:
+              selector:
+                matchLabels:
+                  appstudio.redhat.com/member-cluster: "true"
               values:
-                sourceRoot: components/disaster-recovery
-                environment: staging
-                clusterDir: "empty-base"
+                sourceRoot: components/disaster-recovery-rd
+                ring: "ring-0"
+                clusterDir: base
           - list:
-              elements:
-                - nameNormalized: stone-stg-rh01
-                  values.clusterDir: stone-stg-rh01
-                - nameNormalized: stone-stage-p01
-                  values.clusterDir: stone-stage-p01
+              elements: []
+
   template:
     metadata:
       name: disaster-recovery-{{nameNormalized}}
     spec:
       project: default
       source:
-        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
+        path: '{{values.sourceRoot}}/rings/{{values.ring}}/{{values.clusterDir}}'
         repoURL: https://github.com/redhat-appstudio/infra-deployments.git
         targetRevision: main
       destination:
         namespace: konflux-disaster-recovery
         server: '{{server}}'
       syncPolicy:
-        preserveResourcesOnDeletion: true
+        automated:
+          prune: true
+          selfHeal: true
         syncOptions:
           - CreateNamespace=true
         retry:
           limit: 50
           backoff:
-            duration: 10s
-            factor: 2
-            maxDuration: 3m
+            duration: 15s
