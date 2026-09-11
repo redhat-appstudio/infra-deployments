@@ -1,0 +1,112 @@
+---
+# ClusterRole for SRE telemetry agents (e.g. Pharos, Lumino) requiring
+# read-only access to infrastructure health, pipeline status, and cluster
+# observability resources beyond what konflux-viewer-bot-actions covers.
+#
+# Can be bound to konflux-bot-* ServiceAccounts.
+# secrets-read deliberately excluded — separate team decision required.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: konflux-telemetry-bot-actions
+rules:
+  # Core resources — cluster and namespace read
+  - apiGroups: [""]
+    resources:
+      - configmaps
+      - endpoints
+      - events
+      - limitranges
+      - namespaces
+      - nodes
+      - persistentvolumeclaims
+      - persistentvolumes
+      - pods
+      - pods/log
+      - replicationcontrollers
+      - resourcequotas
+      - serviceaccounts
+      - services
+    verbs: [get, list, watch]
+  # Workloads
+  - apiGroups: [apps]
+    resources:
+      - daemonsets
+      - deployments
+      - replicasets
+      - statefulsets
+    verbs: [get, list, watch]
+  # Jobs
+  - apiGroups: [batch]
+    resources:
+      - cronjobs
+      - jobs
+    verbs: [get, list, watch]
+  # Tekton pipelines — extends viewer-bot-actions (pipelineruns/taskruns)
+  # with full pipeline/task definition read
+  - apiGroups: [tekton.dev]
+    resources:
+      - pipelines
+      - pipelineruns
+      - taskruns
+      - tasks
+    verbs: [get, list, watch]
+  # KubeArchive / Tekton Results
+  - apiGroups: [results.tekton.dev]
+    resources:
+      - logs
+      - records
+      - results
+    verbs: [get, list]
+  # Konflux application resources (superset of viewer-bot-actions)
+  - apiGroups: [appstudio.redhat.com]
+    resources:
+      - applications
+      - components
+      - componentgroups
+      - releases
+      - snapshots
+    verbs: [get, list, watch]
+  - apiGroups: [konflux-ci.dev]
+    resources:
+      - componentgroups
+    verbs: [get, list, watch]
+  - apiGroups: [pipelinesascode.tekton.dev]
+    resources:
+      - repositories
+    verbs: [get, list, watch]
+  # OpenShift cluster operator status
+  - apiGroups: [config.openshift.io]
+    resources:
+      - apiservers
+      - clusteroperators
+      - clusterversions
+      - infrastructures
+      - networks
+      - proxies
+    verbs: [get, list, watch]
+  # Machine and node health
+  - apiGroups: [machine.openshift.io]
+    resources:
+      - machines
+      - machinesets
+    verbs: [get, list, watch]
+  # MachineConfigPool status — separate apiGroup from machine.openshift.io
+  - apiGroups: [machineconfiguration.openshift.io]
+    resources:
+      - machineconfigpools
+    verbs: [get, list, watch]
+  # Metrics and alerting context
+  - apiGroups: [monitoring.coreos.com]
+    resources:
+      - podmonitors
+      - prometheusrules
+      - servicemonitors
+    verbs: [get, list]
+  # Queue triage
+  - apiGroups: [kueue.x-k8s.io]
+    resources:
+      - clusterqueues
+      - localqueues
+      - workloads
+    verbs: [get, list, watch]
