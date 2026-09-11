@@ -4,10 +4,25 @@ kind: Kustomization
 namespace: openshift-gitops
 
 resources:
+  - ../development
   - artifact-registry-proxy
   - container-image-proxy
+  - crossplane-config
   - etcd-shield
   - konflux-operator
+# - kueue # TODO: Uncomment this once e2e tests use solely the rd-dev overlay
+  - kyverno
+  - multi-platform-controller
+  - policies
+  - smee-client
+  - repository-validator
 
-# No patches until those applications are onboarded to the new standards
-patches: []
+patchesStrategicMerge:
+  - delete-legacy-konflux-member-appsets.yaml
+
+patches:
+  - path: pipeline-service-operator-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: pipeline-service

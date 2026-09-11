@@ -1450,34 +1450,12 @@ spec:
               topologyKey: kubernetes.io/hostname
             weight: 100
       containers:
-      - args:
-        - --secure-listen-address=0.0.0.0:9443
-        - --upstream=http://127.0.0.1:9090/
-        - --logtostderr=true
-        - --v=6
-        image: registry.redhat.io/openshift4/ose-kube-rbac-proxy:v4.12
-        name: kube-rbac-proxy
-        ports:
-        - containerPort: 9443
-          name: metrics
-          protocol: TCP
-        resources:
-          limits:
-            cpu: 500m
-            memory: 128Mi
-          requests:
-            cpu: 5m
-            memory: 64Mi
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-            - ALL
-          readOnlyRootFilesystem: true
-          runAsNonRoot: true
-          seccompProfile:
-            type: RuntimeDefault
       - env:
+        - name: DB_PORT
+          valueFrom:
+            secretKeyRef:
+              key: db.port
+              name: tekton-results-database
         - name: LOGS_API
           value: "true"
         - name: LOGS_TYPE
@@ -1584,11 +1562,41 @@ spec:
         - mountPath: /etc/tls
           name: tls
           readOnly: true
+      - args:
+        - --secure-listen-address=0.0.0.0:9443
+        - --upstream=http://127.0.0.1:9090/
+        - --logtostderr=true
+        - --v=6
+        image: registry.redhat.io/openshift4/ose-kube-rbac-proxy:v4.12
+        name: kube-rbac-proxy
+        ports:
+        - containerPort: 9443
+          name: metrics
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+          requests:
+            cpu: 5m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
       serviceAccountName: tekton-results-api
       volumes:
-      - configMap:
-          name: rds-root-crt
-        name: db-tls-ca
+      - name: db-tls-ca
+        secret:
+          items:
+          - key: tekton-results-db-ca.pem
+            path: tekton-results-db-ca.pem
+          secretName: tekton-results-database
       - configMap:
           name: tekton-results-api-config
         name: config
@@ -1640,34 +1648,12 @@ spec:
               topologyKey: kubernetes.io/hostname
             weight: 100
       containers:
-      - args:
-        - --secure-listen-address=0.0.0.0:9443
-        - --upstream=http://127.0.0.1:9090/
-        - --logtostderr=true
-        - --v=6
-        image: registry.redhat.io/openshift4/ose-kube-rbac-proxy:v4.12
-        name: kube-rbac-proxy
-        ports:
-        - containerPort: 9443
-          name: metrics
-          protocol: TCP
-        resources:
-          limits:
-            cpu: 500m
-            memory: 128Mi
-          requests:
-            cpu: 5m
-            memory: 64Mi
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-            - ALL
-          readOnlyRootFilesystem: true
-          runAsNonRoot: true
-          seccompProfile:
-            type: RuntimeDefault
       - env:
+        - name: DB_PORT
+          valueFrom:
+            secretKeyRef:
+              key: db.port
+              name: tekton-results-database
         - name: LOGS_API
           value: "true"
         - name: LOGS_TYPE
@@ -1774,11 +1760,41 @@ spec:
         - mountPath: /etc/tls
           name: tls
           readOnly: true
+      - args:
+        - --secure-listen-address=0.0.0.0:9443
+        - --upstream=http://127.0.0.1:9090/
+        - --logtostderr=true
+        - --v=6
+        image: registry.redhat.io/openshift4/ose-kube-rbac-proxy:v4.12
+        name: kube-rbac-proxy
+        ports:
+        - containerPort: 9443
+          name: metrics
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+          requests:
+            cpu: 5m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
       serviceAccountName: tekton-results-api
       volumes:
-      - configMap:
-          name: rds-root-crt
-        name: db-tls-ca
+      - name: db-tls-ca
+        secret:
+          items:
+          - key: tekton-results-db-ca.pem
+            path: tekton-results-db-ca.pem
+          secretName: tekton-results-database
       - configMap:
           name: tekton-results-api-config
         name: config
@@ -2083,7 +2099,7 @@ metadata:
 spec:
   dataFrom:
   - extract:
-      key: production/platform/terraform/generated/kflux-lw-p01/tekton-bucket
+      key: production/platform/terraform/generated/kflux-lw-p01/plnsvc-cos-credentials
   refreshInterval: 1h
   secretStoreRef:
     kind: ClusterSecretStore
@@ -2094,9 +2110,9 @@ spec:
     name: tekton-results-s3
     template:
       data:
-        aws_access_key_id: '{{ .aws_access_key_id }}'
-        aws_region: '{{ .aws_region }}'
-        aws_secret_access_key: '{{ .aws_secret_access_key }}'
+        aws_access_key_id: '{{ .access_key_id }}'
+        aws_region: '{{ .region }}'
+        aws_secret_access_key: '{{ .secret_access_key }}'
         bucket: '{{ .bucket }}'
         endpoint: https://{{ .endpoint }}
         s3_url: s3://{{ .bucket }}
@@ -2121,6 +2137,11 @@ spec:
     creationPolicy: Owner
     deletionPolicy: Delete
     name: tekton-results-database
+    template:
+      data:
+        tekton-results-db-ca.pem: '{{ index . "db.ca_cert" | b64dec }}'
+      engineVersion: v2
+      mergePolicy: Merge
 ---
 apiVersion: external-secrets.io/v1
 kind: ExternalSecret
@@ -2133,7 +2154,7 @@ metadata:
 spec:
   dataFrom:
   - extract:
-      key: production/platform/terraform/generated/kflux-lw-p01/tekton-bucket
+      key: production/platform/terraform/generated/kflux-lw-p01/plnsvc-cos-credentials
   refreshInterval: 1h
   secretStoreRef:
     kind: ClusterSecretStore
@@ -2144,9 +2165,9 @@ spec:
     name: tekton-results-s3
     template:
       data:
-        aws_access_key_id: '{{ .aws_access_key_id }}'
-        aws_region: '{{ .aws_region }}'
-        aws_secret_access_key: '{{ .aws_secret_access_key }}'
+        aws_access_key_id: '{{ .access_key_id }}'
+        aws_region: '{{ .region }}'
+        aws_secret_access_key: '{{ .secret_access_key }}'
         bucket: '{{ .bucket }}'
         endpoint: https://{{ .endpoint }}
         s3_url: s3://{{ .bucket }}
@@ -2309,7 +2330,7 @@ spec:
             default-timeout-minutes: "120"
         config-leader-election-resolvers:
           data:
-            buckets: "8"
+            buckets: "4"
         config-logging:
           data:
             loglevel.controller: info
@@ -2531,7 +2552,7 @@ metadata:
   namespace: openshift-marketplace
 spec:
   displayName: custom-operators
-  image: quay.io/openshift-pipeline/pipelines-index-4.19@sha256:bd598786408b16bc1171c79907db124013189d57677e8bfbec1feccc55523ccd
+  image: quay.io/openshift-pipeline/pipelines-index-4.19@sha256:8c6152d2924f608960a4cec0faca33a1807bce19085e86d1daeeaa698fce146d
   sourceType: grpc
   updateStrategy:
     registryPoll:

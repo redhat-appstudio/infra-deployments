@@ -1,0 +1,11 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: valid-konflux-bot-allowed-clusterrole-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: konflux-releaser-bot-actions
+subjects:
+- kind: ServiceAccount
+  name: konflux-bot-0

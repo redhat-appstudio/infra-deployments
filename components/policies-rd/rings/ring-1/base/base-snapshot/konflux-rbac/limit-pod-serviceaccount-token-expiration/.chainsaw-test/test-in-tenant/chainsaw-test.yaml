@@ -1,0 +1,86 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: in-tenant-allows-valid-projected-sa-token-pods
+spec:
+  description: |
+    In a tenant namespace, Pods with projected serviceAccountToken expiration at or under
+    the limit (or omitting expirationSeconds) are admitted by the pod-only VAP.
+  concurrent: false
+  steps:
+  - name: ensure-namespace-is-labeled
+    try:
+    - apply:
+        resource:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: ($namespace)
+            labels:
+              konflux-ci.dev/type: tenant
+  - name: given-pod-validatingadmissionpolicy-is-installed
+    try:
+    - apply:
+        file: ../../limit-pod-serviceaccount-token-expiration-validationadmissionpolicy.yaml
+    - apply:
+        file: ../../limit-pod-serviceaccount-token-expiration-validationadmissionpolicybinding.yaml
+    - assert:
+        file: ../chainsaw-assert-policy.yaml
+    - sleep:
+        # add a delay to make sure the APIServer successfully loaded the VAP
+        # so to reduce test flakiness
+        duration: 2s
+  - name: given-serviceaccount-exists
+    try:
+    - apply:
+        file: ../resources/serviceaccount.yaml
+  - name: then-valid-projected-token-pods-are-allowed
+    try:
+    - create:
+        file: ../resources/pod_projected_token_valid_short.yaml
+    - create:
+        file: ../resources/pod_projected_token_valid_omit.yaml
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: in-tenant-denies-long-projected-serviceaccount-token
+spec:
+  description: |
+    In a tenant namespace, a Pod requesting projected serviceAccountToken expirationSeconds
+    above the policy maximum is denied by the pod-only VAP.
+  concurrent: false
+  steps:
+  - name: ensure-namespace-is-labeled
+    try:
+    - apply:
+        resource:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: ($namespace)
+            labels:
+              konflux-ci.dev/type: tenant
+  - name: given-pod-validatingadmissionpolicy-is-installed
+    try:
+    - apply:
+        file: ../../limit-pod-serviceaccount-token-expiration-validationadmissionpolicy.yaml
+    - apply:
+        file: ../../limit-pod-serviceaccount-token-expiration-validationadmissionpolicybinding.yaml
+    - assert:
+        file: ../chainsaw-assert-policy.yaml
+    - sleep:
+        # add a delay to make sure the APIServer successfully loaded the VAP
+        # so to reduce test flakiness
+        duration: 2s
+  - name: given-serviceaccount-exists
+    try:
+    - apply:
+        file: ../resources/serviceaccount.yaml
+  - name: then-long-projected-token-pod-is-denied
+    try:
+    - error:
+        file: ../resources/pod_projected_token_invalid_long.yaml
