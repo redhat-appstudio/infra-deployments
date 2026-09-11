@@ -33,7 +33,9 @@
     dest: "{{ dst }}/components/{{ component }}/{{ subdir }}/{{ shortname }}/{{item['path'] }}"
   with_filetree:
   - "templates/{{ component }}/"
-  when: "item['state'] == 'file'"
+  when:
+    - item['state'] == 'file'
+    - not (component == 'konflux-operator' and item['path'] == 'namespace-lister/resources-patch.yaml' and ring != 'ring-1')
 
 - name: "Create private-network-only files from template for components/{{ component }}/{{ subdir }}/{{ shortname }}"
   tags: [components]

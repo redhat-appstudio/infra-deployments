@@ -5,10 +5,10 @@ resources:
   - ../../base/member
   - ../../base/all-clusters
   - ../../base/ca-bundle
-  - ../../base/repository-validator
   - ../../base/eaas
   - ../../base/smee-client
   - ../../base/backup
+  - ../rd-dev/kueue # TODO: Remove this once e2e tests use solely the rd-dev overlay
 
 patchesStrategicMerge:
   - delete-applications.yaml
@@ -68,16 +68,6 @@ patches:
     target:
       kind: ApplicationSet
       version: v1alpha1
-      name: repository-validator
-  - path: dev-application-auto-sync-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: repository-validator
-  - path: development-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
       name: project-controller
   - path: development-overlay-patch.yaml
     target:
@@ -131,6 +121,16 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: crossplane-config
+  - path: delete-preserve-resources-flag-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: crossplane-config
+  - path: dev-application-auto-sync-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: crossplane-config
   - path: development-overlay-patch.yaml
     target:
       kind: ApplicationSet
@@ -151,21 +151,6 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: cert-manager
-  - path: development-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: kueue
-  - path: delete-preserve-resources-flag-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: kueue
-  - path: dev-application-auto-sync-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: kueue
   - path: development-overlay-patch.yaml
     target:
       kind: ApplicationSet
@@ -246,17 +231,17 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: internal-services
+  - path: development-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: enterprise-contract
   # ensure installation order of ApplicationSets during all-application-sets sync
   - path: dev-application-sync-wave-kyverno.yaml
     target:
       kind: ApplicationSet
       version: v1alpha1
       name: kyverno
-  - path: dev-application-sync-wave-kueue.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: kueue
   - path: dev-application-sync-wave-pipeline-service.yaml
     target:
       kind: ApplicationSet
