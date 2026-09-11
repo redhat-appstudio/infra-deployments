@@ -114,7 +114,7 @@ patches:
               spec:
                 containers:
                   - name: vacuum
-                    image: quay.io/kubearchive/vacuum:v1.21.4
+                    image: quay.io/kubearchive/vacuum:v1.23.0
 
   - patch: |-
       apiVersion: batch/v1
@@ -230,6 +230,14 @@ patches:
                   value: http://otel-collector:4318
                 - name: AUTH_IMPERSONATE
                   value: "true"
+                - name: API_RATE_LIMIT_OVERALL_RPS
+                  value: "1750"
+                - name: API_RATE_LIMIT_OVERALL_BURST
+                  value: "5250"
+                - name: DATABASE_MAX_OPEN_CONNS
+                  value: "25"
+                - name: DATABASE_MAX_IDLE_CONNS
+                  value: "10"
                 - name: MIGRATION_VERSION
                   valueFrom:
                     configMapKeyRef:
@@ -289,6 +297,10 @@ patches:
                   value: enabled
                 - name: OTEL_EXPORTER_OTLP_ENDPOINT
                   value: http://otel-collector:4318
+                - name: DATABASE_MAX_OPEN_CONNS
+                  value: "25"
+                - name: DATABASE_MAX_IDLE_CONNS
+                  value: "10"
                 - name: MIGRATION_VERSION
                   valueFrom:
                     configMapKeyRef:
