@@ -4,7 +4,7 @@ resources:
 - ../base
 - ../base/cost-management
 - ../policies/kubearchive/
-- ../policies/kueue/
+- ./kueue/
 - ../policies/build-resources
 
 # On ROKS HCP the Proxy CR trustedCA field cannot be set, so OpenShift's
@@ -25,3 +25,10 @@ patches:
       path: /spec/rules/0/match/any/0/resources/selector/matchLabels
       value:
         konflux-ci.dev/type: disabled-on-roks
+- patch: |-
+    $patch: delete
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: deny-unallowed-annotations
+      namespace: tekton-kueue
