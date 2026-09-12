@@ -1,0 +1,23 @@
+resources:
+  - ../base
+  - cronjobs
+
+patches:
+  - path: external-secrets/patches/kanary-probe-credentials-path.yaml
+    target:
+      name: kanary-probe-credentials
+      kind: ExternalSecret
+      group: external-secrets.io
+      version: v1
+  - path: external-secrets/patches/kanary-probe-prometheus-credentials-path.yaml
+    target:
+      name: kanary-probe-prometheus-credentials
+      kind: ExternalSecret
+      group: external-secrets.io
+      version: v1
+  - path: external-secrets/patches/kanary-probe-users-credentials-path.yaml
+    target:
+      name: kanary-probe-users-credentials
+      kind: ExternalSecret
+      group: external-secrets.io
+      version: v1
