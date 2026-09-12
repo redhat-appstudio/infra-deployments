@@ -104,13 +104,6 @@ spec:
 
             chmod 640 /mnt/nginx-generated-config/auth.conf
 
-            # Generate watson-auth.conf with Basic auth from Watson API key
-            watson_api_key=$(cat /mnt/watson-api-key/API_KEY)
-            watson_basic=$(printf "apikey:%s" "$watson_api_key" | base64 | tr -d '\n')
-            sed "s/__WATSON_BASIC_AUTH__/$watson_basic/g" /mnt/nginx-templates/watson-auth.conf > /mnt/nginx-generated-config/watson-auth.conf
-
-            chmod 640 /mnt/nginx-generated-config/watson-auth.conf
-
         volumeMounts:
         - mountPath: /var/run/secrets/konflux-ci.dev/serviceaccount
           name: kube-api-token
@@ -119,8 +112,6 @@ spec:
           mountPath: /mnt/nginx-generated-config
         - name: nginx-templates
           mountPath: /mnt/nginx-templates
-        - name: watson-api-key
-          mountPath: /mnt/watson-api-key
         securityContext:
           readOnlyRootFilesystem: true
           runAsNonRoot: true
@@ -355,9 +346,6 @@ spec:
             secretName: serving-cert
         - name: nginx-generated-config
           emptyDir: {}
-        - name: watson-api-key
-          secret:
-            secretName: watson-config
         - name: static-content
           emptyDir: {}
         - name: ui-runtime-env-variables
