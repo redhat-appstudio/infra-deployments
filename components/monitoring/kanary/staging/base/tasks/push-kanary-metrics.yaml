@@ -25,6 +25,10 @@ spec:
       type: string
       default: ""
       description: "Loadtest phase where earliest failure occurred (e.g. waitForImageRepositoryReady). Empty when test passed or kanary mechanism failed."
+    - name: s3-upload-failed
+      type: string
+      default: "false"
+      description: "true if S3 artifact upload failed, false otherwise."
   steps:
     - name: push-metrics
       image: quay.io/redhat-user-workloads/konflux-perfscale-tenant/loadtest
@@ -41,6 +45,8 @@ spec:
           value: $(params.failure-cause)
         - name: FAILURE_PHASE
           value: $(params.failure-phase)
+        - name: S3_UPLOAD_FAILED
+          value: $(params.s3-upload-failed)
       script: |
         #!/usr/bin/env python3
         import os
@@ -58,6 +64,7 @@ spec:
         test_outcome = os.environ["TEST_OUTCOME"]
         failure_cause_raw = os.environ["FAILURE_CAUSE"].strip()
         failure_phase = os.environ["FAILURE_PHASE"].strip()
+        s3_upload_failed = os.environ["S3_UPLOAD_FAILED"].strip() == "true"
 
         # Take the first value from comma-separated error_reason_simple.
         # The full string is preserved in the TaskRun result for debugging.
@@ -110,6 +117,10 @@ spec:
             print(f"Test outcome: {test_outcome}, reporting kanary-pipeline-error")
             kanary_up.set(1, labels_up)
             kanary_error.set(1, {"tested_cluster": tested_cluster, "type": test_type, "reason": "kanary-pipeline-error", "phase": "kanary-pipeline"})
+
+        if s3_upload_failed:
+            print("S3 upload failed, reporting kanary-pipeline-error for upload-results-to-s3")
+            kanary_error.set(1, {"tested_cluster": tested_cluster, "type": test_type, "reason": "kanary-pipeline-error", "phase": "upload-results-to-s3"})
 
         kanary_timestamp.set(time.time(), {"tested_cluster": tested_cluster, "type": test_type})
 
