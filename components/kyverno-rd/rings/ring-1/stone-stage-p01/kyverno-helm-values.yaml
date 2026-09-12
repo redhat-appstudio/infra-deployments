@@ -1,0 +1,139 @@
+fullnameOverride: konflux-kyverno
+namespaceOverride: konflux-kyverno
+config:
+  preserve: false
+admissionController:
+  replicas: 3
+  initContainer:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 100m
+        memory: 256Mi
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+      capabilities:
+        drop:
+        - "ALL"
+  container:
+    extraArgs:
+      leaderElectionRetryPeriod: 26s
+    resources:
+      requests:
+        cpu: 1000m
+        memory: 1Gi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+      capabilities:
+        drop:
+        - "ALL"
+  metering:
+    disabled: false
+  podDisruptionBudget:
+    enabled: true
+    maxUnavailable: 2
+    minAvailable: null
+    unhealthyPodEvictionPolicy: AlwaysAllow
+  serviceMonitor:
+    enabled: true
+    # kyverno doesn't seem to support HTTPS on metrics
+    secure: false
+backgroundController:
+  replicas: 3
+  extraArgs:
+    leaderElectionRetryPeriod: 26s
+  resources:
+    requests:
+      cpu: 4000m
+      memory: 1Gi
+    limits:
+      cpu: 4000m
+      memory: 1Gi
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    capabilities:
+      drop:
+      - "ALL"
+  metering:
+    disabled: false
+  podDisruptionBudget:
+    enabled: true
+    maxUnavailable: 2
+    minAvailable: null
+    unhealthyPodEvictionPolicy: AlwaysAllow
+  serviceMonitor:
+    enabled: true
+    # kyverno doesn't seem to support HTTPS on metrics
+    secure: false
+cleanupController:
+  replicas: 3
+  extraArgs:
+    leaderElectionRetryPeriod: 26s
+  resources:
+    requests:
+      cpu: 500m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    capabilities:
+      drop:
+      - "ALL"
+  metering:
+    disabled: false
+  podDisruptionBudget:
+    enabled: true
+    maxUnavailable: 2
+    minAvailable: null
+    unhealthyPodEvictionPolicy: AlwaysAllow
+  serviceMonitor:
+    enabled: true
+    # kyverno doesn't seem to support HTTPS on metrics
+    secure: false
+reportsController:
+  enabled: false
+policyReportsCleanup:
+  enabled: false
+webhooksCleanup:
+  enabled: false
+crds:
+  migration:
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+      runAsGroup: null
+      runAsUser: null
+      capabilities:
+        drop:
+        - "ALL"
+features:
+  admissionReports:
+    enabled: false
+  aggregateReports:
+    enabled: false
+  policyReports:
+    enabled: false
+  validatingAdmissionPolicyReports:
+    enabled: false
+  reporting:
+    validate: false
+    mutate: false
+    mutateExisting: false
+    imageVerify: false
+    generate: false
