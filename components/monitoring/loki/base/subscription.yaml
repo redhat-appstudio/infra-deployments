@@ -1,0 +1,13 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: loki-operator
+  namespace: konflux-o11y-loki
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  channel: alpha
+  name: loki-operator
+  source: community-operators
+  sourceNamespace: openshift-marketplace
+  installPlanApproval: Automatic
