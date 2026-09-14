@@ -1,0 +1,47 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  annotations:
+    policies.kyverno.io/description: |
+      For staging clusters restrict what can be set into image repository
+      notification callback spec.notifications[].config.url to url pointing to the
+      Red Hat Bombino pre-production instance, so all url should have
+      https://bombino.preprod.api.redhat.com prefix.
+  name: restrict-notifications-url
+spec:
+  validationFailureAction: Enforce
+  background: false
+  rules:
+  - name: restrict-notifications-url
+    match:
+      any:
+      - resources:
+          kinds:
+          - konflux-ci.dev/v1alpha1/ImageRepository
+          - appstudio.redhat.com/v1alpha1/ImageRepository
+          operations:
+          - CREATE
+          - UPDATE
+    skipBackgroundRequests: true
+    validate:
+      message: >-
+        ImageRepository notification callback url (spec.notifications[].config.url)
+        must point to the Red Hat Bombino pre-production instance, i.e. start with
+        https://bombino.preprod.api.redhat.com.
+      foreach:
+      - list: request.object.spec.notifications[]
+        deny:
+          conditions:
+            # Deny unless the url host is exactly bombino.preprod.api.redhat.com.
+            # Both conditions must hold to deny, so a url is allowed when it is either
+            # exactly https://bombino.preprod.api.redhat.com or has a
+            # https://bombino.preprod.api.redhat.com/ prefix. A trailing "*" alone would
+            # let lookalike hosts such as https://bombino.preprod.api.redhat.com.attacker.com/
+            # slip through.
+            all:
+            - key: "{{ element.config.url }}"
+              operator: NotEquals
+              value: "https://bombino.preprod.api.redhat.com"
+            - key: "{{ element.config.url }}"
+              operator: NotEquals
+              value: "https://bombino.preprod.api.redhat.com/*"
