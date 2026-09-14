@@ -11,7 +11,11 @@ spec:
     - port: prometheus
       interval: 15s
       path: /metrics
+      honorLabels: true
       metricRelabelings:
         - sourceLabels: [__name__]
-          regex: 'traces_spanmetrics_.*'
-          action: keep
+          regex: 'traces_span_metrics_.*'
+          action: drop #from allow to drop due to high cardinality. Fix the cardinality or federation before allowing again.
+        - sourceLabels: [__name__]
+          regex: '.*'
+          action: drop

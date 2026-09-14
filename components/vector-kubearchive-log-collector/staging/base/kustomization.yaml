@@ -19,10 +19,8 @@ resources:
 - rbac.yaml
 - prometheus-rules.yaml
 
-patchesStrategicMerge:
-  - namespace-patch.yaml
-
 patches:
+  - path: namespace-patch.yaml
   - path: scc-patch.yaml
     target:
       kind: SecurityContextConstraints

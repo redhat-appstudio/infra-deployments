@@ -1,0 +1,28 @@
+---
+# Network Policy: Metrics Ingress
+#
+# Purpose: Allow Prometheus/monitoring systems to scrape metrics from image-controller
+# Port: 8443 (metrics endpoint)
+#
+# Allows traffic from:
+#   - openshift-user-workload-monitoring namespace (where Prometheus runs)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-metrics-ingress
+  namespace: image-controller
+spec:
+  podSelector:
+    matchLabels:
+      control-plane: controller-manager
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    # Allow Prometheus from openshift-user-workload-monitoring to scrape metrics
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: openshift-user-workload-monitoring
+    ports:
+    - protocol: TCP
+      port: 8443  # Metrics port

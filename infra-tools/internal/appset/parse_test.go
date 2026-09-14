@@ -461,3 +461,163 @@ spec:
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(result.Paths).To(HaveLen(1))
 }
+
+func TestParseApplicationSets_RingTemplate_ClusterDefaults(t *testing.T) {
+	g := NewWithT(t)
+
+	yaml := `
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: multi-platform-controller
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              values:
+                sourceRoot: components/multi-platform-controller
+                ring: "empty-base"
+                clusterDir: "empty-base"
+          - list:
+              elements: []
+  template:
+    metadata:
+      name: multi-platform-controller-{{nameNormalized}}
+    spec:
+      source:
+        path: '{{values.sourceRoot}}/rings/{{values.ring}}/{{values.clusterDir}}'
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+`
+	result, err := ParseApplicationSets([]byte(yaml))
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.Paths).To(HaveLen(1))
+	g.Expect(result.Paths[0].Path).To(Equal("components/multi-platform-controller/rings/empty-base/empty-base"))
+	g.Expect(result.Paths[0].ClusterDir).To(Equal("empty-base"))
+}
+
+func TestParseApplicationSets_RingTemplate_ListOverrides(t *testing.T) {
+	g := NewWithT(t)
+
+	yaml := `
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: multi-platform-controller
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              values:
+                sourceRoot: components/multi-platform-controller
+                ring: "empty-base"
+                clusterDir: "empty-base"
+          - list:
+              elements:
+                - values.ring: ring-1
+                  nameNormalized: stone-stg-rh01
+                  values.clusterDir: stone-stg-rh01
+                - values.ring: ring-2
+                  nameNormalized: kflux-lw-p01
+                  values.clusterDir: kflux-lw-p01
+  template:
+    metadata:
+      name: multi-platform-controller-{{nameNormalized}}
+    spec:
+      source:
+        path: '{{values.sourceRoot}}/rings/{{values.ring}}/{{values.clusterDir}}'
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+`
+	result, err := ParseApplicationSets([]byte(yaml))
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.Paths).To(HaveLen(3))
+
+	paths := make([]string, 0, len(result.Paths))
+	for _, p := range result.Paths {
+		paths = append(paths, p.Path)
+	}
+	g.Expect(paths).To(ConsistOf(
+		"components/multi-platform-controller/rings/empty-base/empty-base",
+		"components/multi-platform-controller/rings/ring-1/stone-stg-rh01",
+		"components/multi-platform-controller/rings/ring-2/kflux-lw-p01",
+	))
+
+	g.Expect(result.Clusters).To(HaveKey("stone-stg-rh01"))
+	g.Expect(result.Clusters["stone-stg-rh01"]).To(ConsistOf(
+		"components/multi-platform-controller/rings/ring-1/stone-stg-rh01",
+	))
+	g.Expect(result.Clusters).To(HaveKey("kflux-lw-p01"))
+	g.Expect(result.Clusters["kflux-lw-p01"]).To(ConsistOf(
+		"components/multi-platform-controller/rings/ring-2/kflux-lw-p01",
+	))
+}
+
+func TestParseApplicationSets_RingTemplate_DevBase(t *testing.T) {
+	g := NewWithT(t)
+
+	yaml := `
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: etcd-shield
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              values:
+                sourceRoot: components/etcd-shield
+                ring: "ring-0"
+                clusterDir: base
+          - list:
+              elements: []
+  template:
+    metadata:
+      name: etcd-shield-{{nameNormalized}}
+    spec:
+      source:
+        path: '{{values.sourceRoot}}/rings/{{values.ring}}/{{values.clusterDir}}'
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+`
+	result, err := ParseApplicationSets([]byte(yaml))
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.Paths).To(HaveLen(1))
+	g.Expect(result.Paths[0].Path).To(Equal("components/etcd-shield/rings/ring-0/base"))
+	g.Expect(result.Paths[0].ClusterDir).To(Equal("base"))
+}
+
+func TestParseApplicationSets_DirectClusters_RingTemplate(t *testing.T) {
+	g := NewWithT(t)
+
+	yaml := `
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: etcd-shield
+spec:
+  generators:
+    - clusters:
+        values:
+          sourceRoot: components/etcd-shield
+          ring: "ring-0"
+          clusterDir: base
+  template:
+    metadata:
+      name: etcd-shield-{{nameNormalized}}
+    spec:
+      source:
+        path: '{{values.sourceRoot}}/rings/{{values.ring}}/{{values.clusterDir}}'
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+`
+	result, err := ParseApplicationSets([]byte(yaml))
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.Paths).To(HaveLen(1))
+	g.Expect(result.Paths[0].Path).To(Equal("components/etcd-shield/rings/ring-0/base"))
+}

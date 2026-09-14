@@ -1,0 +1,10 @@
+---
+# No Rover group sync on this IBM ROKS cluster, so the konflux-o11y-admins
+# bindings in ../../base/rbac and ../../base/uwm-config have no members.
+# Usernames must match `oc auth whoami` exactly.
+apiVersion: user.openshift.io/v1
+kind: Group
+metadata:
+  name: konflux-o11y-admins
+users:
+  - IAM#jmicanek

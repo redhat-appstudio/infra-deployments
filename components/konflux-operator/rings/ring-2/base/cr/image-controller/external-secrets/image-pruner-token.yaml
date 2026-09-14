@@ -1,0 +1,19 @@
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: image-pruner-token
+  namespace: image-controller
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  dataFrom:
+    - extract:
+        key: production/build/image-pruner-token
+  refreshInterval: 30m
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: appsre-stonesoup-vault
+  target:
+    creationPolicy: Owner
+    deletionPolicy: Delete
+    name: image-pruner-token

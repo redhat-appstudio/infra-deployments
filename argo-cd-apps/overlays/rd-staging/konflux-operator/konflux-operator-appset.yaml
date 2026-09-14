@@ -4,7 +4,6 @@ metadata:
   name: konflux-operator
   labels: # Helps k-components detect this appset to apply the correct patches
     appstudio.redhat.com/deployment-clusters: "tenant"
-    appstudio.redhat.com/internal-only: "true"
 spec:
   generators:
     - merge:
@@ -24,6 +23,15 @@ spec:
                 clusterDir: "empty-base"
           - list:
               elements: [] # Populated via k-components (or manually if the cluster list is unusual)
+      # Tenant k-components populate the merge list for every tenant cluster.
+      # This In selector is what actually opts a cluster into the operator.
+      selector:
+        matchExpressions:
+          - key: nameNormalized
+            operator: In
+            values:
+              - stone-stage-p01
+              - lightwell-dev
 
   template:
     metadata:

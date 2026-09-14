@@ -174,6 +174,13 @@ patches:
         dataFrom:
           - extract:
               key: production/platform/terraform/generated/kflux-lw-p01/kubearchive-database
+  - target:
+      kind: ExternalSecret
+      name: database-secret
+    patch: |-
+      - op: replace
+        path: /spec/target/template/data/DATABASE_PORT
+        value: '{{ index . "db.port" }}'
   # These patches add an annotation so an OpenShift service
   # creates the TLS secrets instead of Cert Manager
   - patch: |-
@@ -368,4 +375,4 @@ patches:
           spec:
             containers:
               - name: otel-collector
-                image: quay.io/kubearchive/opentelemetry-collector@sha256:1f8c9a186c56f5ab4ffdd937ecce621aef116868f6022f3652c5d285b5788f8a
+                image: quay.io/kubearchive/opentelemetry-collector@sha256:ef47fef2d742461fba0b9950137895cfd34e3a8500f8acb807003f94751365d0

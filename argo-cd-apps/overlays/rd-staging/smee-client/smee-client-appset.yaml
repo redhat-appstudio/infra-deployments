@@ -1,0 +1,53 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: smee-client
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              selector:
+                matchLabels: # Get all tenant staging clusters for custom case
+                  appstudio.redhat.com/cluster-type: "tenant"
+              values:
+                sourceRoot: components/smee-client-rd
+                ring: "empty-base"
+                clusterDir: "empty-base"
+          - list:
+              elements: # Custom case: internal tenant clusters, but not lightwell-dev
+                - values.ring: ring-1
+                  nameNormalized: stone-stage-p01
+                  values.clusterDir: stone-stage-p01
+        selector: # Custom case: internal staging clusters, but not lightwell-dev
+          matchExpressions:
+            - key: nameNormalized
+              operator: In
+              values:
+                - stone-stage-p01
+  template:
+    metadata:
+      name: smee-client-{{nameNormalized}}
+    spec:
+      project: default
+      source:
+        path: '{{values.sourceRoot}}/rings/{{values.ring}}/{{values.clusterDir}}'
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+        targetRevision: main
+      destination:
+        namespace: smee-client
+        server: '{{server}}'
+      syncPolicy:
+        # automated:
+        #   prune: true
+        #   selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+        retry:
+          limit: -1
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 3m

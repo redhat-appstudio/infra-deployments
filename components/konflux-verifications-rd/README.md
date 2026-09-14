@@ -5,7 +5,7 @@ Infrastructure component for Kargo verification conformance tests.
 ## What this deploys
 
 - **Namespaces**: `konflux-conformance-tests` (tenant) and `konflux-managed-tests` (managed)
-- **ServiceAccount**: `conformance-verification-sa` in `konflux-managed-tests`, with a bound token Secret
+- **ServiceAccount**: `konflux-bot-0` in `konflux-managed-tests`, with a bound token Secret
 - **RoleBindings**: Grants the SA `konflux-admin-user-actions` in both namespaces and `release-pipeline-resource-role` in the managed namespace
 
 ## Purpose

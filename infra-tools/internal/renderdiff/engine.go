@@ -159,8 +159,13 @@ func (e *Engine) buildPair(cd *ComponentDiff) error {
 		cd.BaseYAML = baseYAML
 	}
 
-	// If neither side has the directory, nothing to diff.
+	// If neither side produced output, check whether the directory exists.
+	// Empty-base overlays (resources: []) intentionally produce no output;
+	// treat them as a no-op instead of an error.
 	if cd.HeadYAML == nil && cd.BaseYAML == nil {
+		if e.head.DirExists(cd.Path) || e.base.DirExists(cd.Path) {
+			return nil
+		}
 		return fmt.Errorf("component %s does not exist on either ref", cd.Path)
 	}
 

@@ -12,7 +12,6 @@ customConfig:
   api:
     enabled: true
     address: 127.0.0.1:8686
-    playground: false
   sources:
     kubernetes_logs:
       type: kubernetes_logs
@@ -77,6 +76,10 @@ customConfig:
       filename_time_format: "-%s"
       filename_append_uuid: false
 env:
+  # Vector 0.57 disables ${VAR} interpolation by default. Restore it for
+  # BUCKET/ENDPOINT sourced from the tekton-results-s3 secret.
+  - name: VECTOR_DANGEROUSLY_ALLOW_ENV_VAR_INTERPOLATION
+    value: "true"
   - name: AWS_ACCESS_KEY_ID
     valueFrom:
       secretKeyRef:
@@ -111,7 +114,7 @@ tolerations:
     value: konflux-tenants
 image:
   repository: quay.io/openshift-pipeline/vector
-  tag: 0.45.0-distroless-libc
+  tag: 0.57.0-distroless-libc
 securityContext:
   allowPrivilegeEscalation: false
   capabilities:

@@ -2,14 +2,14 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
 - ../base
-- https://github.com/konflux-ci/build-service/config/default?ref=547914854b06c8725dc609a872b5c62e2b935663
+- https://github.com/konflux-ci/build-service/config/default?ref=d9f967ffe35d99d18b09373822ae2819b50c2aa1
 
 namespace: build-service
 
 images:
 - name: quay.io/konflux-ci/build-service
   newName: quay.io/konflux-ci/build-service
-  newTag: 547914854b06c8725dc609a872b5c62e2b935663
+  newTag: d9f967ffe35d99d18b09373822ae2819b50c2aa1
 
 commonAnnotations:
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true

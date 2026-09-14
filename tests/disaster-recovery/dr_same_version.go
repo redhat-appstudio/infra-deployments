@@ -42,6 +42,9 @@ func defineSameVersionSpecs() {
 		// PaC config PRs must be merged before waiting for pipeline chains because
 		// releases only trigger for push-event builds (merge commits on the default
 		// branch), not pull-request-event builds.
+		var initialPerComp map[string]pipelineRunBaseCounts
+		var initialRelease map[string]releaseBaseCounts
+
 		When("creating tenants and running initial pipelines", func() {
 			It("should create both tenants concurrently", func() {
 				var wg sync.WaitGroup
@@ -57,13 +60,44 @@ func defineSameVersionSpecs() {
 			})
 
 			It("should merge PaC configuration PRs on forked repos", func() {
+				// Snapshot pre-trigger baselines before merging -- createTenant
+				// already creates pull-request-event PipelineRuns, and merging
+				// cancels those while triggering push-event ones. Capturing the
+				// baseline here (not inside waitForPipelineChains) means a
+				// fast-cancelled pull-request PipelineRun is correctly counted
+				// as pre-existing, not mistaken for the newly-triggered attempt.
+				ctx := context.Background()
+				initialPerComp = make(map[string]pipelineRunBaseCounts)
+				initialRelease = make(map[string]releaseBaseCounts)
+				for _, t := range svTenants {
+					for _, comp := range Components {
+						key := t.Namespace + "/" + comp.Name
+						buildCount, buildTotal, err := countPRs(ctx, fw, t.Namespace, "build", comp.Name)
+						Expect(err).ShouldNot(HaveOccurred(), "baseline build counts for %s", key)
+						testCount, testTotal, err := countPRs(ctx, fw, t.Namespace, "test", comp.Name)
+						Expect(err).ShouldNot(HaveOccurred(), "baseline test counts for %s", key)
+						initialPerComp[key] = pipelineRunBaseCounts{
+							build: buildCount,
+							buildTotal: buildTotal,
+							test: testCount,
+							testTotal: testTotal,
+						}
+					}
+					releaseCount, releaseTotal, err := countReleases(ctx, fw, t.Namespace)
+					Expect(err).ShouldNot(HaveOccurred(), "baseline release counts for %s", t.Namespace)
+					initialRelease[t.Namespace] = releaseBaseCounts{
+						released: releaseCount,
+						total: releaseTotal,
+					}
+				}
+
 				for _, t := range svTenants {
 					mergePaCConfigPRs(fw, t)
 				}
 			})
 
 			It("should wait for all pipeline chains to succeed", func() {
-				waitForPipelineChains(context.Background(), fw, svTenants, nil, nil)
+				waitForPipelineChains(context.Background(), fw, svTenants, initialPerComp, initialRelease)
 			})
 		})
 

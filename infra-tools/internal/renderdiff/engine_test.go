@@ -226,6 +226,30 @@ func TestEngine_NoEffectiveChange(t *testing.T) {
 	g.Expect(result.Diffs).To(BeEmpty()) // identical YAML → omitted
 }
 
+func TestEngine_EmptyBase_NewComponent(t *testing.T) {
+	g := NewWithT(t)
+
+	// Simulates an empty-base overlay (resources: []) that produces no output.
+	// The directory exists on HEAD but not on base, and BuildKustomization
+	// returns nil (empty kustomize output). This should be silently skipped.
+	head := &fakeBuilder{
+		exist: map[string]bool{"components/foo/staging/empty-base": true},
+		yamls: map[string][]byte{"components/foo/staging/empty-base": nil},
+	}
+	base := &fakeBuilder{
+		exist: map[string]bool{},
+	}
+
+	engine := NewEngine(head, base, 2)
+	affected := map[detector.Environment][]appset.ComponentPath{
+		detector.Staging: {{Path: "components/foo/staging/empty-base"}},
+	}
+
+	result, err := engine.Run(context.Background(), affected)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.Diffs).To(BeEmpty(), "empty-base with no output should be silently skipped")
+}
+
 func TestEngine_EmptyInput(t *testing.T) {
 	g := NewWithT(t)
 

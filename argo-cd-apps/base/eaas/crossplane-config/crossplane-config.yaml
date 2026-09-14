@@ -28,9 +28,7 @@ spec:
         namespace: crossplane-config
         server: "{{server}}"
       syncPolicy:
-        automated:
-          prune: true
-          selfHeal: true
+        preserveResourcesOnDeletion: true
         syncOptions:
           - CreateNamespace=true
         retry:

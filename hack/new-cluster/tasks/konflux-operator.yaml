@@ -1,0 +1,34 @@
+# Exclude the new cluster from operator-owned legacy ApplicationSets and
+# onboard it on the konflux-operator ApplicationSet (nameNormalized In selector).
+
+- name: Set konflux-operator wiring file paths
+  tags: [applicationsets]
+  set_fact:
+    konflux_operator_exclude_file: "{{ dst }}/argo-cd-apps/overlays/{{ env }}-downstream/exclude-operator-owned-clusters.yaml"
+    konflux_operator_appset_file: "{{ dst }}/argo-cd-apps/overlays/rd-{{ env }}/konflux-operator/konflux-operator-appset.yaml"
+
+- name: Check whether {{ shortname }} is already in the legacy exclude list
+  tags: [applicationsets]
+  command: |
+    yq eval '.[0].value.matchExpressions[0].values[] | select(. == "{{ shortname }}")' {{ konflux_operator_exclude_file }}
+  register: konflux_operator_exclude_idx
+  changed_when: false
+
+- name: Add {{ shortname }} to exclude-operator-owned-clusters.yaml
+  tags: [applicationsets]
+  command: |
+    yq -i eval '.[0].value.matchExpressions[0].values += ["{{ shortname }}"]' {{ konflux_operator_exclude_file }}
+  when: konflux_operator_exclude_idx.stdout == ""
+
+- name: Check whether {{ shortname }} is already in the operator ApplicationSet In selector
+  tags: [applicationsets]
+  command: |
+    yq eval '.spec.generators[0].selector.matchExpressions[0].values[] | select(. == "{{ shortname }}")' {{ konflux_operator_appset_file }}
+  register: konflux_operator_in_idx
+  changed_when: false
+
+- name: Add {{ shortname }} to the konflux-operator ApplicationSet In selector
+  tags: [applicationsets]
+  command: |
+    yq -i eval '.spec.generators[0].selector.matchExpressions[0].values += ["{{ shortname }}"]' {{ konflux_operator_appset_file }}
+  when: konflux_operator_in_idx.stdout == ""

@@ -43,9 +43,7 @@ spec:
         namespace: smee-client
         server: '{{server}}'
       syncPolicy:
-        automated:
-          prune: true
-          selfHeal: true
+        preserveResourcesOnDeletion: true
         syncOptions:
           - CreateNamespace=true
         retry:
