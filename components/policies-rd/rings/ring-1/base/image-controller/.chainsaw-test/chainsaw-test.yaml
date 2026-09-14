@@ -1,0 +1,69 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: restrict-notifications-url
+spec:
+  description: |
+    Tests that the staging restrict-notifications-url ValidatingAdmissionPolicy only allows ImageRepository notification callback urls
+    that point to the Red Hat Bombino pre-production instance (https://bombino.preprod.api.redhat.com) and denies any other url.
+    Also verifies the policy applies to both the current (konflux-ci.dev) and the deprecated (appstudio.redhat.com) API groups.
+  # The ImageRepository CRDs are not part of the chainsaw kind cluster, so both the current and the deprecated group CRDs are installed before the policy.
+  # Tests run serially to keep webhook behaviour deterministic.
+  concurrent: false
+  steps:
+  - name: given-crds-and-validating-admission-policy-are-ready
+    try:
+    - apply:
+        file: resources/imagerepository-crd.yaml
+    - apply:
+        file: resources/imagerepository-crd-deprecated.yaml
+    - apply:
+        file: ../restrict-notifications-url-validationadmissionpolicy.yaml
+    - apply:
+        file: ../restrict-notifications-url-validationadmissionpolicybinding.yaml
+    - assert:
+        file: chainsaw-assert-validatingadmissionpolicy.yaml
+  - name: then-preprod-bombino-url-is-allowed
+    try:
+    - create:
+        file: resources/imagerepository-good-bombino.yaml
+  - name: then-image-repository-without-notifications-is-allowed
+    try:
+    - create:
+        file: resources/imagerepository-good-no-notifications.yaml
+  - name: then-non-bombino-url-is-denied
+    try:
+    - create:
+        file: resources/imagerepository-bad-url.yaml
+        expect:
+        - check:
+            ($error != null): true
+  - name: then-production-bombino-url-is-denied-on-staging
+    try:
+    - create:
+        file: resources/imagerepository-bad-prod-url.yaml
+        expect:
+        - check:
+            ($error != null): true
+  - name: then-lookalike-bombino-host-is-denied
+    try:
+    - create:
+        file: resources/imagerepository-bad-lookalike-url.yaml
+        expect:
+        - check:
+            ($error != null): true
+  - name: then-mixed-notifications-with-one-bad-url-is-denied
+    try:
+    - create:
+        file: resources/imagerepository-bad-mixed.yaml
+        expect:
+        - check:
+            ($error != null): true
+  - name: then-deprecated-api-group-is-still-enforced
+    try:
+    - create:
+        file: resources/imagerepository-bad-deprecated-group.yaml
+        expect:
+        - check:
+            ($error != null): true
