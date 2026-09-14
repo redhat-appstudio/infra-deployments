@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - base-snapshot
+
+images:
+  - name: ghcr.io/chmouel/gosmee
+    newName: ghcr.io/chmouel/gosmee
+    newTag: v0.28.0
+  - name: quay.io/konflux-ci/smee-sidecar
+    newName: quay.io/konflux-ci/smee-sidecar
+    newTag: 10668475e087a18ba9ea5f86b6322f4ce130e200
