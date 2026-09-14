@@ -300,7 +300,6 @@ spec:
         echo -n "unknown" > $(results.test-outcome.path)
         echo -n "" > $(results.failure-cause.path)
         echo -n "" > $(results.failure-phase.path)
-        echo -n "false" > $(results.s3-upload-failed.path)
         if [[ ! -s /opt/users-secret/token ]]; then
           echo "ERROR: /opt/users-secret/token is missing or empty" >&2
           exit 1
@@ -390,6 +389,8 @@ spec:
           echo -n "true" > "$(results.s3-upload-failed.path)"
           exit 0
         }
+
+        echo -n "false" > $(results.s3-upload-failed.path)
 
         if [[ -z "${S3_BUCKET}" ]]; then
           echo "No S3 bucket configured, skipping artifact upload"
