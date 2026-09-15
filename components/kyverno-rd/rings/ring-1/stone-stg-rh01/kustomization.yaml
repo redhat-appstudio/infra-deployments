@@ -4,7 +4,7 @@ kind: Kustomization
 namespace: konflux-kyverno
 
 resources:
-  - base-snapshot
+  - ../base
 
 generators:
   - kyverno-helm-generator.yaml
@@ -28,15 +28,18 @@ images:
 
 # set resources to jobs
 patches:
-  - path: requests-patch.yaml
+  - path: job_resources.yaml
     target:
       group: batch
       version: v1
       kind: Job
       name: konflux-kyverno-migrate-resources
-  - path: limits-patch.yaml
+  - patch: |
+      - op: add
+        path: /spec/unhealthyPodEvictionPolicy
+        value: AlwaysAllow
     target:
-      group: batch
+      group: policy
       version: v1
-      kind: Job
-      name: konflux-kyverno-migrate-resources
+      kind: PodDisruptionBudget
+      labelSelector: app.kubernetes.io/part-of=konflux-kyverno

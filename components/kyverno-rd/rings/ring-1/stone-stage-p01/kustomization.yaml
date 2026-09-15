@@ -4,10 +4,10 @@ kind: Kustomization
 namespace: konflux-kyverno
 
 resources:
-  - base-snapshot
+  - ../base
 
 generators:
-  - kyverno-helm-generator.yaml
+- kyverno-helm-generator.yaml
 
 images:
   - name: reg.kyverno.io/kyverno/kyverno
@@ -28,15 +28,9 @@ images:
 
 # set resources to jobs
 patches:
-  - path: requests-patch.yaml
-    target:
-      group: batch
-      version: v1
-      kind: Job
-      name: konflux-kyverno-migrate-resources
-  - path: limits-patch.yaml
-    target:
-      group: batch
-      version: v1
-      kind: Job
-      name: konflux-kyverno-migrate-resources
+- path: job_resources.yaml
+  target:
+    group: batch
+    kind: Job
+    name: konflux-kyverno-migrate-resources
+    version: v1
