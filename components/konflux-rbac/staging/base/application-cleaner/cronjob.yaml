@@ -1,0 +1,59 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: application-cleaner
+  namespace: konflux-rbac
+spec:
+  schedule: "0 1 * * 0"
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          serviceAccountName: application-cleaner
+          volumes:
+            - name: script-volume
+              configMap:
+                name: application-cleaner-configmap
+                defaultMode: 0555
+          containers:
+            - name: application-cleaner
+              image: quay.io/konflux-ci/task-runner:v1@sha256:b9ef0479b57a494368a12a02886c650314c9ac7391c6228f21065865aab71c9e
+              command:
+                - /bin/bash
+                - /scripts/application-cleaner.sh
+              env:
+                - name: RETENTION_DAYS
+                  valueFrom:
+                    configMapKeyRef:
+                      name: application-cleaner-configmap
+                      key: RETENTION_DAYS
+                - name: NAMESPACE_LABEL_SELECTOR
+                  valueFrom:
+                    configMapKeyRef:
+                      name: application-cleaner-configmap
+                      key: NAMESPACE_LABEL_SELECTOR
+                - name: DRY_RUN
+                  value: "false"
+              volumeMounts:
+                - name: script-volume
+                  mountPath: /scripts
+                  readOnly: true
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
+                limits:
+                  cpu: 200m
+                  memory: 256Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+                readOnlyRootFilesystem: true
+                runAsNonRoot: true
+                seccompProfile:
+                  type: RuntimeDefault
