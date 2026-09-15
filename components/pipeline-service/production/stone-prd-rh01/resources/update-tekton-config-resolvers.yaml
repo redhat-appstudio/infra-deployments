@@ -1,0 +1,15 @@
+---
+- op: add
+  path: /spec/pipeline/options/configMaps/bundleresolver-config
+  value:
+    data:
+      fetch-timeout: "2m"
+      backoff-duration: "15s"
+      backoff-factor: "2.0"
+      backoff-steps: "10"
+      backoff-cap: "15m"
+- op: add
+  path: /spec/pipeline/options/configMaps/git-resolver-config
+  value:
+    data:
+      fetch-timeout: "2m"
