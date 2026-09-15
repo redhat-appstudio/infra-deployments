@@ -57,6 +57,7 @@ config:
   connectors:
     spanmetrics/mttb:
       metrics_expiration: 1h
+      series_expiration: 1h
       histogram:
         unit: s
         explicit:
@@ -65,8 +66,6 @@ config:
         - name: namespace
         - name: cicd.pipeline.action.name
         - name: cicd.pipeline.result
-        - name: delivery.tekton.dev.application
-          default: unknown
       exemplars:
         enabled: true
       metrics_flush_interval: 30s
