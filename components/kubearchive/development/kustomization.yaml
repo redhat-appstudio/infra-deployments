@@ -254,9 +254,32 @@ patches:
                 securityContext:
                   readOnlyRootFilesystem: true
                   runAsNonRoot: true
+                startupProbe:
+                  httpGet:
+                    path: /livez
+                    port: 8081
+                    scheme: HTTPS
+                  periodSeconds: 5
+                  timeoutSeconds: 5
+                  failureThreshold: 30
+                livenessProbe:
+                  timeoutSeconds: 5
+                  periodSeconds: 10
+                  failureThreshold: 5
+                readinessProbe:
+                  timeoutSeconds: 5
+                  periodSeconds: 10
+                  failureThreshold: 3
+                # Raise CPU limit to eliminate CFS throttling of the HTTP/probe
+                # handlers during bursts (GOMAXPROCS is derived from limits.cpu).
                 resources:
                   limits:
+                    cpu: "1"
                     memory: 512Mi
+                  requests:
+                    cpu: 200m
+                    memory: 230Mi
+
   - patch: |-
       apiVersion: apps/v1
       kind: Deployment
