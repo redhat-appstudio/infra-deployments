@@ -110,8 +110,13 @@ patches:
     target:
       kind: ApplicationSet
       version: v1alpha1
-      name: knative-eventing
-  - path: development-overlay-patch.yaml
+      name: crossplane-control-plane
+  - path: delete-preserve-resources-flag-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: crossplane-control-plane
+  - path: dev-application-auto-sync-patch.yaml
     target:
       kind: ApplicationSet
       version: v1alpha1
@@ -142,6 +147,11 @@ patches:
       version: v1alpha1
       name: vector-tekton-logs-collector
   - path: development-overlay-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: kyverno
+  - path: dev-application-auto-sync-patch.yaml
     target:
       kind: ApplicationSet
       version: v1alpha1
