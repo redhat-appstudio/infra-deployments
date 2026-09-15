@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - base-snapshot
+  - external-secrets
+
+namespace: konflux-kite
+
+images:
+  - name: quay.io/konflux-ci/kite-prod
+    newTag: c3b0335fcec1a5d4fb4fa5cdf1de27bf74be2bd1
+  - name: quay.io/konflux-ci/kite-init
+    newTag: c3b0335fcec1a5d4fb4fa5cdf1de27bf74be2bd1
