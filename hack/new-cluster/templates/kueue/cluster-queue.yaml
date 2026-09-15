@@ -100,14 +100,14 @@ spec:
     - linux-extra-fast-amd64
     - linux-fast-amd64
     - linux-g64xlarge-amd64
+    - linux-g72xlarge-amd64
+    - linux-g74xlarge-amd64
     - linux-m2xlarge-amd64
     - linux-m2xlarge-arm64
     - linux-m4xlarge-amd64
     - linux-m4xlarge-arm64
     - linux-m8xlarge-amd64
     - linux-m8xlarge-arm64
-    - linux-mlarge-amd64
-    - linux-mlarge-arm64
     flavors:
     - name: platform-group-2
       resources:
@@ -127,6 +127,10 @@ spec:
         nominalQuota: '250'
       - name: linux-g64xlarge-amd64
         nominalQuota: '250'
+      - name: linux-g72xlarge-amd64
+        nominalQuota: '5'
+      - name: linux-g74xlarge-amd64
+        nominalQuota: '5'
       - name: linux-m2xlarge-amd64
         nominalQuota: '250'
       - name: linux-m2xlarge-arm64
@@ -139,11 +143,9 @@ spec:
         nominalQuota: '250'
       - name: linux-m8xlarge-arm64
         nominalQuota: '250'
-      - name: linux-mlarge-amd64
-        nominalQuota: '250'
-      - name: linux-mlarge-arm64
-        nominalQuota: '250'
   - coveredResources:
+    - linux-mlarge-amd64
+    - linux-mlarge-arm64
     - linux-mxlarge-amd64
     - linux-mxlarge-arm64
     - linux-ppc64le
@@ -158,6 +160,10 @@ spec:
     flavors:
     - name: platform-group-3
       resources:
+      - name: linux-mlarge-amd64
+        nominalQuota: '250'
+      - name: linux-mlarge-arm64
+        nominalQuota: '250'
       - name: linux-mxlarge-amd64
         nominalQuota: '250'
       - name: linux-mxlarge-arm64
