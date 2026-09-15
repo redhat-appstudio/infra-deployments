@@ -1,0 +1,73 @@
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: dr-backup
+spec:
+  params:
+  - name: TENANT_NAMESPACE
+    type: string
+  results:
+  - name: backup-name
+    description: The name of the Velero Backup CR created
+  steps:
+  - name: backup
+    image: quay.io/konflux-ci/tools@sha256:b846eb68ab06f4c61c987bd1053e0e2dda13e18ecd5a75c945a18f7d78743bd8
+    command: ["bash", "-eu", "-o", "pipefail", "-c"]
+    args:
+    - |
+      echo "=== DR Backup ==="
+      NS="$(params.TENANT_NAMESPACE)"
+      BACKUP_NAME="dr-sanity-backup-$(date +%Y%m%d%H%M%S)"
+
+      BSL=$(oc get backupstoragelocations -n openshift-adp -o jsonpath='{.items[0].metadata.name}')
+
+      cat <<BACKUP_EOF | oc apply -f -
+      apiVersion: velero.io/v1
+      kind: Backup
+      metadata:
+        name: $BACKUP_NAME
+        namespace: openshift-adp
+      spec:
+        includedNamespaces:
+        - $NS
+        includedResources:
+        - applications.appstudio.redhat.com
+        - components.appstudio.redhat.com
+        - environments.appstudio.redhat.com
+        - integrationtestscenarios.appstudio.redhat.com
+        - secrets
+        - snapshots.appstudio.redhat.com
+        - serviceaccounts
+        - rolebindings
+        - namespaces
+        - imagerepositories.appstudio.redhat.com
+        - repositories.pipelinesascode.tekton.dev
+        - releases.appstudio.redhat.com
+        - releaseplans.appstudio.redhat.com
+        - releaseplanadmissions.appstudio.redhat.com
+        storageLocation: $BSL
+      BACKUP_EOF
+      echo "Created Backup $BACKUP_NAME"
+
+      echo "Waiting for backup to complete..."
+      for i in $(seq 1 30); do
+        PHASE=$(oc get backup "$BACKUP_NAME" -n openshift-adp \
+          -o jsonpath='{.status.phase}' 2>/dev/null || echo "New")
+        if [ "$PHASE" = "Completed" ]; then
+          ITEMS=$(oc get backup "$BACKUP_NAME" -n openshift-adp \
+            -o jsonpath='{.status.progress.itemsBackedUp}' 2>/dev/null || echo "?")
+          echo "OK: Backup completed ($ITEMS items backed up)"
+          break
+        elif [ "$PHASE" = "Failed" ] || [ "$PHASE" = "PartiallyFailed" ]; then
+          echo "FAIL: Backup $BACKUP_NAME phase=$PHASE"
+          exit 1
+        fi
+        echo "  Backup phase: $PHASE (attempt $i/30)"
+        sleep 60
+      done
+
+      printf "%s" "$BACKUP_NAME" > "$(results.backup-name.path)"
+      echo "=== Backup PASSED ==="
+    computeResources: {}
+    timeout: "30m0s"
