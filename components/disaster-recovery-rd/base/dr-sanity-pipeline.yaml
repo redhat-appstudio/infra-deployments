@@ -1,0 +1,92 @@
+---
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: dr-sanity-pipeline
+spec:
+  params:
+  - name: TENANT_NAMESPACE
+    type: string
+    default: releng-test-product-tenant
+  - name: MANAGED_NAMESPACE
+    type: string
+    default: rhtap-releng-tenant
+  - name: COMPONENT_NAME
+    type: string
+    default: konflux-test-app
+  - name: APP_NAME
+    type: string
+    default: releng-test-app
+  - name: RELEASE_PLAN_NAME
+    type: string
+    default: releng-test-app-quay-release
+  tasks:
+  - name: preflight
+    taskRef:
+      kind: Task
+      name: dr-preflight
+    params:
+    - name: TENANT_NAMESPACE
+      value: $(params.TENANT_NAMESPACE)
+    - name: COMPONENT_NAME
+      value: $(params.COMPONENT_NAME)
+    - name: RELEASE_PLAN_NAME
+      value: $(params.RELEASE_PLAN_NAME)
+  - name: baseline-run
+    runAfter: ["preflight"]
+    taskRef:
+      kind: Task
+      name: dr-baseline-run
+    params:
+    - name: TENANT_NAMESPACE
+      value: $(params.TENANT_NAMESPACE)
+    - name: MANAGED_NAMESPACE
+      value: $(params.MANAGED_NAMESPACE)
+    - name: COMPONENT_NAME
+      value: $(params.COMPONENT_NAME)
+    - name: APP_NAME
+      value: $(params.APP_NAME)
+    - name: RELEASE_PLAN_NAME
+      value: $(params.RELEASE_PLAN_NAME)
+  - name: backup
+    runAfter: ["baseline-run"]
+    taskRef:
+      kind: Task
+      name: dr-backup
+    params:
+    - name: TENANT_NAMESPACE
+      value: $(params.TENANT_NAMESPACE)
+  - name: disaster-and-restore
+    runAfter: ["backup"]
+    taskRef:
+      kind: Task
+      name: dr-disaster-and-restore
+    params:
+    - name: TENANT_NAMESPACE
+      value: $(params.TENANT_NAMESPACE)
+    - name: BACKUP_NAME
+      value: $(tasks.backup.results.backup-name)
+  - name: post-restore-verify
+    runAfter: ["disaster-and-restore"]
+    taskRef:
+      kind: Task
+      name: dr-post-restore-verify
+    params:
+    - name: TENANT_NAMESPACE
+      value: $(params.TENANT_NAMESPACE)
+    - name: MANAGED_NAMESPACE
+      value: $(params.MANAGED_NAMESPACE)
+    - name: COMPONENT_NAME
+      value: $(params.COMPONENT_NAME)
+    - name: APP_NAME
+      value: $(params.APP_NAME)
+    - name: RELEASE_PLAN_NAME
+      value: $(params.RELEASE_PLAN_NAME)
+  finally:
+  - name: cleanup
+    taskRef:
+      kind: Task
+      name: dr-cleanup
+    params:
+    - name: TENANT_NAMESPACE
+      value: $(params.TENANT_NAMESPACE)
