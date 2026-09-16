@@ -1,0 +1,18 @@
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: run-disaster-recovery-pipeline
+spec:
+  resourcetemplates:
+  - apiVersion: tekton.dev/v1
+    kind: PipelineRun
+    metadata:
+      generateName: dr-sanity-pipeline-run-
+    spec:
+      pipelineRef:
+        name: dr-sanity-pipeline
+      taskRunTemplate:
+        serviceAccountName: dr-sanity-runner
+      timeouts:
+        pipeline: 3h
