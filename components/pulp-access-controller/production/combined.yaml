@@ -29,17 +29,21 @@ spec:
           properties:
             spec:
               type: object
-              required:
-                - credentialsSecretName
               properties:
                 credentialsSecretName:
                   type: string
                   description: |
                     Name of the secret containing authentication credentials.
-                    Supports two authentication methods:
-                    1. Certificate-based (mTLS): Secret should contain 'cert' or 'tls.crt' and 'key' or 'tls.key'
-                    2. Basic Auth: Secret should contain 'username' and 'password'
-                    If both are provided, certificate-based authentication takes precedence.
+                    Required when create_service_account is false. Supports certificate-based
+                    (mTLS) or Basic Auth credentials.
+                create_service_account:
+                  type: boolean
+                  description: |
+                    Create a TBR service account via the container-registry-authorizer API.
+                    Defaults to true when credentialsSecretName is omitted.
+                group_name:
+                  type: string
+                  description: Optional Pulp group name to associate with the created domain
                 use_quay_backend:
                   type: boolean
                   description: "Whether to configure Quay as the OCI backend storage for the domain (optional, defaults to false)"
@@ -67,7 +71,7 @@ spec:
                   description: "Name of the generated secret"
                 domain:
                   type: string
-                  description: "The auto-generated Pulp domain name (konflux-<namespace>)"
+                  description: "The Pulp domain name (konflux-<namespace>[-<suffix>], assigned once and never changed)"
                 domainCreated:
                   type: boolean
                   description: "Whether the Pulp domain was created"
@@ -77,6 +81,12 @@ spec:
                 quayBackendConfigured:
                   type: boolean
                   description: "Whether Quay backend storage was configured"
+                serviceAccountCreated:
+                  type: boolean
+                  description: "Whether the TBR service account was created"
+                serviceAccountName:
+                  type: string
+                  description: "The TBR service account name (matches the Pulp domain name)"
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -107,6 +117,10 @@ rules:
   - apiGroups: ["appstudio.redhat.com"]
     resources: ["imagerepositories"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["config.openshift.io"]
+    resources: ["clusterversions"]
+    resourceNames: ["version"]
+    verbs: ["get"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -173,7 +187,7 @@ spec:
          runAsNonRoot: true
       containers:
         - name: operator
-          image: quay.io/redhat-user-workloads/pulp-access-controller-tenant/pulp-access-controller-ca9ff:v1.1.1
+          image: quay.io/redhat-user-workloads/pulp-access-controller-tenant/pulp-access-controller-ca9ff:v1.2.0
           imagePullPolicy: Always
           securityContext:
             allowPrivilegeEscalation: false
