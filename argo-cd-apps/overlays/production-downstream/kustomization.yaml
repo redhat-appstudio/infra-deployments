@@ -386,3 +386,9 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: cert-manager-trusted-ca
+  # ROKS (hypershift) clusters — kubelet is managed by the platform
+  - path: exclude-kubelet-config-roks-clusters.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: kubelet-config
