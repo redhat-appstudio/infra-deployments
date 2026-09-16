@@ -146,11 +146,12 @@ update_repo_server_requests_and_timeout() {
     if kubectl patch argocd/openshift-gitops -n openshift-gitops -p '
 spec:
   repo:
+    replicas: 1
     env:
       - name: ARGOCD_EXEC_TIMEOUT
-        value: 5m
+        value: 15m
       - name: ARGOCD_REPO_SERVER_PARALLELISM_LIMIT
-        value: "20"
+        value: "25"
       - name: GOMEMLIMIT
         value: 6GiB
     resources:
@@ -160,7 +161,7 @@ spec:
       limits:
         memory: 8Gi
 ' --type=merge; then
-        log_success "Repo server configured: timeout=5m, parallelism=20, GOMEMLIMIT=6GiB, cpu=2, memory=2Gi/8Gi"
+        log_success "Repo server configured: timeout=15m, parallelism=25, GOMEMLIMIT=6GiB, cpu=2, memory=2Gi/8Gi"
     else
         log_warn "Failed to patch repo server configuration (may already be set)"
     fi

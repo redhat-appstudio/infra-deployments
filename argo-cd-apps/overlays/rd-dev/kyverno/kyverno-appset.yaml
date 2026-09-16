@@ -24,6 +24,19 @@ spec:
       name: kyverno-{{nameNormalized}}
     spec:
       project: default
+      ignoreDifferences:
+        - group: apiextensions.k8s.io
+          kind: CustomResourceDefinition
+          name: '*.kyverno.io'
+          jqPathExpressions:
+            - .spec
+            - .metadata.labels
+        - group: apiextensions.k8s.io
+          kind: CustomResourceDefinition
+          name: '*.wgpolicyk8s.io'
+          jqPathExpressions:
+            - .spec
+            - .metadata.labels
       source:
         path: '{{values.sourceRoot}}/rings/{{values.ring}}/{{values.clusterDir}}'
         repoURL: https://github.com/redhat-appstudio/infra-deployments.git
@@ -38,6 +51,7 @@ spec:
         syncOptions:
           - CreateNamespace=true
           - ServerSideApply=true
+          - RespectIgnoreDifferences=true
         retry:
           limit: -1
           backoff:
