@@ -938,23 +938,23 @@ data:
   {{- end }}
   {{ end }}
 
-  {{- if hasKey .Values.dynamicConfigs "linux-g72xlarge-amd64" }}
-  {{- $config := index .Values.dynamicConfigs "linux-g72xlarge-amd64" | default (dict) }}
-  dynamic.linux-g72xlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
-  dynamic.linux-g72xlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-g72xlarge-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
-  dynamic.linux-g72xlarge-amd64.instance-type: {{ (index $config "instance-type") | default "g7.2xlarge" | quote }}
-  dynamic.linux-g72xlarge-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
-  dynamic.linux-g72xlarge-amd64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
-  dynamic.linux-g72xlarge-amd64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
-  dynamic.linux-g72xlarge-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
-  dynamic.linux-g72xlarge-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
-  dynamic.linux-g72xlarge-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
-  dynamic.linux-g72xlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-g72xlarge" $environment) | quote }}
-  dynamic.linux-g72xlarge-amd64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
-  dynamic.linux-g72xlarge-amd64.allocation-timeout: "1200"
+  {{- if hasKey .Values.dynamicConfigs "linux-g52xlarge-amd64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-g52xlarge-amd64" | default (dict) }}
+  dynamic.linux-g52xlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-g52xlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-g52xlarge-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-g52xlarge-amd64.instance-type: {{ (index $config "instance-type") | default "g5.2xlarge" | quote }}
+  dynamic.linux-g52xlarge-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-g52xlarge-amd64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-g52xlarge-amd64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-g52xlarge-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-g52xlarge-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-g52xlarge-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-g52xlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-g52xlarge" $environment) | quote }}
+  dynamic.linux-g52xlarge-amd64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
+  dynamic.linux-g52xlarge-amd64.allocation-timeout: "1200"
   {{- if or (index $config "user-data") (.Files.Get "files/linux-g64xlarge-amd64-init.sh") }}
-  dynamic.linux-g72xlarge-amd64.user-data: |
+  dynamic.linux-g52xlarge-amd64.user-data: |
   {{- if (index $config "user-data") }}
   {{- $lines := splitList "\n" (index $config "user-data") }}
   {{- range $line := $lines }}
@@ -966,23 +966,23 @@ data:
   {{- end }}
   {{ end }}
 
-  {{- if hasKey .Values.dynamicConfigs "linux-g74xlarge-amd64" }}
-  {{- $config := index .Values.dynamicConfigs "linux-g74xlarge-amd64" | default (dict) }}
-  dynamic.linux-g74xlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
-  dynamic.linux-g74xlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
-  dynamic.linux-g74xlarge-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
-  dynamic.linux-g74xlarge-amd64.instance-type: {{ (index $config "instance-type") | default "g7.4xlarge" | quote }}
-  dynamic.linux-g74xlarge-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
-  dynamic.linux-g74xlarge-amd64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
-  dynamic.linux-g74xlarge-amd64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
-  dynamic.linux-g74xlarge-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
-  dynamic.linux-g74xlarge-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
-  dynamic.linux-g74xlarge-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
-  dynamic.linux-g74xlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-g74xlarge" $environment) | quote }}
-  dynamic.linux-g74xlarge-amd64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
-  dynamic.linux-g74xlarge-amd64.allocation-timeout: "1200"
+  {{- if hasKey .Values.dynamicConfigs "linux-g54xlarge-amd64" }}
+  {{- $config := index .Values.dynamicConfigs "linux-g54xlarge-amd64" | default (dict) }}
+  dynamic.linux-g54xlarge-amd64.type: {{ index $config "type" | default "aws" | quote }}
+  dynamic.linux-g54xlarge-amd64.region: {{ index $config "region" | default "us-east-1" | quote }}
+  dynamic.linux-g54xlarge-amd64.ami: {{ default (index $amd "ami") $config.ami | quote }}
+  dynamic.linux-g54xlarge-amd64.instance-type: {{ (index $config "instance-type") | default "g5.4xlarge" | quote }}
+  dynamic.linux-g54xlarge-amd64.key-name: {{ default (index $amd "key-name") ((index $config "key-name")) | quote }}
+  dynamic.linux-g54xlarge-amd64.aws-secret: {{ (index $config "aws-secret") | default "aws-account" | quote }}
+  dynamic.linux-g54xlarge-amd64.ssh-secret: {{ (index $config "ssh-secret") | default "aws-ssh-key" | quote }}
+  dynamic.linux-g54xlarge-amd64.security-group-id: {{ default (index $amd "security-group-id") ((index $config "security-group-id")) | quote }}
+  dynamic.linux-g54xlarge-amd64.max-instances: {{ (index $config "max-instances") | default "250" | quote }}
+  dynamic.linux-g54xlarge-amd64.subnet-id: {{ default (index $amd "subnet-id") ((index $config "subnet-id")) | quote }}
+  dynamic.linux-g54xlarge-amd64.instance-tag: {{ (index $config "instance-tag") | default (printf "%s-amd64-g54xlarge" $environment) | quote }}
+  dynamic.linux-g54xlarge-amd64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
+  dynamic.linux-g54xlarge-amd64.allocation-timeout: "1200"
   {{- if or (index $config "user-data") (.Files.Get "files/linux-g64xlarge-amd64-init.sh") }}
-  dynamic.linux-g74xlarge-amd64.user-data: |
+  dynamic.linux-g54xlarge-amd64.user-data: |
   {{- if (index $config "user-data") }}
   {{- $lines := splitList "\n" (index $config "user-data") }}
   {{- range $line := $lines }}
