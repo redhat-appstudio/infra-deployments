@@ -11,3 +11,14 @@ resources:
 
 generators:
 - alloy-helm-generator.yaml
+
+patches:
+- target:
+    group: policy
+    version: v1
+    kind: PodDisruptionBudget
+    name: alloy-poc
+  patch: |-
+    - op: add
+      path: /spec/unhealthyPodEvictionPolicy
+      value: AlwaysAllow
