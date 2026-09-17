@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: alloy-poc
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/name: alloy
+    app.kubernetes.io/part-of: alloy-poc
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: alloy-poc-cluster-monitoring-view
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/name: alloy
+    app.kubernetes.io/part-of: alloy-poc
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-monitoring-view
+subjects:
+- kind: ServiceAccount
+  name: alloy-poc
+  namespace: appstudio-alloy-poc

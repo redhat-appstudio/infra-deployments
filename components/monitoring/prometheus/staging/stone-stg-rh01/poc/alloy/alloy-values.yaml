@@ -1,0 +1,114 @@
+fullnameOverride: alloy-poc
+
+global:
+  podSecurityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+
+alloy:
+  configMap:
+    create: false
+    name: alloy-poc-config
+    key: config.alloy
+  clustering:
+    enabled: true
+    name: stone-stg-rh01-alloy-poc
+  enableReporting: false
+  storagePath: /tmp/alloy
+  extraArgs:
+  - --cluster.wait-for-size=2
+  - --cluster.wait-timeout=2m
+  mounts:
+    extra:
+    - name: service-ca
+      mountPath: /etc/pki/service-ca
+      readOnly: true
+  resources:
+    requests:
+      cpu: "1"
+      memory: 4Gi
+    limits:
+      memory: 16Gi
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+      - ALL
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+
+image:
+  tag: v1.19.2
+
+rbac:
+  create: false
+
+serviceAccount:
+  create: false
+  name: alloy-poc
+  automountServiceAccountToken: true
+
+configReloader:
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+      - ALL
+    runAsNonRoot: true
+    runAsUser: null
+    runAsGroup: null
+    seccompProfile:
+      type: RuntimeDefault
+
+controller:
+  type: statefulset
+  replicas: 3
+  parallelRollout: true
+  minReadySeconds: 10
+  terminationGracePeriodSeconds: 30
+  podLabels:
+    app.kubernetes.io/part-of: alloy-poc
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 2
+  autoscaling:
+    enabled: false
+    horizontal:
+      enabled: false
+    vertical:
+      enabled: false
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          topologyKey: kubernetes.io/hostname
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/part-of: alloy-poc
+  volumes:
+    extra:
+    - name: service-ca
+      configMap:
+        name: openshift-service-ca.crt
+        items:
+        - key: service-ca.crt
+          path: service-ca.crt
+  volumeClaimTemplates: []
+
+networkPolicy:
+  enabled: false
+
+service:
+  enabled: true
+  type: ClusterIP
+
+serviceMonitor:
+  enabled: false
+
+ingress:
+  enabled: false
