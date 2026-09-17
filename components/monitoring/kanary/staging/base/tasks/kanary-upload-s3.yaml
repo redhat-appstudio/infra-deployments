@@ -8,6 +8,10 @@ spec:
       type: string
     - name: test-type
       type: string
+    - name: loadtest-type
+      type: string
+      default: "run-probe"
+      description: "Loadtest type for S3 path prefix (run-probe or run-simple)"
     - name: s3-bucket
       type: string
       default: ""
@@ -26,6 +30,8 @@ spec:
           value: $(params.tested-cluster)
         - name: TEST_TYPE
           value: $(params.test-type)
+        - name: LOADTEST_TYPE
+          value: $(params.loadtest-type)
         - name: S3_BUCKET
           value: $(params.s3-bucket)
         - name: AWS_ACCESS_KEY_ID
@@ -66,8 +72,8 @@ spec:
         fi
 
         timestamp=$(date -u +%Y%m%dT%H%M%SZ)
-        tarball="/tmp/run-probe-${TESTED_CLUSTER}-${TEST_TYPE}-${timestamp}.tar.gz"
-        s3_key="run-probe/${TESTED_CLUSTER}/${TEST_TYPE}/run-probe-${TESTED_CLUSTER}-${TEST_TYPE}-${timestamp}.tar.gz"
+        tarball="/tmp/${LOADTEST_TYPE}-${TESTED_CLUSTER}-${TEST_TYPE}-${timestamp}.tar.gz"
+        s3_key="${LOADTEST_TYPE}/${TESTED_CLUSTER}/${TEST_TYPE}/${LOADTEST_TYPE}-${TESTED_CLUSTER}-${TEST_TYPE}-${timestamp}.tar.gz"
 
         # Remove the tarball on exit regardless of outcome.
         trap 'rm -f "${tarball}"' EXIT
