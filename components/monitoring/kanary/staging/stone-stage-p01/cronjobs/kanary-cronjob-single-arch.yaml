@@ -31,7 +31,7 @@ spec:
                 - /bin/bash
                 - -c
                 - |
-                  tkn pipeline start kanary-run-probe --use-param-defaults \
+                  tkn pipeline start kanary-run-probe --use-param-defaults --workspace name=artifacts,emptyDir="" \
                     --param tested-cluster=stone-stage-p01 \
                     --param test-type=container-single-arch \
                     --param component-repo=https://gitlab.cee.redhat.com/jhutar/nodejs-devfile-sample4 \

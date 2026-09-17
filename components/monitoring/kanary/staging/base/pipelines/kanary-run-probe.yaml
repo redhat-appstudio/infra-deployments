@@ -74,6 +74,8 @@ spec:
     - name: fork-repo-username
       type: string
       default: "jhutar"
+  workspaces:
+    - name: artifacts
   tasks:
     - name: run-kanary-tests
       timeout: "1h0m0s"
@@ -125,8 +127,24 @@ spec:
           value: $(params.fork-repo-host-and-path)
         - name: fork-repo-username
           value: $(params.fork-repo-username)
+      workspaces:
+        - name: artifacts
+          workspace: artifacts
+    - name: upload-artifacts
+      runAfter: [run-kanary-tests]
+      taskRef:
+        kind: Task
+        name: kanary-upload-s3
+      params:
+        - name: tested-cluster
+          value: $(params.tested-cluster)
+        - name: test-type
+          value: $(params.test-type)
         - name: s3-bucket
           value: $(params.s3-bucket)
+      workspaces:
+        - name: artifacts
+          workspace: artifacts
   finally:
     - name: push-kanary-metrics
       taskRef:
@@ -145,4 +163,4 @@ spec:
         - name: failure-phase
           value: $(tasks.run-kanary-tests.results.failure-phase)
         - name: s3-upload-failed
-          value: $(tasks.run-kanary-tests.results.s3-upload-failed)
+          value: $(tasks.upload-artifacts.results.s3-upload-failed)
