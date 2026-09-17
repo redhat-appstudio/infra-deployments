@@ -112,9 +112,9 @@ data:
       params            = { "match[]" = ["{__name__=~\".+\"}"] }
       bearer_token_file = "/var/run/secrets/kubernetes.io/serviceaccount/token"
       honor_labels      = true
-      honor_timestamps  = true
-      scrape_interval   = "30s"
-      scrape_timeout    = "25s"
+      honor_timestamps  = false
+      scrape_interval   = "60s"
+      scrape_timeout    = "55s"
       forward_to        = [prometheus.relabel.platform_normalize.receiver]
 
       tls_config {
@@ -136,9 +136,9 @@ data:
       params            = { "match[]" = ["{__name__=~\".+\"}"] }
       bearer_token_file = "/var/run/secrets/kubernetes.io/serviceaccount/token"
       honor_labels      = true
-      honor_timestamps  = true
-      scrape_interval   = "30s"
-      scrape_timeout    = "25s"
+      honor_timestamps  = false
+      scrape_interval   = "60s"
+      scrape_timeout    = "55s"
       forward_to        = [prometheus.relabel.user_workload_normalize.receiver]
 
       tls_config {
@@ -160,9 +160,9 @@ data:
       params            = { "match[]" = ["{__name__=~\".+\"}"] }
       bearer_token_file = "/var/run/secrets/kubernetes.io/serviceaccount/token"
       honor_labels      = true
-      honor_timestamps  = true
-      scrape_interval   = "30s"
-      scrape_timeout    = "25s"
+      honor_timestamps  = false
+      scrape_interval   = "60s"
+      scrape_timeout    = "55s"
       forward_to        = [prometheus.relabel.tekton_normalize.receiver]
 
       tls_config {
