@@ -1,0 +1,30 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: konflux-model-bot-actions
+rules:
+- apiGroups:
+  - appstudio.redhat.com
+  resources:
+  - applications
+  - components
+  - releaseplans
+  - componentgroups
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+- apiGroups:
+  - konflux-ci.dev
+  resources:
+  - componentgroups
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch

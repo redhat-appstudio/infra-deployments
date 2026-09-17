@@ -4,6 +4,29 @@ This is step 2 of 3 in automating the rollout of a new cluster.
 
 This automation creates yaml files in the infra-deployments repo locally.
 
+New clusters are bootstrapped with the **konflux-operator** overlay under
+`components/konflux-operator/rings/<ring>/<cluster>/`. Operator-owned legacy
+services (`application-api`, `build-service`, `enterprise-contract`,
+`image-controller`, `integration`, `konflux-info`, `konflux-rbac`,
+`konflux-ui`, `namespace-lister`, `release`) are **not** templated. The cluster
+is appended to `exclude-operator-owned-clusters.yaml` so those ApplicationSets
+do not generate for it.
+
+Public and private clusters both get the operator. Smee-client and webhook URL
+patches are generated only when `network` is `private`.
+
+Operator-first bootstrap requires `ring-1` with `env=staging` and `ring-2`
+with `env=production`. The playbook rejects other env/ring pairs. When later
+rings have operator bases, add them to `operator_rings_by_env` in
+`playbook.yaml`. The cluster is also appended to the konflux-operator
+ApplicationSet `nameNormalized In` selector in
+`argo-cd-apps/overlays/rd-<env>/konflux-operator/`.
+
+Staging and production both gate the operator with that `In` selector (staging
+no longer uses `internal-only`). Existing operator clusters stay listed there;
+other tenants do not get the operator until a playbook run (or a manual add)
+includes them.
+
 ## Prerequisite
 
 1. The cluster-layer terraform automation has been run, and the new cluster is up. This entails that the AWS, IBM, and database secrets have been provisioned and injected into vault in the correct paths. This automation will verify that before proceeding.
@@ -22,7 +45,9 @@ This automation creates yaml files in the infra-deployments repo locally.
 * `cutename` - Example: `rh09`
 * `env` - One of `production` or `staging`.
 * `network` - One of `public` or `private`.
-* `ring` - One of `ring-1`, `ring-2`, `ring-3`, or `ring-4`
+* `ring` - `ring-1` when `env=staging`, `ring-2` when `env=production`.
+  Other combinations fail. `ring-3` and `ring-4` are listed for later
+  operator bases; they fail until added to `operator_rings_by_env`.
 * `awsaccount` - The 12-digit AWS account ID for the cluster
 
 4. You are connected to the VPN.
@@ -52,7 +77,7 @@ If you do not want to run all steps, but only a subset **you can use tags** to r
 If you don't want to specify the variables at prompts, you can **specify variables when invoking the CLI**, like this:
 
 ```
-❯ ansible-playbook hack/new-cluster/playbook.yaml -e 'cutename=rh09 shortname=kflux-prd-rh09 longname=kflux-prd-rh09.abe9.p1 ring=ring-3 env=production network=public awsaccount=123456789000'
+❯ ansible-playbook hack/new-cluster/playbook.yaml -e 'cutename=rh09 shortname=kflux-prd-rh09 longname=kflux-prd-rh09.abe9.p1 ring=ring-2 env=production network=public awsaccount=123456789000'
 ```
 
 If you are **nervous about drift** between the current application manifests and those produced by this automation, you can inspect the different by running this automation and requesting it to produce the config **for an existing cluster**, and then investigate what changes it may have made by looking at `git diff`, like this.

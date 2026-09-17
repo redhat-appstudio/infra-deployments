@@ -60,27 +60,28 @@
       - ring-2
       - ring-3
       - ring-4
+    # Operator-first bootstrap: env must use a ring that has a matching
+    # konflux-operator base (staging URLs vs production URLs). Extend the
+    # lists when later rings get operator bases.
+    operator_rings_by_env:
+      staging:
+        - ring-1
+      production:
+        - ring-2
     allowed_networks:
       - public
       - private
 
     templated_components:
       - backup
-      - build-service
       - cert-manager
       - cost-management
-      - integration
       - image-rbac-proxy
       - knative-eventing
-      - konflux-info
       - konflux-kite
-      - konflux-rbac
-      - konflux-ui
       - kubearchive
-      - kueue
       - kyverno
       - mintmaker
-      - namespace-lister
       - pipeline-service
       - policies
       - smee-client
@@ -89,6 +90,8 @@
     templated_rd_components:
       - authentication
       - etcd-shield
+      - konflux-operator
+      - kueue
       - multi-platform-controller
 
     templated_configs:
@@ -96,20 +99,13 @@
     - proactive-scaler
 
     argo_cd_app_files:
-      - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/build-service/build-service.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/cert-manager/cert-manager.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/etcd-defrag/etcd-defrag.yaml"
-      - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/integration/integration.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/image-rbac-proxy/image-rbac-proxy.yaml"
-      - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/konflux-info/konflux-info.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/konflux-kite/konflux-kite.yaml"
-      - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/konflux-rbac/konflux-rbac.yaml"
-      - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/konflux-ui/konflux-ui.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/kubearchive/kubearchive.yaml"
-      - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/kueue/kueue.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/kyverno/kyverno.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/mintmaker/mintmaker.yaml"
-      - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/namespace-lister/namespace-lister.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/pipeline-service/pipeline-service.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/policies/policies.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/proactive-scaler/proactive-scaler.yaml"
@@ -185,12 +181,17 @@
       tags: [applicationsets]
       include_tasks: tasks/k-components.yaml
 
+    - name: Wire konflux-operator (exclude legacy services, onboard operator AppSet)
+      tags: [applicationsets]
+      include_tasks: tasks/konflux-operator.yaml
+
     - name: Copy cluster-specific component manifests
       tags: [components]
       include_tasks: tasks/components.yaml
       loop: "{{ templated_components }}"
       loop_control:
         loop_var: component
+      when: component != 'smee-client' or network == 'private'
 
     - name: Copy cluster-specific ring-deployment component manifests
       tags: [components]

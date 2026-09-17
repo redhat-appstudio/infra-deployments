@@ -6,7 +6,9 @@
     sourceLabels: [__name__]
     # Remote-write only Prometheus status metrics to RHOBS so service-level
     # alerts do not fire for this Lightwell cluster (PVO11Y-5532).
-    regex: prometheus_.+|promhttp_.+
+    # Cardinality exporter metrics are also forwarded for cardinality
+    # analysis of this cluster's Prometheus instances (PVO11Y-5536).
+    regex: prometheus_.+|promhttp_.+|cardinality_exporter_.+
   - action: LabelKeep
     # Labels allowlisted for remote-write to RHOBS.
     # Each line in the regex below corresponds to one group.
