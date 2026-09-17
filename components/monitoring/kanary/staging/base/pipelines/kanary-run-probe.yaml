@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
-  name: kanary-otel-poc
+  name: kanary-run-probe
 spec:
   params:
     - name: otel-endpoint
@@ -79,7 +79,7 @@ spec:
       timeout: "1h0m0s"
       taskRef:
         kind: Task
-        name: run-kanary-tests
+        name: kanary-run-probe
       params:
         - name: tested-cluster
           value: $(params.tested-cluster)
@@ -130,7 +130,7 @@ spec:
   finally:
     - name: push-kanary-metrics
       taskRef:
-        name: push-kanary-metrics
+        name: kanary-push-metrics
       params:
         - name: otel-endpoint
           value: $(params.otel-endpoint)
