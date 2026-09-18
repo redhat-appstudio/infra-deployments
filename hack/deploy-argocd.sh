@@ -149,12 +149,18 @@ spec:
     env:
       - name: ARGOCD_EXEC_TIMEOUT
         value: 5m
+      - name: ARGOCD_REPO_SERVER_PARALLELISM_LIMIT
+        value: "20"
+      - name: GOMEMLIMIT
+        value: 6GiB
     resources:
       requests:
-        cpu: 100m
-        memory: 100Mi
+        cpu: "2"
+        memory: 2Gi
+      limits:
+        memory: 8Gi
 ' --type=merge; then
-        log_success "Repo server configured: timeout=5m, cpu=100m, memory=100Mi"
+        log_success "Repo server configured: timeout=5m, parallelism=20, GOMEMLIMIT=6GiB, cpu=2, memory=2Gi/8Gi"
     else
         log_warn "Failed to patch repo server configuration (may already be set)"
     fi

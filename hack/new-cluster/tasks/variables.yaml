@@ -41,6 +41,26 @@
   fail:
     msg: "Variable 'network' must be one of {{allowed_networks}}, not {{network}}"
   when: "vars['network'] not in vars['allowed_networks']"
+- name: Fail if ring is not valid for this environment
+  tags: [always]
+  fail:
+    msg: >-
+      Operator-first bootstrap requires ring-1 for staging and ring-2 for
+      production (got env={{ env }} ring={{ ring }}). Supported rings for
+      {{ env }}: {{ operator_rings_by_env[env] | join(', ') }}.
+  when: ring not in operator_rings_by_env[env]
+- name: Check that konflux-operator ring base exists
+  tags: [always]
+  stat:
+    path: "{{ dst }}/components/konflux-operator/rings/{{ ring }}/base"
+  register: konflux_operator_ring_base
+- name: Fail if konflux-operator has no base for this ring
+  tags: [always]
+  fail:
+    msg: >-
+      konflux-operator has no rings/{{ ring }}/base. Add the ring to
+      operator_rings_by_env in playbook.yaml only after that base exists.
+  when: not konflux_operator_ring_base.stat.exists
 - name: Determine the latest github commits
   tags: [always]
   include_tasks: tasks/github/find-latest-commits.yaml

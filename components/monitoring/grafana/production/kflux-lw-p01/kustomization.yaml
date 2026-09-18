@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../base
+  - ../tekton-ms-datasource
+patches:
+  - path: ibm-o11y-admins-subject-patch.yaml
+    target:
+      name: all-access-appstudio-grafana
+      kind: RoleBinding
+      group: rbac.authorization.k8s.io
+      version: v1

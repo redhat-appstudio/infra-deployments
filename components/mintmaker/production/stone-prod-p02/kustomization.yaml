@@ -2,6 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
 - ../base
+- create-dependency-update-check-ansible-tenant.yaml
 namespace: mintmaker
 patches:
   - path: pipelines-as-code-secret-path.yaml

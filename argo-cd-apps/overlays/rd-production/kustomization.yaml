@@ -3,12 +3,16 @@ kind: Kustomization
 namespace: argocd-infra-deployments
 
 resources:
+  - artifact-registry-proxy
   - authentication
+  - container-image-proxy
   - etcd-defrag
   - etcd-shield
+  - external-secrets-operator
   - konflux-operator
   - kueue
   - multi-platform-controller
+  - repository-validator
 
 components:
   - ../../k-components/deploy-to-all-production-clusters

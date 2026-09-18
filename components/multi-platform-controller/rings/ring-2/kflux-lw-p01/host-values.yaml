@@ -1,10 +1,9 @@
 environment: production
 
-#localPlatforms:
-#  - "linux/amd64"
-#  - "linux/x86_64"
-#  - "local"
-#  - "localhost"
+localPlatforms:
+  - "linux/x86_64"
+  - "local"
+  - "localhost"
 
 instanceTag: "lw-p01"
 
@@ -14,15 +13,15 @@ additionalInstanceTags:
 archDefaults:
   arm64:
     ami: "ami-06f37afe6d4f43c47"
-    key-name: "kflux-lwp01-key-pair"
-    security-group-id: "SG_ID"
-    subnet-id: "SUBNET_ID"
+    key-name: "aws-ssh-key"
+    security-group-id: "sg-0e908ebe99d326f0c"
+    subnet-id: "subnet-07e9ae539ece248ce"
 
   amd64:
     ami: "ami-01aaf1c29c7e0f0af"
-    key-name: "kflux-lwp01-key-pair"
-    security-group-id: "SG_ID"
-    subnet-id: "SUBNET_ID"
+    key-name: "aws-ssh-key"
+    security-group-id: "sg-0e908ebe99d326f0c"
+    subnet-id: "subnet-07e9ae539ece248ce"
 
 dynamicConfigs:
   linux-arm64: {}

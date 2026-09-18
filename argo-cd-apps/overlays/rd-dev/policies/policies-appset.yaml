@@ -1,6 +1,12 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
+  # policies needs to be installed after
+  # * Kueue
+  # * Kyverno
+  # * pipeline-service
+  annotations:
+    argocd.argoproj.io/sync-wave: "25"
   name: policies-rd
 spec:
   generators:
