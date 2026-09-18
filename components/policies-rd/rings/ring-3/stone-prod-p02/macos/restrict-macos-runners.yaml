@@ -1,0 +1,38 @@
+---
+# TODO: move to k8s validating admission policies when
+# https://github.com/kubernetes/kubernetes/issues/133827 is resolved
+apiVersion: policies.kyverno.io/v1alpha1
+kind: ValidatingPolicy
+metadata:
+  name: restrict-macos-namespaces
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: ['tekton.dev']
+        apiVersions: ['v1']
+        operations: ['CREATE', 'UPDATE']
+        resources: ['pipelineruns']
+    namespaceSelector:
+      matchLabels:
+        konflux-ci.dev/type: tenant
+  variables:
+    - name: annotationName
+      expression: '"kueue.konflux-ci.dev/requests-macos-mac2metal-arm64"'
+    - name: isRestrictedNamespace
+      expression: |
+        resource.Get("v1", "configmaps", "konflux-policies", "macos-allowlist").data.namespaces.split('\n').all(n, n != object.metadata.namespace)
+    - name: isRestrictedPlatform
+      expression: |
+        has(object.metadata.annotations) &&
+          object.metadata.annotations.exists(k, k == variables.annotationName) ?
+          int(object.metadata.annotations[variables.annotationName]) > 0 : false
+  validations:
+    - messageExpression: "'namespace ' + object.metadata.namespace + ' is not allowed to acquire macos runners'"
+      expression: |
+        !(variables.isRestrictedPlatform && variables.isRestrictedNamespace)
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: konflux-policies
