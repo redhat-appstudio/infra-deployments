@@ -1,9 +1,10 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: external-secrets-operator
+  name: notification-controller
   labels:
-    appstudio.redhat.com/deployment-clusters: "all"
+    appstudio.redhat.com/internal-only: "true"
+    appstudio.redhat.com/deployment-clusters: "tenant"
 spec:
   generators:
     - merge:
@@ -18,14 +19,14 @@ spec:
                   - key: appstudio.redhat.com/select-none
                     operator: DoesNotExist
               values:
-                sourceRoot: components/external-secrets-operator
+                sourceRoot: components/notification-controller-rd
                 ring: "empty-base"
                 clusterDir: "empty-base"
           - list:
               elements: [] # Populated via k-components
   template:
     metadata:
-      name: external-secrets-operator-{{nameNormalized}}
+      name: notification-controller-{{nameNormalized}}
     spec:
       project: default
       source:
@@ -33,15 +34,14 @@ spec:
         repoURL: https://github.com/redhat-appstudio/infra-deployments.git
         targetRevision: main
       destination:
-        namespace: external-secrets-operator
+        namespace: notification-controller
         server: '{{server}}'
       syncPolicy:
-        automated:
-          prune: true
-          selfHeal: true
+        # automated:
+        #   prune: true
+        #   selfHeal: true
         syncOptions:
           - CreateNamespace=true
-          - ServerSideApply=true
         retry:
           limit: 50
           backoff:
