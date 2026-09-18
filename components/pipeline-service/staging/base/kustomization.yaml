@@ -12,5 +12,33 @@ resources:
   - pipelines-as-code-secret.yaml
   - ../../base/external-secrets
   - ../../base/testing
-  - ../../base/rbac
+  - ../../base/rbac/cluster-role
+  - ../../base/rbac/openshift-pipelines
+  - ../../base/rbac/tekton-logging
   - ../../base/certificates
+
+patches:
+  - target:
+      kind: ExternalSecret
+      name: tekton-results-database
+      namespace: tekton-results
+    patch: |
+      - op: replace
+        path: /metadata/namespace
+        value: openshift-pipelines
+  - target:
+      kind: ExternalSecret
+      name: tekton-results-s3
+      namespace: tekton-results
+    patch: |
+      - op: replace
+        path: /metadata/namespace
+        value: openshift-pipelines
+  - target:
+      kind: ConfigMap
+      name: rds-root-crt
+      namespace: tekton-results
+    patch: |
+      - op: replace
+        path: /metadata/namespace
+        value: openshift-pipelines
