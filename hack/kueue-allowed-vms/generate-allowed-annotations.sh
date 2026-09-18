@@ -61,8 +61,12 @@ main() {
       ["components/kueue/rings/ring-2/kflux-lw-p01"]="components/policies/production/kflux-lw-p01/kueue/deny-unallowed-annotations/"
       ["components/kueue/rings/ring-2/kflux-ocp-p01"]="components/policies/production/kflux-ocp-p01/kueue/deny-unallowed-annotations/"
       ["components/kueue/rings/ring-2/kflux-osp-p01"]="components/policies/production/kflux-osp-p01/kueue/deny-unallowed-annotations/"
+      ["components/kueue/rings/ring-2/kflux-prd-rh03"]="components/policies/production/kflux-prd-rh03/kueue/deny-unallowed-annotations/"
       ["components/kueue/rings/ring-2/kflux-rhel-p01"]="components/policies/production/kflux-rhel-p01/kueue/deny-unallowed-annotations/"
       ["components/kueue/rings/ring-2/stone-prod-p01"]="components/policies/production/stone-prod-p01/kueue/deny-unallowed-annotations/"
+      ["components/kueue/rings/ring-3/stone-prd-rh01"]="components/policies/production/stone-prd-rh01/kueue/deny-unallowed-annotations/"
+      ["components/kueue/rings/ring-3/stone-prod-p02"]="components/policies/production/stone-prod-p02/kueue/deny-unallowed-annotations/"
+      ["components/kueue/rings/ring-4/kflux-prd-rh02"]="components/policies/production/kflux-prd-rh02/kueue/deny-unallowed-annotations/"
   )
 
   # Ring-level chainsaw test fixture destinations.
@@ -77,8 +81,12 @@ main() {
       ["components/kueue/rings/ring-2/kflux-lw-p01"]="components/policies/production/kflux-lw-p01/kueue/deny-unallowed-annotations/.chainsaw-test/resources/"
       ["components/kueue/rings/ring-2/kflux-ocp-p01"]="components/policies/production/kflux-ocp-p01/kueue/deny-unallowed-annotations/.chainsaw-test/resources/"
       ["components/kueue/rings/ring-2/kflux-osp-p01"]="components/policies/production/kflux-osp-p01/kueue/deny-unallowed-annotations/.chainsaw-test/resources/"
+      ["components/kueue/rings/ring-2/kflux-prd-rh03"]="components/policies/production/kflux-prd-rh03/kueue/deny-unallowed-annotations/.chainsaw-test/resources/"
       ["components/kueue/rings/ring-2/kflux-rhel-p01"]="components/policies/production/kflux-rhel-p01/kueue/deny-unallowed-annotations/.chainsaw-test/resources/"
       ["components/kueue/rings/ring-2/stone-prod-p01"]="components/policies/production/stone-prod-p01/kueue/deny-unallowed-annotations/.chainsaw-test/resources/"
+      ["components/kueue/rings/ring-3/stone-prd-rh01"]="components/policies/production/stone-prd-rh01/kueue/deny-unallowed-annotations/.chainsaw-test/resources/"
+      ["components/kueue/rings/ring-3/stone-prod-p02"]="components/policies/production/stone-prod-p02/kueue/deny-unallowed-annotations/.chainsaw-test/resources/"
+      ["components/kueue/rings/ring-4/kflux-prd-rh02"]="components/policies/production/kflux-prd-rh02/kueue/deny-unallowed-annotations/.chainsaw-test/resources/"
   )
 
   # Update per-cluster ConfigMaps

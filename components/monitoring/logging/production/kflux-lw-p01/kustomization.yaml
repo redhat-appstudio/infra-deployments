@@ -4,3 +4,10 @@ resources:
 - openshift-logging-ns.yaml
 - ../base
 - ../../base/logging-operator-prerequisite
+patches:
+  - path: ibm-o11y-admins-subject-patch.yaml
+    target:
+      name: all-access-openshift-logging
+      kind: RoleBinding
+      group: rbac.authorization.k8s.io
+      version: v1

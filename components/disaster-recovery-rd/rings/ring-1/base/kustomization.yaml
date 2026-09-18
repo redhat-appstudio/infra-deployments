@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: konflux-disaster-recovery
+
+resources:
+- base-snapshot
+- cronjob.yaml
+- event-listener.yaml
+- localqueue.yaml
+- allow-el-from-ns-np.yaml
+- dr-sanity-runner-crb.yaml
+- triggers-rbac.yaml
+- trigger-binding.yaml
+- trigger-template.yaml
