@@ -1,5 +1,8 @@
 fullnameOverride: alloy-poc
 
+crds:
+  create: false
+
 global:
   podSecurityContext:
     runAsNonRoot: true
@@ -75,20 +78,11 @@ configReloader:
 controller:
   type: statefulset
   replicas: 3
-  parallelRollout: true
-  minReadySeconds: 10
-  terminationGracePeriodSeconds: 30
   podLabels:
     app.kubernetes.io/part-of: alloy-poc
   podDisruptionBudget:
     enabled: true
     minAvailable: 2
-  autoscaling:
-    enabled: false
-    horizontal:
-      enabled: false
-    vertical:
-      enabled: false
   affinity:
     podAntiAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:
@@ -117,15 +111,5 @@ controller:
         requests:
           storage: 5Gi
 
-networkPolicy:
-  enabled: false
-
 service:
   enabled: true
-  type: ClusterIP
-
-serviceMonitor:
-  enabled: false
-
-ingress:
-  enabled: false
