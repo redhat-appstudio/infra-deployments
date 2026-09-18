@@ -9,8 +9,9 @@ resources:
   - ../../base/smee-client
   - ../../base/ca-bundle
   - ../../base/cert-manager-trusted-ca
-  - ../../base/repository-validator
   - ../../base/cluster-secret-store-rh
+  - ../../base/repository-validator
+
 patchesStrategicMerge:
   - delete-applications.yaml
 namespace: argocd
@@ -105,11 +106,6 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: ca-bundle
-  - path: production-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: repository-validator
   - path: production-overlay-patch.yaml
     target:
       kind: ApplicationSet
