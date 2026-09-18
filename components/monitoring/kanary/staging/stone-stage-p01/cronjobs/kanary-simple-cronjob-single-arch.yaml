@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: kanary-trigger-single-arch
+  name: kanary-simple-trigger-single-arch
 spec:
   schedule: "0,30 * * * *"
   concurrencyPolicy: Forbid
@@ -9,7 +9,7 @@ spec:
   failedJobsHistoryLimit: 3
   jobTemplate:
     spec:
-      activeDeadlineSeconds: 3000
+      activeDeadlineSeconds: 1800
       template:
         spec:
           serviceAccountName: kanary-cronjob
@@ -31,18 +31,13 @@ spec:
                 - /bin/bash
                 - -c
                 - |
-                  tkn pipeline start kanary-run-probe --use-param-defaults --workspace name=artifacts,emptyDir="" \
+                  tkn pipeline start kanary-run-simple --use-param-defaults --workspace name=artifacts,emptyDir="" \
                     --param tested-cluster=stone-stage-p01 \
                     --param test-type=container-single-arch \
-                    --param component-repo=https://gitlab.cee.redhat.com/jhutar/nodejs-devfile-sample4 \
-                    --param user-prefix=stagep01cs \
-                    --param quay-repo=redhat-user-workloads-stage \
-                    --param pipeline-repo-templating-source=https://github.com/rhtap-perf-test/konflux-probe-test-templates \
-                    --param pipeline-repo-templating-source-dir=nodejs-devfile-sample-SingleArch/ \
-                    --param oci-storage=quay.io/rhtap-perf-test/perf-release-service-trusted-artifacts-stage \
-                    --param release-pipeline-service-account=managed-konflux-perfscale-sa \
-                    --param fork-target=jhutar \
-                    --param gitlab-api-url=https://gitlab.cee.redhat.com/api/v4 \
                     --param member-cluster=https://api.stone-stage-p01.hpmt.p1.openshiftapps.com:6443 \
+                    --param tenant-namespace=konflux-perfscale-3-tenant \
+                    --param application-name=myapp \
+                    --param component-name=mycomp \
+                    --param release-plan-name=myrp \
                     --param s3-bucket=konflux-perfscale-artifacts \
-                    --prefix-name kanary-stone-stage-p01-single-arch-
+                    --prefix-name kanary-simple-stone-stage-p01-single-arch-
