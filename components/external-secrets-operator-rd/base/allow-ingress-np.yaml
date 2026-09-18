@@ -42,7 +42,7 @@ spec:
 # Port: 8080 (metrics endpoint)
 #
 # Allows traffic from:
-#   - appstudio-workload-monitoring namespace
+#   - openshift-user-workload-monitoring namespace
 #   - openshift-monitoring namespace
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -61,7 +61,7 @@ spec:
     # Allow Prometheus to scrape metrics
     - namespaceSelector:
         matchLabels:
-          kubernetes.io/metadata.name: appstudio-workload-monitoring
+          kubernetes.io/metadata.name: openshift-user-workload-monitoring
     # Also allow from openshift-monitoring if it exists
     - namespaceSelector:
         matchLabels:
