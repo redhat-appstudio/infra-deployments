@@ -1,0 +1,115 @@
+fullnameOverride: alloy-poc
+
+crds:
+  create: false
+
+global:
+  podSecurityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+
+alloy:
+  configMap:
+    create: false
+    name: alloy-poc-config
+    key: config.alloy
+  clustering:
+    enabled: true
+    name: stone-stg-rh01-alloy-poc
+  enableReporting: false
+  storagePath: /var/lib/alloy
+  extraArgs:
+  - --cluster.wait-for-size=3
+  - --cluster.wait-timeout=5m
+  mounts:
+    extra:
+    - name: service-ca
+      mountPath: /etc/pki/service-ca
+      readOnly: true
+    - name: alloy-data
+      mountPath: /var/lib/alloy
+  resources:
+    requests:
+      cpu: "1"
+      memory: 4Gi
+    limits:
+      memory: 16Gi
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+      - ALL
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+
+image:
+  tag: v1.19.2
+
+rbac:
+  create: false
+
+serviceAccount:
+  create: false
+  name: alloy-poc
+  automountServiceAccountToken: true
+
+configReloader:
+  resources:
+    requests:
+      cpu: 10m
+      memory: 50Mi
+    limits:
+      memory: 128Mi
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+      - ALL
+    runAsNonRoot: true
+    runAsUser: null
+    runAsGroup: null
+    seccompProfile:
+      type: RuntimeDefault
+
+controller:
+  type: statefulset
+  replicas: 3
+  podLabels:
+    app.kubernetes.io/part-of: alloy-poc
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 2
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          topologyKey: kubernetes.io/hostname
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/part-of: alloy-poc
+  volumes:
+    extra:
+    - name: service-ca
+      configMap:
+        name: openshift-service-ca.crt
+        items:
+        - key: service-ca.crt
+          path: service-ca.crt
+  volumeClaimTemplates:
+  - metadata:
+      name: alloy-data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      storageClassName: gp3
+      resources:
+        requests:
+          storage: 5Gi
+
+service:
+  enabled: true
