@@ -1,0 +1,367 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: kanary-run-probe
+spec:
+  params:
+    - name: tested-cluster
+      type: string
+    - name: test-type
+      type: string
+      default: container-single-arch
+    - name: component-repo
+      type: string
+    - name: user-prefix
+      type: string
+    - name: quay-repo
+      type: string
+    - name: pipeline-repo-templating-source
+      type: string
+      default: "https://github.com/rhtap-perf-test/konflux-probe-test-templates"
+    - name: pipeline-repo-templating-source-dir
+      type: string
+      default: "nodejs-devfile-sample-SingleArch/"
+    - name: release-pipeline-service-account
+      type: string
+      default: "managed-konflux-perfscale-sa"
+    - name: release-managed-namespace
+      type: string
+      default: "managed-konflux-perfscale-tenant"
+    - name: oci-storage
+      type: string
+    # Private clusters only (GitLab-based repos). Leave empty for public clusters.
+    - name: fork-target
+      type: string
+      default: ""
+    - name: gitlab-api-url
+      type: string
+      default: ""
+    - name: member-cluster
+      type: string
+    - name: tenant-namespace
+      type: string
+      default: "konflux-perfscale-4-tenant"
+    # RPM test type only. Leave empty for container test types.
+    - name: component-repo-revision
+      type: string
+      default: ""
+    - name: pipeline-image-pull-secrets
+      type: string
+      default: ""
+    - name: test-scenario-git-url
+      type: string
+      default: ""
+    - name: release-policy
+      type: string
+      default: "tmp-onboard-policy"
+    # RPM mirror workaround only. Leave empty for container test types.
+    - name: upstream-repo-url
+      type: string
+      default: ""
+    - name: upstream-repo-branch
+      type: string
+      default: ""
+    - name: fork-repo-host-and-path
+      type: string
+      default: ""
+    - name: fork-repo-username
+      type: string
+      default: "jhutar"
+  results:
+    - name: test-outcome
+      description: "Test outcome: passed, failed, or unknown"
+    - name: failure-cause
+      description: "Error cause from loadtest error_caused_by_simple (comma-separated if multiple). Empty on pass or when collect-results did not run."
+    - name: failure-phase
+      description: "Loadtest phase where the earliest failure occurred (e.g. waitForImageRepositoryReady). Empty on pass or when collect-results did not run."
+  workspaces:
+    - name: artifacts
+      description: "Shared workspace for test artifacts"
+  volumes:
+    - name: artifacts-tmp
+      emptyDir: {}
+    - name: users-secret
+      secret:
+        secretName: kanary-probe-users-credentials
+        items:
+          - key: token
+            path: token
+  steps:
+    - name: pre-cleanup
+      image: quay.io/redhat-user-workloads/konflux-perfscale-tenant/loadtest
+      volumeMounts:
+        - name: users-secret
+          mountPath: /opt/users-secret
+          readOnly: true
+      env:
+        - name: SERVER_API_URL
+          value: $(params.member-cluster)
+        - name: TENANT_NAMESPACE
+          value: $(params.tenant-namespace)
+        - name: RELEASE_MANAGED_NAMESPACE
+          value: $(params.release-managed-namespace)
+        - name: RELEASE_MANAGED_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: kanary-probe-prometheus-credentials
+              key: managed_sa_token
+      script: |
+        #!/usr/bin/env bash
+        set -u
+        MAX_AGE_SECONDS=43200
+        echo "Pre-cleanup: removing orphaned resources older than $((MAX_AGE_SECONDS / 3600))h"
+        if ! oc login --token="$(cat /opt/users-secret/token)" --server="$SERVER_API_URL" --insecure-skip-tls-verify; then
+          echo "WARNING: failed to login as tenant SA, skipping tenant cleanup"
+        else
+          for resource in ReleasePlan IntegrationTestScenario Application ImageRepository; do
+            names=$(oc -n "$TENANT_NAMESPACE" get "$resource" -o json 2>/dev/null \
+              | jq -r --argjson max "$MAX_AGE_SECONDS" '.items[] | select((now - (.metadata.creationTimestamp | fromdateiso8601)) > $max) | .metadata.name')
+            if [[ -n "$names" ]]; then
+              count=$(echo "$names" | wc -l)
+              echo "Deleting $count orphaned $resource in $TENANT_NAMESPACE:"
+              echo "$names" | sed 's/^/  /'
+              oc -n "$TENANT_NAMESPACE" delete "$resource" $names --wait=false
+            fi
+          done
+        fi
+        if ! oc login --token="$RELEASE_MANAGED_TOKEN" --server="$SERVER_API_URL" --insecure-skip-tls-verify; then
+          echo "WARNING: failed to login as managed SA, skipping RPA cleanup"
+        else
+          names=$(oc -n "$RELEASE_MANAGED_NAMESPACE" get ReleasePlanAdmission -o json \
+            | jq -r --arg ns "$TENANT_NAMESPACE" --argjson max "$MAX_AGE_SECONDS" '.items[] | select(.spec.origin == $ns) | select((now - (.metadata.creationTimestamp | fromdateiso8601)) > $max) | .metadata.name')
+          if [[ -n "$names" ]]; then
+            count=$(echo "$names" | wc -l)
+            echo "Deleting $count orphaned ReleasePlanAdmission in $RELEASE_MANAGED_NAMESPACE:"
+            echo "$names" | sed 's/^/  /'
+            oc -n "$RELEASE_MANAGED_NAMESPACE" delete ReleasePlanAdmission $names --wait=false
+          fi
+        fi
+        echo "Pre-cleanup done"
+    - name: mirror-rpm-repo
+      when:
+        - input: "$(params.test-type)"
+          operator: in
+          values: ["rpm"]
+      image: quay.io/redhat-user-workloads/konflux-perfscale-tenant/loadtest
+      volumeMounts:
+        - name: artifacts-tmp
+          mountPath: /tmp/artifacts
+      env:
+        - name: UPSTREAM_REPO_URL
+          value: $(params.upstream-repo-url)
+        - name: UPSTREAM_REPO_BRANCH
+          value: $(params.upstream-repo-branch)
+        - name: FORK_REPO_HOST_AND_PATH
+          value: $(params.fork-repo-host-and-path)
+        - name: FORK_REPO_USERNAME
+          value: $(params.fork-repo-username)
+        - name: GITHUB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: kanary-probe-credentials
+              key: github_token
+        - name: GITLAB_BOT_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: kanary-probe-credentials
+              key: gitlab-cee-pipelines-as-code-secret
+      script: |
+        #!/usr/bin/env bash
+        set -eu
+
+        if echo "$FORK_REPO_HOST_AND_PATH" | grep -q "gitlab"; then
+          GIT_TOKEN="$GITLAB_BOT_TOKEN"
+        else
+          GIT_TOKEN="$GITHUB_TOKEN"
+        fi
+
+        FORK_DIR="$(basename "$FORK_REPO_HOST_AND_PATH" .git)"
+
+        # Use GIT_ASKPASS so the token is never embedded in any URL or git config.
+        # GIT_TERMINAL_PROMPT=0 makes git fail immediately instead of hanging on a
+        # terminal prompt if GIT_ASKPASS fails (no terminal in a Tekton container).
+        # See: https://git-scm.com/docs/git#Documentation/git.txt-codeGITASKPASScode
+        askpass_script="$(mktemp)"
+        echo '#!/bin/sh' > "${askpass_script}"
+        echo 'echo "${GIT_TOKEN}"' >> "${askpass_script}"
+        chmod +x "${askpass_script}"
+        export GIT_ASKPASS="${askpass_script}"
+        export GIT_TOKEN
+        export GIT_TERMINAL_PROMPT=0
+
+        onerr() {
+          error_time="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo "${error_time},0,\"Mirror-rpm-repo step failed\"" >> /tmp/artifacts/load-test-errors.csv
+          rm -f "${askpass_script}"
+          exit 0
+        }
+        trap 'onerr' ERR
+
+        git clone "https://${FORK_REPO_USERNAME}@${FORK_REPO_HOST_AND_PATH}"
+        cd "${FORK_DIR}"
+        git remote add upstream "${UPSTREAM_REPO_URL}"
+        git fetch upstream "${UPSTREAM_REPO_BRANCH}"
+        git checkout -B "${UPSTREAM_REPO_BRANCH}" upstream/"${UPSTREAM_REPO_BRANCH}"
+
+        sed -i "s/^Name: libecpg$/Name: konflux-probe-libecpg/" libecpg.spec
+        sed -i "s/^Release: [0-9]\+%{?dist}$/Release: $(date --utc +%Y%m%d%H%M%S)%{?dist}/" libecpg.spec
+        git add libecpg.spec
+        git config user.email "loadtest@localhost"
+        git config user.name "Konflux Probes Kanary"
+        git commit -m "test: Alter package name and release so we can push to Brew"
+
+        git push -f origin "${UPSTREAM_REPO_BRANCH}"
+
+        rm -f "${askpass_script}"
+        echo "RPM mirror step completed successfully"
+    - name: run-test
+      image: quay.io/redhat-user-workloads/konflux-perfscale-tenant/loadtest
+      volumeMounts:
+        - name: artifacts-tmp
+          mountPath: /tmp/artifacts
+        - name: users-secret
+          mountPath: /opt/users-secret
+          readOnly: true
+      env:
+        - name: OUTPUT_DIR
+          value: /tmp/artifacts
+        - name: CONCURRENCY
+          value: "1"
+        - name: MY_GITHUB_ORG
+          value: "rhtap-perf-test"
+        - name: COMPONENT_REPO
+          value: $(params.component-repo)
+        - name: COMPONENT_REPO_REVISION
+          value: $(params.component-repo-revision)
+        - name: LOGGING_LEVEL
+          value: "debug"
+        - name: USER_PREFIX
+          value: $(params.user-prefix)
+        - name: QUAY_REPO
+          value: $(params.quay-repo)
+        - name: PIPELINE_REPO_TEMPLATING
+          value: "true"
+        - name: PIPELINE_REPO_TEMPLATING_SOURCE
+          value: $(params.pipeline-repo-templating-source)
+        - name: PIPELINE_REPO_TEMPLATING_SOURCE_DIR
+          value: $(params.pipeline-repo-templating-source-dir)
+        - name: RELEASE_POLICY
+          value: $(params.release-policy)
+        - name: RELEASE_PIPELINE_URL
+          value: "https://github.com/konflux-ci/release-service-catalog.git"
+        - name: RELEASE_PIPELINE_REVISION
+          value: "production"
+        - name: RELEASE_PIPELINE_PATH
+          value: "pipelines/managed/e2e/e2e.yaml"
+        - name: OCI_STORAGE
+          value: $(params.oci-storage)
+        - name: RELEASE_PIPELINE_SERVICE_ACCOUNT
+          value: $(params.release-pipeline-service-account)
+        - name: RELEASE_MANAGED_NAMESPACE
+          value: $(params.release-managed-namespace)
+        - name: RELEASE_MANAGED_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: kanary-probe-prometheus-credentials
+              key: managed_sa_token
+        - name: FORK_TARGET
+          value: $(params.fork-target)
+        - name: GITLAB_API_URL
+          value: $(params.gitlab-api-url)
+        - name: PIPELINE_IMAGE_PULL_SECRETS
+          value: $(params.pipeline-image-pull-secrets)
+        - name: TEST_SCENARIO_GIT_URL
+          value: $(params.test-scenario-git-url)
+        - name: GITHUB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: kanary-probe-credentials
+              key: github_token
+        - name: GITLAB_BOT_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: kanary-probe-credentials
+              key: gitlab-cee-pipelines-as-code-secret
+        - name: OCP_PROMETHEUS_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: kanary-probe-prometheus-credentials
+              key: prometheus_token
+        - name: TENANT_NAMESPACE
+          value: $(params.tenant-namespace)
+        - name: SERVER_API_URL
+          value: $(params.member-cluster)
+      script: |
+        #!/usr/bin/env bash
+        set -euo pipefail
+        echo -n "unknown" > $(results.test-outcome.path)
+        echo -n "" > $(results.failure-cause.path)
+        echo -n "" > $(results.failure-phase.path)
+        if [[ ! -s /opt/users-secret/token ]]; then
+          echo "ERROR: /opt/users-secret/token is missing or empty" >&2
+          exit 1
+        fi
+        jq -n \
+          --arg SERVER_API_URL "$SERVER_API_URL" \
+          --arg NAMESPACE "$TENANT_NAMESPACE" \
+          --rawfile USER_TOKEN /opt/users-secret/token \
+          '[{apiurl: $SERVER_API_URL, namespace: $NAMESPACE, token: ($USER_TOKEN | rtrimstr("\n")), verified: true}]' > users.json
+        ./ci-scripts/run-probe/run.sh || true
+        cp -f started ended /tmp/artifacts/ || true
+    - name: collect-results
+      image: quay.io/redhat-user-workloads/konflux-perfscale-tenant/loadtest
+      volumeMounts:
+        - name: artifacts-tmp
+          mountPath: /tmp/artifacts
+      env:
+        - name: ARTIFACT_DIR
+          value: /tmp/artifacts/results
+        - name: SOURCE_DIR
+          value: /tmp/artifacts
+        - name: MEMBER_CLUSTER
+          value: $(params.member-cluster)
+        - name: OCP_PROMETHEUS_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: kanary-probe-prometheus-credentials
+              key: prometheus_token
+      script: |
+        #!/usr/bin/env bash
+        # -e (errexit) is omitted so we can inspect the exit code
+        # to distinguish test failures from script errors.
+        set -uo pipefail
+        KANARY_FAIL_CODE=42
+        ./ci-scripts/run-probe/collect-results.sh --tests-dir . --exit-on-fail "$KANARY_FAIL_CODE"
+        exit_code=$?
+        if [[ "$exit_code" -eq 0 ]]; then
+          echo -n "passed" > $(results.test-outcome.path)
+        elif [[ "$exit_code" -eq "$KANARY_FAIL_CODE" ]]; then
+          echo -n "failed" > $(results.test-outcome.path)
+        fi
+        # Write the full error_caused_by_simple string as-is (may be comma-separated).
+        # push-kanary-metrics will split and take the first value for the metric label.
+        # Write the phase (loadtest function) where the earliest failure occurred.
+        if [[ -s /tmp/artifacts/results/load-test.json ]]; then
+          jq -r '.results.errors.error_caused_by_simple // ""' \
+            /tmp/artifacts/results/load-test.json > $(results.failure-cause.path)
+          jq -r '.results.measurements.KPI.failed_phase // ""' \
+            /tmp/artifacts/results/load-test.json > $(results.failure-phase.path)
+        else
+          echo "WARN: load-test.json not found or empty, failure-cause and failure-phase will be empty" >&2
+        fi
+    - name: copy-artifacts-to-workspace
+      image: quay.io/redhat-user-workloads/konflux-perfscale-tenant/loadtest
+      volumeMounts:
+        - name: artifacts-tmp
+          mountPath: /tmp/artifacts
+      script: |
+        #!/usr/bin/env bash
+        set -uo pipefail
+        echo "Copying artifacts from /tmp/artifacts to workspace"
+        if [[ -d /tmp/artifacts/results ]]; then
+          mkdir -p "$(workspaces.artifacts.path)/results"
+          cp -r /tmp/artifacts/results/* "$(workspaces.artifacts.path)/results/" || true
+          echo "Artifacts copied to workspace"
+        else
+          echo "WARN: /tmp/artifacts/results not found, nothing to copy"
+        fi

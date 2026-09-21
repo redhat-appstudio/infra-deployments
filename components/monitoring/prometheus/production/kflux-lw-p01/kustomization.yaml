@@ -32,3 +32,27 @@ patches:
       kind: MonitoringStack
       group: monitoring.rhobs
       version: v1alpha1
+  - path: ibm-o11y-admins-subject-patch.yaml
+    target:
+      name: all-access-appstudio-monitoring
+      kind: RoleBinding
+      group: rbac.authorization.k8s.io
+      version: v1
+  - path: ibm-o11y-admins-subject-patch.yaml
+    target:
+      name: o11y-admins-openshift-monitoring-debug
+      kind: RoleBinding
+      group: rbac.authorization.k8s.io
+      version: v1
+  - path: ibm-o11y-admins-subject-patch.yaml
+    target:
+      name: o11y-debug-access-user-workload-monitoring
+      kind: RoleBinding
+      group: rbac.authorization.k8s.io
+      version: v1
+  - path: ibm-o11y-admins-subject-patch.yaml
+    target:
+      name: o11y-admins-cluster-view
+      kind: ClusterRoleBinding
+      group: rbac.authorization.k8s.io
+      version: v1

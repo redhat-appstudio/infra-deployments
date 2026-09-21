@@ -1,0 +1,45 @@
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: dr-cleanup
+spec:
+  params:
+  - name: TENANT_NAMESPACE
+    type: string
+  results:
+  - name: test-result
+    description: Overall test result (PASSED or FAILED)
+  steps:
+  - name: cleanup
+    image: quay.io/konflux-ci/tools@sha256:b846eb68ab06f4c61c987bd1053e0e2dda13e18ecd5a75c945a18f7d78743bd8
+    command: ["bash", "-c"]
+    args:
+    - |
+      echo "=== DR Cleanup ==="
+      NS="$(params.TENANT_NAMESPACE)"
+
+      # Remove NetworkPolicy if it was left behind
+      oc delete networkpolicy dr-block-image-controller -n image-controller --ignore-not-found 2>/dev/null || true
+
+      # Delete test Release CRs
+      for REL in $(oc get releases.appstudio.redhat.com -n "$NS" -o name 2>/dev/null | grep "dr-sanity"); do
+        oc delete "$REL" -n "$NS" --ignore-not-found 2>/dev/null || true
+        echo "Deleted $REL"
+      done
+
+      # Delete test Backup CRs
+      for BACKUP in $(oc get backups.velero.io -n openshift-adp -o name 2>/dev/null | grep "dr-sanity"); do
+        oc delete "$BACKUP" -n openshift-adp --ignore-not-found 2>/dev/null || true
+        echo "Deleted $BACKUP"
+      done
+
+      # Delete test Restore CRs
+      for RESTORE in $(oc get restores.velero.io -n openshift-adp -o name 2>/dev/null | grep "dr-sanity"); do
+        oc delete "$RESTORE" -n openshift-adp --ignore-not-found 2>/dev/null || true
+        echo "Deleted $RESTORE"
+      done
+
+      printf "COMPLETED" > "$(results.test-result.path)"
+      echo "=== Cleanup Done ==="
+    computeResources: {}

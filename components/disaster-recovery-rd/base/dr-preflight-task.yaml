@@ -1,0 +1,63 @@
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: dr-preflight
+spec:
+  params:
+  - name: TENANT_NAMESPACE
+    type: string
+  - name: COMPONENT_NAME
+    type: string
+  - name: RELEASE_PLAN_NAME
+    type: string
+  steps:
+  - name: check
+    image: quay.io/konflux-ci/tools@sha256:b846eb68ab06f4c61c987bd1053e0e2dda13e18ecd5a75c945a18f7d78743bd8
+    command: ["bash", "-eu", "-o", "pipefail", "-c"]
+    args:
+    - |
+      echo "=== DR Preflight Check ==="
+      NS="$(params.TENANT_NAMESPACE)"
+      COMP="$(params.COMPONENT_NAME)"
+      RP="$(params.RELEASE_PLAN_NAME)"
+
+      echo "Checking Velero deployment..."
+      READY=$(oc get deploy velero -n openshift-adp -o jsonpath='{.status.readyReplicas}' 2>/dev/null || echo "0")
+      if [ "$READY" != "1" ]; then
+        echo "FAIL: Velero deployment not ready (readyReplicas=$READY)"
+        exit 1
+      fi
+      echo "OK: Velero ready"
+
+      echo "Checking BackupStorageLocation..."
+      BSL_PHASE=$(oc get backupstoragelocations -n openshift-adp -o jsonpath='{.items[0].status.phase}' 2>/dev/null || echo "Unknown")
+      if [ "$BSL_PHASE" != "Available" ]; then
+        echo "FAIL: BSL not Available (phase=$BSL_PHASE)"
+        exit 1
+      fi
+      echo "OK: BSL Available"
+
+      echo "Checking tenant namespace $NS..."
+      if ! oc get namespace "$NS" &>/dev/null; then
+        echo "FAIL: Namespace $NS does not exist"
+        exit 1
+      fi
+      echo "OK: Namespace exists"
+
+      echo "Checking Component $COMP..."
+      if ! oc get components.appstudio.redhat.com "$COMP" -n "$NS" &>/dev/null; then
+        echo "FAIL: Component $COMP not found in $NS"
+        exit 1
+      fi
+      echo "OK: Component exists"
+
+      echo "Checking ReleasePlan $RP..."
+      if ! oc get releaseplans.appstudio.redhat.com "$RP" -n "$NS" &>/dev/null; then
+        echo "FAIL: ReleasePlan $RP not found in $NS"
+        exit 1
+      fi
+      echo "OK: ReleasePlan exists"
+
+      echo "=== Preflight PASSED ==="
+    computeResources: {}

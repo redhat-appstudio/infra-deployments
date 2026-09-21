@@ -106,11 +106,11 @@ spec:
     - linux-d320-m8xlarge-arm64
     - linux-extra-fast-amd64
     - linux-fast-amd64
+    - linux-g4dn2xlarge-amd64
+    - linux-g4dn4xlarge-amd64
     - linux-g64xlarge-amd64
     - linux-m2xlarge-amd64
     - linux-m2xlarge-arm64
-    - linux-m4xlarge-amd64
-    - linux-m4xlarge-arm64
     flavors:
     - name: platform-group-2
       resources:
@@ -136,17 +136,19 @@ spec:
         nominalQuota: '250'
       - name: linux-fast-amd64
         nominalQuota: '250'
+      - name: linux-g4dn2xlarge-amd64
+        nominalQuota: '5'
+      - name: linux-g4dn4xlarge-amd64
+        nominalQuota: '5'
       - name: linux-g64xlarge-amd64
         nominalQuota: '250'
       - name: linux-m2xlarge-amd64
         nominalQuota: '250'
       - name: linux-m2xlarge-arm64
         nominalQuota: '250'
-      - name: linux-m4xlarge-amd64
-        nominalQuota: '250'
-      - name: linux-m4xlarge-arm64
-        nominalQuota: '250'
   - coveredResources:
+    - linux-m4xlarge-amd64
+    - linux-m4xlarge-arm64
     - linux-m8xlarge-amd64
     - linux-m8xlarge-arm64
     - linux-mlarge-amd64
@@ -161,10 +163,13 @@ spec:
     - local
     - localhost
     - macos-mac2metal-arm64
-    - windows-4xlarge-amd64
     flavors:
     - name: platform-group-3
       resources:
+      - name: linux-m4xlarge-amd64
+        nominalQuota: '250'
+      - name: linux-m4xlarge-arm64
+        nominalQuota: '250'
       - name: linux-m8xlarge-amd64
         nominalQuota: '250'
       - name: linux-m8xlarge-arm64
@@ -193,6 +198,11 @@ spec:
         nominalQuota: 1k
       - name: macos-mac2metal-arm64
         nominalQuota: '5'
+  - coveredResources:
+    - windows-4xlarge-amd64
+    flavors:
+    - name: platform-group-4
+      resources:
       - name: windows-4xlarge-amd64
         nominalQuota: '5'
 ---
@@ -229,4 +239,13 @@ metadata:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
     argocd.argoproj.io/sync-wave: '10'
   name: platform-group-3
+spec: {}
+---
+apiVersion: kueue.x-k8s.io/v1beta2
+kind: ResourceFlavor
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: '10'
+  name: platform-group-4
 spec: {}
