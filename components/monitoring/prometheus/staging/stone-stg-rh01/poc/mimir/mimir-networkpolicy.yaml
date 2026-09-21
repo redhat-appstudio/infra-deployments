@@ -1,0 +1,57 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: mimir-poc-restricted-traffic
+  labels:
+    app.kubernetes.io/name: mimir
+    app.kubernetes.io/part-of: mimir-poc
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - podSelector: {}
+    ports:
+    - protocol: TCP
+      port: 8080
+    - protocol: TCP
+      port: 9095
+    - protocol: TCP
+      port: 7946
+    - protocol: UDP
+      port: 7946
+    - protocol: TCP
+      port: 9000
+  egress:
+  - to:
+    - podSelector: {}
+    ports:
+    - protocol: TCP
+      port: 8080
+    - protocol: TCP
+      port: 9095
+    - protocol: TCP
+      port: 7946
+    - protocol: UDP
+      port: 7946
+    - protocol: TCP
+      port: 9000
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: openshift-dns
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+    - protocol: UDP
+      port: 5353
+    - protocol: TCP
+      port: 5353
+  # Future external S3:
+  # - ports:
+  #   - protocol: TCP
+  #     port: 443
