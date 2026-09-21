@@ -17,8 +17,8 @@ patches:
       kind: RoleBinding
   - path: serviceaccounttoken-manager-rolebinding-patch.yaml
     target:
+      # No namespace: the binding exists in all 5 tenant namespaces
       name: serviceaccounttoken-manager:konflux-perfscale
-      namespace: managed-konflux-perfscale-tenant
       group: rbac.authorization.k8s.io
       version: v1
       kind: RoleBinding
