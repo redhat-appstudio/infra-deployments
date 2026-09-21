@@ -8,4 +8,11 @@ kind: Kustomization
 resources:
   - ../../base
 
-patches: []
+patches:
+  # Hold back termination message compression until Ring 3 promotion
+  - target:
+      kind: TektonConfig
+      name: config
+    patch: |-
+      - op: remove
+        path: /spec/pipeline/options/configMaps/feature-flags
