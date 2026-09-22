@@ -114,7 +114,7 @@ spec:
         #!/usr/bin/env bash
         set -uo pipefail
         KANARY_FAIL_CODE=42
-        ./ci-scripts/run-probe/collect-results.sh --tests-dir . --exit-on-fail "$KANARY_FAIL_CODE"
+        ./ci-scripts/run-simple/collect-results.sh --tests-dir . --exit-on-fail "$KANARY_FAIL_CODE"
         exit_code=$?
         if [[ "$exit_code" -eq 0 ]]; then
           echo -n "passed" > $(results.test-outcome.path)
