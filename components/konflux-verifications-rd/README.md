@@ -16,7 +16,7 @@ base/
     runner/                   # Namespace, launcher and runner SAs, launcher RBAC
     target/                   # Persistent tenant namespace; no test privileges
   suites/
-    devprod/conformance/      # Existing conformance resources, unchanged
+    konflux-vanguard/conformance/      # Existing conformance resources, unchanged
 examples/team-suite/          # Buildable onboarding example; not deployed
 rings/
   ring-0/base/                # Empty: no development deployment
