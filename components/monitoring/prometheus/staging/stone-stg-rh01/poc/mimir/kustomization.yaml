@@ -1,0 +1,54 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: appstudio-mimir-poc
+
+resources:
+- namespace.yaml
+- mimir-rbac.yaml
+- mimir-rules.yaml
+- mimir-networkpolicy.yaml
+
+generators:
+- mimir-helm-generator.yaml
+
+patches:
+- target:
+    labelSelector: release=mimir-poc
+  patch: |-
+    - op: add
+      path: /metadata/namespace
+      value: appstudio-mimir-poc
+- target:
+    kind: ServiceAccount
+    name: minio-sa
+  patch: |-
+    - op: add
+      path: /metadata/namespace
+      value: appstudio-mimir-poc
+- target:
+    kind: Deployment
+    name: mimir-poc-minio
+  patch: |-
+    - op: add
+      path: /spec/template/spec/securityContext
+      value:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+- target:
+    kind: Job
+    labelSelector: release=mimir-poc
+  patch: |-
+    - op: add
+      path: /spec/template/spec/securityContext
+      value:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+- target:
+    kind: PodDisruptionBudget
+  patch: |-
+    - op: add
+      path: /spec/unhealthyPodEvictionPolicy
+      value: AlwaysAllow

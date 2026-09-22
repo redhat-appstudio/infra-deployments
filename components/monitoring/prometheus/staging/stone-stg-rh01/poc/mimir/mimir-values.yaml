@@ -1,0 +1,270 @@
+fullnameOverride: mimir-poc
+
+configStorageType: ConfigMap
+
+# Future external S3; disable MinIO and uncomment this block together with the
+# common.storage and blocks_storage.s3 blocks below.
+# global:
+#   extraEnvFrom:
+#   - secretRef:
+#       name: mimir-poc-s3
+
+image:
+  tag: 3.2.0
+
+rbac:
+  create: false
+  type: scc
+  podSecurityContext:
+    fsGroup: null
+    runAsGroup: null
+    runAsUser: null
+
+kafka:
+  enabled: false
+
+minio:
+  enabled: true
+  mode: standalone
+  additionalAnnotations:
+    ignore-check.kube-linter.io/no-read-only-root-fs: MinIO requires a writable root filesystem.
+  persistence:
+    enabled: true
+    storageClass: gp3
+    size: 100Gi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 1Gi
+  securityContext:
+    enabled: false
+  makeBucketJob:
+    annotations:
+      ignore-check.kube-linter.io/no-read-only-root-fs: The MinIO client writes temporary bootstrap state.
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        memory: 256Mi
+  makeUserJob:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        memory: 256Mi
+  postJob:
+    annotations:
+      ignore-check.kube-linter.io/no-read-only-root-fs: The MinIO client writes temporary bootstrap state.
+
+rollout_operator:
+  enabled: false
+  podSecurityContext:
+    fsGroup: null
+    runAsGroup: null
+    runAsUser: null
+
+gateway:
+  enabled: false
+
+alertmanager:
+  enabled: false
+
+chunks-cache:
+  enabled: false
+
+index-cache:
+  enabled: false
+
+metadata-cache:
+  enabled: false
+
+results-cache:
+  enabled: false
+
+metaMonitoring:
+  serviceMonitor:
+    enabled: false
+  prometheusRule:
+    enabled: false
+  grafanaAgent:
+    enabled: false
+
+mimir:
+  structuredConfig:
+    usage_stats:
+      enabled: false
+    multitenancy_enabled: true
+    # Future external S3:
+    # common:
+    #   storage:
+    #     backend: s3
+    #     s3:
+    #       endpoint: ${MIMIR_S3_ENDPOINT}
+    #       region: ${MIMIR_S3_REGION}
+    #       access_key_id: ${MIMIR_S3_ACCESS_KEY_ID}
+    #       secret_access_key: ${MIMIR_S3_SECRET_ACCESS_KEY}
+    ingest_storage:
+      enabled: false
+    ingester:
+      push_grpc_method_enabled: true
+      ring:
+        replication_factor: 1
+        zone_awareness_enabled: false
+    blocks_storage:
+      backend: s3
+      # Future external S3:
+      # s3:
+      #   bucket_name: ${MIMIR_S3_BLOCKS_BUCKET}
+      tsdb:
+        retention_period: 13h
+        ship_interval: 1m
+    compactor:
+      block_ranges:
+      - 2h
+      - 12h
+      - 24h
+    limits:
+      compactor_blocks_retention_period: 168h
+      ingestion_rate: 50000
+      ingestion_burst_size: 3000000
+      max_global_series_per_user: 2500000
+      ruler_alerting_rules_evaluation_enabled: false
+    memberlist:
+      rejoin_interval: 1m
+    ruler:
+      alertmanager_url: ""
+      enable_api: false
+    ruler_storage:
+      backend: local
+      local:
+        directory: /rules
+    store_gateway:
+      sharding_ring:
+        replication_factor: 1
+        zone_awareness_enabled: false
+
+ingester:
+  replicas: 3
+  zoneAwareReplication:
+    enabled: false
+  resources:
+    requests:
+      cpu: "3"
+      memory: 8Gi
+    limits:
+      memory: 12Gi
+  persistentVolume:
+    enabled: true
+    storageClass: gp3
+    size: 25Gi
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          topologyKey: kubernetes.io/hostname
+          labelSelector:
+            matchExpressions:
+            - key: app.kubernetes.io/component
+              operator: In
+              values:
+              - ingester
+
+distributor:
+  replicas: 2
+  annotations:
+    ignore-check.kube-linter.io/no-anti-affinity: Using topologySpreadConstraints.
+  resources:
+    requests:
+      cpu: "1"
+      memory: 1Gi
+    limits:
+      memory: 2Gi
+
+querier:
+  replicas: 2
+  annotations:
+    ignore-check.kube-linter.io/no-anti-affinity: Using topologySpreadConstraints.
+  resources:
+    requests:
+      cpu: "1"
+      memory: 2Gi
+    limits:
+      memory: 4Gi
+
+query_frontend:
+  replicas: 2
+  annotations:
+    ignore-check.kube-linter.io/no-anti-affinity: Using topologySpreadConstraints.
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
+
+query_scheduler:
+  replicas: 2
+  annotations:
+    ignore-check.kube-linter.io/no-anti-affinity: Using topologySpreadConstraints.
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
+
+ruler:
+  replicas: 1
+  memBallastSizeBytes: 0
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      memory: 4Gi
+  extraVolumes:
+  - name: rules
+    configMap:
+      name: mimir-poc-rules
+      items:
+      - key: pod-cpu.yaml
+        path: konflux-poc/pod-cpu.yaml
+  extraVolumeMounts:
+  - name: rules
+    mountPath: /rules
+    readOnly: true
+
+compactor:
+  resources:
+    requests:
+      cpu: "1"
+      memory: 4Gi
+    limits:
+      memory: 8Gi
+  persistentVolume:
+    enabled: true
+    storageClass: gp3
+    size: 50Gi
+
+store_gateway:
+  replicas: 1
+  zoneAwareReplication:
+    enabled: false
+  resources:
+    requests:
+      cpu: 500m
+      memory: 2Gi
+    limits:
+      memory: 4Gi
+  persistentVolume:
+    enabled: false
+    emptyDir:
+      sizeLimit: 10Gi
+
+overrides_exporter:
+  enabled: false
