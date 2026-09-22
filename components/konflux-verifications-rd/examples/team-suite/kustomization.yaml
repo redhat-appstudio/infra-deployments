@@ -1,0 +1,14 @@
+# Buildable example only: no deployed overlay references this directory.
+# Do not set namespace here: a suite deliberately spans multiple namespaces.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - runner
+  - targets/tenant
+  - target-access.yaml
+labels:
+  - pairs:
+      verification.konflux-ci.dev/team: example
+      verification.konflux-ci.dev/suite: smoke
+    includeSelectors: false
+    includeTemplates: false
