@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kaexporter-deployment
+  namespace: konflux-o11y-exporters
+spec:
+  template:
+    spec:
+      volumes:
+        - name: kaexporter-config
+          configMap:
+            name: kaexporter-config
+      containers:
+        - name: exporters
+          env:
+            - name: KA_CONFIG_FILE
+              value: "/etc/kaexporter/kaexporter-config.yaml"
+          volumeMounts:
+            - name: kaexporter-config
+              mountPath: /etc/kaexporter
+              readOnly: true

@@ -8,10 +8,6 @@ configMapGenerator:
   - name: dex
     files:
       - dex-config.yaml
-  - name: proxy-init-config
-    literals:
-      - IMPERSONATE=true
-      - TEKTON_RESULTS_URL=https://tekton-results-api-service.tekton-results.svc.cluster.local:8080
 
 patches:
   - path: add-service-certs-patch.yaml
@@ -39,7 +35,7 @@ patches:
       kind: Deployment
   - path: set-redirect-uri.yaml
     target:
-      name: dex-client
+      name: dex
       kind: ServiceAccount
   - path: set-hostname.yaml
     target:

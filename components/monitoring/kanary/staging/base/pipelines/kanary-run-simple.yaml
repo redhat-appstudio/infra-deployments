@@ -1,0 +1,100 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: kanary-run-simple
+spec:
+  params:
+    - name: otel-endpoint
+      type: string
+      default: http://open-telemetry-opentelemetry-collector.konflux-otel.svc.cluster.local:4318
+    - name: s3-bucket
+      type: string
+      default: ""
+      description: "S3 bucket name for artifact upload. Leave empty to skip upload."
+    - name: tested-cluster
+      type: string
+    - name: test-type
+      type: string
+      default: container-single-arch
+    - name: member-cluster
+      type: string
+    - name: tenant-namespace
+      type: string
+      default: "konflux-perfscale-3-tenant"
+    - name: release-managed-namespace
+      type: string
+      default: "managed-konflux-perfscale-tenant"
+    # Pre-existing resource names
+    - name: application-name
+      type: string
+      description: "Name of existing Application resource"
+    - name: component-name
+      type: string
+      description: "Name of existing Component resource"
+    - name: release-plan-name
+      type: string
+      description: "Name of existing ReleasePlan resource"
+  workspaces:
+    - name: artifacts
+  tasks:
+    - name: run-simple-test
+      timeout: "30m0s"
+      taskRef:
+        kind: Task
+        name: kanary-run-simple
+      params:
+        - name: tested-cluster
+          value: $(params.tested-cluster)
+        - name: test-type
+          value: $(params.test-type)
+        - name: member-cluster
+          value: $(params.member-cluster)
+        - name: tenant-namespace
+          value: $(params.tenant-namespace)
+        - name: release-managed-namespace
+          value: $(params.release-managed-namespace)
+        - name: application-name
+          value: $(params.application-name)
+        - name: component-name
+          value: $(params.component-name)
+        - name: release-plan-name
+          value: $(params.release-plan-name)
+      workspaces:
+        - name: artifacts
+          workspace: artifacts
+    - name: upload-artifacts
+      runAfter: [run-simple-test]
+      taskRef:
+        kind: Task
+        name: kanary-upload-s3
+      params:
+        - name: tested-cluster
+          value: $(params.tested-cluster)
+        - name: test-type
+          value: $(params.test-type)
+        - name: loadtest-type
+          value: "run-simple"
+        - name: s3-bucket
+          value: $(params.s3-bucket)
+      workspaces:
+        - name: artifacts
+          workspace: artifacts
+  finally:
+    - name: push-kanary-metrics
+      taskRef:
+        name: kanary-push-metrics
+      params:
+        - name: otel-endpoint
+          value: $(params.otel-endpoint)
+        - name: tested-cluster
+          value: $(params.tested-cluster)
+        - name: test-type
+          value: $(params.test-type)
+        - name: test-outcome
+          value: $(tasks.run-simple-test.results.test-outcome)
+        - name: failure-cause
+          value: $(tasks.run-simple-test.results.failure-cause)
+        - name: failure-phase
+          value: $(tasks.run-simple-test.results.failure-phase)
+        - name: s3-upload-failed
+          value: $(tasks.upload-artifacts.results.s3-upload-failed)

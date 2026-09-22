@@ -1,0 +1,66 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: out-tenant-deny-pipelinerun-with-validation-error
+spec:
+  description: |
+    doesn't deny PipelineRuns in non-tenant namespaces
+  concurrent: false
+  steps:
+  - name: given-built-manifests-exists
+    try:
+    - script:
+        # use `bash` shell
+        shell: bash
+        # invoke `bash` with `-c`
+        shellArgs:
+        - -c
+        content: |-
+          #!/bin/bash
+
+          set -euo pipefail
+
+          rm -r ../resources/manifests/ || true
+          mkdir -p ../resources/manifests/
+          kustomize build ../../../../ -o ../resources/manifests/
+    cleanup:
+    - script:
+        # use `bash` shell
+        shell: bash
+        # invoke `bash` with `-c`
+        shellArgs:
+        - -c
+        content: |-
+          #!/bin/bash
+
+          set -euo pipefail
+
+          rm -r ../resources/manifests/
+  - name: given-pipelineruns-crd-exists
+    try:
+    - apply:
+        file: ../resources/pipelineruns.tekton.dev_customresourcedefinition.yaml
+    - assert:
+        file: ../chainsaw-assert-pipelineruns-crd.yaml
+  - name: given-validatingadmissionpolicy-is-installed
+    try:
+    - apply:
+        file: ../resources/manifests/konflux-policies_admissionregistration.k8s.io_v1_validatingadmissionpolicybinding_deny-unallowed-annotations.kueue.konflux-ci.dev.yaml
+    - apply:
+        file: ../resources/manifests/konflux-policies_admissionregistration.k8s.io_v1_validatingadmissionpolicy_deny-unallowed-annotations.kueue.konflux-ci.dev.yaml
+    - assert:
+        file: ../chainsaw-assert-policy.yaml
+    - sleep:
+        duration: 1s
+  - name: then-allowed-annotations-are-accepted
+    try:
+    - create:
+        file: ../resources/pipelinerun_with_allowed_annotations.yaml
+  - name: then-unallowed-annotations-are-accepted
+    try:
+    - create:
+        file: ../resources/pipelinerun_with_unallowed_annotations.yaml
+    - create:
+        file: ../resources/pipelinerun_with_allowed_and_unallowed_annotations.yaml

@@ -78,3 +78,11 @@ spec:
               name: integration-config
               key: GITHUBPRIVATE_KEY
               optional: true
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "http://open-telemetry-opentelemetry-collector.konflux-otel.svc.cluster.local:4317"
+        - name: TRACING_LABEL_ACTION
+          value: pipelines.appstudio.openshift.io/type
+        - name: TRACING_LABEL_APPLICATION
+          value: appstudio.openshift.io/application
+        - name: TRACING_LABEL_COMPONENT
+          value: appstudio.openshift.io/component

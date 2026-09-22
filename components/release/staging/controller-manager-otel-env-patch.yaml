@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: controller-manager
+  namespace: system
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        env:
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "http://open-telemetry-opentelemetry-collector.konflux-otel.svc.cluster.local:4317"
+        - name: TRACING_LABEL_ACTION
+          value: pipelines.appstudio.openshift.io/type
+        - name: TRACING_LABEL_APPLICATION
+          value: appstudio.openshift.io/application
+        - name: TRACING_LABEL_COMPONENT
+          value: appstudio.openshift.io/component

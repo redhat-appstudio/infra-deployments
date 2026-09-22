@@ -1,0 +1,154 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: in-tenant-invalid-rolebinding
+spec:
+  description: |
+    tests that the a invalid RoleBinding can NOT be created
+    in a tenant namespace
+  concurrent: false
+  namespace: 'invalid-rb-tenant-namespace'
+  steps:
+  - name: given-validatingadmissionpolicy-is-ready
+    try:
+    - apply:
+        file: ../restrict-binding-denylist-create-validatingadmissionpolicy.yaml
+    - apply:
+        file: ../restrict-binding-denylist-create-validatingadmissionpolicybinding.yaml
+    - sleep:
+        duration: 1s
+    - assert:
+        file: chainsaw-assert-validatingadmissionpolicy.yaml
+  - name: given-tenant-namespace-exists
+    try:
+    - apply:
+        file: ./resources/tenant-namespace.yaml
+  - name: then-invalid-rolebinding-can-not-be-created
+    try:
+    - create:
+        file: ./resources/invalid-rolebinding-secrets.yaml
+        expect:
+        - check:
+            ($error != null): true
+            '(regex_match(''^rolebindings.rbac.authorization.k8s.io \"invalid-secrets-rolebinding\" is forbidden: ValidatingAdmissionPolicy \''restrict-bindings-denylist-create.konflux-ci.dev\'' with binding \''restrict-bindings-denylist-create.konflux-ci.dev\'' denied request: The referenced Role \''konflux-secrets-bot-actions\'' is deprecated and can\''t be used in new RoleBindings$'', $error))': true
+    - create:
+        file: ./resources/invalid-rolebinding-model.yaml
+        expect:
+        - check:
+            ($error != null): true
+            '(regex_match(''^rolebindings.rbac.authorization.k8s.io \"invalid-model-rolebinding\" is forbidden: ValidatingAdmissionPolicy \''restrict-bindings-denylist-create.konflux-ci.dev\'' with binding \''restrict-bindings-denylist-create.konflux-ci.dev\'' denied request: The referenced Role \''konflux-model-bot-actions\'' is deprecated and can\''t be used in new RoleBindings$'', $error))': true
+    - create:
+        file: ./resources/invalid-rolebinding-viewer.yaml
+        expect:
+        - check:
+            ($error != null): true
+            '(regex_match(''^rolebindings.rbac.authorization.k8s.io \"invalid-viewer-rolebinding\" is forbidden: ValidatingAdmissionPolicy \''restrict-bindings-denylist-create.konflux-ci.dev\'' with binding \''restrict-bindings-denylist-create.konflux-ci.dev\'' denied request: The referenced Role \''konflux-viewer-bot-actions\'' is deprecated and can\''t be used in new RoleBindings$'', $error))': true
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: in-tenant-delete-invalid-existing-rolebinding
+spec:
+  description: |
+    tests that the an existing invalid RoleBinding can be deleted
+    in a tenant namespace
+  concurrent: false
+  namespace: 'existing-invalid-rb-tenant-namespace'
+  steps:
+  - name: given-tenant-namespace-exists
+    try:
+    - apply:
+        file: ./resources/tenant-namespace.yaml
+  - name: given-invalid-rolebinding-exists
+    try:
+    - create:
+        file: ./resources/invalid-rolebinding-secrets.yaml
+    - create:
+        file: ./resources/invalid-rolebinding-model.yaml
+    - create:
+        file: ./resources/invalid-rolebinding-viewer.yaml
+  - name: when-validatingadmissionpolicy-is-ready
+    try:
+    - apply:
+        file: ../restrict-binding-denylist-create-validatingadmissionpolicy.yaml
+    - apply:
+        file: ../restrict-binding-denylist-create-validatingadmissionpolicybinding.yaml
+    - sleep:
+        duration: 1s
+    - assert:
+        file: chainsaw-assert-validatingadmissionpolicy.yaml
+  - name: then-invalid-rolebinding-can-be-deleted
+    try:
+    - delete:
+        file: ./resources/invalid-rolebinding-secrets.yaml
+    - delete:
+        file: ./resources/invalid-rolebinding-model.yaml
+    - delete:
+        file: ./resources/invalid-rolebinding-viewer.yaml
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: in-tenant-valid-rolebinding
+spec:
+  description: |
+    tests that the a valid RoleBinding can be created in a
+    tenant namespace
+  concurrent: false
+  namespace: 'valid-rb-tenant-namespace'
+  steps:
+  - name: given-validatingadmissionpolicy-is-ready
+    try:
+    - apply:
+        file: ../restrict-binding-denylist-create-validatingadmissionpolicy.yaml
+    - apply:
+        file: ../restrict-binding-denylist-create-validatingadmissionpolicybinding.yaml
+    - sleep:
+        duration: 1s
+    - assert:
+        file: chainsaw-assert-validatingadmissionpolicy.yaml
+  - name: given-tenant-namespace-exists
+    try:
+    - apply:
+        file: ./resources/tenant-namespace.yaml
+  - name: then-valid-rolebinding-can-be-created
+    try:
+    - apply:
+        file: ./resources/valid-rolebinding.yaml
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: out-of-tenant-rolebinding
+spec:
+  description: |
+    tests that the whatever RoleBinding can be created in a
+    non-tenant namespace
+  concurrent: false
+  namespace: 'valid-rb-namespace'
+  steps:
+  - name: given-validatingadmissionpolicy-is-ready
+    try:
+    - apply:
+        file: ../restrict-binding-denylist-create-validatingadmissionpolicy.yaml
+    - apply:
+        file: ../restrict-binding-denylist-create-validatingadmissionpolicybinding.yaml
+    - sleep:
+        duration: 1s
+    - assert:
+        file: chainsaw-assert-validatingadmissionpolicy.yaml
+  - name: then-rolebinding-can-be-created-in-a-nontenant-namespace
+    try:
+    - create:
+        file: ./resources/valid-rolebinding.yaml
+    - create:
+        file: ./resources/invalid-rolebinding-secrets.yaml
+    - create:
+        file: ./resources/invalid-rolebinding-model.yaml
+    - create:
+        file: ./resources/invalid-rolebinding-viewer.yaml

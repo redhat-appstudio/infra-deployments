@@ -28,6 +28,8 @@ spec:
                   values.clusterDir: kflux-rhel-p01
                 - nameNormalized: kflux-osp-p01
                   values.clusterDir: kflux-osp-p01
+                - nameNormalized: kflux-lw-p01
+                  values.clusterDir: kflux-lw-p01
   template:
     metadata:
       name: smee-client-{{nameNormalized}}
@@ -41,9 +43,7 @@ spec:
         namespace: smee-client
         server: '{{server}}'
       syncPolicy:
-        automated:
-          prune: true
-          selfHeal: true
+        preserveResourcesOnDeletion: true
         syncOptions:
           - CreateNamespace=true
         retry:

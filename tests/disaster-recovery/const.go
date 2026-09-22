@@ -2,24 +2,19 @@
 // for Konflux tenant namespaces.
 //
 // The suite validates the single-tenant backup and restore process documented in the
-// tenants-restore-from-backup SOP by running two complementary test scenarios on a
-// single ROSA cluster:
+// tenants-restore-from-backup SOP. It creates two tenants on the current Konflux
+// version, backs them up, deletes them, restores them, and verifies structural
+// integrity and functional pipeline execution.
 //
-//  1. Backwards-compatibility test: Creates two tenants on an older Konflux version,
-//     backs them up, upgrades Konflux to the new version, then restores and verifies.
-//     Proves that backups taken on older Konflux versions restore correctly on newer ones.
-//
-//  2. Same-version test: Creates two tenants on the current Konflux version, backs them
-//     up, deletes them, restores them, and verifies. Proves that backup/restore works
-//     correctly within a single Konflux version.
-//
-// Each scenario uses a two-tenant architecture: Tenant 1 (KokoHazamar) restores via
+// The suite uses a two-tenant architecture: Tenant 1 (KokoHazamar) restores via
 // the Velero CLI method, and Tenant 2 (MosheKipod) restores via the oc command method.
 // This tests both documented SOP restore procedures in parallel without doubling runtime.
 // All tenants build the same MathWizz application (3 Components from a monorepo).
 package disaster_recovery
 
 import (
+	"fmt"
+	"os"
 	"time"
 
 	"github.com/konflux-ci/e2e-tests/pkg/constants"
@@ -32,9 +27,7 @@ import (
 // ---------------------------------------------------------------------------
 
 // Tenant holds the deterministic identifiers for a single tenant namespace.
-// Names are convention-based (no timestamps) with scenario-specific suffixes
-// (e.g., "-backwards-compat-dr" vs "-same-version-dr") to avoid collision,
-// since all DR tests run on the same ROSA cluster within a single pipeline run.
+// Names are convention-based (no timestamps) with a "-same-version-dr" suffix.
 type Tenant struct {
 	Namespace        string
 	ManagedNamespace string
@@ -103,29 +96,11 @@ const (
 	// creates. Derived from the Components slice but kept as a constant
 	// because it's used across multiple files for PipelineRun count assertions.
 	ComponentsPerTenant = 3
+
+	// MathWizzDefaultTargetPort is the default port set by HAS when
+	// no targetPort is specified in the Component spec.
+	MathWizzDefaultTargetPort = 8081
 )
-
-// ---------------------------------------------------------------------------
-// Tenant pairs — backwards-compatibility scenario
-// ---------------------------------------------------------------------------
-
-// BCTenant1 is the first backwards-compat tenant (KokoHazamar).
-// Restores via the Velero CLI method.
-var BCTenant1 = Tenant{
-	Namespace:        "dr-test-kokohazamar-backwards-compat-dr",
-	ManagedNamespace: "dr-test-kokohazamar-backwards-compat-dr-managed",
-	AppName:          "kokohazamar-backwards-compat-dr",
-	BackupName:       "backup-kokohazamar-backwards-compat-dr",
-}
-
-// BCTenant2 is the second backwards-compat tenant (MosheKipod).
-// Restores via the oc command method.
-var BCTenant2 = Tenant{
-	Namespace:        "dr-test-moshekipod-backwards-compat-dr",
-	ManagedNamespace: "dr-test-moshekipod-backwards-compat-dr-managed",
-	AppName:          "moshekipod-backwards-compat-dr",
-	BackupName:       "backup-moshekipod-backwards-compat-dr",
-}
 
 // ---------------------------------------------------------------------------
 // Tenant pairs — same-version scenario
@@ -243,14 +218,6 @@ const (
 	DRReleaseCatalogTAQuaySecret = "release-catalog-trusted-artifacts-quay-secret"
 )
 
-// DRCosignPublicKey is the test cosign public key used for Enterprise Contract
-// policy verification. This is a well-known test key shared across the e2e
-// test suites (same key as used in tests/release/).
-var DRCosignPublicKey = []byte("-----BEGIN PUBLIC KEY-----\n" +
-	"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEocSG/SnE0vQ20wRfPltlXrY4Ib9B\n" +
-	"CRnFUCg/fndZsXdz0IX5sfzIyspizaTbu4rapV85KirmSBU6XUaLY347xg==\n" +
-	"-----END PUBLIC KEY-----")
-
 // DRManagedNamespaceSecrets lists the Secrets that must exist in the managed
 // namespace before the release ServiceAccount is created. These are referenced
 // by the ServiceAccount's secrets field so the release pipeline can pull images
@@ -338,22 +305,37 @@ const (
 	SATokenTimeout = 5 * time.Minute
 	SATokenPoll    = 30 * time.Second
 
-	// PipelineTimeout is how long to wait for all build and integration test
-	// PipelineRuns to complete in a tenant namespace.
-	PipelineTimeout = 90 * time.Minute
-	PipelinePoll    = 30 * time.Second
+	PipelinePoll = 30 * time.Second
 
-	// ReleaseChainTimeout is how long to wait for all release PipelineRuns to
-	// complete in the managed namespace after integration tests pass. Release
-	// pipelines are slower because they include image signing, EC validation,
-	// and pushing to the release registry.
-	ReleaseChainTimeout = 60 * time.Minute
-	ReleaseChainPoll    = 5 * time.Minute
+	// WebhookDeliveryTimeout is how long to wait for PaC to create at least
+	// one new PipelineRun after trigger PRs are opened. If no PipelineRuns
+	// appear within this window, webhook delivery is broken and there is no
+	// point waiting the full PipelineTimeout.
+	WebhookDeliveryTimeout = 5 * time.Minute
+	WebhookDeliveryPoll    = 30 * time.Second
+
+	ReleaseChainPoll = 5 * time.Minute
 
 	// VeleroReadyTimeout is how long to wait for Velero deployment readiness
 	// and BSL availability during precondition checks.
 	VeleroReadyTimeout = 5 * time.Minute
 	VeleroReadyPoll    = 10 * time.Second
+)
+
+var (
+	// PipelineTimeout is how long to wait for all build and integration test
+	// PipelineRuns to complete in a tenant namespace.
+	// Overridable via DR_PIPELINE_TIMEOUT env var.
+	// Format: Go duration string (e.g., "120m", "2h").
+	PipelineTimeout = getEnvDuration("DR_PIPELINE_TIMEOUT", 90*time.Minute)
+
+	// ReleaseChainTimeout is how long to wait for all release PipelineRuns to
+	// complete in the managed namespace after integration tests pass. Release
+	// pipelines are slower because they include image signing, EC validation,
+	// and pushing to the release registry.
+	// Overridable via DR_RELEASE_CHAIN_TIMEOUT env var.
+	// Format: Go duration string (e.g., "120m", "2h").
+	ReleaseChainTimeout = getEnvDuration("DR_RELEASE_CHAIN_TIMEOUT", 60*time.Minute)
 )
 
 // ---------------------------------------------------------------------------
@@ -386,3 +368,22 @@ const (
 // tarball. Velero writes the compressed backup data at this path inside the
 // bucket. Both %s placeholders are the backup name.
 const VeleroBackupTarballPathFmt = "backups/%s/%s.tar.gz"
+
+// getEnvDuration reads a time.Duration from an environment variable.
+// Returns defaultVal if the variable is unset, unparseable, or non-positive.
+func getEnvDuration(key string, defaultVal time.Duration) time.Duration {
+	s := os.Getenv(key)
+	if s == "" {
+		return defaultVal
+	}
+	d, err := time.ParseDuration(s)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "WARNING: env %s=%q is not a valid duration, using default %s\n", key, s, defaultVal)
+		return defaultVal
+	}
+	if d <= 0 {
+		fmt.Fprintf(os.Stderr, "WARNING: env %s=%q resolved to non-positive duration, using default %s\n", key, s, defaultVal)
+		return defaultVal
+	}
+	return d
+}

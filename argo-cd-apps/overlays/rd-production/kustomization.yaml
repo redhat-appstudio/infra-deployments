@@ -1,0 +1,23 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: argocd-infra-deployments
+
+resources:
+  - artifact-registry-proxy
+  - authentication
+  - container-image-proxy
+  - crossplane-config
+  - etcd-defrag
+  - etcd-shield
+  - external-secrets-operator
+  - konflux-operator
+  - kueue
+  - multi-platform-controller
+  - notification-controller
+  - repository-validator
+
+components:
+  - ../../k-components/deploy-to-all-production-clusters
+  - ../../k-components/deploy-to-production-tenant-clusters
+  - ../../k-components/deploy-to-production-eaas-clusters
+  - ../../k-components/deploy-to-production-internal-tenant-clusters

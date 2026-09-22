@@ -2293,10 +2293,11 @@ spec:
   chain:
     artifacts.oci.storage: oci
     artifacts.pipelinerun.enable-deep-inspection: "true"
-    artifacts.pipelinerun.format: in-toto
+    artifacts.pipelinerun.format: slsa/v2alpha3
     artifacts.pipelinerun.storage: oci
     artifacts.taskrun.format: in-toto
     artifacts.taskrun.storage: ""
+    builddefinition.buildtype: https://tekton.dev/chains/v2/slsa-tekton
     options:
       deployments:
         tekton-chains-controller:
@@ -2355,7 +2356,7 @@ spec:
             default-timeout-minutes: "120"
         config-leader-election-resolvers:
           data:
-            buckets: "8"
+            buckets: "4"
         config-logging:
           data:
             loglevel.controller: info
@@ -2385,49 +2386,13 @@ spec:
                   "callerEncoder": ""
                 }
               }
+        feature-flags:
+          data:
+            enable-termination-message-compression: "true"
         git-resolver-config:
           data:
             fetch-timeout: 2m
       deployments:
-        pipelines-as-code-controller:
-          spec:
-            template:
-              spec:
-                containers:
-                - name: pac-controller
-                  resources:
-                    limits:
-                      cpu: 500m
-                      memory: 2560Mi
-                    requests:
-                      cpu: 500m
-                      memory: 2560Mi
-        pipelines-as-code-watcher:
-          spec:
-            template:
-              spec:
-                containers:
-                - name: pac-watcher
-                  resources:
-                    limits:
-                      cpu: 250m
-                      memory: 1Gi
-                    requests:
-                      cpu: 250m
-                      memory: 1Gi
-        pipelines-as-code-webhook:
-          spec:
-            template:
-              spec:
-                containers:
-                - name: pac-webhook
-                  resources:
-                    limits:
-                      cpu: 400m
-                      memory: 100Mi
-                    requests:
-                      cpu: 400m
-                      memory: 100Mi
         pipelines-console-plugin:
           spec:
             template:
@@ -2636,12 +2601,57 @@ spec:
         enable: true
         options:
           deployments:
+            pipelines-as-code-controller:
+              spec:
+                template:
+                  spec:
+                    containers:
+                    - env:
+                      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+                        value: http://open-telemetry-opentelemetry-collector.konflux-otel.svc.cluster.local:4317
+                      - name: OTEL_TRACES_SAMPLER
+                        value: parentbased_always_on
+                      name: pac-controller
+                      resources:
+                        limits:
+                          cpu: "1"
+                          memory: 4Gi
+                        requests:
+                          cpu: "1"
+                          memory: 4Gi
             pipelines-as-code-watcher:
               spec:
                 replicas: 2
+                template:
+                  spec:
+                    containers:
+                    - env:
+                      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+                        value: http://open-telemetry-opentelemetry-collector.konflux-otel.svc.cluster.local:4317
+                      - name: OTEL_TRACES_SAMPLER
+                        value: parentbased_always_on
+                      name: pac-watcher
+                      resources:
+                        limits:
+                          cpu: 250m
+                          memory: 1Gi
+                        requests:
+                          cpu: 250m
+                          memory: 1Gi
             pipelines-as-code-webhook:
               spec:
                 replicas: 2
+                template:
+                  spec:
+                    containers:
+                    - name: pac-webhook
+                      resources:
+                        limits:
+                          cpu: 400m
+                          memory: 256Mi
+                        requests:
+                          cpu: 400m
+                          memory: 256Mi
         settings:
           application-name: Konflux Staging
           custom-console-name: Konflux Staging
@@ -2655,6 +2665,9 @@ spec:
           enable-cancel-in-progress-on-pull-requests: "true"
           remember-ok-to-test: "false"
           secret-github-app-token-scoped: "false"
+          tracing-label-action: pipelines.appstudio.openshift.io/type
+          tracing-label-application: appstudio.openshift.io/application
+          tracing-label-component: appstudio.openshift.io/component
   profile: all
   pruner:
     disabled: true
@@ -2707,7 +2720,7 @@ metadata:
   namespace: openshift-marketplace
 spec:
   displayName: custom-operators
-  image: quay.io/openshift-pipeline/pipelines-index-4.18@sha256:a4aa211a70b0a92c98c885cca8fed2cce490e3fec656ad1ea68bf7e7c3c18304
+  image: quay.io/openshift-pipeline/pipelines-index-4.19@sha256:8c6152d2924f608960a4cec0faca33a1807bce19085e86d1daeeaa698fce146d
   sourceType: grpc
   updateStrategy:
     registryPoll:
@@ -2727,16 +2740,6 @@ spec:
     env:
     - name: AUTOINSTALL_COMPONENTS
       value: "false"
-    - name: IMAGE_PAC_PAC_CONTROLLER
-      value: quay.io/openshift-pipeline/pipelines-pipelines-as-code-controller-rhel9@sha256:1b1e365cfdcc85646d5890232a04bad8c7ba9ebb0db36042eeda5961f8106567
-    - name: IMAGE_PAC_PAC_WEBHOOK
-      value: quay.io/openshift-pipeline/pipelines-pipelines-as-code-webhook-rhel9@sha256:0ccda15a17a405020fa199b3dce4a630e592da9dfdbd9778be1dcc9f4bdc3fbd
-    - name: IMAGE_PAC_PAC_WATCHER
-      value: quay.io/openshift-pipeline/pipelines-pipelines-as-code-watcher-rhel9@sha256:d100578068feb5482e2631b4fadc80b9687f129c7e303b55431ac41ce58f7758
-    - name: IMAGE_PAC_PAC_CLI
-      value: quay.io/openshift-pipeline/pipelines-pipelines-as-code-cli-rhel9@sha256:0fc0dd05236f14265e25cc770a7f9f3aeea2e27964a730dac39cf9f61d349bde
-    - name: IMAGE_PIPELINES_CONTROLLER
-      value: quay.io/openshift-pipeline/pipelines-resolvers-rhel9@sha256:7cd91bc4c0f3469ec4c39d08d818b00c90ce07456364910e49ad5e1430f3110a
   name: openshift-pipelines-operator-rh
   source: custom-operators
   sourceNamespace: openshift-marketplace

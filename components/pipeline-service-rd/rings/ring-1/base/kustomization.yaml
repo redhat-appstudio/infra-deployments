@@ -1,0 +1,87 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - base-snapshot
+  - pipelines-as-code-es.yaml
+  - tekton-config.yaml
+  - tekton-results-api-cm.yaml
+
+patches:
+  # Pipelines Metrics Exporter Deployment
+  - target:
+      kind: Deployment
+      name: pipeline-metrics-exporter
+      namespace: openshift-pipelines
+    patch: |
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: 2Gi
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/memory
+        value: 1Gi
+  # Tekton Results API Deployment
+  - path: patches/set-argocd-sync-wave-to-1-patch.yaml
+    target:
+      kind: Deployment
+      name: tekton-results-api
+      namespace: tekton-results
+  - path: patches/add-env-to-api-container-patch.yaml
+    target:
+      kind: Deployment
+      name: tekton-results-api
+      namespace: tekton-results
+  - path: patches/set-api-container-resources-limits-patch.yaml
+    target:
+      kind: Deployment
+      name: tekton-results-api
+      namespace: tekton-results
+  - path: patches/set-api-container-resources-requests-patch.yaml
+    target:
+      kind: Deployment
+      name: tekton-results-api
+      namespace: tekton-results
+  # Tekton Results API For Watcher Deployment
+  - path: patches/set-argocd-sync-wave-to-1-patch.yaml
+    target:
+      kind: Deployment
+      name: tekton-results-api-for-watcher
+      namespace: tekton-results
+  - path: patches/add-env-to-api-container-patch.yaml
+    target:
+      kind: Deployment
+      name: tekton-results-api-for-watcher
+      namespace: tekton-results
+  - path: patches/set-api-container-resources-limits-patch.yaml
+    target:
+      kind: Deployment
+      name: tekton-results-api-for-watcher
+      namespace: tekton-results
+  - path: patches/set-api-container-resources-requests-patch.yaml
+    target:
+      kind: Deployment
+      name: tekton-results-api-for-watcher
+      namespace: tekton-results
+  # Tekton Results Watcher Deployment
+  - target:
+      kind: Deployment
+      name: tekton-results-watcher
+      namespace: tekton-results
+    patch: |
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: 8Gi
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/cpu
+        value: 3000m
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/memory
+        value: 8Gi
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/cpu
+        value: 1000m
+  - path: patches/update-tekton-results-watcher-container-args-patch.yaml
+    target:
+      kind: Deployment
+      name: tekton-results-watcher
+      namespace: tekton-results

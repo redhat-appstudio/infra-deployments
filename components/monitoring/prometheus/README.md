@@ -1,6 +1,6 @@
 # Konflux Central Monitoring
-The Konflux monitoring solution is based on three Prometheus instances deployed to each
-Production and Staging host and member cluster. Each cluster writes a subset of the
+The Konflux monitoring solution is based on Prometheus instances deployed to each
+Production and Staging cluster. Each cluster writes a subset of the
 metrics it generates into Observatorium (RHOBS), marking each metric with a label
 indicating its cluster of origin.
 
@@ -13,61 +13,63 @@ presentation via the AppSRE Grafana instance.
 flowchart BT
   services(Konflux Services) --> |scrape|UWM
   pods(kubelet, pods, etc.) --> |scrape|Platform
-  UWM(User Workload Monitoring) --> |federate| MS(Monitoring Stack)
-  Platform --> |federate|MS(Monitoring Stack)
-  MS --> |remote-write|rhobs(Observatorium)
-
-  services2(Konflux Services) --> |scrape|UWM2
-  pods2(kubelet, pods, etc.) --> |scrape|Platform2
-  UWM2(User Workload Monitoring) --> |federate| MS2(Monitoring Stack)
-  Platform2(Platform) --> |federate|MS2(Monitoring Stack)
-  MS2 --> |remote-write|rhobs(Observatorium)
+  UWM(User Workload Monitoring) --> |federate| Federation(Federation)
+  Platform --> |federate|Federation(Federation)
+  Federation --> |remote-write|rhobs(Observatorium)
+  tekton_metrics(Tekton metrics) --> |scrape|Tekton
+  Tekton --> |remote-write|rhobs(Observatorium)
 
   rhobs --> |scrape|grafana(AppSRE Grafana)
 
-  subgraph member[Konflux Member Clusters]
+  subgraph member[Konflux Clusters]
+    subgraph "workloads"
+    tekton_metrics
     services
     pods
-    subgraph "cmo member"[Cluster Monitoring Operator]
+    end
+    subgraph "coo"[COO - Cluster Observability Operator]
+      Federation
+      Tekton
+    end
+    subgraph "cmo"[CMO - Cluster Monitoring Operator]
       UWM
       Platform
     end
-    MS
-  end
-
-  subgraph host["Konflux Host Cluster"]
-    services2
-    pods2
-    subgraph "cmo host"[Cluster Monitoring Operator]
-      UWM2
-      Platform2
-    end
-    MS2
   end
 
   style member color:blue
-  style host color:red
 ```
-## Data Plane Clusters Prometheus Instances
+## Konflux Prometheus Instances
 We use the
-[Openshift-provided](https://docs.openshift.com/container-platform/4.12/monitoring/monitoring-overview.html)
-Prometheus deployments, Platform and user-workload-monitoring (UWM), alongside a
-Prometheus instance deployed by the
-[Cluster Observability Operator](https://docs.openshift.com/container-platform/4.15/observability/cluster_observability_operator/cluster-observability-operator-overview.html).
+[Openshift-provided](https://docs.redhat.com/en/documentation/monitoring_stack_for_red_hat_openshift/4.19/html/about_monitoring/about-ocp-monitoring#monitoring-stack-overview_about-ocp-monitoring)
+Prometheus deployments, Core Platform and User Workload Monitoring (UWM).
 
-### Platform Prometheus
+Additional Prometheus instances are deployed by the
+[Cluster Observability Operator](https://docs.redhat.com/en/documentation/red_hat_openshift_cluster_observability_operator/1-latest) (COO).
+
+### Built-in Openshift Prometheus instances
+
+#### Platform Prometheus
 Mainly scrapes generic metrics produced by built-in exporters such as cAdvisor and
-kube-state-metrics.
+kube-state-metrics. It also gathers metrics from services deployed via operators.
+
+A full list of monitored namespaces can be shown by running:
+
+`oc get namespaces -l openshift.io/cluster-monitoring=true`
 
 Retention for platform metrics gathered by this Prometheus instance cannot be changed, as they are managed by the ROSA. [See this KB article](https://access.redhat.com/solutions/4280821) for details about default retention settings of ROSA clusters. Any metrics not pushed to RHOBS will be lost when retention time or storage runs out. Any data gathering necessary for RCA must be done within the retention period, before it is erased.
 
-### User Workload Monitoring (UWM) Prometheus
+#### User Workload Monitoring (UWM) Prometheus
 Scrapes custom metrics provided by services deployed by the different Konflux teams, and
 collected by Service Monitors, also provided by the teams.
 
-In Production and Staging, UWM Prometheus is enabled using OCM (since it maintains the
+This Prometheus is configured to monitor all namespaces not monitored by Platform Prometheus. So the query to get list of namespaces would be:
+
+`oc get namespaces -l '!openshift.io/cluster-monitoring'`
+
+In Production and Staging, UWM Prometheus is **enabled** using Openshift Cluster Manager (since it maintains the
 Prometheus configurations).
-The retention period and size is maintained using an ArgoCD-controlled
+Configuration of the UWM Prometheus, such as retention, resource allocation or node placement, is **self-managed** via
 [ConfigMap](./base/uwm-config/uwm-config.yaml).
 
 In Development this ConfigMap is created implicitly when UWM is enabled. Consequently,
@@ -88,9 +90,17 @@ data:
       retentionSize: 1GiB
 ```
 
-### Observability Operator (OBO) Prometheus
-This instance federates the Platform and UWM Prometheus instances.
+### Cluster Observability Operator (COO)
+This Operator allows deployment of fully customizable Prometheus instances and additional observability tools such as Thanos and Perses.
 
+#### Tekton Prometheus
+In [PVO11Y-5094](https://redhat.atlassian.net/browse/PVO11Y-5094), a new Prometheus instance was deployed to handle subset of metrics from Tekton pipelines controller and the Pipeline exporter. 
+
+This set of metrics can potentially have a very high cardinality due to the high numbers of Tekton pipelines running in Konflux. Since these metrics were gathered by the Platform prometheus, they could bloat the memory usage of the Prometheus, growing it beyond the memory available on the cluster nodes. This caused the pods to become evicted and unschedulable on any nodes, causing loss of all Platform metrics.
+
+To avoid such incidents in the future, and allow us to gather fine grained pipeline and task metrics, it was decided to deploy a separate Prometheus solely for the risky Tekton metrics.
+
+#### Federation Prometheus
 There are limitations for both built-in Prometheus instances that do not allow us to
 use them directly to write metrics to RHOBS:
 

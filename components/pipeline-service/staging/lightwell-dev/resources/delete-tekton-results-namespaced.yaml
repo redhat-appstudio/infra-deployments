@@ -1,0 +1,14 @@
+# Removes all resources in the tekton-results namespace:
+# ServiceAccounts, Roles, RoleBindings, ConfigMaps, Secrets,
+# Services, Deployments, ServiceMonitors, and Routes.
+#
+# Target in kustomization.yaml: namespace: tekton-results
+#
+# Note: $patch:delete targets are controlled by the target selector
+# in kustomization.yaml, not by the apiVersion/kind/name below.
+# Those fields are required by kustomize but unused for matching.
+$patch: delete
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: unused

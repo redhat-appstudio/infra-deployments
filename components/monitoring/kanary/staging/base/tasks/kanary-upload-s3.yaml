@@ -1,0 +1,95 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: kanary-upload-s3
+spec:
+  params:
+    - name: tested-cluster
+      type: string
+    - name: test-type
+      type: string
+    - name: loadtest-type
+      type: string
+      default: "run-probe"
+      description: "Loadtest type for S3 path prefix (run-probe or run-simple)"
+    - name: s3-bucket
+      type: string
+      default: ""
+      description: "S3 bucket name for artifact upload. Leave empty to skip upload."
+  workspaces:
+    - name: artifacts
+      description: "Workspace containing /results/ directory from test task"
+  results:
+    - name: s3-upload-failed
+      description: "true if artifact upload to S3 failed, false otherwise."
+  steps:
+    - name: upload
+      image: quay.io/redhat-user-workloads/konflux-perfscale-tenant/loadtest
+      env:
+        - name: TESTED_CLUSTER
+          value: $(params.tested-cluster)
+        - name: TEST_TYPE
+          value: $(params.test-type)
+        - name: LOADTEST_TYPE
+          value: $(params.loadtest-type)
+        - name: S3_BUCKET
+          value: $(params.s3-bucket)
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: kanary-probe-credentials
+              key: aws_access_key_id
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: kanary-probe-credentials
+              key: aws_secret_access_key
+        - name: AWS_REGION
+          valueFrom:
+            secretKeyRef:
+              name: kanary-probe-credentials
+              key: aws_region
+      script: |
+        #!/usr/bin/env bash
+        set -uo pipefail
+
+        # Upload is non-fatal: mark failure and exit 0 so the TaskRun succeeds.
+        fail_upload() {
+          echo "ERROR: ${1}" >&2
+          echo -n "true" > "$(results.s3-upload-failed.path)"
+          exit 0
+        }
+
+        echo -n "false" > $(results.s3-upload-failed.path)
+
+        if [[ -z "${S3_BUCKET}" ]]; then
+          echo "No S3 bucket configured, skipping artifact upload"
+          exit 0
+        fi
+
+        if [[ ! -d $(workspaces.artifacts.path)/results ]]; then
+          fail_upload "$(workspaces.artifacts.path)/results not found, cannot create artifact tarball"
+        fi
+
+        timestamp=$(date -u +%Y%m%dT%H%M%SZ)
+        tarball="/tmp/${LOADTEST_TYPE}-${TESTED_CLUSTER}-${TEST_TYPE}-${timestamp}.tar.gz"
+        s3_key="${LOADTEST_TYPE}/${TESTED_CLUSTER}/${TEST_TYPE}/${LOADTEST_TYPE}-${TESTED_CLUSTER}-${TEST_TYPE}-${timestamp}.tar.gz"
+
+        # Remove the tarball on exit regardless of outcome.
+        trap 'rm -f "${tarball}"' EXIT
+
+        echo "Creating tarball from $(workspaces.artifacts.path)/results/"
+        if ! tar -czf "${tarball}" -C "$(workspaces.artifacts.path)/results" .; then
+          fail_upload "failed to create tarball ${tarball}"
+        fi
+
+        echo "Uploading to s3://${S3_BUCKET}/${s3_key}"
+        if ! python3 ci-scripts/s3-artifacts.py push \
+          --bucket "${S3_BUCKET}" \
+          --local "${tarball}" \
+          --remote "${s3_key}"; then
+          fail_upload "failed to upload ${tarball} to s3://${S3_BUCKET}/${s3_key}"
+        fi
+
+        echo "Upload complete: s3://${S3_BUCKET}/${s3_key}"
+        echo -n "false" > "$(results.s3-upload-failed.path)"

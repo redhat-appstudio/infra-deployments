@@ -13,7 +13,7 @@ step refs (`konflux-ci-install-konflux`, `redhat-appstudio-conformance-tests`).
 | `Dockerfile` | Unified CI image (`konflux-overlay-install`): task-runner + Go 1.26.4 from ubi10/go-toolset |
 | `ci-common.sh` | Shared cluster login (temp kubeconfig copy) and ephemeral git credentials |
 | `install.sh` | `hack/bootstrap-cluster.sh preview --operator-overlay`, QE secrets, SprayProxy, `e2e-secrets` quay pull secret |
-| `run-e2e.sh` | Clone konflux-ci @ ref from `invariant/kustomization.yaml`; `prepare-conformance-env` + `test/e2e/run-e2e.sh` (deploy test resources, proxy integration tests, then conformance in `default-tenant`) |
+| `run-e2e.sh` | Clone konflux-ci @ ref from `rings/ring-0/base/invariant/kustomization.yaml`; `prepare-conformance-env` + `test/e2e/run-e2e.sh` (OpenShift UWM metrics when applicable, proxy integration tests, conformance in `default-tenant`) |
 
 ## CI flow (both steps use the same pattern)
 
@@ -47,6 +47,10 @@ original kubeconfig file is not modified. While the step runs, `KUBECONFIG` poin
 a temp credential store file so your `~/.gitconfig` is not modified and the PAT is removed on
 `EXIT`. For interactive testing, run via a wrapper script or subshell so env vars from the step do
 not linger mid-session.
+
+OpenShift UWM metrics tests run inside `test/e2e/run-e2e.sh` when the cluster has user-workload
+monitoring. Preview already enables UWM via the `monitoring-workload-prometheus` Argo app; the
+`dummy-service` canary namespace triggers the default canary wait in metricsopenshift `BeforeSuite`.
 
 ```bash
 ./components/konflux-operator/ci/openshift-overlay-e2e/install.sh

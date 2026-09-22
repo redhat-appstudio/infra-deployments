@@ -1,0 +1,11 @@
+apiVersion: konflux.konflux-ci.dev/v1alpha1
+kind: Konflux
+metadata:
+  name: konflux
+spec:
+  namespaceLister:
+    spec:
+      cacheResyncPeriod: "10m"
+      logLevel: info
+      namespaceLister:
+        replicas: 3

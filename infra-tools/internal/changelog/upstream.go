@@ -25,10 +25,15 @@ type FileChange struct {
 	Patch    string // unified diff; may be empty for binary or very large files
 }
 
-// OperatorCompare holds the changed files from comparing two operator refs.
+// OperatorCompare holds the changed files and conventional commits from comparing
+// two operator refs. Commits are filtered to feat/fix only (same rules as
+// FetchServiceCommits) so callers can render an operator changelog without a
+// second Compare API call.
 type OperatorCompare struct {
-	Files     []FileChange
-	Truncated bool // true when the API returned the 300-file maximum, indicating possible truncation
+	Files            []FileChange
+	Truncated        bool // true when the API returned the 300-file maximum, indicating possible truncation
+	Commits          []ConventionalCommit
+	CommitsTruncated bool // true when AheadBy hit the 250-commit API limit
 }
 
 // maxCompareFiles is the GitHub compare API hard limit on returned files.
@@ -48,11 +53,14 @@ func NewRepoComparer(token string) RepoComparer {
 }
 
 // FetchOperatorCompare calls the GitHub compare API for konflux-ci/konflux-ci
-// between oldRef and newRef and returns the changed files. The call is retried
-// up to three times with exponential backoff to survive transient failures.
+// between oldRef and newRef and returns the changed files plus filtered
+// conventional commits. The call is retried up to three times with exponential
+// backoff to survive transient failures.
 //
 // When the API returns exactly maxCompareFiles files the result is marked
-// Truncated; callers should degrade in the same way they handle API errors.
+// Truncated; callers should degrade bump detection in the same way they handle
+// API errors. Commits are still returned when Truncated is true — file truncation
+// is independent of the commit list.
 func FetchOperatorCompare(ctx context.Context, c RepoComparer, oldRef, newRef string) (*OperatorCompare, error) {
 	var comparison *gh.CommitsComparison
 	err := retryDo(ctx, 3, func() error {
@@ -66,8 +74,10 @@ func FetchOperatorCompare(ctx context.Context, c RepoComparer, oldRef, newRef st
 	}
 	files := convertFiles(comparison.Files)
 	return &OperatorCompare{
-		Files:     files,
-		Truncated: len(files) >= maxCompareFiles,
+		Files:            files,
+		Truncated:        len(files) >= maxCompareFiles,
+		Commits:          filterConventional(comparison.Commits),
+		CommitsTruncated: comparison.GetAheadBy() >= CommitMaxFromCompare,
 	}, nil
 }
 

@@ -1,0 +1,168 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: kanary-run-probe
+spec:
+  params:
+    - name: otel-endpoint
+      type: string
+      default: http://open-telemetry-opentelemetry-collector.konflux-otel.svc.cluster.local:4318
+    - name: s3-bucket
+      type: string
+      default: ""
+      description: "S3 bucket name for artifact upload. Leave empty to skip upload."
+    - name: tested-cluster
+      type: string
+    - name: test-type
+      type: string
+      default: container-single-arch
+    - name: component-repo
+      type: string
+    - name: user-prefix
+      type: string
+    - name: quay-repo
+      type: string
+    - name: pipeline-repo-templating-source
+      type: string
+      default: "https://github.com/rhtap-perf-test/konflux-probe-test-templates"
+    - name: pipeline-repo-templating-source-dir
+      type: string
+      default: "nodejs-devfile-sample-SingleArch/"
+    - name: release-pipeline-service-account
+      type: string
+      default: "managed-konflux-perfscale-sa"
+    - name: release-managed-namespace
+      type: string
+      default: "managed-konflux-perfscale-tenant"
+    - name: oci-storage
+      type: string
+    # Private clusters only (GitLab-based repos). Leave empty for public clusters.
+    - name: fork-target
+      type: string
+      default: ""
+    - name: gitlab-api-url
+      type: string
+      default: ""
+    - name: member-cluster
+      type: string
+    - name: tenant-namespace
+      type: string
+      default: "konflux-perfscale-4-tenant"
+    # RPM test type only. Leave empty for container test types.
+    - name: component-repo-revision
+      type: string
+      default: ""
+    - name: pipeline-image-pull-secrets
+      type: string
+      default: ""
+    - name: test-scenario-git-url
+      type: string
+      default: ""
+    - name: release-policy
+      type: string
+      default: "tmp-onboard-policy"
+    # RPM mirror workaround only. Leave empty for container test types.
+    - name: upstream-repo-url
+      type: string
+      default: ""
+    - name: upstream-repo-branch
+      type: string
+      default: ""
+    - name: fork-repo-host-and-path
+      type: string
+      default: ""
+    - name: fork-repo-username
+      type: string
+      default: "jhutar"
+  workspaces:
+    - name: artifacts
+  tasks:
+    - name: run-kanary-tests
+      timeout: "1h0m0s"
+      taskRef:
+        kind: Task
+        name: kanary-run-probe
+      params:
+        - name: tested-cluster
+          value: $(params.tested-cluster)
+        - name: test-type
+          value: $(params.test-type)
+        - name: component-repo
+          value: $(params.component-repo)
+        - name: user-prefix
+          value: $(params.user-prefix)
+        - name: quay-repo
+          value: $(params.quay-repo)
+        - name: pipeline-repo-templating-source
+          value: $(params.pipeline-repo-templating-source)
+        - name: pipeline-repo-templating-source-dir
+          value: $(params.pipeline-repo-templating-source-dir)
+        - name: release-pipeline-service-account
+          value: $(params.release-pipeline-service-account)
+        - name: release-managed-namespace
+          value: $(params.release-managed-namespace)
+        - name: oci-storage
+          value: $(params.oci-storage)
+        - name: fork-target
+          value: $(params.fork-target)
+        - name: gitlab-api-url
+          value: $(params.gitlab-api-url)
+        - name: member-cluster
+          value: $(params.member-cluster)
+        - name: tenant-namespace
+          value: $(params.tenant-namespace)
+        - name: component-repo-revision
+          value: $(params.component-repo-revision)
+        - name: pipeline-image-pull-secrets
+          value: $(params.pipeline-image-pull-secrets)
+        - name: test-scenario-git-url
+          value: $(params.test-scenario-git-url)
+        - name: release-policy
+          value: $(params.release-policy)
+        - name: upstream-repo-url
+          value: $(params.upstream-repo-url)
+        - name: upstream-repo-branch
+          value: $(params.upstream-repo-branch)
+        - name: fork-repo-host-and-path
+          value: $(params.fork-repo-host-and-path)
+        - name: fork-repo-username
+          value: $(params.fork-repo-username)
+      workspaces:
+        - name: artifacts
+          workspace: artifacts
+    - name: upload-artifacts
+      runAfter: [run-kanary-tests]
+      taskRef:
+        kind: Task
+        name: kanary-upload-s3
+      params:
+        - name: tested-cluster
+          value: $(params.tested-cluster)
+        - name: test-type
+          value: $(params.test-type)
+        - name: loadtest-type
+          value: "run-probe"
+        - name: s3-bucket
+          value: $(params.s3-bucket)
+      workspaces:
+        - name: artifacts
+          workspace: artifacts
+  finally:
+    - name: push-kanary-metrics
+      taskRef:
+        name: kanary-push-metrics
+      params:
+        - name: otel-endpoint
+          value: $(params.otel-endpoint)
+        - name: tested-cluster
+          value: $(params.tested-cluster)
+        - name: test-type
+          value: $(params.test-type)
+        - name: test-outcome
+          value: $(tasks.run-kanary-tests.results.test-outcome)
+        - name: failure-cause
+          value: $(tasks.run-kanary-tests.results.failure-cause)
+        - name: failure-phase
+          value: $(tasks.run-kanary-tests.results.failure-phase)
+        - name: s3-upload-failed
+          value: $(tasks.upload-artifacts.results.s3-upload-failed)

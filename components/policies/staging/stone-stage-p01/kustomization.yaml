@@ -3,4 +3,14 @@ kind: Kustomization
 resources:
 - ../base/
 - ../policies/kubearchive/
-- ../policies/kueue/
+- kueue/
+
+patches:
+  - patch: |-
+      $patch: delete
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: deny-unallowed-annotations
+        namespace: tekton-kueue
+

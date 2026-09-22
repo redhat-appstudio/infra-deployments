@@ -1,7 +1,7 @@
 ---
 global:
   extraArgs:
-    - "-log.level=debug"
+    - "-log.level=info"
 
 gateway:
   service:
@@ -32,7 +32,7 @@ loki:
     gossip_to_dead_nodes_time: 15s
     # How long to wait for an ingester to gracefully leave before considering it dead
     # This should be longer than terminationGracePeriodSeconds to allow graceful shutdown
-    left_ingesters_timeout: 90s
+    left_ingesters_timeout: 150s  # 30s buffer after terminationGracePeriodSeconds (120s)
   # Required storage configuration for Helm chart
   storage:
     type: s3
@@ -62,36 +62,36 @@ loki:
     discover_log_levels: false
     volume_enabled: true
     max_global_streams_per_user: 75000
-    max_entries_limit_per_query: 100000
+    max_entries_limit_per_query: 50000
     increment_duplicate_timestamp: true
     allow_structured_metadata: true
-    tsdb_max_query_parallelism: 16
-    split_queries_by_interval: 1h
+    tsdb_max_query_parallelism: 8
+    split_queries_by_interval: 30m
     query_timeout: 5m
   runtimeConfig:
     configs:
       kubearchive:
-        log_push_request: true
-        log_push_request_streams: true
-        log_stream_creation: true
-        log_duplicate_stream_info: true
+        log_push_request: false
+        log_push_request_streams: false
+        log_stream_creation: false
+        log_duplicate_stream_info: false
   ingester:
     autoforget_unhealthy: true
-    chunk_target_size: 8388608        # 8MB
-    chunk_idle_period: 1h
-    max_chunk_age: 2h
+    chunk_target_size: 4194304        # 4MB (reduced from 8MB to lower per-chunk memory)
+    chunk_idle_period: 30m            # Flush idle chunks sooner (was 1h)
+    max_chunk_age: 1h                 # Reduce max chunk lifetime (was 2h)
     chunk_encoding: snappy            # Compress data (reduces S3 transfer size)
-    chunk_retain_period: 1h           # Keep chunks in memory after flush
+    chunk_retain_period: 15m          # Reduced from 1h to free memory faster after flush
     flush_op_timeout: 10m             # Add timeout for S3 operations
     lifecycler:
       ring:
-        heartbeat_timeout: 10m
+        heartbeat_timeout: 10m        # Prevent premature unhealthy marking
     wal:
       enabled: true
       dir: /var/loki/wal
-      checkpoint_duration: 5m
-      flush_on_shutdown: true
-      replay_memory_ceiling: 2GB
+      checkpoint_duration: 5m          # Create checkpoints every 5 minutes
+      flush_on_shutdown: true          # Ensure data is flushed before shutdown
+      replay_memory_ceiling: 4GB       # ~33% of 12Gi limit - prevents OOM during WAL replay
   server:
     grpc_server_max_recv_msg_size: 15728640  # 15MB
     grpc_server_max_send_msg_size: 15728640
@@ -105,7 +105,7 @@ loki:
       max_send_msg_size: 15728640  # 15MB
   # Tuning for high-load queries
   querier:
-    max_concurrent: 8
+    max_concurrent: 4
   query_range:
     # split_queries_by_interval deprecated in query_range block in Loki 3.x - removed
     parallelise_shardable_queries: false
@@ -121,10 +121,10 @@ ingester:
   resources:
     requests:
       cpu: 500m
-      memory: 4Gi
+      memory: 8Gi
     limits:
       cpu: 2000m
-      memory: 6Gi
+      memory: 12Gi
   persistence:
     enabled: true
     size: 10Gi
@@ -153,9 +153,9 @@ querier:
   resources:
     requests:
       cpu: 500m
-      memory: 6Gi
+      memory: 8Gi
     limits:
-      memory: 10Gi
+      memory: 14Gi
   affinity: {}
 
 queryFrontend:

@@ -35,16 +35,19 @@ func (f *fakeCommenter) UpsertCommentByMarker(_ context.Context, prNumber int, b
 }
 
 // fakeRepoComparer implements changelog.RepoComparer for testing.
-// The operator compare call (repo == "konflux-ci") uses err and files.
+// The operator compare call (repo == "konflux-ci") uses err, files,
+// operatorCommits, and operatorAheadBy.
 // Service compare calls (any other repo) use commitErr and commits/aheadBy.
 var _ changelog.RepoComparer = &fakeRepoComparer{}
 
 type fakeRepoComparer struct {
-	files     []*gh.CommitFile
-	commits   []*gh.RepositoryCommit
-	aheadBy   int
-	err       error // returned for the operator compare call
-	commitErr error // returned for service compare calls
+	files           []*gh.CommitFile
+	operatorCommits []*gh.RepositoryCommit
+	operatorAheadBy int
+	commits         []*gh.RepositoryCommit
+	aheadBy         int
+	err             error // returned for the operator compare call
+	commitErr       error // returned for service compare calls
 }
 
 func (f *fakeRepoComparer) CompareCommits(_ context.Context, _, repo, _, _ string, _ *gh.ListOptions) (*gh.CommitsComparison, *gh.Response, error) {
@@ -52,7 +55,11 @@ func (f *fakeRepoComparer) CompareCommits(_ context.Context, _, repo, _, _ strin
 		if f.err != nil {
 			return nil, nil, f.err
 		}
-		return &gh.CommitsComparison{Files: f.files}, nil, nil
+		return &gh.CommitsComparison{
+			Files:   f.files,
+			Commits: f.operatorCommits,
+			AheadBy: gh.Ptr(f.operatorAheadBy),
+		}, nil, nil
 	}
 	// Service compare call
 	if f.commitErr != nil {
@@ -62,6 +69,27 @@ func (f *fakeRepoComparer) CompareCommits(_ context.Context, _, repo, _, _ strin
 		Commits: f.commits,
 		AheadBy: gh.Ptr(f.aheadBy),
 	}, nil, nil
+}
+
+// fakeRegistryInspector implements changelog.RegistryInspector for testing.
+// Returns labels[ref] when set, or an empty map. Returns err for all calls when set.
+type fakeRegistryInspector struct {
+	labels map[string]map[string]string // imageRef → labels
+	err    error
+}
+
+var _ changelog.RegistryInspector = &fakeRegistryInspector{}
+
+func (f *fakeRegistryInspector) InspectLabels(_ context.Context, ref string) (map[string]string, error) {
+	if f.err != nil {
+		return nil, f.err
+	}
+	if f.labels != nil {
+		if m, ok := f.labels[ref]; ok {
+			return m, nil
+		}
+	}
+	return map[string]string{}, nil
 }
 
 func writeTempKustomization(t *testing.T, ref string) string {
@@ -95,9 +123,62 @@ func TestPost_PassesCorrectMarkerAndBody(t *testing.T) {
 // are not truncated — the short() helper takes a different branch.
 func TestFormatCompare_ShortRef(t *testing.T) {
 	g := NewWithT(t)
-	body := formatCompare("main", "feature-x", nil)
+	body := formatCompare("main", "feature-x", commitDetails{Failed: true}, nil)
 	g.Expect(body).To(ContainSubstring("main"))
 	g.Expect(body).To(ContainSubstring("feature-x"))
+}
+
+// TestFormatCompare_OperatorCommits verifies operator feat/fix bullets and
+// scoped subjects render between Full diff and the service-bumps section.
+func TestFormatCompare_OperatorCommits(t *testing.T) {
+	g := NewWithT(t)
+	op := commitDetails{
+		Commits: []changelog.ConventionalCommit{
+			{Type: "feat", Scope: "operator", Subject: "add ring sync"},
+			{Type: "fix", Subject: "nil pointer in reconcile"},
+		},
+	}
+	body := formatCompare(oldRef, newRef, op, []bumpWithCommits{})
+	g.Expect(body).To(ContainSubstring("feat(operator): add ring sync"))
+	g.Expect(body).To(ContainSubstring("fix: nil pointer in reconcile"))
+	g.Expect(body).To(ContainSubstring("No upstream service refs changed"))
+	// Operator bullets appear before the service section.
+	opIdx := strings.Index(body, "feat(operator): add ring sync")
+	svcIdx := strings.Index(body, "No upstream service refs changed")
+	g.Expect(opIdx).To(BeNumerically("<", svcIdx))
+}
+
+// TestFormatCompare_OperatorTruncated verifies the 250-commit truncation note
+// appears after operator commit bullets.
+func TestFormatCompare_OperatorTruncated(t *testing.T) {
+	g := NewWithT(t)
+	op := commitDetails{
+		Commits:   []changelog.ConventionalCommit{{Type: "feat", Subject: "something"}},
+		Truncated: true,
+	}
+	body := formatCompare(oldRef, newRef, op, []bumpWithCommits{})
+	g.Expect(body).To(ContainSubstring("feat: something"))
+	g.Expect(body).To(ContainSubstring("250 commits"))
+}
+
+// TestFormatCompare_OperatorEmptyButTruncated verifies that when the compare
+// API is truncated and no feat/fix commits appear in the returned subset, the
+// comment notes the 250-commit limit instead of claiming there are none.
+func TestFormatCompare_OperatorEmptyButTruncated(t *testing.T) {
+	g := NewWithT(t)
+	body := formatCompare(oldRef, newRef, commitDetails{Truncated: true}, []bumpWithCommits{})
+	g.Expect(body).To(ContainSubstring("No notable commits (feat/fix) in the first 250 commits"))
+	g.Expect(body).To(ContainSubstring("results may be incomplete"))
+	g.Expect(body).NotTo(ContainSubstring("_No notable commits (feat/fix)._"))
+}
+
+// TestFormatCompare_OperatorFailed verifies commit-details failure note for
+// the operator section.
+func TestFormatCompare_OperatorFailed(t *testing.T) {
+	g := NewWithT(t)
+	body := formatCompare(oldRef, newRef, commitDetails{Failed: true}, nil)
+	g.Expect(body).To(ContainSubstring("Commit details unavailable"))
+	g.Expect(body).To(ContainSubstring("Upstream service bump detection unavailable"))
 }
 
 // TestComputeBody_Unchanged verifies that identical kustomization files produce
@@ -105,7 +186,7 @@ func TestFormatCompare_ShortRef(t *testing.T) {
 func TestComputeBody_Unchanged(t *testing.T) {
 	g := NewWithT(t)
 	path := writeTempKustomization(t, oldRef)
-	body, err := computeBody(context.Background(), path, path, &fakeRepoComparer{})
+	body, err := computeBody(context.Background(), path, path, &fakeRepoComparer{}, &fakeRegistryInspector{})
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(body).To(ContainSubstring(commentMarker))
 	g.Expect(body).To(ContainSubstring("### Operator Changelog"))
@@ -114,20 +195,104 @@ func TestComputeBody_Unchanged(t *testing.T) {
 
 // TestComputeBody_Changed verifies that different kustomization files produce
 // a compare comment containing both refs and a compare URL. No service bumps
-// in this case because the fake comparer returns no files.
+// in this case because the fake comparer returns no files; with no operator
+// commits the body notes that explicitly.
 func TestComputeBody_Changed(t *testing.T) {
 	g := NewWithT(t)
 	basePath := writeTempKustomization(t, oldRef)
 	headPath := writeTempKustomization(t, newRef)
-	body, err := computeBody(context.Background(), basePath, headPath, &fakeRepoComparer{})
+	body, err := computeBody(context.Background(), basePath, headPath, &fakeRepoComparer{}, &fakeRegistryInspector{})
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(body).To(ContainSubstring(commentMarker))
 	g.Expect(body).To(ContainSubstring(oldRef))
 	g.Expect(body).To(ContainSubstring(newRef))
 	g.Expect(body).To(ContainSubstring(oldRef[:12]))
 	g.Expect(body).To(ContainSubstring("konflux-ci/konflux-ci/compare/" + oldRef + "..." + newRef))
+	g.Expect(body).To(ContainSubstring("No notable commits"))
 	g.Expect(body).To(ContainSubstring("No upstream service refs changed"))
 	g.Expect(body).NotTo(ContainSubstring("No operator ref change"))
+}
+
+// TestComputeBody_WithOperatorCommits verifies that feat/fix commits returned
+// on the operator compare appear in the operator section, while chore commits
+// are filtered out.
+func TestComputeBody_WithOperatorCommits(t *testing.T) {
+	g := NewWithT(t)
+	fake := &fakeRepoComparer{
+		operatorCommits: []*gh.RepositoryCommit{
+			{SHA: gh.Ptr("c1c1c1c1c1c1"), Commit: &gh.Commit{Message: gh.Ptr("feat(operator): wire scrape token")}},
+			{SHA: gh.Ptr("c2c2c2c2c2c2"), Commit: &gh.Commit{Message: gh.Ptr("fix: avoid double reconcile")}},
+			{SHA: gh.Ptr("c3c3c3c3c3c3"), Commit: &gh.Commit{Message: gh.Ptr("chore: bump deps")}},
+		},
+	}
+	basePath := writeTempKustomization(t, oldRef)
+	headPath := writeTempKustomization(t, newRef)
+	body, err := computeBody(context.Background(), basePath, headPath, fake, &fakeRegistryInspector{})
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(body).To(ContainSubstring("feat(operator): wire scrape token"))
+	g.Expect(body).To(ContainSubstring("fix: avoid double reconcile"))
+	g.Expect(body).NotTo(ContainSubstring("chore:"))
+	g.Expect(body).To(ContainSubstring("No upstream service refs changed"))
+}
+
+// TestComputeBody_OperatorCommitsTruncated verifies that when AheadBy hits the
+// 250-commit API limit on the operator compare, a truncation note appears.
+func TestComputeBody_OperatorCommitsTruncated(t *testing.T) {
+	g := NewWithT(t)
+	fake := &fakeRepoComparer{
+		operatorCommits: []*gh.RepositoryCommit{
+			{SHA: gh.Ptr("c1c1c1c1c1c1"), Commit: &gh.Commit{Message: gh.Ptr("feat: large bump")}},
+		},
+		operatorAheadBy: 250,
+	}
+	basePath := writeTempKustomization(t, oldRef)
+	headPath := writeTempKustomization(t, newRef)
+	body, err := computeBody(context.Background(), basePath, headPath, fake, &fakeRegistryInspector{})
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(body).To(ContainSubstring("feat: large bump"))
+	g.Expect(body).To(ContainSubstring("250 commits"))
+}
+
+// TestComputeBody_OperatorEmptyButTruncated verifies that chore-only commits
+// under a truncated compare do not claim a definitive empty changelog.
+func TestComputeBody_OperatorEmptyButTruncated(t *testing.T) {
+	g := NewWithT(t)
+	fake := &fakeRepoComparer{
+		operatorCommits: []*gh.RepositoryCommit{
+			{SHA: gh.Ptr("c1c1c1c1c1c1"), Commit: &gh.Commit{Message: gh.Ptr("chore: bump deps")}},
+			{SHA: gh.Ptr("c2c2c2c2c2c2"), Commit: &gh.Commit{Message: gh.Ptr("docs: update README")}},
+		},
+		operatorAheadBy: 250,
+	}
+	basePath := writeTempKustomization(t, oldRef)
+	headPath := writeTempKustomization(t, newRef)
+	body, err := computeBody(context.Background(), basePath, headPath, fake, &fakeRegistryInspector{})
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(body).To(ContainSubstring("No notable commits (feat/fix) in the first 250 commits"))
+	g.Expect(body).To(ContainSubstring("results may be incomplete"))
+	g.Expect(body).NotTo(ContainSubstring("_No notable commits (feat/fix)._"))
+}
+
+// TestComputeBody_OperatorCommitsSurviveBumpDegrade verifies that operator
+// commits are still shown when file truncation forces bump-detection degrade.
+func TestComputeBody_OperatorCommitsSurviveBumpDegrade(t *testing.T) {
+	g := NewWithT(t)
+	files := make([]*gh.CommitFile, 300)
+	for i := range files {
+		files[i] = &gh.CommitFile{Filename: gh.Ptr("file.yaml"), Patch: gh.Ptr("diff")}
+	}
+	fake := &fakeRepoComparer{
+		files: files,
+		operatorCommits: []*gh.RepositoryCommit{
+			{SHA: gh.Ptr("c1c1c1c1c1c1"), Commit: &gh.Commit{Message: gh.Ptr("feat: still visible")}},
+		},
+	}
+	basePath := writeTempKustomization(t, oldRef)
+	headPath := writeTempKustomization(t, newRef)
+	body, err := computeBody(context.Background(), basePath, headPath, fake, &fakeRegistryInspector{})
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(body).To(ContainSubstring("feat: still visible"))
+	g.Expect(body).To(ContainSubstring("unavailable"))
 }
 
 // TestComputeBody_WithServiceBumps verifies that a fake comparer returning a
@@ -152,7 +317,7 @@ func TestComputeBody_WithServiceBumps(t *testing.T) {
 
 	basePath := writeTempKustomization(t, oldRef)
 	headPath := writeTempKustomization(t, newRef)
-	body, err := computeBody(context.Background(), basePath, headPath, fake)
+	body, err := computeBody(context.Background(), basePath, headPath, fake, &fakeRegistryInspector{})
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(body).To(ContainSubstring("build-service"))
 	g.Expect(body).To(ContainSubstring(buildOldSHA[:12]))
@@ -162,15 +327,16 @@ func TestComputeBody_WithServiceBumps(t *testing.T) {
 
 // TestComputeBody_APIFailureDegrades verifies that when the comparer returns an
 // error, the comment still includes the operator compare link (not an error page),
-// and notes that service bump detection was unavailable.
+// and notes that both commit details and service bump detection were unavailable.
 func TestComputeBody_APIFailureDegrades(t *testing.T) {
 	g := NewWithT(t)
 	basePath := writeTempKustomization(t, oldRef)
 	headPath := writeTempKustomization(t, newRef)
 	fake := &fakeRepoComparer{err: errors.New("rate limited")}
-	body, err := computeBody(context.Background(), basePath, headPath, fake)
+	body, err := computeBody(context.Background(), basePath, headPath, fake, &fakeRegistryInspector{})
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(body).To(ContainSubstring("compare/" + oldRef + "..." + newRef))
+	g.Expect(body).To(ContainSubstring("Commit details unavailable"))
 	g.Expect(body).To(ContainSubstring("unavailable"))
 }
 
@@ -189,7 +355,7 @@ func TestComputeBody_TruncatedDegrades(t *testing.T) {
 	}
 	fake := &fakeRepoComparer{files: files}
 
-	body, err := computeBody(context.Background(), basePath, headPath, fake)
+	body, err := computeBody(context.Background(), basePath, headPath, fake, &fakeRegistryInspector{})
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(body).To(ContainSubstring("compare/" + oldRef + "..." + newRef))
 	g.Expect(body).To(ContainSubstring("unavailable"))
@@ -215,7 +381,7 @@ func TestComputeBody_EmptyPatchDegrades(t *testing.T) {
 		},
 	}
 
-	body, err := computeBody(context.Background(), basePath, headPath, fake)
+	body, err := computeBody(context.Background(), basePath, headPath, fake, &fakeRegistryInspector{})
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(body).To(ContainSubstring("compare/" + oldRef + "..." + newRef))
 	g.Expect(body).To(ContainSubstring("unavailable"))
@@ -225,9 +391,46 @@ func TestComputeBody_EmptyPatchDegrades(t *testing.T) {
 // TestComputeBody_Error verifies that an unreadable file returns an error.
 func TestComputeBody_Error(t *testing.T) {
 	g := NewWithT(t)
-	_, err := computeBody(context.Background(), "/nonexistent/kustomization.yaml", "/nonexistent/kustomization.yaml", &fakeRepoComparer{})
+	_, err := computeBody(context.Background(), "/nonexistent/kustomization.yaml", "/nonexistent/kustomization.yaml", &fakeRepoComparer{}, &fakeRegistryInspector{})
 	g.Expect(err).To(HaveOccurred())
 	g.Expect(err.Error()).To(ContainSubstring("extracting operator refs"))
+}
+
+// TestComputeBody_OperatorAndServiceCommits verifies both operator and service
+// feat/fix lists appear in the same comment.
+func TestComputeBody_OperatorAndServiceCommits(t *testing.T) {
+	g := NewWithT(t)
+	buildOldSHA := "cccccccccccccccccccccccccccccccccccccccc"
+	buildNewSHA := "dddddddddddddddddddddddddddddddddddddddd"
+
+	patch := "-  - https://github.com/konflux-ci/build-service/config/default?ref=" + buildOldSHA + "\n" +
+		"+  - https://github.com/konflux-ci/build-service/config/default?ref=" + buildNewSHA + "\n"
+
+	fake := &fakeRepoComparer{
+		files: []*gh.CommitFile{
+			{
+				Filename: gh.Ptr("operator/upstream-kustomizations/build-service/kustomization.yaml"),
+				Patch:    gh.Ptr(patch),
+			},
+		},
+		operatorCommits: []*gh.RepositoryCommit{
+			{SHA: gh.Ptr("c1c1c1c1c1c1"), Commit: &gh.Commit{Message: gh.Ptr("feat(operator): bump wiring")}},
+		},
+		commits: []*gh.RepositoryCommit{
+			{SHA: gh.Ptr("e1e1e1e1e1e1"), Commit: &gh.Commit{Message: gh.Ptr("feat: add multi-arch support")}},
+		},
+	}
+
+	basePath := writeTempKustomization(t, oldRef)
+	headPath := writeTempKustomization(t, newRef)
+	body, err := computeBody(context.Background(), basePath, headPath, fake, &fakeRegistryInspector{})
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(body).To(ContainSubstring("feat(operator): bump wiring"))
+	g.Expect(body).To(ContainSubstring("build-service"))
+	g.Expect(body).To(ContainSubstring("feat: add multi-arch support"))
+	opIdx := strings.Index(body, "feat(operator): bump wiring")
+	svcIdx := strings.Index(body, "#### Upstream Service Bumps")
+	g.Expect(opIdx).To(BeNumerically("<", svcIdx))
 }
 
 // TestComputeBody_WithServiceCommits verifies that feat/fix conventional commits
@@ -257,7 +460,7 @@ func TestComputeBody_WithServiceCommits(t *testing.T) {
 
 	basePath := writeTempKustomization(t, oldRef)
 	headPath := writeTempKustomization(t, newRef)
-	body, err := computeBody(context.Background(), basePath, headPath, fake)
+	body, err := computeBody(context.Background(), basePath, headPath, fake, &fakeRegistryInspector{})
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(body).To(ContainSubstring("build-service"))
 	g.Expect(body).To(ContainSubstring("feat: add multi-arch support"))
@@ -288,7 +491,7 @@ func TestComputeBody_ServiceCommitsFail(t *testing.T) {
 
 	basePath := writeTempKustomization(t, oldRef)
 	headPath := writeTempKustomization(t, newRef)
-	body, err := computeBody(context.Background(), basePath, headPath, fake)
+	body, err := computeBody(context.Background(), basePath, headPath, fake, &fakeRegistryInspector{})
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(body).To(ContainSubstring("build-service"))
 	g.Expect(body).To(ContainSubstring("compare/" + oldRef + "..." + newRef))
@@ -321,7 +524,7 @@ func TestComputeBody_ServiceCommitsTruncated(t *testing.T) {
 
 	basePath := writeTempKustomization(t, oldRef)
 	headPath := writeTempKustomization(t, newRef)
-	body, err := computeBody(context.Background(), basePath, headPath, fake)
+	body, err := computeBody(context.Background(), basePath, headPath, fake, &fakeRegistryInspector{})
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(body).To(ContainSubstring("feat: add feature"))
 	g.Expect(body).To(ContainSubstring("250 commits"))
@@ -352,7 +555,7 @@ func TestComputeBody_NoNotableCommits(t *testing.T) {
 
 	basePath := writeTempKustomization(t, oldRef)
 	headPath := writeTempKustomization(t, newRef)
-	body, err := computeBody(context.Background(), basePath, headPath, fake)
+	body, err := computeBody(context.Background(), basePath, headPath, fake, &fakeRegistryInspector{})
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(body).To(ContainSubstring("build-service"))
 	g.Expect(body).To(ContainSubstring("No notable commits"))
@@ -383,11 +586,175 @@ func TestBuildBody_Integration(t *testing.T) {
 	gitRun(t, dir, "commit", "-m", "bump operator ref")
 
 	// Use a fake comparer so the test does not make real GitHub API calls.
-	body, err := buildBody(context.Background(), dir, baseCommit, defaultKustomizationPath, &fakeRepoComparer{})
+	body, err := buildBody(context.Background(), dir, baseCommit, defaultKustomizationPath, &fakeRepoComparer{}, &fakeRegistryInspector{})
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(body).To(ContainSubstring(oldRef))
 	g.Expect(body).To(ContainSubstring(newRef))
 	g.Expect(body).To(ContainSubstring("compare"))
+}
+
+// TestComputeBody_WithImageBumps verifies that a digest change in an upstream
+// kustomization images: block is detected, resolved to git SHAs via the
+// registry inspector, and rendered in the comment body.
+func TestComputeBody_WithImageBumps(t *testing.T) {
+	g := NewWithT(t)
+
+	oldDigest := "sha256:" + strings.Repeat("a", 64)
+	newDigest := "sha256:" + strings.Repeat("b", 64)
+	oldSHA := strings.Repeat("c", 40)
+	newSHA := strings.Repeat("d", 40)
+
+	patch := " images:\n" +
+		"-- digest: " + oldDigest + "\n" +
+		"+- digest: " + newDigest + "\n" +
+		"   name: quay.io/konflux-ci/namespace-lister\n" +
+		"   newName: quay.io/konflux-ci/namespace-lister\n"
+
+	fake := &fakeRepoComparer{
+		files: []*gh.CommitFile{
+			{
+				Filename: gh.Ptr("operator/upstream-kustomizations/namespace-lister/kustomization.yaml"),
+				Patch:    gh.Ptr(patch),
+			},
+		},
+		commits: []*gh.RepositoryCommit{
+			{SHA: gh.Ptr("e1e1e1e1e1e1"), Commit: &gh.Commit{Message: gh.Ptr("feat: expose lister metrics")}},
+		},
+	}
+
+	inspector := &fakeRegistryInspector{
+		labels: map[string]map[string]string{
+			"quay.io/konflux-ci/namespace-lister@" + oldDigest: {
+				"org.opencontainers.image.revision": oldSHA,
+			},
+			"quay.io/konflux-ci/namespace-lister@" + newDigest: {
+				"org.opencontainers.image.revision": newSHA,
+			},
+		},
+	}
+
+	basePath := writeTempKustomization(t, oldRef)
+	headPath := writeTempKustomization(t, newRef)
+	body, err := computeBody(context.Background(), basePath, headPath, fake, inspector)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(body).To(ContainSubstring("namespace-lister"))
+	g.Expect(body).To(ContainSubstring(oldSHA[:12]))
+	g.Expect(body).To(ContainSubstring(newSHA[:12]))
+	g.Expect(body).To(ContainSubstring("feat: expose lister metrics"))
+}
+
+// TestComputeBody_ImageBumpVcsRefFallback verifies that when
+// org.opencontainers.image.revision is absent but vcs-ref is present,
+// the git SHA is resolved correctly.
+func TestComputeBody_ImageBumpVcsRefFallback(t *testing.T) {
+	g := NewWithT(t)
+
+	oldDigest := "sha256:" + strings.Repeat("a", 64)
+	newDigest := "sha256:" + strings.Repeat("b", 64)
+	oldSHA := strings.Repeat("e", 40)
+	newSHA := strings.Repeat("f", 40)
+
+	patch := " images:\n" +
+		"-- digest: " + oldDigest + "\n" +
+		"+- digest: " + newDigest + "\n" +
+		"   name: quay.io/konflux-ci/namespace-lister\n" +
+		"   newName: quay.io/konflux-ci/namespace-lister\n"
+
+	fake := &fakeRepoComparer{
+		files: []*gh.CommitFile{
+			{
+				Filename: gh.Ptr("operator/upstream-kustomizations/namespace-lister/kustomization.yaml"),
+				Patch:    gh.Ptr(patch),
+			},
+		},
+	}
+
+	inspector := &fakeRegistryInspector{
+		labels: map[string]map[string]string{
+			"quay.io/konflux-ci/namespace-lister@" + oldDigest: {"vcs-ref": oldSHA},
+			"quay.io/konflux-ci/namespace-lister@" + newDigest: {"vcs-ref": newSHA},
+		},
+	}
+
+	basePath := writeTempKustomization(t, oldRef)
+	headPath := writeTempKustomization(t, newRef)
+	body, err := computeBody(context.Background(), basePath, headPath, fake, inspector)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(body).To(ContainSubstring("namespace-lister"))
+	g.Expect(body).To(ContainSubstring(oldSHA[:12]))
+	g.Expect(body).To(ContainSubstring(newSHA[:12]))
+}
+
+// TestComputeBody_ImageBumpNoRevisionLabel verifies that when the registry
+// returns no git revision label and no ref bumps exist, the comment degrades
+// rather than reporting a misleading empty-bumps message.
+func TestComputeBody_ImageBumpNoRevisionLabel(t *testing.T) {
+	g := NewWithT(t)
+
+	oldDigest := "sha256:" + strings.Repeat("a", 64)
+	newDigest := "sha256:" + strings.Repeat("b", 64)
+
+	patch := " images:\n" +
+		"-- digest: " + oldDigest + "\n" +
+		"+- digest: " + newDigest + "\n" +
+		"   name: quay.io/konflux-ci/namespace-lister\n" +
+		"   newName: quay.io/konflux-ci/namespace-lister\n"
+
+	fake := &fakeRepoComparer{
+		files: []*gh.CommitFile{
+			{
+				Filename: gh.Ptr("operator/upstream-kustomizations/namespace-lister/kustomization.yaml"),
+				Patch:    gh.Ptr(patch),
+			},
+		},
+	}
+
+	// Inspector returns empty labels — no revision label present.
+	inspector := &fakeRegistryInspector{}
+
+	basePath := writeTempKustomization(t, oldRef)
+	headPath := writeTempKustomization(t, newRef)
+	body, err := computeBody(context.Background(), basePath, headPath, fake, inspector)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(body).To(ContainSubstring(commentMarker))
+	g.Expect(body).To(ContainSubstring("unavailable"))
+	g.Expect(body).NotTo(ContainSubstring("No upstream service refs changed"))
+	g.Expect(body).NotTo(ContainSubstring("namespace-lister"))
+}
+
+// TestComputeBody_ImageBumpRegistryFailsDegrades verifies that when digest
+// changes are detected but the registry inspector fails for all lookups, the
+// comment degrades the same way as for API failures.
+func TestComputeBody_ImageBumpRegistryFailsDegrades(t *testing.T) {
+	g := NewWithT(t)
+
+	oldDigest := "sha256:" + strings.Repeat("a", 64)
+	newDigest := "sha256:" + strings.Repeat("b", 64)
+
+	patch := " images:\n" +
+		"-- digest: " + oldDigest + "\n" +
+		"+- digest: " + newDigest + "\n" +
+		"   name: quay.io/konflux-ci/namespace-lister\n" +
+		"   newName: quay.io/konflux-ci/namespace-lister\n"
+
+	fake := &fakeRepoComparer{
+		files: []*gh.CommitFile{
+			{
+				Filename: gh.Ptr("operator/upstream-kustomizations/namespace-lister/kustomization.yaml"),
+				Patch:    gh.Ptr(patch),
+			},
+		},
+	}
+
+	inspector := &fakeRegistryInspector{err: errors.New("connection refused")}
+
+	basePath := writeTempKustomization(t, oldRef)
+	headPath := writeTempKustomization(t, newRef)
+	body, err := computeBody(context.Background(), basePath, headPath, fake, inspector)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(body).To(ContainSubstring("compare/" + oldRef + "..." + newRef))
+	g.Expect(body).To(ContainSubstring("unavailable"))
+	g.Expect(body).NotTo(ContainSubstring("No upstream service refs changed"))
 }
 
 func gitRun(t *testing.T, dir string, args ...string) {

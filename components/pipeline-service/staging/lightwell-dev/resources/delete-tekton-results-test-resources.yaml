@@ -1,0 +1,15 @@
+# Removes tekton-results test resources from the plnsvc-tests namespace:
+# ServiceAccount/tekton-results-tests and RoleBinding/pipeline-service-admin.
+#
+# Target in kustomization.yaml:
+#   namespace: plnsvc-tests
+#   name: "(tekton-results-tests|pipeline-service-admin)"
+#
+# Note: $patch:delete targets are controlled by the target selector
+# in kustomization.yaml, not by the apiVersion/kind/name below.
+# Those fields are required by kustomize but unused for matching.
+$patch: delete
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: unused

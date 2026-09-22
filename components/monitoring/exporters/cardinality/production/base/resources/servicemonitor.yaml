@@ -1,0 +1,15 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: prometheus-cardinality-exporter
+  labels:
+    app: prometheus-cardinality-exporter
+spec:
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 2m
+  selector:
+    matchLabels:
+      app: prometheus-cardinality-exporter

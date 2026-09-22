@@ -1,0 +1,71 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: buildah-roks-seccomp-workaround
+  annotations:
+    policies.kyverno.io/title: "Buildah ROKS seccomp workaround"
+    policies.kyverno.io/category: "Build"
+    policies.kyverno.io/description: >-
+      On ROKS clusters with seccompDefault=true (CIS benchmark), buildah
+      builds fail because RuntimeDefault blocks the unshare syscall. This
+      policy injects the Localhost unshare.json seccomp profile, /dev/fuse
+      access for fuse-overlayfs, and SETFCAP + SYS_CHROOT capabilities on
+      buildah task pods to enable rootless builds while keeping seccomp
+      enforcement enabled. Covers buildah-oci-ta, buildah-oci-ta-min, and
+      buildah-remote-oci-ta task variants.
+spec:
+  background: false
+  failurePolicy: Ignore
+  rules:
+    - name: inject-buildah-seccomp-config
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              operations:
+                - CREATE
+              selector:
+                matchLabels:
+                  tekton.dev/task: buildah-oci-ta
+              namespaceSelector:
+                matchLabels:
+                  konflux-ci.dev/type: tenant
+          - resources:
+              kinds:
+                - Pod
+              operations:
+                - CREATE
+              selector:
+                matchLabels:
+                  tekton.dev/task: buildah-oci-ta-min
+              namespaceSelector:
+                matchLabels:
+                  konflux-ci.dev/type: tenant
+          - resources:
+              kinds:
+                - Pod
+              operations:
+                - CREATE
+              selector:
+                matchLabels:
+                  tekton.dev/task: buildah-remote-oci-ta
+              namespaceSelector:
+                matchLabels:
+                  konflux-ci.dev/type: tenant
+      mutate:
+        patchStrategicMerge:
+          metadata:
+            annotations:
+              io.kubernetes.cri-o.Devices: "/dev/fuse"
+          spec:
+            containers:
+              - (name): "step-build"
+                securityContext:
+                  seccompProfile:
+                    type: Localhost
+                    localhostProfile: profiles/unshare.json
+                  capabilities:
+                    add:
+                      - SETFCAP
+                      - SYS_CHROOT

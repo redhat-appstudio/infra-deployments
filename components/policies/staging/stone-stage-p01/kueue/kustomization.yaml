@@ -1,0 +1,49 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- ../../policies/kueue/
+- deny-unallowed-annotations
+
+replacements:
+  - source:
+      kind: ConfigMap
+      version: v1
+      name: deny-unallowed-annotations
+      namespace: tekton-kueue
+      fieldPath: data.allowed-annotations
+    targets:
+      - select:
+          group: admissionregistration.k8s.io
+          version: v1
+          kind: ValidatingAdmissionPolicy
+          name: deny-unallowed-annotations.kueue.konflux-ci.dev
+        fieldPaths:
+        - 'spec.variables.[name=allowedAnnotations].expression'
+  - source:
+      kind: ConfigMap
+      version: v1
+      name: deny-unallowed-annotations
+      namespace: tekton-kueue
+      fieldPath: data.annotation-prefixes
+    targets:
+      - select:
+          group: admissionregistration.k8s.io
+          version: v1
+          kind: ValidatingAdmissionPolicy
+          name: deny-unallowed-annotations.kueue.konflux-ci.dev
+        fieldPaths:
+        - 'spec.variables.[name=annotationPrefixes].expression'
+  - source:
+      kind: ConfigMap
+      version: v1
+      name: deny-unallowed-annotations
+      namespace: tekton-kueue
+      fieldPath: data.message-expression
+    targets:
+      - select:
+          group: admissionregistration.k8s.io
+          version: v1
+          kind: ValidatingAdmissionPolicy
+          name: deny-unallowed-annotations.kueue.konflux-ci.dev
+        fieldPaths:
+        - 'spec.validations.0.messageExpression'

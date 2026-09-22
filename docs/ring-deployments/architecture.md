@@ -95,7 +95,7 @@ This separation provides:
 - **Independent Cadence**: Application components and shared infrastructure advance through rings at their own pace without blocking each other.
 - **Auditability**: All promotion activity is scoped and queryable per project.
 
-Both repositories follow a **canonical directory layout** that ensures every component is structured identically across all rings and clusters. Kargo PromotionTasks write to a single, computable path per ring — the Tier 2 ring base (`components/{component}/rings/ring-N/base/kustomization.yaml`). For the full directory standard, tier definitions, and Kustomize layering rules, see the [Canonical Directory Layout](directory-layout.md) specification.
+Both repositories follow a **canonical directory layout** that ensures every component is structured identically across all rings and clusters. Kargo PromotionTasks write to specific files/folders within a single, computable path per ring — the Tier 2 ring base (`components/{component}/rings/ring-{N}/base/`). For the full directory standard, tier definitions, and Kustomize layering rules, see the [Canonical Directory Layout](directory-layout.md) specification.
 
 Within each Project, the ring topology is modeled as a directed acyclic graph (DAG) of **Stages**, where each Stage represents a ring (or a subset of clusters within a ring). Freight flows from inner rings to outer rings through automated or gated Promotions.
 
@@ -188,7 +188,7 @@ Freight is identified by a SHA-1 hash of its origin Warehouse and artifact versi
 
 The Warehouse's `FreightCreationPolicy` controls whether Freight is created automatically upon discovery or requires an explicit manual trigger.
 
-A Git-subscription Warehouse can also detect changes in the `new-base/` directory — a ring-safe mechanism for promoting Tier 1 (`base/`) changes. Kargo copies `new-base/` ring-by-ring and renames it to `base/` at the destination, avoiding the all-rings-at-once merge path. See [Canonical Directory Layout — Tier 1](directory-layout.md#41-tier-1--component-base) for details.
+A Git-subscription Warehouse can also detect changes in the component's `base/` directory. Kargo deletes a ring's old `base-snapshot/` directory and copies `base-snapshot/` from the previous ring (or the component's `base/` directory if there is no previous ring) to the target ring's `base/` directory, creating a new `base/base-snapshot/` directory in the ring and avoiding an all-rings-at-once merge path. See [Canonical Directory Layout — Tier 1](directory-layout.md#41-tier-1--component-base) for details.
 
 ```mermaid
 sequenceDiagram

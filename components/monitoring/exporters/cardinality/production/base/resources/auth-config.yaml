@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cardinality-exporter-auth
+  labels:
+    app: prometheus-cardinality-exporter
+data:
+  auth.yaml: |
+    # OpenShift platform monitoring — Prometheus secured via kube-rbac-proxy
+    openshift-monitoring:
+      sa_auth: true
+      ca: "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
+      port: "9091"
+
+    # OpenShift user-workload monitoring — same kube-rbac-proxy setup
+    # Note: Does not work at the moment due to kube-rbac-proxy not allowing /api/v1/status/tsdb endpoint access.
+    openshift-user-workload-monitoring:
+      sa_auth: true
+      ca: "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
+      port: "9091"

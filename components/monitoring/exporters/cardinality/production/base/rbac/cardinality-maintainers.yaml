@@ -1,0 +1,12 @@
+# Grant o11y admins full access to the exporter namespace
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: appstudio-cardinality-exporter-maintainers
+subjects:
+  - kind: Group
+    name: konflux-o11y
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: component-maintainer

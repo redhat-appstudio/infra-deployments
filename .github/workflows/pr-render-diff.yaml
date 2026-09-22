@@ -12,11 +12,11 @@ jobs:
       contents: read
     steps:
       # Check out the BASE branch (trusted code) so we never execute fork code.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # hash v7
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           go-version-file: infra-tools/go.mod
           cache-dependency-path: infra-tools/go.sum
@@ -65,7 +65,7 @@ jobs:
 
       - name: Upload diff artifacts
         if: ${{ always() && steps.fetch-merge.outcome == 'success' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: render-diff-output
           path: |

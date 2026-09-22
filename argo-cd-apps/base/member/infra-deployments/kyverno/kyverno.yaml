@@ -15,10 +15,6 @@ spec:
                 clusterDir: "empty-base"
           - list:
               elements:
-                - nameNormalized: stone-stg-rh01
-                  values.clusterDir: stone-stg-rh01
-                - nameNormalized: stone-stage-p01
-                  values.clusterDir: stone-stage-p01
                 - nameNormalized: stone-prd-rh01
                   values.clusterDir: stone-prd-rh01
                 - nameNormalized: kflux-prd-rh02
@@ -37,9 +33,13 @@ spec:
                   values.clusterDir: kflux-osp-p01
                 - nameNormalized: kflux-fedora-01
                   values.clusterDir: kflux-fedora-01
+                - nameNormalized: kflux-lw-p01
+                  values.clusterDir: kflux-lw-p01
   template:
     metadata:
       name: kyverno-{{nameNormalized}}
+      annotations:
+        argocd.argoproj.io/compare-options: ServerSideDiff=true,IncludeMutationWebhook=true
     spec:
       project: default
       source:
@@ -49,13 +49,26 @@ spec:
       destination:
         namespace: konflux-kyverno
         server: '{{server}}'
+      ignoreDifferences:
+        - group: apiextensions.k8s.io
+          kind: CustomResourceDefinition
+          name: '*.kyverno.io'
+          jqPathExpressions:
+            - .spec.preserveUnknownFields
+            - .spec.conversion
+            - .spec.versions[].schema.openAPIV3Schema
+        - group: apiextensions.k8s.io
+          kind: CustomResourceDefinition
+          name: '*.wgpolicyk8s.io'
+          jqPathExpressions:
+            - .spec.preserveUnknownFields
+            - .spec.conversion
+            - .spec.versions[].schema.openAPIV3Schema
       syncPolicy:
-        automated:
-          prune: true
-          selfHeal: true
         syncOptions:
           - CreateNamespace=true
           - ServerSideApply=true
+          - RespectIgnoreDifferences=true
         retry:
           limit: 50
           backoff:

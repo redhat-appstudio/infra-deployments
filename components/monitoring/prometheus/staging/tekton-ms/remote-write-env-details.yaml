@@ -29,7 +29,7 @@
             |tekton_pipelines_controller_running_taskruns_throttled_by_node\
             |tekton_pipelines_controller_running_taskruns_throttled_by_quota"
         - action: LabelKeep
-          regex: "__name__|source_environment|source_cluster|namespace|job|instance|pipeline|status|task"
+          regex: "__name__|prometheus_replica|source_environment|source_cluster|namespace|job|instance|pipeline|status|task"
     # Prometheus self-monitoring metrics
     - url: https://observatorium-mst.api.stage.openshift.com/api/metrics/v1/rhtap/api/v1/receive
       oauth2:
@@ -63,4 +63,4 @@
             |prometheus_tsdb_head_samples_appended_total\
             |process_start_time_seconds"
         - action: LabelKeep
-          regex: "__name__|source_environment|source_cluster|namespace|job|instance|version|quantile|slice|scrape_job"
+          regex: "__name__|prometheus_replica|source_environment|source_cluster|namespace|job|instance|version|quantile|slice|scrape_job"

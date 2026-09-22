@@ -1,0 +1,54 @@
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: validate-cost-management-labels
+  annotations:
+    policies.kyverno.io/title: Validate Cost-Management label
+    policies.kyverno.io/category: Cost Management
+    policies.kyverno.io/severity: low
+    policies.kyverno.io/subject: Namespace
+    policies.kyverno.io/description: >-
+      This policy ensures that:
+      (1) New tenant namespaces have the `cost-management` label.
+      (2) The `cost-management` label value contains only numeric characters.
+spec:
+  validationFailureAction: Enforce
+  rules:
+  - name: validate-cost-center-label
+    skipBackgroundRequests: true
+    match:
+      any:
+      - resources:
+          kinds:
+          - Namespace
+          selector:
+            matchLabels:
+              konflux-ci.dev/type: tenant
+    validate:
+      allowExistingViolations: true
+      message: "Tenant namespaces must have the 'cost-center' label."
+      pattern:
+        metadata:
+          labels:
+            cost-center: "?*"
+  - name: validate-cost-center-label-value
+    skipBackgroundRequests: true
+    match:
+      any:
+      - resources:
+          kinds:
+          - Namespace
+          operations:
+          - CREATE
+          - UPDATE
+          selector:
+            matchLabels:
+              konflux-ci.dev/type: tenant
+              cost-center: "?*"
+    validate:
+      allowExistingViolations: true
+      message: "Tenant namespaces 'cost-center' label can only contain numbers."
+      cel:
+        expressions:
+        - expression: "object.metadata.labels['cost-center'].matches('^[0-9]+$')"

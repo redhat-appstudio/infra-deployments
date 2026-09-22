@@ -69,14 +69,14 @@ Clusters affected: <list clusters>
 **Risk Level:** Low / Medium / High / Very High
 **What could go wrong:** <describe what breaks if this change is incorrect>
 **Rollback:** Revert PR / <specific rollback steps>
-<blast radius — how many clusters, which environments>
+**Blast radius:** <how many clusters, which environments>
 ```
 
 **Rules:**
 - **What** — Concise change list, affected clusters, Jira link at the bottom. Don't explain why here.
 - **Why** — Motivation only. Keep it brief.
 - **Validation** — Proof, not explanation. kustomize build results, staging links, prior ring PRs.
-- **Risk Assessment** — Required for production PRs. May be omitted for dev/staging.
+- **Risk Assessment** — Required for production PRs. May be omitted for dev/staging. When drafting or reviewing this section, read `skills/risk-assessment.md` for level heuristics, blast-radius rules, and templates.
 
 ## Commit Conventions
 
@@ -128,7 +128,7 @@ Production changes must be split into 3 ring PRs covering subsets of clusters. N
 
 ## Production PR Requirements
 
-- **Risk Assessment** section is mandatory (level, what could go wrong, rollback plan, blast radius).
+- **Risk Assessment** section is mandatory (level, what could go wrong, rollback plan, blast radius). Follow `skills/risk-assessment.md`.
 - Follow the ring rollout pattern above.
 - When updating component images, check if corresponding references exist in `hack/new-cluster/templates/` — if so, update them and include this in the PR's **What** section. New clusters are bootstrapped from these templates and won't get ArgoCD-synced versions.
 

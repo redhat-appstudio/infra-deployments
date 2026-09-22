@@ -1,0 +1,21 @@
+apiVersion: pipelinesascode.tekton.dev/v1alpha1
+kind: Repository
+metadata:
+  name: pipelines-as-code
+  namespace: openshift-pipelines
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  url: https://forge.fedoraproject.org # The global Repository CR does not need a real spec.url,
+                                         # will not be used so setting this to forge landing page
+  git_provider:
+    type: forgejo
+    url: https://forge.fedoraproject.org
+    user: konflux-forge-bot
+    secret:
+      name: forge-bot-secret
+      key: token
+    webhook_secret:
+      name: forge-bot-secret
+      key: webhook-secret

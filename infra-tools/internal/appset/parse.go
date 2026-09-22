@@ -4,6 +4,7 @@ package appset
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -30,6 +31,86 @@ type ParseResult struct {
 	// Clusters maps cluster names found in list.elements[].nameNormalized.
 	// Key: cluster name, Value: list of component paths for that cluster.
 	Clusters map[string][]string
+}
+
+// AppSetsByName parses rendered YAML (multi-document) and returns all
+// ApplicationSet resources keyed by metadata.name for change detection.
+func AppSetsByName(renderedYAML []byte) (map[string]map[string]interface{}, error) {
+	result := make(map[string]map[string]interface{})
+	if len(renderedYAML) == 0 {
+		return result, nil
+	}
+	decoder := yaml.NewDecoder(bytes.NewReader(renderedYAML))
+	for {
+		var doc map[string]interface{}
+		err := decoder.Decode(&doc)
+		if errors.Is(err, io.EOF) {
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("decoding YAML document: %w", err)
+		}
+		if doc == nil {
+			continue
+		}
+		if kind, _ := doc["kind"].(string); kind != "ApplicationSet" {
+			continue
+		}
+		name := ""
+		if md, ok := doc["metadata"].(map[string]interface{}); ok {
+			name, _ = md["name"].(string)
+		}
+		if name != "" {
+			result[name] = doc
+		}
+	}
+	return result, nil
+}
+
+// EnvironmentFromAppSet extracts the environment value from an ApplicationSet's
+// generator configuration. It looks for a clusters generator (direct or nested
+// inside a merge generator) with a values.environment field.
+// Returns the environment string and true if an explicit environment is found.
+func EnvironmentFromAppSet(doc map[string]interface{}) (string, bool) {
+	spec, ok := doc["spec"].(map[string]interface{})
+	if !ok {
+		return "", false
+	}
+	generators, _ := spec["generators"].([]interface{})
+	for _, gen := range generators {
+		genMap, ok := gen.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		if env, ok := envFromClusters(genMap["clusters"]); ok {
+			return env, true
+		}
+		merge, _ := genMap["merge"].(map[string]interface{})
+		subGens, _ := merge["generators"].([]interface{})
+		for _, sg := range subGens {
+			sgMap, ok := sg.(map[string]interface{})
+			if !ok {
+				continue
+			}
+			if env, ok := envFromClusters(sgMap["clusters"]); ok {
+				return env, true
+			}
+		}
+	}
+	return "", false
+}
+
+func envFromClusters(v interface{}) (string, bool) {
+	clusters, ok := v.(map[string]interface{})
+	if !ok {
+		return "", false
+	}
+	values, _ := clusters["values"].(map[string]interface{})
+	env, _ := values["environment"].(string)
+	if env == "" {
+		return "", false
+	}
+	return env, true
 }
 
 // ParseApplicationSets parses rendered YAML (multi-document) and extracts
@@ -153,17 +234,68 @@ func extractTemplatedPaths(pathTemplate string, generators []interface{}) ([]Com
 	return paths, clusters, nil
 }
 
+// generatorValues holds the ApplicationSet template placeholders we can resolve
+// from a clusters generator (defaults) plus list-generator overrides.
+type generatorValues struct {
+	sourceRoot  string
+	environment string
+	clusterDir  string
+	ring        string
+}
+
+func valuesFromMap(values map[string]interface{}) generatorValues {
+	if values == nil {
+		return generatorValues{}
+	}
+	v := generatorValues{}
+	v.sourceRoot, _ = values["sourceRoot"].(string)
+	v.environment, _ = values["environment"].(string)
+	v.clusterDir, _ = values["clusterDir"].(string)
+	v.ring, _ = values["ring"].(string)
+	return v
+}
+
+// interpolatePath substitutes known {{values.*}} placeholders in an ApplicationSet
+// source path. Empty trailing segments (e.g. clusterDir: "") are trimmed so
+// environment-based templates still resolve to sourceRoot/environment.
+func interpolatePath(pathTemplate string, v generatorValues) string {
+	resolved := strings.NewReplacer(
+		"{{values.sourceRoot}}", v.sourceRoot,
+		"{{values.environment}}", v.environment,
+		"{{values.clusterDir}}", v.clusterDir,
+		"{{values.ring}}", v.ring,
+	).Replace(pathTemplate)
+	return strings.TrimSuffix(resolved, "/")
+}
+
+func componentPathFromValues(pathTemplate string, v generatorValues) ComponentPath {
+	cp := ComponentPath{Path: interpolatePath(pathTemplate, v)}
+	if v.clusterDir != "" {
+		cp.ClusterDir = v.clusterDir
+	}
+	return cp
+}
+
+type listElement struct {
+	nameNormalized string
+	clusterDir     string
+	ring           string
+}
+
+func (v generatorValues) withListOverrides(le listElement) generatorValues {
+	out := v
+	if le.clusterDir != "" {
+		out.clusterDir = le.clusterDir
+	}
+	if le.ring != "" {
+		out.ring = le.ring
+	}
+	return out
+}
+
 // processMergeGenerators processes generators inside a merge generator.
 func processMergeGenerators(pathTemplate string, subGens []interface{}) ([]ComponentPath, map[string][]string, error) {
-	// First pass: extract base values from the clusters generator
-	var sourceRoot, environment, clusterDir string
-	var hasClusterDir bool
-
-	// Collect list elements for cluster overrides
-	type listElement struct {
-		nameNormalized string
-		clusterDir     string
-	}
+	var defaults generatorValues
 	var listElements []listElement
 
 	for _, sg := range subGens {
@@ -174,16 +306,7 @@ func processMergeGenerators(pathTemplate string, subGens []interface{}) ([]Compo
 
 		if clustersGen, ok := sgMap["clusters"].(map[string]interface{}); ok {
 			values, _ := clustersGen["values"].(map[string]interface{})
-			if sr, ok := values["sourceRoot"].(string); ok {
-				sourceRoot = sr
-			}
-			if env, ok := values["environment"].(string); ok {
-				environment = env
-			}
-			if cd, ok := values["clusterDir"].(string); ok {
-				clusterDir = cd
-				hasClusterDir = true
-			}
+			defaults = valuesFromMap(values)
 		}
 
 		if listGen, ok := sgMap["list"].(map[string]interface{}); ok {
@@ -200,6 +323,9 @@ func processMergeGenerators(pathTemplate string, subGens []interface{}) ([]Compo
 				if cd, ok := elemMap["values.clusterDir"].(string); ok {
 					le.clusterDir = cd
 				}
+				if ring, ok := elemMap["values.ring"].(string); ok {
+					le.ring = ring
+				}
 				listElements = append(listElements, le)
 			}
 		}
@@ -208,27 +334,24 @@ func processMergeGenerators(pathTemplate string, subGens []interface{}) ([]Compo
 	var paths []ComponentPath
 	clusters := make(map[string][]string)
 
-	// Resolve the path template
-	if sourceRoot == "" {
-		// Can't resolve without sourceRoot
+	if defaults.sourceRoot == "" {
 		return nil, nil, nil
 	}
 
 	// Check if the path uses {{nameNormalized}} — treat as prefix
 	if strings.Contains(pathTemplate, "{{nameNormalized}}") {
-		basePath := sourceRoot + "/" + environment + "/"
+		basePath := defaults.sourceRoot + "/" + defaults.environment + "/"
 		paths = append(paths, ComponentPath{
 			Path: basePath,
 		})
 
-		// Also add cluster-specific paths from list elements
 		for _, le := range listElements {
 			dir := le.clusterDir
 			if dir == "" {
 				dir = le.nameNormalized
 			}
 			if dir != "" {
-				p := sourceRoot + "/" + environment + "/" + dir
+				p := defaults.sourceRoot + "/" + defaults.environment + "/" + dir
 				paths = append(paths, ComponentPath{
 					Path:       p,
 					ClusterDir: dir,
@@ -239,41 +362,19 @@ func processMergeGenerators(pathTemplate string, subGens []interface{}) ([]Compo
 		return paths, clusters, nil
 	}
 
-	// Standard template: {{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}
-	// or: {{values.sourceRoot}}/{{values.environment}}
+	// Interpolate the real source path template so both environment-based
+	// (sourceRoot/environment/clusterDir) and ring-based
+	// (sourceRoot/rings/ring/clusterDir) ApplicationSets resolve correctly.
+	paths = append(paths, componentPathFromValues(pathTemplate, defaults))
 
-	// Base path (from clusters generator defaults)
-	if hasClusterDir && clusterDir == "" {
-		// clusterDir is explicitly empty string — the path resolves to sourceRoot/environment/
-		basePath := sourceRoot + "/" + environment
-		paths = append(paths, ComponentPath{
-			Path: basePath,
-		})
-	} else if hasClusterDir && clusterDir != "" {
-		basePath := sourceRoot + "/" + environment + "/" + clusterDir
-		paths = append(paths, ComponentPath{
-			Path:       basePath,
-			ClusterDir: clusterDir,
-		})
-	} else {
-		// No clusterDir in template
-		basePath := sourceRoot + "/" + environment
-		paths = append(paths, ComponentPath{
-			Path: basePath,
-		})
-	}
-
-	// Add cluster-specific overrides from list elements
 	for _, le := range listElements {
-		if le.clusterDir != "" {
-			p := sourceRoot + "/" + environment + "/" + le.clusterDir
-			paths = append(paths, ComponentPath{
-				Path:       p,
-				ClusterDir: le.clusterDir,
-			})
-			if le.nameNormalized != "" {
-				clusters[le.nameNormalized] = append(clusters[le.nameNormalized], p)
-			}
+		if le.clusterDir == "" && le.ring == "" {
+			continue
+		}
+		cp := componentPathFromValues(pathTemplate, defaults.withListOverrides(le))
+		paths = append(paths, cp)
+		if le.nameNormalized != "" {
+			clusters[le.nameNormalized] = append(clusters[le.nameNormalized], cp.Path)
 		}
 	}
 
@@ -283,15 +384,9 @@ func processMergeGenerators(pathTemplate string, subGens []interface{}) ([]Compo
 // resolveClusterGenerator processes a direct clusters generator (without merge).
 func resolveClusterGenerator(pathTemplate string, clustersGen map[string]interface{}) []ComponentPath {
 	values, _ := clustersGen["values"].(map[string]interface{})
-	sourceRoot, _ := values["sourceRoot"].(string)
-	environment, _ := values["environment"].(string)
-
-	if sourceRoot == "" {
+	v := valuesFromMap(values)
+	if v.sourceRoot == "" {
 		return nil
 	}
-
-	basePath := sourceRoot + "/" + environment
-	return []ComponentPath{{
-		Path: basePath,
-	}}
+	return []ComponentPath{componentPathFromValues(pathTemplate, v)}
 }

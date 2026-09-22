@@ -1,0 +1,132 @@
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: dr-disaster-and-restore
+spec:
+  params:
+  - name: TENANT_NAMESPACE
+    type: string
+  - name: BACKUP_NAME
+    type: string
+  steps:
+  - name: disaster-and-restore
+    image: quay.io/konflux-ci/tools@sha256:b846eb68ab06f4c61c987bd1053e0e2dda13e18ecd5a75c945a18f7d78743bd8
+    command: ["bash", "-eu", "-o", "pipefail", "-c"]
+    args:
+    - |
+      echo "=== DR Disaster Simulation & Restore ==="
+      NS="$(params.TENANT_NAMESPACE)"
+      BACKUP_NAME="$(params.BACKUP_NAME)"
+      RESTORE_NAME="dr-sanity-restore-$(date +%Y%m%d%H%M%S)"
+
+      # --- Apply NetworkPolicy to block image-controller egress ---
+      echo "Applying NetworkPolicy to block image-controller egress..."
+      cat <<NP_EOF | oc apply -f -
+      apiVersion: networking.k8s.io/v1
+      kind: NetworkPolicy
+      metadata:
+        name: dr-block-image-controller
+        namespace: image-controller
+      spec:
+        podSelector:
+          matchLabels:
+            control-plane: controller-manager
+        policyTypes:
+        - Egress
+        egress: []
+      NP_EOF
+      echo "OK: NetworkPolicy applied"
+      sleep 10
+
+      # --- Strip finalizers ---
+      echo "Stripping finalizers from resources in $NS..."
+
+      for IR in $(oc get imagerepositories.appstudio.redhat.com -n "$NS" -o name 2>/dev/null); do
+        oc patch "$IR" -n "$NS" --type=merge -p '{"metadata":{"finalizers":null}}' 2>/dev/null || true
+      done
+
+      for COMP in $(oc get components.appstudio.redhat.com -n "$NS" -o name 2>/dev/null); do
+        oc patch "$COMP" -n "$NS" --type=merge -p '{"metadata":{"finalizers":null}}' 2>/dev/null || true
+      done
+
+      for APP in $(oc get applications.appstudio.redhat.com -n "$NS" -o name 2>/dev/null); do
+        oc patch "$APP" -n "$NS" --type=merge -p '{"metadata":{"finalizers":null}}' 2>/dev/null || true
+      done
+
+      for KAC in $(oc get kubearchiveconfigs.kubearchive.org -n "$NS" -o name 2>/dev/null); do
+        oc patch "$KAC" -n "$NS" --type=merge -p '{"metadata":{"finalizers":null}}' 2>/dev/null || true
+      done
+
+      for PR in $(oc get pipelineruns -n "$NS" -o name 2>/dev/null); do
+        oc patch "$PR" -n "$NS" --type=merge -p '{"metadata":{"finalizers":null}}' 2>/dev/null || true
+      done
+
+      for TR in $(oc get taskruns -n "$NS" -o name 2>/dev/null); do
+        oc patch "$TR" -n "$NS" --type=merge -p '{"metadata":{"finalizers":null}}' 2>/dev/null || true
+      done
+      echo "OK: Finalizers stripped"
+
+      # --- Delete namespace ---
+      echo "Deleting namespace $NS..."
+      oc delete namespace "$NS" --wait=false
+      echo "Waiting for namespace deletion..."
+      for i in $(seq 1 60); do
+        if ! oc get namespace "$NS" &>/dev/null; then
+          echo "OK: Namespace deleted"
+          break
+        fi
+        if [ "$i" -eq 60 ]; then
+          echo "FAIL: Namespace $NS still exists after 5 minutes"
+          oc delete networkpolicy dr-block-image-controller -n image-controller --ignore-not-found
+          exit 1
+        fi
+        sleep 5
+      done
+
+      # --- Restore from backup ---
+      echo "Creating Restore $RESTORE_NAME from backup $BACKUP_NAME..."
+      BSL=$(oc get backupstoragelocations -n openshift-adp -o jsonpath='{.items[0].metadata.name}')
+      cat <<RESTORE_EOF | oc apply -f -
+      apiVersion: velero.io/v1
+      kind: Restore
+      metadata:
+        name: $RESTORE_NAME
+        namespace: openshift-adp
+      spec:
+        backupName: $BACKUP_NAME
+        includedNamespaces:
+        - $NS
+        restoreStatus:
+          includedResources:
+          - imagerepositories.appstudio.redhat.com
+      RESTORE_EOF
+
+      echo "Waiting for restore to complete..."
+      for i in $(seq 1 60); do
+        PHASE=$(oc get restore "$RESTORE_NAME" -n openshift-adp \
+          -o jsonpath='{.status.phase}' 2>/dev/null || echo "New")
+        if [ "$PHASE" = "Completed" ]; then
+          WARNINGS=$(oc get restore "$RESTORE_NAME" -n openshift-adp \
+            -o jsonpath='{.status.warnings}' 2>/dev/null || echo "?")
+          ERRORS=$(oc get restore "$RESTORE_NAME" -n openshift-adp \
+            -o jsonpath='{.status.errors}' 2>/dev/null || echo "?")
+          echo "OK: Restore completed (warnings=$WARNINGS, errors=$ERRORS)"
+          break
+        elif [ "$PHASE" = "Failed" ] || [ "$PHASE" = "PartiallyFailed" ]; then
+          echo "FAIL: Restore $RESTORE_NAME phase=$PHASE"
+          oc delete networkpolicy dr-block-image-controller -n image-controller --ignore-not-found
+          exit 1
+        fi
+        echo "  Restore phase: $PHASE (attempt $i/60)"
+        sleep 60
+      done
+
+      # --- Remove NetworkPolicy ---
+      echo "Removing NetworkPolicy..."
+      oc delete networkpolicy dr-block-image-controller -n image-controller --ignore-not-found
+      echo "OK: NetworkPolicy removed"
+
+      echo "=== Disaster & Restore PASSED ==="
+    computeResources: {}
+    timeout: "1h30m0s"

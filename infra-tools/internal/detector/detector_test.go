@@ -69,6 +69,41 @@ spec:
         server: '{{server}}'
 `
 
+// appSetWithRing returns an ApplicationSet YAML that uses the ring-based path
+// template: sourceRoot/rings/ring/clusterDir.
+func appSetWithRing(root, defaultRing, defaultClusterDir, listRing, listCluster string) string {
+	return fmt.Sprintf(`apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: test-app
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              values:
+                sourceRoot: %s
+                ring: %q
+                clusterDir: %q
+          - list:
+              elements:
+                - nameNormalized: %s
+                  values.ring: %s
+                  values.clusterDir: %s
+  template:
+    metadata:
+      name: test-{{nameNormalized}}
+    spec:
+      source:
+        path: '{{values.sourceRoot}}/rings/{{values.ring}}/{{values.clusterDir}}'
+        repoURL: https://github.com/example/repo.git
+      destination:
+        server: '{{server}}'
+`, root, defaultRing, defaultClusterDir, listCluster, listRing, listCluster)
+}
+
 // appSetWithCluster returns an ApplicationSet YAML that uses a merge generator
 // with a cluster list, producing paths under <root>/<env> and <root>/<env>/<cluster>.
 func appSetWithCluster(root, env, cluster string) string {
@@ -120,20 +155,18 @@ func TestNewDetector_Valid(t *testing.T) {
 	g.Expect(d.overlayEnvs["konflux-public-production"]).To(Equal(Production))
 }
 
-func TestNewDetector_Valid_Ring(t *testing.T) {
+func TestNewDetector_Valid_Ring_Deployments(t *testing.T) {
 	g := NewWithT(t)
 
-	head := &fakeRepo{dirs: map[string][]string{"overlays": {"ring-0", "ring-1", "ring-2", "ring-3", "ring-4"}}}
-	base := &fakeRepo{dirs: map[string][]string{"overlays": {"ring-0"}}}
+	head := &fakeRepo{dirs: map[string][]string{"overlays": {"rd-dev", "rd-staging", "rd-production"}}}
+	base := &fakeRepo{dirs: map[string][]string{"overlays": {"rd-dev"}}}
 
 	d, err := NewDetector(head, base, "overlays")
 	g.Expect(err).NotTo(HaveOccurred())
-	g.Expect(d.overlayEnvs).To(HaveLen(5))
-	g.Expect(d.overlayEnvs["ring-0"]).To(Equal(Development))
-	g.Expect(d.overlayEnvs["ring-1"]).To(Equal(Staging))
-	g.Expect(d.overlayEnvs["ring-2"]).To(Equal(Production))
-	g.Expect(d.overlayEnvs["ring-3"]).To(Equal(Production))
-	g.Expect(d.overlayEnvs["ring-4"]).To(Equal(Production))
+	g.Expect(d.overlayEnvs).To(HaveLen(3))
+	g.Expect(d.overlayEnvs["rd-dev"]).To(Equal(Development))
+	g.Expect(d.overlayEnvs["rd-staging"]).To(Equal(Staging))
+	g.Expect(d.overlayEnvs["rd-production"]).To(Equal(Production))
 }
 
 func TestNewDetector_UnknownOverlay(t *testing.T) {
@@ -629,6 +662,68 @@ func TestDetect_WithCluster(t *testing.T) {
 	g.Expect(result.AffectedClusters).To(HaveKey("stone-prod-p01"))
 }
 
+func TestDetect_RingPathsAttributedToOverlayEnv(t *testing.T) {
+	g := NewWithT(t)
+
+	stagingYAML := appSetWithRing(
+		"components/multi-platform-controller",
+		"empty-base", "empty-base",
+		"ring-1", "stone-stg-rh01",
+	)
+	productionYAML := appSetWithRing(
+		"components/multi-platform-controller",
+		"empty-base", "empty-base",
+		"ring-2", "kflux-lw-p01",
+	)
+	const stagingPath = "components/multi-platform-controller/rings/ring-1/stone-stg-rh01"
+	const productionPath = "components/multi-platform-controller/rings/ring-2/kflux-lw-p01"
+
+	head := &fakeRepo{
+		dirs: map[string][]string{"overlays": {"rd-staging", "rd-production"}},
+		yamls: map[string][]byte{
+			"overlays/rd-staging":    []byte(stagingYAML),
+			"overlays/rd-production": []byte(productionYAML),
+		},
+		exist: map[string]bool{
+			"overlays/rd-staging":    true,
+			"overlays/rd-production": true,
+			"components/multi-platform-controller/rings/empty-base/empty-base": true,
+			stagingPath:    true,
+			productionPath: true,
+		},
+		deps: map[string]map[string]bool{
+			stagingPath: {
+				stagingPath + "/host-config.yaml": true,
+			},
+			productionPath: {
+				productionPath + "/host-config.yaml": true,
+			},
+		},
+	}
+	base := &fakeRepo{
+		dirs: map[string][]string{"overlays": {"rd-staging", "rd-production"}},
+		yamls: map[string][]byte{
+			"overlays/rd-staging":    []byte(stagingYAML),
+			"overlays/rd-production": []byte(productionYAML),
+		},
+		exist: map[string]bool{
+			"overlays/rd-staging":    true,
+			"overlays/rd-production": true,
+		},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	result, err := d.Detect([]string{stagingPath + "/host-config.yaml"})
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.AffectedEnvironments).To(HaveKey(Staging))
+	g.Expect(result.AffectedEnvironments).NotTo(HaveKey(Production))
+	g.Expect(result.AffectedClusters).To(HaveKey("stone-stg-rh01"))
+	g.Expect(result.AffectedClusters).NotTo(HaveKey("kflux-lw-p01"))
+	g.Expect(result.AffectedClusters).NotTo(HaveKey("empty-base"))
+}
+
 func TestDetect_RemovedOverlay(t *testing.T) {
 	g := NewWithT(t)
 
@@ -755,6 +850,19 @@ func TestMatchClusters_ReservedDirBase(t *testing.T) {
 	g.Expect(result.AffectedClusters).To(BeEmpty())
 }
 
+func TestMatchClusters_ReservedDirEmptyBase(t *testing.T) {
+	g := NewWithT(t)
+	result := &Result{AffectedClusters: make(map[string]bool)}
+	cp := appset.ComponentPath{
+		Path:       "components/foo/rings/empty-base/empty-base",
+		ClusterDir: "empty-base",
+	}
+
+	matchClusters(cp, nil, result)
+
+	g.Expect(result.AffectedClusters).NotTo(HaveKey("empty-base"))
+}
+
 func TestMatchClusters_ReservedDirOverlay(t *testing.T) {
 	g := NewWithT(t)
 	result := &Result{AffectedClusters: make(map[string]bool)}
@@ -826,6 +934,113 @@ func TestDetectOverlayDiffs_NewOverlay(t *testing.T) {
 	g.Expect(result.AffectedEnvironments).To(HaveKey(Production))
 }
 
+// TestDetectOverlayDiffs_BaseAppSetWithExplicitEnv covers the case where a new
+// ApplicationSet with environment:staging is added to argo-cd-apps/base and
+// therefore appears in ALL overlays' rendered output.  Only staging should be
+// marked — not development or production.
+func TestDetectOverlayDiffs_BaseAppSetWithExplicitEnv(t *testing.T) {
+	g := NewWithT(t)
+
+	const stagingAppSet = `apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: kanary
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              values:
+                sourceRoot: components/monitoring/kanary
+                environment: staging
+                clusterDir: ""
+          - list:
+              elements:
+                - nameNormalized: lightwell-dev
+                  values.clusterDir: lightwell-dev
+  template:
+    metadata:
+      name: kanary-{{nameNormalized}}
+    spec:
+      source:
+        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
+        repoURL: https://github.com/example/repo.git
+      destination:
+        server: '{{server}}'
+`
+	result := &Result{AffectedEnvironments: make(map[Environment]bool)}
+	// Simulate base change: the new AppSet appears in all overlays (dev, staging, prod),
+	// but none of them had it before (baseYAML is empty).
+	builds := []overlayBuild{
+		{name: "development", env: Development, headYAML: []byte(stagingAppSet), baseYAML: []byte{}},
+		{name: "staging-downstream", env: Staging, headYAML: []byte(stagingAppSet), baseYAML: []byte{}},
+		{name: "production-downstream", env: Production, headYAML: []byte(stagingAppSet), baseYAML: []byte{}},
+	}
+	detectOverlayDiffs(builds, result)
+
+	g.Expect(result.AffectedEnvironments).To(HaveKey(Staging))
+	g.Expect(result.AffectedEnvironments).NotTo(HaveKey(Development))
+	g.Expect(result.AffectedEnvironments).NotTo(HaveKey(Production))
+}
+
+func TestDetectOverlayDiffs_RemovedBaseAppSetUsesGeneratorEnv(t *testing.T) {
+	g := NewWithT(t)
+
+	const stagingAppSet = `apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: kanary
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              values:
+                sourceRoot: components/monitoring/kanary
+                environment: staging
+                clusterDir: ""
+  template:
+    metadata:
+      name: kanary-{{nameNormalized}}
+    spec:
+      source:
+        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
+        repoURL: https://github.com/example/repo.git
+      destination:
+        server: '{{server}}'
+`
+	result := &Result{AffectedEnvironments: make(map[Environment]bool)}
+	// AppSet existed on base (all overlays) but was removed on HEAD.
+	builds := []overlayBuild{
+		{name: "development", env: Development, headYAML: []byte{}, baseYAML: []byte(stagingAppSet)},
+		{name: "staging-downstream", env: Staging, headYAML: []byte{}, baseYAML: []byte(stagingAppSet)},
+		{name: "production-downstream", env: Production, headYAML: []byte{}, baseYAML: []byte(stagingAppSet)},
+	}
+	detectOverlayDiffs(builds, result)
+
+	// Should use generator env (staging), not the overlay's env.
+	g.Expect(result.AffectedEnvironments).To(HaveKey(Staging))
+	g.Expect(result.AffectedEnvironments).NotTo(HaveKey(Development))
+	g.Expect(result.AffectedEnvironments).NotTo(HaveKey(Production))
+}
+
+func TestDetectOverlayDiffs_ParseErrorFallsBackToOverlayEnv(t *testing.T) {
+	g := NewWithT(t)
+
+	result := &Result{AffectedEnvironments: make(map[Environment]bool)}
+	// Invalid YAML on HEAD — parse fails, should fall back to overlay env.
+	builds := []overlayBuild{
+		{name: "staging-downstream", env: Staging, headYAML: []byte("not: valid: yaml: [}"), baseYAML: []byte{}},
+	}
+	detectOverlayDiffs(builds, result)
+
+	g.Expect(result.AffectedEnvironments).To(HaveKey(Staging))
+}
+
 func TestDetectOverlayDiffs_NoChanges(t *testing.T) {
 	g := NewWithT(t)
 	result := &Result{AffectedEnvironments: make(map[Environment]bool)}
@@ -837,6 +1052,89 @@ func TestDetectOverlayDiffs_NoChanges(t *testing.T) {
 	detectOverlayDiffs(builds, result)
 
 	g.Expect(result.AffectedEnvironments).To(BeEmpty())
+}
+
+func TestDetectOverlayDiffs_BaseAppSetWithProductionEnv(t *testing.T) {
+	g := NewWithT(t)
+
+	const prodAppSet = `apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: my-prod-component
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              values:
+                sourceRoot: components/my-app
+                environment: production
+                clusterDir: ""
+          - list:
+              elements:
+                - nameNormalized: stone-prod-p01
+                  values.clusterDir: stone-prod-p01
+  template:
+    metadata:
+      name: prod-{{nameNormalized}}
+    spec:
+      source:
+        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
+        repoURL: https://github.com/example/repo.git
+      destination:
+        server: '{{server}}'
+`
+	result := &Result{AffectedEnvironments: make(map[Environment]bool)}
+	builds := []overlayBuild{
+		{name: "development", env: Development, headYAML: []byte(prodAppSet), baseYAML: []byte{}},
+		{name: "staging-downstream", env: Staging, headYAML: []byte(prodAppSet), baseYAML: []byte{}},
+		{name: "production-downstream", env: Production, headYAML: []byte(prodAppSet), baseYAML: []byte{}},
+	}
+	detectOverlayDiffs(builds, result)
+
+	g.Expect(result.AffectedEnvironments).To(HaveKey(Production))
+	g.Expect(result.AffectedEnvironments).NotTo(HaveKey(Development))
+	g.Expect(result.AffectedEnvironments).NotTo(HaveKey(Staging))
+}
+
+// TestDetectOverlayDiffs_MultiEnvWarning verifies that when a base AppSet has
+// no explicit environment (targets all clusters), all environments are marked —
+// which is the expected "multi-env" signal.
+func TestDetectOverlayDiffs_MultiEnvWarning(t *testing.T) {
+	g := NewWithT(t)
+
+	// AppSet with clusters: {} (no values.environment) targets all clusters.
+	const allEnvsAppSet = `apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: global-component
+spec:
+  generators:
+    - clusters: {}
+  template:
+    metadata:
+      name: global-{{nameNormalized}}
+    spec:
+      source:
+        path: components/global
+        repoURL: https://github.com/example/repo.git
+      destination:
+        server: '{{server}}'
+`
+	result := &Result{AffectedEnvironments: make(map[Environment]bool)}
+	builds := []overlayBuild{
+		{name: "development", env: Development, headYAML: []byte(allEnvsAppSet), baseYAML: []byte{}},
+		{name: "staging-downstream", env: Staging, headYAML: []byte(allEnvsAppSet), baseYAML: []byte{}},
+		{name: "production-downstream", env: Production, headYAML: []byte(allEnvsAppSet), baseYAML: []byte{}},
+	}
+	detectOverlayDiffs(builds, result)
+
+	// No explicit environment → each overlay falls back to its own env → multi-env.
+	g.Expect(result.AffectedEnvironments).To(HaveKey(Development))
+	g.Expect(result.AffectedEnvironments).To(HaveKey(Staging))
+	g.Expect(result.AffectedEnvironments).To(HaveKey(Production))
 }
 
 // ---------------------------------------------------------------------------
@@ -867,6 +1165,45 @@ func TestExtractPathsFromOverlays_Basic(t *testing.T) {
 
 	// Cluster should be extracted
 	g.Expect(allClusters).To(HaveKey("stone-prod-p01"))
+}
+
+func TestExtractPathsFromOverlays_RingTemplateAttributedToOverlayEnv(t *testing.T) {
+	g := NewWithT(t)
+
+	stagingYAML := appSetWithRing(
+		"components/multi-platform-controller",
+		"empty-base", "empty-base",
+		"ring-1", "stone-stg-rh01",
+	)
+	productionYAML := appSetWithRing(
+		"components/multi-platform-controller",
+		"empty-base", "empty-base",
+		"ring-2", "kflux-lw-p01",
+	)
+	builds := []overlayBuild{
+		{name: "rd-staging", env: Staging, headYAML: []byte(stagingYAML)},
+		{name: "rd-production", env: Production, headYAML: []byte(productionYAML)},
+	}
+
+	envPaths, allClusters, err := extractPathsFromOverlays(builds)
+	g.Expect(err).NotTo(HaveOccurred())
+
+	stagingPaths := make([]string, 0, len(envPaths[Staging]))
+	for _, cp := range envPaths[Staging] {
+		stagingPaths = append(stagingPaths, cp.Path)
+	}
+	productionPaths := make([]string, 0, len(envPaths[Production]))
+	for _, cp := range envPaths[Production] {
+		productionPaths = append(productionPaths, cp.Path)
+	}
+
+	g.Expect(stagingPaths).To(ContainElement("components/multi-platform-controller/rings/ring-1/stone-stg-rh01"))
+	g.Expect(stagingPaths).NotTo(ContainElement("components/multi-platform-controller/rings/ring-2/kflux-lw-p01"))
+	g.Expect(productionPaths).To(ContainElement("components/multi-platform-controller/rings/ring-2/kflux-lw-p01"))
+	g.Expect(productionPaths).NotTo(ContainElement("components/multi-platform-controller/rings/ring-1/stone-stg-rh01"))
+
+	g.Expect(allClusters).To(HaveKey("stone-stg-rh01"))
+	g.Expect(allClusters).To(HaveKey("kflux-lw-p01"))
 }
 
 func TestExtractPathsFromOverlays_MultipleEnvs(t *testing.T) {

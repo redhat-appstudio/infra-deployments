@@ -1,0 +1,84 @@
+# Resolves an image tag and digest for {{ repo }} from quay.io, using these inputs:
+#   - Neither tag nor digest provided: pick the highest semver tag (X.Y.Z) and its digest.
+#   - Tag provided without digest: look up the digest for that specific tag.
+#   - Digest provided without tag: fail (a digest alone is ambiguous).
+#   - Both provided: use them as-is (no lookup).
+- name: Fail if digest is provided without tag for {{ repo }}
+  tags: [always]
+  fail:
+    msg: "{{ varname_digest }} was provided without {{ varname_tag }}. Both must be set together."
+  when: "(vars[varname_tag] is undefined or vars[varname_tag] == '') and vars[varname_digest] is defined and vars[varname_digest] != ''"
+
+- name: Fetch tags from quay.io for {{ repo }}
+  tags: [always]
+  uri:
+    url: "https://quay.io/api/v1/repository/{{ repo }}/tag/?limit=100&onlyActiveTags=true"
+    method: GET
+    return_content: yes
+    headers:
+      Accept: "application/json"
+  register: quay_tags_response
+  when: "vars[varname_tag] is undefined or vars[varname_tag] == ''"
+
+- name: Filter semver tags for {{ repo }}
+  tags: [always]
+  set_fact:
+    _semver_tags: >-
+      {{ quay_tags_response.json.tags
+         | selectattr('name', 'match', '^\d+\.\d+\.\d+$')
+         | list }}
+  when: "vars[varname_tag] is undefined or vars[varname_tag] == ''"
+
+- name: Fail if no semver tags found for {{ repo }}
+  tags: [always]
+  fail:
+    msg: "No semver tags found in quay.io/{{ repo }}"
+  when: "(vars[varname_tag] is undefined or vars[varname_tag] == '') and _semver_tags | length == 0"
+
+- name: Find highest semver tag for {{ repo }}
+  tags: [always]
+  set_fact:
+    _best_tag: "{{ item }}"
+  loop: "{{ _semver_tags | default([]) }}"
+  when: "(vars[varname_tag] is undefined or vars[varname_tag] == '') and (_best_tag is undefined or item.name is version(_best_tag.name, '>'))"
+  no_log: true
+
+- name: Set {{ varname_tag }} and {{ varname_digest }} from highest semver tag
+  tags: [always]
+  set_fact:
+    "{{ varname_tag }}": "{{ _best_tag.name }}"
+    "{{ varname_digest }}": "{{ _best_tag.manifest_digest }}"
+  when: "vars[varname_tag] is undefined or vars[varname_tag] == ''"
+
+- name: Look up digest for provided tag {{ varname_tag }}
+  tags: [always]
+  uri:
+    url: "https://quay.io/api/v1/repository/{{ repo }}/tag/?specificTag={{ vars[varname_tag] }}&onlyActiveTags=true"
+    method: GET
+    return_content: yes
+    headers:
+      Accept: "application/json"
+  register: quay_specific_tag_response
+  when: "vars[varname_tag] is defined and vars[varname_tag] != '' and (vars[varname_digest] is undefined or vars[varname_digest] == '')"
+
+- name: Fail if provided tag not found for {{ repo }}
+  tags: [always]
+  vars:
+    tag_obj: "{{ quay_specific_tag_response.json.tags | default([]) | first | default({}) }}"
+  fail:
+    msg: "Tag '{{ vars[varname_tag] }}' not found in quay.io/{{ repo }}"
+  when: "vars[varname_tag] is defined and vars[varname_tag] != '' and (vars[varname_digest] is undefined or vars[varname_digest] == '') and tag_obj == {}"
+
+- name: Set {{ varname_digest }} from provided tag
+  tags: [always]
+  vars:
+    tag_obj: "{{ quay_specific_tag_response.json.tags | default([]) | first | default({}) }}"
+  set_fact:
+    "{{ varname_digest }}": "{{ tag_obj.manifest_digest }}"
+  when: "vars[varname_tag] is defined and vars[varname_tag] != '' and (vars[varname_digest] is undefined or vars[varname_digest] == '') and tag_obj != {}"
+
+- name: Show selected tag for {{ repo }}
+  tags: [always]
+  debug:
+    msg: "Selected {{ repo }} tag: {{ vars[varname_tag] }} digest: {{ vars[varname_digest] }}"
+  when: "vars[varname_tag] is defined and vars[varname_digest] is defined"

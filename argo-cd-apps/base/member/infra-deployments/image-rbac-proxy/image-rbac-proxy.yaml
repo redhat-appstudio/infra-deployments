@@ -37,6 +37,8 @@ spec:
                   values.clusterDir: stone-prod-p02
                 - nameNormalized: kflux-fedora-01
                   values.clusterDir: kflux-fedora-01
+                - nameNormalized: kflux-lw-p01
+                  values.clusterDir: kflux-lw-p01
   template:
     metadata:
       name: image-rbac-proxy-{{nameNormalized}}
@@ -54,7 +56,7 @@ spec:
           prune: true
           selfHeal: true
         syncOptions:
-        - CreateNamespace=true
+          - CreateNamespace=true
         retry:
           limit: -1
           backoff:

@@ -1,0 +1,20 @@
+# Deployment-agnostic patch: applied to any Deployment that has a volume
+# named "ca-s3" and "tmp-mc-volume" via a `target:` selector in kustomization.yaml. The
+# metadata.name below is a placeholder required by kustomize to parse the
+# patch; it is not used for matching when a `target:` selector is set.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: placeholder
+spec:
+  template:
+    spec:
+      volumes:
+      - name: ca-s3
+        secret:
+          items:
+          - key: public.crt
+            path: s3-cert.crt
+          secretName: storage-tls
+      - emptyDir: {}
+        name: tmp-mc-volume

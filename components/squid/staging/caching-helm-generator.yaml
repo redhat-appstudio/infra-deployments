@@ -4,8 +4,11 @@ metadata:
   name: caching-helm
 name: caching-helm
 repo: oci://quay.io/konflux-ci/caching
-version: 0.1.1688+a7def07
+version: 0.1.1982+f50afb8
 valuesInline:
+  # The protected live Bundle is retained for adoption by container-image-proxy.
+  selfsigned-bundle:
+    enabled: false
   squid:
     enabled: true
   installCertManagerComponents: false
@@ -28,6 +31,16 @@ valuesInline:
     auth:
       enabled: true
       secretName: artifact-registry-credentials
+    subFilters:
+      - location: '^/repository/cargo-proxy/config\.json$'
+        types:
+          - application/json
+        once: false
+        filters:
+          - string: '"auth-required":true'
+            replacement: '"auth-required":false'
+          - string: 'https://red-hat.repo.sonatype.app'
+            replacement: 'https://artifact-registry-proxy.caching.svc.cluster.local'
     cache:
       allowList:
         # Cache all traffic to nexus repositories

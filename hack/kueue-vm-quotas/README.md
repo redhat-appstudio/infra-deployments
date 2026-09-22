@@ -24,17 +24,23 @@ Platform quotas are distributed across resource groups respecting Kueue's constr
 
 ```bash
 python3 hack/kueue-vm-quotas/update-kueue-vm-quotas.py \
-    components/multi-platform-controller/staging/host-config.yaml \
-    components/kueue/development/queue-config/cluster-queue.yaml \
+    components/multi-platform-controller/rings/ring-1/stone-stg-rh01/host-config.yaml \
+    components/kueue/staging/stone-stg-rh01/queue-config/cluster-queue.yaml \
     --dry-run
+```
+
+`generate-queue-config.sh` helm-templates `host-values.yaml` into `host-config.yaml` first. To regenerate every mapped cluster:
+
+```bash
+./hack/kueue-vm-quotas/generate-queue-config.sh
 ```
 
 ### Update the Cluster Queue
 
 ```bash
 python3 hack/kueue-vm-quotas/update-kueue-vm-quotas.py \
-    components/multi-platform-controller/staging/host-config.yaml \
-    components/kueue/development/queue-config/cluster-queue.yaml
+    components/multi-platform-controller/rings/ring-1/stone-stg-rh01/host-config.yaml \
+    components/kueue/staging/stone-stg-rh01/queue-config/cluster-queue.yaml
 ```
 
 ## Example Output
@@ -132,6 +138,6 @@ When updating multi-platform-controller host configurations:
 
 ## Files
 
-- **Input**: `components/multi-platform-controller/*/host-config.yaml`
+- **Input**: `components/multi-platform-controller/rings/ring-*/<cluster>/host-values.yaml` (rendered to `host-config.yaml`)
 - **Output**: `components/kueue/*/queue-config/cluster-queue.yaml`
 - **Generated**: ResourceFlavor objects for each platform group

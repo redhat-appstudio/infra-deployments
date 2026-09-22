@@ -89,7 +89,7 @@ sed '1,/custom-resource-state.yaml: |/d' \
   | sed 's/^    //' > /tmp/ksm-test-config.yaml
 ```
 
-4. Run kube-state-metrics locally (must match the deployed version — v2.11.0):
+4. Run kube-state-metrics locally (must match the deployed version — v2.19.1):
 
 ```bash
 docker run --rm -d \
@@ -97,7 +97,7 @@ docker run --rm -d \
   -p 8080:8080 \
   -v /tmp/ksm-test-kubeconfig:/kubeconfig:ro \
   -v /tmp/ksm-test-config.yaml:/etc/config/custom-resource-state.yaml:ro \
-  registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.11.0 \
+  registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.19.1 \
   --kubeconfig=/kubeconfig \
   --custom-resource-state-config-file=/etc/config/custom-resource-state.yaml \
   --custom-resource-state-only=true
@@ -133,7 +133,7 @@ If the metric appears with expected labels and values, it is ready for productio
 
 ## Constraints
 
-We run kube-state-metrics **v2.11.0** and our metrics are scraped by UWM
+We run kube-state-metrics **v2.19.1** and our metrics are scraped by UWM
 (User Workload Monitoring) Prometheus. This combination imposes the following
 constraints on custom resource metrics:
 
@@ -145,10 +145,8 @@ constraints on custom resource metrics:
   `"Unknown"`) cause `strconv.ParseFloat` errors and emit zero data points. To work
   around this, use the string as a **label** (via `labelsFromPath`) and point the
   gauge `path` at a numeric field instead.
-- **No `valueMap`.** The `valueMap` option (which maps strings to numbers) does not
-  exist in v2.11.0. It was introduced in a later version.
 
 ## References
 
-- [CustomResourceState metrics docs (v2.11.0)](https://github.com/kubernetes/kube-state-metrics/blob/v2.11.0/docs/customresourcestate-metrics.md)
+- [CustomResourceState metrics docs (v2.19.1)](https://github.com/kubernetes/kube-state-metrics/blob/v2.19.1/docs/customresourcestate-metrics.md)
 - See `base/custom-resource-state-config.yaml` for examples

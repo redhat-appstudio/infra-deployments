@@ -1,8 +1,9 @@
 config:
   exporters:
-    sapm:
-      endpoint: "https://ingest.us1.signalfx.com/v2/trace"
-      access_token: ${env:SIGNALFX_API_TOKEN}
+    otlphttp/splunk:
+      traces_endpoint: "https://ingest.us1.signalfx.com/v2/trace/otlp"
+      headers:
+        "X-SF-Token": "${env:SIGNALFX_API_TOKEN}"
     signalfx:
       endpoint: "https://api.signalfx.com/v2/traces"
       realm: "us1"
@@ -37,6 +38,39 @@ config:
         - key: collector.clustername
           action: insert
           value: staging
+    filter/mttb:
+      error_mode: ignore
+      traces:
+        span:
+          - instrumentation_scope.name == nil
+          - not(IsMatch(instrumentation_scope.name, "^(pipelines-as-code|integration-service|release-service)$"))
+    transform/mttb-service-name:
+      error_mode: ignore
+      trace_statements:
+        - context: span
+          statements:
+            - >-
+              set(resource.attributes["service.name"], instrumentation_scope.name)
+              where instrumentation_scope.name != nil and
+              (resource.attributes["service.name"] == nil or
+              IsMatch(resource.attributes["service.name"], "^unknown_service"))
+  connectors:
+    spanmetrics/mttb:
+      metrics_expiration: 1h
+      series_expiration: 1h
+      histogram:
+        unit: s
+        explicit:
+          buckets: [30s, 1m, 2m, 5m, 10m, 20m, 40m, 1h, 2h, 4h, 8h]
+      dimensions:
+        - name: namespace
+        - name: cicd.pipeline.action.name
+        - name: cicd.pipeline.result
+      exemplars:
+        enabled: true
+      metrics_flush_interval: 30s
+      resource_metrics_key_attributes:
+        - service.name
   receivers:
     jaeger: null
     prometheus: null
@@ -55,7 +89,7 @@ config:
       traces:
         exporters:
           - debug
-          - sapm
+          - otlphttp/splunk
           - signalfx
         processors:
           - memory_limiter
@@ -64,16 +98,29 @@ config:
           - attributes/stage
         receivers:
           - otlp
+      traces/stage-mttb:
+        receivers:
+          - otlp
+        processors:
+          - memory_limiter
+          - filter/mttb
+          - transform/mttb-service-name
+          - batch
+        exporters:
+          - spanmetrics/mttb
       metrics:
         receivers:
         - otlp
+        - spanmetrics/mttb
         processors:
         - memory_limiter
         - batch
         exporters:
         - prometheus
+        - signalfx
     telemetry:
       metrics:
+        address: null
         level: basic
         readers:
         - pull:
@@ -119,7 +166,7 @@ image:
   repository: quay.io/konflux-ci/opentelemetry-collector-k8s
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "0.113.0"
+  tag: "0.156.0"
 # OpenTelemetry Collector executable
 command:
   # The operator prepends '/' to the command name...no idea why.

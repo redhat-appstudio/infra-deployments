@@ -1,0 +1,12 @@
+---
+# Restrict kube-shard ApplicationSet generation to lightwell-dev.
+# Uses ApplicationSet post-selector on generated params (nameNormalized)
+# so other tenant/internal clusters from the cluster generator are dropped.
+- op: add
+  path: /spec/generators/0/selector
+  value:
+    matchExpressions:
+      - key: nameNormalized
+        operator: In
+        values:
+          - lightwell-dev

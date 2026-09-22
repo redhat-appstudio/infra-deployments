@@ -1,0 +1,16 @@
+---
+- op: add
+  path: /spec/platforms/openshift/pipelinesAsCode/settings
+  value:
+    application-name: Konflux Staging Internal
+    custom-console-name: Konflux Staging Internal
+    custom-console-url: https://konflux-ui.lightwell-dev-3d9eec70183348a345ccd3ce3bdd95b9-0000.us-east.containers.appdomain.cloud
+    custom-console-url-namespace: https://konflux-ui.lightwell-dev-3d9eec70183348a345ccd3ce3bdd95b9-0000.us-east.containers.appdomain.cloud/ns/{{ namespace }}
+    custom-console-url-pr-details: https://konflux-ui.lightwell-dev-3d9eec70183348a345ccd3ce3bdd95b9-0000.us-east.containers.appdomain.cloud/ns/{{ namespace }}/pipelinerun/{{ pr }}
+    custom-console-url-pr-tasklog: https://konflux-ui.lightwell-dev-3d9eec70183348a345ccd3ce3bdd95b9-0000.us-east.containers.appdomain.cloud/ns/{{ namespace }}/pipelinerun/{{ pr }}/logs/{{ task }}
+    remember-ok-to-test: "false"
+    secret-github-app-token-scoped: "false"
+    enable-cancel-in-progress-on-pull-requests: "true"
+    tracing-label-action: pipelines.appstudio.openshift.io/type
+    tracing-label-application: appstudio.openshift.io/application
+    tracing-label-component: appstudio.openshift.io/component

@@ -1,0 +1,31 @@
+apiVersion: monitoring.rhobs/v1alpha1
+kind: MonitoringStack
+metadata:
+  name: appstudio-tekton-ms
+  namespace: appstudio-tekton
+spec:
+  resourceSelector:
+    matchLabels:
+      monitoring.rhobs/stack: appstudio-tekton-ms
+  logLevel: info
+  retention: 7d
+  retentionSize: 15GB
+  alertmanagerConfig:
+    disabled: true
+  resources:
+    requests:
+      cpu: 200m
+      memory: 8Gi
+    limits:
+      memory: 8Gi
+  prometheusConfig:
+    externalLabels: {} # added by overlays (source_cluster, source_environment)
+    replicas: 2
+    persistentVolumeClaim:
+      storageClassName: gp3
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 20Gi
+    remoteWrite: [] # defined entirely by overlays

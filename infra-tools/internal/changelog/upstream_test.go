@@ -46,6 +46,11 @@ func TestFetchOperatorCompare_ReturnsConvertedFiles(t *testing.T) {
 			},
 			{Filename: gh.Ptr("other/file.yaml"), Patch: gh.Ptr("unchanged")},
 		},
+		commits: []*gh.RepositoryCommit{
+			{SHA: gh.Ptr("aaaaaaaaaaaa"), Commit: &gh.Commit{Message: gh.Ptr("feat(operator): sync rings")}},
+			{SHA: gh.Ptr("bbbbbbbbbbbb"), Commit: &gh.Commit{Message: gh.Ptr("chore: ignore me")}},
+			{SHA: gh.Ptr("cccccccccccc"), Commit: &gh.Commit{Message: gh.Ptr("fix: handle nil")}},
+		},
 	}
 	result, err := changelog.FetchOperatorCompare(context.Background(), fake, "oldref", "newref")
 	g.Expect(err).NotTo(HaveOccurred())
@@ -53,6 +58,49 @@ func TestFetchOperatorCompare_ReturnsConvertedFiles(t *testing.T) {
 	g.Expect(result.Truncated).To(BeFalse())
 	g.Expect(result.Files[0].Filename).To(Equal("operator/upstream-kustomizations/build-service/kustomization.yaml"))
 	g.Expect(result.Files[0].Patch).To(Equal("-old\n+new"))
+	g.Expect(result.Commits).To(HaveLen(2))
+	g.Expect(result.Commits[0].Type).To(Equal("feat"))
+	g.Expect(result.Commits[0].Scope).To(Equal("operator"))
+	g.Expect(result.Commits[0].Subject).To(Equal("sync rings"))
+	g.Expect(result.Commits[1].Type).To(Equal("fix"))
+	g.Expect(result.CommitsTruncated).To(BeFalse())
+}
+
+func TestFetchOperatorCompare_CommitsTruncated(t *testing.T) {
+	g := NewWithT(t)
+	fake := &fakeComparer{
+		files: []*gh.CommitFile{
+			{Filename: gh.Ptr("file.yaml"), Patch: gh.Ptr("diff")},
+		},
+		commits: []*gh.RepositoryCommit{
+			{SHA: gh.Ptr("aaaaaaaaaaaa"), Commit: &gh.Commit{Message: gh.Ptr("feat: one")}},
+		},
+		aheadBy: changelog.CommitMaxFromCompare,
+	}
+	result, err := changelog.FetchOperatorCompare(context.Background(), fake, "a", "b")
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.Commits).To(HaveLen(1))
+	g.Expect(result.CommitsTruncated).To(BeTrue())
+	g.Expect(result.Truncated).To(BeFalse())
+}
+
+func TestFetchOperatorCompare_TruncatedFilesStillReturnCommits(t *testing.T) {
+	g := NewWithT(t)
+	files := make([]*gh.CommitFile, 300)
+	for i := range files {
+		files[i] = &gh.CommitFile{Filename: gh.Ptr("file.yaml"), Patch: gh.Ptr("diff")}
+	}
+	fake := &fakeComparer{
+		files: files,
+		commits: []*gh.RepositoryCommit{
+			{SHA: gh.Ptr("aaaaaaaaaaaa"), Commit: &gh.Commit{Message: gh.Ptr("feat: kept")}},
+		},
+	}
+	result, err := changelog.FetchOperatorCompare(context.Background(), fake, "a", "b")
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.Truncated).To(BeTrue())
+	g.Expect(result.Commits).To(HaveLen(1))
+	g.Expect(result.Commits[0].Subject).To(Equal("kept"))
 }
 
 func TestFetchOperatorCompare_APIError(t *testing.T) {
@@ -134,7 +182,8 @@ func TestFetchOperatorCompare_NonRetryableErrorFastFails(t *testing.T) {
 	g.Expect(fake.calls).To(Equal(1)) // only one attempt — no retries for 404
 }
 
-func TestFetchOperatorCompare_ContextCancelledDuringRetry(t *testing.T) {	g := NewWithT(t)
+func TestFetchOperatorCompare_ContextCancelledDuringRetry(t *testing.T) {
+	g := NewWithT(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	// Cancel immediately so the retry wait is interrupted.
 	cancel()

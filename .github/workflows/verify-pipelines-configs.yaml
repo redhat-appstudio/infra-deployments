@@ -19,15 +19,25 @@ jobs:
     outputs:
       has_errors: ${{ steps.check.outputs.has_errors }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Checkout base branch (scripts trusted)
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # hash v7
+
+      - name: Overlay PR manifests
+        env:
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git fetch --depth=1 origin "${PR_HEAD_SHA}"
+          git checkout "${PR_HEAD_SHA}" -- components/pipeline-service/
+          git checkout HEAD -- components/pipeline-service/production/sync-rings.sh
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "overlay PR manifests" --allow-empty
 
       - name: Setup Kustomize
-        uses: multani/action-setup-kustomize@v1
+        uses: multani/action-setup-kustomize@bf96e027caf74ab03bb3f79bac2addb331b28f1d
         with:
-          version: 5.6.0
+          version: 5.8.1
 
       - name: Verify Pipelines kustomize output is in sync
         id: check
@@ -67,7 +77,7 @@ jobs:
 
       - name: Upload comment artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: pr-comment
           path: /tmp/pr_comment
@@ -84,7 +94,7 @@ jobs:
       issues: write
     steps:
       - name: Download comment artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: pr-comment
           path: /tmp

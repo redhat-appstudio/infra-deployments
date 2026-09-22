@@ -55,3 +55,20 @@
       - expr: |
           sum(kube_node_status_capacity{cluster="", resource="cpu"}) by (node) and on (node) kube_node_role{role="master"}
         record: master_node:kube_node_status_capacity_cpu:sum
+
+    - name: konflux_tenant_capacity
+      rules:
+      - expr: |
+          avg by (namespace) (
+            sum by (namespace, pod, container) (rate(container_cpu_cfs_throttled_periods_total{container!="", image!="", namespace=~".*-tenant"}[10m]))
+            /
+            (sum by (namespace, pod, container) (rate(container_cpu_cfs_periods_total{container!="", image!="", namespace=~".*-tenant"}[10m])) > 0)
+          )
+        record: namespace:avg_container_cpu_cfs_throttled_periods:ratio
+      - expr: |
+          max by (namespace, resource) (
+            kube_resourcequota{namespace=~".*-tenant", resource=~"(requests|limits)\\.(cpu|memory)", type="used"}
+            / on (namespace, resource, resourcequota)
+            kube_resourcequota{namespace=~".*-tenant", resource=~"(requests|limits)\\.(cpu|memory)", type="hard"}
+          )
+        record: namespace:konflux_tenant_resourcequota_utilization:ratio

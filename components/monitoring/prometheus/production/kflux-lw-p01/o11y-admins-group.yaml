@@ -1,0 +1,12 @@
+---
+# The LDAP usernames in konflux-o11y-admins do not match IBM IAM usernames on
+# this ROKS cluster, so cluster-overlay RBAC patches use this temporary group.
+# Usernames must match `oc auth whoami` exactly.
+apiVersion: user.openshift.io/v1
+kind: Group
+metadata:
+  name: konflux-o11y-admins-ibm
+users:
+  - IAM#jmicanek
+  - IAM#rrajashe@redhat.com
+  - IAM#mkingsbu@redhat.com

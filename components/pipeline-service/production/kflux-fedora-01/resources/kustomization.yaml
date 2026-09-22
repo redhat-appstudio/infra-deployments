@@ -3,6 +3,8 @@ kind: Kustomization
 resources:
   - ../../rings/ring-1
   - scc-rbac.yaml
+  - forge-bot-secret.yaml
+  - forge-repository.yaml
 patches:
   - path: tekton-chains-public-key-path.yaml
     target:

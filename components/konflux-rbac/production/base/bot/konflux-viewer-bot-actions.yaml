@@ -1,0 +1,73 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: konflux-viewer-bot-actions
+rules:
+- apiGroups:
+  - tekton.dev
+  resources:
+  - pipelineruns
+  - taskruns
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods/log
+  verbs:
+  - get
+- apiGroups:
+  - appstudio.redhat.com
+  resources:
+  - applications
+  - components
+  - componentgroups
+  - enterprisecontractpolicies
+  - imagerepositories
+  - integrationtestscenarios
+  - releases
+  - releaseplans
+  - releaseplanadmissions
+  - snapshots
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - konflux-ci.dev
+  resources:
+  - components
+  - componentgroups
+  - imagerepositories
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - pipelinesascode.tekton.dev
+  resources:
+  - repositories
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - results.tekton.dev
+  resources:
+  - logs
+  - records
+  - results
+  verbs:
+  - get
+  - list
+  - watch

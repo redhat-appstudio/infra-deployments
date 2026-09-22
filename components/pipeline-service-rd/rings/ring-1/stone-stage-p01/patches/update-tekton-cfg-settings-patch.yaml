@@ -1,0 +1,18 @@
+- op: replace
+  path: /spec/platforms/openshift/pipelinesAsCode/settings/application-name
+  value: Konflux Staging Internal
+- op: replace
+  path: /spec/platforms/openshift/pipelinesAsCode/settings/custom-console-name
+  value: Konflux Staging Internal
+- op: replace
+  path: /spec/platforms/openshift/pipelinesAsCode/settings/custom-console-url
+  value: https://konflux-ui.apps.stone-stage-p01.hpmt.p1.openshiftapps.com
+- op: replace
+  path: /spec/platforms/openshift/pipelinesAsCode/settings/custom-console-url-namespace
+  value: https://konflux-ui.apps.stone-stage-p01.hpmt.p1.openshiftapps.com/ns/{{ namespace }}
+- op: replace
+  path: /spec/platforms/openshift/pipelinesAsCode/settings/custom-console-url-pr-details
+  value: https://konflux-ui.apps.stone-stage-p01.hpmt.p1.openshiftapps.com/ns/{{ namespace }}/pipelinerun/{{ pr }}
+- op: replace
+  path: /spec/platforms/openshift/pipelinesAsCode/settings/custom-console-url-pr-tasklog
+  value: https://konflux-ui.apps.stone-stage-p01.hpmt.p1.openshiftapps.com/ns/{{ namespace }}/pipelinerun/{{ pr }}/logs/{{ task }}

@@ -1,3 +1,10 @@
 resources:
-  - kanary-cronjob-single-arch.yaml
+  # run-probe CronJobs (tenant-4)
+  # - kanary-cronjob-single-arch.yaml  # Replaced by run-simple
   - kanary-cronjob-multi-arch.yaml
+  - kanary-cronjob-rpm.yaml
+
+  # run-simple CronJobs (tenant-3) - validation only
+  - kanary-simple-cronjob-single-arch.yaml  # Active for validation
+  # - kanary-simple-cronjob-multi-arch.yaml  # Disabled until validation completes
+  # - kanary-simple-cronjob-rpm.yaml  # Disabled until validation completes

@@ -1,0 +1,30 @@
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: nudge-migration
+  annotations:
+    konflux-ci.dev/temporary: "STONEINTG-1682 -- remove after nudge-migrate.sh has been run on all clusters"
+rules:
+- apiGroups:
+  - appstudio.redhat.com
+  resources:
+  - nudgeconfigs
+  verbs:
+  - create
+  - patch
+  - update
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: nudge-migration
+  annotations:
+    konflux-ci.dev/temporary: "STONEINTG-1682 -- remove after nudge-migrate.sh has been run on all clusters"
+subjects:
+- kind: Group
+  apiGroup: rbac.authorization.k8s.io
+  name: konflux-integration
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: nudge-migration

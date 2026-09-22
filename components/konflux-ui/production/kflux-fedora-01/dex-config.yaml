@@ -14,6 +14,7 @@ staticClients:
   redirectURIs:
   - https://konflux-ui.apps.kflux-fedora-01.84db.p1.openshiftapps.com/oauth2/callback
   - https://konflux-ci.fedoraproject.org/oauth2/callback
+  - https://konflux.fedoraproject.org/oauth2/callback
   name: 'oauth2-proxy'
   secretEnv: 'OAUTH2_CLIENT_SECRET'
 
@@ -28,6 +29,6 @@ connectors:
       # OpenShift API
       issuer: https://api.kflux-fedora-01.84db.p1.openshiftapps.com:6443
       # Credentials can be string literals or pulled from the environment.
-      clientID: system:serviceaccount:konflux-ui:dex-client
+      clientID: $OPENSHIFT_OAUTH_CLIENT_ID
       clientSecret: $OPENSHIFT_OAUTH_CLIENT_SECRET
       redirectURI: https://konflux-ui.apps.kflux-fedora-01.84db.p1.openshiftapps.com/idp/callback
