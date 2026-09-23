@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: kyverno-rd
+  name: kyverno
 spec:
   generators:
     - merge:
@@ -13,7 +13,7 @@ spec:
                 matchLabels:
                   appstudio.redhat.com/member-cluster: "true"
               values:
-                sourceRoot: components/kyverno-rd
+                sourceRoot: components/kyverno
                 ring: "ring-0"
                 clusterDir: base
           - list:

@@ -1,4 +1,4 @@
-# kyverno-rd
+# Kyverno
 
 Ring-deployment layout for Kyverno, following the components standard
 (directory-structure-migration SOP). Kyverno is a Helm-based component, so
