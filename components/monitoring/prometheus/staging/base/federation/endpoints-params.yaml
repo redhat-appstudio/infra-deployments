@@ -152,6 +152,7 @@
     ## Container Metrics
     - '{__name__="kube_pod_container_status_waiting_reason", namespace!~".*-tenant|openshift-.*|kube-.*|mintmaker"}'
     - '{__name__="kube_pod_container_status_waiting_reason", namespace="mintmaker", pod!~"renovate.*"}'
+    - '{__name__="kube_pod_container_status_waiting_reason", namespace=~"rhtap-releng-tenant|releng-integration-tenant|releng-dev-tenant|releng-dev-tools-tenant"}'
     - '{__name__="kube_pod_container_resource_requests", namespace="appstudio-grafana", resource=~"cpu|memory"}'
     - '{__name__="kube_pod_container_resource_limits", namespace=~"release-service|rhtap-releng-tenant"}'
     - '{__name__="kube_pod_container_status_terminated_reason", namespace=~"release-service|openshift-etcd|openshift-kube-apiserver|build-service|image-controller|integration-service|konflux-ui|konflux-kite|product-kubearchive|product-kubearchive-logging|openshift-kueue-operator|tekton-kueue|multi-platform-controller|namespace-lister|openshift-pipelines|tekton-results|project-controller|smee|smee-client"}'
@@ -379,3 +380,6 @@
     - '{__name__="namespace:container_memory_usage_bytes:sum", namespace=~".*-tenant"}'
     - '{__name__="namespace:avg_container_cpu_cfs_throttled_periods:ratio"}'
     - '{__name__="namespace:konflux_tenant_resourcequota_utilization:ratio"}'
+
+    ## RelEng Tenant Monitoring (PVO11Y-5599)
+    - '{__name__="namespace:kube_pod_status_phase:sum", namespace=~"rhtap-releng-tenant|releng-integration-tenant|releng-dev-tenant|releng-dev-tools-tenant"}'
