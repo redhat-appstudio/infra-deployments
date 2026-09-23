@@ -79,9 +79,9 @@ spec:
           kubernetes.io/metadata.name: appstudio-mimir-poc
       podSelector:
         matchLabels:
+          app.kubernetes.io/component: distributor
           app.kubernetes.io/instance: mimir-poc
           app.kubernetes.io/name: mimir
-        app.kubernetes.io/component: distributor
     ports:
     - protocol: TCP
       port: 8080
