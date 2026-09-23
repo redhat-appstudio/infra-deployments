@@ -20,6 +20,17 @@ spec:
     ports:
     - protocol: TCP
       port: 12345
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: appstudio-mimir-poc
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: vmalert
+          app.kubernetes.io/part-of: mimir-poc
+    ports:
+    - protocol: TCP
+      port: 9999
   egress:
   - to:
     - podSelector:
@@ -62,3 +73,15 @@ spec:
     ports:
     - protocol: TCP
       port: 9091
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: appstudio-mimir-poc
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/component: distributor
+          app.kubernetes.io/instance: mimir-poc
+          app.kubernetes.io/name: mimir
+    ports:
+    - protocol: TCP
+      port: 8080

@@ -129,19 +129,12 @@ mimir:
       - 24h
     limits:
       compactor_blocks_retention_period: 168h
-      ingestion_rate: 50000
-      ingestion_burst_size: 3000000
-      max_global_series_per_user: 2500000
+      ingestion_rate: 120000
+      ingestion_burst_size: 6000000
+      max_global_series_per_user: 7500000
       ruler_alerting_rules_evaluation_enabled: false
     memberlist:
       rejoin_interval: 1m
-    ruler:
-      alertmanager_url: ""
-      enable_api: false
-    ruler_storage:
-      backend: local
-      local:
-        directory: /rules
     store_gateway:
       sharding_ring:
         replication_factor: 1
@@ -156,7 +149,7 @@ ingester:
       cpu: "3"
       memory: 8Gi
     limits:
-      memory: 12Gi
+      memory: 16Gi
   persistentVolume:
     enabled: true
     storageClass: gp3
@@ -219,25 +212,7 @@ query_scheduler:
       memory: 1Gi
 
 ruler:
-  replicas: 1
-  memBallastSizeBytes: 0
-  resources:
-    requests:
-      cpu: 500m
-      memory: 1Gi
-    limits:
-      memory: 4Gi
-  extraVolumes:
-  - name: rules
-    configMap:
-      name: mimir-poc-rules
-      items:
-      - key: pod-cpu.yaml
-        path: konflux-poc/pod-cpu.yaml
-  extraVolumeMounts:
-  - name: rules
-    mountPath: /rules
-    readOnly: true
+  enabled: false
 
 compactor:
   resources:
