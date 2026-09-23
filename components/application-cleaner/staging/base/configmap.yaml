@@ -63,7 +63,7 @@ data:
             removed=$((removed + 1))
           else
             echo -n "Deleting application ${application_name} in ${namespace} (created ${created_at})... "
-            if kubectl delete application "${application_name}" -n "${namespace}" --ignore-not-found=true; then
+            if kubectl delete applications.appstudio.redhat.com "${application_name}" -n "${namespace}" --ignore-not-found=true; then
               echo "DELETED"
               removed=$((removed + 1))
             else
