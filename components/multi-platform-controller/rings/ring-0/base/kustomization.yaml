@@ -3,16 +3,16 @@ kind: Kustomization
 namespace: multi-platform-controller
 resources:
 - base-snapshot
-- https://github.com/konflux-ci/multi-platform-controller/deploy/operator?ref=a4a84ad774d7f0e979391e4d7216606680a22840
-- https://github.com/konflux-ci/multi-platform-controller/deploy/otp?ref=a4a84ad774d7f0e979391e4d7216606680a22840
+- https://github.com/konflux-ci/multi-platform-controller/deploy/operator?ref=0cc5b50985b6e20735022220f353e13a6782b8f4
+- https://github.com/konflux-ci/multi-platform-controller/deploy/otp?ref=0cc5b50985b6e20735022220f353e13a6782b8f4
 - host-config-cm.yaml
 images:
 - name: multi-platform-controller
   newName: quay.io/konflux-ci/multi-platform-controller
-  newTag: a4a84ad774d7f0e979391e4d7216606680a22840
+  newTag: 0cc5b50985b6e20735022220f353e13a6782b8f4
 - name: multi-platform-otp-server
   newName: quay.io/konflux-ci/multi-platform-controller-otp-service
-  newTag: a4a84ad774d7f0e979391e4d7216606680a22840
+  newTag: 0cc5b50985b6e20735022220f353e13a6782b8f4
 patches:
 - path: patches/logs-in-console-format-cmd-arg-patch.yaml
   target:
