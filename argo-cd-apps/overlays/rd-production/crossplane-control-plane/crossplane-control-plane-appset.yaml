@@ -1,0 +1,50 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: crossplane-control-plane
+  labels:
+    appstudio.redhat.com/deployment-clusters: "tenant"
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              selector:
+                matchExpressions:
+                  - key: appstudio.redhat.com/select-none
+                    operator: Exists
+                  - key: appstudio.redhat.com/select-none
+                    operator: DoesNotExist
+              values:
+                sourceRoot: components/crossplane-control-plane-rd
+                ring: "empty-base"
+                clusterDir: "empty-base"
+          - list:
+              elements: []
+
+  template:
+    metadata:
+      name: crossplane-control-plane-{{nameNormalized}}
+    spec:
+      project: default
+      source:
+        path: '{{values.sourceRoot}}/rings/{{values.ring}}/{{values.clusterDir}}'
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+        targetRevision: main
+      destination:
+        namespace: crossplane-system
+        server: '{{server}}'
+      syncPolicy:
+        # automated:
+        #   prune: true
+        #   selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+        retry:
+          limit: -1
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 3m

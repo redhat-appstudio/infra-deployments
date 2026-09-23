@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- ../base
+
+patches:
+  - path: patches/cluster-name-patch.yaml
+    target:
+      name: envcfg
+      kind: EnvironmentConfig
+      group: apiextensions.crossplane.io
+      version: v1beta1
