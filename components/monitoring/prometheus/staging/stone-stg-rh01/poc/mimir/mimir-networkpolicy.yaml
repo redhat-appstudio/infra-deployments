@@ -24,6 +24,24 @@ spec:
       port: 7946
     - protocol: TCP
       port: 9000
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: appstudio-alloy-poc
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: alloy
+          app.kubernetes.io/part-of: alloy-poc
+    ports:
+    - protocol: TCP
+      port: 8080
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: appstudio-grafana
+    ports:
+    - protocol: TCP
+      port: 8080
   egress:
   - to:
     - podSelector: {}
@@ -51,6 +69,17 @@ spec:
       port: 5353
     - protocol: TCP
       port: 5353
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: appstudio-alloy-poc
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: alloy
+          app.kubernetes.io/part-of: alloy-poc
+    ports:
+    - protocol: TCP
+      port: 9999
   # Future external S3:
   # - ports:
   #   - protocol: TCP

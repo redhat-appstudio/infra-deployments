@@ -9,13 +9,13 @@ spec:
         data:
           allowCacheProxy: true
           allowPackageRegistryProxy: true
-          httpProxy: squid.caching.svc.cluster.local:3128
+          httpProxy: squid.container-image-proxy.svc.cluster.local:3128
           noProxy: ""
-          packageRegistryProxyGomodUrl: https://artifact-registry-proxy.caching.svc.cluster.local/repository/go-proxy
-          packageRegistryProxyNpmUrl: https://artifact-registry-proxy.caching.svc.cluster.local/repository/npm-proxy
-          packageRegistryProxyPipUrl: https://artifact-registry-proxy.caching.svc.cluster.local/repository/pypi-proxy/simple
-          packageRegistryProxyPnpmUrl: https://artifact-registry-proxy.caching.svc.cluster.local/repository/npm-proxy
-          packageRegistryProxyYarnUrl: https://artifact-registry-proxy.caching.svc.cluster.local/repository/npm-proxy
+          packageRegistryProxyGomodUrl: https://artifact-registry-proxy.artifact-registry-proxy.svc.cluster.local/repository/go-proxy
+          packageRegistryProxyNpmUrl: https://artifact-registry-proxy.artifact-registry-proxy.svc.cluster.local/repository/npm-proxy
+          packageRegistryProxyPipUrl: https://artifact-registry-proxy.artifact-registry-proxy.svc.cluster.local/repository/pypi-proxy/simple
+          packageRegistryProxyPnpmUrl: https://artifact-registry-proxy.artifact-registry-proxy.svc.cluster.local/repository/npm-proxy
+          packageRegistryProxyYarnUrl: https://artifact-registry-proxy.artifact-registry-proxy.svc.cluster.local/repository/npm-proxy
       publicInfo:
         environment: staging
         integrations:
@@ -32,5 +32,5 @@ spec:
                   url: "https://bombino.preprod.api.redhat.com/v1/sbom/quay/push"
       banner:
         items:
-          - summary: "Service Accounts will be rotated on staging clusters during the September 18 Konflux Maintenance window. Not migrated automation will start failing."
+          - summary: "Want to **display important updates** here? [See how to create a banner](https://github.com/redhat-appstudio/infra-deployments/blob/main/components/konflux-info/README.md)."
             type: info

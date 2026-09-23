@@ -19,7 +19,7 @@ spec:
                   - key: appstudio.redhat.com/select-none
                     operator: DoesNotExist
               values:
-                sourceRoot: components/repository-validator-rd
+                sourceRoot: components/repository-validator
                 ring: "empty-base"
                 clusterDir: "empty-base"
           - list:
@@ -38,9 +38,9 @@ spec:
         namespace: repository-validator
         server: '{{server}}'
       syncPolicy:
-        # automated:
-        #   prune: true
-        #   selfHeal: true
+        automated:
+          prune: true
+          selfHeal: true
         syncOptions:
         - CreateNamespace=true
         retry:

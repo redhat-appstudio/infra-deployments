@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vmalert-poc
+  labels:
+    app.kubernetes.io/name: vmalert
+    app.kubernetes.io/part-of: mimir-poc
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: vmalert
+      app.kubernetes.io/part-of: mimir-poc
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: vmalert
+        app.kubernetes.io/part-of: mimir-poc
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: vmalert
+        image: victoriametrics/vmalert:v1.152.0
+        args:
+        - -datasource.url=http://mimir-poc-query-frontend.appstudio-mimir-poc.svc:8080/prometheus
+        - "-datasource.headers=X-Scope-OrgID: konflux-poc"
+        - -remoteWrite.url=http://alloy-poc.appstudio-alloy-poc.svc:9999/api/v1/metrics/write
+        - -remoteWrite.disablePathAppend
+        - -rule=/etc/vmalert/rules/*.yaml
+        - -configCheckInterval=1m
+        - -httpListenAddr=:8880
+        ports:
+        - name: http
+          containerPort: 8880
+          protocol: TCP
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            memory: 512Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: rules
+          mountPath: /etc/vmalert/rules
+          readOnly: true
+        readinessProbe:
+          httpGet:
+            path: /-/ready
+            port: http
+        livenessProbe:
+          httpGet:
+            path: /-/healthy
+            port: http
+      volumes:
+      - name: rules
+        configMap:
+          name: vmalert-poc-rules

@@ -6,7 +6,8 @@ namespace: appstudio-mimir-poc
 resources:
 - namespace.yaml
 - mimir-rbac.yaml
-- mimir-rules.yaml
+- vmalert.yaml
+- vmalert-rules.yaml
 - mimir-networkpolicy.yaml
 
 generators:
@@ -46,6 +47,13 @@ patches:
         runAsNonRoot: true
         seccompProfile:
           type: RuntimeDefault
+- target:
+    kind: Job
+    labelSelector: release=mimir-poc
+  patch: |-
+    - op: add
+      path: /spec/ttlSecondsAfterFinished
+      value: 3600
 - target:
     kind: PodDisruptionBudget
   patch: |-
