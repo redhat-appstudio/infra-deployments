@@ -3,14 +3,14 @@ kind: Kustomization
 namespace: image-rbac-proxy
 resources:
 - ../base
-- https://github.com/konflux-ci/image-rbac-proxy/deploy/development/base?ref=00e4832fe930795b1516ae214ba61666aa91075b
+- https://github.com/konflux-ci/image-rbac-proxy/deploy/development/base?ref=8729db8750c3dd2b3b64b49b710dc1e06f0d8f83
 # Enable this to create/rotate oauth secret
 - ../base/oauth
 
 images:
 - name: quay.io/konflux-ci/image-rbac-proxy
   newName: quay.io/konflux-ci/image-rbac-proxy
-  newTag: 00e4832fe930795b1516ae214ba61666aa91075b
+  newTag: 8729db8750c3dd2b3b64b49b710dc1e06f0d8f83
 - name: memcached
   newName: quay.io/kubearchive/memcached
   newTag: 1.6.39
