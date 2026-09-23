@@ -1154,6 +1154,93 @@ PIPELINERUN_DEFINITIONS: Dict[str, PipelineRunTestData] = {
             }
         }
     },
+
+    "mintmaker_triggered_tenant_pipelinerun": {
+        "name": "Mintmaker-triggered pipeline in tenant namespace",
+        "pipelinerun": {
+            "apiVersion": "tekton.dev/v1",
+            "kind": "PipelineRun",
+            "metadata": {
+                "name": "mintmaker-component-update",
+                "namespace": "tenant-workspace-123",
+                "annotations": {
+                    "pipelinesascode.tekton.dev/source-branch": "konflux/mintmaker/ansible-automation-platform-devel/lock-file-maintenance",
+                    "pipelinesascode.tekton.dev/event-type": "push"
+                }
+            },
+            "spec": {
+                "pipelineRef": {"name": "component-build"},
+                "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
+            }
+        },
+        "expected": {
+            "annotations": {
+                "kueue.konflux-ci.dev/requests-konflux-ci-dev-token": "1",
+            },
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-mintmaker-triggered"
+            }
+        }
+    },
+
+    "mintmaker_triggered_in_mintmaker_namespace": {
+        "name": "Mintmaker-triggered pipeline in mintmaker namespace (excluded)",
+        "pipelinerun": {
+            "apiVersion": "tekton.dev/v1",
+            "kind": "PipelineRun",
+            "metadata": {
+                "name": "mintmaker-internal-pipeline",
+                "namespace": "mintmaker",
+                "annotations": {
+                    "pipelinesascode.tekton.dev/source-branch": "konflux/mintmaker/component-abc-update-v1.2.3",
+                    "pipelinesascode.tekton.dev/event-type": "push"
+                }
+            },
+            "spec": {
+                "pipelineRef": {"name": "internal-pipeline"},
+                "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
+            }
+        },
+        "expected": {
+            "annotations": {
+                "kueue.konflux-ci.dev/requests-konflux-ci-dev-token": "1",
+                "kueue.konflux-ci.dev/requests-mintmaker": "1"
+            },
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-dependency-update"
+            }
+        }
+    },
+
+    "tenant_pipelinerun_without_mintmaker_label": {
+        "name": "Tenant pipeline without mintmaker label (standard priority)",
+        "pipelinerun": {
+            "apiVersion": "tekton.dev/v1",
+            "kind": "PipelineRun",
+            "metadata": {
+                "name": "regular-build",
+                "namespace": "tenant-workspace-456",
+                "labels": {
+                    "pipelinesascode.tekton.dev/event-type": "push"
+                }
+            },
+            "spec": {
+                "pipelineRef": {"name": "component-build"},
+                "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
+            }
+        },
+        "expected": {
+            "annotations": {
+                "kueue.konflux-ci.dev/requests-konflux-ci-dev-token": "1",
+            },
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-post-merge-build"
+            }
+        }
+    },
 }
 
 # Configuration combinations that can be applied to any PipelineRun
@@ -1295,6 +1382,18 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
         "pipelinerun_key": "nudge_pipelinerun",
         "config_key": "development"
     },
+    "mintmaker_triggered_tenant_dev": {
+        "pipelinerun_key": "mintmaker_triggered_tenant_pipelinerun",
+        "config_key": "development"
+    },
+    "mintmaker_triggered_in_mintmaker_namespace_dev": {
+        "pipelinerun_key": "mintmaker_triggered_in_mintmaker_namespace",
+        "config_key": "development"
+    },
+    "tenant_pipelinerun_without_mintmaker_label_dev": {
+        "pipelinerun_key": "tenant_pipelinerun_without_mintmaker_label",
+        "config_key": "development"
+    },
 
     # multiplatform_old edge cases
     "multiplatform_old_no_pipelineSpecTasks": {
@@ -1353,6 +1452,18 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
     },
     "test_ok_to_test_comment_staging": {
         "pipelinerun_key": "test-ok-to-test-comment",
+        "config_key": "staging"
+    },
+    "mintmaker_triggered_tenant_staging": {
+        "pipelinerun_key": "mintmaker_triggered_tenant_pipelinerun",
+        "config_key": "staging"
+    },
+    "mintmaker_triggered_in_mintmaker_namespace_staging": {
+        "pipelinerun_key": "mintmaker_triggered_in_mintmaker_namespace",
+        "config_key": "staging"
+    },
+    "tenant_pipelinerun_without_mintmaker_label_staging": {
+        "pipelinerun_key": "tenant_pipelinerun_without_mintmaker_label",
         "config_key": "staging"
     },
     "build_test_comment_staging": {
