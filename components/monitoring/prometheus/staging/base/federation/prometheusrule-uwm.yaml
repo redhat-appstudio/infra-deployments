@@ -72,3 +72,10 @@
             kube_resourcequota{namespace=~".*-tenant", resource=~"(requests|limits)\\.(cpu|memory)", type="hard"}
           )
         record: namespace:konflux_tenant_resourcequota_utilization:ratio
+      - expr: |
+          max by (namespace, resource) (
+            kube_resourcequota{namespace=~"rhtap-releng-tenant|releng-integration-tenant|releng-dev-tenant|releng-dev-tools-tenant", resource="pods", type="used"}
+            / on (namespace, resource, resourcequota)
+            kube_resourcequota{namespace=~"rhtap-releng-tenant|releng-integration-tenant|releng-dev-tenant|releng-dev-tools-tenant", resource="pods", type="hard"}
+          )
+        record: namespace:konflux_tenant_resourcequota_utilization:ratio
