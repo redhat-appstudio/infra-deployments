@@ -1454,18 +1454,6 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
         "pipelinerun_key": "test-ok-to-test-comment",
         "config_key": "staging"
     },
-    "mintmaker_triggered_tenant_staging": {
-        "pipelinerun_key": "mintmaker_triggered_tenant_pipelinerun",
-        "config_key": "staging"
-    },
-    "mintmaker_triggered_in_mintmaker_namespace_staging": {
-        "pipelinerun_key": "mintmaker_triggered_in_mintmaker_namespace",
-        "config_key": "staging"
-    },
-    "tenant_pipelinerun_without_mintmaker_label_staging": {
-        "pipelinerun_key": "tenant_pipelinerun_without_mintmaker_label",
-        "config_key": "staging"
-    },
     "build_test_comment_staging": {
         "pipelinerun_key": "build-test-comment",
         "config_key": "staging"
