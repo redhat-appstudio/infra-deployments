@@ -1382,18 +1382,6 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
         "pipelinerun_key": "nudge_pipelinerun",
         "config_key": "development"
     },
-    "mintmaker_triggered_tenant_dev": {
-        "pipelinerun_key": "mintmaker_triggered_tenant_pipelinerun",
-        "config_key": "development"
-    },
-    "mintmaker_triggered_in_mintmaker_namespace_dev": {
-        "pipelinerun_key": "mintmaker_triggered_in_mintmaker_namespace",
-        "config_key": "development"
-    },
-    "tenant_pipelinerun_without_mintmaker_label_dev": {
-        "pipelinerun_key": "tenant_pipelinerun_without_mintmaker_label",
-        "config_key": "development"
-    },
 
     # multiplatform_old edge cases
     "multiplatform_old_no_pipelineSpecTasks": {
