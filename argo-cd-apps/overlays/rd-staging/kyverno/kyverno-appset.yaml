@@ -18,7 +18,7 @@ spec:
                   - key: appstudio.redhat.com/select-none
                     operator: DoesNotExist
               values:
-                sourceRoot: components/kyverno-rd
+                sourceRoot: components/kyverno
                 ring: "empty-base"
                 clusterDir: "empty-base"
           - list:
@@ -39,9 +39,9 @@ spec:
         namespace: konflux-kyverno
         server: '{{server}}'
       syncPolicy:
-        # automated:
-        #   prune: true
-        #   selfHeal: true
+        automated:
+          prune: true
+          selfHeal: true
         syncOptions:
           - CreateNamespace=true
           - ServerSideApply=true
