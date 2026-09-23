@@ -1,0 +1,20 @@
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: crypto-rules-image
+spec:
+  lookupPolicy:
+    local: false
+  tags:
+  - annotations: null
+    from:
+      kind: DockerImage
+      name: quay.io/exd-guild-security/crypto-rules-image:latest
+    importPolicy:
+      importMode: PreserveOriginal
+      scheduled: true
+    name: latest
+    referencePolicy:
+      type: Local
+---
