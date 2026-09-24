@@ -1,0 +1,32 @@
+---
+# Allows the SPRE rover group to mint bound tokens for konflux-bot-0
+# without needing cluster-admin. Token generation:
+#   oc -n spre-telemetry create token konflux-bot-0
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: spre-telemetry-token-creator
+  namespace: spre-telemetry
+rules:
+  - verbs:
+      - create
+    apiGroups:
+      - ""
+    resources:
+      - serviceaccounts/token
+    resourceNames:
+      - konflux-bot-0
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: spre-telemetry-token-creator
+  namespace: spre-telemetry
+subjects:
+  - kind: Group
+    apiGroup: rbac.authorization.k8s.io
+    name: sp-resilience-team
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: spre-telemetry-token-creator
