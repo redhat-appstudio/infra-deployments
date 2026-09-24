@@ -1,0 +1,15 @@
+apiVersion: konflux-ci.dev/v1alpha1
+kind: ImageRepository
+metadata:
+  name: test-bad-prod-url
+spec:
+  image:
+    name: my-tenant/test
+    visibility: public
+  notifications:
+    # The production Bombino host must be rejected on staging clusters, which only allow the pre-production instance.
+    - config:
+        url: 'https://bombino.api.redhat.com/v1/sbom/quay/push'
+      event: repo_push
+      method: webhook
+      title: prod-bombino-on-staging

@@ -1,0 +1,190 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: restrict-notifications-url
+spec:
+  description: |
+    Tests that the staging restrict-notifications-url ValidatingAdmissionPolicy only allows ImageRepository notification callback urls
+    that point to the Red Hat Bombino pre-production instance (https://bombino.preprod.api.redhat.com) and denies any other url.
+    Also verifies the policy applies to both the current (konflux-ci.dev) and the deprecated (appstudio.redhat.com) API groups.
+  # The ImageRepository CRDs are not part of the chainsaw kind cluster, so both the current and the deprecated group CRDs are installed before the policy.
+  # Tests run serially to keep webhook behaviour deterministic.
+  concurrent: false
+  steps:
+  - name: given-crds-and-validating-admission-policy-are-ready
+    try:
+    - apply:
+        file: resources/imagerepository-crd.yaml
+    - apply:
+        file: resources/imagerepository-crd-deprecated.yaml
+    - apply:
+        file: ../restrict-notifications-url-validationadmissionpolicy.yaml
+    - apply:
+        file: ../restrict-notifications-url-validationadmissionpolicybinding.yaml
+    - assert:
+        file: chainsaw-assert-validatingadmissionpolicy.yaml
+    # The policy status is reported before the api server actually starts enforcing the policy,
+    # so poll with a known bad object until it gets denied.
+    - script:
+        skipLogOutput: true
+        env:
+        - name: NAMESPACE
+          value: ($namespace)
+        content: |
+          for _ in $(seq 60); do
+            if ! kubectl create --dry-run=server -n "${NAMESPACE}" -f resources/imagerepository-bad-url.yaml >/dev/null 2>&1; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "the ValidatingAdmissionPolicy is still not enforced" >&2
+          exit 1
+        check:
+          ($error): ~
+  - name: then-preprod-bombino-url-is-allowed
+    try:
+    - create:
+        file: resources/imagerepository-good-bombino.yaml
+  - name: then-image-repository-without-notifications-is-allowed
+    try:
+    - create:
+        file: resources/imagerepository-good-no-notifications.yaml
+  - name: then-non-bombino-url-is-denied
+    try:
+    - create:
+        file: resources/imagerepository-bad-url.yaml
+        expect:
+        - check:
+            ($error != null): true
+  - name: then-production-bombino-url-is-denied-on-staging
+    try:
+    - create:
+        file: resources/imagerepository-bad-prod-url.yaml
+        expect:
+        - check:
+            ($error != null): true
+  - name: then-lookalike-bombino-host-is-denied
+    try:
+    - create:
+        file: resources/imagerepository-bad-lookalike-url.yaml
+        expect:
+        - check:
+            ($error != null): true
+  - name: then-mixed-notifications-with-one-bad-url-is-denied
+    try:
+    - create:
+        file: resources/imagerepository-bad-mixed.yaml
+        expect:
+        - check:
+            ($error != null): true
+  - name: then-deprecated-api-group-is-still-enforced
+    try:
+    - create:
+        file: resources/imagerepository-bad-deprecated-group.yaml
+        expect:
+        - check:
+            ($error != null): true
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: allow-update-existing-invalid-url-if-unchanged
+spec:
+  description: |
+    Tests that an existing ImageRepository with an invalid notification url can still be updated
+    as long as spec.notifications is left untouched. This allows controllers to update the rest of
+    the object without being blocked by pre-existing invalid urls, while any change to
+    spec.notifications must bring every url into compliance. The exemption is intentionally
+    coarse grained, it covers the whole spec.notifications field and not an individual url, so
+    even edits that keep an invalid url as is, like renaming a notification, are denied.
+  concurrent: false
+  steps:
+  - name: given-crds-exist
+    try:
+    - apply:
+        file: resources/imagerepository-crd.yaml
+    - assert:
+        file: chainsaw-assert-imagerepository-crd.yaml
+  - name: given-imagerepository-with-invalid-url-exists-before-policy
+    try:
+    - create:
+        file: resources/imagerepository-existing-bad-url.yaml
+  - name: given-validating-admission-policy-is-applied
+    try:
+    - apply:
+        file: ../restrict-notifications-url-validationadmissionpolicy.yaml
+    - apply:
+        file: ../restrict-notifications-url-validationadmissionpolicybinding.yaml
+    - assert:
+        file: chainsaw-assert-validatingadmissionpolicy.yaml
+  # The policy status is reported before the api server actually starts enforcing the policy.
+  # Poll with a known bad object until it gets denied, otherwise the update steps below run unguarded and silently pass.
+  - name: given-policy-enforcement-has-started
+    try:
+    - script:
+        skipLogOutput: true
+        env:
+        - name: NAMESPACE
+          value: ($namespace)
+        content: |
+          for _ in $(seq 60); do
+            if ! kubectl create --dry-run=server -n "${NAMESPACE}" -f resources/imagerepository-bad-url.yaml >/dev/null 2>&1; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "the ValidatingAdmissionPolicy is still not enforced" >&2
+          exit 1
+        check:
+          ($error): ~
+  - name: then-update-metadata-without-changing-notifications-succeeds
+    try:
+    - patch:
+        resource:
+          apiVersion: konflux-ci.dev/v1alpha1
+          kind: ImageRepository
+          metadata:
+            name: test-existing-bad-url
+            labels:
+              updated-by: controller
+  - name: then-apply-full-object-with-same-notifications-succeeds
+    try:
+    - apply:
+        file: resources/imagerepository-existing-bad-url-updated-metadata.yaml
+  - name: then-changing-invalid-url-to-another-invalid-url-fails
+    try:
+    - apply:
+        file: resources/imagerepository-existing-bad-url-changed-url.yaml
+        expect:
+        - check:
+            ($error != null): true
+  - name: then-adding-another-invalid-url-fails
+    try:
+    - apply:
+        file: resources/imagerepository-existing-bad-url-added-invalid.yaml
+        expect:
+        - check:
+            ($error != null): true
+  - name: then-duplicating-the-existing-invalid-url-fails
+    try:
+    - apply:
+        file: resources/imagerepository-existing-bad-url-duplicated.yaml
+        expect:
+        - check:
+            ($error != null): true
+  # The exemption covers the whole spec.notifications field, so this is denied even though it
+  # does not introduce a new invalid url. Such objects have to be fixed by bringing every url
+  # into compliance in the same update.
+  - name: then-editing-a-notification-that-keeps-the-invalid-url-fails
+    try:
+    - apply:
+        file: resources/imagerepository-existing-bad-url-retitled.yaml
+        expect:
+        - check:
+            ($error != null): true
+  - name: then-changing-invalid-url-to-valid-url-succeeds
+    try:
+    - apply:
+        file: resources/imagerepository-existing-bad-url-fixed.yaml
