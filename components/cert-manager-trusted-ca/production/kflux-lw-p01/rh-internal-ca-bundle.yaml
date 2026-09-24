@@ -2,11 +2,16 @@
 #
 # On ROSA clusters, OpenShift's inject-trusted-cabundle mechanism distributes
 # the RH internal CA via the Proxy CR. On ROKS HCP this is blocked, so we use
-# trust-manager to distribute the CA bundle to tenant namespaces instead.
+# trust-manager to distribute the CA bundle to all namespaces instead.
 #
 # The Bundle creates a ConfigMap named "trusted-ca" with key "ca-bundle.crt"
-# in every namespace labeled konflux-ci.dev/type=tenant — matching the default
-# caTrustConfigMapName parameter in build tasks. No workload changes needed.
+# in every namespace — matching the default caTrustConfigMapName parameter
+# in build tasks. No workload changes needed.
+#
+# Sources are concatenated into ca-bundle.crt:
+# - useDefaultCAs: public CA bundle from trust-manager's default package
+#   (Debian ca-certificates; enabled via the trust-manager Helm chart)
+# - rh-internal-ca ConfigMap: RH internal CA certificates
 #
 # The source ConfigMap (rh-internal-ca) containing the CA certificates is
 # deployed from internal-infra-deployments (private repo) via the ca-bundle
@@ -24,6 +29,7 @@ metadata:
   name: trusted-ca
 spec:
   sources:
+    - useDefaultCAs: true
     - configMap:
         name: rh-internal-ca
         key: ca-bundle.crt
@@ -38,6 +44,5 @@ spec:
           # (Proxy CR trustedCA is not set on HCP). Setting it to "false"
           # stops the injection and lets trust-manager manage the content.
           config.openshift.io/inject-trusted-cabundle: "false"
-    namespaceSelector:
-      matchLabels:
-        konflux-ci.dev/type: tenant
+    # Empty selector: sync the target ConfigMap to every namespace.
+    namespaceSelector: {}
