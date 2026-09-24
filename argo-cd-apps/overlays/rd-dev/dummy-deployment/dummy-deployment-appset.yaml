@@ -9,18 +9,23 @@ spec:
           - nameNormalized
         generators:
           - clusters:
+              selector:
+                matchLabels:
+                  appstudio.redhat.com/member-cluster: "true"
               values:
-                sourceRoot: components/dummy-deployment/overlays
-                environment: staging
+                sourceRoot: components/dummy-deployment
+                ring: "ring-0"
+                clusterDir: base
           - list:
               elements: []
+
   template:
     metadata:
       name: dummy-deployment-{{nameNormalized}}
     spec:
       project: default
       source:
-        path: '{{values.sourceRoot}}/{{values.environment}}'
+        path: '{{values.sourceRoot}}/rings/{{values.ring}}/{{values.clusterDir}}'
         repoURL: https://github.com/redhat-appstudio/infra-deployments.git
         targetRevision: main
       destination:
