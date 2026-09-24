@@ -154,6 +154,7 @@ spec:
     - linux-mlarge-arm64
     - linux-mxlarge-amd64
     - linux-mxlarge-arm64
+    - linux-ppc64be
     - linux-ppc64le
     - linux-riscv64
     - linux-root-amd64
@@ -162,7 +163,6 @@ spec:
     - linux-x86-64
     - local
     - localhost
-    - windows-4xlarge-amd64
     flavors:
     - name: platform-group-3
       resources:
@@ -180,6 +180,8 @@ spec:
         nominalQuota: '250'
       - name: linux-mxlarge-arm64
         nominalQuota: '250'
+      - name: linux-ppc64be
+        nominalQuota: '8'
       - name: linux-ppc64le
         nominalQuota: '64'
       - name: linux-riscv64
@@ -196,6 +198,11 @@ spec:
         nominalQuota: 1k
       - name: localhost
         nominalQuota: 1k
+  - coveredResources:
+    - windows-4xlarge-amd64
+    flavors:
+    - name: platform-group-4
+      resources:
       - name: windows-4xlarge-amd64
         nominalQuota: '5'
 ---
@@ -232,4 +239,13 @@ metadata:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
     argocd.argoproj.io/sync-wave: '10'
   name: platform-group-3
+spec: {}
+---
+apiVersion: kueue.x-k8s.io/v1beta2
+kind: ResourceFlavor
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: '10'
+  name: platform-group-4
 spec: {}
