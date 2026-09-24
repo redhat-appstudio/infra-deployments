@@ -93,9 +93,12 @@ metadata:
   name: allow-update-existing-invalid-url-if-unchanged
 spec:
   description: |
-    Tests that an existing ImageRepository with an invalid notification URL can still be updated
-    as long as the notification URL itself is not changed. This allows controllers to update
-    metadata without being blocked by pre-existing invalid URLs.
+    Tests that an existing ImageRepository with an invalid notification url can still be updated
+    as long as spec.notifications is left untouched. This allows controllers to update the rest of
+    the object without being blocked by pre-existing invalid urls, while any change to
+    spec.notifications must bring every url into compliance. The exemption is intentionally
+    coarse grained, it covers the whole spec.notifications field and not an individual url, so
+    even edits that keep an invalid url as is, like renaming a notification, are denied.
   concurrent: false
   steps:
   - name: given-crds-exist
@@ -164,10 +167,23 @@ spec:
         expect:
         - check:
             ($error != null): true
-  - name: then-adding-valid-url-next-to-the-existing-invalid-one-succeeds
+  - name: then-duplicating-the-existing-invalid-url-fails
     try:
     - apply:
-        file: resources/imagerepository-existing-bad-url-added-valid.yaml
+        file: resources/imagerepository-existing-bad-url-duplicated.yaml
+        expect:
+        - check:
+            ($error != null): true
+  # The exemption covers the whole spec.notifications field, so this is denied even though it
+  # does not introduce a new invalid url. Such objects have to be fixed by bringing every url
+  # into compliance in the same update.
+  - name: then-editing-a-notification-that-keeps-the-invalid-url-fails
+    try:
+    - apply:
+        file: resources/imagerepository-existing-bad-url-retitled.yaml
+        expect:
+        - check:
+            ($error != null): true
   - name: then-changing-invalid-url-to-valid-url-succeeds
     try:
     - apply:

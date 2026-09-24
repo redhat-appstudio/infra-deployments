@@ -12,24 +12,19 @@ spec:
       operations: ["CREATE", "UPDATE"]
       resources: ["imagerepositories"]
       scope: "Namespaced"
-  variables:
-  # Urls that are already present on the object being updated.
-  # Pre-existing objects may carry not allowed urls, so they must not block unrelated updates.
-  - name: existingUrls
-    expression: |
-      (request.operation == 'UPDATE' && has(oldObject.spec.notifications))
-        ? oldObject.spec.notifications
-            .filter(n, has(n.config) && has(n.config.url))
-            .map(n, n.config.url)
-        : []
   validations:
   - expression: |
+      (
+        request.operation == 'UPDATE' &&
+        has(oldObject.spec.notifications) &&
+        has(object.spec.notifications) &&
+        object.spec.notifications == oldObject.spec.notifications
+      ) ||
       !has(object.spec.notifications) ||
       object.spec.notifications.all(n,
         !has(n.config) || !has(n.config.url) ||
         n.config.url == 'https://bombino.preprod.api.redhat.com' ||
-        n.config.url.startsWith('https://bombino.preprod.api.redhat.com/') ||
-        n.config.url in variables.existingUrls
+        n.config.url.startsWith('https://bombino.preprod.api.redhat.com/')
       )
     reason: Invalid
     message: >
