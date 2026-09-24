@@ -1,0 +1,87 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: alloy-poc-restricted-traffic
+  labels:
+    app.kubernetes.io/name: alloy
+    app.kubernetes.io/part-of: alloy-poc
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/part-of: alloy-poc
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/part-of: alloy-poc
+    ports:
+    - protocol: TCP
+      port: 12345
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: appstudio-mimir-poc
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: vmalert
+          app.kubernetes.io/part-of: mimir-poc
+    ports:
+    - protocol: TCP
+      port: 9999
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/part-of: alloy-poc
+    ports:
+    - protocol: TCP
+      port: 12345
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: openshift-dns
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+    - protocol: UDP
+      port: 5353
+    - protocol: TCP
+      port: 5353
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: openshift-monitoring
+    ports:
+    - protocol: TCP
+      port: 9091
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: openshift-user-workload-monitoring
+    ports:
+    - protocol: TCP
+      port: 9092
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: appstudio-tekton
+    ports:
+    - protocol: TCP
+      port: 9091
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: appstudio-mimir-poc
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/component: distributor
+          app.kubernetes.io/instance: mimir-poc
+          app.kubernetes.io/name: mimir
+    ports:
+    - protocol: TCP
+      port: 8080

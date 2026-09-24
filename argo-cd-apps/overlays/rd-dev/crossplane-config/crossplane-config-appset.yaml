@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: crossplane-config-rd
+  name: crossplane-config
 spec:
   generators:
     - merge:
@@ -13,7 +13,7 @@ spec:
                 matchLabels:
                   appstudio.redhat.com/eaas-cluster: "true"
               values:
-                sourceRoot: components/crossplane-config-rd
+                sourceRoot: components/crossplane-config
                 ring: "ring-0"
                 clusterDir: base
           - list:

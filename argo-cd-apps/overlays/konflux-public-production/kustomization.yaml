@@ -40,6 +40,11 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: cluster-secret-store
+  - path: cluster-secret-store-production-auto-sync-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: cluster-secret-store
   - path: production-overlay-patch.yaml
     target:
       kind: ApplicationSet
@@ -119,22 +124,12 @@ patches:
     target:
       kind: ApplicationSet
       version: v1alpha1
-      name: notification-controller
-  - path: production-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
       name: proactive-scaler
   - path: production-overlay-patch.yaml
     target:
       kind: ApplicationSet
       version: v1alpha1
       name: crossplane-control-plane
-  - path: production-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: crossplane-config
   - path: production-overlay-patch.yaml
     target:
       kind: ApplicationSet

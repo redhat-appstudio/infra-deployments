@@ -1,0 +1,35 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: appstudio-alloy-poc
+
+resources:
+- namespace.yaml
+- alloy-config.yaml
+- alloy-rbac.yaml
+- alloy-networkpolicy.yaml
+
+generators:
+- alloy-helm-generator.yaml
+
+patches:
+- target:
+    kind: Service
+    name: alloy-poc
+  patch: |-
+    - op: add
+      path: /spec/ports/-
+      value:
+        name: vmalert-receive
+        port: 9999
+        targetPort: 9999
+        protocol: TCP
+- target:
+    group: policy
+    version: v1
+    kind: PodDisruptionBudget
+    name: alloy-poc
+  patch: |-
+    - op: add
+      path: /spec/unhealthyPodEvictionPolicy
+      value: AlwaysAllow

@@ -1,0 +1,127 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: kanary-run-simple
+spec:
+  params:
+    - name: tested-cluster
+      type: string
+    - name: test-type
+      type: string
+      default: container-single-arch
+    - name: member-cluster
+      type: string
+    - name: tenant-namespace
+      type: string
+      default: "konflux-perfscale-3-tenant"
+    - name: release-managed-namespace
+      type: string
+      default: "managed-konflux-perfscale-tenant"
+    # Pre-existing resource names
+    - name: application-name
+      type: string
+      description: "Name of existing Application resource"
+    - name: component-name
+      type: string
+      description: "Name of existing Component resource"
+  results:
+    - name: test-outcome
+      description: "Test outcome: passed, failed, or unknown"
+    - name: failure-cause
+      description: "Error cause from loadtest error_caused_by_simple (comma-separated if multiple). Empty on pass or when collect-results did not run."
+    - name: failure-phase
+      description: "Loadtest phase where the earliest failure occurred. Empty on pass or when collect-results did not run."
+  workspaces:
+    - name: artifacts
+      description: "Shared workspace for test artifacts"
+  volumes:
+    - name: users-secret
+      secret:
+        secretName: kanary-probe-users-credentials-tenant3
+        items:
+          - key: token
+            path: token
+  steps:
+    - name: run-simple-test
+      image: quay.io/redhat-user-workloads/konflux-perfscale-tenant/loadtest
+      volumeMounts:
+        - name: users-secret
+          mountPath: /opt/users-secret
+          readOnly: true
+      env:
+        - name: OUTPUT_DIR
+          value: $(workspaces.artifacts.path)
+        - name: APPLICATION
+          value: $(params.application-name)
+        - name: COMPONENT
+          value: $(params.component-name)
+        - name: TENANT_NAMESPACE
+          value: $(params.tenant-namespace)
+        - name: RELEASE_MANAGED_NAMESPACE
+          value: $(params.release-managed-namespace)
+        - name: SERVER_API_URL
+          value: $(params.member-cluster)
+        - name: RELEASE_MANAGED_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: kanary-probe-prometheus-credentials
+              key: managed_sa_token
+        - name: OCP_PROMETHEUS_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: kanary-probe-prometheus-credentials
+              key: prometheus_token
+      script: |
+        #!/usr/bin/env bash
+        set -euo pipefail
+        echo -n "unknown" > $(results.test-outcome.path)
+        echo -n "" > $(results.failure-cause.path)
+        echo -n "" > $(results.failure-phase.path)
+
+        if [[ ! -s /opt/users-secret/token ]]; then
+          echo "ERROR: /opt/users-secret/token is missing or empty" >&2
+          exit 1
+        fi
+
+        jq -n \
+          --arg SERVER_API_URL "$SERVER_API_URL" \
+          --arg NAMESPACE "$TENANT_NAMESPACE" \
+          --rawfile USER_TOKEN /opt/users-secret/token \
+          '[{apiurl: $SERVER_API_URL, namespace: $NAMESPACE, token: ($USER_TOKEN | rtrimstr("\n")), verified: true}]' > users.json
+
+        ./ci-scripts/run-simple/run.sh || true
+        cp -f started ended "$(workspaces.artifacts.path)/" || true
+    - name: collect-results
+      image: quay.io/redhat-user-workloads/konflux-perfscale-tenant/loadtest
+      env:
+        - name: ARTIFACT_DIR
+          value: $(workspaces.artifacts.path)/results
+        - name: SOURCE_DIR
+          value: $(workspaces.artifacts.path)
+        - name: MEMBER_CLUSTER
+          value: $(params.member-cluster)
+        - name: OCP_PROMETHEUS_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: kanary-probe-prometheus-credentials
+              key: prometheus_token
+      script: |
+        #!/usr/bin/env bash
+        set -uo pipefail
+        KANARY_FAIL_CODE=42
+        ./ci-scripts/run-simple/collect-results.sh --tests-dir . --exit-on-fail "$KANARY_FAIL_CODE"
+        exit_code=$?
+        if [[ "$exit_code" -eq 0 ]]; then
+          echo -n "passed" > $(results.test-outcome.path)
+        elif [[ "$exit_code" -eq "$KANARY_FAIL_CODE" ]]; then
+          echo -n "failed" > $(results.test-outcome.path)
+        fi
+
+        if [[ -s "$(workspaces.artifacts.path)/results/load-test.json" ]]; then
+          jq -r '.results.errors.error_caused_by_simple // ""' \
+            "$(workspaces.artifacts.path)/results/load-test.json" > $(results.failure-cause.path)
+          jq -r '.results.measurements.KPI.failed_phase // ""' \
+            "$(workspaces.artifacts.path)/results/load-test.json" > $(results.failure-phase.path)
+        else
+          echo "WARN: load-test.json not found or empty, failure-cause and failure-phase will be empty" >&2
+        fi

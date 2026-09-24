@@ -4,7 +4,7 @@ metadata:
   name: caching-helm
 name: caching-helm
 repo: oci://quay.io/konflux-ci/caching
-version: 0.1.1980+7667c92
+version: 0.1.1986+ec0ea54
 valuesInline:
   squid:
     enabled: true
@@ -18,6 +18,8 @@ valuesInline:
     enabled: true
   selfsigned-bundle:
     enabled: true
+    # Keep the ConfigMap name consumed by existing build tasks.
+    name: caching-ca-bundle
   mirrord:
     enabled: false
   test:

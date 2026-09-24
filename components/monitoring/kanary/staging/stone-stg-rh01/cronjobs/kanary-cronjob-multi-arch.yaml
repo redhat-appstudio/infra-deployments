@@ -31,7 +31,7 @@ spec:
                 - /bin/bash
                 - -c
                 - |
-                  tkn pipeline start kanary-otel-poc --use-param-defaults \
+                  tkn pipeline start kanary-run-probe --use-param-defaults --workspace name=artifacts,emptyDir="" \
                     --param tested-cluster=stone-stg-rh01 \
                     --param test-type=container-multi-arch \
                     --param component-repo=https://github.com/rhtap-perf-test/nodejs-devfile-sample \
