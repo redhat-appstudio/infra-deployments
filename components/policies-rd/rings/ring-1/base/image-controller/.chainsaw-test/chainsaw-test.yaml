@@ -67,3 +67,59 @@ spec:
         expect:
         - check:
             ($error != null): true
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: allow-update-existing-invalid-url-if-unchanged
+spec:
+  description: |
+    Tests that an existing ImageRepository with an invalid notification URL can still be updated
+    as long as the notification URL itself is not changed. This allows controllers to update
+    metadata without being blocked by pre-existing invalid URLs.
+  concurrent: false
+  steps:
+  - name: given-crds-exist
+    try:
+    - apply:
+        file: resources/imagerepository-crd.yaml
+    - assert:
+        file: chainsaw-assert-imagerepository-crd.yaml
+  - name: given-imagerepository-with-invalid-url-exists-before-policy
+    try:
+    - create:
+        file: resources/imagerepository-existing-bad-url.yaml
+  - name: given-validating-admission-policy-is-applied
+    try:
+    - apply:
+        file: ../restrict-notifications-url-validationadmissionpolicy.yaml
+    - apply:
+        file: ../restrict-notifications-url-validationadmissionpolicybinding.yaml
+    - assert:
+        file: chainsaw-assert-validatingadmissionpolicy.yaml
+  - name: then-update-metadata-without-changing-notifications-succeeds
+    try:
+    - patch:
+        resource:
+          apiVersion: konflux-ci.dev/v1alpha1
+          kind: ImageRepository
+          metadata:
+            name: test-existing-bad-url
+            labels:
+              updated-by: controller
+  - name: then-apply-full-object-with-same-notifications-succeeds
+    try:
+    - apply:
+        file: resources/imagerepository-existing-bad-url-updated-metadata.yaml
+  - name: then-changing-invalid-url-to-another-invalid-url-fails
+    try:
+    - apply:
+        file: resources/imagerepository-existing-bad-url-changed-url.yaml
+        expect:
+        - check:
+            ($error != null): true
+  - name: then-changing-invalid-url-to-valid-url-succeeds
+    try:
+    - apply:
+        file: resources/imagerepository-existing-bad-url-fixed.yaml
