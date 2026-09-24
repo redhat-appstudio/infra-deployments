@@ -24,9 +24,6 @@ spec:
     - name: component-name
       type: string
       description: "Name of existing Component resource"
-    - name: release-plan-name
-      type: string
-      description: "Name of existing ReleasePlan resource"
   results:
     - name: test-outcome
       description: "Test outcome: passed, failed, or unknown"
@@ -54,12 +51,10 @@ spec:
       env:
         - name: OUTPUT_DIR
           value: $(workspaces.artifacts.path)
-        - name: APPLICATION_NAME
+        - name: APPLICATION
           value: $(params.application-name)
-        - name: COMPONENT_NAME
+        - name: COMPONENT
           value: $(params.component-name)
-        - name: RELEASE_PLAN_NAME
-          value: $(params.release-plan-name)
         - name: TENANT_NAMESPACE
           value: $(params.tenant-namespace)
         - name: RELEASE_MANAGED_NAMESPACE
