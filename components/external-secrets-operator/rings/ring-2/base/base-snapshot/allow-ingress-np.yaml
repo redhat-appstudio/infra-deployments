@@ -23,6 +23,8 @@ spec:
     # - 192.168.0.0/16 (pod CIDR in most clusters)
     # - 10.128.0.0/14 (pod CIDR in stg-rh01, prd-rh01 and prd-p01 clusters)
     # - 172.24.0.0/14 (pod CIDR in new cluster)
+    # Individual cluster overlays will patch out the CIDR blocks not relevant
+    # to their configuration.
     - ipBlock:
         cidr: 10.128.0.0/14
     - ipBlock:
