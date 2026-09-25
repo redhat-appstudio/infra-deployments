@@ -13,7 +13,7 @@ spec:
                 matchLabels: # Get all tenant staging clusters for custom case
                   appstudio.redhat.com/cluster-type: "tenant"
               values:
-                sourceRoot: components/smee-client-rd
+                sourceRoot: components/smee-client
                 ring: "empty-base"
                 clusterDir: "empty-base"
           - list:
@@ -40,9 +40,9 @@ spec:
         namespace: smee-client
         server: '{{server}}'
       syncPolicy:
-        # automated:
-        #   prune: true
-        #   selfHeal: true
+        automated:
+          prune: true
+          selfHeal: true
         syncOptions:
           - CreateNamespace=true
         retry:
