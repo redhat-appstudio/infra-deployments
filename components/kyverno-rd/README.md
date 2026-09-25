@@ -14,8 +14,12 @@ generator are reproduced via Tier-3 post-render patches.
 - `rings/ring-0/base/` — Ring 0 (development): Helm generator, values, image
   overrides and the migrate-resources Job patch. Contains a `base-snapshot/`
   copy of Tier 1 so `kustomize build` stays self-contained per ring.
+- `rings/ring-1/base/` — Ring 1 (staging): Contains a `base-snapshot/`
+  copy of Tier 1 so `kustomize build` stays self-contained per ring. 
+  Helm generator, values, image overrides and resource patches are located
+  at the cluster level (Tier 3).
 
-Staging (ring-1) and production (rings 2-4) rings are added in later SOP parts.
+Rings 2-4 (production) follow the same layout as ring 1.
 
 ## Notes
 
