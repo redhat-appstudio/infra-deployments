@@ -114,7 +114,7 @@ patches:
               spec:
                 containers:
                   - name: vacuum
-                    image: quay.io/kubearchive/vacuum:v1.22.2
+                    image: quay.io/kubearchive/vacuum:v1.23.0
 
   - patch: |-
       apiVersion: batch/v1
@@ -150,7 +150,7 @@ patches:
     patch: |-
       - op: replace
         path: /metadata/name
-        value: kubearchive-schema-migration-v13-v1.22.2
+        value: kubearchive-schema-migration-v13-v1.23.0
 
   # We don't need the Secret as it will be created by the ExternalSecrets Operator
   - patch: |-
@@ -237,6 +237,14 @@ patches:
                     configMapKeyRef:
                       name: kubearchive-deployment-schema-version
                       key: MIGRATION_VERSION
+                - name: API_RATE_LIMIT_OVERALL_RPS
+                  value: "2300"
+                - name: API_RATE_LIMIT_OVERALL_BURST
+                  value: "6900"
+                - name: DATABASE_MAX_OPEN_CONNS
+                  value: "25"
+                - name: DATABASE_MAX_IDLE_CONNS
+                  value: "10"
                 securityContext:
                   readOnlyRootFilesystem: true
                   runAsNonRoot: true
@@ -296,6 +304,10 @@ patches:
                     configMapKeyRef:
                       name: kubearchive-deployment-schema-version
                       key: MIGRATION_VERSION
+                - name: DATABASE_MAX_OPEN_CONNS
+                  value: "25"
+                - name: DATABASE_MAX_IDLE_CONNS
+                  value: "10"
                 securityContext:
                   readOnlyRootFilesystem: true
                   runAsNonRoot: true

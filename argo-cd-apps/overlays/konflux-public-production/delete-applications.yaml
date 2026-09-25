@@ -21,12 +21,17 @@ $patch: delete
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: dummy-deployment
+  name: konflux-verifications-rd
 $patch: delete
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: konflux-verifications-rd
+  name: policies
 $patch: delete
 ---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: kyverno
+$patch: delete

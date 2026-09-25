@@ -36,6 +36,17 @@ spec:
                   values.clusterDir: kflux-prd-rh02
                 - nameNormalized: kflux-prd-rh03
                   values.clusterDir: kflux-prd-rh03
+        # Exclude stone-stage-p01 and stone-stg-rh01 from all ArgoCD instances,
+        # including those reading base directly (e.g. konflux-public-staging
+        # whose app-of-apps overlay is not yet enabled). lightwell-dev is
+        # handled separately in a follow-up.
+        selector:
+          matchExpressions:
+            - key: nameNormalized
+              operator: NotIn
+              values:
+                - stone-stage-p01
+                - stone-stg-rh01
   template:
     metadata:
       name: knative-eventing-{{nameNormalized}}

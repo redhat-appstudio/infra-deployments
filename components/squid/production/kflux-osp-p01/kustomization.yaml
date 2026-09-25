@@ -6,3 +6,26 @@ resources:
 
 generators:
 - caching-helm-generator.yaml
+
+# Existing build tasks mount caching-ca-bundle. Trust both proxies during migration.
+patches:
+- target:
+    group: trust.cert-manager.io
+    version: v1alpha1
+    kind: Bundle
+    name: caching-ca-bundle
+  patch: |-
+    - op: add
+      path: /spec/sources/-
+      value:
+        secret:
+          name: container-image-proxy-root-ca-secret
+          key: ca.crt
+# Retain the Bundle and its tenant ConfigMaps during the application handover.
+- patch: |-
+    apiVersion: trust.cert-manager.io/v1alpha1
+    kind: Bundle
+    metadata:
+      name: caching-ca-bundle
+      annotations:
+        argocd.argoproj.io/sync-options: Prune=false,Delete=false

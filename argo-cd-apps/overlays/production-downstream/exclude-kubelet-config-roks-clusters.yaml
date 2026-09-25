@@ -1,0 +1,11 @@
+---
+# ROKS (hypershift) clusters have a managed control plane — kubelet
+# configuration is not accessible to tenants.
+- op: add
+  path: /spec/generators/0/selector
+  value:
+    matchExpressions:
+      - key: nameNormalized
+        operator: NotIn
+        values:
+          - kflux-lw-p01

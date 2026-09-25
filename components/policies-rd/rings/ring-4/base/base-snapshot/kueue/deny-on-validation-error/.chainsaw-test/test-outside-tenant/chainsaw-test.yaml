@@ -1,0 +1,60 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: outside-tenant-allow-pipelinerun-with-validation-error
+spec:
+  description: |
+    allows a PipelineRun that has the tekton-kueue validation-error
+    annotation in a non-tenant namespace
+  concurrent: false
+  steps:
+  - name: given-pipelineruns-crd-exists
+    try:
+    - apply:
+        file: ../resources/pipelineruns.tekton.dev_customresourcedefinition.yaml
+    - assert:
+        file: ../chainsaw-assert-pipelineruns-crd.yaml
+  - name: given-validatingadmissionpolicy-is-installed
+    try:
+    - apply:
+        file: ../../deny-on-validation-error-validatingadmissionpolicy.yaml
+    - apply:
+        file: ../../deny-on-validation-error-validatingadmissionpolicybinding.yaml
+    - assert:
+        file: ../chainsaw-assert-policy.yaml
+  - name: then-pipelinerun-with-validation-error-is-allowed
+    try:
+    - create:
+        file: ../resources/pipelinerun_with_validation_error.yaml
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: outside-tenant-allow-pipelinerun-without-validation-error
+spec:
+  description: |
+    allows a PipelineRun that does not have the tekton-kueue
+    validation-error annotation in a non-tenant namespace
+  concurrent: false
+  steps:
+  - name: given-pipelineruns-crd-exists
+    try:
+    - apply:
+        file: ../resources/pipelineruns.tekton.dev_customresourcedefinition.yaml
+    - assert:
+        file: ../chainsaw-assert-pipelineruns-crd.yaml
+  - name: given-validatingadmissionpolicy-is-installed
+    try:
+    - apply:
+        file: ../../deny-on-validation-error-validatingadmissionpolicy.yaml
+    - apply:
+        file: ../../deny-on-validation-error-validatingadmissionpolicybinding.yaml
+    - assert:
+        file: ../chainsaw-assert-policy.yaml
+  - name: then-pipelinerun-without-validation-error-is-allowed
+    try:
+    - create:
+        file: ../resources/pipelinerun_without_validation_error.yaml
