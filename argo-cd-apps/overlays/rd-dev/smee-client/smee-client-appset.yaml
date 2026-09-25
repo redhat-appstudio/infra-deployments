@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: smee-client-rd
+  name: smee-client
 spec:
   generators:
     - merge:
@@ -13,7 +13,7 @@ spec:
                 matchLabels:
                   appstudio.redhat.com/member-cluster: "true"
               values:
-                sourceRoot: components/smee-client-rd
+                sourceRoot: components/smee-client
                 ring: "ring-0"
                 clusterDir: base
           - list:
