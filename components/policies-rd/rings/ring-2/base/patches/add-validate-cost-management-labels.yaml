@@ -1,0 +1,67 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    rbac.kyverno.io/aggregate-to-admission-controller: "true"
+  name: kyverno-admission-validate-cost-management-labels
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - list
+  - get
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  annotations:
+    policies.kyverno.io/category: Cost Management
+    policies.kyverno.io/description: 'This policy ensures that: (1) New tenant namespaces
+      have the `cost-management` label. (2) The `cost-management` label value contains
+      only numeric characters.'
+    policies.kyverno.io/severity: low
+    policies.kyverno.io/subject: Namespace
+    policies.kyverno.io/title: Validate Cost-Management label
+  name: validate-cost-management-labels
+spec:
+  rules:
+  - match:
+      any:
+      - resources:
+          kinds:
+          - Namespace
+          selector:
+            matchLabels:
+              konflux-ci.dev/type: tenant
+    name: validate-cost-center-label
+    skipBackgroundRequests: true
+    validate:
+      allowExistingViolations: true
+      message: Tenant namespaces must have the 'cost-center' label.
+      pattern:
+        metadata:
+          labels:
+            cost-center: ?*
+  - match:
+      any:
+      - resources:
+          kinds:
+          - Namespace
+          operations:
+          - CREATE
+          - UPDATE
+          selector:
+            matchLabels:
+              cost-center: ?*
+              konflux-ci.dev/type: tenant
+    name: validate-cost-center-label-value
+    skipBackgroundRequests: true
+    validate:
+      allowExistingViolations: true
+      cel:
+        expressions:
+        - expression: object.metadata.labels['cost-center'].matches('^[0-9]+$')
+      message: Tenant namespaces 'cost-center' label can only contain numbers.
+  validationFailureAction: Enforce
