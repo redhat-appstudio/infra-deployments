@@ -8,7 +8,6 @@ resources:
   - minio-tenant.yaml
   - postgres-app.yaml
   - tekton-chains-signing-secret-job.yaml
-  - tekton-config.yaml
   - tekton-results-api-cm.yaml
 
 patches:
@@ -17,6 +16,30 @@ patches:
   - path: patches/delete-tekton-logging-resources-patch.yaml
   - path: patches/delete-testing-resources-patch.yaml
   - path: patches/add-argocd-skip-dry-run-annotation-patch.yaml
+
+  # TektonConfig changes
+  - path: patches/tektonconfig-resources-updates.yaml
+  - path: patches/tektonconfig-pipeline-configmaps.yaml
+    target:
+      kind: TektonConfig
+      name: config
+  - path: patches/tektonconfig-disable-pruner.yaml
+    target:
+      kind: TektonConfig
+      name: config
+  # remove PaC resources
+  - target:
+      kind: TektonConfig
+      name: config
+    patch: |
+      - op: remove
+        path: /spec/platforms/openshift/pipelinesAsCode/options/deployments/pipelines-as-code-controller
+      - op: remove
+        path: /spec/platforms/openshift/pipelinesAsCode/options/deployments/pipelines-as-code-watcher/spec/template
+      - op: remove
+        path: /spec/platforms/openshift/pipelinesAsCode/options/deployments/pipelines-as-code-webhook/spec/template
+
+
 
   # Minio operator services
   - path: patches/minio-patches/add-dangling-service-annotation.yaml

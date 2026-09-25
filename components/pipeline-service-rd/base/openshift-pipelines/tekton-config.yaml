@@ -20,11 +20,11 @@ spec:
             template:
               spec:
                 containers:
-                - args:
-                  - --threads-per-controller=32
-                  - --kube-api-qps=50
-                  - --kube-api-burst=50
-                  name: tekton-chains-controller
+                  - args:
+                      - --threads-per-controller=32
+                      - --kube-api-qps=50
+                      - --kube-api-burst=50
+                    name: tekton-chains-controller
     transparency.enabled: "false"
   params:
   - name: createRbacResource
@@ -40,40 +40,13 @@ spec:
     enable-hub-resolver: true
     enable-param-enum: true
     enable-step-actions: true
-    metrics.pipelinerun.level: pipeline
-    metrics.taskrun.level: task
+    metrics.pipelinerun.level: namespace
+    metrics.taskrun.level: namespace
     options:
       configMaps:
         feature-flags:
           data:
-            enable-termination-message-compression: "true"
-        bundleresolver-config:
-          data:
-            backoff-cap: 15m
-            backoff-duration: 15s
-            backoff-factor: "2.0"
-            backoff-steps: "10"
-            fetch-timeout: 2m
-        config-defaults:
-          data:
-            default-container-resource-requirements: |
-              default:
-                requests:
-                  memory: "256Mi"
-                  cpu: "100m"
-            default-imagepullbackoff-timeout: 15m
-            default-pod-template: |
-              nodeSelector:
-                konflux-ci.dev/workload: konflux-tenants
-              tolerations:
-                - key: konflux-ci.dev/workload
-                  operator: "Equal"
-                  value: "konflux-tenants"
-                  effect: "NoSchedule"
-            default-timeout-minutes: "120"
-        config-leader-election-resolvers:
-          data:
-            buckets: "4"
+            enable-termination-message-compression: 'true'
         config-logging:
           data:
             loglevel.controller: info
@@ -103,119 +76,186 @@ spec:
                   "callerEncoder": ""
                 }
               }
+        config-defaults:
+          data:
+            default-container-resource-requirements: |
+              default:
+                requests:
+                  memory: "256Mi"
+                  cpu: "100m"
+            default-pod-template: |
+              nodeSelector:
+                konflux-ci.dev/workload: konflux-tenants
+              tolerations:
+                - key: konflux-ci.dev/workload
+                  operator: "Equal"
+                  value: "konflux-tenants"
+                  effect: "NoSchedule"
+            default-timeout-minutes: "120"
+            default-imagepullbackoff-timeout: "15m"
+        config-leader-election-resolvers:
+          data:
+            buckets: "4"
+        bundleresolver-config:
+          data:
+            backoff-cap: "15m"
+            backoff-duration: "15s"
+            backoff-factor: "2.0"
+            backoff-steps: "10"
+            fetch-timeout: "2m"
         git-resolver-config:
           data:
             fetch-timeout: 2m
       deployments:
-        pipelines-console-plugin:
-          spec:
-            template:
-              spec:
-                containers:
-                - name: pipelines-console-plugin
-                  resources:
-                    limits:
-                      cpu: 200m
-                      memory: 8Mi
-                    requests:
-                      cpu: 200m
-                      memory: 8Mi
-        tekton-chains-controller:
-          spec:
-            template:
-              spec:
-                containers:
-                - name: tekton-chains-controller
-                  resources:
-                    limits:
-                      cpu: 1500m
-                      memory: 8Gi
-                    requests:
-                      cpu: 1500m
-                      memory: 8Gi
-        tekton-events-controller:
-          spec:
-            replicas: 0
         tekton-operator-proxy-webhook:
           spec:
             replicas: 2
             template:
               spec:
                 containers:
-                - name: proxy
-                  resources:
-                    limits:
-                      cpu: 500m
-                      memory: 500Mi
-                    requests:
-                      cpu: 100m
-                      memory: 100Mi
+                  - name: proxy
+                    resources:
+                      limits:
+                        cpu: 500m
+                        memory: 500Mi
+                      requests:
+                        cpu: 100m
+                        memory: 100Mi
         tekton-pipelines-webhook:
           spec:
             template:
               spec:
                 containers:
-                - name: webhook
-                  resources:
-                    limits:
-                      cpu: "1"
-                      memory: 1Gi
-                    requests:
-                      cpu: 400m
-                      memory: 1Gi
+                  - name: webhook
+                    resources:
+                      limits:
+                        cpu: "1"
+                        memory: 1Gi
+                      requests:
+                        cpu: 400m
+                        memory: 1Gi
+        pipelines-console-plugin:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: pipelines-console-plugin
+                    resources:
+                      limits:
+                        cpu: 200m
+                        memory: 8Mi
+                      requests:
+                        cpu: 200m
+                        memory: 8Mi
+        tekton-chains-controller:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: tekton-chains-controller
+                    resources:
+                      limits:
+                        cpu: 1500m
+                        memory: 8Gi
+                      requests:
+                        cpu: 1500m
+                        memory: 8Gi
+        # The events controller is unused by Konflux but requires not-insignificant resources
+        # since it watches all PipelineRuns and TaskRuns in the cluster
+        # Disabling it saves resources. If Konflux requires CloudEvents for Tekton *Run lifecycle
+        # events in the future, the controller can be re-enabled
+        tekton-events-controller:
+          spec:
+            replicas: 0
         tekton-triggers-controller:
           spec:
             template:
               spec:
                 containers:
-                - name: tekton-triggers-controller
-                  resources:
-                    limits:
-                      cpu: 400m
-                      memory: 64Mi
-                    requests:
-                      cpu: 400m
-                      memory: 64Mi
-        tekton-triggers-core-interceptors:
-          spec:
-            template:
-              spec:
-                containers:
-                - name: tekton-triggers-core-interceptors
-                  resources:
-                    limits:
-                      cpu: 500m
-                      memory: 1Gi
-                    requests:
-                      cpu: 500m
-                      memory: 1Gi
+                  - name: tekton-triggers-controller
+                    resources:
+                      limits:
+                        cpu: 400m
+                        memory: 64Mi
+                      requests:
+                        cpu: 400m
+                        memory: 64Mi
         tekton-triggers-webhook:
           spec:
             template:
               spec:
                 containers:
-                - name: webhook
-                  resources:
-                    limits:
-                      cpu: 250m
-                      memory: 50Mi
-                    requests:
-                      cpu: 250m
-                      memory: 50Mi
+                  - name: webhook
+                    resources:
+                      limits:
+                        cpu: 250m
+                        memory: 50Mi
+                      requests:
+                        cpu: 250m
+                        memory: 50Mi
+        tekton-triggers-core-interceptors:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: tekton-triggers-core-interceptors
+                    resources:
+                      limits:
+                        cpu: 500m
+                        memory: 1Gi
+                      requests:
+                        cpu: 500m
+                        memory: 1Gi
         tkn-cli-serve:
           spec:
             replicas: 0
             template:
               spec:
                 containers:
-                - name: tkn-cli-serve
-                  resources:
-                    limits:
-                      cpu: 250m
-                      memory: 64Mi
-                    requests:
-                      cpu: 250m
-                      memory: 64Mi
+                  - name: tkn-cli-serve
+                    resources:
+                      limits:
+                        cpu: 250m
+                        memory: 64Mi
+                      requests:
+                        cpu: 250m
+                        memory: 64Mi
+      statefulSets:
+        tekton-pipelines-remote-resolvers:
+          spec:
+            replicas: 4
+            template:
+              spec:
+                containers:
+                  - name: controller
+                    env:
+                      - name: GIT_SSL_CAINFO
+                        value: /tekton-custom-certs/ca-bundle.crt
+                    resources:
+                      limits:
+                        memory: 10Gi
+                      requests:
+                        cpu: "500m"
+                        memory: 10Gi
+        tekton-pipelines-controller:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: tekton-pipelines-controller
+                    resources:
+                      requests:
+                        memory: 16Gi
+                        cpu: "1"
+                      limits:
+                        memory: 16Gi
+                topologySpreadConstraints:
+                  - maxSkew: 1
+                    topologyKey: topology.kubernetes.io/zone
+                    whenUnsatisfiable: DoNotSchedule
+                    labelSelector:
+                      matchLabels:
+                        app: tekton-pipelines-controller
       disabled: false
       horizontalPodAutoscalers:
         tekton-operator-proxy-webhook:
@@ -252,50 +292,14 @@ spec:
                   type: Utilization
               type: Resource
             minReplicas: 6
-      statefulSets:
-        tekton-pipelines-controller:
-          spec:
-            template:
-              spec:
-                containers:
-                - name: tekton-pipelines-controller
-                  resources:
-                    limits:
-                      memory: 16Gi
-                    requests:
-                      cpu: "1"
-                      memory: 16Gi
-                topologySpreadConstraints:
-                - labelSelector:
-                    matchLabels:
-                      app: tekton-pipelines-controller
-                  maxSkew: 1
-                  topologyKey: topology.kubernetes.io/zone
-                  whenUnsatisfiable: DoNotSchedule
-        tekton-pipelines-remote-resolvers:
-          spec:
-            replicas: 4
-            template:
-              spec:
-                containers:
-                - env:
-                  - name: GIT_SSL_CAINFO
-                    value: /tekton-custom-certs/ca-bundle.crt
-                  name: controller
-                  resources:
-                    limits:
-                      memory: 10Gi
-                    requests:
-                      cpu: 500m
-                      memory: 10Gi
     performance:
       buckets: 4
       disable-ha: false
       kube-api-burst: 50
       kube-api-qps: 50
       replicas: 4
-      statefulset-ordinals: true
       threads-per-controller: 32
+      statefulset-ordinals: true
   platforms:
     openshift:
       pipelinesAsCode:
@@ -353,25 +357,13 @@ spec:
                         requests:
                           cpu: 400m
                           memory: 256Mi
-        settings:
-          application-name: Konflux Staging
-          custom-console-name: Konflux Staging
-          custom-console-url: https://konflux-ui.apps.stone-stg-rh01.l2vh.p1.openshiftapps.com/
-          custom-console-url-namespace: https://konflux-ui.apps.stone-stg-rh01.l2vh.p1.openshiftapps.com/ns/{{
-            namespace }}
-          custom-console-url-pr-details: https://konflux-ui.apps.stone-stg-rh01.l2vh.p1.openshiftapps.com/ns/{{
-            namespace }}/pipelinerun/{{ pr }}
-          custom-console-url-pr-tasklog: https://konflux-ui.apps.stone-stg-rh01.l2vh.p1.openshiftapps.com/ns/{{
-            namespace }}/pipelinerun/{{ pr }}/logs/{{ task }}
-          enable-cancel-in-progress-on-pull-requests: "true"
-          remember-ok-to-test: "false"
-          secret-github-app-token-scoped: "false"
-          tracing-label-action: pipelines.appstudio.openshift.io/type
-          tracing-label-application: appstudio.openshift.io/application
-          tracing-label-component: appstudio.openshift.io/component
   profile: all
   pruner:
-    disabled: true
+    disabled: false
+    keep-since: 80
+    resources:
+      - pipelinerun
+    schedule: '*/30 * * * *'
   result:
     disabled: true
   targetNamespace: openshift-pipelines
