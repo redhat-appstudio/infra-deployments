@@ -1,0 +1,47 @@
+# Mount the trust-manager-managed trusted-ca ConfigMap into Pipelines as Code.
+# On ROKS HCP, Proxy CR trustedCA cannot be set, so the OpenShift Pipelines
+# operator does not distribute the RH internal CA via tekton-custom-certs.
+# See components/cert-manager-trusted-ca/production/kflux-lw-p01/.
+---
+- op: add
+  path: /spec/platforms/openshift/pipelinesAsCode/options/deployments/pipelines-as-code-controller
+  value:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: pac-controller
+            volumeMounts:
+            - name: trusted-ca
+              mountPath: /etc/ssl/certs/ca-custom-bundle.crt
+              readOnly: true
+              subPath: ca-bundle.crt
+          volumes:
+          - name: trusted-ca
+            configMap:
+              name: trusted-ca
+              items:
+              - key: ca-bundle.crt
+                path: ca-bundle.crt
+              defaultMode: 420
+              optional: false
+- op: add
+  path: /spec/platforms/openshift/pipelinesAsCode/options/deployments/pipelines-as-code-watcher/spec/template
+  value:
+    spec:
+      containers:
+      - name: pac-watcher
+        volumeMounts:
+        - name: trusted-ca
+          mountPath: /etc/ssl/certs/ca-custom-bundle.crt
+          readOnly: true
+          subPath: ca-bundle.crt
+      volumes:
+      - name: trusted-ca
+        configMap:
+          name: trusted-ca
+          items:
+          - key: ca-bundle.crt
+            path: ca-bundle.crt
+          defaultMode: 420
+          optional: false
