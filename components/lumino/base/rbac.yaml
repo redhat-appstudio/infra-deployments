@@ -1,0 +1,27 @@
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: konflux-lumino-view
+aggregationRule:
+  clusterRoleSelectors:
+    - matchExpressions:
+        - key: konflux-ci.dev/scope
+          operator: In
+          values:
+            - lumino-view
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: konflux-lumino-view:lumino
+subjects:
+# the lumino ServiceAccount is managed outside infra-deployments
+- kind: ServiceAccount
+  apiGroup: ""
+  name: lumino
+  namespace: konflux-lumino
+roleRef:
+  kind: ClusterRole
+  apiGroup: rbac.authorization.k8s.io
+  name: konflux-lumino-view
