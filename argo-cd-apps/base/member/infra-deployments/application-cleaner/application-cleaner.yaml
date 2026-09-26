@@ -1,0 +1,49 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: application-cleaner
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              values:
+                sourceRoot: components/application-cleaner
+                environment: staging
+                # empty-base is an overlay without resources.
+                # This allows gradual rollout to selected clusters.
+                clusterDir: empty-base
+          - list:
+              elements:
+                - nameNormalized: stone-stg-rh01
+                  values.clusterDir: stone-stg-rh01
+                - nameNormalized: stone-stage-p01
+                  values.clusterDir: stone-stage-p01
+                - nameNormalized: lightwell-dev
+                  values.clusterDir: lightwell-dev
+  template:
+    metadata:
+      name: application-cleaner-{{nameNormalized}}
+    spec:
+      project: default
+      source:
+        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+        targetRevision: main
+      destination:
+        namespace: application-cleaner
+        server: '{{server}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: false
+        syncOptions:
+          - CreateNamespace=true
+        retry:
+          limit: -1
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 3m
