@@ -11,7 +11,10 @@ resources:
   - github.com/minio/operator?ref=v5.0.15  # when updating the tag, update also the patches below
   - main-pipeline-service-configuration.yaml
   - dev-only-pipeline-service-storage-configuration.yaml
-  - ../base/rbac
+  - ../base/rbac/cluster-role
+  - ../base/rbac/openshift-pipelines
+  - ../base/rbac/tekton-logging
+  - ../base/rbac/tekton-results
 
 patches:
   - target:
@@ -74,3 +77,33 @@ patches:
       - op: replace
         path: /spec/template/spec/containers/0/image
         value: "quay.io/minio/operator:v5.0.15"
+  - target:
+      kind: RoleBinding
+      name: pipeline-service-sre-ns-edit
+      namespace: tekton-results
+    patch: |
+      $patch: delete
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: RoleBinding
+      metadata:
+        name: pipeline-service-sre-ns-edit
+        namespace: tekton-results
+  - target:
+      kind: Role
+      name: pipeline-service-sre-exec-pprof-data
+      namespace: tekton-results
+    patch: |
+      - op: replace
+        path: /metadata/namespace
+        value: openshift-pipelines
+      - op: replace
+        path: /rules/0/resources/0
+        value: pods/exec
+  - target:
+      kind: RoleBinding
+      name: pipeline-service-sre-exec-pprof-data
+      namespace: tekton-results
+    patch: |
+      - op: replace
+        path: /metadata/namespace
+        value: openshift-pipelines
