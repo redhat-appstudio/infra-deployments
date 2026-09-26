@@ -2295,6 +2295,13 @@ spec:
     metrics.taskrun.level: namespace
     options:
       configMaps:
+        bundleresolver-config:
+          data:
+            backoff-cap: 15m
+            backoff-duration: 15s
+            backoff-factor: "2.0"
+            backoff-steps: "10"
+            fetch-timeout: 2m
         config-defaults:
           data:
             default-imagepullbackoff-timeout: 15m
@@ -2342,6 +2349,9 @@ spec:
         feature-flags:
           data:
             enable-termination-message-compression: "true"
+        git-resolver-config:
+          data:
+            fetch-timeout: 2m
       deployments:
         tekton-events-controller:
           spec:
