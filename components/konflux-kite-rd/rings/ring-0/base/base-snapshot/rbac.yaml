@@ -1,0 +1,63 @@
+# Konflux-kite specific RBAC for functionality (NS checking, etc)
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: konflux-kite
+  namespace: konflux-kite
+---
+# Konflux-UI specific RBAC
+# Needed to view things like DB secrets
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: konflux-kite-component-maintainers
+  namespace: konflux-kite
+subjects:
+  - kind: Group
+    apiGroup: rbac.authorization.k8s.io
+    name: konflux-ui # Rover group
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: component-maintainer
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: konflux-kite-admin
+  namespace: konflux-kite
+subjects:
+  - kind: Group
+    apiGroup: rbac.authorization.k8s.io
+    name: konflux-ui # Rover group
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: admin
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: konflux-kite-authorizer
+rules:
+  - apiGroups:
+      - authorization.k8s.io
+      - authentication.k8s.io
+    resources:
+      - subjectaccessreviews
+      - tokenreviews
+    verbs:
+      - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: konflux-kite-authorizer
+subjects:
+- kind: ServiceAccount
+  name: konflux-kite
+  namespace: konflux-kite
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: konflux-kite-authorizer
