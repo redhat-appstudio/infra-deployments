@@ -1,0 +1,51 @@
+apiVersion: builtin
+kind: HelmChartInflationGenerator
+metadata:
+  name: loki
+name: loki
+# Match staging ROKS peer lightwell-dev (IBM COS + access keys, not IRSA)
+repo: https://grafana-community.github.io/helm-charts
+version: 12.0.0
+releaseName: loki
+namespace: product-kubearchive-logging
+valuesFile: loki-helm-values.yaml
+additionalValuesFiles:
+  - loki-helm-stg-values.yaml
+  - loki-helm-images.yaml
+valuesInline:
+  serviceAccount:
+    create: true
+    name: loki-sa
+  loki:
+    storage:
+      bucketNames:
+        chunks: kflux-stg-p02-kubearchive-loki-2546
+        admin: kflux-stg-p02-kubearchive-loki-2546
+      s3:
+        endpoint: s3.private.us-east.cloud-object-storage.appdomain.cloud
+        s3ForcePathStyle: true
+    storage_config:
+      aws:
+        bucketnames: kflux-stg-p02-kubearchive-loki-2546
+        endpoint: s3.private.us-east.cloud-object-storage.appdomain.cloud
+        s3forcepathstyle: true
+  ingester:
+    extraEnvFrom:
+      - secretRef:
+          name: cos-credentials
+  distributor:
+    extraEnvFrom:
+      - secretRef:
+          name: cos-credentials
+  querier:
+    extraEnvFrom:
+      - secretRef:
+          name: cos-credentials
+  compactor:
+    extraEnvFrom:
+      - secretRef:
+          name: cos-credentials
+  indexGateway:
+    extraEnvFrom:
+      - secretRef:
+          name: cos-credentials

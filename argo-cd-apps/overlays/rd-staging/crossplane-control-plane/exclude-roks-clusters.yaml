@@ -1,0 +1,10 @@
+---
+# Crossplane control plane is not deployed on this ROKS cluster.
+- op: add
+  path: /spec/generators/0/selector
+  value:
+    matchExpressions:
+      - key: nameNormalized
+        operator: NotIn
+        values:
+          - kflux-stg-p02
