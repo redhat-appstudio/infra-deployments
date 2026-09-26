@@ -44,6 +44,9 @@ spec:
     metrics.taskrun.level: task
     options:
       configMaps:
+        feature-flags:
+          data:
+            enable-termination-message-compression: "true"
         bundleresolver-config:
           data:
             backoff-cap: 15m
@@ -70,7 +73,7 @@ spec:
             default-timeout-minutes: "120"
         config-leader-election-resolvers:
           data:
-            buckets: "8"
+            buckets: "4"
         config-logging:
           data:
             loglevel.controller: info
@@ -104,45 +107,6 @@ spec:
           data:
             fetch-timeout: 2m
       deployments:
-        pipelines-as-code-controller:
-          spec:
-            template:
-              spec:
-                containers:
-                - name: pac-controller
-                  resources:
-                    limits:
-                      cpu: 500m
-                      memory: 2560Mi
-                    requests:
-                      cpu: 500m
-                      memory: 2560Mi
-        pipelines-as-code-watcher:
-          spec:
-            template:
-              spec:
-                containers:
-                - name: pac-watcher
-                  resources:
-                    limits:
-                      cpu: 250m
-                      memory: 1Gi
-                    requests:
-                      cpu: 250m
-                      memory: 1Gi
-        pipelines-as-code-webhook:
-          spec:
-            template:
-              spec:
-                containers:
-                - name: pac-webhook
-                  resources:
-                    limits:
-                      cpu: 400m
-                      memory: 100Mi
-                    requests:
-                      cpu: 400m
-                      memory: 100Mi
         pipelines-console-plugin:
           spec:
             template:
@@ -338,12 +302,57 @@ spec:
         enable: true
         options:
           deployments:
+            pipelines-as-code-controller:
+              spec:
+                template:
+                  spec:
+                    containers:
+                    - env:
+                      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+                        value: "http://open-telemetry-opentelemetry-collector.konflux-otel.svc.cluster.local:4317"
+                      - name: OTEL_TRACES_SAMPLER
+                        value: "parentbased_always_on"
+                      name: pac-controller
+                      resources:
+                        limits:
+                          cpu: "1"
+                          memory: 4Gi
+                        requests:
+                          cpu: "1"
+                          memory: 4Gi
             pipelines-as-code-watcher:
               spec:
                 replicas: 2
+                template:
+                  spec:
+                    containers:
+                    - env:
+                      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+                        value: "http://open-telemetry-opentelemetry-collector.konflux-otel.svc.cluster.local:4317"
+                      - name: OTEL_TRACES_SAMPLER
+                        value: "parentbased_always_on"
+                      name: pac-watcher
+                      resources:
+                        limits:
+                          cpu: 250m
+                          memory: 1Gi
+                        requests:
+                          cpu: 250m
+                          memory: 1Gi
             pipelines-as-code-webhook:
               spec:
                 replicas: 2
+                template:
+                  spec:
+                    containers:
+                    - name: pac-webhook
+                      resources:
+                        limits:
+                          cpu: 400m
+                          memory: 256Mi
+                        requests:
+                          cpu: 400m
+                          memory: 256Mi
         settings:
           application-name: Konflux Staging
           custom-console-name: Konflux Staging
@@ -357,6 +366,9 @@ spec:
           enable-cancel-in-progress-on-pull-requests: "true"
           remember-ok-to-test: "false"
           secret-github-app-token-scoped: "false"
+          tracing-label-action: pipelines.appstudio.openshift.io/type
+          tracing-label-application: appstudio.openshift.io/application
+          tracing-label-component: appstudio.openshift.io/component
   profile: all
   pruner:
     disabled: true
