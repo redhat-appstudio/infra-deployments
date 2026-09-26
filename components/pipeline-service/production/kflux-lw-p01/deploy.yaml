@@ -2480,9 +2480,47 @@ spec:
         enable: true
         options:
           deployments:
+            pipelines-as-code-controller:
+              spec:
+                template:
+                  spec:
+                    containers:
+                    - name: pac-controller
+                      volumeMounts:
+                      - mountPath: /etc/ssl/certs/ca-custom-bundle.crt
+                        name: trusted-ca
+                        readOnly: true
+                        subPath: ca-bundle.crt
+                    volumes:
+                    - configMap:
+                        defaultMode: 420
+                        items:
+                        - key: ca-bundle.crt
+                          path: ca-bundle.crt
+                        name: trusted-ca
+                        optional: false
+                      name: trusted-ca
             pipelines-as-code-watcher:
               spec:
                 replicas: 2
+                template:
+                  spec:
+                    containers:
+                    - name: pac-watcher
+                      volumeMounts:
+                      - mountPath: /etc/ssl/certs/ca-custom-bundle.crt
+                        name: trusted-ca
+                        readOnly: true
+                        subPath: ca-bundle.crt
+                    volumes:
+                    - configMap:
+                        defaultMode: 420
+                        items:
+                        - key: ca-bundle.crt
+                          path: ca-bundle.crt
+                        name: trusted-ca
+                        optional: false
+                      name: trusted-ca
             pipelines-as-code-webhook:
               spec:
                 replicas: 2
