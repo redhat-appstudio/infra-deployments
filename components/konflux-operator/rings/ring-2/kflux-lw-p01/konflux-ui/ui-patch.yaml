@@ -12,12 +12,12 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: sso-client
-                  key: clientID
+                  key: client_id
             - name: RH_SSO_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
                   name: sso-client
-                  key: clientSecret
+                  key: client_secret
         config:
           connectors:
             - type: oidc
@@ -27,8 +27,6 @@ spec:
                 clientID: $RH_SSO_CLIENT_ID
                 clientSecret: $RH_SSO_CLIENT_SECRET
                 issuer: https://auth.redhat.com/auth/realms/EmployeeIDP
-      ingress:
-        enabled: true
       runtimeConfig:
         chatBot:
           enabled: false
