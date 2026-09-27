@@ -224,7 +224,7 @@ patches:
     patch: |-
       - op: replace
         path: /metadata/annotations/cert-manager.io~1inject-ca-from
-        value: product-kubearchive/kubearchive-operator-tls
+        value: product-kubearchive/kubearchive-operator-certificate
   - target:
       group: admissionregistration.k8s.io
       version: v1
@@ -233,7 +233,7 @@ patches:
     patch: |-
       - op: replace
         path: /metadata/annotations/cert-manager.io~1inject-ca-from
-        value: product-kubearchive/kubearchive-operator-tls
+        value: product-kubearchive/kubearchive-operator-certificate
   - target:
       group: admissionregistration.k8s.io
       version: v1
@@ -242,14 +242,14 @@ patches:
     patch: |-
       - op: replace
         path: /metadata/annotations/cert-manager.io~1inject-ca-from
-        value: product-kubearchive/kubearchive-operator-tls
+        value: product-kubearchive/kubearchive-operator-certificate
   # The overlay deploys into product-kubearchive, so its serving cert DNS names
   # must use that namespace.
   - target:
       group: cert-manager.io
       version: v1
       kind: Certificate
-      name: kubearchive-api-server-tls
+      name: kubearchive-api-server-certificate
     patch: |-
       - op: replace
         path: /spec/dnsNames
@@ -262,7 +262,7 @@ patches:
       group: cert-manager.io
       version: v1
       kind: Certificate
-      name: kubearchive-operator-tls
+      name: kubearchive-operator-certificate
     patch: |-
       - op: replace
         path: /spec/dnsNames
