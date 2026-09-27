@@ -158,9 +158,12 @@ spec:
         cpu: "2"
         memory: 2Gi
       limits:
+        # Keep this >= requests.cpu. The operator copies these resources onto
+        # the copyutil init container as well (KONFLUX-16073).
+        cpu: "2"
         memory: 8Gi
 ' --type=merge; then
-        log_success "Repo server configured: timeout=5m, parallelism=20, GOMEMLIMIT=6GiB, cpu=2, memory=2Gi/8Gi"
+        log_success "Repo server configured: timeout=5m, parallelism=20, GOMEMLIMIT=6GiB, cpu=2/2, memory=2Gi/8Gi"
     else
         log_warn "Failed to patch repo server configuration (may already be set)"
     fi
@@ -177,9 +180,53 @@ spec:
         cpu: 4
         memory: 4Gi
 ' --type=merge; then
-        log_success "Application controller configured: cpu=4, memory=4Gi"
+        log_info "Application controller resource patch accepted: cpu=4, memory=4Gi"
     else
         log_warn "Failed to patch controller resources (may already be set)"
+    fi
+
+    # The CR patch is accepted even when the operator cannot reconcile it.
+    # App sync must wait until the StatefulSet is actually running at 4Gi.
+    wait_for_application_controller_rollout
+}
+
+wait_for_application_controller_rollout() {
+    log_substep "Waiting for application controller to roll out with memory limit 4Gi"
+
+    local sts="statefulset/openshift-gitops-application-controller"
+    local max_wait="${APPLICATION_CONTROLLER_RESOURCE_WAIT_SECONDS:-300}"
+    local wait_time=0
+    local memory_limit=""
+
+    while true; do
+        memory_limit="$(
+            kubectl get "$sts" -n openshift-gitops \
+                -o jsonpath='{.spec.template.spec.containers[0].resources.limits.memory}' 2>/dev/null || true
+        )"
+        memory_limit="${memory_limit//[[:space:]]/}"
+        if [ "$memory_limit" = "4Gi" ]; then
+            break
+        fi
+
+        wait_time=$((wait_time + 5))
+        if [ "$wait_time" -ge "$max_wait" ]; then
+            log_error "TIMEOUT: application controller memory limit is '${memory_limit:-unset}', expected 4Gi after ${max_wait}s"
+            log_error "The GitOps operator rejects the ArgoCD reconcile when the repo-server CPU request exceeds its CPU limit, so this limit is never applied."
+            log_error "ACTION REQUIRED: Check the GitOps operator log for 'must be less than or equal to cpu limit'"
+            log_error "  Run: oc get pods -n openshift-operators | grep gitops"
+            exit 1
+        fi
+        log_wait "Application controller memory limit is '${memory_limit:-unset}', waiting for 4Gi (${wait_time}s/${max_wait}s)"
+        sleep 5
+    done
+
+    log_info "Waiting for application controller rollout"
+    if kubectl rollout status -n openshift-gitops "$sts" --timeout="${max_wait}s"; then
+        log_success "Application controller rolled out with memory limit 4Gi"
+    else
+        log_error "TIMEOUT: application controller StatefulSet did not finish rolling out within ${max_wait}s"
+        log_error "ACTION REQUIRED: oc describe $sts -n openshift-gitops"
+        exit 1
     fi
 }
 
