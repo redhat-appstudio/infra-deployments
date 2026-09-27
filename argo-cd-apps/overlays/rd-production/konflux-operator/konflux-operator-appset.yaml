@@ -33,6 +33,8 @@ spec:
   template:
     metadata:
       name: konflux-operator-{{nameNormalized}}
+      labels:
+        app.kubernetes.io/part-of: konflux-operator
     spec:
       project: default
       source:

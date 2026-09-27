@@ -27,6 +27,8 @@ spec:
   template:
     metadata:
       name: artifact-registry-proxy-{{nameNormalized}}
+      labels:
+        app.kubernetes.io/part-of: artifact-registry-proxy
     spec:
       project: default
       source:

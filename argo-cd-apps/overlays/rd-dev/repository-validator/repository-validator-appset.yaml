@@ -24,6 +24,8 @@ spec:
   template:
     metadata:
       name: repository-validator-{{nameNormalized}}
+      labels:
+        app.kubernetes.io/part-of: repository-validator
     spec:
       project: default
       source:

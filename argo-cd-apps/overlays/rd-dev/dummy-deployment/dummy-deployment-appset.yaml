@@ -22,6 +22,8 @@ spec:
   template:
     metadata:
       name: dummy-deployment-{{nameNormalized}}
+      labels:
+        app.kubernetes.io/part-of: dummy-deployment
     spec:
       project: default
       source:

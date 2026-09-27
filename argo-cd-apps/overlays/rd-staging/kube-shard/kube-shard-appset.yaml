@@ -26,6 +26,8 @@ spec:
   template:
     metadata:
       name: kube-shard-{{nameNormalized}}
+      labels:
+        app.kubernetes.io/part-of: kube-shard
     spec:
       project: default
       source:
