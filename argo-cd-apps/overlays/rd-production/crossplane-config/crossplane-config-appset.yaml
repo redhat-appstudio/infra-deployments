@@ -27,6 +27,8 @@ spec:
   template:
     metadata:
       name: crossplane-config-{{nameNormalized}}
+      labels:
+        app.kubernetes.io/part-of: crossplane-config
     spec:
       project: default
       source:

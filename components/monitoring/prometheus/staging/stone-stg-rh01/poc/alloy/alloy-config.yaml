@@ -7,21 +7,45 @@ metadata:
     app.kubernetes.io/part-of: alloy-poc
 data:
   config.alloy: |
-    // Phase 1 intentionally validates acquisition without retaining or forwarding data.
-    prometheus.echo "discard" {}
+    prometheus.remote_write "mimir" {
+      endpoint {
+        name    = "mimir-poc"
+        url     = "http://mimir-poc-distributor.appstudio-mimir-poc.svc:8080/api/v1/push"
+        headers = { "X-Scope-OrgID" = "konflux-poc" }
 
-    prometheus.relabel "discard" {
-      forward_to = [prometheus.echo.discard.receiver]
+        queue_config {
+          retry_on_http_429 = true
+        }
+      }
 
-      rule {
-        source_labels = ["__name__"]
-        regex         = ".*"
-        action        = "drop"
+      wal {
+        truncate_frequency = "5m"
+        min_keepalive_time = "5m"
+        max_keepalive_time = "15m"
       }
     }
 
+    prometheus.relabel "vmalert_recording_allow" {
+      forward_to = [prometheus.remote_write.mimir.receiver]
+
+      rule {
+        source_labels = ["__name__", "recording_engine"]
+        regex         = "konflux_poc:cluster_pod_cpu_usage_cores:sum_rate5m;vmalert-poc"
+        action        = "keep"
+      }
+    }
+
+    prometheus.receive_http "vmalert" {
+      http {
+        listen_address = "0.0.0.0"
+        listen_port    = 9999
+      }
+
+      forward_to = [prometheus.relabel.vmalert_recording_allow.receiver]
+    }
+
     prometheus.relabel "platform_normalize" {
-      forward_to = [prometheus.relabel.discard.receiver]
+      forward_to = [prometheus.remote_write.mimir.receiver]
 
       rule {
         regex  = "prometheus|prometheus_replica"
@@ -37,6 +61,12 @@ data:
       rule {
         target_label = "source_environment"
         replacement  = "staging-poc"
+        action       = "replace"
+      }
+
+      rule {
+        target_label = "source_pipeline"
+        replacement  = "alloy-mimir-poc"
         action       = "replace"
       }
 
@@ -48,7 +78,7 @@ data:
     }
 
     prometheus.relabel "user_workload_normalize" {
-      forward_to = [prometheus.relabel.discard.receiver]
+      forward_to = [prometheus.remote_write.mimir.receiver]
 
       rule {
         regex  = "prometheus|prometheus_replica"
@@ -64,6 +94,12 @@ data:
       rule {
         target_label = "source_environment"
         replacement  = "staging-poc"
+        action       = "replace"
+      }
+
+      rule {
+        target_label = "source_pipeline"
+        replacement  = "alloy-mimir-poc"
         action       = "replace"
       }
 
@@ -75,7 +111,7 @@ data:
     }
 
     prometheus.relabel "tekton_normalize" {
-      forward_to = [prometheus.relabel.discard.receiver]
+      forward_to = [prometheus.remote_write.mimir.receiver]
 
       rule {
         regex  = "prometheus|prometheus_replica"
@@ -91,6 +127,12 @@ data:
       rule {
         target_label = "source_environment"
         replacement  = "staging-poc"
+        action       = "replace"
+      }
+
+      rule {
+        target_label = "source_pipeline"
+        replacement  = "alloy-mimir-poc"
         action       = "replace"
       }
 

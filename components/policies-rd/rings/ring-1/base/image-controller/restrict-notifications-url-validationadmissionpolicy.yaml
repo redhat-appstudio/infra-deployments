@@ -1,0 +1,33 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: restrict-imagerepository-notifications-url.konflux-ci.dev
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+    - apiGroups: ["konflux-ci.dev", "appstudio.redhat.com"]
+      apiVersions: ["v1alpha1"]
+      operations: ["CREATE", "UPDATE"]
+      resources: ["imagerepositories"]
+      scope: "Namespaced"
+  validations:
+  - expression: |
+      (
+        request.operation == 'UPDATE' &&
+        has(oldObject.spec.notifications) &&
+        has(object.spec.notifications) &&
+        object.spec.notifications == oldObject.spec.notifications
+      ) ||
+      !has(object.spec.notifications) ||
+      object.spec.notifications.all(n,
+        !has(n.config) || !has(n.config.url) ||
+        n.config.url == 'https://bombino.preprod.api.redhat.com' ||
+        n.config.url.startsWith('https://bombino.preprod.api.redhat.com/')
+      )
+    reason: Invalid
+    message: >
+      ImageRepository notification callback url (spec.notifications[].config.url)
+      must point to the Red Hat Bombino pre-production instance, i.e. start with
+      https://bombino.preprod.api.redhat.com.

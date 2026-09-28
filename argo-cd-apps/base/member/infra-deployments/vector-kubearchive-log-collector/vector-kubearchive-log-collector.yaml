@@ -51,6 +51,7 @@ spec:
       annotations:
         argocd.argoproj.io/sync-wave: "100"
         argocd.argoproj.io/refresh: "hard"
+        argocd.argoproj.io/compare-options: ServerSideDiff=true
     spec:
       ignoreDifferences:
         # Ignore Helm-generated dynamic content that causes drift

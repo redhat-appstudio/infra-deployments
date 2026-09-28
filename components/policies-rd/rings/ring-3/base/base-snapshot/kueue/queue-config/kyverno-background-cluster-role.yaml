@@ -1,0 +1,19 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kyverno-background:manage-queue
+  labels:
+    rbac.kyverno.io/aggregate-to-background-controller: "true"
+rules:
+- apiGroups:
+  - kueue.x-k8s.io
+  resources:
+  - localqueues
+  verbs:
+  - create
+  - get
+  - list
+  - delete
+  - update
+  - watch

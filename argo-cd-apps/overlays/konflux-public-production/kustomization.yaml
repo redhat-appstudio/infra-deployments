@@ -40,6 +40,11 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: cluster-secret-store
+  - path: cluster-secret-store-production-auto-sync-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: cluster-secret-store
   - path: production-overlay-patch.yaml
     target:
       kind: ApplicationSet
@@ -124,11 +129,6 @@ patches:
     target:
       kind: ApplicationSet
       version: v1alpha1
-      name: crossplane-control-plane
-  - path: production-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
       name: konflux-ui
   - path: production-overlay-patch.yaml
     target:
@@ -159,27 +159,7 @@ patches:
     target:
       kind: ApplicationSet
       version: v1alpha1
-      name: kyverno
-  - path: kyverno-production-auto-sync-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: kyverno
-  - path: production-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
       name: knative-eventing
-  - path: production-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: policies
-  - path: policies-production-auto-sync-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: policies
   - path: production-overlay-patch.yaml
     target:
       kind: ApplicationSet

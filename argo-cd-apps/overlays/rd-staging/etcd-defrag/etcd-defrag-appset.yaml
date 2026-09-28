@@ -27,6 +27,8 @@ spec:
   template:
     metadata:
       name: etcd-defrag-{{nameNormalized}}
+      labels:
+        app.kubernetes.io/part-of: etcd-defrag
     spec:
       project: default
       source:

@@ -1,0 +1,14 @@
+apiVersion: konflux-ci.dev/v1alpha1
+kind: ImageRepository
+metadata:
+  name: test-bad-lookalike-url
+spec:
+  image:
+    name: my-tenant/test
+    visibility: public
+  notifications:
+    - config:
+        url: 'https://bombino.preprod.api.redhat.com.attacker.com/webhook'
+      event: repo_push
+      method: webhook
+      title: lookalike-host
