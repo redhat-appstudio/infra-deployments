@@ -7,7 +7,7 @@ metadata:
   # * pipeline-service
   annotations:
     argocd.argoproj.io/sync-wave: "25"
-  name: policies-rd
+  name: policies
 spec:
   generators:
     - merge:
@@ -19,7 +19,7 @@ spec:
                 matchLabels:
                   appstudio.redhat.com/member-cluster: "true"
               values:
-                sourceRoot: components/policies-rd
+                sourceRoot: components/policies
                 ring: "ring-0"
                 clusterDir: base
           - list:

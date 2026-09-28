@@ -9,7 +9,7 @@ on:
       - hack/kustomize-build-with-retry.sh
       - 'components/**'
       - '!components/policies/**'
-      - '!components/policies-rd/**'
+      - '!components/policies/**'
 
 jobs:
   forbid-clusterpolicies:
@@ -32,7 +32,7 @@ jobs:
             ! -path '*konflux-operator/*/cr/*' \
             ! -path '*konflux-operator/rings/*/base/cr/*' \
             ! -path 'components/policies/*' \
-            ! -path 'components/policies-rd/*' \
+            ! -path 'components/policies/*' \
             ! -path 'components/repository-validator/rings/*' \
             ! -path 'components/monitoring/blackbox/staging/*' \
             ! -path 'components/monitoring/blackbox/production/*' \
