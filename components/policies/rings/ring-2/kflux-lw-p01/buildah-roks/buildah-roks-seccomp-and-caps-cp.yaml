@@ -1,0 +1,67 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: buildah-roks-seccomp-and-caps
+  annotations:
+    policies.kyverno.io/title: "Buildah ROKS capability workaround"
+    policies.kyverno.io/category: "Build"
+    policies.kyverno.io/description: >-
+      On ROKS clusters with seccompDefault=true (CIS benchmark), RuntimeDefault
+      seccomp blocks the unshare(2) syscall (ENOSYS) and gates chroot(2) on
+      CAP_SYS_CHROOT. The buildah task (0.12.2+, konflux-build-cli) calls
+      unshare internally and only requests SETFCAP. This policy injects the
+      Localhost unshare.json seccomp profile and SYS_CHROOT into step-build.
+      Covers buildah-oci-ta, buildah-oci-ta-min, and buildah-remote-oci-ta.
+spec:
+  background: false
+  failurePolicy: Ignore
+  rules:
+    - name: inject-buildah-sys-chroot
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              operations:
+                - CREATE
+              selector:
+                matchLabels:
+                  tekton.dev/task: buildah-oci-ta
+              namespaceSelector:
+                matchLabels:
+                  konflux-ci.dev/type: tenant
+          - resources:
+              kinds:
+                - Pod
+              operations:
+                - CREATE
+              selector:
+                matchLabels:
+                  tekton.dev/task: buildah-oci-ta-min
+              namespaceSelector:
+                matchLabels:
+                  konflux-ci.dev/type: tenant
+          - resources:
+              kinds:
+                - Pod
+              operations:
+                - CREATE
+              selector:
+                matchLabels:
+                  tekton.dev/task: buildah-remote-oci-ta
+              namespaceSelector:
+                matchLabels:
+                  konflux-ci.dev/type: tenant
+      mutate:
+        patchStrategicMerge:
+          spec:
+            containers:
+              - (name): "step-build"
+                securityContext:
+                  seccompProfile:
+                    type: Localhost
+                    localhostProfile: profiles/unshare.json
+                  capabilities:
+                    add:
+                      - SETFCAP
+                      - SYS_CHROOT
