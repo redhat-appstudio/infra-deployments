@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: crossplane-control-plane-rd
+  name: crossplane-control-plane
 spec:
   generators:
     - merge:
@@ -13,7 +13,7 @@ spec:
                 matchLabels:
                   appstudio.redhat.com/member-cluster: "true"
               values:
-                sourceRoot: components/crossplane-control-plane-rd
+                sourceRoot: components/crossplane-control-plane
                 ring: "ring-0"
                 clusterDir: base
           - list:
