@@ -28,6 +28,8 @@ spec:
   template:
     metadata:
       name: policies-{{nameNormalized}}
+      labels:
+        app.kubernetes.io/part-of: policies
       annotations:
         argocd.argoproj.io/compare-options: ServerSideDiff=true,IncludeMutationWebhook=true
     spec:

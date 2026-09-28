@@ -26,6 +26,8 @@ spec:
   template:
     metadata:
       name: notification-controller-{{nameNormalized}}
+      labels:
+        app.kubernetes.io/part-of: notification-controller
     spec:
       project: default
       source:
