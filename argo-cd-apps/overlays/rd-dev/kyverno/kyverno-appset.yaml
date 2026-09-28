@@ -22,6 +22,8 @@ spec:
   template:
     metadata:
       name: kyverno-{{nameNormalized}}
+      labels:
+        app.kubernetes.io/part-of: kyverno
       annotations:
         argocd.argoproj.io/compare-options: ServerSideDiff=true,IncludeMutationWebhook=true
     spec:
