@@ -2458,7 +2458,7 @@ spec:
                 containers:
                 - env:
                   - name: GIT_SSL_CAINFO
-                    value: /tekton-custom-certs/ca-bundle.crt
+                    value: /etc/ssl/certs/ca-custom-bundle.crt
                   name: controller
                   resources:
                     limits:
@@ -2466,6 +2466,20 @@ spec:
                     requests:
                       cpu: 500m
                       memory: 10Gi
+                  volumeMounts:
+                  - mountPath: /etc/ssl/certs/ca-custom-bundle.crt
+                    name: trusted-ca
+                    readOnly: true
+                    subPath: ca-bundle.crt
+                volumes:
+                - configMap:
+                    defaultMode: 420
+                    items:
+                    - key: ca-bundle.crt
+                      path: ca-bundle.crt
+                    name: trusted-ca
+                    optional: false
+                  name: trusted-ca
     performance:
       buckets: 4
       disable-ha: false
