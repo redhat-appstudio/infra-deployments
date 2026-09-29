@@ -1,14 +1,13 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - github.com/minio/operator?ref=v5.0.15
+  - minio-operator
   - base-snapshot
   - rbac
   - secrets
   - minio-tenant.yaml
-  - postgres-app.yaml
+  - minio-create-bucket-job.yaml
   - tekton-chains-signing-secret-job.yaml
-  - tekton-results-api-cm.yaml
 
 patches:
   - path: patches/delete-tekton-results-resources-patch.yaml
@@ -38,9 +37,74 @@ patches:
         path: /spec/platforms/openshift/pipelinesAsCode/options/deployments/pipelines-as-code-watcher/spec/template
       - op: remove
         path: /spec/platforms/openshift/pipelinesAsCode/options/deployments/pipelines-as-code-webhook/spec/template
+  # Disable TektonResults DB
+  - target:
+      kind: TektonConfig
+      name: config
+    patch: |
+      - op: replace
+        path: /spec/result/is_external_db
+        value: false
+      - op: remove
+        path: /spec/result/db_port
+      - op: remove
+        path: /spec/result/db_secret_name
+      - op: remove
+        path: /spec/result/db_secret_password_key
+      - op: remove
+        path: /spec/result/db_secret_user_key
+      - op: remove
+        path: /spec/result/db_sslmode
+      - op: remove
+        path: /spec/result/db_sslrootcert
+      - op: remove
+        path: /spec/result/db_enable_auto_migration
+      # kube-rbac-proxy not in dev (unknown why)
+      - op: remove
+        path: /spec/result/options/deployments/tekton-results-api/spec/template/spec/containers/1
+      - op: remove
+        path: /spec/result/options/deployments/tekton-results-watcher/spec/template/spec/containers/1
+      # logging plugin api url and db env are not in dev (unknown why)
+      # note: all env here are `0` because the remove acts as a "pop"
+      - op: remove
+        path: /spec/result/options/deployments/tekton-results-api/spec/template/spec/containers/0/env/0
+      - op: remove
+        path: /spec/result/options/deployments/tekton-results-api/spec/template/spec/containers/0/env/0
+      - op: remove
+        path: /spec/result/options/deployments/tekton-results-api/spec/template/spec/containers/0/env/0
+      # adjust store dealine
+      - op: replace
+        path: /spec/result/options/deployments/tekton-results-watcher/spec/template/spec/containers/0/args/0
+        value: "-completed_run_grace_period=2h"
+      - op: replace
+        path: /spec/result/options/deployments/tekton-results-watcher/spec/template/spec/containers/0/args/1
+        value: "-requeue_interval=2m"
+      - op: replace
+        path: /spec/result/options/deployments/tekton-results-watcher/spec/template/spec/containers/0/args/2
+        value: "-store_deadline=1m"
+      # Configure minio S3 cert
+      - op: replace
+        path: /spec/result/options/deployments/tekton-results-api/spec/template/spec/volumes/0
+        value:
+          name: ca-s3
+          secret:
+            items:
+              - key: public.crt
+                path: s3-cert.crt
+            secretName: storage-tls
+      - op: replace
+        path: /spec/result/options/deployments/tekton-results-api/spec/template/spec/containers/0/volumeMounts/0
+        value:
+          name: ca-s3
+          mountPath: /etc/ssl/certs/s3-cert.crt
+          subPath: s3-cert.crt
+  - path: patches/tektonconfig-results-resources.yaml
+    target:
+      kind: TektonConfig
+      name: config
 
-
-
+  # Minio requires patching even though it's only in ring 0 because it's provided
+  # via the helm chart.
   # Minio operator services
   - path: patches/minio-patches/add-dangling-service-annotation.yaml
     target:
@@ -125,31 +189,3 @@ patches:
           requests:
             cpu: 50m
             memory: 64Mi
-
-  # Tekton Results API Deployment
-  - path: patches/add-dev-volume-mount-to-api-container-patch.yaml
-    target:
-      kind: Deployment
-      name: tekton-results-api
-      namespace: tekton-results
-  - path: patches/add-dev-volumes-patch.yaml
-    target:
-      kind: Deployment
-      name: tekton-results-api
-      namespace: tekton-results
-  - path: patches/add-init-container-field-patch.yaml
-    target:
-      kind: Deployment
-      name: tekton-results-api
-      namespace: tekton-results
-  # Tekton Results API for Watcher Deployment
-  - path: patches/add-dev-volume-mount-to-api-container-patch.yaml
-    target:
-      kind: Deployment
-      name: tekton-results-api-for-watcher
-      namespace: tekton-results
-  - path: patches/add-dev-volumes-patch.yaml
-    target:
-      kind: Deployment
-      name: tekton-results-api-for-watcher
-      namespace: tekton-results

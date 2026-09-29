@@ -1,0 +1,96 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: create-minio-bucket
+  namespace: openshift-pipelines
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      annotations:
+        argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    spec:
+      containers:
+      - name: mc
+        image: "quay.io/openshift-pipeline/minio-mc-mirror:RELEASE.2025-08-13T08-35-41Z"
+        imagePullPolicy: Always
+        command:
+        - /bin/bash
+        - "-c"
+        - |
+          set -e
+          echo "Waiting for MinIO to become ready..."
+          for i in $(seq 1 30); do
+            if mc --insecure --config-dir /tmp alias set minio "$S3_ENDPOINT" "$S3_ACCESS_KEY_ID" "$S3_SECRET_ACCESS_KEY" >/dev/null 2>&1; then
+              echo "MinIO is ready."
+              break
+            fi
+            if [ "$i" -eq 30 ]; then
+              echo "MinIO did not become ready in time." >&2
+              exit 1
+            fi
+            echo "MinIO not ready yet (attempt $i/30), retrying in 10s..."
+            sleep 10
+          done
+          if [[ "$(mc --insecure --config-dir /tmp ls minio)" != *"${S3_BUCKET_NAME}"* ]]; then
+            mc --insecure --config-dir /tmp mb --with-lock --region "$S3_REGION" minio/"$S3_BUCKET_NAME"
+            echo "Bucket $S3_BUCKET_NAME created."
+          else
+            echo "Bucket $S3_BUCKET_NAME already exists."
+          fi
+        resources:
+          limits:
+            cpu: 100m
+            memory: 128Mi
+          requests:
+            cpu: 5m
+            memory: 32Mi
+        volumeMounts:
+        - name: tmp-mc-volume
+          mountPath: /tmp
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+        env:
+        - name: S3_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: tekton-results-s3
+              key: aws_access_key_id
+        - name: S3_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: tekton-results-s3
+              key: aws_secret_access_key
+        - name: S3_REGION
+          valueFrom:
+            secretKeyRef:
+              name: tekton-results-s3
+              key: aws_region
+        - name: S3_BUCKET_NAME
+          valueFrom:
+            secretKeyRef:
+              name: tekton-results-s3
+              key: bucket
+        - name: S3_ENDPOINT
+          valueFrom:
+            secretKeyRef:
+              name: tekton-results-s3
+              key: endpoint
+      restartPolicy: OnFailure
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      volumes:
+      - name: tmp-mc-volume
+        emptyDir: {}
+  ttlSecondsAfterFinished: 300

@@ -304,6 +304,20 @@ spec:
     openshift:
       pipelinesAsCode:
         enable: true
+        settings:
+          enable-cancel-in-progress-on-pull-requests: "true"
+          remember-ok-to-test: "false"
+          secret-github-app-token-scoped: "false"
+          tracing-label-action: pipelines.appstudio.openshift.io/type
+          tracing-label-application: appstudio.openshift.io/application
+          tracing-label-component: appstudio.openshift.io/component
+          # REPLACE THESE PER ENVIRONMENT
+          application-name: "Konflux"
+          custom-console-name: "Konflux"
+          custom-console-url: "https://konflux-ci.dev"
+          custom-console-url-namespace: "https://konflux-ci.dev"
+          custom-console-url-pr-details: "https://konflux-ci.dev"
+          custom-console-url-pr-tasklog: "https://konflux-ci.dev"
         options:
           deployments:
             pipelines-as-code-controller:
@@ -365,7 +379,150 @@ spec:
       - pipelinerun
     schedule: '*/30 * * * *'
   result:
-    disabled: true
+    disabled: false
+    is_external_db: true
+    db_enable_auto_migration: true
+    db_port: 5432
+    db_secret_name: tekton-results-database
+    db_secret_password_key: db.password
+    db_secret_user_key: db.user
+    db_sslmode: verify-full
+    db_sslrootcert: /etc/tls/db/tekton-results-db-ca.pem
+    logs_api: true
+    logs_type: blob
+    options:
+      deployments:
+        tekton-results-api:
+          spec:
+            template:
+              spec:
+                containers:
+                - name: api
+                  resources:
+                    limits:
+                      cpu: '3'
+                      memory: 1Gi
+                    requests:
+                      cpu: '1'
+                      memory: 500Mi
+                  volumeMounts:
+                  - name: db-tls-ca
+                    mountPath: /etc/tls/db
+                    readOnly: true
+                  env:
+                  - name: LOGGING_PLUGIN_API_URL
+                    valueFrom:
+                      secretKeyRef:
+                        name: tekton-results-s3
+                        key: s3_url
+                  - name: DB_HOST
+                    valueFrom:
+                      secretKeyRef:
+                        name: tekton-results-database
+                        key: db.host
+                  - name: DB_NAME
+                    valueFrom:
+                      secretKeyRef:
+                        name: tekton-results-database
+                        key: db.name
+                  - name: K8S_QPS
+                    value: "50"
+                  - name: K8S_BURST
+                    value: "100"
+                  - name: S3_HOSTNAME_IMMUTABLE
+                    value: "true"
+                  - name: AWS_ACCESS_KEY_ID
+                    valueFrom:
+                      secretKeyRef:
+                        name: tekton-results-s3
+                        key: aws_access_key_id
+                  - name: AWS_SECRET_ACCESS_KEY
+                    valueFrom:
+                      secretKeyRef:
+                        name: tekton-results-s3
+                        key: aws_secret_access_key
+                  - name: AWS_REGION
+                    valueFrom:
+                      secretKeyRef:
+                        name: tekton-results-s3
+                        key: aws_region
+                  - name: S3_BUCKET_NAME
+                    valueFrom:
+                      secretKeyRef:
+                        name: tekton-results-s3
+                        key: bucket
+                  - name: AWS_ENDPOINT_URL
+                    valueFrom:
+                      secretKeyRef:
+                        name: tekton-results-s3
+                        key: endpoint
+                - name: kube-rbac-proxy
+                  image: "registry.redhat.io/openshift4/ose-kube-rbac-proxy:v4.15"
+                  args:
+                  - "--secure-listen-address=0.0.0.0:9443"
+                  - "--upstream=http://127.0.0.1:9090/"
+                  - "--logtostderr=true"
+                  - "--v=6"
+                  ports:
+                  - name: metrics
+                    containerPort: 9443
+                    protocol: TCP
+                  resources:
+                    limits:
+                      cpu: 500m
+                      memory: 128Mi
+                    requests:
+                      cpu: 5m
+                      memory: 64Mi
+                volumes:
+                  - name: db-tls-ca
+                    configMap:
+                      name: rds-root-crt
+        tekton-results-retention-policy-agent:
+          spec:
+            replicas: 0
+        tekton-results-watcher:
+          spec:
+            template:
+              spec:
+                containers:
+                - name: watcher
+                  args:
+                  - "-completed_run_grace_period=5m"
+                  - "-requeue_interval=2m"
+                  - "-store_deadline=30m"
+                  - "-check_owner=false"
+                  - "-forward_buffer=1m"
+                  - "-threadiness=32"
+                  - "-qps=50"
+                  - "-burst=50"
+                  - "-logs_api=true"
+                  - "-disable_storing_incomplete_runs=true"
+                  resources:
+                    limits:
+                      cpu: '3'
+                      memory: 8Gi
+                    requests:
+                      cpu: '1'
+                      memory: 8Gi
+                - name: kube-rbac-proxy
+                  image: "registry.redhat.io/openshift4/ose-kube-rbac-proxy:v4.15"
+                  args:
+                  - "--secure-listen-address=0.0.0.0:8443"
+                  - "--upstream=http://127.0.0.1:9090/"
+                  - "--logtostderr=true"
+                  - "--v=6"
+                  ports:
+                  - name: watchermetrics
+                    containerPort: 8443
+                    protocol: TCP
+                  resources:
+                    limits:
+                      cpu: 500m
+                      memory: 128Mi
+                    requests:
+                      cpu: 5m
+                      memory: 64Mi
   targetNamespace: openshift-pipelines
   tektonpruner:
     disabled: true
