@@ -23,10 +23,6 @@ spec:
                 - nameNormalized: lightwell-dev
                   values.clusterDir: lightwell-dev
                 # Private
-                - nameNormalized: kflux-ocp-p01
-                  values.clusterDir: kflux-ocp-p01
-                - nameNormalized: stone-prod-p01
-                  values.clusterDir: stone-prod-p01
                 - nameNormalized: stone-prod-p02
                   values.clusterDir: stone-prod-p02
                 # Public
@@ -34,8 +30,6 @@ spec:
                   values.clusterDir: stone-prd-rh01
                 - nameNormalized: kflux-prd-rh02
                   values.clusterDir: kflux-prd-rh02
-                - nameNormalized: kflux-prd-rh03
-                  values.clusterDir: kflux-prd-rh03
         # Exclude stone-stage-p01 and stone-stg-rh01 from all ArgoCD instances,
         # including those reading base directly (e.g. konflux-public-staging
         # whose app-of-apps overlay is not yet enabled). lightwell-dev is
@@ -47,6 +41,14 @@ spec:
               values:
                 - stone-stage-p01
                 - stone-stg-rh01
+                # ring-2
+                - kflux-ocp-p01
+                - stone-prod-p01
+                - kflux-prd-rh03
+                - kflux-osp-p01
+                - kflux-rhel-p01
+                - kflux-fedora-01
+                - kflux-lw-p01
   template:
     metadata:
       name: knative-eventing-{{nameNormalized}}
