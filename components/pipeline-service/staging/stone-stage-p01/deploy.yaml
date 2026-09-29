@@ -1297,6 +1297,10 @@ spec:
               spec:
                 containers:
                 - env:
+                  - name: K8S_QPS
+                    value: "50"
+                  - name: K8S_BURST
+                    value: "100"
                   - name: S3_HOSTNAME_IMMUTABLE
                     value: "true"
                   - name: AWS_ACCESS_KEY_ID
