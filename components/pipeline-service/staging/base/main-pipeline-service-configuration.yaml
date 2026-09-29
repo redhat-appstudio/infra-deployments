@@ -780,6 +780,10 @@ spec:
                           secretKeyRef:
                             name: tekton-results-database
                             key: db.name
+                      - name: K8S_QPS
+                        value: "50"
+                      - name: K8S_BURST
+                        value: "100"
                     volumeMounts:
                       - mountPath: /etc/tls/db
                         name: db-tls-ca

@@ -1339,6 +1339,10 @@ spec:
                       secretKeyRef:
                         key: db.name
                         name: tekton-results-database
+                  - name: K8S_QPS
+                    value: "50"
+                  - name: K8S_BURST
+                    value: "100"
                   name: api
                   resources:
                     limits:

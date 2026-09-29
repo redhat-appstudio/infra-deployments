@@ -853,6 +853,10 @@ spec:
                           secretKeyRef:
                             name: tekton-results-s3
                             key: endpoint
+                      - name: K8S_QPS
+                        value: "50"
+                      - name: K8S_BURST
+                        value: "100"
                     volumeMounts:
                       - mountPath: /etc/ssl/certs/s3-cert.crt
                         name: ca-s3
