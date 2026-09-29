@@ -1,0 +1,18 @@
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: selfsigned-issuer
+  namespace: image-rbac-proxy
+spec:
+  selfSigned: {}
+---
+# Signs serving certificates for proxy and dex. Depends on the CA Secret
+# created by the image-rbac-proxy-ca Certificate.
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: image-rbac-proxy-ca-issuer
+  namespace: image-rbac-proxy
+spec:
+  ca:
+    secretName: image-rbac-proxy-ca

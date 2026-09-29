@@ -1,6 +1,7 @@
-# Distributes the RH internal CA bundle to tenant namespaces on HCP
-# clusters via trust-manager. Only deployed to clusters listed below —
-# clusters where the Proxy CR trustedCA cannot be set.
+# Distributes the RH internal CA plus default public CAs to all
+# namespaces on HCP clusters via trust-manager. Only deployed to
+# clusters listed below — clusters where the Proxy CR trustedCA cannot
+# be set.
 #
 # This is a standalone component (not part of trust-manager) to avoid
 # Helm chart download conflicts in CI when multiple kustomize overlays

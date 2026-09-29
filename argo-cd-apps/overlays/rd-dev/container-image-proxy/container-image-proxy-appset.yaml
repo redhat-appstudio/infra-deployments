@@ -22,6 +22,8 @@ spec:
   template:
     metadata:
       name: container-image-proxy-{{nameNormalized}}
+      labels:
+        app.kubernetes.io/part-of: container-image-proxy
     spec:
       project: default
       source:

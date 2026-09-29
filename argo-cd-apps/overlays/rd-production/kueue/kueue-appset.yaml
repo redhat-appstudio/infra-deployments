@@ -27,6 +27,8 @@ spec:
   template:
     metadata:
       name: kueue-{{nameNormalized}}
+      labels:
+        app.kubernetes.io/part-of: kueue
     spec:
       project: default
       source:
