@@ -6,6 +6,12 @@ resources:
 - cluster-monitoring-config.yaml
 - o11y-admins-group.yaml
 patches:
+  # Override user-workload config from base with cluster-specific retention and PVC
+  - path: uwm-config-patch.yaml
+    target:
+      name: user-workload-monitoring-config
+      kind: ConfigMap
+      version: v1
   - path: cluster-id-label.yaml
     target:
       name: appstudio-federate-ms
