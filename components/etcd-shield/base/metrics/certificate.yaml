@@ -1,0 +1,14 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: service-cert
+  namespace: system
+spec:
+  dnsNames:
+  - etcd-shield.etcd-shield.svc
+  - etcd-shield.etcd-shield.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: selfsigned-issuer
+  secretName: etcd-shield-tls
