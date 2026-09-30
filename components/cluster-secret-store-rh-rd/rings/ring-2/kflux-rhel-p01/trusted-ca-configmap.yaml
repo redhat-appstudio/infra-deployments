@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: trusted-ca
+  namespace: appsre-vault
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+  labels:
+    config.openshift.io/inject-trusted-cabundle: "true"
