@@ -1,0 +1,23 @@
+build_duration:
+  tiers:
+    - { name: fast, baseline_max: 300, threshold: 600 }
+    - { name: medium, baseline_max: 900, threshold: 1800 }
+    - { name: slow, baseline_max: 1500, threshold: 2700 }
+    - { name: heavy, baseline_max: null, threshold: 5400 }
+
+integration_duration:
+  tiers:
+    - { name: fast, baseline_max: 300, threshold: 600 }
+    - { name: medium, baseline_max: 1200, threshold: 2700 }
+    - { name: slow, baseline_max: 3600, threshold: 7200 }
+    - { name: heavy, baseline_max: null, threshold: 10800 }
+  overrides:
+    - match: { test_type: ec }
+      tiers:
+        - { name: ec, baseline_max: null, threshold: 600 }
+
+release_duration:
+  tiers:
+    - { name: fast, baseline_max: 600, threshold: 1200 }
+    - { name: medium, baseline_max: 1800, threshold: 3600 }
+    - { name: slow, baseline_max: null, threshold: 5400 }
