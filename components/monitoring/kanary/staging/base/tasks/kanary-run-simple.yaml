@@ -24,6 +24,10 @@ spec:
     - name: component-name
       type: string
       description: "Name of existing Component resource"
+    - name: integration-test-scenario
+      type: string
+      default: ""
+      description: "Name of the IntegrationTestScenario to use. Leave empty to skip integration tests."
   results:
     - name: test-outcome
       description: "Test outcome: passed, failed, or unknown"
@@ -71,6 +75,8 @@ spec:
             secretKeyRef:
               name: kanary-probe-prometheus-credentials
               key: prometheus_token
+        - name: INTEGRATION_TEST_SCENARIO
+          value: $(params.integration-test-scenario)
       script: |
         #!/usr/bin/env bash
         set -euo pipefail
