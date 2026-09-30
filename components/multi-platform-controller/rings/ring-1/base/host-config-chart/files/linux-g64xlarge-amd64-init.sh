@@ -3,7 +3,7 @@
 set -xeuo pipefail
 
 # Close MPC's readiness signal until SSH auth is actually usable
-systemctl stop sshd.service || true
+systemctl stop sshd.service
 
 configure_nvidia_cdi() {
   # generate Nvidia CDI with retry
@@ -49,14 +49,16 @@ chmod 1777 /home/var-tmp /var/tmp
 chown root:root /home/var-tmp /var/tmp
 restorecon -r /var/lib/containers /var/tmp
 
-# Restore SSH before reopening port 22 and before NVIDIA (uses su - ec2-user)
+# Keys must exist before NVIDIA CDI (su - ec2-user). Keep sshd stopped until GPU setup finishes.
 configure_ec2_user_ssh
-systemctl start sshd.service
 
-# GPU setup (slow) — SSH already usable for MPC
+# GPU setup (slow). Port 22 stays closed so MPC does not connect yet.
 mkdir -p /etc/cdi /var/run/cdi
 chmod a+rwx /etc/cdi /var/run/cdi
 setsebool container_use_devices 1 2>/dev/null || true
 configure_nvidia_cdi
 chmod a+rw /etc/cdi/nvidia.yaml
 chmod a+rw /var/run/cdi/nvidia.yaml
+
+# Open port 22 only after GPU setup so MPC's readiness check means the host is ready
+systemctl start sshd.service
