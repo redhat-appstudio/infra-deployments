@@ -49,6 +49,27 @@ do not add production targets. See the
 [ApplicationSet](../../argo-cd-apps/overlays/rd-staging/konflux-verifications-rd/konflux-verifications-rd-appset.yaml)
 and [staging cluster list](../../argo-cd-apps/k-components/deploy-to-staging-tenant-clusters/tenant-clusters-list-patch.yaml).
 
+## Proxy suite
+
+| Resource | Purpose |
+| --- | --- |
+| `verification-vanguard-proxy-runner` | Runner namespace |
+| `verification-vanguard-proxy-runner/konflux-bot-0` | Remote launcher identity |
+| `verification-vanguard-proxy-runner/verification-runner` | Test execution identity |
+| `sa-token-manager` Role | Grants `create` on `serviceaccounts/token` for `konflux-bot-0` |
+| `konflux-vanguard-token-manager` RoleBinding | Binds `sa-token-manager` to `konflux-vanguard` group |
+
+The proxy suite uses the shared runner profile with namespace override to
+`verification-vanguard-proxy-runner`. It includes a `build-scc.yaml` for
+build-specific SecurityContextConstraints and cluster-config read access
+in the `konflux-info` namespace.
+
+The `konflux-vanguard` group can self-service mint launcher tokens:
+
+```sh
+oc create token konflux-bot-0 -n verification-vanguard-proxy-runner --duration=8760h
+```
+
 ## Add a suite
 
 1. Copy `examples/team-suite/` into `base/suites/<team>/<suite>/` and add an
@@ -95,6 +116,53 @@ Launcher tokens are minted through Kubernetes TokenRequest and delivered to Karg
 through the existing credential system. This component does **not** mint tokens,
 create bound token Secrets, or publish them to Vault. Provisioning and rotation
 need an explicit owner; an ExternalSecret refresh does not renew a token.
+
+### Self-service token management for teams
+
+Each suite can include RBAC that grants the owning team's OpenShift group
+permission to create ServiceAccount tokens in the suite's runner namespace.
+This lets team members mint and rotate launcher tokens without requiring
+DevProd intervention.
+
+To enable self-service token management for a suite:
+
+1. Create a `vanguard-token-manager-rbac.yaml` (or `<team>-token-manager-rbac.yaml`)
+   in the suite directory with a Role granting `create` on `serviceaccounts/token`
+   and a RoleBinding to the team's group:
+
+   ```yaml
+   apiVersion: rbac.authorization.k8s.io/v1
+   kind: Role
+   metadata:
+     name: sa-token-manager
+     namespace: <runner-namespace>
+   rules:
+     - apiGroups: [""]
+       resources: ["serviceaccounts/token"]
+       verbs: ["create"]
+   ---
+   apiVersion: rbac.authorization.k8s.io/v1
+   kind: RoleBinding
+   metadata:
+     name: <team>-token-manager
+     namespace: <runner-namespace>
+   roleRef:
+     apiGroup: rbac.authorization.k8s.io
+     kind: Role
+     name: sa-token-manager
+   subjects:
+     - apiGroup: rbac.authorization.k8s.io
+       kind: Group
+       name: <team-group>
+   ```
+
+2. Add the file to the suite's `kustomization.yaml` resources.
+
+3. After merge and sync, team members can mint tokens:
+
+   ```sh
+   oc create token konflux-bot-0 -n <runner-namespace> --duration=8760h
+   ```
 
 For new suites, keep test credentials in the remote runner namespace and use
 `valueFrom.secretKeyRef` in test steps. Do not insert token values into PipelineRun
