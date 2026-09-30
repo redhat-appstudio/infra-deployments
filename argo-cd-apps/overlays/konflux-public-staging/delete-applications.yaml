@@ -21,12 +21,6 @@ $patch: delete
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: policies
-$patch: delete
----
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
   name: kyverno
 $patch: delete
 ---
@@ -39,5 +33,11 @@ $patch: delete
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: crossplane-control-plane
+  name: knative-eventing
+$patch: delete
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: cluster-secret-store
 $patch: delete

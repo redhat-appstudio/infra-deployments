@@ -5,3 +5,13 @@ resources:
 - base-snapshot
 generators:
 - caching-helm-generator.yaml
+
+# Preserve the Bundle while Ring 2 moves to the new proxy endpoint.
+patches:
+- patch: |-
+    apiVersion: trust.cert-manager.io/v1alpha1
+    kind: Bundle
+    metadata:
+      name: caching-ca-bundle
+      annotations:
+        argocd.argoproj.io/sync-options: Prune=false,Delete=false

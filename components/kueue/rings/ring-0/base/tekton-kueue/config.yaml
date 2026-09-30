@@ -146,9 +146,17 @@ cel:
     # Set the pipeline priority
     - |
         has(pipelineRun.metadata.labels) &&
-        'build.appstudio.redhat.com/type' in pipelineRun.metadata.labels &&
-        pipelineRun.metadata.labels['build.appstudio.redhat.com/type'] == 'nudge' ?
+        (('build.appstudio.redhat.com/type' in pipelineRun.metadata.labels &&
+          pipelineRun.metadata.labels['build.appstudio.redhat.com/type'] == 'nudge') ||
+         ('build.konflux-ci.dev/type' in pipelineRun.metadata.labels &&
+          pipelineRun.metadata.labels['build.konflux-ci.dev/type'] == 'nudge')) ?
         priority('konflux-nudge') :
+
+        has(pipelineRun.metadata.annotations) &&
+        'pipelinesascode.tekton.dev/source-branch' in pipelineRun.metadata.annotations &&
+        pipelineRun.metadata.annotations['pipelinesascode.tekton.dev/source-branch'].startsWith('konflux/mintmaker/') &&
+        plrNamespace != 'mintmaker' ?
+        priority('konflux-mintmaker-triggered') :
 
         pacEventType == 'push' ? priority('konflux-post-merge-build') :
         pacEventType == 'pull_request' ||

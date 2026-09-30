@@ -1,0 +1,49 @@
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: appstudio-pipelines-scc-roks
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "0"
+    description: >-
+      Supplemental SCC for ROKS buildah builds (task-buildah-oci-ta 0.12.2+,
+      konflux-build-cli). Extends appstudio-pipelines-scc with SYS_CHROOT and
+      the Localhost unshare.json seccomp profile. RuntimeDefault blocks
+      unshare(2) (ENOSYS) and gates chroot(2) on CAP_SYS_CHROOT; both are
+      needed because konflux-build-cli calls unshare internally.
+allowHostDirVolumePlugin: false
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: false
+allowHostPorts: false
+allowPrivilegeEscalation: false
+allowPrivilegedContainer: false
+allowedCapabilities:
+- SETFCAP
+- SYS_CHROOT
+defaultAddCapabilities: null
+fsGroup:
+  type: MustRunAs
+groups:
+- system:cluster-admins
+priority: 11
+readOnlyRootFilesystem: false
+requiredDropCapabilities:
+- MKNOD
+runAsUser:
+  type: RunAsAny
+seccompProfiles:
+- runtime/default
+- localhost/profiles/unshare.json
+seLinuxContext:
+  type: MustRunAs
+supplementalGroups:
+  type: RunAsAny
+users: []
+volumes:
+- configMap
+- downwardAPI
+- emptyDir
+- persistentVolumeClaim
+- projected
+- secret

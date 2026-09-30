@@ -27,6 +27,7 @@ cel:
           !(
             p in [
               'linux/ppc64le',
+              'linux/ppc64be',
               'linux/s390x',
               'linux/x86_64',
               'local',
@@ -134,8 +135,10 @@ cel:
     # Set the pipeline priority
     - |
         has(pipelineRun.metadata.labels) &&
-        'build.appstudio.redhat.com/type' in pipelineRun.metadata.labels &&
-        pipelineRun.metadata.labels['build.appstudio.redhat.com/type'] == 'nudge' ?
+        (('build.appstudio.redhat.com/type' in pipelineRun.metadata.labels &&
+          pipelineRun.metadata.labels['build.appstudio.redhat.com/type'] == 'nudge') ||
+         ('build.konflux-ci.dev/type' in pipelineRun.metadata.labels &&
+          pipelineRun.metadata.labels['build.konflux-ci.dev/type'] == 'nudge')) ?
         priority('konflux-nudge') :
 
         pacEventType == 'push' ? priority('konflux-post-merge-build') :

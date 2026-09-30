@@ -3,3 +3,10 @@ kind: Kustomization
 
 resources:
 - etcd-defrag-appset.yaml
+
+patches:
+  - path: exclude-roks-clusters.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: etcd-defrag

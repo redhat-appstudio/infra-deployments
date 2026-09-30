@@ -31,9 +31,6 @@ spec:
     - name: component-name
       type: string
       description: "Name of existing Component resource"
-    - name: release-plan-name
-      type: string
-      description: "Name of existing ReleasePlan resource"
   workspaces:
     - name: artifacts
   tasks:
@@ -57,8 +54,6 @@ spec:
           value: $(params.application-name)
         - name: component-name
           value: $(params.component-name)
-        - name: release-plan-name
-          value: $(params.release-plan-name)
       workspaces:
         - name: artifacts
           workspace: artifacts

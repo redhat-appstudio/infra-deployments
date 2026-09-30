@@ -14,6 +14,17 @@ generators:
 
 patches:
 - target:
+    kind: Service
+    name: alloy-poc
+  patch: |-
+    - op: add
+      path: /spec/ports/-
+      value:
+        name: vmalert-receive
+        port: 9999
+        targetPort: 9999
+        protocol: TCP
+- target:
     group: policy
     version: v1
     kind: PodDisruptionBudget

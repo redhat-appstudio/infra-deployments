@@ -1,0 +1,11 @@
+---
+# ROKS (hypershift) clusters have a managed control plane — etcd is not
+# visible to tenants, so etcd-defrag must not be deployed there.
+- op: add
+  path: /spec/generators/0/selector
+  value:
+    matchExpressions:
+      - key: nameNormalized
+        operator: NotIn
+        values:
+          - kflux-lw-p01

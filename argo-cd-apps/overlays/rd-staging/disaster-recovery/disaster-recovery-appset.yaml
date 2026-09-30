@@ -27,6 +27,8 @@ spec:
   template:
     metadata:
       name: disaster-recovery-{{nameNormalized}}
+      labels:
+        app.kubernetes.io/part-of: disaster-recovery
     spec:
       project: default
       source:

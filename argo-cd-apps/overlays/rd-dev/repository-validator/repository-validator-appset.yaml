@@ -15,7 +15,7 @@ spec:
                   matchLabels:
                     appstudio.redhat.com/member-cluster: "true"
               values:
-                sourceRoot: components/repository-validator-rd
+                sourceRoot: components/repository-validator
                 ring: "ring-0"
                 clusterDir: "base"
           - list:
@@ -24,6 +24,8 @@ spec:
   template:
     metadata:
       name: repository-validator-{{nameNormalized}}
+      labels:
+        app.kubernetes.io/part-of: repository-validator
     spec:
       project: default
       source:

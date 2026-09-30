@@ -1,0 +1,24 @@
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDatasource
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  name: mimir-poc-ds
+  namespace: appstudio-grafana
+spec:
+  instanceSelector:
+    matchLabels:
+      dashboards: appstudio-grafana
+  datasource:
+    access: proxy
+    editable: true
+    isDefault: false
+    jsonData:
+      httpHeaderName1: X-Scope-OrgID
+      timeInterval: 30s
+    name: mimir-poc
+    secureJsonData:
+      httpHeaderValue1: konflux-poc
+    type: prometheus
+    uid: mimir-poc
+    url: http://mimir-poc-query-frontend.appstudio-mimir-poc.svc:8080/prometheus

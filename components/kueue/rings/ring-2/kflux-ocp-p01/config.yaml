@@ -140,8 +140,10 @@ cel:
         priority(pipelineRun.metadata.labels['kueue.x-k8s.io/priority-class']) :
 
         has(pipelineRun.metadata.labels) &&
-        'build.appstudio.redhat.com/type' in pipelineRun.metadata.labels &&
-        pipelineRun.metadata.labels['build.appstudio.redhat.com/type'] == 'nudge' ?
+        (('build.appstudio.redhat.com/type' in pipelineRun.metadata.labels &&
+          pipelineRun.metadata.labels['build.appstudio.redhat.com/type'] == 'nudge') ||
+         ('build.konflux-ci.dev/type' in pipelineRun.metadata.labels &&
+          pipelineRun.metadata.labels['build.konflux-ci.dev/type'] == 'nudge')) ?
         priority('konflux-nudge') :
 
         pacEventType == 'push' ? priority('konflux-post-merge-build') :
