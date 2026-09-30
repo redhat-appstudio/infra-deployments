@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: verification-vanguard-proxy-runner
+resources:
+  - ../../../../profiles/runner
+  - build-scc.yaml
+  - konflux-vanguard-admins-rb.yaml
+patches:
+  - target:
+      kind: Namespace
+    patch: |-
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: verification-runner
+        labels:
+          cost-center: "670"
+          cost_management_optimizations: "true"
