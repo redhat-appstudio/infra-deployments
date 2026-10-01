@@ -77,11 +77,12 @@ and [staging cluster list](../../argo-cd-apps/k-components/deploy-to-staging-ten
 8. Configure the corresponding Kargo AnalysisTemplate and credential delivery in
    `infra-common-deployments`. Namespace provisioning alone does not enable tests.
 
-The launcher Role permits PipelineRun submission, observation, cancellation and
-deletion, plus TaskRun/pod/log reads within its runner namespace. It grants no
-Secret reads or target-namespace permissions. Test permissions belong in explicit
-RoleBindings from the runner ServiceAccount into the suite's target namespaces.
-For additional operations inside the runner namespace, add explicit suite RBAC.
+The launcher uses the policy-approved `konflux-builder-bot-actions` ClusterRole
+for PipelineRun submission, observation, cancellation and deletion. It receives
+no Secret reads, pod/log reads or target-namespace permissions. Test permissions
+belong in explicit RoleBindings from the `verification-runner` ServiceAccount
+into the suite's runner and target namespaces. For additional test operations,
+add explicit suite RBAC for that execution identity.
 
 Creating arbitrary PipelineRuns can indirectly exercise the runner's permissions
 and access its Secrets. These identities are separate operational roles, not a

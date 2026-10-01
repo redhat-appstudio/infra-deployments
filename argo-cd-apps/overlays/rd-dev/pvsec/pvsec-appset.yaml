@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: project-controller
+  name: pvsec
 spec:
   generators:
     - merge:
@@ -9,25 +9,32 @@ spec:
           - nameNormalized
         generators:
           - clusters:
+              selector:
+                matchLabels:
+                  appstudio.redhat.com/member-cluster: "true"
               values:
-                sourceRoot: components/project-controller
-                environment: staging
-                clusterDir: ""
+                sourceRoot: components/pvsec
+                ring: "ring-0"
+                clusterDir: base
           - list:
               elements: []
+
   template:
     metadata:
-      name: project-controller-{{nameNormalized}}
+      name: pvsec-{{nameNormalized}}
     spec:
       project: default
       source:
-        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
+        path: '{{values.sourceRoot}}/rings/{{values.ring}}/{{values.clusterDir}}'
         repoURL: https://github.com/redhat-appstudio/infra-deployments.git
         targetRevision: main
       destination:
-        namespace: project-controller
+        namespace: crypto-scanner # (optional) IF the component is deployed to a single namespace
         server: '{{server}}'
       syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
         syncOptions:
         - CreateNamespace=true
         retry:
