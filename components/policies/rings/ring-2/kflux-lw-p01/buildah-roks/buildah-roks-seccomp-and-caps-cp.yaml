@@ -8,9 +8,11 @@ metadata:
     policies.kyverno.io/description: >-
       On ROKS clusters with seccompDefault=true (CIS benchmark), RuntimeDefault
       seccomp blocks the unshare(2) syscall (ENOSYS) and gates chroot(2) on
-      CAP_SYS_CHROOT. The buildah task (0.12.2+, konflux-build-cli) calls
-      unshare internally and only requests SETFCAP. This policy injects the
-      Localhost unshare.json seccomp profile and SYS_CHROOT into step-build.
+      CAP_SYS_CHROOT. The buildah task calls unshare internally and only
+      requests SETFCAP. This policy injects the Localhost unshare.json seccomp
+      profile and SYS_CHROOT into every step that shells out to buildah:
+      step-build on all task versions, plus step-push on 0.10.x and earlier,
+      where the push has not yet been folded into step-build.
       Covers buildah-oci-ta, buildah-oci-ta-min, buildah-remote-oci-ta, and
       build-image-index.
 spec:
@@ -69,6 +71,18 @@ spec:
           spec:
             containers:
               - (name): "step-build"
+                securityContext:
+                  seccompProfile:
+                    type: Localhost
+                    localhostProfile: profiles/unshare.json
+                  capabilities:
+                    add:
+                      - SETFCAP
+                      - SYS_CHROOT
+              # step-push only exists on buildah task 0.10.x and earlier. The
+              # (name) conditional anchor is a no-op from 0.11.0 onward, where the
+              # push was folded into step-build.
+              - (name): "step-push"
                 securityContext:
                   seccompProfile:
                     type: Localhost

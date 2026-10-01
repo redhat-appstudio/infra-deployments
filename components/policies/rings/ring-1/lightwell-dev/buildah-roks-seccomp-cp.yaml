@@ -11,8 +11,11 @@ metadata:
       policy injects the Localhost unshare.json seccomp profile, /dev/fuse
       access for fuse-overlayfs, and SETFCAP + SYS_CHROOT capabilities on
       buildah task pods to enable rootless builds while keeping seccomp
-      enforcement enabled. Covers buildah-oci-ta, buildah-oci-ta-min, and
-      buildah-remote-oci-ta task variants.
+      enforcement enabled. Applies to every step that shells out to buildah:
+      step-build on all task versions, plus step-push on 0.10.x and earlier,
+      where the push has not yet been folded into step-build.
+      Covers buildah-oci-ta, buildah-oci-ta-min, and buildah-remote-oci-ta
+      task variants.
 spec:
   background: false
   failurePolicy: Ignore
@@ -61,6 +64,18 @@ spec:
           spec:
             containers:
               - (name): "step-build"
+                securityContext:
+                  seccompProfile:
+                    type: Localhost
+                    localhostProfile: profiles/unshare.json
+                  capabilities:
+                    add:
+                      - SETFCAP
+                      - SYS_CHROOT
+              # step-push only exists on buildah task 0.10.x and earlier. The
+              # (name) conditional anchor is a no-op from 0.11.0 onward, where the
+              # push was folded into step-build.
+              - (name): "step-push"
                 securityContext:
                   seccompProfile:
                     type: Localhost
