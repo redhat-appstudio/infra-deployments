@@ -1,0 +1,69 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: konflux-tempo
+
+resources:
+  - tempo-minio-credentials.yaml
+
+generators:
+  - tempo-helm-generator.yaml
+
+# Tempo 3.x drops the ingester and compactor targets this chart invokes.
+images:
+  - name: docker.io/grafana/tempo
+    newName: registry.access.redhat.com/hi/tempo
+    newTag: 2.10.8
+  - name: docker.io/nginx/nginx-unprivileged
+    newName: quay.io/nginx/nginx-unprivileged
+  - name: docker.io/memcached
+    newName: quay.io/kubearchive/memcached
+
+# Not exposed as chart values.
+patches:
+  - target:
+      kind: Deployment
+      name: tempo-minio
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: tempo-minio
+      spec:
+        template:
+          spec:
+            containers:
+              - name: minio
+                securityContext:
+                  runAsNonRoot: true
+                  allowPrivilegeEscalation: false
+                  readOnlyRootFilesystem: true
+                  capabilities:
+                    drop:
+                      - ALL
+  - target:
+      kind: Job
+      name: tempo-minio-make-bucket-job
+    patch: |
+      apiVersion: batch/v1
+      kind: Job
+      metadata:
+        name: tempo-minio-make-bucket-job
+      spec:
+        template:
+          spec:
+            containers:
+              - name: minio-mc
+                securityContext:
+                  runAsNonRoot: true
+                  allowPrivilegeEscalation: false
+                  readOnlyRootFilesystem: true
+                  capabilities:
+                    drop:
+                      - ALL
+  - target:
+      kind: PodDisruptionBudget
+    patch: |
+      - op: add
+        path: /spec/unhealthyPodEvictionPolicy
+        value: AlwaysAllow

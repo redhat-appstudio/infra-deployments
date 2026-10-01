@@ -9,6 +9,10 @@ config:
       realm: "us1"
       api_url: "https://api.us1.signalfx.com"
       access_token: ${env:SIGNALFX_API_TOKEN}
+    otlp/tempo:
+      endpoint: "tempo-gateway.konflux-tempo.svc.cluster.local:4317"
+      tls:
+        insecure: true
     prometheus:
       endpoint: 0.0.0.0:8889
       metric_expiration: 45m
@@ -91,6 +95,7 @@ config:
           - debug
           - otlphttp/splunk
           - signalfx
+          - otlp/tempo
         processors:
           - memory_limiter
           - attributes/collector-info
