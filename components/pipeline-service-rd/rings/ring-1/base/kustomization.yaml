@@ -69,16 +69,16 @@ patches:
       namespace: tekton-results
     patch: |
       - op: replace
-        path: /spec/template/spec/containers/0/resources/limits/memory
+        path: /spec/template/spec/containers/1/resources/limits/memory
         value: 8Gi
       - op: replace
-        path: /spec/template/spec/containers/0/resources/limits/cpu
+        path: /spec/template/spec/containers/1/resources/limits/cpu
         value: 3000m
       - op: replace
-        path: /spec/template/spec/containers/0/resources/requests/memory
+        path: /spec/template/spec/containers/1/resources/requests/memory
         value: 8Gi
       - op: replace
-        path: /spec/template/spec/containers/0/resources/requests/cpu
+        path: /spec/template/spec/containers/1/resources/requests/cpu
         value: 1000m
   - path: patches/update-tekton-results-watcher-container-args-patch.yaml
     target:

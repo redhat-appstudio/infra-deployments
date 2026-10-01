@@ -44,6 +44,33 @@ spec:
             weight: 100
       containers:
       - args:
+        - --secure-listen-address=0.0.0.0:8443
+        - --upstream=http://127.0.0.1:9090/
+        - --logtostderr=true
+        - --v=6
+        image: registry.redhat.io/openshift4/ose-kube-rbac-proxy:v4.12
+        name: kube-rbac-proxy
+        ports:
+        - containerPort: 8443
+          name: watchermetrics
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+          requests:
+            cpu: 5m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+      - args:
         - -api_addr
         - tekton-results-api-service-for-watcher.tekton-results.svc.cluster.local:8080
         - -auth_mode
@@ -104,33 +131,6 @@ spec:
         - mountPath: /etc/tls
           name: tls
           readOnly: true
-      - args:
-        - --secure-listen-address=0.0.0.0:8443
-        - --upstream=http://127.0.0.1:9090/
-        - --logtostderr=true
-        - --v=6
-        image: registry.redhat.io/openshift4/ose-kube-rbac-proxy:v4.12
-        name: kube-rbac-proxy
-        ports:
-        - containerPort: 8443
-          name: watchermetrics
-          protocol: TCP
-        resources:
-          limits:
-            cpu: 500m
-            memory: 128Mi
-          requests:
-            cpu: 5m
-            memory: 64Mi
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-            - ALL
-          readOnlyRootFilesystem: true
-          runAsNonRoot: true
-          seccompProfile:
-            type: RuntimeDefault
       serviceAccountName: tekton-results-watcher
       volumes:
       - name: tls
