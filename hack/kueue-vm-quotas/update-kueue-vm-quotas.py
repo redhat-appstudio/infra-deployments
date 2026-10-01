@@ -200,7 +200,7 @@ def resource_group_to_dict(resource_group: ResourceGroup, flavor_name: str) -> D
 def create_resource_flavor(name: str) -> Dict[str, Any]:
     """Create a ResourceFlavor object."""
     return {
-        'apiVersion': 'kueue.x-k8s.io/v1beta1',
+        'apiVersion': 'kueue.x-k8s.io/v1beta2',
         'kind': 'ResourceFlavor',
         'metadata': {'name': name},
         'spec': {}
