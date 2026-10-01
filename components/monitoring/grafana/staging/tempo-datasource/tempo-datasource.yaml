@@ -1,0 +1,19 @@
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDatasource
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  name: tempo-ds
+  namespace: appstudio-grafana
+spec:
+  instanceSelector:
+    matchLabels:
+      dashboards: "appstudio-grafana"
+  datasource:
+    access: proxy
+    editable: true
+    isDefault: false
+    name: tempo-ds
+    type: tempo
+    # The gateway proxies /api/* to the query-frontend.
+    url: 'http://tempo-gateway.konflux-tempo.svc.cluster.local:80'
