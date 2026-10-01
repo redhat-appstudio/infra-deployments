@@ -11,7 +11,8 @@ metadata:
       CAP_SYS_CHROOT. The buildah task (0.12.2+, konflux-build-cli) calls
       unshare internally and only requests SETFCAP. This policy injects the
       Localhost unshare.json seccomp profile and SYS_CHROOT into step-build.
-      Covers buildah-oci-ta, buildah-oci-ta-min, and buildah-remote-oci-ta.
+      Covers buildah-oci-ta, buildah-oci-ta-min, buildah-remote-oci-ta, and
+      build-image-index.
 spec:
   background: false
   failurePolicy: Ignore
@@ -49,6 +50,17 @@ spec:
               selector:
                 matchLabels:
                   tekton.dev/task: buildah-remote-oci-ta
+              namespaceSelector:
+                matchLabels:
+                  konflux-ci.dev/type: tenant
+          - resources:
+              kinds:
+                - Pod
+              operations:
+                - CREATE
+              selector:
+                matchLabels:
+                  tekton.dev/task: build-image-index
               namespaceSelector:
                 matchLabels:
                   konflux-ci.dev/type: tenant
