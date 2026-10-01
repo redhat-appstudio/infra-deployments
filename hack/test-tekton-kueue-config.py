@@ -1275,6 +1275,31 @@ CONFIG_COMBINATIONS: Dict[str, ConfigCombination] = {
         "name": "Production RHEL config",
         "config_file": "components/kueue/rings/ring-2/kflux-rhel-p01/config.yaml",
         "kustomization_file": "components/kueue/rings/ring-2/base/tekton-kueue/kustomization.yaml"
+    },
+    "production-kflux-fedora-01": {
+        "name": "Production Fedora config",
+        "config_file": "components/kueue/rings/ring-2/kflux-fedora-01/config.yaml",
+        "kustomization_file": "components/kueue/rings/ring-2/base/tekton-kueue/kustomization.yaml"
+    },
+    "production-kflux-lw-p01": {
+        "name": "Production Lightwell config",
+        "config_file": "components/kueue/rings/ring-2/kflux-lw-p01/config.yaml",
+        "kustomization_file": "components/kueue/rings/ring-2/base/tekton-kueue/kustomization.yaml"
+    },
+    "production-kflux-osp-p01": {
+        "name": "Production OSP config",
+        "config_file": "components/kueue/rings/ring-2/kflux-osp-p01/config.yaml",
+        "kustomization_file": "components/kueue/rings/ring-2/base/tekton-kueue/kustomization.yaml"
+    },
+    "production-kflux-prd-rh03": {
+        "name": "Production RH03 config",
+        "config_file": "components/kueue/rings/ring-2/kflux-prd-rh03/config.yaml",
+        "kustomization_file": "components/kueue/rings/ring-2/base/tekton-kueue/kustomization.yaml"
+    },
+    "production-stone-prod-p01": {
+        "name": "Production Stone P01 config",
+        "config_file": "components/kueue/rings/ring-2/stone-prod-p01/config.yaml",
+        "kustomization_file": "components/kueue/rings/ring-2/base/tekton-kueue/kustomization.yaml"
     }
 }
 
@@ -1770,6 +1795,18 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
             }
         }
     },
+    "mintmaker_triggered_tenant_production-kflux-ocp-p01": {
+        "pipelinerun_key": "mintmaker_triggered_tenant_pipelinerun",
+        "config_key": "production-kflux-ocp-p01"
+    },
+    "mintmaker_triggered_in_mintmaker_namespace_production-kflux-ocp-p01": {
+        "pipelinerun_key": "mintmaker_triggered_in_mintmaker_namespace",
+        "config_key": "production-kflux-ocp-p01"
+    },
+    "tenant_pipelinerun_without_mintmaker_label_production-kflux-ocp-p01": {
+        "pipelinerun_key": "tenant_pipelinerun_without_mintmaker_label",
+        "config_key": "production-kflux-ocp-p01"
+    },
 
     "multiplatform_new_string_param_production": {
         "pipelinerun_key": "multiplatform_new_string_param",
@@ -1938,6 +1975,88 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
                 "kueue.x-k8s.io/priority-class": "konflux-pre-merge-test",
             }
         }
+    },
+    "mintmaker_triggered_tenant_production-kflux-rhel-p01": {
+        "pipelinerun_key": "mintmaker_triggered_tenant_pipelinerun",
+        "config_key": "production-kflux-rhel-p01"
+    },
+    "mintmaker_triggered_in_mintmaker_namespace_production-kflux-rhel-p01": {
+        "pipelinerun_key": "mintmaker_triggered_in_mintmaker_namespace",
+        "config_key": "production-kflux-rhel-p01"
+    },
+    "tenant_pipelinerun_without_mintmaker_label_production-kflux-rhel-p01": {
+        "pipelinerun_key": "tenant_pipelinerun_without_mintmaker_label",
+        "config_key": "production-kflux-rhel-p01"
+    },
+
+    # kflux-fedora-01 mintmaker tests
+    "mintmaker_triggered_tenant_production-kflux-fedora-01": {
+        "pipelinerun_key": "mintmaker_triggered_tenant_pipelinerun",
+        "config_key": "production-kflux-fedora-01"
+    },
+    "mintmaker_triggered_in_mintmaker_namespace_production-kflux-fedora-01": {
+        "pipelinerun_key": "mintmaker_triggered_in_mintmaker_namespace",
+        "config_key": "production-kflux-fedora-01"
+    },
+    "tenant_pipelinerun_without_mintmaker_label_production-kflux-fedora-01": {
+        "pipelinerun_key": "tenant_pipelinerun_without_mintmaker_label",
+        "config_key": "production-kflux-fedora-01"
+    },
+
+    # kflux-lw-p01 mintmaker tests
+    "mintmaker_triggered_tenant_production-kflux-lw-p01": {
+        "pipelinerun_key": "mintmaker_triggered_tenant_pipelinerun",
+        "config_key": "production-kflux-lw-p01"
+    },
+    "mintmaker_triggered_in_mintmaker_namespace_production-kflux-lw-p01": {
+        "pipelinerun_key": "mintmaker_triggered_in_mintmaker_namespace",
+        "config_key": "production-kflux-lw-p01"
+    },
+    "tenant_pipelinerun_without_mintmaker_label_production-kflux-lw-p01": {
+        "pipelinerun_key": "tenant_pipelinerun_without_mintmaker_label",
+        "config_key": "production-kflux-lw-p01"
+    },
+
+    # kflux-osp-p01 mintmaker tests
+    "mintmaker_triggered_tenant_production-kflux-osp-p01": {
+        "pipelinerun_key": "mintmaker_triggered_tenant_pipelinerun",
+        "config_key": "production-kflux-osp-p01"
+    },
+    "mintmaker_triggered_in_mintmaker_namespace_production-kflux-osp-p01": {
+        "pipelinerun_key": "mintmaker_triggered_in_mintmaker_namespace",
+        "config_key": "production-kflux-osp-p01"
+    },
+    "tenant_pipelinerun_without_mintmaker_label_production-kflux-osp-p01": {
+        "pipelinerun_key": "tenant_pipelinerun_without_mintmaker_label",
+        "config_key": "production-kflux-osp-p01"
+    },
+
+    # kflux-prd-rh03 mintmaker tests
+    "mintmaker_triggered_tenant_production-kflux-prd-rh03": {
+        "pipelinerun_key": "mintmaker_triggered_tenant_pipelinerun",
+        "config_key": "production-kflux-prd-rh03"
+    },
+    "mintmaker_triggered_in_mintmaker_namespace_production-kflux-prd-rh03": {
+        "pipelinerun_key": "mintmaker_triggered_in_mintmaker_namespace",
+        "config_key": "production-kflux-prd-rh03"
+    },
+    "tenant_pipelinerun_without_mintmaker_label_production-kflux-prd-rh03": {
+        "pipelinerun_key": "tenant_pipelinerun_without_mintmaker_label",
+        "config_key": "production-kflux-prd-rh03"
+    },
+
+    # stone-prod-p01 mintmaker tests
+    "mintmaker_triggered_tenant_production-stone-prod-p01": {
+        "pipelinerun_key": "mintmaker_triggered_tenant_pipelinerun",
+        "config_key": "production-stone-prod-p01"
+    },
+    "mintmaker_triggered_in_mintmaker_namespace_production-stone-prod-p01": {
+        "pipelinerun_key": "mintmaker_triggered_in_mintmaker_namespace",
+        "config_key": "production-stone-prod-p01"
+    },
+    "tenant_pipelinerun_without_mintmaker_label_production-stone-prod-p01": {
+        "pipelinerun_key": "tenant_pipelinerun_without_mintmaker_label",
+        "config_key": "production-stone-prod-p01"
     },
 }
 
