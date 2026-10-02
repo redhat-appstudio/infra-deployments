@@ -1,0 +1,53 @@
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMAgent
+metadata:
+  name: vm-poc
+  namespace: appstudio-vm-poc
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/part-of: stone-stg-rh01-vm-poc
+spec:
+  image:
+    repository: docker.io/victoriametrics/vmagent
+    tag: v1.153.0
+    pullPolicy: IfNotPresent
+  serviceAccountName: vmagent-vm-poc
+  shardCount: 3
+  replicaCount: 2
+  statefulMode: true
+  statefulStorage:
+    volumeClaimTemplate:
+      spec:
+        accessModes: [ReadWriteOnce]
+        storageClassName: gp3
+        resources:
+          requests:
+            storage: 10Gi
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: "2"
+      memory: 4Gi
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchLabels:
+              shard-num: "%SHARD_NUM%"
+          topologyKey: kubernetes.io/hostname
+  selectAllByDefault: true
+  disableSelfServiceScrape: true
+  minScrapeInterval: 30s
+  maxScrapeInterval: 30s
+  scrapeInterval: 30s
+  scrapeTimeout: 10s
+  externalLabels:
+    cluster: stone-stg-rh01
+    collector: vmagent-poc
+    source_environment: staging-poc
+  externalLabelName: ""
+  remoteWrite:
+    - url: http://vminsert-vm-poc.appstudio-vm-poc.svc:8480/insert/0/prometheus/api/v1/write
