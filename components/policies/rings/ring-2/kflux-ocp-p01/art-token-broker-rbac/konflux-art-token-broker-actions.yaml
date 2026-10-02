@@ -1,0 +1,32 @@
+# Temporary ClusterRole for the ART token broker workaround (KFLUXINFRA-4662).
+#
+# Deployed from the OCP_01 policies overlay instead of components/konflux-rbac
+# because kflux-ocp-p01 is an operator-owned cluster: the konflux-rbac
+# ApplicationSet excludes it (argo-cd-apps/overlays/production-downstream/
+# exclude-operator-owned-clusters.yaml) and konflux-rbac there is owned by the
+# konflux-operator, whose cr/konflux-rbac component does not include this role.
+# The policies ApplicationSet (argo-cd-apps/overlays/rd-production via
+# k-components/deploy-to-all-production-clusters) does sync this overlay to
+# kflux-ocp-p01, so the role and its admission guardrails deploy together.
+#
+# Do not deploy to other clusters: ART is the only consumer, and the paired
+# guardrails only exist on OCP_01.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: konflux-art-token-broker-actions
+  annotations:
+    konflux-ci.dev/description: |
+      Temporary role for the ART token broker workaround. Remove after ART
+      migrates to the permanent machine-to-machine authentication and signs
+      off; tracked in KFLUXINFRA-4662
+      (https://redhat.atlassian.net/browse/KFLUXINFRA-4662).
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - serviceaccounts/token
+  resourceNames:
+  - konflux-bot-0
+  verbs:
+  - create

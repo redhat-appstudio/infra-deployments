@@ -1,0 +1,48 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: deny-art-token-broker-clusterrolebindings.konflux-ci.dev
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+    - apiGroups:
+      - rbac.authorization.k8s.io
+      apiVersions:
+      - v1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - clusterrolebindings
+      scope: Cluster
+  variables:
+  - name: usesArtTokenBrokerClusterRole
+    expression: |
+      has(object.roleRef) &&
+      object.roleRef.kind == 'ClusterRole' &&
+      has(object.roleRef.name) &&
+      object.roleRef.name == 'konflux-art-token-broker-actions'
+  - name: bindsArtTokenBrokerIdentity
+    expression: |
+      has(object.subjects) &&
+      object.subjects.exists(subject,
+        (subject.kind == 'ServiceAccount' &&
+          (!has(subject.apiGroup) || subject.apiGroup == '') &&
+          has(subject.name) && subject.name == 'art-token-broker' &&
+          has(subject.namespace) && subject.namespace == 'art-token-broker') ||
+        (subject.kind == 'User' &&
+          has(subject.name) &&
+          subject.name == 'system:serviceaccount:art-token-broker:art-token-broker') ||
+        (subject.kind == 'Group' && has(subject.name) &&
+          subject.name == 'system:serviceaccounts:art-token-broker'))
+  validations:
+  - expression: '!variables.usesArtTokenBrokerClusterRole'
+    reason: Invalid
+    message: >-
+      konflux-art-token-broker-actions must be granted only through approved
+      namespace-scoped RoleBindings.
+  - expression: '!variables.bindsArtTokenBrokerIdentity'
+    reason: Invalid
+    message: >-
+      The ART token broker identity must not be granted ClusterRoleBindings.
