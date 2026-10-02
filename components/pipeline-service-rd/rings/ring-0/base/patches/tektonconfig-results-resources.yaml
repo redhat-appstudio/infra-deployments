@@ -1,0 +1,18 @@
+- op: replace
+  path: /spec/result/options/deployments/tekton-results-api/spec/template/spec/containers/0/resources
+  value:
+    limits:
+      cpu: 100m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 512Mi
+- op: replace
+  path: /spec/result/options/deployments/tekton-results-watcher/spec/template/spec/containers/0/resources
+  value:
+    limits:
+      cpu: 250m
+      memory: 2Gi
+    requests:
+      cpu: 100m
+      memory: 64Mi
