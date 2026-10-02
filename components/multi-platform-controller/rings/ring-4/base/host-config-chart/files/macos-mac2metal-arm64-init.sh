@@ -21,6 +21,11 @@ fi
 # Create home directory if it doesn't exist
 sudo mkdir -p /Users/"$user"
 
+# Homebrew bottles for Apple Silicon require the default /opt/homebrew prefix.
+# The AMI includes Homebrew there; grant the non-privileged builder ownership.
+sudo mkdir -p /opt/homebrew # idempotent
+sudo chown -R "$user":staff /opt/homebrew
+
 # Create SSH directory
 sudo mkdir -p /Users/"$user"/.ssh
 

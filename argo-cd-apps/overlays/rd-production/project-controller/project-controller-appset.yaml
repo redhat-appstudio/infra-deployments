@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: cluster-secret-store-rh
+  name: project-controller
   labels:
     appstudio.redhat.com/deployment-clusters: "tenant"
 spec:
@@ -18,7 +18,7 @@ spec:
                   - key: appstudio.redhat.com/select-none
                     operator: DoesNotExist
               values:
-                sourceRoot: components/cluster-secret-store-rh
+                sourceRoot: components/project-controller-rd
                 ring: "empty-base"
                 clusterDir: "empty-base"
           - list:
@@ -26,9 +26,9 @@ spec:
 
   template:
     metadata:
-      name: cluster-secret-store-rh-{{nameNormalized}}
+      name: project-controller-{{nameNormalized}}
       labels:
-        app.kubernetes.io/part-of: cluster-secret-store-rh
+        app.kubernetes.io/part-of: project-controller
     spec:
       project: default
       source:
@@ -36,17 +36,15 @@ spec:
         repoURL: https://github.com/redhat-appstudio/infra-deployments.git
         targetRevision: main
       destination:
-        namespace: cluster-secret-store-rh
+        namespace: project-controller
         server: '{{server}}'
       syncPolicy:
-        automated:
-          prune: true
-          selfHeal: true
+        # automated:
+        #   prune: true
+        #   selfHeal: true
         syncOptions:
-          - CreateNamespace=true
+        - CreateNamespace=true
         retry:
-          limit: 20
+          limit: 50
           backoff:
-            duration: 10s
-            factor: 2
-            maxDuration: 3m
+            duration: 15s
