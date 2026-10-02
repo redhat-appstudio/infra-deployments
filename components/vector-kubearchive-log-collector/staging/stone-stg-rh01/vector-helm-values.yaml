@@ -106,6 +106,8 @@ env:
       secretKeyRef:
         name: kubearchive-loki
         key: PASSWORD
+  - name: VECTOR_DANGEROUSLY_ALLOW_ENV_VAR_INTERPOLATION
+    value: "true"
 # Use preferred nodeSelector instead of required to allow scheduling on other nodes if needed
 # This provides flexibility while still preferring konflux-tenants nodes
 affinity:
