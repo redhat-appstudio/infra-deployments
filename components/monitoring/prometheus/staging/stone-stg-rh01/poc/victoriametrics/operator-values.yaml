@@ -1,0 +1,39 @@
+fullnameOverride: vm-operator-stone-stg-rh01-poc
+replicaCount: 2
+global:
+  compatibility:
+    openshift:
+      adaptSecurityContext: force
+image:
+  repository: docker.io/victoriametrics/operator
+  tag: v0.74.0
+  pullPolicy: IfNotPresent
+env:
+  - name: VM_CONFIG_RELOADER_IMAGE
+    value: docker.io/victoriametrics/operator:config-reloader-v0.74.0
+crds:
+  enabled: true
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
+  plain: false
+  cleanup:
+    enabled: false
+  upgrade:
+    enabled: false
+operator:
+  disable_prometheus_converter: false
+  enable_converter_ownership: true
+  prometheus_converter_add_argocd_ignore_annotations: true
+extraArgs:
+  controller.disableReconcileFor: PrometheusRule,AlertmanagerConfig
+admissionWebhooks:
+  enabled: false
+serviceMonitor:
+  enabled: false
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi
