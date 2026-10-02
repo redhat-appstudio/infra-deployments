@@ -8,7 +8,6 @@ resources:
   - ../../base/monitoring-blackbox
   - ../../base/ca-bundle
   - ../../base/cert-manager-trusted-ca
-  - ../../base/cluster-secret-store-rh
 patchesStrategicMerge:
   - delete-applications.yaml
 namespace: argocd
@@ -33,16 +32,6 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: has
-  - path: production-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: cluster-secret-store
-  - path: cluster-secret-store-production-auto-sync-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: cluster-secret-store
   - path: production-overlay-patch.yaml
     target:
       kind: ApplicationSet
@@ -73,11 +62,6 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: monitoring-workload-custom-kube-state-metrics
-  - path: production-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: cluster-secret-store-rh
   - path: production-overlay-patch.yaml
     target:
       kind: ApplicationSet

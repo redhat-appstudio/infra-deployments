@@ -5,7 +5,6 @@ resources:
   - ../../base/all-clusters
   - ../../base/backup
   - ../../base/konflux-ci
-  - ../../base/cluster-secret-store-rh
   - ../../base/eaas
   - ../../base/monitoring-blackbox
 
@@ -39,16 +38,6 @@ patches:
     target:
       kind: ApplicationSet
       version: v1alpha1
-      name: cluster-secret-store
-  - path: cluster-secret-store-production-auto-sync-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: cluster-secret-store
-  - path: production-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
       name: konflux-ci
   - path: production-overlay-patch.yaml
     target:
@@ -75,11 +64,6 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: monitoring-workload-custom-kube-state-metrics
-  - path: production-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: cluster-secret-store-rh
   - path: production-overlay-patch.yaml
     target:
       kind: ApplicationSet
