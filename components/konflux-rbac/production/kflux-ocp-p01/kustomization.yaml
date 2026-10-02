@@ -2,3 +2,5 @@ kind: Kustomization
 apiVersion: kustomize.config.k8s.io/v1beta1
 resources:
   - ../base
+  # ART-specific temporary token broker role; do not deploy to other clusters.
+  - konflux-art-token-broker-actions.yaml
