@@ -1,0 +1,18 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: application-cleaner
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: application-cleaner
+subjects:
+  - kind: ServiceAccount
+    name: application-cleaner
+    namespace: application-cleaner
+roleRef:
+  kind: ClusterRole
+  name: konflux-cleaner-bot-actions
+  apiGroup: rbac.authorization.k8s.io
