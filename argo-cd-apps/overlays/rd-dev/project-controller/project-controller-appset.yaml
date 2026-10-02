@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: project-controller-rd
+  name: project-controller
 spec:
   generators:
     - merge:
@@ -13,7 +13,7 @@ spec:
                 matchLabels:
                   appstudio.redhat.com/member-cluster: "true"
               values:
-                sourceRoot: components/project-controller-rd
+                sourceRoot: components/project-controller
                 ring: "ring-0"
                 clusterDir: base
           - list:
@@ -22,6 +22,8 @@ spec:
   template:
     metadata:
       name: project-controller-{{nameNormalized}}
+      labels:
+        app.kubernetes.io/part-of: project-controller
     spec:
       project: default
       source:
