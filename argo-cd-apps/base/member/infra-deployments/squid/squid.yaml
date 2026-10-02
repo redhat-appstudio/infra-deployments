@@ -7,6 +7,14 @@ spec:
     - merge:
         mergeKeys:
           - nameNormalized
+        selector:
+          matchExpressions:
+            - key: nameNormalized
+              operator: NotIn
+              values:
+                - lightwell-dev
+                - stone-stage-p01
+                - stone-stg-rh01
         generators:
           - clusters:
               selector:
