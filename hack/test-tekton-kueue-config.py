@@ -1770,6 +1770,18 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
             }
         }
     },
+    "mintmaker_triggered_tenant_production-kflux-ocp-p01": {
+        "pipelinerun_key": "mintmaker_triggered_tenant_pipelinerun",
+        "config_key": "production-kflux-ocp-p01"
+    },
+    "mintmaker_triggered_in_mintmaker_namespace_production-kflux-ocp-p01": {
+        "pipelinerun_key": "mintmaker_triggered_in_mintmaker_namespace",
+        "config_key": "production-kflux-ocp-p01"
+    },
+    "tenant_pipelinerun_without_mintmaker_label_production-kflux-ocp-p01": {
+        "pipelinerun_key": "tenant_pipelinerun_without_mintmaker_label",
+        "config_key": "production-kflux-ocp-p01"
+    },
 
     "multiplatform_new_string_param_production": {
         "pipelinerun_key": "multiplatform_new_string_param",
@@ -1938,6 +1950,18 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
                 "kueue.x-k8s.io/priority-class": "konflux-pre-merge-test",
             }
         }
+    },
+    "mintmaker_triggered_tenant_production-kflux-rhel-p01": {
+        "pipelinerun_key": "mintmaker_triggered_tenant_pipelinerun",
+        "config_key": "production-kflux-rhel-p01"
+    },
+    "mintmaker_triggered_in_mintmaker_namespace_production-kflux-rhel-p01": {
+        "pipelinerun_key": "mintmaker_triggered_in_mintmaker_namespace",
+        "config_key": "production-kflux-rhel-p01"
+    },
+    "tenant_pipelinerun_without_mintmaker_label_production-kflux-rhel-p01": {
+        "pipelinerun_key": "tenant_pipelinerun_without_mintmaker_label",
+        "config_key": "production-kflux-rhel-p01"
     },
 }
 
