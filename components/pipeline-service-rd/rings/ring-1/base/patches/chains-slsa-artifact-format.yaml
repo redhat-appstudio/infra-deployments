@@ -1,0 +1,9 @@
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  chain:
+    builddefinition.buildtype: "https://tekton.dev/chains/v2/slsa-tekton"
+    artifacts.pipelinerun.format: "slsa/v2alpha3"
+
