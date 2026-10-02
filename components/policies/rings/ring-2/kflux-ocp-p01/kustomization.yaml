@@ -2,9 +2,100 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
 - ../base
+- art-token-broker-rbac
 - kueue
 
 patches:
+  - target:
+      group: admissionregistration.k8s.io
+      version: v1
+      kind: ValidatingAdmissionPolicyBinding
+      name: deny-serviceaccount-token-secrets.konflux-ci.dev
+    patch: |-
+      - op: replace
+        path: /spec/matchResources/namespaceSelector
+        value:
+          matchExpressions:
+          - key: konflux-ci.dev/type
+            operator: In
+            values:
+            - tenant
+            - managed-tenant
+  - target:
+      group: admissionregistration.k8s.io
+      version: v1
+      kind: ValidatingAdmissionPolicyBinding
+      name: limit-pod-serviceaccount-token-expiration.konflux-ci.dev
+    patch: |-
+      - op: replace
+        path: /spec/matchResources/namespaceSelector
+        value:
+          matchExpressions:
+          - key: konflux-ci.dev/type
+            operator: In
+            values:
+            - tenant
+            - managed-tenant
+  - target:
+      group: admissionregistration.k8s.io
+      version: v1
+      kind: ValidatingAdmissionPolicyBinding
+      name: limit-serviceaccount-tokenrequest-expiration.konflux-ci.dev
+    patch: |-
+      - op: replace
+        path: /spec/matchResources/namespaceSelector
+        value:
+          matchExpressions:
+          - key: konflux-ci.dev/type
+            operator: In
+            values:
+            - tenant
+            - managed-tenant
+  - target:
+      group: admissionregistration.k8s.io
+      version: v1
+      kind: ValidatingAdmissionPolicyBinding
+      name: restrict-bindings-serviceaccounts-create.konflux-ci.dev
+    patch: |-
+      - op: replace
+        path: /spec/matchResources/namespaceSelector
+        value:
+          matchExpressions:
+          - key: konflux-ci.dev/type
+            operator: In
+            values:
+            - tenant
+            - managed-tenant
+  - target:
+      group: admissionregistration.k8s.io
+      version: v1
+      kind: ValidatingAdmissionPolicyBinding
+      name: restrict-bindings-serviceaccounts-update.konflux-ci.dev
+    patch: |-
+      - op: replace
+        path: /spec/matchResources/namespaceSelector
+        value:
+          matchExpressions:
+          - key: konflux-ci.dev/type
+            operator: In
+            values:
+            - tenant
+            - managed-tenant
+  - target:
+      group: kyverno.io
+      version: v1
+      kind: ClusterPolicy
+      name: restrict-binding-system-groups
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/match/any/0/resources/namespaceSelector
+        value:
+          matchExpressions:
+          - key: konflux-ci.dev/type
+            operator: In
+            values:
+            - tenant
+            - managed-tenant
   - patch: |-
       $patch: delete
       apiVersion: v1
