@@ -1,13 +1,13 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: vmagent-vm-poc
+  name: vmagent-poc
   namespace: appstudio-vm-poc
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: vmagent-stone-stg-rh01-poc
+  name: vmagent-poc-discovery
 rules:
   - apiGroups: [""]
     resources: [nodes, pods, services, endpoints, namespaces]
@@ -27,12 +27,26 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: vmagent-stone-stg-rh01-poc
+  name: vmagent-poc-discovery
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: vmagent-stone-stg-rh01-poc
+  name: vmagent-poc-discovery
 subjects:
   - kind: ServiceAccount
-    name: vmagent-vm-poc
+    name: vmagent-poc
     namespace: appstudio-vm-poc
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: vm-poc-maintainers
+  namespace: appstudio-vm-poc
+subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: konflux-o11y
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: component-maintainer
