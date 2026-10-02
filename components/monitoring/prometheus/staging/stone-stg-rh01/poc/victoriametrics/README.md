@@ -56,11 +56,16 @@ CRD deletion.
    inventory and confirm that another operator does not manage it. If the
    baseline is unavailable or ownership is ambiguous, resolve that before
    deleting anything.
-3. Delete the reviewed converted objects individually by kind, namespace, and
-   name. Do not use a cluster-wide `--all` deletion. Re-list the four kinds,
+3. If the inventory confirms that this is the only VM converter and the
+   candidate objects belong to this PoC, delete the reviewed set in one
+   batch. Otherwise exclude objects another operator or VM stack uses. Use
+   explicit kind, namespace, and name pairs from the reviewed inventory;
+   do not use a cluster-wide `--all` deletion. Re-list the four kinds,
    check that the copies stay gone, and confirm no converted copy remains for
-   the PoC. Disabling conversion first prevents the operator from recreating
-   them while this check runs.
+   the PoC. Disabling conversion first prevents this operator from recreating
+   them while this check runs. Do not rely on another operator to recreate a
+   deleted copy promptly: the v0.74.0 converter watches source monitors, so
+   deleting a converted object alone does not trigger its reconciliation.
 4. Remove `poc/victoriametrics` from the parent `stone-stg-rh01/kustomization.yaml`
    and sync with pruning. Verify the PoC's `VMAgent`, `VMCluster`, `VMAlert`,
    `VMRule`, operator Deployment and RBAC, namespace, and generated pods are
