@@ -80,3 +80,10 @@ Normal Argo CD sync will not perform step 3 for this package because the
 converted objects carry `Prune=false`. The source-owner reference handles
 source deletion, while the explicit inventory and deletion handles PoC
 retirement.
+
+A later, freshly deployed VM operator will convert existing source monitors
+again in each cluster if conversion is enabled and it watches their
+namespaces. Check target parity after that rollout. This startup conversion
+is different from relying on an already running operator to notice deletion
+of a converted object. The PoC's native `VMRule` and `VMAlert` are not
+recreated by monitor conversion.
