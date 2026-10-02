@@ -53,3 +53,224 @@ spec:
     - url: ".*"
       revision: ".*"
       pathInRepo: "pipelines/managed/push-rpms-to-pulp/push-rpms-to-pulp.yaml"
+  retryablePipelines:
+    - url: https://github.com/konflux-ci/release-service-catalog.git
+      revision: .*
+      pathInRepo: pipelines/managed/fbc-release/fbc-release.yaml
+      retryPolicy:
+        maxRetries: 1
+        mitigations:
+          oomKill:
+            multiplier: "2"
+            maxComputeResources:
+              limits:
+                memory: 8Gi
+              requests:
+                memory: 8Gi
+          timeout:
+            pipeline:
+              increment: 30m
+              maxTimeout: 12h
+            task:
+              increment: 15m
+              maxTimeout: 7h
+    - url: https://github.com/konflux-ci/release-service-catalog.git
+      revision: .*
+      pathInRepo: pipelines/managed/push-tekton-task-bundles-to-external-registry/push-tekton-task-bundles-to-external-registry.yaml
+      retryPolicy:
+        maxRetries: 1
+        disableOn:
+          tags:
+            - '.*\{\{\s*incrementer\s*\}\}.*'
+            - '.*\{\{\s*release_timestamp\s*\}\}.*'
+            - '.*\{\{\s*component-incrementer\s*\}\}.*'
+        mitigations:
+          oomKill:
+            multiplier: "2"
+            maxComputeResources:
+              limits:
+                memory: 6Gi
+              requests:
+                memory: 6Gi
+          timeout:
+            pipeline:
+              increment: 30m
+              maxTimeout: 6h
+            task:
+              increment: 15m
+              maxTimeout: 5h
+    - url: https://github.com/konflux-ci/release-service-catalog.git
+      revision: .*
+      pathInRepo: pipelines/managed/push-to-addons-registry/push-to-addons-registry.yaml
+      retryPolicy:
+        maxRetries: 1
+        disableOn:
+          tags:
+            - '.*\{\{\s*incrementer\s*\}\}.*'
+            - '.*\{\{\s*release_timestamp\s*\}\}.*'
+            - '.*\{\{\s*component-incrementer\s*\}\}.*'
+        mitigations:
+          oomKill:
+            multiplier: "2"
+            maxComputeResources:
+              limits:
+                memory: 4Gi
+              requests:
+                memory: 4Gi
+          timeout:
+            pipeline:
+              increment: 30m
+              maxTimeout: 6h
+            task:
+              increment: 15m
+              maxTimeout: 5h
+    - url: https://github.com/konflux-ci/release-service-catalog.git
+      revision: .*
+      pathInRepo: pipelines/managed/push-to-external-registry/push-to-external-registry.yaml
+      retryPolicy:
+        maxRetries: 1
+        disableOn:
+          tags:
+            - '.*\{\{\s*incrementer\s*\}\}.*'
+            - '.*\{\{\s*release_timestamp\s*\}\}.*'
+            - '.*\{\{\s*component-incrementer\s*\}\}.*'
+        mitigations:
+          oomKill:
+            multiplier: "2"
+            maxComputeResources:
+              limits:
+                memory: 6Gi
+              requests:
+                memory: 6Gi
+          timeout:
+            pipeline:
+              increment: 30m
+              maxTimeout: 7h
+            task:
+              increment: 15m
+              maxTimeout: 7h
+    - url: https://github.com/konflux-ci/release-service-catalog.git
+      revision: .*
+      pathInRepo: pipelines/managed/rh-advisories/rh-advisories.yaml
+      retryPolicy:
+        maxRetries: 1
+        disableOn:
+          tags:
+            - '.*\{\{\s*incrementer\s*\}\}.*'
+            - '.*\{\{\s*release_timestamp\s*\}\}.*'
+            - '.*\{\{\s*component-incrementer\s*\}\}.*'
+        mitigations:
+          oomKill:
+            multiplier: "2"
+            maxComputeResources:
+              limits:
+                memory: 8Gi
+              requests:
+                memory: 8Gi
+          timeout:
+            pipeline:
+              increment: 30m
+              maxTimeout: 12h
+            task:
+              increment: 15m
+              maxTimeout: 7h
+    - url: https://github.com/konflux-ci/release-service-catalog.git
+      revision: .*
+      pathInRepo: pipelines/managed/rh-push-helm-chart-to-registry-redhat-io/rh-push-helm-chart-to-registry-redhat-io.yaml
+      retryPolicy:
+        maxRetries: 1
+        disableOn:
+          tags:
+            - '.*\{\{\s*incrementer\s*\}\}.*'
+            - '.*\{\{\s*release_timestamp\s*\}\}.*'
+            - '.*\{\{\s*component-incrementer\s*\}\}.*'
+        mitigations:
+          oomKill:
+            multiplier: "2"
+            maxComputeResources:
+              limits:
+                memory: 8Gi
+              requests:
+                memory: 8Gi
+          timeout:
+            pipeline:
+              increment: 30m
+              maxTimeout: 7h
+            task:
+              increment: 15m
+              maxTimeout: 7h
+    - url: https://github.com/konflux-ci/release-service-catalog.git
+      revision: .*
+      pathInRepo: pipelines/managed/rh-push-to-external-registry/rh-push-to-external-registry.yaml
+      retryPolicy:
+        maxRetries: 1
+        disableOn:
+          tags:
+            - '.*\{\{\s*incrementer\s*\}\}.*'
+            - '.*\{\{\s*release_timestamp\s*\}\}.*'
+            - '.*\{\{\s*component-incrementer\s*\}\}.*'
+        mitigations:
+          oomKill:
+            multiplier: "2"
+            maxComputeResources:
+              limits:
+                memory: 8Gi
+              requests:
+                memory: 8Gi
+          timeout:
+            pipeline:
+              increment: 30m
+              maxTimeout: 6h
+            task:
+              increment: 15m
+              maxTimeout: 5h
+    - url: https://github.com/konflux-ci/release-service-catalog.git
+      revision: .*
+      pathInRepo: pipelines/managed/rh-push-to-registry-redhat-io/rh-push-to-registry-redhat-io.yaml
+      retryPolicy:
+        maxRetries: 1
+        disableOn:
+          tags:
+            - '.*\{\{\s*incrementer\s*\}\}.*'
+            - '.*\{\{\s*release_timestamp\s*\}\}.*'
+            - '.*\{\{\s*component-incrementer\s*\}\}.*'
+        mitigations:
+          oomKill:
+            multiplier: "2"
+            maxComputeResources:
+              limits:
+                memory: 8Gi
+              requests:
+                memory: 8Gi
+          timeout:
+            pipeline:
+              increment: 30m
+              maxTimeout: 10h
+            task:
+              increment: 15m
+              maxTimeout: 7h
+    - url: https://github.com/konflux-ci/release-service-catalog.git
+      revision: .*
+      pathInRepo: pipelines/managed/rhtap-service-push/rhtap-service-push.yaml
+      retryPolicy:
+        maxRetries: 1
+        disableOn:
+          tags:
+            - '.*\{\{\s*incrementer\s*\}\}.*'
+            - '.*\{\{\s*release_timestamp\s*\}\}.*'
+            - '.*\{\{\s*component-incrementer\s*\}\}.*'
+        mitigations:
+          oomKill:
+            multiplier: "2"
+            maxComputeResources:
+              limits:
+                memory: 8Gi
+              requests:
+                memory: 8Gi
+          timeout:
+            pipeline:
+              increment: 30m
+              maxTimeout: 6h
+            task:
+              increment: 15m
+              maxTimeout: 5h
