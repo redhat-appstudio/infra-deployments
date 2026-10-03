@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# Operator variant: inherits the full ring-0 base but omits
+# SecurityContextConstraints/appstudio-pipelines-scc because the operator's
+# build-service component owns that SCC.  Deploying it here would conflict
+# with build-service on rd-dev and development-operator clusters.
+resources:
+  - ../base
+
+patches:
+  - target:
+      kind: SecurityContextConstraints
+      name: appstudio-pipelines-scc
+    patch: |-
+      $patch: delete
+      apiVersion: security.openshift.io/v1
+      kind: SecurityContextConstraints
+      metadata:
+        name: appstudio-pipelines-scc
