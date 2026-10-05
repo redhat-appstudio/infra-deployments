@@ -38,8 +38,7 @@ spec:
             matchLabels:
               shard-num: "%SHARD_NUM%"
           topologyKey: kubernetes.io/hostname
-  # The converter retains OpenShift Prometheus file paths in copied monitors.
-  # The sync CronJob mirrors the CMO certificate and kubelet CA into this namespace.
+  # UWM monitors may use the OpenShift service CA at this Prometheus path.
   volumes:
     - name: platform-service-ca
       configMap:
@@ -47,32 +46,57 @@ spec:
         items:
           - key: service-ca.crt
             path: service-ca.crt
-    - name: kubelet-serving-ca
-      configMap:
-        name: vm-poc-kubelet-serving-ca-bundle
-        items:
-          - key: ca-bundle.crt
-            path: ca-bundle.crt
-    - name: metrics-client-certs
-      secret:
-        secretName: vm-poc-metrics-client-certs
-        items:
-          - key: tls.crt
-            path: tls.crt
-          - key: tls.key
-            path: tls.key
   volumeMounts:
     - name: platform-service-ca
       mountPath: /etc/prometheus/configmaps/serving-certs-ca-bundle
       readOnly: true
-    - name: kubelet-serving-ca
-      mountPath: /etc/prometheus/configmaps/kubelet-serving-ca-bundle
-      readOnly: true
-    - name: metrics-client-certs
-      mountPath: /etc/prometheus/secrets/metrics-client-certs
-      readOnly: true
-  # Include converted Prometheus monitors and the native Tekton scrapes.
-  selectAllByDefault: true
+  # Match the UWM Prometheus monitor selectors. Platform collection is separate.
+  selectAllByDefault: false
+  serviceScrapeSelector:
+    matchExpressions:
+      - key: openshift.io/user-monitoring
+        operator: NotIn
+        values: ["false"]
+  serviceScrapeNamespaceSelector:
+    matchExpressions:
+      - key: openshift.io/cluster-monitoring
+        operator: NotIn
+        values: ["true"]
+      - key: openshift.io/user-monitoring
+        operator: NotIn
+        values: ["false"]
+  podScrapeSelector:
+    matchExpressions:
+      - key: openshift.io/user-monitoring
+        operator: NotIn
+        values: ["false"]
+  podScrapeNamespaceSelector:
+    matchExpressions:
+      - key: openshift.io/cluster-monitoring
+        operator: NotIn
+        values: ["true"]
+      - key: openshift.io/user-monitoring
+        operator: NotIn
+        values: ["false"]
+  probeSelector:
+    matchExpressions:
+      - key: openshift.io/user-monitoring
+        operator: NotIn
+        values: ["false"]
+  probeNamespaceSelector:
+    matchExpressions:
+      - key: openshift.io/cluster-monitoring
+        operator: NotIn
+        values: ["true"]
+      - key: openshift.io/user-monitoring
+        operator: NotIn
+        values: ["false"]
+  staticScrapeSelector:
+    matchLabels:
+      app.kubernetes.io/part-of: stone-stg-rh01-vm-poc
+  staticScrapeNamespaceSelector:
+    matchLabels:
+      app.kubernetes.io/part-of: stone-stg-rh01-vm-poc
   # Keep longer source intervals, including kaexporter's 300s scrape.
   minScrapeInterval: 30s
   scrapeInterval: 30s

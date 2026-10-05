@@ -40,6 +40,20 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
+  name: vmagent-poc-platform-prometheus-api
+  namespace: openshift-monitoring
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: cluster-monitoring-metrics-api
+subjects:
+  - kind: ServiceAccount
+    name: vmagent-poc
+    namespace: appstudio-vm-poc
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
   name: vm-poc-maintainers
   namespace: appstudio-vm-poc
 subjects:

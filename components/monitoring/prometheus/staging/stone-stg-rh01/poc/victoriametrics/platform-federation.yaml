@@ -1,0 +1,31 @@
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMStaticScrape
+metadata:
+  name: vm-poc-platform-prometheus
+  namespace: appstudio-vm-poc
+  labels:
+    app.kubernetes.io/part-of: stone-stg-rh01-vm-poc
+spec:
+  jobName: platform-prometheus-federate
+  targetEndpoints:
+    - targets: [prometheus-k8s.openshift-monitoring.svc:9091]
+      scheme: https
+      path: /federate
+      params:
+        'match[]':
+          - '{__name__=~".+",job!~"tekton-pipelines-controller|pipeline-metrics-exporter"}'
+      interval: 2m
+      scrapeTimeout: 90s
+      max_scrape_size: 2GiB
+      honorLabels: true
+      honorTimestamps: true
+      bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+      tlsConfig:
+        caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
+        serverName: prometheus-k8s.openshift-monitoring.svc
+      metricRelabelConfigs:
+        - action: labeldrop
+          regex: prometheus|prometheus_replica
+      vm_scrape_params:
+        stream_parse: true
+        no_stale_markers: true
