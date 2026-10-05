@@ -2,8 +2,9 @@
 
 This package runs in `appstudio-vm-poc`. Its operator also converts existing
 `ServiceMonitor`, `PodMonitor`, `Probe`, and `ScrapeConfig` objects into VM scrape
-objects **in the source namespaces**. It does not convert `PrometheusRule` or
-`AlertmanagerConfig`; the `VMRule` in this package is a native PoC resource.
+objects **in the source namespaces**. Operator environment flags explicitly
+disable conversion of `PrometheusRule` and `AlertmanagerConfig`; the `VMRule`
+in this package is a native PoC resource.
 
 The native Tekton `VMServiceScrape` objects scrape the pipelines controller
 and pipeline metrics exporter directly. The exporter also has a converted
@@ -40,7 +41,8 @@ kubelet CA from `openshift-monitoring` every minute, with read access limited to
 those two source objects. It places no credential data in Git. The VMAgent pods
 may wait for the first successful sync before their volumes become available.
 Check the CronJob and its generated Secret and ConfigMap before diagnosing
-missing platform targets. NetworkPolicies permit the PoC pods to reach target
+missing platform targets. Its pod has egress only to the staging Kubernetes API
+and OpenShift DNS. NetworkPolicies permit the PoC pods to reach target
 namespaces whose existing policies allow only the current Prometheus pods.
 
 After deployment, compare the union of `/targets` from **all** VMAgent shards
@@ -50,8 +52,10 @@ investigate every missing or down target. The source snapshot on 2026-10-05 had
 524 platform targets, 95 UWM targets (4 already down), and five healthy Tekton
 application targets; the sixth Tekton target was its own Prometheus. Also
 check that the mirrored certificate and CA update on source rotation, remote
-write errors remain stable, and VM queries contain the expected series. A
-render or dry-run cannot establish live target parity.
+write errors remain stable, and VM queries contain the expected series.
+Confirm the VMAlert status is operational and `vm_poc:up:sum` is queryable
+through vmselect. A render or dry-run cannot establish live target parity or
+recording-rule operation.
 
 ## Capacity gate before staging sync
 
@@ -111,14 +115,22 @@ remains instead of deleting unrelated VM objects.
 
 ## Before the first PoC sync
 
+Compare the API and DNS destinations in `networkpolicy.yaml` with the staging
+cluster's `default/kubernetes` Service and Endpoints and
+`openshift-dns/dns-default` Service. Update the policy if an API endpoint or
+service IP changed; the credential sync must still reach the API after the
+egress policy takes effect.
+
 Save an inventory of existing VM scrape objects so teardown can distinguish
-this PoC's conversions from objects managed by other operators:
+this PoC's conversions from objects managed by other operators. Also save the
+rule and AlertmanagerConfig inventory to confirm conversion stays disabled:
 
 ```sh
 oc get vmservicescrapes,vmpodscrapes,vmprobes,vmscrapeconfigs -A -o json > vm-scrapes-before-poc.json
+oc get vmrules,vmalertmanagerconfigs -A -o json > vm-rules-before-poc.json
 ```
 
-Keep this snapshot outside the Git repository. Record any other VM operators
+Keep these snapshots outside the Git repository. Record any other VM operators
 running in the cluster.
 
 ## After the first PoC sync
@@ -131,8 +143,10 @@ compare annotation only keeps generated objects from making the Application
 appear out of sync; it does not prevent deletion.
 
 Inspect a live converted object and confirm both annotations and its source
-owner reference are present. Check the Argo CD Application resource tree and
-sync result for unexpected prune candidates. If the annotations are absent,
+owner reference are present. Compare all `VMRule` and `VMAlertmanagerConfig`
+objects outside `appstudio-vm-poc` with the pre-sync inventory; this PoC must
+not create any there. Check the Argo CD Application resource tree and sync
+result for unexpected prune candidates. If the annotations are absent,
 resolve that before relying on normal syncs. `Prune=false` does not prevent
 Kubernetes owner garbage collection, direct deletion, namespace deletion, or
 CRD deletion.
