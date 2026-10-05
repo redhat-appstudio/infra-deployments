@@ -16,13 +16,15 @@ metadata:
       where the push has not yet been folded into step-build.
       Covers buildah-oci-ta, buildah-oci-ta-min, and buildah-remote-oci-ta
       task variants.
+      step-build and step-push are patched by two separate rules on purpose —
+      see the comment on the second rule.
 spec:
   background: false
   failurePolicy: Ignore
   rules:
     - name: inject-buildah-seccomp-config
       match:
-        any:
+        any: &buildah-task-match
           - resources:
               kinds:
                 - Pod
@@ -72,9 +74,27 @@ spec:
                     add:
                       - SETFCAP
                       - SYS_CHROOT
-              # step-push only exists on buildah task 0.10.x and earlier. The
-              # (name) conditional anchor is a no-op from 0.11.0 onward, where the
-              # push was folded into step-build.
+    # step-push only exists on buildah task 0.10.x and earlier; from 0.11.0 the
+    # push was folded into step-build, so this rule is a no-op there.
+    #
+    # It must stay a separate rule. Kyverno cannot handle two conditional-anchor
+    # elements in the same patchStrategicMerge list: deleteAnchorsInList()
+    # iterates a snapshot of the list but deletes by index from the live node,
+    # so the second deletion uses a stale index. With both anchors in one list
+    # this silently dropped the step-build patch, emptied spec.containers (the
+    # API server then rejected every build pod with "spec.containers: Required
+    # value"), and panicked the admission webhook outright on a matched pod that
+    # had neither container. One anchor per list keeps the index valid.
+    #
+    # The /dev/fuse annotation stays on the first rule only — it is pod-level
+    # and would otherwise be applied by a rule whose container patch is empty.
+    - name: inject-buildah-seccomp-config-push
+      match:
+        any: *buildah-task-match
+      mutate:
+        patchStrategicMerge:
+          spec:
+            containers:
               - (name): "step-push"
                 securityContext:
                   seccompProfile:
