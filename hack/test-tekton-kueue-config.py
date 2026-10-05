@@ -1155,6 +1155,31 @@ PIPELINERUN_DEFINITIONS: Dict[str, PipelineRunTestData] = {
         }
     },
 
+    "kanary_pipelinerun": {
+        "name": "Kanary health-check pipeline in appstudio-kanary-exporter namespace",
+        "pipelinerun": {
+            "apiVersion": "tekton.dev/v1",
+            "kind": "PipelineRun",
+            "metadata": {
+                "name": "kanary-simple-stone-stg-rh01-single-arch",
+                "namespace": "appstudio-kanary-exporter"
+            },
+            "spec": {
+                "pipelineRef": {"name": "kanary-run-simple"},
+                "workspaces": [{"name": "artifacts", "emptyDir": {}}]
+            }
+        },
+        "expected": {
+            "annotations": {
+                "kueue.konflux-ci.dev/requests-konflux-ci-dev-token": "1",
+            },
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-kanary"
+            }
+        }
+    },
+
     "mintmaker_triggered_tenant_pipelinerun": {
         "name": "Mintmaker-triggered pipeline in tenant namespace",
         "pipelinerun": {
@@ -1407,6 +1432,10 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
         "pipelinerun_key": "nudge_pipelinerun",
         "config_key": "development"
     },
+    "kanary_dev": {
+        "pipelinerun_key": "kanary_pipelinerun",
+        "config_key": "development"
+    },
     "mintmaker_triggered_tenant_dev": {
         "pipelinerun_key": "mintmaker_triggered_tenant_pipelinerun",
         "config_key": "development"
@@ -1497,6 +1526,10 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
     },
     "nudging_staging": {
         "pipelinerun_key": "nudge_pipelinerun",
+        "config_key": "staging"
+    },
+    "kanary_staging": {
+        "pipelinerun_key": "kanary_pipelinerun",
         "config_key": "staging"
     },
     "mintmaker_triggered_tenant_staging": {

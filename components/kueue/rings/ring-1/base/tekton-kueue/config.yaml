@@ -145,6 +145,9 @@ cel:
 
     # Set the pipeline priority
     - |
+        plrNamespace == 'appstudio-kanary-exporter' ?
+        priority('konflux-kanary') :
+
         has(pipelineRun.metadata.labels) &&
         (('build.appstudio.redhat.com/type' in pipelineRun.metadata.labels &&
           pipelineRun.metadata.labels['build.appstudio.redhat.com/type'] == 'nudge') ||
