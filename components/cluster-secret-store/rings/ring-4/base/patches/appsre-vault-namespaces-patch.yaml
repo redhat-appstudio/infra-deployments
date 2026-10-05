@@ -1,0 +1,14 @@
+---
+apiVersion: external-secrets.io/v1
+kind: ClusterSecretStore
+metadata:
+  name: appsre-vault
+spec:
+  conditions:
+    - namespaces:
+        - tekton-logging
+        - tekton-results
+        - openshift-pipelines
+        - openshift-adp
+        - product-kubearchive
+        - konflux-kite
