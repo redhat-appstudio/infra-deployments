@@ -1,0 +1,15 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "0"
+  name: custom-operators
+  namespace: openshift-marketplace
+spec:
+  displayName: custom-operators
+  image: quay.io/openshift-pipeline/pipelines-index-4.19@sha256:8c6152d2924f608960a4cec0faca33a1807bce19085e86d1daeeaa698fce146d
+  sourceType: grpc
+  updateStrategy:
+    registryPoll:
+      interval: 30m
