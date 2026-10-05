@@ -1,7 +1,7 @@
 # Test: `mutate-pod-remote-platform`
 
 Tests that a buildah-remote-oci-ta Pod with a remote platform (not in
-local-platforms) gets its build step resources adjusted to cpu=1, memory=2Gi.
+local-platforms) gets its build step resources adjusted to cpu=1, memory=4Gi.
 
 
 ## Steps
@@ -11,7 +11,7 @@ local-platforms) gets its build step resources adjusted to cpu=1, memory=2Gi.
 | 1 | [given-test-namespace-is-tenant-labeled](#step-given-test-namespace-is-tenant-labeled) | 0 | 1 | 0 | 0 | 0 |
 | 2 | [given-multi-platform-controller-namespace-exists](#step-given-multi-platform-controller-namespace-exists) | 0 | 1 | 0 | 0 | 0 |
 | 3 | [given-host-config-configmap-exists](#step-given-host-config-configmap-exists) | 0 | 1 | 0 | 0 | 0 |
-| 4 | [given-kyverno-has-permission-on-resources](#step-given-kyverno-has-permission-on-resources) | 0 | 1 | 0 | 0 | 0 |
+| 4 | [given-kyverno-has-permission-on-resources](#step-given-kyverno-has-permission-on-resources) | 0 | 2 | 0 | 0 | 0 |
 | 5 | [given-cluster-policy-is-ready](#step-given-cluster-policy-is-ready) | 0 | 2 | 0 | 0 | 0 |
 | 6 | [when-pod-with-remote-platform-is-created](#step-when-pod-with-remote-platform-is-created) | 0 | 1 | 0 | 0 | 0 |
 | 7 | [then-build-step-resources-are-adjusted](#step-then-build-step-resources-are-adjusted) | 0 | 1 | 0 | 0 | 0 |
@@ -55,6 +55,7 @@ local-platforms) gets its build step resources adjusted to cpu=1, memory=2Gi.
 | # | Operation | Bindings | Outputs | Description |
 |:-:|---|:-:|:-:|---|
 | 1 | `apply` | 0 | 0 | *No description* |
+| 2 | `apply` | 0 | 0 | *No description* |
 
 ### Step: `given-cluster-policy-is-ready`
 
@@ -102,7 +103,7 @@ local-platforms) does NOT get its build step resources adjusted.
 | 1 | [given-test-namespace-is-tenant-labeled](#step-given-test-namespace-is-tenant-labeled) | 0 | 1 | 0 | 0 | 0 |
 | 2 | [given-multi-platform-controller-namespace-exists](#step-given-multi-platform-controller-namespace-exists) | 0 | 1 | 0 | 0 | 0 |
 | 3 | [given-host-config-configmap-exists](#step-given-host-config-configmap-exists) | 0 | 1 | 0 | 0 | 0 |
-| 4 | [given-kyverno-has-permission-on-resources](#step-given-kyverno-has-permission-on-resources) | 0 | 1 | 0 | 0 | 0 |
+| 4 | [given-kyverno-has-permission-on-resources](#step-given-kyverno-has-permission-on-resources) | 0 | 2 | 0 | 0 | 0 |
 | 5 | [given-cluster-policy-is-ready](#step-given-cluster-policy-is-ready) | 0 | 2 | 0 | 0 | 0 |
 | 6 | [when-pod-with-local-platform-is-created](#step-when-pod-with-local-platform-is-created) | 0 | 1 | 0 | 0 | 0 |
 | 7 | [then-build-step-resources-are-not-adjusted](#step-then-build-step-resources-are-not-adjusted) | 0 | 1 | 0 | 0 | 0 |
@@ -146,6 +147,7 @@ local-platforms) does NOT get its build step resources adjusted.
 | # | Operation | Bindings | Outputs | Description |
 |:-:|---|:-:|:-:|---|
 | 1 | `apply` | 0 | 0 | *No description* |
+| 2 | `apply` | 0 | 0 | *No description* |
 
 ### Step: `given-cluster-policy-is-ready`
 
@@ -193,7 +195,7 @@ variable does NOT get its build step resources adjusted.
 | 1 | [given-test-namespace-is-tenant-labeled](#step-given-test-namespace-is-tenant-labeled) | 0 | 1 | 0 | 0 | 0 |
 | 2 | [given-multi-platform-controller-namespace-exists](#step-given-multi-platform-controller-namespace-exists) | 0 | 1 | 0 | 0 | 0 |
 | 3 | [given-host-config-configmap-exists](#step-given-host-config-configmap-exists) | 0 | 1 | 0 | 0 | 0 |
-| 4 | [given-kyverno-has-permission-on-resources](#step-given-kyverno-has-permission-on-resources) | 0 | 1 | 0 | 0 | 0 |
+| 4 | [given-kyverno-has-permission-on-resources](#step-given-kyverno-has-permission-on-resources) | 0 | 2 | 0 | 0 | 0 |
 | 5 | [given-cluster-policy-is-ready](#step-given-cluster-policy-is-ready) | 0 | 2 | 0 | 0 | 0 |
 | 6 | [when-pod-without-platform-env-is-created](#step-when-pod-without-platform-env-is-created) | 0 | 1 | 0 | 0 | 0 |
 | 7 | [then-build-step-resources-are-not-adjusted](#step-then-build-step-resources-are-not-adjusted) | 0 | 1 | 0 | 0 | 0 |
@@ -237,6 +239,7 @@ variable does NOT get its build step resources adjusted.
 | # | Operation | Bindings | Outputs | Description |
 |:-:|---|:-:|:-:|---|
 | 1 | `apply` | 0 | 0 | *No description* |
+| 2 | `apply` | 0 | 0 | *No description* |
 
 ### Step: `given-cluster-policy-is-ready`
 
@@ -285,7 +288,7 @@ is remote.
 | 1 | [given-test-namespace-is-tenant-labeled](#step-given-test-namespace-is-tenant-labeled) | 0 | 1 | 0 | 0 | 0 |
 | 2 | [given-multi-platform-controller-namespace-exists](#step-given-multi-platform-controller-namespace-exists) | 0 | 1 | 0 | 0 | 0 |
 | 3 | [given-host-config-configmap-exists](#step-given-host-config-configmap-exists) | 0 | 1 | 0 | 0 | 0 |
-| 4 | [given-kyverno-has-permission-on-resources](#step-given-kyverno-has-permission-on-resources) | 0 | 1 | 0 | 0 | 0 |
+| 4 | [given-kyverno-has-permission-on-resources](#step-given-kyverno-has-permission-on-resources) | 0 | 2 | 0 | 0 | 0 |
 | 5 | [given-cluster-policy-is-ready](#step-given-cluster-policy-is-ready) | 0 | 2 | 0 | 0 | 0 |
 | 6 | [when-pod-without-matching-label-is-created](#step-when-pod-without-matching-label-is-created) | 0 | 1 | 0 | 0 | 0 |
 | 7 | [then-build-step-resources-are-not-adjusted](#step-then-build-step-resources-are-not-adjusted) | 0 | 1 | 0 | 0 | 0 |
@@ -329,6 +332,7 @@ is remote.
 | # | Operation | Bindings | Outputs | Description |
 |:-:|---|:-:|:-:|---|
 | 1 | `apply` | 0 | 0 | *No description* |
+| 2 | `apply` | 0 | 0 | *No description* |
 
 ### Step: `given-cluster-policy-is-ready`
 
@@ -375,7 +379,7 @@ get mutated when the namespace is not labeled as a tenant namespace.
 |:-:|---|:-:|:-:|:-:|:-:|:-:|
 | 1 | [given-multi-platform-controller-namespace-exists](#step-given-multi-platform-controller-namespace-exists) | 0 | 1 | 0 | 0 | 0 |
 | 2 | [given-host-config-configmap-exists](#step-given-host-config-configmap-exists) | 0 | 1 | 0 | 0 | 0 |
-| 3 | [given-kyverno-has-permission-on-resources](#step-given-kyverno-has-permission-on-resources) | 0 | 1 | 0 | 0 | 0 |
+| 3 | [given-kyverno-has-permission-on-resources](#step-given-kyverno-has-permission-on-resources) | 0 | 2 | 0 | 0 | 0 |
 | 4 | [given-cluster-policy-is-ready](#step-given-cluster-policy-is-ready) | 0 | 2 | 0 | 0 | 0 |
 | 5 | [when-matching-pod-is-created-in-non-tenant-namespace](#step-when-matching-pod-is-created-in-non-tenant-namespace) | 0 | 1 | 0 | 0 | 0 |
 | 6 | [then-build-step-resources-are-not-adjusted](#step-then-build-step-resources-are-not-adjusted) | 0 | 1 | 0 | 0 | 0 |
@@ -409,6 +413,7 @@ get mutated when the namespace is not labeled as a tenant namespace.
 | # | Operation | Bindings | Outputs | Description |
 |:-:|---|:-:|:-:|---|
 | 1 | `apply` | 0 | 0 | *No description* |
+| 2 | `apply` | 0 | 0 | *No description* |
 
 ### Step: `given-cluster-policy-is-ready`
 
@@ -455,7 +460,7 @@ mutated when the namespace is not labeled as a tenant namespace.
 |:-:|---|:-:|:-:|:-:|:-:|:-:|
 | 1 | [given-multi-platform-controller-namespace-exists](#step-given-multi-platform-controller-namespace-exists) | 0 | 1 | 0 | 0 | 0 |
 | 2 | [given-host-config-configmap-exists](#step-given-host-config-configmap-exists) | 0 | 1 | 0 | 0 | 0 |
-| 3 | [given-kyverno-has-permission-on-resources](#step-given-kyverno-has-permission-on-resources) | 0 | 1 | 0 | 0 | 0 |
+| 3 | [given-kyverno-has-permission-on-resources](#step-given-kyverno-has-permission-on-resources) | 0 | 2 | 0 | 0 | 0 |
 | 4 | [given-cluster-policy-is-ready](#step-given-cluster-policy-is-ready) | 0 | 2 | 0 | 0 | 0 |
 | 5 | [when-non-matching-pod-is-created-in-non-tenant-namespace](#step-when-non-matching-pod-is-created-in-non-tenant-namespace) | 0 | 1 | 0 | 0 | 0 |
 | 6 | [then-build-step-resources-are-not-adjusted](#step-then-build-step-resources-are-not-adjusted) | 0 | 1 | 0 | 0 | 0 |
@@ -489,6 +494,7 @@ mutated when the namespace is not labeled as a tenant namespace.
 | # | Operation | Bindings | Outputs | Description |
 |:-:|---|:-:|:-:|---|
 | 1 | `apply` | 0 | 0 | *No description* |
+| 2 | `apply` | 0 | 0 | *No description* |
 
 ### Step: `given-cluster-policy-is-ready`
 
@@ -535,7 +541,7 @@ This ensures any changes to the failurePolicy field are intentional.
 |:-:|---|:-:|:-:|:-:|:-:|:-:|
 | 1 | [given-multi-platform-controller-namespace-exists](#step-given-multi-platform-controller-namespace-exists) | 0 | 1 | 0 | 0 | 0 |
 | 2 | [given-host-config-configmap-exists](#step-given-host-config-configmap-exists) | 0 | 1 | 0 | 0 | 0 |
-| 3 | [given-kyverno-has-permission-on-resources](#step-given-kyverno-has-permission-on-resources) | 0 | 1 | 0 | 0 | 0 |
+| 3 | [given-kyverno-has-permission-on-resources](#step-given-kyverno-has-permission-on-resources) | 0 | 2 | 0 | 0 | 0 |
 | 4 | [given-cluster-policy-is-ready](#step-given-cluster-policy-is-ready) | 0 | 2 | 0 | 0 | 0 |
 | 5 | [then-cluster-policy-has-failure-policy-ignore](#step-then-cluster-policy-has-failure-policy-ignore) | 0 | 1 | 0 | 0 | 0 |
 
@@ -568,6 +574,7 @@ This ensures any changes to the failurePolicy field are intentional.
 | # | Operation | Bindings | Outputs | Description |
 |:-:|---|:-:|:-:|---|
 | 1 | `apply` | 0 | 0 | *No description* |
+| 2 | `apply` | 0 | 0 | *No description* |
 
 ### Step: `given-cluster-policy-is-ready`
 

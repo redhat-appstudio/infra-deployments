@@ -6,7 +6,7 @@ metadata:
 spec:
   description: |
     Tests that a buildah-remote-oci-ta Pod with a remote platform (not in
-    local-platforms) gets its build step resources adjusted to cpu=1, memory=2Gi.
+    local-platforms) gets its build step resources adjusted to cpu=1, memory=4Gi.
   concurrent: false
   steps:
   - name: given-test-namespace-is-tenant-labeled
@@ -31,11 +31,13 @@ spec:
   - name: given-kyverno-has-permission-on-resources
     try:
     - apply:
-        file: ../kyverno-rbac.yaml
+        file: ../kyverno-configmap-read-role.yaml
+    - apply:
+        file: ../kyverno-configmap-read-rb.yaml
   - name: given-cluster-policy-is-ready
     try:
     - apply:
-        file: ../adjust-buildah-resources-for-remote-platforms.yaml
+        file: ../adjust-buildah-resources-for-remote-platforms-cp.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: when-pod-with-remote-platform-is-created
@@ -80,11 +82,13 @@ spec:
   - name: given-kyverno-has-permission-on-resources
     try:
     - apply:
-        file: ../kyverno-rbac.yaml
+        file: ../kyverno-configmap-read-role.yaml
+    - apply:
+        file: ../kyverno-configmap-read-rb.yaml
   - name: given-cluster-policy-is-ready
     try:
     - apply:
-        file: ../adjust-buildah-resources-for-remote-platforms.yaml
+        file: ../adjust-buildah-resources-for-remote-platforms-cp.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: when-pod-with-local-platform-is-created
@@ -129,11 +133,13 @@ spec:
   - name: given-kyverno-has-permission-on-resources
     try:
     - apply:
-        file: ../kyverno-rbac.yaml
+        file: ../kyverno-configmap-read-role.yaml
+    - apply:
+        file: ../kyverno-configmap-read-rb.yaml
   - name: given-cluster-policy-is-ready
     try:
     - apply:
-        file: ../adjust-buildah-resources-for-remote-platforms.yaml
+        file: ../adjust-buildah-resources-for-remote-platforms-cp.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: when-pod-without-platform-env-is-created
@@ -179,11 +185,13 @@ spec:
   - name: given-kyverno-has-permission-on-resources
     try:
     - apply:
-        file: ../kyverno-rbac.yaml
+        file: ../kyverno-configmap-read-role.yaml
+    - apply:
+        file: ../kyverno-configmap-read-rb.yaml
   - name: given-cluster-policy-is-ready
     try:
     - apply:
-        file: ../adjust-buildah-resources-for-remote-platforms.yaml
+        file: ../adjust-buildah-resources-for-remote-platforms-cp.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: when-pod-without-matching-label-is-created
@@ -217,11 +225,13 @@ spec:
   - name: given-kyverno-has-permission-on-resources
     try:
     - apply:
-        file: ../kyverno-rbac.yaml
+        file: ../kyverno-configmap-read-role.yaml
+    - apply:
+        file: ../kyverno-configmap-read-rb.yaml
   - name: given-cluster-policy-is-ready
     try:
     - apply:
-        file: ../adjust-buildah-resources-for-remote-platforms.yaml
+        file: ../adjust-buildah-resources-for-remote-platforms-cp.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: when-matching-pod-is-created-in-non-tenant-namespace
@@ -255,11 +265,13 @@ spec:
   - name: given-kyverno-has-permission-on-resources
     try:
     - apply:
-        file: ../kyverno-rbac.yaml
+        file: ../kyverno-configmap-read-role.yaml
+    - apply:
+        file: ../kyverno-configmap-read-rb.yaml
   - name: given-cluster-policy-is-ready
     try:
     - apply:
-        file: ../adjust-buildah-resources-for-remote-platforms.yaml
+        file: ../adjust-buildah-resources-for-remote-platforms-cp.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: when-non-matching-pod-is-created-in-non-tenant-namespace
@@ -293,11 +305,13 @@ spec:
   - name: given-kyverno-has-permission-on-resources
     try:
     - apply:
-        file: ../kyverno-rbac.yaml
+        file: ../kyverno-configmap-read-role.yaml
+    - apply:
+        file: ../kyverno-configmap-read-rb.yaml
   - name: given-cluster-policy-is-ready
     try:
     - apply:
-        file: ../adjust-buildah-resources-for-remote-platforms.yaml
+        file: ../adjust-buildah-resources-for-remote-platforms-cp.yaml
     - assert:
         file: chainsaw-assert-clusterpolicy.yaml
   - name: then-cluster-policy-has-failure-policy-ignore
