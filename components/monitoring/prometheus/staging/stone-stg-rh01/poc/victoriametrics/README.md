@@ -1,9 +1,11 @@
 # stone-stg-rh01 VictoriaMetrics PoC
 
 This package runs in `appstudio-vm-poc`. VMAgent scrapes user workload
-monitoring (UWM) and Tekton targets directly, and collects platform metrics
-from platform Prometheus through `/federate`. It writes only to this PoC's
-`vminsert`. Existing RHOBS MonitoringStacks and their deliveries are unchanged.
+monitoring (UWM) and Tekton targets directly. Alloy's existing platform
+`/federate` scrape also forwards platform samples to both shard-0 VMAgent
+replicas, which write to this PoC's `vminsert`. Alloy continues to send its
+existing data to Mimir; RHOBS MonitoringStacks and their deliveries are
+unchanged.
 
 The operator converts existing `ServiceMonitor`, `PodMonitor`, `Probe`, and
 `ScrapeConfig` objects into VM objects in their source namespaces. The agent's
@@ -14,17 +16,18 @@ its own `VMRule` and `VMAlert`.
 
 ## Collection paths
 
-- **Platform:** `platform-federation.yaml` scrapes
-  `https://prometheus-k8s.openshift-monitoring.svc:9091/federate` with the
-  VMAgent service account token. A RoleBinding in `openshift-monitoring`
-  grants that account the existing `cluster-monitoring-metrics-api` Role.
-  The mounted OpenShift service CA verifies the server. The 2-minute job has
-  a 90-second timeout and a 2GiB uncompressed response limit. Stream parsing
-  avoids buffering the full response; disabling stale markers avoids retaining
-  the previous response in agent memory. Removed platform series therefore
-  have no explicit stale marker from this scrape. The source `prometheus` and
-  `prometheus_replica` labels are dropped so the two agent replicas write the
-  same series identity.
+- **Platform:** Alloy's existing clustered platform scrape reads
+  `https://prometheus-k8s.openshift-monitoring.svc:9091/federate` every
+  60 seconds with a 55-second timeout, using its service account and the
+  OpenShift service CA. One scrape feeds both the existing Mimir branch and
+  a separate VM branch without another platform request. The VM branch drops
+  the source `prometheus` and `prometheus_replica` labels. It adds missing PoC
+  `cluster`, `collector`, and `source_environment` labels, then excludes the
+  two Tekton jobs below.
+  Alloy sends that same VM branch to two distinct shard-0 VMAgent replicas
+  through `/api/v1/write`; each agent forwards it to `vminsert`. VMAgent's
+  `externalLabels` apply to its own scrapes, not to pushed samples. No
+  VMAgent platform scrape or platform Prometheus API RoleBinding is needed.
 - **UWM:** Converted VM scrape objects are selected with the live UWM
   Prometheus monitor and namespace selectors. Unspecified and faster source
   intervals become 30 seconds; longer intervals remain, including
@@ -36,12 +39,13 @@ its own `VMRule` and `VMAlert`.
 - **Tekton:** The two native `VMServiceScrape` objects target the pipelines
   controller and pipeline metrics exporter directly. Their current platform
   Prometheus jobs, `tekton-pipelines-controller` and
-  `pipeline-metrics-exporter`, are excluded from federation to avoid
-  collecting the same endpoints twice. Recheck those job labels if Tekton's
-  monitors change. The Tekton Prometheus proxy is not a scrape target.
+  `pipeline-metrics-exporter`, are dropped only from Alloy's VM branch to
+  avoid collecting the same endpoints twice in VM. Mimir's platform path
+  remains unchanged. Recheck those job labels if Tekton's monitors change.
+  The Tekton Prometheus proxy is not a VM scrape target.
 
-The network policies in this package permit the direct UWM and Tekton
-connections where the source namespaces restrict monitoring ingress. The
+Network policies permit the Alloy-to-VMAgent writes and the direct UWM and
+Tekton connections where source namespaces restrict monitoring ingress. The
 PoC has no RHOBS remote-write destination.
 
 ## Validation after staging sync
@@ -54,52 +58,65 @@ including Secret-backed authentication and kaexporter's effective 300-second
 cadence. Check that no converted platform monitor is selected for direct
 scraping.
 
-The platform proxy appears as **one target on one shard pair**, not as
-hundreds of original platform targets. On both replicas of that shard, confirm
-`up`, the 2-minute cadence, scrape duration below 90 seconds, response size
-below 2GiB, comparable samples after metric relabeling, stable remote-write
-errors, and persistent queue drain. Query representative non-Tekton platform
-series through vmselect and compare their labels and current values with
-platform Prometheus. Also watch platform Prometheus CPU, memory, and query
-latency while this large request runs. Confirm the `VMAlert` is operational
-and `vm_poc:up:sum` is queryable through vmselect.
+The platform proxy appears as **one target in the Alloy cluster**, not as a
+VMAgent target or hundreds of original platform targets. Confirm Alloy's
+60-second cadence, scrape duration below 55 seconds, successful Mimir writes,
+and equal sample delivery to its two distinct VM endpoints. Watch each Alloy
+endpoint's failures, pending samples, WAL use, and queue lag; its VM WAL can
+discard samples once they exceed the configured 15-minute keepalive. Confirm
+that both shard-0 VMAgents receive platform samples and drain their persistent
+queues without drops. There should be no platform `VMStaticScrape` or platform
+target on VMAgent. Query representative non-Tekton platform series through
+vmselect and compare their labels and
+current values with platform Prometheus; check that Mimir-only labels and
+duplicate Tekton platform jobs are absent. Watch VMAgent CPU, memory and
+queue PVCs, as well as platform Prometheus CPU, memory, and query latency.
+Confirm the `VMAlert` is operational and `vm_poc:up:sum` is queryable through
+vmselect.
 
-Federation returns the latest value for each selected series at each proxy
-scrape. Samples from platform's intervening scrapes do not arrive in VM.
-Therefore this path cannot establish raw sample parity with direct platform
-scraping. A render or dry-run cannot establish live target parity, proxy
-health, or recording-rule operation.
+Federation returns the latest value for each selected series at each Alloy
+scrape. Alloy uses its scrape time rather than the source sample timestamp;
+samples from platform's intervening scrapes do not arrive in VM. Therefore
+this path cannot establish raw sample parity with direct platform scraping.
+A render or dry-run cannot establish live target parity, Alloy delivery,
+queue health, or recording-rule operation.
 
 ## Capacity gate before staging sync
 
 Measure active series, ingestion rate, new-series churn, and source cadence
-separately for platform, UWM, and Tekton. For platform, use the configured
-federation response's **samples after relabeling per successful scrape divided
-by its observed interval**. For each direct target group, estimate one
-replica's samples/second at its effective interval,
-`max(30s, source interval)`, and reconcile that estimate with the agent's
-observed samples and target inventory. Include the two native Tekton jobs;
-their platform copies are excluded by the federation selector.
+separately for platform, UWM, and Tekton. For platform, use Alloy's **VM-branch
+samples after the Tekton drop per successful scrape divided by its observed
+60-second interval**. Do not normalize this path to a 30-second scrape. For
+each direct target group, estimate one replica's samples/second at its
+effective interval, `max(30s, source interval)`, and reconcile that estimate
+with the agent's observed samples and target inventory. Include the two native
+Tekton jobs;
+their platform copies are excluded by the Alloy VM branch.
 
-`raw VM samples/second = 2 * (platform federation samples/second
+`raw VM samples/second = 2 * (Alloy platform-to-VM samples/second
 + direct UWM samples/second + direct Tekton samples/second)`.
-The factor of two is the two VMAgent replicas per shard. Three shards split
-targets, but the single large federation target lands on one shard pair.
-Size that pair's CPU, memory, 10Gi queues, scrape response, and recovery
-margin separately. The replicas have identical external labels, so count
-distinct new-series and index growth once only after verifying their
-series identity in live data.
+The factor of two counts both VMAgent copies, including the two copies of
+each Alloy platform sample. Three shards split direct scrape targets, while
+the entire platform stream enters the shard-0 pair. Size that pair's CPU,
+memory, 10Gi queues, network throughput, and recovery margin separately.
+Also size the Alloy pod that owns the platform scrape, its shared 5Gi PVC, and
+both VM endpoint queues while keeping the existing Mimir queue healthy.
+Measure queue drain and recovery before either the Alloy WAL or VMAgent's
+10Gi persistent queue fills. Count distinct new-series and index growth once
+only after verifying that both VM writes have identical series labels.
 
 A read-only full-platform request on 2026-10-05 returned about 2.04 million
 metric lines, 845 MB uncompressed, in 50 seconds. That measurement predates
-the Tekton job exclusion. At two minutes and two agent replicas, roughly
-2.04 million platform series would produce 34,000 raw VM samples/second.
+the VM-branch Tekton job exclusion. Alloy still downloads the full response
+for Mimir. At 60 seconds and two VM endpoints, roughly 2.04 million platform
+series would produce 68,000 raw VM samples/second before that exclusion.
 Two 30-second direct scrapers of those same series would produce about
 136,000 samples/second. The proxy therefore tests lower write throughput
 than future direct platform scraping. Its very large response can still
 burden Prometheus: [Red Hat recommends a limited, aggregated federation
 selection](https://docs.redhat.com/en/documentation/monitoring_stack_for_red_hat_openshift/4.21/html/accessing_metrics/accessing-monitoring-apis-by-using-the-cli#querying-metrics-by-using-the-federation-endpoint-for-prometheus).
-Recheck one response's size and duration before staging sync and stop the
+The 50-second measurement leaves little margin under Alloy's 55-second
+timeout. Recheck response size and duration before staging sync and stop the
 test if platform monitoring degrades.
 
 Project four days (72-hour retention plus one retention cycle) using
@@ -108,10 +125,12 @@ Project four days (72-hour retention plus one retention cycle) using
 Measure the byte factors with both replicas writing, including transient disk
 used before deduplication. Do not infer raw ingestion from query-visible
 samples. The 30-second storage and select deduplication can reduce later
-disk use and query-visible samples, but both copies are ingested. At long
-cadences, replica scrapes in different 30-second buckets may both remain
-visible. Compare per-replica scrape counts with a stable slow `up` series
-using `count_over_time(up{job="<job>",instance="<instance>"}[1h])`.
+disk use and query-visible samples, but both copies are ingested. For
+platform, compare Alloy's per-endpoint sent counts with each VMAgent's
+received and forwarded counts; the two writes have the same scrape timestamp.
+For slow direct scrapes, replica scrapes in different 30-second buckets may
+both remain visible. Compare their per-replica scrape counts with a stable
+`up` series using `count_over_time(up{job="<job>",instance="<instance>"}[1h])`.
 
 Size the busiest of 20 storage shards, not just the average. Require at
 least 20% free space on every storage PVC after the four-day projection;
@@ -133,13 +152,16 @@ Investigate any copy that remains instead of deleting unrelated VM objects.
 
 ## Before the first PoC sync
 
-Confirm that `openshift-monitoring` has the
-`cluster-monitoring-metrics-api` Role, port 9091 of the
-`prometheus-k8s` Service, and the PoC namespace's
-`openshift-service-ca.crt` ConfigMap after namespace creation. Save an
-inventory of VM scrape objects so teardown can distinguish this PoC's
-conversions from objects managed by other operators. Also save the rule
-and AlertmanagerConfig inventory to confirm conversion stays disabled.
+Confirm Alloy's current platform scrape and Mimir delivery are healthy.
+Before enabling the VM fan-out, check that both shard-0 VMAgent pods are
+Ready and their distinct pod DNS names resolve from Alloy, with network
+policy access on port 8429. If both changes sync together, watch Alloy's
+new VM queues while the receivers start. Confirm the PoC namespace's
+`openshift-service-ca.crt` ConfigMap after namespace creation; selected UWM
+monitors still use it. Save an inventory of VM scrape objects so teardown can
+distinguish this PoC's conversions from objects managed by other operators.
+Also save the rule and AlertmanagerConfig inventory to confirm conversion
+stays disabled.
 First check `oc api-resources --api-group=operator.victoriametrics.com -o name`.
 If no VM kinds are installed yet, record an empty baseline; the following
 `oc get` commands would fail until this PoC installs the CRDs. If the kinds
@@ -174,12 +196,17 @@ direct deletion, namespace deletion, or CRD deletion.
 
 ## Retiring the PoC
 
-1. In a separate GitOps change, set
+1. Let both Alloy VM endpoint queues drain. In a separate GitOps change,
+   remove only Alloy's VM forwarding branch, its two endpoints, and its
+   VM-specific egress rule; keep the platform scrape and Mimir path running.
+   Sync Alloy and confirm Mimir delivery remains healthy. Stop these writes
+   before removing the VMAgents so Alloy cannot build a backlog.
+2. In a separate GitOps change, set
    `operator.disable_prometheus_converter` to `true` in
    `operator-values.yaml` and sync. Keep the rest of the package deployed.
    Wait for the operator Deployment in `appstudio-vm-poc` to roll out and
    verify its pods have the converter disabled.
-2. Inventory the same four VM scrape kinds across **all namespaces**,
+3. Inventory the same four VM scrape kinds across **all namespaces**,
    saving the result as `vm-scrapes-at-teardown.json` without overwriting
    the baseline. For each proposed deletion, inspect its namespace, name,
    UID, `metadata.ownerReferences`, and Argo annotations. The converted
@@ -187,28 +214,27 @@ direct deletion, namespace deletion, or CRD deletion.
    `IgnoreExtraneous` / `Prune=false` annotations. Compare with the
    pre-PoC inventory and confirm that another operator does not manage it.
    If ownership is ambiguous, resolve that before deleting anything.
-3. Delete only the reviewed PoC-generated converted objects, using
+4. Delete only the reviewed PoC-generated converted objects, using
    explicit kind, namespace, and name pairs. Do not use a cluster-wide
    `--all` deletion. Re-list all four kinds and check that the copies
    remain gone. Disabling conversion first prevents this operator from
    recreating them. Deleting a converted copy alone does not reliably
    trigger a running converter to rebuild it.
-4. Remove `poc/victoriametrics` from the parent
+5. Remove `poc/victoriametrics` from the parent
    `stone-stg-rh01/kustomization.yaml` and remove
    `vm-poc-datasource.yaml` from the staging Grafana Kustomization. Sync
-   both with pruning. Verify the PoC's native `VMStaticScrape`, Tekton
-   `VMServiceScrape` objects, `VMAgent`, `VMCluster`, `VMAlert`, `VMRule`,
-   operator Deployment and RBAC (including the RoleBinding in
-   `openshift-monitoring`), network policies, Grafana datasource, namespace,
-   and generated pods are gone. Check remaining PoC PVCs and PVs before
-   considering teardown complete; retained volumes need an explicit data
-   deletion decision.
-5. The operator CRDs use `Prune=false` and can be shared with other VM
+   both with pruning. Verify the PoC's native Tekton `VMServiceScrape`
+   objects, VMAgent receiver Service, `VMAgent`, `VMCluster`, `VMAlert`,
+   `VMRule`, operator Deployment and RBAC, network policies, Grafana
+   datasource, namespace, and generated pods are gone. Check remaining PoC
+   PVCs and PVs before considering teardown complete; retained volumes need
+   an explicit data deletion decision.
+6. The operator CRDs use `Prune=false` and can be shared with other VM
    users. Inventory **all** VM custom resources and operators cluster-wide
    before removing CRDs in a separate decommission. Never delete the CRDs
    merely to clear this PoC's converted objects.
 
-Normal Argo CD sync will not perform step 3 for this package because the
+Normal Argo CD sync will not perform step 4 for this package because the
 converted objects carry `Prune=false`. The source owner reference handles
 source deletion, while explicit inventory and deletion handle PoC
 retirement.

@@ -50,7 +50,7 @@ spec:
     - name: platform-service-ca
       mountPath: /etc/prometheus/configmaps/serving-certs-ca-bundle
       readOnly: true
-  # Match the UWM Prometheus monitor selectors. Platform collection is separate.
+  # Match the UWM Prometheus monitor selectors. Alloy forwards platform samples.
   selectAllByDefault: false
   serviceScrapeSelector:
     matchExpressions:
@@ -91,12 +91,6 @@ spec:
       - key: openshift.io/user-monitoring
         operator: NotIn
         values: ["false"]
-  staticScrapeSelector:
-    matchLabels:
-      app.kubernetes.io/part-of: stone-stg-rh01-vm-poc
-  staticScrapeNamespaceSelector:
-    matchLabels:
-      app.kubernetes.io/part-of: stone-stg-rh01-vm-poc
   # Keep longer source intervals, including kaexporter's 300s scrape.
   minScrapeInterval: 30s
   scrapeInterval: 30s
