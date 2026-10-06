@@ -17,14 +17,8 @@ patches:
       name: config
 
   # Pipelines Metrics Exporter Deployment
-  - target:
+  - path: ./patches/service-exporter-resources.yaml
+    target:
       kind: Deployment
       name: pipeline-metrics-exporter
       namespace: openshift-pipelines
-    patch: |
-      - op: replace
-        path: /spec/template/spec/containers/0/resources/limits/memory
-        value: 2Gi
-      - op: replace
-        path: /spec/template/spec/containers/0/resources/requests/memory
-        value: 1Gi
