@@ -1,0 +1,61 @@
+---
+apiVersion: external-secrets.io/v1
+kind: ClusterSecretStore
+metadata:
+  name: appsre-stonesoup-vault
+spec:
+   conditions:
+    - namespaces:
+        - admin-checker
+        - application-service
+        - appsre-vault
+        - appstudio-kanary-exporter
+        - appstudio-monitoring
+        - appstudio-tekton
+        - appstudio-workload-monitoring
+        - artifact-registry-proxy
+        - build-service
+        - build-templates
+        - build-templates-e2e
+        - caching
+        - clusters
+        - costmanagement-metrics-operator
+        - crossplane-system
+        - dynatrace
+        - image-controller
+        - image-rbac-proxy
+        - integration-service
+        - konflux-ci
+        - konflux-kite
+        - konflux-o11y-exporters
+        - konflux-perfscale-1-tenant
+        - konflux-perfscale-2-tenant
+        - konflux-perfscale-3-tenant
+        - konflux-perfscale-4-tenant
+        - konflux-otel
+        - konflux-qe-team-tenant
+        - konflux-ui
+        - konflux-vanguard-tenant
+        - local-cluster
+        - managed-konflux-perfscale-tenant
+        - mintmaker
+        - multi-platform-controller
+        - notification-controller
+        - openshift-adp
+        - openshift-logging
+        - openshift-pipelines
+        - product-kubearchive
+        - product-kubearchive-logging
+        - pulp-access-controller
+        - release-service
+        - rhtap-build-tenant
+        - rhtap-integration-tenant
+        - rhtap-o11y-tenant
+        - rhtap-release-2-tenant
+        - rhtap-releng-tenant
+        - rhtap-servicerelease-tenant
+        - rhtap-shared-team-tenant
+        - segment-bridge
+        - sprayproxy
+        - tekton-logging
+        - tekton-results

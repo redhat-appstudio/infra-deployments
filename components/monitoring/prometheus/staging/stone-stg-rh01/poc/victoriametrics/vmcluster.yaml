@@ -1,0 +1,70 @@
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMCluster
+metadata:
+  name: vm-poc
+  namespace: appstudio-vm-poc
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/part-of: stone-stg-rh01-vm-poc
+spec:
+  clusterVersion: v1.153.0-cluster
+  retentionPeriod: "3d"
+  replicationFactor: 1
+  vmstorage:
+    replicaCount: 20
+    storageDataPath: /vm-data
+    extraArgs:
+      dedup.minScrapeInterval: 30s
+    resources:
+      requests:
+        cpu: "1"
+        memory: 2Gi
+      limits:
+        cpu: "2"
+        memory: 4Gi
+    storage:
+      volumeClaimTemplate:
+        spec:
+          accessModes: [ReadWriteOnce]
+          storageClassName: gp3
+          resources:
+            requests:
+              storage: 20Gi
+    topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: vmstorage
+            app.kubernetes.io/instance: vm-poc
+  vminsert:
+    replicaCount: 4
+    resources:
+      requests:
+        cpu: "1"
+        memory: 2Gi
+      limits:
+        cpu: "2"
+        memory: 4Gi
+  vmselect:
+    replicaCount: 2
+    cacheMountPath: /select-cache
+    extraArgs:
+      dedup.minScrapeInterval: 30s
+    resources:
+      requests:
+        cpu: "1"
+        memory: 2Gi
+      limits:
+        cpu: "2"
+        memory: 4Gi
+    storage:
+      volumeClaimTemplate:
+        spec:
+          accessModes: [ReadWriteOnce]
+          storageClassName: gp3
+          resources:
+            requests:
+              storage: 10Gi
