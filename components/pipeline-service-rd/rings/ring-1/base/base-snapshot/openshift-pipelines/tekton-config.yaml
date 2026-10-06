@@ -390,6 +390,7 @@ spec:
     db_sslrootcert: /etc/tls/db/tekton-results-db-ca.pem
     logs_api: true
     logs_type: blob
+    logs_path: "//logs"
     options:
       deployments:
         tekton-results-api:
@@ -410,6 +411,8 @@ spec:
                     mountPath: /etc/tls/db
                     readOnly: true
                   env:
+                  # Note: order matters since for ENVs which need to be modified by kustomize
+                  # --- Begin order-sensitive ENV vars
                   - name: LOGGING_PLUGIN_API_URL
                     valueFrom:
                       secretKeyRef:
@@ -425,6 +428,11 @@ spec:
                       secretKeyRef:
                         name: tekton-results-database
                         key: db.name
+                  # --- End order-sensitive ENV vars
+                  - name: LOGGING_PLUGIN_QUERY_PARAMS
+                    value: 'v1alpha2LogType=true&use_path_style=true'
+                  - name: LOGGING_PLUGIN_MULTIPART_REGEX
+                    value: '-\d{10}.log$'
                   - name: K8S_QPS
                     value: "50"
                   - name: K8S_BURST
