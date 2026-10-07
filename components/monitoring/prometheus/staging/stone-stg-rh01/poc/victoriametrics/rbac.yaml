@@ -50,3 +50,36 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: component-maintainer
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: vm-poc-argocd
+  namespace: appstudio-vm-poc
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+rules:
+  - apiGroups: [operator.victoriametrics.com]
+    resources:
+      - vmagents
+      - vmclusters
+      - vmalerts
+      - vmrules
+      - vmservicescrapes
+    verbs: [get, list, watch, create, update, patch, delete]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: vm-poc-argocd
+  namespace: appstudio-vm-poc
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: vm-poc-argocd
+subjects:
+  - kind: ServiceAccount
+    name: remote-argocd
+    namespace: remote-argocd
