@@ -2,6 +2,8 @@ apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
   name: trust-manager
+  labels:
+    appstudio.redhat.com/deployment-clusters: "tenant"
 spec:
   generators:
     - merge:
@@ -10,32 +12,37 @@ spec:
         generators:
           - clusters:
               selector:
-                matchLabels:
-                  appstudio.redhat.com/member-cluster: "true"
+                matchExpressions:
+                  - key: appstudio.redhat.com/select-none
+                    operator: Exists
+                  - key: appstudio.redhat.com/select-none
+                    operator: DoesNotExist
               values:
-                sourceRoot: components/trust-manager
-                environment: staging
-                clusterDir: ""
+                sourceRoot: components/trust-manager-rd
+                ring: "empty-base"
+                clusterDir: "empty-base"
           - list:
               elements: []
+
   template:
     metadata:
       name: trust-manager-{{nameNormalized}}
     spec:
       project: default
       source:
-        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
+        path: '{{values.sourceRoot}}/rings/{{values.ring}}/{{values.clusterDir}}'
         repoURL: https://github.com/redhat-appstudio/infra-deployments.git
         targetRevision: main
       destination:
         namespace: cert-manager
         server: '{{server}}'
       syncPolicy:
+        # automated:
+        #   prune: true
+        #   selfHeal: true
         syncOptions:
-          - CreateNamespace=true
+        - CreateNamespace=true
         retry:
-          limit: -1
+          limit: 50
           backoff:
-            duration: 10s
-            factor: 2
-            maxDuration: 3m
+            duration: 15s
