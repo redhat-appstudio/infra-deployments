@@ -9,6 +9,7 @@ resources:
 - vmalert.yaml
 - vmalert-rules.yaml
 - mimir-networkpolicy.yaml
+- seaweedfs.yaml
 
 generators:
 - mimir-helm-generator.yaml
@@ -20,40 +21,6 @@ patches:
     - op: add
       path: /metadata/namespace
       value: appstudio-mimir-poc
-- target:
-    kind: ServiceAccount
-    name: minio-sa
-  patch: |-
-    - op: add
-      path: /metadata/namespace
-      value: appstudio-mimir-poc
-- target:
-    kind: Deployment
-    name: mimir-poc-minio
-  patch: |-
-    - op: add
-      path: /spec/template/spec/securityContext
-      value:
-        runAsNonRoot: true
-        seccompProfile:
-          type: RuntimeDefault
-- target:
-    kind: Job
-    labelSelector: release=mimir-poc
-  patch: |-
-    - op: add
-      path: /spec/template/spec/securityContext
-      value:
-        runAsNonRoot: true
-        seccompProfile:
-          type: RuntimeDefault
-- target:
-    kind: Job
-    labelSelector: release=mimir-poc
-  patch: |-
-    - op: add
-      path: /spec/ttlSecondsAfterFinished
-      value: 3600
 - target:
     kind: PodDisruptionBudget
   patch: |-
