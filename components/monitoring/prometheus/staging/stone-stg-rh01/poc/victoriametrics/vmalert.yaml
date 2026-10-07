@@ -1,0 +1,32 @@
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMAlert
+metadata:
+  name: vm-poc
+  namespace: appstudio-vm-poc
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/part-of: stone-stg-rh01-vm-poc
+spec:
+  image:
+    repository: docker.io/victoriametrics/vmalert
+    tag: v1.153.0
+    pullPolicy: IfNotPresent
+  replicaCount: 1
+  evaluationInterval: 30s
+  extraArgs:
+    notifier.blackhole: "true"
+  ruleSelector:
+    matchLabels:
+      app.kubernetes.io/part-of: stone-stg-rh01-vm-poc
+  datasource:
+    url: http://vmselect-vm-poc.appstudio-vm-poc.svc:8481/select/0/prometheus
+  remoteWrite:
+    url: http://vminsert-vm-poc.appstudio-vm-poc.svc:8480/insert/0/prometheus
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi

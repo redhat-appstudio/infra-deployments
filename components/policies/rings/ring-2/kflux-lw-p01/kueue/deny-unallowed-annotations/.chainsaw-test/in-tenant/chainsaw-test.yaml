@@ -57,9 +57,9 @@ spec:
   - name: given-validatingadmissionpolicy-is-installed
     try:
     - apply:
-        file: ../resources/manifests/default_admissionregistration.k8s.io_v1_validatingadmissionpolicybinding_deny-unallowed-annotations.kueue.konflux-ci.dev.yaml
+        file: ../resources/manifests/admissionregistration.k8s.io_v1_validatingadmissionpolicybinding_deny-unallowed-annotations.kueue.konflux-ci.dev.yaml
     - apply:
-        file: ../resources/manifests/default_admissionregistration.k8s.io_v1_validatingadmissionpolicy_deny-unallowed-annotations.kueue.konflux-ci.dev.yaml
+        file: ../resources/manifests/admissionregistration.k8s.io_v1_validatingadmissionpolicy_deny-unallowed-annotations.kueue.konflux-ci.dev.yaml
     - assert:
         file: ../chainsaw-assert-policy.yaml
     - sleep:

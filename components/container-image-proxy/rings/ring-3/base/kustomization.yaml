@@ -5,13 +5,3 @@ resources:
 - base-snapshot
 generators:
 - caching-helm-generator.yaml
-
-# Preserve retention protection while adopting the existing Bundle.
-patches:
-- patch: |-
-    apiVersion: trust.cert-manager.io/v1alpha1
-    kind: Bundle
-    metadata:
-      name: caching-ca-bundle
-      annotations:
-        argocd.argoproj.io/sync-options: Prune=false,Delete=false

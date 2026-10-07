@@ -1,0 +1,17 @@
+apiVersion: konflux.konflux-ci.dev/v1alpha1
+kind: Konflux
+metadata:
+  name: konflux
+spec:
+  info:
+    spec:
+      banner:
+        items:
+          - summary: "Service Accounts will be rotated on stone-prod-p01 cluster during the October 9 Konflux Maintenance window. Not migrated automation will start failing."
+            type: warning
+      publicInfo:
+        visibility: private
+        statusPageUrl: "https://grafana.app-sre.devshift.net/d/aes1ns0htwni8a/konflux-status-page?var-cluster=stone-prod-p01"
+        integrations:
+          github:
+            application_url: "https://github.com/apps/konflux-internal"

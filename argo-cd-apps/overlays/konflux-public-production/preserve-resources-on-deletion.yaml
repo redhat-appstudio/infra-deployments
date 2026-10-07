@@ -1,0 +1,8 @@
+---
+# When operator-managed cluster Applications are removed from an ApplicationSet,
+# do not prune cluster resources. The konflux-operator owns those workloads;
+# Argo must orphan, not delete. konflux-public-production overlay only.
+- op: add
+  path: /spec/syncPolicy
+  value:
+    preserveResourcesOnDeletion: true

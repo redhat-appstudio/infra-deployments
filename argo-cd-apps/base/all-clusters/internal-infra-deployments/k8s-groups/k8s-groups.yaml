@@ -15,8 +15,32 @@ spec:
                 useCaseDir: rover
           - list:
               elements:
+                # Staging
+                - nameNormalized: stone-stage-p01
+                  values.useCaseDir: rover/rh-sso-internal
+                - nameNormalized: stone-stg-rh01
+                  values.useCaseDir: rover/rh-sso-internal
+                - nameNormalized: kflux-stg-p02
+                  values.useCaseDir: rover/ibmid
+                # Production
                 - nameNormalized: kflux-fedora-01
                   values.useCaseDir: fas
+                - nameNormalized: kflux-prd-rh02
+                  values.useCaseDir: rover
+                - nameNormalized: kflux-prd-rh03
+                  values.useCaseDir: rover
+                - nameNormalized: kflux-rhel-p01
+                  values.useCaseDir: rover
+                - nameNormalized: kflux-ocp-p01
+                  values.useCaseDir: rover
+                - nameNormalized: kflux-osp-p01
+                  values.useCaseDir: rover
+                - nameNormalized: stone-prd-rh01
+                  values.useCaseDir: rover
+                - nameNormalized: stone-prod-p01
+                  values.useCaseDir: rover
+                - nameNormalized: stone-prod-p02
+                  values.useCaseDir: rover
   template:
     metadata:
       name: k8s-groups-{{nameNormalized}}

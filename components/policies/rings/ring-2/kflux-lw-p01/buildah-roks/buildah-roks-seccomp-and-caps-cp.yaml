@@ -8,18 +8,22 @@ metadata:
     policies.kyverno.io/description: >-
       On ROKS clusters with seccompDefault=true (CIS benchmark), RuntimeDefault
       seccomp blocks the unshare(2) syscall (ENOSYS) and gates chroot(2) on
-      CAP_SYS_CHROOT. The buildah task (0.12.2+, konflux-build-cli) calls
-      unshare internally and only requests SETFCAP. This policy injects the
-      Localhost unshare.json seccomp profile and SYS_CHROOT into step-build.
+      CAP_SYS_CHROOT. The buildah task calls unshare internally and only
+      requests SETFCAP. This policy injects the Localhost unshare.json seccomp
+      profile and SYS_CHROOT into every step that shells out to buildah:
+      step-build on all task versions, plus step-push on 0.10.x and earlier,
+      where the push has not yet been folded into step-build.
       Covers buildah-oci-ta, buildah-oci-ta-min, buildah-remote-oci-ta, and
       build-image-index.
+      step-build and step-push are patched by two separate rules on purpose —
+      see the comment on the second rule.
 spec:
   background: false
   failurePolicy: Ignore
   rules:
     - name: inject-buildah-sys-chroot
       match:
-        any:
+        any: &buildah-task-match
           - resources:
               kinds:
                 - Pod
@@ -69,6 +73,33 @@ spec:
           spec:
             containers:
               - (name): "step-build"
+                securityContext:
+                  seccompProfile:
+                    type: Localhost
+                    localhostProfile: profiles/unshare.json
+                  capabilities:
+                    add:
+                      - SETFCAP
+                      - SYS_CHROOT
+    # step-push only exists on buildah task 0.10.x and earlier; from 0.11.0 the
+    # push was folded into step-build, so this rule is a no-op there.
+    #
+    # It must stay a separate rule. Kyverno cannot handle two conditional-anchor
+    # elements in the same patchStrategicMerge list: deleteAnchorsInList()
+    # iterates a snapshot of the list but deletes by index from the live node,
+    # so the second deletion uses a stale index. With both anchors in one list
+    # this silently dropped the step-build patch, emptied spec.containers (the
+    # API server then rejected every build pod with "spec.containers: Required
+    # value"), and panicked the admission webhook outright on a matched pod that
+    # had neither container. One anchor per list keeps the index valid.
+    - name: inject-buildah-sys-chroot-push
+      match:
+        any: *buildah-task-match
+      mutate:
+        patchStrategicMerge:
+          spec:
+            containers:
+              - (name): "step-push"
                 securityContext:
                   seccompProfile:
                     type: Localhost

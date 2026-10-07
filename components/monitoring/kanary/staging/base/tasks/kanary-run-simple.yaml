@@ -28,6 +28,10 @@ spec:
       type: string
       default: ""
       description: "Name of the IntegrationTestScenario to use. Leave empty to skip integration tests."
+    - name: gitlab-api-url
+      type: string
+      default: ""
+      description: "GitLab API URL (e.g. https://gitlab.cee.redhat.com/api/v4). Leave empty for GitHub-only components."
   results:
     - name: test-outcome
       description: "Test outcome: passed, failed, or unknown"
@@ -77,6 +81,18 @@ spec:
               key: prometheus_token
         - name: INTEGRATION_TEST_SCENARIO
           value: $(params.integration-test-scenario)
+        - name: GITHUB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: kanary-probe-credentials
+              key: github_token
+        - name: GITLAB_BOT_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: kanary-probe-credentials
+              key: gitlab-cee-pipelines-as-code-secret
+        - name: GITLAB_API_URL
+          value: $(params.gitlab-api-url)
       script: |
         #!/usr/bin/env bash
         set -euo pipefail
