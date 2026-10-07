@@ -201,7 +201,7 @@ patches:
         name: kubearchive-operator-webhooks
         namespace: kubearchive
         annotations:
-          service.beta.openshift.io/serving-cert-secret-name: kubearchive-operator-webhooks-tls
+          service.beta.openshift.io/serving-cert-secret-name: kubearchive-operator-tls
   - patch: |-
       apiVersion: admissionregistration.k8s.io/v1
       kind: MutatingWebhookConfiguration
@@ -279,6 +279,15 @@ patches:
         value:
           - kubearchive-operator-webhooks.product-kubearchive.svc
           - kubearchive-operator-webhooks.product-kubearchive.svc.cluster.local
+  - target:
+      group: cert-manager.io
+      version: v1
+      kind: Certificate
+      name: kubearchive-operator-certificate
+    patch: |-
+      - op: replace
+        path: /spec/secretName
+        value: kubearchive-operator-tls-pending
   # These patches solve Kube Linter problems
   - patch: |-
       apiVersion: apps/v1
