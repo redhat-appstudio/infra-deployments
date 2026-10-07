@@ -32,6 +32,11 @@ const NeedsApprovalProductionLabel = "prod/needs-approval"
 // environment, signalling that the PR has been approved.
 const ApprovedProductionLabel = "prod/approved"
 
+// KargoBot is the GitHub login of the Kargo automated promotion bot.
+// Production PRs opened by this bot skip the prod/needs-approval label
+// because they are the result of a pre-approved automated promotion pipeline.
+const KargoBot = "konflux-kargo-bot"
+
 // IssuesService is the subset of the GitHub Issues API used by this package.
 type IssuesService interface {
 	ListLabelsByIssue(ctx context.Context, owner, repo string, number int, opts *gh.ListOptions) ([]*gh.Label, *gh.Response, error)
