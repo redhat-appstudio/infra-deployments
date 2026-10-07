@@ -1,0 +1,70 @@
+name: Verify Bot ClusterRoles Are Bindable By Admins
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'components/konflux-rbac/**'
+      - 'components/konflux-operator/rings/*/base/cr/konflux-rbac/**'
+      - 'hack/verify-bot-clusterroles-subset.py'
+      - '.github/workflows/verify-bot-clusterroles.yaml'
+
+jobs:
+  verify-bot-clusterroles:
+    name: Verify bot ClusterRoles are a subset of the admin role
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up Python 3
+        uses: actions/setup-python@7f4fc3e22c37d6ff65e88745f38bd3157c663f7c # v4
+        with:
+          python-version: '3.x'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install PyYAML
+
+      - name: Setup Kustomize
+        uses: multani/action-setup-kustomize@bf96e027caf74ab03bb3f79bac2addb331b28f1d
+        with:
+          version: 5.8.1
+
+      # Clusters Argo CD targets directly. Each overlay ships both the bot roles
+      # and konflux-admin-user-actions, so each is self-contained.
+      - name: Verify konflux-rbac overlays
+        env:
+          OUTPUT: GITHUB
+        run: |
+          mapfile -t overlays < <(
+            find components/konflux-rbac/staging components/konflux-rbac/production \
+              -mindepth 1 -maxdepth 1 -type d \
+              ! -name base ! -name empty-base \
+              | sort
+          )
+          printf 'Checking %d overlay(s)\n' "${#overlays[@]}"
+          ./hack/verify-bot-clusterroles-subset.py "${overlays[@]}"
+
+      # Operator-owned clusters are excluded from the konflux-rbac ApplicationSet
+      # (argo-cd-apps/overlays/*/exclude-operator-owned-clusters.yaml) and get their
+      # bot roles from here instead. These directories ship no admin role -- on those
+      # clusters konflux-operator supplies it -- so the in-repo role for the matching
+      # environment is used as a stand-in. If the operator's own admin role ever
+      # diverges from the in-repo one, this check stops being authoritative for these
+      # clusters and the comparison must move to the operator repo.
+      - name: Verify konflux-operator ring CR copies
+        env:
+          OUTPUT: GITHUB
+        run: |
+          set -e
+          for ring_dir in components/konflux-operator/rings/*/base/cr/konflux-rbac; do
+            [ -d "${ring_dir}" ] || continue
+            case "${ring_dir}" in
+              */ring-1/*) admin_from=components/konflux-rbac/staging/stone-stg-rh01 ;;
+              *)          admin_from=components/konflux-rbac/production/stone-prd-rh01 ;;
+            esac
+            printf 'Checking %s against %s\n' "${ring_dir}" "${admin_from}"
+            ./hack/verify-bot-clusterroles-subset.py --admin-from "${admin_from}" "${ring_dir}"
+          done
