@@ -2,11 +2,6 @@ fullnameOverride: mimir-poc
 
 configStorageType: ConfigMap
 
-global:
-  extraEnvFrom:
-  - secretRef:
-      name: mimir-poc-s3
-
 image:
   tag: 3.2.0
 
@@ -68,8 +63,6 @@ mimir:
         s3:
           endpoint: mimir-poc-seaweedfs:8333
           region: us-east-1
-          access_key_id: ${AWS_ACCESS_KEY_ID}
-          secret_access_key: ${AWS_SECRET_ACCESS_KEY}
           insecure: true
     ingest_storage:
       enabled: false
