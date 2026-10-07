@@ -194,6 +194,26 @@ rules:
       - rbac.authorization.k8s.io
     resources:
       - rolebindings
+  # Allows binding the konflux-*-bot-actions ClusterRoles to konflux-bot-*
+  # ServiceAccounts without holding every permission they grant. Keep this
+  # list in sync with ../bot/kustomization.yaml; internalbot roles are
+  # deliberately excluded.
+  - verbs:
+      - bind
+    apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - clusterroles
+    resourceNames:
+      - konflux-builder-bot-actions
+      - konflux-cleaner-bot-actions
+      - konflux-externalpuller-bot-actions
+      - konflux-integrationtest-bot-actions
+      - konflux-managed-releaser-bot-actions
+      - konflux-model-bot-actions
+      - konflux-releaser-bot-actions
+      - konflux-secrets-bot-actions
+      - konflux-viewer-bot-actions
   - verbs:
       - get
       - list
