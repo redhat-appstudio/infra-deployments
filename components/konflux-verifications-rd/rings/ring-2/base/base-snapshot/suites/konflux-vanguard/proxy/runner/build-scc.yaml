@@ -1,0 +1,23 @@
+# Match normal build admission for the self-contained image pull/build step.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: proxy-build-scc
+rules:
+  - apiGroups: ["security.openshift.io"]
+    resources: ["securitycontextconstraints"]
+    resourceNames: ["appstudio-pipelines-scc"]
+    verbs: ["use"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: proxy-build-scc
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: proxy-build-scc
+subjects:
+  - kind: ServiceAccount
+    name: verification-runner
+    namespace: verification-vanguard-proxy-runner

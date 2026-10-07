@@ -1,0 +1,14 @@
+# Allow the Vanguard team to administer its verification runner namespace,
+# including issuing and rotating the remote launcher ServiceAccount token.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: konflux-vanguard-admins
+subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: konflux-vanguard
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: admin
