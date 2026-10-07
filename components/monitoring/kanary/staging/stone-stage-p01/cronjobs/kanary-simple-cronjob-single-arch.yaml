@@ -31,7 +31,7 @@ spec:
                 - /bin/bash
                 - -c
                 - |
-                  tkn pipeline start kanary-run-simple --use-param-defaults --workspace name=artifacts,emptyDir="" \
+                  tkn pipeline start kanary-run-simple --use-param-defaults --workspace name=artifacts,volumeClaimTemplateFile=/etc/kanary/vct.yaml \
                     --param tested-cluster=stone-stage-p01 \
                     --param test-type=container-single-arch \
                     --param member-cluster=https://api.stone-stage-p01.hpmt.p1.openshiftapps.com:6443 \
@@ -43,3 +43,11 @@ spec:
                     --param s3-bucket=konflux-perfscale-artifacts \
                     --prefix-name kanary-simple-stone-stage-p01-single-arch- \
                     --showlog
+              volumeMounts:
+                - name: workspace-vct
+                  mountPath: /etc/kanary
+                  readOnly: true
+          volumes:
+            - name: workspace-vct
+              configMap:
+                name: kanary-workspace-vct
