@@ -4,35 +4,15 @@ metadata:
   name: konflux-verifications-rd
 spec:
   generators:
-    - merge:
-        mergeKeys:
-          - nameNormalized
-        generators:
-          - clusters:
-              selector:
-                matchExpressions:
-                  - key: appstudio.redhat.com/select-none
-                    operator: Exists
-                  - key: appstudio.redhat.com/select-none
-                    operator: DoesNotExist
-              values:
-                sourceRoot: components/konflux-verifications-rd
-                ring: "empty-base"
-                clusterDir: "empty-base"
-          - list:
-              elements:
-                - nameNormalized: stone-prod-p01
-                  values.ring: ring-2
-                  values.clusterDir: stone-prod-p01
-      selector:
-        matchExpressions:
-          - key: nameNormalized
-            operator: In
-            values:
-              - stone-prod-p01
+    - list:
+        elements:
+          - name: stone-prod-p01
+            values.sourceRoot: components/konflux-verifications-rd
+            values.ring: ring-2
+            values.clusterDir: stone-prod-p01
   template:
     metadata:
-      name: konflux-verifications-rd-{{nameNormalized}}
+      name: konflux-verifications-rd-{{name}}
       labels:
         app.kubernetes.io/part-of: konflux-verifications
     spec:
@@ -42,8 +22,8 @@ spec:
         repoURL: https://github.com/redhat-appstudio/infra-deployments.git
         targetRevision: main
       destination:
+        name: '{{name}}'
         namespace: verification-vanguard-proxy-runner
-        server: '{{server}}'
       syncPolicy:
         automated:
           prune: true
