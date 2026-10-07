@@ -45,17 +45,9 @@ spec:
         args:
         - mini
         - -dir=/data
+        # The staging PoC uses anonymous S3. The namespace NetworkPolicy limits
+        # access to port 8333 to pods in this namespace.
         env:
-        - name: AWS_ACCESS_KEY_ID
-          valueFrom:
-            secretKeyRef:
-              name: mimir-poc-s3
-              key: AWS_ACCESS_KEY_ID
-        - name: AWS_SECRET_ACCESS_KEY
-          valueFrom:
-            secretKeyRef:
-              name: mimir-poc-s3
-              key: AWS_SECRET_ACCESS_KEY
         - name: S3_BUCKET
           value: mimir-tsdb
         - name: HOME
