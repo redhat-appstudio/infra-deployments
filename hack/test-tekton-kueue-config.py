@@ -1180,6 +1180,64 @@ PIPELINERUN_DEFINITIONS: Dict[str, PipelineRunTestData] = {
         }
     },
 
+    "kanary_tenant_pipelinerun": {
+        "name": "Kanary-triggered build in perfscale tenant namespace",
+        "pipelinerun": {
+            "apiVersion": "tekton.dev/v1",
+            "kind": "PipelineRun",
+            "metadata": {
+                "name": "kanary-build-in-tenant",
+                "namespace": "konflux-perfscale-3-tenant",
+                "labels": {
+                    "pipelinesascode.tekton.dev/event-type": "push"
+                }
+            },
+            "spec": {
+                "pipelineRef": {"name": "build-pipeline"},
+                "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
+            }
+        },
+        "expected": {
+            "annotations": {
+                "kueue.konflux-ci.dev/requests-konflux-ci-dev-token": "1",
+            },
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-kanary"
+            }
+        }
+    },
+
+    "kanary_managed_release_pipelinerun": {
+        "name": "Kanary release in managed perfscale namespace",
+        "pipelinerun": {
+            "apiVersion": "tekton.dev/v1",
+            "kind": "PipelineRun",
+            "metadata": {
+                "name": "kanary-release",
+                "namespace": "managed-konflux-perfscale-tenant",
+                "labels": {
+                    "appstudio.openshift.io/service": "release",
+                    "pipelines.appstudio.openshift.io/type": "managed"
+                }
+            },
+            "spec": {
+                "pipelineRef": {"name": "release-pipeline"},
+                "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
+            }
+        },
+        "expected": {
+            "annotations": {
+                "kueue.konflux-ci.dev/requests-konflux-ci-dev-token": "1",
+                "kueue.konflux-ci.dev/requests-konflux-release": "1",
+            },
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-kanary"
+            }
+        }
+    },
+
     "mintmaker_triggered_tenant_pipelinerun": {
         "name": "Mintmaker-triggered pipeline in tenant namespace",
         "pipelinerun": {
@@ -1436,6 +1494,14 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
         "pipelinerun_key": "kanary_pipelinerun",
         "config_key": "development"
     },
+    "kanary_tenant_dev": {
+        "pipelinerun_key": "kanary_tenant_pipelinerun",
+        "config_key": "development"
+    },
+    "kanary_managed_release_dev": {
+        "pipelinerun_key": "kanary_managed_release_pipelinerun",
+        "config_key": "development"
+    },
     "mintmaker_triggered_tenant_dev": {
         "pipelinerun_key": "mintmaker_triggered_tenant_pipelinerun",
         "config_key": "development"
@@ -1530,6 +1596,14 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
     },
     "kanary_staging": {
         "pipelinerun_key": "kanary_pipelinerun",
+        "config_key": "staging"
+    },
+    "kanary_tenant_staging": {
+        "pipelinerun_key": "kanary_tenant_pipelinerun",
+        "config_key": "staging"
+    },
+    "kanary_managed_release_staging": {
+        "pipelinerun_key": "kanary_managed_release_pipelinerun",
         "config_key": "staging"
     },
     "mintmaker_triggered_tenant_staging": {

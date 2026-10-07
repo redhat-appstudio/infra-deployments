@@ -145,8 +145,14 @@ cel:
 
     # Set the pipeline priority
     - |
-        plrNamespace == 'appstudio-kanary-exporter' ?
-        priority('konflux-kanary') :
+        plrNamespace in [
+          'appstudio-kanary-exporter',
+          'konflux-perfscale-1-tenant',
+          'konflux-perfscale-2-tenant',
+          'konflux-perfscale-3-tenant',
+          'konflux-perfscale-4-tenant',
+          'managed-konflux-perfscale-tenant'
+        ] ? priority('konflux-kanary') :
 
         has(pipelineRun.metadata.labels) &&
         (('build.appstudio.redhat.com/type' in pipelineRun.metadata.labels &&
