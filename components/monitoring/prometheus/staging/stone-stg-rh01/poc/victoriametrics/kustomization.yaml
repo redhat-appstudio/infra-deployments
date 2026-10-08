@@ -13,3 +13,14 @@ resources:
   - networkpolicy.yaml
 generators:
   - operator-helm-generator.yaml
+patches:
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: vm-operator-stone-stg-rh01-poc
+    patch: |-
+      - op: add
+        path: /metadata/annotations
+        value:
+          ignore-check.kube-linter.io/unset-memory-requirements: Operator memory is intentionally uncapped for the PoC; the 1Gi request remains.
