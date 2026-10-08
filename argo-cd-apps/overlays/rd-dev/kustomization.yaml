@@ -17,6 +17,7 @@ resources:
 # - kyverno # TODO: Uncomment this once e2e tests use solely the rd-dev overlay
   - lumino
   - multi-platform-controller
+# - pipeline-service # TODO: Uncomment this once e2e tests use solely the rd-dev overlay
 # - policies # TODO: Uncomment this once e2e tests use solely the rd-dev overlay
   - project-controller
   - smee-client
@@ -27,9 +28,12 @@ resources:
 patchesStrategicMerge:
   - delete-legacy-konflux-member-appsets.yaml
 
+# Patch the pipeline-service ApplicationSet to use the `components/pipeline-service-rd/rings/ring-0/base/`
+# directory instead of the default `components/pipeline-service-rd/rings/ring-0/legacy-development/` directory,
+# which includes the `appstudio-pipelines-scc` SecurityContextConstraints.
 patches:
   - path: pipeline-service-operator-patch.yaml
     target:
       kind: ApplicationSet
       version: v1alpha1
-      name: pipeline-service
+      name: pipeline-service-rd
