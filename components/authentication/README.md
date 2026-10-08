@@ -12,7 +12,7 @@ The Authentication component contains GitOps manifests for Konflux cluster **aut
 | `konflux-admins-pod-admin.yaml` | `ClusterRole` + `RoleBinding` | Pod create/exec/attach in selected namespaces only |
 | `konflux-sre.yaml` | `ClusterRole` / `ClusterRoleBinding` | Read-only pod access; delete allowed for cleanup |
 | `component-maintainer.yaml` | `ClusterRole`  | OLM `installplans`, Tekton Results, limited SA patch |
-| `grafana-view-only.yaml` | `ClusterRole` / `RoleBinding` | Read `appstudio-grafana` namespace |
+| `grafana-view-only.yaml` | `ClusterRole` / `RoleBinding` / `ClusterRoleBinding` | Read `appstudio-grafana` namespace; `cluster-monitoring-view` for `konflux-grafana-viewers` |
 | `test-platform-ci-admins-can-view.yaml` | `ClusterRole` / `ClusterRoleBinding` | View test platform / Crossplane resources |
 | `everyone-can-view.yaml` + patch | `ClusterRole` / `ClusterRoleBinding` | Shared view roles for App Studio, monitoring, cluster version, compute |
 

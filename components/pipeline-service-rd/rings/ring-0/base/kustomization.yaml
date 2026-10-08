@@ -10,11 +10,24 @@ resources:
   - tekton-chains-signing-secret-job.yaml
 
 patches:
-  - path: patches/delete-tekton-results-resources-patch.yaml
-  - path: patches/delete-openshift-pipelines-resources-patch.yaml
+  - path: patches/delete-tekton-results-configmap-patch.yaml
+  - path: patches/delete-tekton-results-database-es-patch.yaml
+  - path: patches/delete-tekton-results-s3-es-patch.yaml
+  - path: patches/delete-chains-public-key-es-patch.yaml
+  - path: patches/delete-chains-signing-secret-es-patch.yaml
   - path: patches/delete-tekton-logging-resources-patch.yaml
-  - path: patches/delete-testing-resources-patch.yaml
+  - path: patches/delete-testing-ns-patch.yaml
+  - path: patches/delete-testing-sa-patch.yaml
+  - path: patches/delete-testing-crb-patch.yaml
+  - path: patches/delete-testing-rb-patch.yaml
   - path: patches/add-argocd-skip-dry-run-annotation-patch.yaml
+
+  # Service exporter settings
+  - path: patches/service-exporter-resources.yaml
+    target:
+      kind: Deployment
+      name: pipeline-metrics-exporter
+      namespace: openshift-pipelines
 
   # TektonConfig changes
   - path: patches/tektonconfig-resources-updates.yaml
