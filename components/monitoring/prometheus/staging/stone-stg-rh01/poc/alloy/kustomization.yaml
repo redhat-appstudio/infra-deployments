@@ -14,6 +14,16 @@ generators:
 
 patches:
 - target:
+    group: apps
+    version: v1
+    kind: StatefulSet
+    name: alloy-poc
+  patch: |-
+    - op: add
+      path: /metadata/annotations
+      value:
+        ignore-check.kube-linter.io/unset-memory-requirements: Alloy memory is intentionally uncapped for the PoC; the 10Gi request remains.
+- target:
     kind: Service
     name: alloy-poc
   patch: |-
