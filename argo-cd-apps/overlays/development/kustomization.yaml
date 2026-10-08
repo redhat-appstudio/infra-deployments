@@ -161,11 +161,6 @@ patches:
     target:
       kind: ApplicationSet
       version: v1alpha1
-      name: disaster-recovery
-  - path: development-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
       name: perf-team-prometheus-reader
   - path: development-overlay-patch.yaml
     target:
@@ -183,26 +178,6 @@ patches:
       version: v1alpha1
       name: enterprise-contract
   # ensure installation order of ApplicationSets during all-application-sets sync
-  - path: dev-application-sync-wave-pipeline-service.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: pipeline-service
-  - path: dev-application-sync-wave-disaster-recovery.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: disaster-recovery
-  - path: delete-preserve-resources-flag-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: disaster-recovery
-  - path: dev-application-auto-sync-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: disaster-recovery
   - path: delete-preserve-resources-flag-patch.yaml
     target:
       kind: ApplicationSet
