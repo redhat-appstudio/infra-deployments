@@ -50,6 +50,11 @@ Deploys a dedicated namespace and RBAC used by Tekton Results end-to-end/smoke t
 | `testing-ns.yaml` | `Namespace` | Creates `plnsvc-tests` |
 | `testing-rbac.yaml` | `ServiceAccount` / `ClusterRoleBinding` / `RoleBinding` | Grants the 'tekton-results-tests' SA permissions in the 'tekton-results-readonly' `ClusterRole` and the 'konflux-pipeline-service' group permissions in the 'tekton-results-admin' `ClusterRole` |
 
+
+### Operator versus non-Operator Managed Clusters
+
+Until the Konflux Operator is deployed to all clusters, some clusters' (those without the Konflux Operator) will have an additional `SecurityContextConstraint` resource present in the cluster's Kustomize file. On clusters that have the Konflux Operator deployed, this resource is managed by the operator.
+
 ## Promotion Tactics
 
 This component is a special case in terms of using the automatic ring deployments workflow. Unlike most other components, there are no images listed in the ring or cluster Kustomize files. Image-based changes can still be automatically detected and promoted when a new image is available from the associated Quay repository, but this configuration allows image-based changes to be paired with manifest-based changes in the same [Freight](https://docs.kargo.io/user-guide/core-concepts#freight) by making changes to each resource's image reference in the `components/pipeline-service-rd/base/` directory.

@@ -1,0 +1,54 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../base
+
+patches:
+  - path: patches/tekton-chains-public-key-path-patch.yaml
+    target:
+      name: tekton-chains-public-key
+      group: external-secrets.io
+      version: v1
+      kind: ExternalSecret
+  - path: patches/tekton-chains-signing-secret-path-patch.yaml
+    target:
+      name: tekton-chains-signing-secret
+      group: external-secrets.io
+      version: v1
+      kind: ExternalSecret
+  - path: patches/pipelines-as-code-secret-path-patch.yaml
+    target:
+      name: pipelines-as-code-secret
+      group: external-secrets.io
+      version: v1
+      kind: ExternalSecret
+  - path: patches/tekton-config-pac-settings-patch.yaml
+    target:
+      kind: TektonConfig
+      name: config
+  - path: patches/pipeline-metrics-exporter-resources-patch.yaml
+    target:
+      kind: Deployment
+      name: pipeline-metrics-exporter
+  # tekton-results is not deployed on this cluster — delete all its resources
+  - path: patches/delete-tekton-results-namespace-patch.yaml
+    target:
+      name: tekton-results
+      kind: Namespace
+  - path: patches/delete-tr-namespaced-resources-patch.yaml
+    target:
+      namespace: tekton-results
+  - path: patches/delete-tekton-results-cluster-rbac-patch.yaml
+    target:
+      name: "(tekton-results|prometheus-tekton-results).*"
+      kind: "Cluster(Role|RoleBinding)"
+  - path: patches/delete-tekton-results-test-resources-patch.yaml
+    target:
+      namespace: plnsvc-tests
+      name: "(tekton-results-tests|pipeline-service-admin)"
+  - path: patches/delete-tekton-results-external-secrets-patch.yaml
+    target:
+      name: "tekton-results-.*"
+      group: external-secrets.io
+      kind: ExternalSecret

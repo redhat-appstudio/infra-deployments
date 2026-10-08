@@ -1,0 +1,16 @@
+# Removes cluster-scoped tekton-results RBAC resources:
+# ClusterRoles and ClusterRoleBindings whose names start with
+# tekton-results-* or prometheus-tekton-results-*.
+#
+# Target in kustomization.yaml:
+#   name: "(tekton-results|prometheus-tekton-results).*"
+#   kind: "Cluster(Role|RoleBinding)"
+#
+# Note: $patch:delete targets are controlled by the target selector
+# in kustomization.yaml, not by the apiVersion/kind/name below.
+# Those fields are required by kustomize but unused for matching.
+$patch: delete
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: unused
