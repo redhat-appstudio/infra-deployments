@@ -5,7 +5,7 @@ Konflux multi-platform-controller overlays, organized by ring.
 | Ring | Clusters |
 |------|----------|
 | ring-0 | development |
-| ring-1 | `stone-stg-rh01`, `stone-stage-p01`, `lightwell-dev` |
+| ring-1 | `stone-stg-rh01`, `stone-stage-p01`, `lightwell-dev`, `kflux-stg-p02` |
 | ring-2 | `kflux-fedora-01`, `kflux-ocp-p01`, `kflux-osp-p01`, `kflux-prd-rh03`, `kflux-rhel-p01`, `stone-prod-p01`, `kflux-lw-p01` |
 | ring-3 | `stone-prd-rh01`, `stone-prod-p02` |
 | ring-4 | `kflux-prd-rh02` |
