@@ -1628,6 +1628,18 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
             }
         }
     },
+    "mintmaker_triggered_tenant_production": {
+        "pipelinerun_key": "mintmaker_triggered_tenant_pipelinerun",
+        "config_key": "production"
+    },
+    "mintmaker_triggered_in_mintmaker_namespace_production": {
+        "pipelinerun_key": "mintmaker_triggered_in_mintmaker_namespace",
+        "config_key": "production"
+    },
+    "tenant_pipelinerun_without_mintmaker_label_production": {
+        "pipelinerun_key": "tenant_pipelinerun_without_mintmaker_label",
+        "config_key": "production"
+    },
 
     # Test key PipelineRuns with production kflux-ocp-p01 config
     "multiplatform_new_production-kflux-ocp-p01": {
@@ -1904,6 +1916,18 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
                 "kueue.x-k8s.io/priority-class": "konflux-release"
             }
         }
+    },
+    "mintmaker_triggered_tenant_production-stone-prod-p02": {
+        "pipelinerun_key": "mintmaker_triggered_tenant_pipelinerun",
+        "config_key": "production-stone-prod-p02"
+    },
+    "mintmaker_triggered_in_mintmaker_namespace_production-stone-prod-p02": {
+        "pipelinerun_key": "mintmaker_triggered_in_mintmaker_namespace",
+        "config_key": "production-stone-prod-p02"
+    },
+    "tenant_pipelinerun_without_mintmaker_label_production-stone-prod-p02": {
+        "pipelinerun_key": "tenant_pipelinerun_without_mintmaker_label",
+        "config_key": "production-stone-prod-p02"
     },
 
     # Test key PipelineRuns with production kflux-rhel-p01 config
