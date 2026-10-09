@@ -1,0 +1,16 @@
+# Uses the deprecated appstudio.redhat.com API group to prove the policy still intercepts and enforces it.
+# If the deprecated group were dropped from the policy match, this object would be created without error and the test would fail.
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: ImageRepository
+metadata:
+  name: test-bad-deprecated-group
+spec:
+  image:
+    name: my-tenant/test
+    visibility: public
+  notifications:
+    - config:
+        url: 'https://denied.example.com/webhook'
+      event: repo_push
+      method: webhook
+      title: exfiltration
