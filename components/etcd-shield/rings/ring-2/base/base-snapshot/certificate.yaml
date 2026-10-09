@@ -1,0 +1,15 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: serving-cert
+  namespace: etcd-shield
+spec:
+  duration: 2160h    # 90 days
+  renewBefore: 360h  # renew 15 days before expiry
+  dnsNames:
+    - etcd-shield.etcd-shield.svc
+    - etcd-shield.etcd-shield.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: selfsigned-issuer
+  secretName: etcd-shield-metrics-tls
