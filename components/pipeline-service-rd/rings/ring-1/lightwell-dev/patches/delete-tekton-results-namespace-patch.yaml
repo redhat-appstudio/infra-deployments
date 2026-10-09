@@ -1,0 +1,9 @@
+# Removes the tekton-results Namespace from the kustomize output.
+# tekton-results is not deployed on this cluster.
+#
+# Target in kustomization.yaml: kind: Namespace, name: tekton-results
+$patch: delete
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tekton-results
