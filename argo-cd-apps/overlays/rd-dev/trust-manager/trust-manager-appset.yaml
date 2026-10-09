@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: trust-manager-rd
+  name: trust-manager
 spec:
   generators:
     - merge:
@@ -13,7 +13,7 @@ spec:
                 matchLabels:
                   appstudio.redhat.com/member-cluster: "true"
               values:
-                sourceRoot: components/trust-manager-rd
+                sourceRoot: components/trust-manager
                 ring: "ring-0"
                 clusterDir: base
           - list:
@@ -22,6 +22,8 @@ spec:
   template:
     metadata:
       name: trust-manager-{{nameNormalized}}
+      labels:
+        app.kubernetes.io/part-of: trust-manager
     spec:
       project: default
       source:
