@@ -38,6 +38,7 @@ GitOps monorepo deploying 50+ Kubernetes components across multiple clusters via
 
 ## Skills
 
+- When determining desired deployment state, comparing component versions across clusters, or tracing fixes and rollout history, read `skills/deployment-state/SKILL.md`
 - Before opening a PR, writing a PR description, or interpreting CI results, read `skills/pr-workflow.md`
 - When drafting or reviewing a production PR's Risk Assessment section, read `skills/risk-assessment.md`
 - When a CI check fails on a PR, read `skills/ci-troubleshooting.md`
