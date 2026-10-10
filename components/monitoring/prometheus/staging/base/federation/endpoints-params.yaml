@@ -29,6 +29,14 @@
     - '{__name__="nginx_otel_http_request_errors_total", namespace="konflux-ui"}'
     - '{__name__="caddy_http_request_duration_seconds_count", namespace="konflux-ui"}'
 
+    # Namespace: Kargo
+    - '{__name__="kube_deployment_status_replicas_available", namespace="kargo"}'
+    - '{__name__="kube_deployment_spec_replicas", namespace="kargo"}'
+
+    # Namespace: Kargo Infrastructure Shard
+    - '{__name__="kube_deployment_status_replicas_available", namespace="kargo-shard-infra-deployments"}'
+    - '{__name__="kube_deployment_spec_replicas", namespace="kargo-shard-infra-deployments"}'
+
     # Namespace: konflux-kite
     - '{__name__="kube_deployment_status_replicas_ready", namespace="konflux-kite"}'
     - '{__name__="kube_deployment_status_replicas_available", namespace="konflux-kite"}'
