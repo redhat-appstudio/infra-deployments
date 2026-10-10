@@ -1,0 +1,7 @@
+# It has similar idea as ring-1/base/image-controller, but with production data instead of staging data.
+# We do not use kustomize on ring-1 to avoid mistakes (because of different data in different places and conditions) and chainsaw tests.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- restrict-notifications-url-validationadmissionpolicy.yaml
+- restrict-notifications-url-validationadmissionpolicybinding.yaml

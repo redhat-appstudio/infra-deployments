@@ -1,0 +1,16 @@
+apiVersion: konflux-ci.dev/v1alpha1
+kind: ImageRepository
+metadata:
+  name: test-existing-bad-url
+  labels:
+    updated-by: controller
+spec:
+  image:
+    name: my-tenant/test
+    visibility: public
+  notifications:
+    - config:
+        url: 'https://legacy-invalid.example.com/webhook'
+      event: repo_push
+      method: webhook
+      title: legacy-webhook-renamed
