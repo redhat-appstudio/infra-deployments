@@ -1,0 +1,59 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: konflux-kite
+  labels:
+    appstudio.redhat.com/deployment-clusters: "tenant"
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              selector:
+                matchExpressions: # k-components will replace this with the correct selector
+                  - key: appstudio.redhat.com/select-none
+                    operator: Exists
+                  - key: appstudio.redhat.com/select-none
+                    operator: DoesNotExist
+              values:
+                sourceRoot: components/konflux-kite-rd
+                ring: "empty-base"
+                clusterDir: "empty-base"
+          - list:
+              elements: [] # Populated via k-components
+
+  template:
+    metadata:
+      name: konflux-kite-{{nameNormalized}}
+    spec:
+      ignoreDifferences:
+        - kind: ConfigMap
+          group: ""
+          name: kite-config-*
+          jsonPointers:
+            - /data
+        - group: route.openshift.io
+          kind: Route
+          jsonPointers:
+            - /spec/tls/destinationCACertificate
+      project: default
+      source:
+        path: '{{values.sourceRoot}}/rings/{{values.ring}}/{{values.clusterDir}}'
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+        targetRevision: main
+      destination:
+        namespace: konflux-kite
+        server: '{{server}}'
+      syncPolicy:
+        # automated:
+        #   prune: true
+        #   selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - SkipDryRunOnMissingResource=true
+        retry:
+          limit: 50
+          backoff:
+            duration: 15s
