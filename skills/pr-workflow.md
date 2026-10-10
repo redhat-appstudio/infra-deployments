@@ -118,9 +118,17 @@ Mention the results in the Validation section of the PR body.
 
 ## Production Ring Rollouts
 
-Production changes must be split into 3 ring PRs covering subsets of clusters. Never apply a production change to all clusters in a single PR — unless it's a hotfix using the `skip-ring-deployment/hotfix` label.
+Production changes must be split into 3 ring PRs (rings 2-4) covering subsets of clusters. Never apply a production change to all clusters in a single PR — unless it's a hotfix using the `skip-ring-deployment/hotfix` label.
 
-- Each ring PR title includes the ring number:
+**If the component is onboarded to Kargo:**
+
+- Kargo will create production ring PRs called `chore(ring-<N>-<component>): promote <component> to ring-<N>`
+- If Kargo is recognized as the author and sole contributor to the PR, no 'prod/needs-approval' or 'infra/hold-production' labels are applied to the PR
+- All production ring PRs require human approval
+
+**If the component is NOT onboarded to Kargo:**
+
+- Each manually created ring PR title includes the ring & Jira ticket number:
   `KFLUXINFRA-1234: short description of the change (ring-1)`
 - The **What** section lists the specific clusters included in this ring.
 - Later ring PRs reference earlier ring PRs in **Validation** as evidence of success.

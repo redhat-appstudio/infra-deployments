@@ -36,7 +36,6 @@ func main() {
 		logFile           = flag.String("log-file", "", "Write debug-level logs to this file (in addition to INFO-level logs on stdout)")
 		enforceRingDeploy = flag.Bool("enforce-ring-deployment", false, "Fail when both staging and production overlays are directly modified in the same PR")
 		ringReportFile    = flag.String("ring-report-file", "", "Write ring deployment check result (markdown) to this file for external consumers like PR comments")
-		prAuthor          = flag.String("pr-author", "", "GitHub login of the PR author; when set to a known bot (e.g. konflux-kargo-bot) the prod/needs-approval label is skipped")
 	)
 	flag.Parse()
 
@@ -53,6 +52,16 @@ func main() {
 	if !*dryRun {
 		if *prNumber == 0 || *githubToken == "" || *repo == "" {
 			fatal("--pr-number, --github-token, and --repo are required when not using --dry-run")
+		}
+	}
+
+	// Create the GitHub client early so it can be used for both the Kargo
+	// identity check and the final label sync.
+	var ghClient *ghclient.Client
+	if !*dryRun {
+		ghClient, err = ghclient.NewClient(*githubToken, *repo)
+		if err != nil {
+			fatal("creating GitHub client", "err", err)
 		}
 	}
 
@@ -95,7 +104,7 @@ func main() {
 	if len(changedFiles) == 0 {
 		slog.Info("No changed files detected")
 		if !*dryRun {
-			if err := syncLabels(ctx, *githubToken, *repo, *prNumber, []string{"environment/none"}); err != nil {
+			if err := ghClient.SyncLabels(ctx, *prNumber, []string{"environment/none"}); err != nil {
 				fatal("syncing labels", "err", err)
 			}
 		}
@@ -141,11 +150,31 @@ func main() {
 		labels = append(labels, "environment/none")
 	}
 
-	// If production is affected and the PR is not opened by Kargo, add a hold label that Prow
-	// Tide can use to block merging until a human explicitly removes it after review.
-	if result.AffectedEnvironments[detector.Production] && *prAuthor != ghclient.KargoBot {
-		labels = append(labels, ghclient.HoldProductionLabel)
-		labels = append(labels, ghclient.NeedsApprovalProductionLabel)
+	// If production is affected, add hold labels that block merging until a
+	// human explicitly removes them after review.
+	//
+	// Exception: automated Kargo promotion PRs skip prod/needs-approval and hold-production because
+	// they are the output of a pre-approved promotion pipeline. The exemption requires ALL of:
+	//   1. The PR opener's login AND immutable numeric account ID match the
+	//      known Kargo bot constants (bare login alone is spoofable).
+	//   2. Every commit was authored by that same account ID.
+	//   3. Every commit carries a verified (GPG/SSH) signature.
+	if result.AffectedEnvironments[detector.Production] {
+		applyProdLabels := true
+		if !*dryRun {
+			kargoResult, err := ghClient.IsKargoAutomation(ctx, *prNumber)
+			if err != nil {
+				// Fail closed: if we can't verify, we must apply the label.
+				slog.Warn("Kargo bot check failed; applying prod/needs-approval as precaution", "err", err)
+			} else {
+				slog.Info("Kargo bot check complete", "is_kargo_automation", kargoResult.IsBot, "reason", kargoResult.Reason)
+				applyProdLabels = !kargoResult.IsBot
+			}
+		}
+		if applyProdLabels {
+			labels = append(labels, ghclient.NeedsApprovalProductionLabel)
+			labels = append(labels, ghclient.HoldProductionLabel)
+		}
 	}
 
 	printSummary(result, labels, headSHA, baseSHA)
@@ -153,7 +182,7 @@ func main() {
 	if !*dryRun {
 		// Step 5: Sync labels via GitHub API
 		slog.Info("Syncing labels...")
-		if err := syncLabels(ctx, *githubToken, *repo, *prNumber, labels); err != nil {
+		if err := ghClient.SyncLabels(ctx, *prNumber, labels); err != nil {
 			fatal("syncing labels", "err", err)
 		}
 	}
@@ -299,15 +328,6 @@ func printSummary(result *detector.Result, labels []string, headSHA, baseSHA str
 			fmt.Printf("  - %s\n", label)
 		}
 	}
-}
-
-// syncLabels calls the GitHub API to sync labels on the PR.
-func syncLabels(ctx context.Context, token, repoName string, prNumber int, labels []string) error {
-	client, err := ghclient.NewClient(token, repoName)
-	if err != nil {
-		return err
-	}
-	return client.SyncLabels(ctx, prNumber, labels)
 }
 
 // formatRingViolation returns a markdown message for a direct staging+production conflict.
