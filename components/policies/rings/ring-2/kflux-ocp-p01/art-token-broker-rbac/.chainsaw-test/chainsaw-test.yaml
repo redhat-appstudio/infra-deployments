@@ -1,0 +1,126 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: restrict-art-token-broker-bindings
+spec:
+  description: >-
+    Restrict ART token broker permissions to the approved namespaced
+    RoleBindings and deny cluster-scoped grants.
+  concurrent: false
+  namespace: art-kueue-tenant
+  steps:
+  - name: given-policy-is-ready
+    try:
+    - apply:
+        file: ../restrict-art-token-broker-bindings-validatingadmissionpolicy.yaml
+    - apply:
+        file: ../restrict-art-token-broker-bindings-validatingadmissionpolicybinding.yaml
+    - apply:
+        file: ../deny-art-token-broker-clusterrolebindings-validatingadmissionpolicy.yaml
+    - apply:
+        file: ../deny-art-token-broker-clusterrolebindings-validatingadmissionpolicybinding.yaml
+    - sleep:
+        duration: 1s
+    - assert:
+        file: chainsaw-assert-validatingadmissionpolicy.yaml
+    - assert:
+        file: chainsaw-assert-clusterrolebinding-policy.yaml
+  - name: given-tenant-namespace-exists
+    try:
+    - apply:
+        file: resources/tenant-namespace.yaml
+    - apply:
+        file: resources/non-art-tenant-namespace.yaml
+    - apply:
+        file: resources/broker-namespace.yaml
+  - name: then-exact-broker-binding-is-allowed
+    try:
+    - apply:
+        file: resources/valid-rolebinding.yaml
+        expect:
+        - check:
+            ($error != null): false
+    - apply:
+        file: resources/valid-unrelated-rolebinding.yaml
+        expect:
+        - check:
+            ($error != null): false
+  - name: then-other-broker-rolebindings-are-denied
+    try:
+    - create:
+        file: resources/invalid-broker-rolebinding.yaml
+        expect:
+        - check:
+            ($error != null): true
+    - create:
+        file: resources/invalid-role-subject.yaml
+        expect:
+        - check:
+            ($error != null): true
+    - create:
+        file: resources/invalid-extra-subject.yaml
+        expect:
+        - check:
+            ($error != null): true
+    - create:
+        file: resources/invalid-non-art-namespace-rolebinding.yaml
+        expect:
+        - check:
+            ($error != null): true
+    - create:
+        file: resources/invalid-user-rolebinding.yaml
+        expect:
+        - check:
+            ($error != null): true
+    - create:
+        file: resources/invalid-group-rolebinding.yaml
+        expect:
+        - check:
+            ($error != null): true
+    - create:
+        file: resources/invalid-implicit-serviceaccount-rolebinding.yaml
+        expect:
+        - check:
+            ($error != null): true
+    - apply:
+        file: resources/invalid-update-extra-subject-rolebinding.yaml
+        expect:
+        - check:
+            ($error != null): true
+  - name: then-unlabeled-namespaces-are-unaffected
+    try:
+    - apply:
+        file: resources/unlabeled-namespace.yaml
+    - apply:
+        file: resources/unlabeled-broker-rolebinding.yaml
+        expect:
+        - check:
+            ($error != null): false
+  - name: then-broker-clusterrolebindings-are-denied
+    try:
+    - create:
+        file: resources/invalid-clusterrolebinding-role.yaml
+        expect:
+        - check:
+            ($error != null): true
+    - create:
+        file: resources/invalid-clusterrolebinding-subject.yaml
+        expect:
+        - check:
+            ($error != null): true
+    - create:
+        file: resources/invalid-clusterrolebinding-group.yaml
+        expect:
+        - check:
+            ($error != null): true
+    - apply:
+        file: resources/valid-clusterrolebinding.yaml
+        expect:
+        - check:
+            ($error != null): false
+    - apply:
+        file: resources/valid-clusterrolebinding-broad-group.yaml
+        expect:
+        - check:
+            ($error != null): false
