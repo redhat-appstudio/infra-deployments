@@ -8,11 +8,29 @@ resources:
   - ../../base/eaas
   - ../../base/monitoring-blackbox
   - ../../base/ca-bundle
+  - ../../base/cert-manager-trusted-ca
 
 patchesStrategicMerge:
   - delete-applications.yaml
 
 patches:
+  # ROKS (hypershift) — kubelet is managed by the platform
+  - path: exclude-kubelet-config-roks-clusters.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: kubelet-config
+  # Defer blackbox (o11y private overlay) and perf-team (tenant namespaces)
+  - path: exclude-kflux-stg-p02.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: monitoring-blackbox
+  - path: exclude-kflux-stg-p02.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: perf-team-prometheus-reader
   # Exclude operator-managed clusters from Argo generation for services owned
   # by the konflux-operator. Orphan (do not prune) when Applications go away.
   - path: exclude-operator-owned-clusters.yaml
