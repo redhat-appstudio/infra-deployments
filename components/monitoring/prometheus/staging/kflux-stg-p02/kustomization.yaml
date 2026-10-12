@@ -5,6 +5,11 @@ resources:
 - cluster-monitoring-config.yaml
 
 patches:
+  - path: uwm-config-patch.yaml
+    target:
+      name: user-workload-monitoring-config
+      kind: ConfigMap
+      version: v1
   - path: cluster-id-label.yaml
     target:
       name: appstudio-federate-ms
