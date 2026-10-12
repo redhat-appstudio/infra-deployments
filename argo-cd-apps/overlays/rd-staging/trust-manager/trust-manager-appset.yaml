@@ -18,7 +18,7 @@ spec:
                   - key: appstudio.redhat.com/select-none
                     operator: DoesNotExist
               values:
-                sourceRoot: components/trust-manager-rd
+                sourceRoot: components/trust-manager
                 ring: "empty-base"
                 clusterDir: "empty-base"
           - list:
@@ -27,6 +27,8 @@ spec:
   template:
     metadata:
       name: trust-manager-{{nameNormalized}}
+      labels:
+        app.kubernetes.io/part-of: trust-manager
     spec:
       project: default
       source:
@@ -37,9 +39,9 @@ spec:
         namespace: cert-manager
         server: '{{server}}'
       syncPolicy:
-        # automated:
-        #   prune: true
-        #   selfHeal: true
+        automated:
+          prune: true
+          selfHeal: true
         syncOptions:
         - CreateNamespace=true
         retry:

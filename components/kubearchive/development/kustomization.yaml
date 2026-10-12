@@ -185,8 +185,7 @@ patches:
       - op: replace
         path: /metadata/name
         value: kubearchive-schema-migration-v13-v1.23.0
-  # These patches add an annotation so an OpenShift service
-  # creates the TLS secrets instead of Cert Manager
+  # cert-manager provisions the API server and webhook serving certificates.
   - patch: |-
       apiVersion: v1
       kind: Service
@@ -217,6 +216,51 @@ patches:
         name: kubearchive-validating-webhook-configuration
         annotations:
           service.beta.openshift.io/inject-cabundle: "true"
+  # The overlay deploys into product-kubearchive, so its serving cert DNS names
+  # must use that namespace.
+  - target:
+      group: cert-manager.io
+      version: v1
+      kind: Certificate
+      name: kubearchive-api-server-certificate
+    patch: |-
+      - op: replace
+        path: /spec/dnsNames
+        value:
+          - localhost
+          - kubearchive-api-server
+          - kubearchive-api-server.product-kubearchive.svc
+          - kubearchive-api-server.product-kubearchive.svc.cluster.local
+  # Keep cert-manager's Secret separate from the service-ca Secret during handoff.
+  - target:
+      group: cert-manager.io
+      version: v1
+      kind: Certificate
+      name: kubearchive-api-server-certificate
+    patch: |-
+      - op: replace
+        path: /spec/secretName
+        value: kubearchive-api-server-tls-pending
+  - target:
+      group: cert-manager.io
+      version: v1
+      kind: Certificate
+      name: kubearchive-operator-certificate
+    patch: |-
+      - op: replace
+        path: /spec/dnsNames
+        value:
+          - kubearchive-operator-webhooks.product-kubearchive.svc
+          - kubearchive-operator-webhooks.product-kubearchive.svc.cluster.local
+  - target:
+      group: cert-manager.io
+      version: v1
+      kind: Certificate
+      name: kubearchive-operator-certificate
+    patch: |-
+      - op: replace
+        path: /spec/secretName
+        value: kubearchive-operator-tls-pending
   # These patches solve Kube Linter problems
   - patch: |-
       apiVersion: apps/v1
@@ -365,42 +409,6 @@ patches:
       kind: CronJob
       metadata:
         name: cluster-vacuum
-        namespace: kubearchive
-  # These patches remove Certificates and Issuer from Cert-Manager
-  - patch: |-
-      $patch: delete
-      apiVersion: cert-manager.io/v1
-      kind: Certificate
-      metadata:
-        name: "kubearchive-api-server-certificate"
-        namespace: kubearchive
-  - patch: |-
-      $patch: delete
-      apiVersion: cert-manager.io/v1
-      kind: Certificate
-      metadata:
-        name: "kubearchive-ca"
-        namespace: kubearchive
-  - patch: |-
-      $patch: delete
-      apiVersion: cert-manager.io/v1
-      kind: Issuer
-      metadata:
-        name: "kubearchive-ca"
-        namespace: kubearchive
-  - patch: |-
-      $patch: delete
-      apiVersion: cert-manager.io/v1
-      kind: Issuer
-      metadata:
-        name: "kubearchive"
-        namespace: kubearchive
-  - patch: |-
-      $patch: delete
-      apiVersion: cert-manager.io/v1
-      kind: Certificate
-      metadata:
-        name: "kubearchive-operator-certificate"
         namespace: kubearchive
   # Delete the original ConfigMaps since we're generating them with configMapGenerator
   - patch: |-

@@ -45,6 +45,11 @@ spec:
     metadata:
       name: image-rbac-proxy-{{nameNormalized}}
     spec:
+      ignoreDifferences:
+        - group: route.openshift.io
+          kind: Route
+          jsonPointers:
+            - /spec/tls/destinationCACertificate
       project: default
       source:
         path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
