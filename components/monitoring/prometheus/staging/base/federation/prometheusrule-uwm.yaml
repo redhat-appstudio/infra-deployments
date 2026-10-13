@@ -60,7 +60,7 @@
       rules:
       - record: kube_pod_status_phase:excluding_jobs
         expr: |
-          kube_pod_status_phase{namespace!~".*-tenant|openshift-.*|kube-.*"}
+          kube_pod_status_phase{namespace!~".*-tenant|openshift-.*|kube-.*|mintmaker"}
           unless on (namespace, pod) kube_pod_owner{owner_kind="Job"}
 
     - name: konflux_tenant_capacity
