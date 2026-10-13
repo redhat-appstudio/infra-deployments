@@ -2,8 +2,6 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ../base
-  - ../base/monitor/staging
-  - external-secrets/release-monitor-secret.yaml
   - external-secrets/release-service-github-token.yaml
   - https://github.com/konflux-ci/release-service/config/default?ref=3f78e9ca61075d10298f9edcb3902a50e92628c2
   - release_service_config.yaml
