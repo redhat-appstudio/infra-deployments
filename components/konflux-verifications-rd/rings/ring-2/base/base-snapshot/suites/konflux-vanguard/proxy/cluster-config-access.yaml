@@ -1,0 +1,25 @@
+# Read the deployed endpoint; tests must not substitute a matching test proxy.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: vanguard-proxy-cluster-config
+  namespace: konflux-info
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    resourceNames: ["cluster-config"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: vanguard-proxy-cluster-config
+  namespace: konflux-info
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: vanguard-proxy-cluster-config
+subjects:
+  - kind: ServiceAccount
+    name: verification-runner
+    namespace: verification-vanguard-proxy-runner

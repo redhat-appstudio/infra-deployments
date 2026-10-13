@@ -1300,6 +1300,7 @@ spec:
     disabled: false
     is_external_db: true
     logs_api: true
+    logs_path: //logs
     logs_type: blob
     options:
       deployments:
@@ -1340,6 +1341,10 @@ spec:
                       secretKeyRef:
                         key: endpoint
                         name: tekton-results-s3
+                  - name: LOGGING_PLUGIN_QUERY_PARAMS
+                    value: v1alpha2LogType=true&use_path_style=true
+                  - name: LOGGING_PLUGIN_MULTIPART_REGEX
+                    value: -\d{10}.log$
                   - name: LOGGING_PLUGIN_API_URL
                     valueFrom:
                       secretKeyRef:

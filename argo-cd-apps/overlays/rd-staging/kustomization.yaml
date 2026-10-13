@@ -3,6 +3,7 @@ kind: Kustomization
 namespace: argocd-infra-deployments
 
 resources:
+  - application-cleaner
   - artifact-registry-proxy
   - authentication
   - cluster-secret-store
@@ -22,10 +23,13 @@ resources:
   - lumino
   - multi-platform-controller
   - notification-controller
+  - pipeline-service
   - policies
   - project-controller
+  - pvsec
   - repository-validator
   - smee-client
+  - trust-manager
 
 components:
   - ../../k-components/deploy-to-all-staging-clusters

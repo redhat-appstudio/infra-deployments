@@ -1,0 +1,111 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mimir-poc-seaweedfs
+  labels:
+    app.kubernetes.io/name: seaweedfs
+    app.kubernetes.io/part-of: mimir-poc
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: gp3
+  resources:
+    requests:
+      storage: 100Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mimir-poc-seaweedfs
+  labels:
+    app.kubernetes.io/name: seaweedfs
+    app.kubernetes.io/part-of: mimir-poc
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: seaweedfs
+      app.kubernetes.io/instance: mimir-poc
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: seaweedfs
+        app.kubernetes.io/instance: mimir-poc
+        app.kubernetes.io/part-of: mimir-poc
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: seaweedfs
+        image: docker.io/chrislusf/seaweedfs:4.48
+        args:
+        - mini
+        - -dir=/data
+        # The staging PoC uses anonymous S3. The namespace NetworkPolicy limits
+        # access to port 8333 to pods in this namespace.
+        env:
+        - name: S3_BUCKET
+          value: mimir-tsdb
+        - name: HOME
+          value: /data
+        ports:
+        - name: s3
+          containerPort: 8333
+          protocol: TCP
+        startupProbe:
+          tcpSocket:
+            port: s3
+          periodSeconds: 10
+          failureThreshold: 30
+        readinessProbe:
+          tcpSocket:
+            port: s3
+          periodSeconds: 10
+        livenessProbe:
+          tcpSocket:
+            port: s3
+          periodSeconds: 20
+        resources:
+          requests:
+            cpu: 100m
+            memory: 512Mi
+          limits:
+            memory: 2Gi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: mimir-poc-seaweedfs
+      - name: tmp
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mimir-poc-seaweedfs
+  labels:
+    app.kubernetes.io/name: seaweedfs
+    app.kubernetes.io/part-of: mimir-poc
+spec:
+  ports:
+  - name: s3
+    port: 8333
+    targetPort: s3
+    protocol: TCP
+  selector:
+    app.kubernetes.io/name: seaweedfs
+    app.kubernetes.io/instance: mimir-poc

@@ -66,7 +66,8 @@ jobs:
             --pr-number=${{ github.event.pull_request.number }} \
             --github-token=$GITHUB_TOKEN \
             --repo=${{ github.repository }} \
-            --log-file=../debug.log
+            --log-file=../debug.log \
+            --pr-author=${{ github.event.pull_request.user.login }}
 
       - name: Upload debug log
         if: always()

@@ -1,0 +1,36 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: konflux-verifications-rd
+spec:
+  generators:
+    - list:
+        elements:
+          - name: stone-prod-p01
+            values.sourceRoot: components/konflux-verifications-rd
+            values.ring: ring-2
+            values.clusterDir: stone-prod-p01
+  template:
+    metadata:
+      name: konflux-verifications-rd-{{name}}
+      labels:
+        app.kubernetes.io/part-of: konflux-verifications
+    spec:
+      project: default
+      source:
+        path: '{{values.sourceRoot}}/rings/{{values.ring}}/{{values.clusterDir}}'
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+        targetRevision: main
+      destination:
+        name: '{{name}}'
+        namespace: verification-vanguard-proxy-runner
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+        retry:
+          limit: 50
+          backoff:
+            duration: 15s

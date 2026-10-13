@@ -1,0 +1,24 @@
+# The Tekton controller has restricted ingress. Permit this PoC's vmagent
+# pods to scrape the controller metrics endpoint without opening its Prometheus.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: vm-poc-tekton-controller-scrape
+  namespace: openshift-pipelines
+spec:
+  podSelector:
+    matchLabels:
+      app: tekton-pipelines-controller
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: appstudio-vm-poc
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: vmagent
+              app.kubernetes.io/instance: vm-poc
+      ports:
+        - protocol: TCP
+          port: 9090

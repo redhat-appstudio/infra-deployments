@@ -22,6 +22,8 @@ rings/
   ring-0/base/                # Empty: no development deployment
   ring-1/base/base-snapshot/  # Self-contained snapshot of base
   ring-1/<cluster>/           # Cluster overlay selecting the snapshot
+  ring-2/base/base-snapshot/  # Proxy-only promoted snapshot
+  ring-2/stone-prod-p01/      # Ring 2 proxy verification target
 ```
 
 `base/kustomization.yaml` explicitly selects enabled suites. The profiles and
@@ -44,10 +46,11 @@ reorganization preserves all existing names, annotations, permissions and target
 Conformance keeps its legacy RBAC; new suites use the smaller runner profile.
 
 The staging ApplicationSet selects `stone-stage-p01`, `stone-stg-rh01` and
-`lightwell-dev`. Other selected clusters use the empty fallback. These manifests
-do not add production targets. See the
+`lightwell-dev`. Other selected staging clusters use the empty fallback. The
+production ApplicationSet is deliberately scoped to the representative Ring 2
+cluster `stone-prod-p01`, where only the Vanguard proxy suite is selected. See the
 [ApplicationSet](../../argo-cd-apps/overlays/rd-staging/konflux-verifications-rd/konflux-verifications-rd-appset.yaml)
-and [staging cluster list](../../argo-cd-apps/k-components/deploy-to-staging-tenant-clusters/tenant-clusters-list-patch.yaml).
+and [production ApplicationSet](../../argo-cd-apps/overlays/rd-production/konflux-verifications-rd/konflux-verifications-rd-appset.yaml).
 
 ## Add a suite
 
@@ -134,6 +137,7 @@ kustomize build components/konflux-verifications-rd/examples/team-suite
 kustomize build components/konflux-verifications-rd/rings/ring-1/stone-stage-p01
 kustomize build components/konflux-verifications-rd/rings/ring-1/stone-stg-rh01
 kustomize build components/konflux-verifications-rd/rings/ring-1/lightwell-dev
+kustomize build components/konflux-verifications-rd/rings/ring-2/stone-prod-p01
 ```
 
 Before enabling a suite, inspect the rendered namespaces, RoleBindings and runner

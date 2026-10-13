@@ -67,7 +67,11 @@ rules:
   - logs
   - records
   - results
+  # No watch: results.tekton.dev is a virtual API group served by the Tekton
+  # Results API server, which only ever issues SubjectAccessReviews for
+  # create/get/list/delete/update. A watch verb here is never evaluated, but it
+  # does break RoleBinding creation for namespace admins, whose role does not
+  # hold it. Keep this set a subset of konflux-admin-user-actions.
   verbs:
   - get
   - list
-  - watch
