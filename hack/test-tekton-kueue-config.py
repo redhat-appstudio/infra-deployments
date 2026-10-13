@@ -1300,6 +1300,11 @@ CONFIG_COMBINATIONS: Dict[str, ConfigCombination] = {
         "name": "Production Stone P01 config",
         "config_file": "components/kueue/rings/ring-2/stone-prod-p01/config.yaml",
         "kustomization_file": "components/kueue/rings/ring-2/base/tekton-kueue/kustomization.yaml"
+    },
+    "production-kflux-prd-rh02": {
+        "name": "Production RH02 config (ring-4)",
+        "config_file": "components/kueue/rings/ring-4/kflux-prd-rh02/config.yaml",
+        "kustomization_file": "components/kueue/rings/ring-4/base/tekton-kueue/kustomization.yaml"
     }
 }
 
@@ -2067,6 +2072,20 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
     "tenant_pipelinerun_without_mintmaker_label_production-kflux-prd-rh03": {
         "pipelinerun_key": "tenant_pipelinerun_without_mintmaker_label",
         "config_key": "production-kflux-prd-rh03"
+    },
+
+    # kflux-prd-rh02 mintmaker tests (ring-4)
+    "mintmaker_triggered_tenant_production-kflux-prd-rh02": {
+        "pipelinerun_key": "mintmaker_triggered_tenant_pipelinerun",
+        "config_key": "production-kflux-prd-rh02"
+    },
+    "mintmaker_triggered_in_mintmaker_namespace_production-kflux-prd-rh02": {
+        "pipelinerun_key": "mintmaker_triggered_in_mintmaker_namespace",
+        "config_key": "production-kflux-prd-rh02"
+    },
+    "tenant_pipelinerun_without_mintmaker_label_production-kflux-prd-rh02": {
+        "pipelinerun_key": "tenant_pipelinerun_without_mintmaker_label",
+        "config_key": "production-kflux-prd-rh02"
     },
 
     # stone-prod-p01 mintmaker tests
