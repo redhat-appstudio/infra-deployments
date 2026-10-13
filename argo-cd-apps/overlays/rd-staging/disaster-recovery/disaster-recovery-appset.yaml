@@ -2,8 +2,6 @@ apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
   name: disaster-recovery
-  labels:
-    appstudio.redhat.com/deployment-clusters: "tenant"
 spec:
   generators:
     - merge:
@@ -12,17 +10,23 @@ spec:
         generators:
           - clusters:
               selector:
-                matchExpressions: # k-components will replace this with the correct selector
-                  - key: appstudio.redhat.com/select-none
-                    operator: Exists
-                  - key: appstudio.redhat.com/select-none
-                    operator: DoesNotExist
+                matchLabels: # Get tenant clusters for this custom case
+                  appstudio.redhat.com/cluster-type: "tenant"
               values:
                 sourceRoot: components/tenants-backup-restore-test
                 ring: "empty-base"
                 clusterDir: "empty-base"
           - list:
-              elements: [] # Populated via k-components
+              elements: # Run the nightly only on stone-stg-rh01
+                - values.ring: ring-1
+                  nameNormalized: stone-stg-rh01
+                  values.clusterDir: stone-stg-rh01
+        selector: # Keep the generated Application limited to stone-stg-rh01
+          matchExpressions:
+            - key: nameNormalized
+              operator: In
+              values:
+                - stone-stg-rh01
 
   template:
     metadata:
