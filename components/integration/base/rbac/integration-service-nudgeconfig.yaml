@@ -1,0 +1,21 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: integration-service-nudgeconfig-admin
+rules:
+- apiGroups: ["appstudio.redhat.com"]
+  resources: ["nudgeconfigs"]
+  verbs: ["create", "delete", "update", "patch", "get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: integration-service-nudgeconfig-admin
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: integration-service-nudgeconfig-admin
+subjects:
+- kind: ServiceAccount
+  name: integration-service-controller-manager
+  namespace: integration-service
