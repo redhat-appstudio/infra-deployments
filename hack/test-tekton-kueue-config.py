@@ -1241,6 +1241,102 @@ PIPELINERUN_DEFINITIONS: Dict[str, PipelineRunTestData] = {
             }
         }
     },
+
+    "hummingbird_chore_branch_pr": {
+        "name": "Hummingbird chore branch (pull_request in hummingbird-tenant)",
+        "pipelinerun": {
+            "apiVersion": "tekton.dev/v1",
+            "kind": "PipelineRun",
+            "metadata": {
+                "name": "lockfile-update-build",
+                "namespace": "hummingbird-tenant",
+                "annotations": {
+                    "pipelinesascode.tekton.dev/source-branch": "chore/lockfile-update/caddy/rawhide",
+                    "pipelinesascode.tekton.dev/event-type": "pull_request"
+                },
+                "labels": {
+                    "pipelinesascode.tekton.dev/event-type": "pull_request"
+                }
+            },
+            "spec": {
+                "pipelineRef": {"name": "component-build"},
+                "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
+            }
+        },
+        "expected": {
+            "annotations": {
+                "kueue.konflux-ci.dev/requests-konflux-ci-dev-token": "1",
+            },
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-pre-merge-build"
+            }
+        }
+    },
+
+    "hummingbird_chore_branch_push": {
+        "name": "Hummingbird chore branch (push in hummingbird-tenant)",
+        "pipelinerun": {
+            "apiVersion": "tekton.dev/v1",
+            "kind": "PipelineRun",
+            "metadata": {
+                "name": "lockfile-update-post-merge",
+                "namespace": "hummingbird-tenant",
+                "annotations": {
+                    "pipelinesascode.tekton.dev/source-branch": "chore/lockfile-update/nginx/hummingbird",
+                    "pipelinesascode.tekton.dev/event-type": "push"
+                },
+                "labels": {
+                    "pipelinesascode.tekton.dev/event-type": "push"
+                }
+            },
+            "spec": {
+                "pipelineRef": {"name": "component-build"},
+                "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
+            }
+        },
+        "expected": {
+            "annotations": {
+                "kueue.konflux-ci.dev/requests-konflux-ci-dev-token": "1",
+            },
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-post-merge-build"
+            }
+        }
+    },
+
+    "other_tenant_chore_branch": {
+        "name": "Chore branch in non-hummingbird namespace (should not get hummingbird priority)",
+        "pipelinerun": {
+            "apiVersion": "tekton.dev/v1",
+            "kind": "PipelineRun",
+            "metadata": {
+                "name": "other-tenant-chore-build",
+                "namespace": "other-tenant",
+                "annotations": {
+                    "pipelinesascode.tekton.dev/source-branch": "chore/lockfile-update/something",
+                    "pipelinesascode.tekton.dev/event-type": "pull_request"
+                },
+                "labels": {
+                    "pipelinesascode.tekton.dev/event-type": "pull_request"
+                }
+            },
+            "spec": {
+                "pipelineRef": {"name": "component-build"},
+                "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
+            }
+        },
+        "expected": {
+            "annotations": {
+                "kueue.konflux-ci.dev/requests-konflux-ci-dev-token": "1",
+            },
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-pre-merge-build"
+            }
+        }
+    },
 }
 
 # Configuration combinations that can be applied to any PipelineRun
@@ -1422,6 +1518,20 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
     },
     "tenant_pipelinerun_without_mintmaker_label_dev": {
         "pipelinerun_key": "tenant_pipelinerun_without_mintmaker_label",
+        "config_key": "development"
+    },
+
+    # hummingbird chore branch tests (dev config has no special rule, uses default priority)
+    "hummingbird_chore_branch_pr_dev": {
+        "pipelinerun_key": "hummingbird_chore_branch_pr",
+        "config_key": "development"
+    },
+    "hummingbird_chore_branch_push_dev": {
+        "pipelinerun_key": "hummingbird_chore_branch_push",
+        "config_key": "development"
+    },
+    "other_tenant_chore_branch_dev": {
+        "pipelinerun_key": "other_tenant_chore_branch",
         "config_key": "development"
     },
 
@@ -2072,6 +2182,38 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
     "tenant_pipelinerun_without_mintmaker_label_production-kflux-prd-rh03": {
         "pipelinerun_key": "tenant_pipelinerun_without_mintmaker_label",
         "config_key": "production-kflux-prd-rh03"
+    },
+
+    # kflux-prd-rh03 hummingbird chore branch tests
+    "hummingbird_chore_branch_pr_production-kflux-prd-rh03": {
+        "pipelinerun_key": "hummingbird_chore_branch_pr",
+        "config_key": "production-kflux-prd-rh03",
+        "expected": {
+            "annotations": {
+                "kueue.konflux-ci.dev/requests-konflux-ci-dev-token": "1",
+            },
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-hummingbird-automation"
+            }
+        }
+    },
+    "hummingbird_chore_branch_push_production-kflux-prd-rh03": {
+        "pipelinerun_key": "hummingbird_chore_branch_push",
+        "config_key": "production-kflux-prd-rh03",
+        "expected": {
+            "annotations": {
+                "kueue.konflux-ci.dev/requests-konflux-ci-dev-token": "1",
+            },
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-hummingbird-automation"
+            }
+        }
+    },
+    "other_tenant_chore_branch_production-kflux-prd-rh03": {
+        "pipelinerun_key": "other_tenant_chore_branch",
+        "config_key": "production-kflux-prd-rh03",
     },
 
     # kflux-prd-rh02 mintmaker tests (ring-4)
