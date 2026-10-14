@@ -14,6 +14,10 @@ patchesStrategicMerge:
   - delete-applications.yaml
 
 patches:
+  - path: disable-auto-sync.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
   - path: production-overlay-patch.yaml
     target:
       kind: ApplicationSet
@@ -321,8 +325,3 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: release
-  - path: production-auto-sync-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: pipeline-service
