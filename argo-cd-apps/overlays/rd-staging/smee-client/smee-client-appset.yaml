@@ -21,12 +21,16 @@ spec:
                 - values.ring: ring-1
                   nameNormalized: stone-stage-p01
                   values.clusterDir: stone-stage-p01
+                - values.ring: ring-1
+                  nameNormalized: kflux-stg-p02
+                  values.clusterDir: kflux-stg-p02
         selector: # Custom case: internal staging clusters, but not lightwell-dev
           matchExpressions:
             - key: nameNormalized
               operator: In
               values:
                 - stone-stage-p01
+                - kflux-stg-p02
   template:
     metadata:
       name: smee-client-{{nameNormalized}}

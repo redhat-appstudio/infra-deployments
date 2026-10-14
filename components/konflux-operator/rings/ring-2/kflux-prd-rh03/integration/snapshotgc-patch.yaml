@@ -1,0 +1,18 @@
+apiVersion: konflux.konflux-ci.dev/v1alpha1
+kind: Konflux
+metadata:
+  name: konflux
+spec:
+  integrationService:
+    spec:
+      prSnapshotsToKeep: "256"
+      nonPRSnapshotsToKeep: "2048"
+      minSnapshotsToKeepPerComponent: "3"
+      snapshotGarbageCollector:
+        resources:
+          requests:
+            cpu: 1000m
+            memory: 4000Mi
+          limits:
+            cpu: 1000m
+            memory: 4000Mi

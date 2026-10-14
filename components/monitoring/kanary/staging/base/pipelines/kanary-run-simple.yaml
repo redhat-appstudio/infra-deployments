@@ -31,6 +31,14 @@ spec:
     - name: component-name
       type: string
       description: "Name of existing Component resource"
+    - name: integration-test-scenario
+      type: string
+      default: ""
+      description: "Name of the IntegrationTestScenario to use. Leave empty to skip integration tests."
+    - name: gitlab-api-url
+      type: string
+      default: ""
+      description: "GitLab API URL (e.g. https://gitlab.cee.redhat.com/api/v4). Leave empty for GitHub-only components."
   workspaces:
     - name: artifacts
   tasks:
@@ -54,6 +62,10 @@ spec:
           value: $(params.application-name)
         - name: component-name
           value: $(params.component-name)
+        - name: integration-test-scenario
+          value: $(params.integration-test-scenario)
+        - name: gitlab-api-url
+          value: $(params.gitlab-api-url)
       workspaces:
         - name: artifacts
           workspace: artifacts

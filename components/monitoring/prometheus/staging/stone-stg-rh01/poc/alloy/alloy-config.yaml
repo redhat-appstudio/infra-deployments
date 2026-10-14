@@ -25,6 +25,34 @@ data:
       }
     }
 
+    // Each endpoint receives the same platform samples through a distinct
+    // VMAgent shard-0 replica and its own remote-write queue.
+    prometheus.remote_write "vm_poc" {
+      endpoint {
+        name = "vmagent-shard-0-replica-0"
+        url  = "http://vmagent-vm-poc-0-0.vmagent-vm-poc.appstudio-vm-poc.svc:8429/api/v1/write"
+
+        queue_config {
+          retry_on_http_429 = true
+        }
+      }
+
+      endpoint {
+        name = "vmagent-shard-0-replica-1"
+        url  = "http://vmagent-vm-poc-0-1.vmagent-vm-poc.appstudio-vm-poc.svc:8429/api/v1/write"
+
+        queue_config {
+          retry_on_http_429 = true
+        }
+      }
+
+      wal {
+        truncate_frequency = "5m"
+        min_keepalive_time = "5m"
+        max_keepalive_time = "15m"
+      }
+    }
+
     prometheus.relabel "vmalert_recording_allow" {
       forward_to = [prometheus.remote_write.mimir.receiver]
 
@@ -74,6 +102,47 @@ data:
         target_label = "source_prometheus"
         replacement  = "platform"
         action       = "replace"
+      }
+    }
+
+    prometheus.relabel "platform_vm_poc" {
+      forward_to = [prometheus.remote_write.vm_poc.receiver]
+
+      // The PoC scrapes these Tekton endpoints directly.
+      rule {
+        source_labels = ["job"]
+        regex         = "tekton-pipelines-controller|pipeline-metrics-exporter"
+        action        = "drop"
+      }
+
+      rule {
+        regex  = "prometheus|prometheus_replica"
+        action = "labeldrop"
+      }
+
+      // VMAgent externalLabels apply to its scrapes, not pushed samples.
+      rule {
+        source_labels = ["cluster"]
+        regex         = "^$"
+        target_label  = "cluster"
+        replacement   = "stone-stg-rh01"
+        action        = "replace"
+      }
+
+      rule {
+        source_labels = ["collector"]
+        regex         = "^$"
+        target_label  = "collector"
+        replacement   = "vmagent-poc"
+        action        = "replace"
+      }
+
+      rule {
+        source_labels = ["source_environment"]
+        regex         = "^$"
+        target_label  = "source_environment"
+        replacement   = "staging-poc"
+        action        = "replace"
       }
     }
 
@@ -155,7 +224,7 @@ data:
       honor_timestamps  = false
       scrape_interval   = "60s"
       scrape_timeout    = "55s"
-      forward_to        = [prometheus.relabel.platform_normalize.receiver]
+      forward_to        = [prometheus.relabel.platform_normalize.receiver, prometheus.relabel.platform_vm_poc.receiver]
 
       tls_config {
         ca_file     = "/etc/pki/service-ca/service-ca.crt"

@@ -1,0 +1,27 @@
+- op: replace
+  path: /spec/platforms/openshift/pipelinesAsCode/settings/application-name
+  value: Konflux kflux-stg-p02
+- op: replace
+  path: /spec/platforms/openshift/pipelinesAsCode/settings/custom-console-name
+  value: Konflux kflux-stg-p02
+- op: replace
+  path: /spec/platforms/openshift/pipelinesAsCode/settings/custom-console-url
+  value: https://konflux-ui.kflux-stg-p02-861edabb428ba4747c2d33f45e5a0de2-0000.us-east.containers.appdomain.cloud
+- op: replace
+  path: /spec/platforms/openshift/pipelinesAsCode/settings/custom-console-url-namespace
+  value: https://konflux-ui.kflux-stg-p02-861edabb428ba4747c2d33f45e5a0de2-0000.us-east.containers.appdomain.cloud/ns/{{ namespace }}
+- op: replace
+  path: /spec/platforms/openshift/pipelinesAsCode/settings/custom-console-url-pr-details
+  value: https://konflux-ui.kflux-stg-p02-861edabb428ba4747c2d33f45e5a0de2-0000.us-east.containers.appdomain.cloud/ns/{{ namespace }}/pipelinerun/{{ pr }}
+- op: replace
+  path: /spec/platforms/openshift/pipelinesAsCode/settings/custom-console-url-pr-tasklog
+  value: https://konflux-ui.kflux-stg-p02-861edabb428ba4747c2d33f45e5a0de2-0000.us-east.containers.appdomain.cloud/ns/{{ namespace }}/pipelinerun/{{ pr }}/logs/{{ task }}
+- op: add
+  path: /spec/platforms/openshift/pipelinesAsCode/settings/tracing-label-action
+  value: pipelines.appstudio.openshift.io/type
+- op: add
+  path: /spec/platforms/openshift/pipelinesAsCode/settings/tracing-label-application
+  value: appstudio.openshift.io/application
+- op: add
+  path: /spec/platforms/openshift/pipelinesAsCode/settings/tracing-label-component
+  value: appstudio.openshift.io/component

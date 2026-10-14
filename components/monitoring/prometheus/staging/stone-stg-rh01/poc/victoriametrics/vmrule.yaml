@@ -1,0 +1,14 @@
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMRule
+metadata:
+  name: vm-poc
+  namespace: appstudio-vm-poc
+  labels:
+    app.kubernetes.io/part-of: stone-stg-rh01-vm-poc
+spec:
+  groups:
+    - name: vm-poc-recording-rules
+      interval: 30s
+      rules:
+        - record: vm_poc:up:sum
+          expr: sum by (cluster) (up{collector="vmagent-poc"})

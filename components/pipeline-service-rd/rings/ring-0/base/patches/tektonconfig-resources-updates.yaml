@@ -1,0 +1,154 @@
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  pipeline:
+    options:
+      configMaps:
+        config-defaults:
+          data:
+            default-container-resource-requirements: |
+              default:
+                requests:
+                  memory: "128Mi"
+                  cpu: "50m"
+      deployments:
+        tekton-operator-proxy-webhook:
+          spec:
+            replicas: 2
+            template:
+              spec:
+                containers:
+                  - name: proxy
+                    resources:
+                      limits:
+                        cpu: 250m
+                        memory: 256Mi
+                      requests:
+                        cpu: 50m
+                        memory: 64Mi
+        tekton-pipelines-webhook:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: webhook
+                    resources:
+                      limits:
+                        cpu: 500m
+                        memory: 512Mi
+                      requests:
+                        cpu: 100m
+                        memory: 128Mi
+        pipelines-console-plugin:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: pipelines-console-plugin
+                    resources:
+                      limits:
+                        cpu: 100m
+                        memory: 100Mi
+                      requests:
+                        cpu: 50m
+                        memory: 64Mi
+        tekton-chains-controller:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: tekton-chains-controller
+                    resources:
+                      limits:
+                        cpu: 300m
+                        memory: 512Mi
+                      requests:
+                        cpu: 100m
+                        memory: 128Mi
+        tekton-triggers-controller:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: tekton-triggers-controller
+                    resources:
+                      limits:
+                        cpu: 300m
+                        memory: 256Mi
+                      requests:
+                        cpu: 100m
+                        memory: 128Mi
+        tekton-triggers-webhook:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: webhook
+                    resources:
+                      limits:
+                        cpu: 200m
+                        memory: 100Mi
+                      requests:
+                        cpu: 50m
+                        memory: 64Mi
+        tekton-triggers-core-interceptors:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: tekton-triggers-core-interceptors
+                    resources:
+                      limits:
+                        cpu: 300m
+                        memory: 512Mi
+                      requests:
+                        cpu: 100m
+                        memory: 128Mi
+        tkn-cli-serve:
+          spec:
+            replicas: 0
+            template:
+              spec:
+                containers:
+                  - name: tkn-cli-serve
+                    resources:
+                      limits:
+                        cpu: 200m
+                        memory: 100Mi
+                      requests:
+                        cpu: 50m
+                        memory: 64Mi
+      statefulSets:
+        tekton-pipelines-controller:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: tekton-pipelines-controller
+                    resources:
+                      limits:
+                        memory: 1Gi
+                        cpu: 500m
+                      requests:
+                        cpu: 200m
+                        memory: 512Mi
+        tekton-pipelines-remote-resolvers:
+          spec:
+            replicas: 2
+            template:
+              spec:
+                containers:
+                  - name: controller
+                    env:
+                      - name: GIT_SSL_CAINFO
+                        value: /tekton-custom-certs/ca-bundle.crt
+                    resources:
+                      limits:
+                        memory: 512Mi
+                        cpu: 300m
+                      requests:
+                        cpu: 100m
+                        memory: 256Mi
+

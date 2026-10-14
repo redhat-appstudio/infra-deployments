@@ -10,12 +10,22 @@ spec:
         - name: kaexporter-config
           configMap:
             name: kaexporter-config
+        - name: slo-tiers
+          configMap:
+            name: kaexporter-slo-tiers
       containers:
         - name: exporters
           env:
             - name: KA_CONFIG_FILE
               value: "/etc/kaexporter/kaexporter-config.yaml"
+            - name: KA_SLO_TIERS_FILE
+              value: "/etc/kaexporter/slo-tiers.yaml"
           volumeMounts:
             - name: kaexporter-config
-              mountPath: /etc/kaexporter
+              mountPath: /etc/kaexporter/kaexporter-config.yaml
+              subPath: kaexporter-config.yaml
+              readOnly: true
+            - name: slo-tiers
+              mountPath: /etc/kaexporter/slo-tiers.yaml
+              subPath: slo-tiers.yaml
               readOnly: true

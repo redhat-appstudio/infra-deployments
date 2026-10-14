@@ -1,0 +1,45 @@
+# RHOBS ServiceMonitors are not handled by the Prometheus monitor converter.
+# Scrape the controller directly, without the Tekton Prometheus proxy.
+# The exporter also has a converted platform monitor, but Tekton gives it a
+# different job label. Keep a native scrape for that Tekton series identity.
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMServiceScrape
+metadata:
+  name: vm-poc-tekton-controller
+  namespace: appstudio-vm-poc
+  labels:
+    app.kubernetes.io/part-of: stone-stg-rh01-vm-poc
+spec:
+  jobLabel: app
+  namespaceSelector:
+    matchNames: [openshift-pipelines]
+  selector:
+    matchLabels:
+      app: tekton-pipelines-controller
+      app.kubernetes.io/component: controller
+  endpoints:
+    - port: http-metrics
+      interval: 30s
+      scrapeTimeout: 10s
+      honorLabels: true
+      honorTimestamps: false
+---
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMServiceScrape
+metadata:
+  name: vm-poc-tekton-pipeline-exporter
+  namespace: appstudio-vm-poc
+  labels:
+    app.kubernetes.io/part-of: stone-stg-rh01-vm-poc
+spec:
+  jobLabel: app
+  namespaceSelector:
+    matchNames: [openshift-pipelines]
+  selector:
+    matchLabels:
+      app: pipeline-metrics-exporter
+  endpoints:
+    - port: metrics
+      interval: 30s
+      scrapeTimeout: 10s
+      honorLabels: true

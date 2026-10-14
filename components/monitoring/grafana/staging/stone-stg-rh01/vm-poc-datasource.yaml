@@ -1,0 +1,21 @@
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDatasource
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  name: vm-poc-ds
+  namespace: appstudio-grafana
+spec:
+  instanceSelector:
+    matchLabels:
+      dashboards: appstudio-grafana
+  datasource:
+    access: proxy
+    editable: true
+    isDefault: false
+    jsonData:
+      timeInterval: 30s
+    name: victoria-metrics-poc
+    type: prometheus
+    uid: vm-poc
+    url: http://vmselect-vm-poc.appstudio-vm-poc.svc:8481/select/0/prometheus

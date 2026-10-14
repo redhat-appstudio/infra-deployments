@@ -1241,6 +1241,102 @@ PIPELINERUN_DEFINITIONS: Dict[str, PipelineRunTestData] = {
             }
         }
     },
+
+    "hummingbird_chore_branch_pr": {
+        "name": "Hummingbird chore branch (pull_request in hummingbird-tenant)",
+        "pipelinerun": {
+            "apiVersion": "tekton.dev/v1",
+            "kind": "PipelineRun",
+            "metadata": {
+                "name": "lockfile-update-build",
+                "namespace": "hummingbird-tenant",
+                "annotations": {
+                    "pipelinesascode.tekton.dev/source-branch": "chore/lockfile-update/caddy/rawhide",
+                    "pipelinesascode.tekton.dev/event-type": "pull_request"
+                },
+                "labels": {
+                    "pipelinesascode.tekton.dev/event-type": "pull_request"
+                }
+            },
+            "spec": {
+                "pipelineRef": {"name": "component-build"},
+                "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
+            }
+        },
+        "expected": {
+            "annotations": {
+                "kueue.konflux-ci.dev/requests-konflux-ci-dev-token": "1",
+            },
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-pre-merge-build"
+            }
+        }
+    },
+
+    "hummingbird_chore_branch_push": {
+        "name": "Hummingbird chore branch (push in hummingbird-tenant)",
+        "pipelinerun": {
+            "apiVersion": "tekton.dev/v1",
+            "kind": "PipelineRun",
+            "metadata": {
+                "name": "lockfile-update-post-merge",
+                "namespace": "hummingbird-tenant",
+                "annotations": {
+                    "pipelinesascode.tekton.dev/source-branch": "chore/lockfile-update/nginx/hummingbird",
+                    "pipelinesascode.tekton.dev/event-type": "push"
+                },
+                "labels": {
+                    "pipelinesascode.tekton.dev/event-type": "push"
+                }
+            },
+            "spec": {
+                "pipelineRef": {"name": "component-build"},
+                "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
+            }
+        },
+        "expected": {
+            "annotations": {
+                "kueue.konflux-ci.dev/requests-konflux-ci-dev-token": "1",
+            },
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-post-merge-build"
+            }
+        }
+    },
+
+    "other_tenant_chore_branch": {
+        "name": "Chore branch in non-hummingbird namespace (should not get hummingbird priority)",
+        "pipelinerun": {
+            "apiVersion": "tekton.dev/v1",
+            "kind": "PipelineRun",
+            "metadata": {
+                "name": "other-tenant-chore-build",
+                "namespace": "other-tenant",
+                "annotations": {
+                    "pipelinesascode.tekton.dev/source-branch": "chore/lockfile-update/something",
+                    "pipelinesascode.tekton.dev/event-type": "pull_request"
+                },
+                "labels": {
+                    "pipelinesascode.tekton.dev/event-type": "pull_request"
+                }
+            },
+            "spec": {
+                "pipelineRef": {"name": "component-build"},
+                "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
+            }
+        },
+        "expected": {
+            "annotations": {
+                "kueue.konflux-ci.dev/requests-konflux-ci-dev-token": "1",
+            },
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-pre-merge-build"
+            }
+        }
+    },
 }
 
 # Configuration combinations that can be applied to any PipelineRun
@@ -1275,6 +1371,36 @@ CONFIG_COMBINATIONS: Dict[str, ConfigCombination] = {
         "name": "Production RHEL config",
         "config_file": "components/kueue/rings/ring-2/kflux-rhel-p01/config.yaml",
         "kustomization_file": "components/kueue/rings/ring-2/base/tekton-kueue/kustomization.yaml"
+    },
+    "production-kflux-fedora-01": {
+        "name": "Production Fedora config",
+        "config_file": "components/kueue/rings/ring-2/kflux-fedora-01/config.yaml",
+        "kustomization_file": "components/kueue/rings/ring-2/base/tekton-kueue/kustomization.yaml"
+    },
+    "production-kflux-lw-p01": {
+        "name": "Production Lightwell config",
+        "config_file": "components/kueue/rings/ring-2/kflux-lw-p01/config.yaml",
+        "kustomization_file": "components/kueue/rings/ring-2/base/tekton-kueue/kustomization.yaml"
+    },
+    "production-kflux-osp-p01": {
+        "name": "Production OSP config",
+        "config_file": "components/kueue/rings/ring-2/kflux-osp-p01/config.yaml",
+        "kustomization_file": "components/kueue/rings/ring-2/base/tekton-kueue/kustomization.yaml"
+    },
+    "production-kflux-prd-rh03": {
+        "name": "Production RH03 config",
+        "config_file": "components/kueue/rings/ring-2/kflux-prd-rh03/config.yaml",
+        "kustomization_file": "components/kueue/rings/ring-2/base/tekton-kueue/kustomization.yaml"
+    },
+    "production-stone-prod-p01": {
+        "name": "Production Stone P01 config",
+        "config_file": "components/kueue/rings/ring-2/stone-prod-p01/config.yaml",
+        "kustomization_file": "components/kueue/rings/ring-2/base/tekton-kueue/kustomization.yaml"
+    },
+    "production-kflux-prd-rh02": {
+        "name": "Production RH02 config (ring-4)",
+        "config_file": "components/kueue/rings/ring-4/kflux-prd-rh02/config.yaml",
+        "kustomization_file": "components/kueue/rings/ring-4/base/tekton-kueue/kustomization.yaml"
     }
 }
 
@@ -1392,6 +1518,20 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
     },
     "tenant_pipelinerun_without_mintmaker_label_dev": {
         "pipelinerun_key": "tenant_pipelinerun_without_mintmaker_label",
+        "config_key": "development"
+    },
+
+    # hummingbird chore branch tests (dev config has no special rule, uses default priority)
+    "hummingbird_chore_branch_pr_dev": {
+        "pipelinerun_key": "hummingbird_chore_branch_pr",
+        "config_key": "development"
+    },
+    "hummingbird_chore_branch_push_dev": {
+        "pipelinerun_key": "hummingbird_chore_branch_push",
+        "config_key": "development"
+    },
+    "other_tenant_chore_branch_dev": {
+        "pipelinerun_key": "other_tenant_chore_branch",
         "config_key": "development"
     },
 
@@ -1603,6 +1743,18 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
             }
         }
     },
+    "mintmaker_triggered_tenant_production": {
+        "pipelinerun_key": "mintmaker_triggered_tenant_pipelinerun",
+        "config_key": "production"
+    },
+    "mintmaker_triggered_in_mintmaker_namespace_production": {
+        "pipelinerun_key": "mintmaker_triggered_in_mintmaker_namespace",
+        "config_key": "production"
+    },
+    "tenant_pipelinerun_without_mintmaker_label_production": {
+        "pipelinerun_key": "tenant_pipelinerun_without_mintmaker_label",
+        "config_key": "production"
+    },
 
     # Test key PipelineRuns with production kflux-ocp-p01 config
     "multiplatform_new_production-kflux-ocp-p01": {
@@ -1770,6 +1922,18 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
             }
         }
     },
+    "mintmaker_triggered_tenant_production-kflux-ocp-p01": {
+        "pipelinerun_key": "mintmaker_triggered_tenant_pipelinerun",
+        "config_key": "production-kflux-ocp-p01"
+    },
+    "mintmaker_triggered_in_mintmaker_namespace_production-kflux-ocp-p01": {
+        "pipelinerun_key": "mintmaker_triggered_in_mintmaker_namespace",
+        "config_key": "production-kflux-ocp-p01"
+    },
+    "tenant_pipelinerun_without_mintmaker_label_production-kflux-ocp-p01": {
+        "pipelinerun_key": "tenant_pipelinerun_without_mintmaker_label",
+        "config_key": "production-kflux-ocp-p01"
+    },
 
     "multiplatform_new_string_param_production": {
         "pipelinerun_key": "multiplatform_new_string_param",
@@ -1868,6 +2032,18 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
             }
         }
     },
+    "mintmaker_triggered_tenant_production-stone-prod-p02": {
+        "pipelinerun_key": "mintmaker_triggered_tenant_pipelinerun",
+        "config_key": "production-stone-prod-p02"
+    },
+    "mintmaker_triggered_in_mintmaker_namespace_production-stone-prod-p02": {
+        "pipelinerun_key": "mintmaker_triggered_in_mintmaker_namespace",
+        "config_key": "production-stone-prod-p02"
+    },
+    "tenant_pipelinerun_without_mintmaker_label_production-stone-prod-p02": {
+        "pipelinerun_key": "tenant_pipelinerun_without_mintmaker_label",
+        "config_key": "production-stone-prod-p02"
+    },
 
     # Test key PipelineRuns with production kflux-rhel-p01 config
     "multiplatform_new_production-kflux-rhel-p01": {
@@ -1938,6 +2114,134 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
                 "kueue.x-k8s.io/priority-class": "konflux-pre-merge-test",
             }
         }
+    },
+    "mintmaker_triggered_tenant_production-kflux-rhel-p01": {
+        "pipelinerun_key": "mintmaker_triggered_tenant_pipelinerun",
+        "config_key": "production-kflux-rhel-p01"
+    },
+    "mintmaker_triggered_in_mintmaker_namespace_production-kflux-rhel-p01": {
+        "pipelinerun_key": "mintmaker_triggered_in_mintmaker_namespace",
+        "config_key": "production-kflux-rhel-p01"
+    },
+    "tenant_pipelinerun_without_mintmaker_label_production-kflux-rhel-p01": {
+        "pipelinerun_key": "tenant_pipelinerun_without_mintmaker_label",
+        "config_key": "production-kflux-rhel-p01"
+    },
+
+    # kflux-fedora-01 mintmaker tests
+    "mintmaker_triggered_tenant_production-kflux-fedora-01": {
+        "pipelinerun_key": "mintmaker_triggered_tenant_pipelinerun",
+        "config_key": "production-kflux-fedora-01"
+    },
+    "mintmaker_triggered_in_mintmaker_namespace_production-kflux-fedora-01": {
+        "pipelinerun_key": "mintmaker_triggered_in_mintmaker_namespace",
+        "config_key": "production-kflux-fedora-01"
+    },
+    "tenant_pipelinerun_without_mintmaker_label_production-kflux-fedora-01": {
+        "pipelinerun_key": "tenant_pipelinerun_without_mintmaker_label",
+        "config_key": "production-kflux-fedora-01"
+    },
+
+    # kflux-lw-p01 mintmaker tests
+    "mintmaker_triggered_tenant_production-kflux-lw-p01": {
+        "pipelinerun_key": "mintmaker_triggered_tenant_pipelinerun",
+        "config_key": "production-kflux-lw-p01"
+    },
+    "mintmaker_triggered_in_mintmaker_namespace_production-kflux-lw-p01": {
+        "pipelinerun_key": "mintmaker_triggered_in_mintmaker_namespace",
+        "config_key": "production-kflux-lw-p01"
+    },
+    "tenant_pipelinerun_without_mintmaker_label_production-kflux-lw-p01": {
+        "pipelinerun_key": "tenant_pipelinerun_without_mintmaker_label",
+        "config_key": "production-kflux-lw-p01"
+    },
+
+    # kflux-osp-p01 mintmaker tests
+    "mintmaker_triggered_tenant_production-kflux-osp-p01": {
+        "pipelinerun_key": "mintmaker_triggered_tenant_pipelinerun",
+        "config_key": "production-kflux-osp-p01"
+    },
+    "mintmaker_triggered_in_mintmaker_namespace_production-kflux-osp-p01": {
+        "pipelinerun_key": "mintmaker_triggered_in_mintmaker_namespace",
+        "config_key": "production-kflux-osp-p01"
+    },
+    "tenant_pipelinerun_without_mintmaker_label_production-kflux-osp-p01": {
+        "pipelinerun_key": "tenant_pipelinerun_without_mintmaker_label",
+        "config_key": "production-kflux-osp-p01"
+    },
+
+    # kflux-prd-rh03 mintmaker tests
+    "mintmaker_triggered_tenant_production-kflux-prd-rh03": {
+        "pipelinerun_key": "mintmaker_triggered_tenant_pipelinerun",
+        "config_key": "production-kflux-prd-rh03"
+    },
+    "mintmaker_triggered_in_mintmaker_namespace_production-kflux-prd-rh03": {
+        "pipelinerun_key": "mintmaker_triggered_in_mintmaker_namespace",
+        "config_key": "production-kflux-prd-rh03"
+    },
+    "tenant_pipelinerun_without_mintmaker_label_production-kflux-prd-rh03": {
+        "pipelinerun_key": "tenant_pipelinerun_without_mintmaker_label",
+        "config_key": "production-kflux-prd-rh03"
+    },
+
+    # kflux-prd-rh03 hummingbird chore branch tests
+    "hummingbird_chore_branch_pr_production-kflux-prd-rh03": {
+        "pipelinerun_key": "hummingbird_chore_branch_pr",
+        "config_key": "production-kflux-prd-rh03",
+        "expected": {
+            "annotations": {
+                "kueue.konflux-ci.dev/requests-konflux-ci-dev-token": "1",
+            },
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-hummingbird-automation"
+            }
+        }
+    },
+    "hummingbird_chore_branch_push_production-kflux-prd-rh03": {
+        "pipelinerun_key": "hummingbird_chore_branch_push",
+        "config_key": "production-kflux-prd-rh03",
+        "expected": {
+            "annotations": {
+                "kueue.konflux-ci.dev/requests-konflux-ci-dev-token": "1",
+            },
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-hummingbird-automation"
+            }
+        }
+    },
+    "other_tenant_chore_branch_production-kflux-prd-rh03": {
+        "pipelinerun_key": "other_tenant_chore_branch",
+        "config_key": "production-kflux-prd-rh03",
+    },
+
+    # kflux-prd-rh02 mintmaker tests (ring-4)
+    "mintmaker_triggered_tenant_production-kflux-prd-rh02": {
+        "pipelinerun_key": "mintmaker_triggered_tenant_pipelinerun",
+        "config_key": "production-kflux-prd-rh02"
+    },
+    "mintmaker_triggered_in_mintmaker_namespace_production-kflux-prd-rh02": {
+        "pipelinerun_key": "mintmaker_triggered_in_mintmaker_namespace",
+        "config_key": "production-kflux-prd-rh02"
+    },
+    "tenant_pipelinerun_without_mintmaker_label_production-kflux-prd-rh02": {
+        "pipelinerun_key": "tenant_pipelinerun_without_mintmaker_label",
+        "config_key": "production-kflux-prd-rh02"
+    },
+
+    # stone-prod-p01 mintmaker tests
+    "mintmaker_triggered_tenant_production-stone-prod-p01": {
+        "pipelinerun_key": "mintmaker_triggered_tenant_pipelinerun",
+        "config_key": "production-stone-prod-p01"
+    },
+    "mintmaker_triggered_in_mintmaker_namespace_production-stone-prod-p01": {
+        "pipelinerun_key": "mintmaker_triggered_in_mintmaker_namespace",
+        "config_key": "production-stone-prod-p01"
+    },
+    "tenant_pipelinerun_without_mintmaker_label_production-stone-prod-p01": {
+        "pipelinerun_key": "tenant_pipelinerun_without_mintmaker_label",
+        "config_key": "production-stone-prod-p01"
     },
 }
 

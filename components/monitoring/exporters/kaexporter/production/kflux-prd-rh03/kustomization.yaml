@@ -1,6 +1,13 @@
 resources:
   - ../base
 
+configMapGenerator:
+  - name: kaexporter-slo-tiers
+    namespace: konflux-o11y-exporters
+    behavior: replace
+    files:
+      - slo-tiers.yaml=configs/slo-tiers.yaml
+
 patches:
   - target:
       kind: ExternalSecret

@@ -1,0 +1,15 @@
+- op: remove
+  path: /spec/pipeline/options/configMaps/config-leader-election-resolvers
+- op: replace
+  path: /spec/pipeline/options/statefulSets/tekton-pipelines-remote-resolvers/spec/replicas
+  value: 2
+- op: replace
+  path: /spec/pipeline/performance/buckets
+  value: 2
+- op: replace
+  path: /spec/pipeline/performance/replicas
+  value: 2
+- op: replace
+  path: /spec/pipeline/options/horizontalPodAutoscalers/tekton-pipelines-webhook/spec/minReplicas
+  value: 2
+

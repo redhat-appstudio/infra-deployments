@@ -14,6 +14,10 @@ configMapGenerator:
 
 patches:
 - path: configmap.yaml
+- path: service-tls-patch.yaml
+  target:
+    kind: Service
+    name: image-rbac-proxy|dex
 - path: route-patch.yaml
   target:
     kind: Route

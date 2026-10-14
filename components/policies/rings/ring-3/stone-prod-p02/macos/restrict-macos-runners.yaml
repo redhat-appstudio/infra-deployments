@@ -31,8 +31,3 @@ spec:
     - messageExpression: "'namespace ' + object.metadata.namespace + ' is not allowed to acquire macos runners'"
       expression: |
         !(variables.isRestrictedPlatform && variables.isRestrictedNamespace)
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: konflux-policies

@@ -8,17 +8,14 @@ resources:
   - ../../base/eaas
   - ../../base/backup
   - ../rd-dev/kueue # TODO: Remove this once e2e tests use solely the rd-dev overlay
+  - ../rd-dev/kyverno # TODO: Remove this once e2e tests use solely the rd-dev overlay
+  - ../rd-dev/pipeline-service # TODO: Remove this once e2e tests use solely the rd-dev overlay
   - ../rd-dev/policies # TODO: Remove this once e2e tests use solely the rd-dev overlay
 
 patchesStrategicMerge:
   - delete-applications.yaml
 namespace: openshift-gitops
 patches:
-  - path: development-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: pipeline-service
   - path: development-overlay-patch.yaml
     target:
       kind: ApplicationSet
@@ -64,11 +61,6 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: ca-bundle
-  - path: development-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: project-controller
   - path: development-overlay-patch.yaml
     target:
       kind: ApplicationSet
@@ -130,16 +122,6 @@ patches:
     target:
       kind: ApplicationSet
       version: v1alpha1
-      name: kyverno
-  - path: dev-application-auto-sync-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: kyverno
-  - path: development-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
       name: cert-manager
   - path: development-overlay-patch.yaml
     target:
@@ -155,27 +137,12 @@ patches:
     target:
       kind: ApplicationSet
       version: v1alpha1
-      name: trust-manager
-  - path: development-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: squid
-  - path: development-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
       name: image-rbac-proxy
   - path: development-overlay-patch.yaml
     target:
       kind: ApplicationSet
       version: v1alpha1
       name: konflux-info
-  - path: development-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: disaster-recovery
   - path: development-overlay-patch.yaml
     target:
       kind: ApplicationSet
@@ -197,31 +164,6 @@ patches:
       version: v1alpha1
       name: enterprise-contract
   # ensure installation order of ApplicationSets during all-application-sets sync
-  - path: dev-application-sync-wave-kyverno.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: kyverno
-  - path: dev-application-sync-wave-pipeline-service.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: pipeline-service
-  - path: dev-application-sync-wave-disaster-recovery.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: disaster-recovery
-  - path: delete-preserve-resources-flag-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: disaster-recovery
-  - path: dev-application-auto-sync-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: disaster-recovery
   - path: delete-preserve-resources-flag-patch.yaml
     target:
       kind: ApplicationSet
