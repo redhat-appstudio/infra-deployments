@@ -114,7 +114,7 @@ patches:
               spec:
                 containers:
                   - name: vacuum
-                    image: quay.io/kubearchive/vacuum:v1.21.4
+                    image: quay.io/kubearchive/vacuum:v1.23.0
 
   - patch: |-
       apiVersion: batch/v1
@@ -151,7 +151,7 @@ patches:
     patch: |-
       - op: replace
         path: /metadata/name
-        value: kubearchive-schema-migration-v13b
+        value: kubearchive-schema-migration-v13-v1.23.0
   # We don't need the Secret as it will be created by the ExternalSecrets Operator
   - patch: |-
       $patch: delete
@@ -230,6 +230,14 @@ patches:
                   value: http://otel-collector:4318
                 - name: AUTH_IMPERSONATE
                   value: "true"
+                - name: API_RATE_LIMIT_OVERALL_RPS
+                  value: "1750"
+                - name: API_RATE_LIMIT_OVERALL_BURST
+                  value: "5250"
+                - name: DATABASE_MAX_OPEN_CONNS
+                  value: "25"
+                - name: DATABASE_MAX_IDLE_CONNS
+                  value: "10"
                 - name: MIGRATION_VERSION
                   valueFrom:
                     configMapKeyRef:
@@ -314,6 +322,10 @@ patches:
                   value: enabled
                 - name: OTEL_EXPORTER_OTLP_ENDPOINT
                   value: http://otel-collector:4318
+                - name: DATABASE_MAX_OPEN_CONNS
+                  value: "25"
+                - name: DATABASE_MAX_IDLE_CONNS
+                  value: "10"
                 - name: MIGRATION_VERSION
                   valueFrom:
                     configMapKeyRef:
@@ -374,7 +386,7 @@ patches:
       metadata:
         name: "kubearchive-operator-certificate"
         namespace: kubearchive
-  # opentelemetry-collector 0.158.0
+  # opentelemetry-collector 0.160.0
   - patch: |-
       apiVersion: apps/v1
       kind: Deployment
@@ -387,5 +399,5 @@ patches:
           spec:
             containers:
               - name: otel-collector
-                image: quay.io/kubearchive/opentelemetry-collector@sha256:ef47fef2d742461fba0b9950137895cfd34e3a8500f8acb807003f94751365d0
+                image: quay.io/kubearchive/opentelemetry-collector@sha256:30619e2a6e7ec84debb478a60ffecdcf493a68d8206120c4a4b01b83f31ea3e4
 
