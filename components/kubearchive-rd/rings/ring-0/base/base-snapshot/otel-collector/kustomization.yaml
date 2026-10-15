@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - otel-collector-crb.yaml
+  - otel-collector-deployment.yaml
+  - otel-collector-service.yaml
+  - otel-collector-sa.yaml
+
+# ROSA does not support namespaces starting with `kube`
+configMapGenerator:
+  - name: otel-collector-conf
+    namespace: product-kubearchive
+    files:
+      - otel-collector-config.yaml
