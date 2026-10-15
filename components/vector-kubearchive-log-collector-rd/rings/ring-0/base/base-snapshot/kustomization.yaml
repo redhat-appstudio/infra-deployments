@@ -1,0 +1,21 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: product-kubearchive-logging
+
+commonAnnotations:
+  argocd.argoproj.io/sync-wave: "-1"
+
+resources:
+- kubearchive-logging-scc.yaml
+- loki-sa.yaml
+- loki-canary-sa.yaml
+- metrics-reader-sa.yaml
+- metrics-reader-secret.yaml
+- kubearchive-logging-component-maintainers-rb.yaml
+- kubearchive-logging-admin-rb.yaml
+- kubearchive-vector-scc-user-cr.yaml
+- vector-scc-binding-crb.yaml
+- product-kubearchive-logging-metrics-reader-cr.yaml
+- prometheus-product-kubearchive-logging-metrics-reader-crb.yaml
+- product-kubearchive-logging-monitor-sm.yaml
