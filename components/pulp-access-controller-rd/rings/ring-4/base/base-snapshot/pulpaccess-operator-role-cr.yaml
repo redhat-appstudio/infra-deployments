@@ -1,0 +1,27 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: pulpaccess-operator-role
+rules:
+  - apiGroups: ["pulp.konflux-ci.dev"]
+    resources: ["pulpaccessrequests"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["pulp.konflux-ci.dev"]
+    resources: ["pulpaccessrequests/status"]
+    verbs: ["get", "update", "patch"]
+  - apiGroups: ["pulp.konflux-ci.dev"]
+    resources: ["pulpaccessrequests/finalizers"]
+    verbs: ["update"]
+  - apiGroups: ["apiextensions.k8s.io"]
+    resources: ["customresourcedefinitions"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["secrets", "events"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["appstudio.redhat.com"]
+    resources: ["imagerepositories"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["config.openshift.io"]
+    resources: ["clusterversions"]
+    resourceNames: ["version"]
+    verbs: ["get"]
