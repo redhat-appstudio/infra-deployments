@@ -27,6 +27,8 @@ spec:
   template:
     metadata:
       name: pulp-access-controller-{{nameNormalized}}
+      labels:
+        app.kubernetes.io/part-of: pulp-access-controller
     spec:
       project: default
       source:
