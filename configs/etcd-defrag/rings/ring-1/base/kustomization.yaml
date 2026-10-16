@@ -1,7 +1,11 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+
 resources:
 - base-snapshot
-images:
-- name: quay.io/konflux-ci/etcd-defrag
-  newTag: 2c2fdca8596efbc4d777759d1d5930d9c27eb54854ced040d29e26df59409ac6
+
+patches:
+- target:
+    kind: CronJob
+    name: etcd-maintenance
+  path: image-patch.yaml
