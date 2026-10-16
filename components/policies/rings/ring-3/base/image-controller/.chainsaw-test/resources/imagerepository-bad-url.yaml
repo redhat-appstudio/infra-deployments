@@ -1,0 +1,14 @@
+apiVersion: konflux-ci.dev/v1alpha1
+kind: ImageRepository
+metadata:
+  name: test-bad-url
+spec:
+  image:
+    name: my-tenant/test
+    visibility: public
+  notifications:
+    - config:
+        url: 'https://denied.example.com/webhook'
+      event: repo_push
+      method: webhook
+      title: exfiltration

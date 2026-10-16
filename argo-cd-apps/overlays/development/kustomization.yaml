@@ -137,22 +137,12 @@ patches:
     target:
       kind: ApplicationSet
       version: v1alpha1
-      name: squid
-  - path: development-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
       name: image-rbac-proxy
   - path: development-overlay-patch.yaml
     target:
       kind: ApplicationSet
       version: v1alpha1
       name: konflux-info
-  - path: development-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: disaster-recovery
   - path: development-overlay-patch.yaml
     target:
       kind: ApplicationSet
@@ -174,21 +164,6 @@ patches:
       version: v1alpha1
       name: enterprise-contract
   # ensure installation order of ApplicationSets during all-application-sets sync
-  - path: dev-application-sync-wave-disaster-recovery.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: disaster-recovery
-  - path: delete-preserve-resources-flag-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: disaster-recovery
-  - path: dev-application-auto-sync-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: disaster-recovery
   - path: delete-preserve-resources-flag-patch.yaml
     target:
       kind: ApplicationSet
