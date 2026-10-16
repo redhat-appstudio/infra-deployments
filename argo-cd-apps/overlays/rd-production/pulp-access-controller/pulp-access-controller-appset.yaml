@@ -18,7 +18,7 @@ spec:
                     - key: appstudio.redhat.com/select-none
                       operator: DoesNotExist
               values:
-                sourceRoot: components/pulp-access-controller-rd
+                sourceRoot: components/pulp-access-controller
                 ring: "empty-base"
                 clusterDir: "empty-base"
           - list:
@@ -27,6 +27,8 @@ spec:
   template:
     metadata:
       name: pulp-access-controller-{{nameNormalized}}
+      labels:
+        app.kubernetes.io/part-of: pulp-access-controller
     spec:
       project: default
       source:
@@ -37,9 +39,9 @@ spec:
         namespace: pulp-access-controller
         server: '{{server}}'
       syncPolicy:
-        # automated:
-        #   prune: true
-        #   selfHeal: true
+        automated:
+          prune: true
+          selfHeal: true
         syncOptions:
         - CreateNamespace=true
         retry:
