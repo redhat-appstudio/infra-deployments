@@ -323,14 +323,16 @@ configure_deploy_only() {
     log_step "Configuring selective deployment (DEPLOY_ONLY mode)"
     log_info "DEPLOY_ONLY is set, filtering applications to deploy only: $DEPLOY_ONLY"
 
-    local applications deleted app
+    local applications deleted app app_alias
     local delete_file="$TARGET_DELETE_FILE"
 
     applications=$(oc kustomize "$TARGET_OVERLAY_PATH" | yq e --no-doc 'select(.kind == "ApplicationSet") | .metadata.name')
     deleted=$(yq e --no-doc .metadata.name "$delete_file")
 
     for app in $applications; do
-        if ! grep -q "\b$app\b" <<< $DEPLOY_ONLY && ! grep -q "\b$app\b" <<< $deleted; then
+        app_alias="$app"
+        [[ "$app" == *-rd ]] && app_alias="${app%-rd}"
+        if ! grep -q "\b$app\b" <<< "$DEPLOY_ONLY" && ! grep -q "\b$app_alias\b" <<< "$DEPLOY_ONLY" && ! grep -q "\b$app\b" <<< "$deleted"; then
             log_substep "Disabling ApplicationSet '$app' (not in DEPLOY_ONLY list)"
             echo '---' >> "$delete_file"
             yq e -n ".apiVersion=\"argoproj.io/v1alpha1\"
@@ -464,15 +466,19 @@ apply_service_image_overrides() {
     [[ -n "${RELEASE_SERVICE_PR_OWNER}" && "${RELEASE_SERVICE_PR_SHA}" ]] && yq -i e "(.resources[] | select(. ==\"*github.com/konflux-ci/release-service*\")) |= \"https://github.com/${RELEASE_SERVICE_PR_OWNER}/release-service/config/default?ref=${RELEASE_SERVICE_PR_SHA}\"" $ROOT/components/release/development/kustomization.yaml
 
     # Mintmaker
+    local mintmaker_kustomization="$ROOT/components/mintmaker/development/kustomization.yaml"
+    if [ "$TARGET_PREVIEW_OVERLAY" = "rd-dev" ]; then
+        mintmaker_kustomization="$ROOT/components/mintmaker-rd/rings/ring-0/base/kustomization.yaml"
+    fi
     if [ -n "${MINTMAKER_IMAGE_REPO}" ] || [ -n "${MINTMAKER_IMAGE_TAG}" ] || [ -n "${MINTMAKER_PR_OWNER}" ]; then
         log_substep "Configuring Mintmaker overrides"
         [ -n "${MINTMAKER_IMAGE_REPO}" ] && log_info "  - Image repo: ${MINTMAKER_IMAGE_REPO}" && has_overrides=true
         [ -n "${MINTMAKER_IMAGE_TAG}" ] && log_info "  - Image tag: ${MINTMAKER_IMAGE_TAG}" && has_overrides=true
         [[ -n "${MINTMAKER_PR_OWNER}" && -n "${MINTMAKER_PR_SHA}" ]] && log_info "  - PR source: ${MINTMAKER_PR_OWNER}@${MINTMAKER_PR_SHA}" && has_overrides=true
     fi
-    [ -n "${MINTMAKER_IMAGE_REPO}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/konflux-ci/mintmaker\")) |=.newName=\"${MINTMAKER_IMAGE_REPO}\"" $ROOT/components/mintmaker/development/kustomization.yaml
-    [ -n "${MINTMAKER_IMAGE_TAG}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/konflux-ci/mintmaker\")) |=.newTag=\"${MINTMAKER_IMAGE_TAG}\"" $ROOT/components/mintmaker/development/kustomization.yaml
-    [[ -n "${MINTMAKER_PR_OWNER}" && "${MINTMAKER_PR_SHA}" ]] && yq -i "(.resources[] | select(contains(\"konflux-ci/mintmaker\"))) |= (sub(\"konflux-ci/mintmaker\", \"${MINTMAKER_PR_OWNER}/mintmaker\") | sub(\"ref=.*\", \"ref=${MINTMAKER_PR_SHA}\"))" $ROOT/components/mintmaker/development/kustomization.yaml
+    [ -n "${MINTMAKER_IMAGE_REPO}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/konflux-ci/mintmaker\")) |=.newName=\"${MINTMAKER_IMAGE_REPO}\"" "$mintmaker_kustomization"
+    [ -n "${MINTMAKER_IMAGE_TAG}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/konflux-ci/mintmaker\")) |=.newTag=\"${MINTMAKER_IMAGE_TAG}\"" "$mintmaker_kustomization"
+    [[ -n "${MINTMAKER_PR_OWNER}" && "${MINTMAKER_PR_SHA}" ]] && yq -i "(.resources[] | select(contains(\"konflux-ci/mintmaker\"))) |= (sub(\"konflux-ci/mintmaker\", \"${MINTMAKER_PR_OWNER}/mintmaker\") | sub(\"ref=.*\", \"ref=${MINTMAKER_PR_SHA}\"))" "$mintmaker_kustomization"
 
     # Mintmaker Renovate
     if [ -n "${MINTMAKER_RENOVATE_IMAGE_REPO}" ] || [ -n "${MINTMAKER_RENOVATE_IMAGE_TAG}" ]; then
@@ -480,8 +486,8 @@ apply_service_image_overrides() {
         [ -n "${MINTMAKER_RENOVATE_IMAGE_REPO}" ] && log_info "  - Image repo: ${MINTMAKER_RENOVATE_IMAGE_REPO}" && has_overrides=true
         [ -n "${MINTMAKER_RENOVATE_IMAGE_TAG}" ] && log_info "  - Image tag: ${MINTMAKER_RENOVATE_IMAGE_TAG}" && has_overrides=true
     fi
-    [ -n "${MINTMAKER_RENOVATE_IMAGE_REPO}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/konflux-ci/mintmaker-renovate-image\")) |=.newName=\"${MINTMAKER_RENOVATE_IMAGE_REPO}\"" $ROOT/components/mintmaker/development/kustomization.yaml
-    [ -n "${MINTMAKER_RENOVATE_IMAGE_TAG}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/konflux-ci/mintmaker-renovate-image\")) |=.newTag=\"${MINTMAKER_RENOVATE_IMAGE_TAG}\"" $ROOT/components/mintmaker/development/kustomization.yaml
+    [ -n "${MINTMAKER_RENOVATE_IMAGE_REPO}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/konflux-ci/mintmaker-renovate-image\")) |=.newName=\"${MINTMAKER_RENOVATE_IMAGE_REPO}\"" "$mintmaker_kustomization"
+    [ -n "${MINTMAKER_RENOVATE_IMAGE_TAG}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/konflux-ci/mintmaker-renovate-image\")) |=.newTag=\"${MINTMAKER_RENOVATE_IMAGE_TAG}\"" "$mintmaker_kustomization"
 
     # Image Controller
     if [ -n "${IMAGE_CONTROLLER_IMAGE_REPO}" ] || [ -n "${IMAGE_CONTROLLER_IMAGE_TAG}" ] || [ -n "${IMAGE_CONTROLLER_PR_OWNER}" ]; then
