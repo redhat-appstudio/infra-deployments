@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: lumino
+  name: pharos
   labels: # Helps k-components detect this appset to apply the correct patches
     appstudio.redhat.com/deployment-clusters: "tenant"
 spec:
@@ -18,7 +18,7 @@ spec:
                   - key: appstudio.redhat.com/select-none
                     operator: DoesNotExist
               values:
-                sourceRoot: components/lumino
+                sourceRoot: components/pharos
                 ring: "empty-base"
                 clusterDir: "empty-base"
           - list:
@@ -26,7 +26,7 @@ spec:
 
   template:
     metadata:
-      name: lumino-{{nameNormalized}}
+      name: pharos-{{nameNormalized}}
     spec:
       project: default
       source:

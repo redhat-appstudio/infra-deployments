@@ -3,7 +3,7 @@ kind: ApplicationSet
 metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "-1"
-  name: lumino
+  name: pharos
 spec:
   generators:
     - merge:
@@ -15,7 +15,7 @@ spec:
                 matchLabels:
                   appstudio.redhat.com/member-cluster: "true"
               values:
-                sourceRoot: components/lumino
+                sourceRoot: components/pharos
                 ring: "ring-0"
                 clusterDir: base
           - list:
@@ -23,7 +23,7 @@ spec:
 
   template:
     metadata:
-      name: lumino-{{nameNormalized}}
+      name: pharos-{{nameNormalized}}
     spec:
       project: default
       source:
