@@ -1,0 +1,12 @@
+---
+# Exclude kflux-stg-p02 from ApplicationSets that are not ready for this
+# staging ROKS cluster yet (blackbox awaits o11y private overlay; perf-team
+# awaits perfscale tenant namespaces).
+- op: add
+  path: /spec/generators/0/selector
+  value:
+    matchExpressions:
+      - key: nameNormalized
+        operator: NotIn
+        values:
+          - kflux-stg-p02
