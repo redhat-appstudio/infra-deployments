@@ -18,7 +18,7 @@ spec:
                     - key: appstudio.redhat.com/select-none
                       operator: DoesNotExist
               values:
-                sourceRoot: components/pipeline-service-rd
+                sourceRoot: components/pipeline-service
                 ring: "empty-base"
                 clusterDir: "empty-base"
           - list:
@@ -27,6 +27,8 @@ spec:
   template:
     metadata:
       name: pipeline-service-{{nameNormalized}}
+      labels:
+        app.kubernetes.io/part-of: pipeline-service
     spec:
       project: default
       source:
@@ -37,9 +39,9 @@ spec:
         namespace: openshift-pipelines
         server: '{{server}}'
       syncPolicy:
-        # automated:
-        #   prune: true
-        #   selfHeal: true
+        automated:
+          prune: true
+          selfHeal: true
         syncOptions:
           - CreateNamespace=true
         retry:
