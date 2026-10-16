@@ -8,11 +8,10 @@ on:
     paths:
       - 'components/pipeline-service/**'
       - '.github/workflows/verify-pipelines-configs.yaml'
-      - 'hack/generate-deploy-config.sh'
 
 jobs:
   verify-pipelines-configs:
-    name: Verify pipelines kustomize in sync
+    name: Verify pipelines Kustomize rendering
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -27,20 +26,16 @@ jobs:
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           git fetch --depth=1 origin "${PR_HEAD_SHA}"
-          git checkout "${PR_HEAD_SHA}" -- components/pipeline-service/
-          git checkout HEAD -- components/pipeline-service/production/sync-rings.sh
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit -m "overlay PR manifests" --allow-empty
+          git restore --source="${PR_HEAD_SHA}" --staged --worktree -- components/pipeline-service/
 
       - name: Setup Kustomize
         uses: multani/action-setup-kustomize@bf96e027caf74ab03bb3f79bac2addb331b28f1d
         with:
           version: 5.8.1
 
-      - name: Verify Pipelines kustomize output is in sync
+      - name: Render Pipelines base, rings, and cluster configurations
         id: check
+        shell: bash
         run: |
           ERRORS_FILE="/tmp/errors_detected"
           COMMENT_FILE="/tmp/pr_comment"
@@ -53,25 +48,30 @@ jobs:
             touch "${ERRORS_FILE}"
           }
 
-          function check_changes() {
-            ENVIRONMENT="${1}"
-            ./hack/generate-deploy-config.sh -c "components/pipeline-service/${ENVIRONMENT}" || fail "Error generating configuration for ${ENVIRONMENT}"
-            ./components/pipeline-service/production/sync-rings.sh || fail "Error syncing production ring configuration"
-
-            if [ -n "$(git status --porcelain components/pipeline-service/${ENVIRONMENT})" ]; then
-              body="Please rebuild with kustomize following [the README](https://github.com/redhat-appstudio/infra-deployments/tree/main/components/pipeline-service#update-procedure). If the change is unexpected, use git-blame to identify the source of the change and confirm with the author that the change is safe."
-              diff="$(git diff components/pipeline-service/${ENVIRONMENT})"
-              fail "Pipelines service \`${ENVIRONMENT}\` configuration is out of sync." "$(printf '%s\n\n```diff\n%s\n```' "${body}" "${diff}")"
+          # Render entrypoints independently: ring snapshots may differ during promotion.
+          # Nested bases are validated through their owning ring/cluster entrypoints.
+          shopt -s nullglob
+          kustomizations=(
+            components/pipeline-service/base/kustomization.yaml
+            components/pipeline-service/rings/*/*/kustomization.yaml
+            components/pipeline-service/empty-base/*/kustomization.yaml
+          )
+          render_errors="$(mktemp)"
+          while IFS= read -r -d '' kustomization; do
+            directory="${kustomization%/kustomization.yaml}"
+            echo "Rendering ${directory}"
+            # Only builtins and Helm are enabled; never execute PR-owned scripts/plugins.
+            if ! kustomize build --enable-helm "${directory}" > /dev/null 2> "${render_errors}"; then
+              fail "Cannot render Pipelines service configuration: \`${directory}\`." \
+                "$(printf 'Fix the Kustomize rendering error below.\n\n```text\n%s\n```' "$(cat "${render_errors}")")"
             fi
-          }
-
-          check_changes "staging"
-          check_changes "production"
+          done < <(printf '%s\0' "${kustomizations[@]}" | LC_ALL=C sort -z)
+          rm -f "${render_errors}"
 
           if [ -e "${ERRORS_FILE}" ]; then
             echo "has_errors=true" >> "${GITHUB_OUTPUT}"
           else
-            echo "✅ All Pipelines service configurations are in sync with kustomize" | tee -a "${GITHUB_STEP_SUMMARY}" | tee -a "${COMMENT_FILE}"
+            echo "✅ All Pipelines service base, ring, and cluster configurations render successfully with Kustomize" | tee -a "${GITHUB_STEP_SUMMARY}" | tee -a "${COMMENT_FILE}"
             echo "has_errors=false" >> "${GITHUB_OUTPUT}"
           fi
 
@@ -116,6 +116,7 @@ jobs:
             --repo ${{ github.repository }} \
             --body-file /tmp/pr_comment
 
-          if [ "${{ needs.verify-pipelines-configs.outputs.has_errors }}" = "true" ]; then
+          if [ "${{ needs.verify-pipelines-configs.result }}" != "success" ] || \
+             [ "${{ needs.verify-pipelines-configs.outputs.has_errors }}" != "false" ]; then
             exit 1
           fi
