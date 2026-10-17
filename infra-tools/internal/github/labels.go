@@ -32,10 +32,17 @@ const NeedsApprovalProductionLabel = "prod/needs-approval"
 // environment, signalling that the PR has been approved.
 const ApprovedProductionLabel = "prod/approved"
 
-// KargoBot is the GitHub login of the Kargo automated promotion bot.
-// Production PRs opened by this bot skip the prod/needs-approval label
-// because they are the result of a pre-approved automated promotion pipeline.
-const KargoBot = "konflux-kargo-bot"
+// KargoBotLogin is the GitHub login of the Kargo automated promotion bot.
+// Production PRs opened by this bot skip 'prod/needs-approval' and 'infra/hold-production'
+// labels because they are the result of a pre-approved automated promotion pipeline.
+// The bare login is NOT sufficient for the security check; use IsKargoAutomation
+// which also verifies the immutable account ID and every commit's authorship.
+const KargoBotLogin = "konflux-kargo-bot[bot]"
+
+// KargoBotAccountID is the immutable numeric GitHub account ID for KargoBotLogin.
+// This MUST be kept in sync with the actual account; a login string alone can be
+// spoofed if the account is renamed or the name is later reused.
+const KargoBotAccountID = int64(286661375)
 
 // IssuesService is the subset of the GitHub Issues API used by this package.
 type IssuesService interface {
@@ -49,6 +56,7 @@ type IssuesService interface {
 // Client wraps a GitHub Issues service for label management.
 type Client struct {
 	issues IssuesService
+	pulls  PullsService
 	owner  string
 	repo   string
 }
@@ -62,6 +70,7 @@ func NewClient(token, repoFullName string) (*Client, error) {
 	client := gh.NewClient(nil).WithAuthToken(token)
 	return &Client{
 		issues: client.Issues,
+		pulls:  client.PullRequests,
 		owner:  parts[0],
 		repo:   parts[1],
 	}, nil
