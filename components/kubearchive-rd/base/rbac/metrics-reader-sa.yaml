@@ -1,0 +1,15 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: metrics-reader
+  namespace: product-kubearchive
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: metrics-reader
+  namespace: product-kubearchive
+  annotations:
+    kubernetes.io/service-account.name: metrics-reader
+type: kubernetes.io/service-account-token

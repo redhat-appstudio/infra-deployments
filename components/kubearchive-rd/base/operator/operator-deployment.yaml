@@ -1,0 +1,113 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: operator
+    app.kubernetes.io/name: kubearchive-operator
+    app.kubernetes.io/part-of: kubearchive
+    app.kubernetes.io/version: v1.23.0
+  name: kubearchive-operator
+  namespace: kubearchive
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+      labels:
+        control-plane: controller-manager
+    spec:
+      containers:
+        - args:
+            - --health-probe-bind-address=:8081
+          env:
+            - name: KUBEARCHIVE_OTEL_MODE
+              value: enabled
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value:  http://otel-collector:4318
+            - name: KUBEARCHIVE_ENABLE_PPROF
+              value: "true"
+            - name: LOG_LEVEL
+              value: INFO
+            - name: KLOG_LEVEL
+              value: "0"
+            - name: KUBEARCHIVE_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: KUBEARCHIVE_OTLP_SEND_LOGS
+              value: "false"
+            - name: OTEL_GO_X_DEPRECATED_RUNTIME_METRICS
+              value: "false"
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: GOMEMLIMIT
+              valueFrom:
+                resourceFieldRef:
+                  resource: requests.memory
+            - name: GOMAXPROCS
+              valueFrom:
+                resourceFieldRef:
+                  resource: limits.cpu
+          image: quay.io/kubearchive/operator:v1.23.0@sha256:7253603c3c9a76e223f86baea26a53e1cb685a401bd0e4264ae44f82a8c5ec37
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8081
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          name: manager
+          ports:
+          - containerPort: 8081
+          - containerPort: 9443
+            name: webhook-server
+            protocol: TCP
+          - containerPort: 8888
+            name: pprof-server
+            protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8081
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            limits:
+              cpu: 500m
+              memory: 256Mi
+            requests:
+              cpu: 10m
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+          volumeMounts:
+            - mountPath: /tmp/k8s-webhook-server/serving-certs
+              name: cert
+              readOnly: true
+            - mountPath: /etc/kubearchive/config
+              name: operator-config
+              readOnly: true
+      securityContext:
+        runAsNonRoot: true
+      serviceAccountName: kubearchive-operator
+      terminationGracePeriodSeconds: 10
+      volumes:
+        - name: cert
+          secret:
+            defaultMode: 420
+            secretName: kubearchive-operator-tls
+        - configMap:
+            defaultMode: 420
+            name: kubearchive-operator
+          name: operator-config

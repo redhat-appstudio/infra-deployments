@@ -1,0 +1,14 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  labels:
+    app.kubernetes.io/component: certs
+    app.kubernetes.io/name: kubearchive
+    app.kubernetes.io/part-of: kubearchive
+    app.kubernetes.io/version: v1.23.0
+  name: kubearchive
+  namespace: kubearchive
+spec:
+  ca:
+    secretName: kubearchive-ca

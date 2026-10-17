@@ -1,0 +1,20 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: o11y-kubearchive
+  namespace: product-kubearchive
+spec:
+  endpoints:
+    - path: /metrics
+      port: https
+      scheme: https
+      bearerTokenSecret:
+        name: metrics-reader
+        key: token
+      tlsConfig:
+        insecureSkipVerify: true
+      honorLabels: false # this is enforced as false at a higher level
+  selector:
+    matchLabels:
+      app: otel-collector
