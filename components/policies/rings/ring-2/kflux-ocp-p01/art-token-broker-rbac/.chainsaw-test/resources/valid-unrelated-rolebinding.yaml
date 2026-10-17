@@ -1,0 +1,12 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: valid-unrelated-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: konflux-viewer-bot-actions
+subjects:
+- kind: ServiceAccount
+  name: another-serviceaccount
+  namespace: art-kueue-tenant
