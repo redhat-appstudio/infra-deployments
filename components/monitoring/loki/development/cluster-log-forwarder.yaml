@@ -1,0 +1,41 @@
+apiVersion: observability.openshift.io/v1
+kind: ClusterLogForwarder
+metadata:
+  name: instance
+  namespace: openshift-logging
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  serviceAccount:
+    name: log-collector
+  outputs:
+    - name: loki-output
+      type: lokiStack
+      lokiStack:
+        target:
+          name: logging-loki
+          namespace: openshift-logging
+        authentication:
+          token:
+            from: serviceAccount
+      tls:
+        ca:
+          configMapName: logging-loki-gateway-ca-bundle
+          key: service-ca.crt
+  pipelines:
+    - name: application-logs
+      inputRefs:
+        - application
+      outputRefs:
+        - loki-output
+    - name: infrastructure-logs
+      inputRefs:
+        - infrastructure
+      outputRefs:
+        - loki-output
+    - name: audit-logs
+      inputRefs:
+        - audit
+      outputRefs:
+        - loki-output

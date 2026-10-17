@@ -1,0 +1,26 @@
+apiVersion: loki.grafana.com/v1
+kind: LokiStack
+metadata:
+  name: logging-loki
+  namespace: openshift-logging
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+    # CRD does not exist until the operator installs; dry-run would fail
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  size: 1x.medium
+  storage:
+    schemas:
+      - version: v13
+        effectiveDate: "2024-10-25"
+    secret:
+      name: logging-loki-s3
+      type: s3
+  limits:
+    global:
+      retention:
+        days: 30
+  managementState: Managed
+  storageClassName: gp3
+  tenants:
+    mode: openshift-logging
