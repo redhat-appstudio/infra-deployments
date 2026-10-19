@@ -1,0 +1,29 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: vector-scc-binding
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kubearchive-vector-scc-user
+subjects:
+- kind: ServiceAccount
+  name: vector
+  namespace: product-kubearchive-logging
+- kind: ServiceAccount
+  name: loki
+  namespace: product-kubearchive-logging
+- kind: ServiceAccount
+  name: loki-sa
+  namespace: product-kubearchive-logging
+- kind: ServiceAccount
+  name: grafana
+  namespace: product-kubearchive-logging
+- kind: ServiceAccount
+  name: loki
+  namespace: product-kubearchive-logging
+- kind: ServiceAccount
+  name: loki-canary
+  namespace: product-kubearchive-logging
