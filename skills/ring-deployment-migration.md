@@ -73,9 +73,9 @@ Follow the SOP steps **sequentially** — do not skip or reorder steps within a 
 
 **Every time you copy or create a YAML file during ANY SOP step, you MUST immediately:**
 
-1. Run `grep -c '^---$'` on the file. If count > 0, the file has multiple resources — split it into separate files, one resource per file. Do NOT copy multi-document files as-is.
+1. Check if the file has multiple resources. Skip this check for files in `templates/`, `charts/`, `.chainsaw-test/`, `patches/` subdirectories, and for upstream manifests/CRDs (Section 5.2 of directory-layout.md). For hand-written resource files listed in `resources:`, run `grep -c '^kind:' <file>`. If count > 1, split into separate files, one resource per file. Do NOT copy multi-document files as-is.
 
-2. Rename each file to `{resource-name}-{type-abbreviation}.yaml` where `resource-name` is the `metadata.name`. Use these abbreviations:
+2. Rename each file to `{resource-name}-{type-abbreviation}.yaml` where `resource-name` is the `metadata.name`. If the name already ends with the abbreviation, do not repeat it. Use these abbreviations:
 
    | Resource Kind | Abbreviation |
    |--------------|-------------|
@@ -97,7 +97,7 @@ Follow the SOP steps **sequentially** — do not skip or reorder steps within a 
    For custom resources without a standard abbreviation, use a short descriptive suffix.
 
    Examples:
-   - `scc.yaml` with SCC named `kubearchive-logging-scc` → `kubearchive-logging-scc.yaml`
+   - `scc.yaml` with SCC named `kubearchive-logging-scc` → `kubearchive-logging-scc.yaml` (name already ends with `-scc`, don't add another)
    - `sa.yaml` with 4 ServiceAccounts → split into `loki-sa.yaml`, `loki-canary-sa.yaml`, `metrics-reader-sa.yaml`, `loki-gateway-sa.yaml`
    - `rbac.yaml` with ClusterRole + ClusterRoleBinding + RoleBinding → split into `{name}-cr.yaml`, `{name}-crb.yaml`, `{name}-rb.yaml`
 
@@ -109,13 +109,15 @@ When applicable — organize related files into subdirectories with their own `k
 
 **After completing the last SOP step, run these validation commands. Fix any failures before presenting results:**
 
+**Parts 1, 2, 4** (component structure changes):
+
 1. Verify base-snapshot matches base:
    `diff -r components/<COMPONENT>-rd/base components/<COMPONENT>-rd/rings/ring-N/base/base-snapshot`
 
 2. Verify renders match legacy (use `all` when applicable — render diffs are sometimes acceptable but document WHY):
    `hack/test-ring-render.sh <COMPONENT>-rd all`
 
-3. Check common base resources (first PR only):
+3. Check common base resources (Parts 1 or 2 only, first PR for component):
    `hack/test-base-common.sh <COMPONENT>-rd`
 
 4. Build each kustomization.yaml independently:
@@ -124,17 +126,64 @@ When applicable — organize related files into subdirectories with their own `k
      while read d; do echo "=== $d ==="; kustomize build --enable-helm "$d" > /dev/null && echo OK || echo FAIL; done
    ```
 
-5. Build the appset overlay:
-   `kustomize build --enable-helm argo-cd-apps/overlays/rd-dev/<COMPONENT>`
+5. Build the appset overlay (select overlay by part). Build both the component subdirectory and the full top-level overlay:
+   ```bash
+   # Part 1:
+   kustomize build --enable-helm argo-cd-apps/overlays/rd-dev/<COMPONENT>
+   kustomize build argo-cd-apps/overlays/rd-dev  # verify kustomization.yaml and delete-legacy edits
+   # Part 2:
+   kustomize build --enable-helm argo-cd-apps/overlays/rd-staging/<COMPONENT>
+   kustomize build argo-cd-apps/overlays/rd-staging
+   # Part 4:
+   kustomize build --enable-helm argo-cd-apps/overlays/rd-production/<COMPONENT>
+   kustomize build argo-cd-apps/overlays/rd-production
+   ```
 
 6. Search for path references that need updating:
    `grep -r "<COMPONENT>" hack/ .github/workflows/`
 
-7. Run kube-linter on each kustomization build output (CI builds each independently):
-   ```bash
-   find components/<COMPONENT>-rd -name kustomization.yaml -exec dirname {} \; | \
-     while read d; do echo "=== $d ==="; kustomize build --enable-helm "$d" 2>/dev/null | kube-linter lint - && echo OK || echo FAIL; done
-   ```
+**Parts 3, 5** (delete legacy ApplicationSets only):
+
+- Build all overlays with delete patches to verify they apply:
+  ```bash
+  # Part 3:
+  kustomize build argo-cd-apps/overlays/staging-downstream
+  kustomize build argo-cd-apps/overlays/konflux-public-staging
+  # Part 5:
+  kustomize build argo-cd-apps/overlays/production-downstream
+  kustomize build argo-cd-apps/overlays/konflux-public-production
+  ```
+- Verify deleted AppSets no longer appear in rendered output
+
+**Part 6** (rename and remove legacy):
+
+- Verify `-rd` suffix removed and legacy component deleted:
+  ```bash
+  test ! -d components/<COMPONENT>-rd  # renamed component should not exist
+  test ! -d components/<COMPONENT>/development  # no legacy env dirs in final component
+  test ! -d components/<COMPONENT>/staging
+  test ! -d components/<COMPONENT>/production
+  ```
+- Verify final component structure builds:
+  ```bash
+  find components/<COMPONENT> -name kustomization.yaml -exec dirname {} \; | \
+    while read d; do echo "=== $d ==="; kustomize build --enable-helm "$d" > /dev/null && echo OK || echo FAIL; done
+  ```
+- Verify no leftover `-rd` references in AppSets or scripts:
+  ```bash
+  grep -rn '<COMPONENT>-rd' argo-cd-apps/ hack/ .github/workflows/ components/
+  # Expect no output
+  ```
+- Build changed rd-* overlays and legacy overlays where delete entries were removed:
+  ```bash
+  kustomize build argo-cd-apps/overlays/rd-dev
+  kustomize build argo-cd-apps/overlays/rd-staging
+  kustomize build argo-cd-apps/overlays/rd-production
+  kustomize build argo-cd-apps/overlays/development
+  kustomize build argo-cd-apps/overlays/staging-downstream
+  kustomize build argo-cd-apps/overlays/production-downstream
+  ```
+- Do NOT run `test-ring-render.sh` (requires both `-rd` and legacy paths which no longer exist)
 
 ### AppSet Configuration
 
