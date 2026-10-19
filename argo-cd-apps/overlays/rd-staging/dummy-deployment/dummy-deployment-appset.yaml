@@ -23,6 +23,12 @@ spec:
                 clusterDir: "empty-base"
           - list:
               elements: [] # Populated via k-components (or manually if the cluster list is unusual)
+        selector:
+          matchExpressions:
+            - key: nameNormalized
+              operator: NotIn
+              values:
+                - kflux-stg-p02
 
   template:
     metadata:
