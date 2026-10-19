@@ -505,15 +505,6 @@ apply_service_image_overrides() {
     [ -n "${MULTI_ARCH_CONTROLLER_IMAGE_TAG}" ] && yq -i e "(.images.[] | select(.name==\"multi-platform-controller\")) |=.newTag=\"${MULTI_ARCH_CONTROLLER_IMAGE_TAG}\"" $ROOT/components/multi-platform-controller/rings/ring-0/base/kustomization.yaml
     [[ -n "${MULTI_ARCH_CONTROLLER_PR_OWNER}" && "${MULTI_ARCH_CONTROLLER_PR_SHA}" ]] && yq -i e "(.resources[] | select(. ==\"*github.com/konflux-ci/multi-platform-controller*\")) |= (sub(\"\?ref=.+\", \"?ref=${MULTI_ARCH_CONTROLLER_PR_SHA}\" ) | sub(\"github.com/konflux-ci\", \"github.com/${MULTI_ARCH_CONTROLLER_PR_OWNER}\"))" $ROOT/components/multi-platform-controller/rings/ring-0/base/kustomization.yaml
 
-    # EaaS Hypershift
-    if [ -n "${EAAS_HYPERSHIFT_BASE_DOMAIN}" ] || [ -n "${EAAS_HYPERSHIFT_CLI_ROLE_ARN}" ]; then
-        log_substep "Configuring EaaS Hypershift overrides"
-        [ -n "${EAAS_HYPERSHIFT_BASE_DOMAIN}" ] && log_info "  - Base domain: ${EAAS_HYPERSHIFT_BASE_DOMAIN}" && has_overrides=true
-        [ -n "${EAAS_HYPERSHIFT_CLI_ROLE_ARN}" ] && log_info "  - CLI Role ARN: ${EAAS_HYPERSHIFT_CLI_ROLE_ARN}" && has_overrides=true
-    fi
-    [ -n "${EAAS_HYPERSHIFT_BASE_DOMAIN}" ] && yq -i e "(.[] | select(.value.name==\"baseDomain\")).value.value |= \"${EAAS_HYPERSHIFT_BASE_DOMAIN}\"" $ROOT/components/cluster-as-a-service/development/add-hypershift-params.yaml
-    [ -n "${EAAS_HYPERSHIFT_CLI_ROLE_ARN}" ] && yq -i e "(.[] | select(.value.name==\"hypershiftRoleArn\")).value.value |= \"${EAAS_HYPERSHIFT_CLI_ROLE_ARN}\"" $ROOT/components/cluster-as-a-service/development/add-hypershift-params.yaml
-
     # Pipeline Service
     if [[ -n "${PIPELINE_PR_OWNER}" && -n "${PIPELINE_PR_SHA}" ]]; then
         log_substep "Configuring Pipeline Service overrides"
@@ -1099,11 +1090,11 @@ if $EAAS; then
     if [ "$TARGET_PREVIEW_OVERLAY" != "development" ] && [ "$TARGET_PREVIEW_OVERLAY" != "rd-dev" ]; then
         log_warn "Ignoring --eaas for overlay '$TARGET_PREVIEW_OVERLAY'"
     else
-    log_step "Enabling Environment-as-a-Service (EaaS) components"
-    log_info "Enabling EaaS cluster role assignment"
-    yq -i '.components += ["../../../k-components/assign-eaas-role-to-local-cluster"]' \
-        $ROOT/argo-cd-apps/base/local-cluster-secret/all-in-one/kustomization.yaml
-    log_success "EaaS components enabled"
+        log_step "Enabling Environment-as-a-Service (EaaS) workloads"
+        log_info "Assigning the EaaS role to the local cluster"
+        yq -i '.components += ["../../../k-components/assign-eaas-role-to-local-cluster"]' \
+            $ROOT/argo-cd-apps/base/local-cluster-secret/all-in-one/kustomization.yaml
+        log_success "Local cluster labeled for EaaS workloads"
     fi
 fi
 
