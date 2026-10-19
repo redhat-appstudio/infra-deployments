@@ -1,0 +1,27 @@
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: konflux-pharos-view
+aggregationRule:
+  clusterRoleSelectors:
+    - matchExpressions:
+        - key: konflux-ci.dev/scope
+          operator: In
+          values:
+            - pharos-view
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: konflux-pharos-view:pharos
+subjects:
+# the pharos ServiceAccount is managed outside infra-deployments
+- kind: ServiceAccount
+  apiGroup: ""
+  name: pharos
+  namespace: konflux-pharos
+roleRef:
+  kind: ClusterRole
+  apiGroup: rbac.authorization.k8s.io
+  name: konflux-pharos-view

@@ -6,3 +6,9 @@ resources:
 - buildah-roks-scc.yaml
 - buildah-roks-scc-clusterrole.yaml
 - buildah-roks-scc-clusterrolebinding.yaml
+
+patches:
+- target:
+    kind: ClusterPolicy
+    name: konflux-rbac-bootstrap-tenant-namespace-rbcm
+  path: disable-konflux-rbac-bootstrap-on-roks.yaml

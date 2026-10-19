@@ -114,7 +114,7 @@ patches:
               spec:
                 containers:
                   - name: vacuum
-                    image: quay.io/kubearchive/vacuum:v1.22.2
+                    image: quay.io/kubearchive/vacuum:v1.23.0
 
   - patch: |-
       apiVersion: batch/v1
@@ -153,7 +153,7 @@ patches:
     patch: |-
       - op: replace
         path: /metadata/name
-        value: kubearchive-schema-migration-v13-v1.22.2
+        value: kubearchive-schema-migration-v13-v1.23.0
 
   # We don't need the Secret as it will be created by the ExternalSecrets Operator
   - patch: |-
@@ -368,4 +368,4 @@ patches:
           spec:
             containers:
               - name: otel-collector
-                image: quay.io/kubearchive/opentelemetry-collector@sha256:1f8c9a186c56f5ab4ffdd937ecce621aef116868f6022f3652c5d285b5788f8a
+                image: quay.io/kubearchive/opentelemetry-collector@sha256:30619e2a6e7ec84debb478a60ffecdcf493a68d8206120c4a4b01b83f31ea3e4

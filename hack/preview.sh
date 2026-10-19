@@ -519,7 +519,7 @@ apply_service_image_overrides() {
         log_substep "Configuring Pipeline Service overrides"
         log_info "  - PR source: ${PIPELINE_PR_OWNER}@${PIPELINE_PR_SHA}"
         has_overrides=true
-        yq -i e ".resources[] |= sub(\"ref=[^ ]*\"; \"ref=${PIPELINE_PR_SHA}\") | .resources[] |= sub(\"openshift-pipelines\"; \"${PIPELINE_PR_OWNER}\")" $ROOT/components/pipeline-service/development/kustomization.yaml
+        yq -i e ".resources[] |= sub(\"ref=[^ ]*\"; \"ref=${PIPELINE_PR_SHA}\") | .resources[] |= sub(\"openshift-pipelines\"; \"${PIPELINE_PR_OWNER}\")" $ROOT/components/pipeline-service/rings/ring-0/base/kustomization.yaml
     fi
 
     if [ "$has_overrides" = false ]; then
