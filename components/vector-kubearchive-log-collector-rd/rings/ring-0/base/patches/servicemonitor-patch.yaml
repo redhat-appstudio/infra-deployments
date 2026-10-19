@@ -1,0 +1,24 @@
+- op: replace
+  path: /spec/endpoints/0/scheme
+  value: http
+- op: replace
+  path: /spec/endpoints/0/port
+  value: http-metrics
+- op: remove
+  path: /spec/endpoints/0/bearerTokenSecret
+- op: remove
+  path: /spec/endpoints/0/tlsConfig
+- op: replace
+  path: /spec/selector/matchExpressions
+  value:
+  - key: app.kubernetes.io/component
+    operator: In
+    values:
+    - querier
+    - ingester
+    - distributor
+    - compactor
+  - key: app.kubernetes.io/name
+    operator: In
+    values:
+    - loki

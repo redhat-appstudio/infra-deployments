@@ -1,0 +1,12 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus-product-kubearchive-logging-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: product-kubearchive-logging-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: metrics-reader
+  namespace: product-kubearchive-logging

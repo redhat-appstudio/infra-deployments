@@ -1,0 +1,14 @@
+apiVersion: builtin
+kind: HelmChartInflationGenerator
+metadata:
+  name: loki
+name: loki
+repo: https://grafana-community.github.io/helm-charts
+version: 18.5.2
+releaseName: loki
+namespace: product-kubearchive-logging
+valuesFile: loki-helm-values.yaml
+additionalValuesFiles:
+  - loki-helm-dev-values.yaml
+  - loki-helm-minio-values.yaml
+  - loki-helm-images.yaml
