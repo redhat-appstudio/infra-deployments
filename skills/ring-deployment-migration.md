@@ -227,7 +227,14 @@ Start from the **SOP template** for the ApplicationSet. Then compare against the
 - `namespace` in destination
 - `syncOptions`
 
-Do not blindly copy the original — use the SOP template as the base and supplement with the original's extras.
+**Choose the correct template options** (don't just pick the first option):
+
+- `appstudio.redhat.com/deployment-clusters`: Choose `all`, `tenant`, or `eaas` based on the original AppSet. Most components use `tenant`, not `all`.
+- `appstudio.redhat.com/internal-only: "true"`: Only include this label if the component deploys to internal clusters only. Most components do NOT have this label.
+
+Check the original AppSet for these labels and match them. If unsure which option to choose, ask the user.
+
+Do not blindly copy the template — verify each option matches the component's actual deployment scope.
 
 ### PR Conventions
 
