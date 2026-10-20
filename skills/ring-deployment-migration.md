@@ -69,7 +69,15 @@ If the user does not specify which part, ask. The parts are:
 
 Follow the SOP steps **sequentially** — do not skip or reorder steps within a part. Also follow `docs/ring-deployments/directory-layout.md` for canonical structure (Sections 3-4) and cluster/ring assignments.
 
-**For Parts 1 or 2 (first PR for the component):** after SOP step 2 (create `-rd` copy) and step 3 (create `base/`), run `hack/test-base-common.sh <COMPONENT>-rd` to verify the base captures what is truly common across all legacy environments. Review findings — Helm-generated resources (Services, ServiceAccounts, ClusterRoles) stay in ring, not base; only manually authored resources that are identical across all envs belong in base. Clean up any prerequisites created solely for this check that don't belong in the current SOP step. Then continue with the remaining SOP steps.
+**CRITICAL for Parts 1 or 2 (first PR for the component):** after SOP step 2 (create `-rd` copy), immediately delete the legacy environment directories from the `-rd` copy:
+```bash
+rm -rf components/<COMPONENT>-rd/development
+rm -rf components/<COMPONENT>-rd/staging
+rm -rf components/<COMPONENT>-rd/production
+```
+SOP step 3 says "Create just base/ and rings/" — this means ONLY these directories should exist in `-rd`, not in addition to legacy dirs. Keep only `OWNERS`, `README.md`, and similar metadata files at the top level.
+
+After step 3 (create `base/`), run `hack/test-base-common.sh <COMPONENT>-rd` to verify the base captures what is truly common across all legacy environments. Review findings — Helm-generated resources (Services, ServiceAccounts, ClusterRoles) stay in ring, not base; only manually authored resources that are identical across all envs belong in base. Clean up any prerequisites created solely for this check that don't belong in the current SOP step. Then continue with the remaining SOP steps.
 
 **Every time you copy or create a YAML file during ANY SOP step, you MUST immediately:**
 
@@ -111,22 +119,30 @@ When applicable — organize related files into subdirectories with their own `k
 
 **Parts 1, 2, 4** (component structure changes):
 
-1. Verify base-snapshot matches base:
+1. Verify legacy environment directories removed from `-rd`:
+   ```bash
+   test ! -d components/<COMPONENT>-rd/development
+   test ! -d components/<COMPONENT>-rd/staging
+   test ! -d components/<COMPONENT>-rd/production
+   # All three should return 0 (directories do not exist)
+   ```
+
+2. Verify base-snapshot matches base:
    `diff -r components/<COMPONENT>-rd/base components/<COMPONENT>-rd/rings/ring-N/base/base-snapshot`
 
-2. Verify renders match legacy (use `all` when applicable — render diffs are sometimes acceptable but document WHY):
+3. Verify renders match legacy (use `all` when applicable — render diffs are sometimes acceptable but document WHY):
    `hack/test-ring-render.sh <COMPONENT>-rd all`
 
-3. Check common base resources (Parts 1 or 2 only, first PR for component):
+4. Check common base resources (Parts 1 or 2 only, first PR for component):
    `hack/test-base-common.sh <COMPONENT>-rd`
 
-4. Build each kustomization.yaml independently:
+5. Build each kustomization.yaml independently:
    ```bash
    find components/<COMPONENT>-rd -name kustomization.yaml -exec dirname {} \; | \
      while read d; do echo "=== $d ==="; kustomize build --enable-helm "$d" > /dev/null && echo OK || echo FAIL; done
    ```
 
-5. Build the appset overlay (select overlay by part). Build both the component subdirectory and the full top-level overlay:
+6. Build the appset overlay (select overlay by part). Build both the component subdirectory and the full top-level overlay:
    ```bash
    # Part 1:
    kustomize build --enable-helm argo-cd-apps/overlays/rd-dev/<COMPONENT>
@@ -139,7 +155,7 @@ When applicable — organize related files into subdirectories with their own `k
    kustomize build argo-cd-apps/overlays/rd-production
    ```
 
-6. Search for path references that need updating:
+7. Search for path references that need updating:
    `grep -r "<COMPONENT>" hack/ .github/workflows/`
 
 **Parts 3, 5** (delete legacy ApplicationSets only):
