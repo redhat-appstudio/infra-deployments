@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: loki-compactor
+spec:
+  template:
+    spec:
+      volumes:
+        - name: temp
+          emptyDir: {}
+      initContainers:
+        - name: create-minio-buckets
+          image: quay.io/openshift-pipeline/minio-mc-mirror:RELEASE.2025-08-13T08-35-41Z
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - name: temp
+              mountPath: /tmp
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              MC="mc --config-dir /tmp --insecure"
+              ATTEMPTS=0
+              until $MC alias set myminio http://loki-minio:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD" 2>/dev/null; do
+                ATTEMPTS=$((ATTEMPTS + 1))
+                if [ $ATTEMPTS -gt 30 ]; then
+                  echo "Failed to connect to MinIO after 30 attempts, last error:"
+                  $MC alias set myminio http://loki-minio:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD"
+                  exit 1
+                fi
+                sleep 2
+              done
+              for BUCKET in chunks ruler; do
+                if ! $MC stat myminio/$BUCKET >/dev/null 2>&1; then
+                  $MC mb myminio/$BUCKET
+                fi
+              done
+              echo "Buckets ready"
+          env:
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: loki-minio
+                  key: rootUser
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: loki-minio
+                  key: rootPassword
+          resources:
+            requests:
+              cpu: 10m
+              memory: 64Mi
+            limits:
+              memory: 128Mi

@@ -131,14 +131,6 @@ main() {
         ;;
     esac
 
-    # EaaS-specific setup (if enabled)
-    if [ -n "$eaas" ]; then
-        log_step "Phase 6: EaaS Cluster Bootstrap"
-        log_info "OIDC secrets deployment (requires MCE operator to create local-cluster namespace)"
-        "${ROOT}/hack/bootstrap-eaas-cluster.sh"
-        log_success "EaaS cluster bootstrap complete"
-    fi
-
     # Calculate total time
     end_time=$(date +%s)
     total_time=$((end_time - start_time))

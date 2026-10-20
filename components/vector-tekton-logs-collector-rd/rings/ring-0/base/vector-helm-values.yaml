@@ -1,0 +1,94 @@
+---
+role: Agent
+resources:
+  requests:
+    cpu: 100m
+    memory: 512Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+customConfig:
+  data_dir: /vector-data-dir
+  api:
+    enabled: true
+    address: 127.0.0.1:8686
+  sources:
+    kubernetes_logs:
+      type: kubernetes_logs
+      rotate_wait_secs: 5
+      glob_minimum_cooldown_ms: 500
+      max_line_bytes: 3145728
+      auto_partial_merge: true
+      extra_label_selector: "app.kubernetes.io/managed-by in (tekton-pipelines,pipelinesascode.tekton.dev)"
+  transforms:
+    reduce_events:
+      type: reduce
+      inputs:
+        - kubernetes_logs
+      group_by:
+        - file
+      flush_period_ms: 2000
+      end_every_period_ms: 2000
+      merge_strategies:
+        message: concat_newline
+    remap_app_logs:
+      type: remap
+      inputs:
+        - reduce_events
+      source: |-
+        .tmp = del(.)
+        if exists(.tmp.kubernetes.pod_labels."tekton.dev/taskRunUID") {
+          .taskRunUID = del(.tmp.kubernetes.pod_labels."tekton.dev/taskRunUID")
+        } else {
+          .taskRunUID = "none"
+        }
+        if exists(.tmp.kubernetes.pod_labels."tekton.dev/pipelineRunUID") {
+          .pipelineRunUID = del(.tmp.kubernetes.pod_labels."tekton.dev/pipelineRunUID")
+          .result = .pipelineRunUID
+        } else {
+          .result = .taskRunUID
+        }
+        if exists(.tmp.kubernetes.pod_namespace) {
+          .namespace = del(.tmp.kubernetes.pod_namespace)
+        } else {
+          .namespace = "unlabeled"
+        }
+        .container = del(.tmp.kubernetes.container_name)
+        .message = del(.tmp.message)
+        del(.tmp)
+  # Dev: no S3, no Loki. Send Tekton logs to stdout (collectable by cluster logging / kubectl logs).
+  sinks:
+    console:
+      type: console
+      inputs: ["remap_app_logs"]
+      encoding:
+        codec: "text"
+env: []
+nodeSelector:
+  konflux-ci.dev/workload: konflux-tenants
+tolerations:
+  - effect: NoSchedule
+    key: konflux-ci.dev/workload
+    operator: Equal
+    value: konflux-tenants
+image:
+  repository: quay.io/openshift-pipeline/vector
+  tag: 0.57.0-distroless-libc
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+    - CHOWN
+    - DAC_OVERRIDE
+    - FOWNER
+    - FSETID
+    - KILL
+    - NET_BIND_SERVICE
+    - SETGID
+    - SETPCAP
+    - SETUID
+  readOnlyRootFilesystem: true
+  seLinuxOptions:
+    type: spc_t
+  seccompProfile:
+    type: RuntimeDefault

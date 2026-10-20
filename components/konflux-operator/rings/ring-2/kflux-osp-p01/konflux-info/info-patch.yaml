@@ -1,0 +1,17 @@
+apiVersion: konflux.konflux-ci.dev/v1alpha1
+kind: Konflux
+metadata:
+  name: konflux
+spec:
+  info:
+    spec:
+      banner:
+        items:
+        - summary: "Service Accounts will be rotated on kflux-osp-p01 cluster during the October 23 Konflux Maintenance window. Not migrated automation will start failing."
+          type: "warning"
+      publicInfo:
+        visibility: private
+        statusPageUrl: "https://grafana.app-sre.devshift.net/d/aes1ns0htwni8a/konflux-status-page?var-cluster=kflux-osp-p01"
+        integrations:
+          github:
+            application_url: "https://github.com/apps/red-hat-konflux-kflux-osp-p01"

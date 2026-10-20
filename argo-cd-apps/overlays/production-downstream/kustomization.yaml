@@ -16,11 +16,6 @@ patches:
     target:
       kind: ApplicationSet
       version: v1alpha1
-      name: pipeline-service
-  - path: production-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
       name: build-service
   - path: production-overlay-patch.yaml
     target:
@@ -162,16 +157,6 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: cert-manager
-  - path: production-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: pulp-access-controller
-  - path: squid-production-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: squid
   - path: production-overlay-patch.yaml
     target:
       kind: ApplicationSet
@@ -335,8 +320,8 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: kubelet-config
-  - path: production-auto-sync-patch.yaml
+  - path: production-overlay-patch.yaml
     target:
       kind: ApplicationSet
       version: v1alpha1
-      name: pipeline-service
+      name: enterprise-contract

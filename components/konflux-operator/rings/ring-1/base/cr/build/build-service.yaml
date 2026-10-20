@@ -9,9 +9,16 @@ spec:
         # docker-build-oci-ta is defined upstream, but it's not the default there.
         defaultPipelineName: docker-build-oci-ta
         pipelines:
+          - name: fbc-builder
+            bundle: quay.io/konflux-ci/tekton-catalog/pipeline-fbc-builder:devel
+            description: "Build and validate File Based Catalogs"
+            additionalParams:
+              - build-platforms
           - name: docker-build-multi-platform-oci-ta
             bundle: quay.io/konflux-ci/tekton-catalog/pipeline-docker-build-multi-platform-oci-ta:devel
             description: "Build multi-platform container images with secure data transfer for the pipelines"
+            additionalParams:
+              - build-platforms
       buildControllerManager:
         replicas: 1
         manager:

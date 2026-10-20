@@ -1,5 +1,7 @@
 # Configuring OpenShift Pipelines (the version of Tekton installed by the OpenShift Pipelines Operator) on Konflux
 
+**Migration Status**: In-Progress
+
 As of August, 2024, Konflux no longer uses the [deprecated 'Pipeline Service' repository](https://github.com/openshift-pipelines/pipeline-service/)
 as a base of the Tekton related configuration deployed on the various Konflux clusters.
 
@@ -17,177 +19,55 @@ Configuration documentation:
 
 [Downstream documentation for OpenShift Pipelines](https://docs.openshift.com/pipelines/1.15/about/understanding-openshift-pipelines.html)
 
-## Kustomize verification commands
+## What gets deployed
 
-All commands in this section are relative to the infra-deployments repository root directory
+The `CatalogSource` and `Subscription` resources install the OpenShift Pipelines Operator from a pinned index image rather than the default Red Hat catalog, so operator upgrades happen on a schedule controlled by this repo instead of automatically.
 
-- development overlay:
+### OpenShift Pipelines
 
-```shell
-# cd to your infra-deployment git clone base directory
-$ kustomize build ./components/pipeline-service/development/
-```
+The resources here, which run in the `openshift-pipelines` namespace, help manage RBAC permissions and monitor  the Tekton Chains controller. The namespace is created in this component and the `konflux-pipeline-service`/`konflux-sre` groups are granted `edit` access.
 
-- stage overlay:
+Tekton Chains' signing key and public key are synced in from Vault (`appsre-stonesoup-vault` ClusterSecretStore); the public key is readable by all authenticated users. A Tekton Chains `Service` and `ServiceMonitor` are deployed to monitor and expose the Tekton Chains controller. The ArgoCD application controller is granted permission to manage the `ServiceMonitor`, `TektonConfig`, `SecurityContextConstraints`, and `batch/jobs` resources, since the operator doesn't own those directly.
 
-```shell
-# cd to your infra-deployment git clone base directory
-$ kustomize build ./components/pipeline-service/staging/base
-```
+### Tekton Logging
 
-- production overlay
+The resources here, which mainly exist in the `tekton-logging` namespace, sync the credentials needed to authenticate to the AWS Tekton Results S3 bucket, expose metrics regarding `PipelineRun`s, and provide the `konflux-pipeline-service` / `konflux-sre` groups cluster-scoped access to debug resources and issues related to  cluster upgrades and cluster health. 
 
-```shell
-# cd to your infra-deployment git clone base directory
-$ kustomize build ./components/pipeline-service/production/base
-```
+The other resources for exporting pipeline metrics live in the `openshift-pipelines` namespace. A `Deployment`, `Service`, and `ServiceMonitor` regarding exporting pipeline metrics are deployed and a `ServiceAccount` specifically for exporting these metrics is granted viewing permissions for many resources in addition with the ability to patch `Pipeline`/ `TaskRun`s. 
 
-## Current protocol
+### Tekton Results
 
-The basic pattern followed is to update both the development and stage overlays with as new change.
-The development overlay the 'appstudio-e2e-tests' CI job that leverage Konflux QE's [End to End tests](https://github.com/konflux-ci/e2e-tests) utilize.
-Their slack channel for questions on the tests, known issues, help in debug, is #forum-konflux-qe.
+The resources here, which run in the `tekton-results` namespace, deploy the main `Deployments` and `Services` related to Tekton Results in addition to other resources required to connect Tekton Results to external sources.  
 
-The stage overlay deploys the Konflux clusters that post merge development testing can be done on, where those
-clusters resemble as closely as possible the production clusters.
+The API, API for Watcher, and Watcher `Deployments`/`Services` are ran here in addition to a scaled-to-zero retention-policy agent that prunes results after certain configured period of time. An external `Route` is configured for the API, and `ServiceMonitor`s exist for both the API and Watcher services. `ExternalSecret`s pull DB and S3 credentials from Vault and aggregated `tekton-results-admin`/`-readonly`/`-readwrite` ClusterRoles control who can read or manage results.
 
-After vetting the change in stage for an amount of time appropriate for the complexity of your change, move onto
-updating the production clusters.
+### Testing Resources
 
-## Update procedure
+Deploys a dedicated namespace and RBAC used by Tekton Results end-to-end/smoke tests.
 
-All commands in this section are relative to the infra-deployments repository root directory
-
-- For development overlay: 
-
-Edit the yaml files under the development subdirectory as needed.  Run the 'kustomize build' command for the 
-development overlay as a sanity check, and then git commit to your branch to include in your pull request.
-
-- For stage overlay:
-
-Same process with respect to editing files, though under the 'stage' subdirectory this time,  and running 'kustomize build',
-but there is a separate step.  Specific 'deploy.yaml' files are created for each of the actual Konflux clusters.
-
-To update them with your yaml changes:
-```shell
-# cd to your infra-deployment git clone base directory
-$ ./hack/generate-deploy-config.sh -c components/pipeline-service/staging
-# to see if your updates made it to the deploy.yaml files
-$ git status
-```
-
-- For production overlay:
-
-By default production changes are done using a Ring deployment, for which details are included below.
-If you're making changes which do not require a ring deployment, the change can be made
-the same as the 'stage' overlay, though you'll deal with the yaml files under the 'production' subdirectory, and the
-use of 'generate-deploy-config.sh' similarily is tweaked to update the 'production' overlay.
-
-```shell
-# cd to your infra-deployment git clone base directory
-$ ./hack/generate-deploy-config.sh -c components/pipeline-service/production
-# to see if your updates made it to the deploy.yaml files
-$ git status
-```
-
-## Production Ring Deployments
-
-Production clusters are organized into three rings for gradual rollout to minimize blast radius:
-
-- **Ring 1**: Early adopter clusters (smallest blast radius)
-- **Ring 2**: Mid-tier clusters
-- **Ring 3**: Remaining production clusters
-
-See `./components/pipeline-service/production/ring-mappings.yaml` for current cluster membership.
-
-### Updating procedure for Ring Deployments
-
-1. Apply the change as a patch in ring-1's kustomization file. For example:
-```yaml
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-
-resources: []
-patches:
-  - target:
-      kind: CatalogSource
-      name: custom-operators
-    patch: |-
-      - op: replace
-        path: /spec/image
-        value: quay.io/openshift-pipeline/pipelines-index-4.18@sha256:d4d3f6210a384da6bfb11214a860e72e52d0a38b73037b8135c0571a6365d2a1
-```
-
-2. Sync ring configuration and regenerate deploy.yaml files
-```bash
-# Sync ring references to all clusters
-./components/pipeline-service/production/sync-rings.sh
-
-# Regenerate all deploy.yaml files
-./hack/generate-deploy-config.sh -c components/pipeline-service/production
-```
-
-3. Deploy the changes
-
-4. After the ring has been deployed and validated, repeat steps 1 through 3 for the next ring.
-
-5. Once the change is ready to deploy on all clusters, apply the change to `components/pipeline-service/production/base/main-pipeline-service-configuration.yaml` and remove the patch from the rings' `kustomization.yaml` files.
-
-6. Sync the ring configuration and regenerate `deploy.yaml` files. There should be no changes to the `deploy.yaml` files.
+| Manifest | Kind | Purpose |
+| --- | --- | --- |
+| `testing-ns.yaml` | `Namespace` | Creates `plnsvc-tests` |
+| `testing-rbac.yaml` | `ServiceAccount` / `ClusterRoleBinding` / `RoleBinding` | Grants the 'tekton-results-tests' SA permissions in the 'tekton-results-readonly' `ClusterRole` and the 'konflux-pipeline-service' group permissions in the 'tekton-results-admin' `ClusterRole` |
 
 
-### Managing Ring Membership
+### Operator versus non-Operator Managed Clusters
 
-To add a cluster to a ring or move it between rings, edit `production/ring-mappings.yaml`:
+Until the Konflux Operator is deployed to all clusters, some clusters' (those without the Konflux Operator) will have an additional `SecurityContextConstraint` resource present in the cluster's Kustomize file. On clusters that have the Konflux Operator deployed, this resource is managed by the operator.
 
-```yaml
-ring-1:
-  - kflux-fedora-01
-  - stone-prod-p01
-  - new-cluster-01  # Add new cluster here
+## Promotion Tactics
 
-ring-2:
-  - stone-prod-p02
-  - kflux-rhel-p01
-```
+This component is a special case in terms of using the automatic ring deployments workflow. Unlike most other components, there are no images listed in the ring or cluster Kustomize files. Image-based changes can still be automatically detected and promoted when a new image is available from the associated Quay repository, but this configuration allows image-based changes to be paired with manifest-based changes in the same [Freight](https://docs.kargo.io/user-guide/core-concepts#freight) by making changes to each resource's image reference in the `components/pipeline-service/base/` directory.
 
-Then run `./components/pipeline-service/production/sync-rings.sh` to apply the changes. The script will validate that all mapped clusters exist and all cluster directories are mapped to a ring.
+Both image-based and manifest-based changes must follow the [Manifest-based Promotion Workflows](https://gitlab.cee.redhat.com/konflux/docs/sop/-/blob/main/infra/ring-deployments/component-promotions.md?ref_type=heads#manifest-based-promotion), with the exception that Kargo can automatically create the first PR in the `components/pipeline-service/base/` directory if it detects a new image.
 
-### Common Ring Deployment Patterns
+If an image-based change also requires the rollout of a new ring/cluster-level patch, a component owner must checkout the branch that Kargo creates and push the patch for that specific ring/cluster(s) before the auto-generated PR is approved and merged.
 
-**Index update:**
-```yaml
-patches:
-  - target:
-      kind: CatalogSource
-      name: custom-operators
-    patch: |-
-      - op: replace
-        path: /spec/image
-        value: quay.io/openshift-pipeline/pipelines-index-4.18@sha256:d4d3f6210a384da6bfb11214a860e72e52d0a38b73037b8135c0571a6365d2a1
-```
+The following components reference images:
 
-**Image override:**
-```yaml
-patches:
-  - target:
-      kind: Subscription
-      name: openshift-pipelines-operator
-    patch: |-
-      - op: add
-        path: /spec/config/env
-        value: {"name": "IMAGE_PAC_PAC_CLI", "value": "quay.io/openshift-pipeline/pipelines-pipelines-as-code-cli-rhel9@sha256:0fc0dd05236f14265e25cc770a7f9f3aeea2e27964a730dac39cf9f61d349bde"}
-```
-
-**Resource limit adjustment:**
-```yaml
-patches:
-  - target:
-      kind: TektonConfig
-      name: config
-    patch: |-
-      - op: replace
-        path: /spec/pipeline/options/statefulSets/tekton-pipelines-remote-resolvers/spec/template/spec/
-containers/0/resources/limits/memory
-        value: 12G
-```
+- 'custom-operators' `CatalogSource`
+- 'pipeline-metrics-exporter' `Deployment` (`tekton-logging/`)
+- 'tekton-results-retention-policy-agent' `Deployment` (`tekton-results/deployments/`)
+- 'tekton-results-api' `Deployment` (`tekton-results/deployments/`)
+- 'tekton-results-api-for-watcher' `Deployment` (`tekton-results/deployments/`)
+- 'tekton-results-watcher' `Deployment` (`tekton-results/deployments/`)

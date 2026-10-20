@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: pipeline-service-rd
+  name: pipeline-service
   annotations:
     argocd.argoproj.io/sync-wave: "-2"
 spec:
@@ -15,7 +15,7 @@ spec:
                 matchLabels:
                   appstudio.redhat.com/member-cluster: "true"
               values:
-                sourceRoot: components/pipeline-service-rd
+                sourceRoot: components/pipeline-service
                 ring: "ring-0"
                 clusterDir: "legacy-development" # TODO: Change to "base" once e2e tests use solely the rd-dev overlay
           - list:

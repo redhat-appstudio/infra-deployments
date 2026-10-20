@@ -18,14 +18,17 @@ metadata:
   name: knative-eventing
 $patch: delete
 ---
+# Owned by ring Argo CD (rd-staging). Legacy empty-base AppSet conflicts
+# with ring-deployed resources on operator-first clusters.
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: pipeline-service
+  name: konflux-verifications-rd
 $patch: delete
 ---
+# Deleting this ApplicationSet cascades to its Applications and managed cluster resources.
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: squid
+  name: cluster-as-a-service
 $patch: delete
