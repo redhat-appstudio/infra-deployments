@@ -83,7 +83,7 @@ After step 3 (create `base/`), run `hack/test-base-common.sh <COMPONENT>-rd` to 
 
 1. Check if the file has multiple resources. Skip this check for files in `templates/`, `charts/`, `.chainsaw-test/`, `patches/` subdirectories, and for upstream manifests/CRDs (Section 5.2 of directory-layout.md). For hand-written resource files listed in `resources:`, run `grep -c '^kind:' <file>`. If count > 1, split into separate files, one resource per file. Do NOT copy multi-document files as-is.
 
-2. Rename each file to `{resource-name}-{type-abbreviation}.yaml` where `resource-name` is the `metadata.name`. If the name already ends with the abbreviation, do not repeat it. Use these abbreviations:
+2. Rename each **Kubernetes resource file** to `{resource-name}-{type-abbreviation}.yaml` where `resource-name` is the `metadata.name`. Do NOT rename `kustomization.yaml`, `Chart.yaml`, `values.yaml`, or other Helm/Kustomize metadata files. If the resource name already ends with the abbreviation, do not repeat it. Use these abbreviations:
 
    | Resource Kind | Abbreviation |
    |--------------|-------------|
@@ -172,20 +172,20 @@ If none are true, flat structure is fine.
    ```
 
 7. Search for path references that need updating:
-   `grep -r "<COMPONENT>" hack/ .github/workflows/`
+   `grep -r "<COMPONENT>" argo-cd-apps/ hack/ .github/workflows/`
 
 **Parts 3, 5** (delete legacy ApplicationSets only):
 
-- Build all overlays with delete patches to verify they apply:
+- Build all overlays with delete patches and verify deleted AppSets removed:
   ```bash
   # Part 3:
-  kustomize build argo-cd-apps/overlays/staging-downstream
-  kustomize build argo-cd-apps/overlays/konflux-public-staging
+  kustomize build --enable-helm argo-cd-apps/overlays/staging-downstream | yq 'select(.kind=="ApplicationSet") | .metadata.name'
+  kustomize build --enable-helm argo-cd-apps/overlays/konflux-public-staging | yq 'select(.kind=="ApplicationSet") | .metadata.name'
   # Part 5:
-  kustomize build argo-cd-apps/overlays/production-downstream
-  kustomize build argo-cd-apps/overlays/konflux-public-production
+  kustomize build --enable-helm argo-cd-apps/overlays/production-downstream | yq 'select(.kind=="ApplicationSet") | .metadata.name'
+  kustomize build --enable-helm argo-cd-apps/overlays/konflux-public-production | yq 'select(.kind=="ApplicationSet") | .metadata.name'
+  # Verify <COMPONENT> AppSet does NOT appear in any output
   ```
-- Verify deleted AppSets no longer appear in rendered output
 
 **Part 6** (rename and remove legacy):
 
@@ -208,12 +208,12 @@ If none are true, flat structure is fine.
   ```
 - Build changed rd-* overlays and legacy overlays where delete entries were removed:
   ```bash
-  kustomize build argo-cd-apps/overlays/rd-dev
-  kustomize build argo-cd-apps/overlays/rd-staging
-  kustomize build argo-cd-apps/overlays/rd-production
-  kustomize build argo-cd-apps/overlays/development
-  kustomize build argo-cd-apps/overlays/staging-downstream
-  kustomize build argo-cd-apps/overlays/production-downstream
+  kustomize build --enable-helm argo-cd-apps/overlays/rd-dev
+  kustomize build --enable-helm argo-cd-apps/overlays/rd-staging
+  kustomize build --enable-helm argo-cd-apps/overlays/rd-production
+  kustomize build --enable-helm argo-cd-apps/overlays/development
+  kustomize build --enable-helm argo-cd-apps/overlays/staging-downstream
+  kustomize build --enable-helm argo-cd-apps/overlays/production-downstream
   ```
 - Do NOT run `test-ring-render.sh` (requires both `-rd` and legacy paths which no longer exist)
 
