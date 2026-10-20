@@ -113,7 +113,23 @@ After step 3 (create `base/`), run `hack/test-base-common.sh <COMPONENT>-rd` to 
 
 4. Update `kustomization.yaml` to reference the new filenames.
 
-When applicable — organize related files into subdirectories with their own `kustomization.yaml` (e.g., `loki/`, `rbac/`, `grafana/`, `vector/`, `monitoring/`). Do this when a directory has more than ~6 resource files, or when matching an existing subdirectory structure from `base/` so that ring directories extend the same folders (e.g., `base/konflux-rbac/` → `rings/ring-1/base/konflux-rbac/`).
+**After creating files in ANY directory (rings/ring-N/base/ OR rings/ring-N/<cluster>/), check if subdirectories are needed:**
+
+Count files in the current directory:
+```bash
+find <current-directory> -maxdepth 1 -name '*.yaml' | wc -l
+```
+
+Organize into subdirectories if **any** of these is true:
+- More than 6 resource files
+- Corresponding directory in base/ uses subdirectories
+- Corresponding directory in previous ring uses subdirectories
+
+**Apply this check to EVERY directory where you create files** - both base/ AND each cluster overlay.
+
+If yes to any, create subdirs like `loki/`, `grafana/`, `vector/`, `monitoring/`, `rbac/` with their own `kustomization.yaml`. Move related files into subdirs, update parent kustomization to reference subdirs instead of individual files. When extending existing subdirs from base/ or previous ring, use same folder names (e.g., `base/konflux-rbac/` → `rings/ring-1/base/konflux-rbac/`).
+
+If none are true, flat structure is fine.
 
 **After completing the last SOP step, run these validation commands. Fix any failures before presenting results:**
 
