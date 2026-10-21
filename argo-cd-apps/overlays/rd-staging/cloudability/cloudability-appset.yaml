@@ -1,0 +1,46 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: cloudability
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              selector:
+                matchLabels:
+                  appstudio.redhat.com/cluster-type: "tenant"
+              values:
+                sourceRoot: components/cloudability
+                ring: "empty-base"
+                clusterDir: "empty-base"
+          - list:
+              elements:
+                - nameNormalized: stone-stg-rh01
+                  values.ring: ring-1
+                  values.clusterDir: stone-stg-rh01
+
+  template:
+    metadata:
+      name: cloudability-{{nameNormalized}}
+    spec:
+      project: default
+      source:
+        path: '{{values.sourceRoot}}/rings/{{values.ring}}/{{values.clusterDir}}'
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+        targetRevision: main
+      destination:
+        namespace: ibm-finops-agent
+        server: '{{server}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+        - CreateNamespace=true
+        retry:
+          limit: 50
+          backoff:
+            duration: 15s
