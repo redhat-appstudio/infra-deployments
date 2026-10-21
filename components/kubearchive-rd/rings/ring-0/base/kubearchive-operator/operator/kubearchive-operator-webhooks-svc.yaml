@@ -8,6 +8,8 @@ metadata:
     app.kubernetes.io/version: v1.23.0
   name: kubearchive-operator-webhooks
   namespace: kubearchive
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: kubearchive-operator-tls
 spec:
   ports:
     - name: webhook-server

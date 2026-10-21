@@ -6,18 +6,30 @@ metadata:
     app.kubernetes.io/name: kubearchive-schema-migration
     app.kubernetes.io/part-of: kubearchive
     app.kubernetes.io/version: v1.23.0
-  name: kubearchive-schema-migration
+  # Versioned name so that ArgoCD resyncs do not restart the immutable Job.
+  # Update to match when bumping MIGRATION_VERSION (see ring kustomization).
+  name: kubearchive-schema-migration-v13-v1.23.0
   namespace: kubearchive
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+    ignore-check.kube-linter.io/no-read-only-root-fs: >
+      "This job needs to clone a repository to do its job, so it needs write access to the FS."
 spec:
   backoffLimit: 4
   parallelism: 1
-  suspend: true
+  suspend: false
   template:
     spec:
       containers:
         - env:
             - name: MIGRATION_VERSION
               value: ""
+              valueFrom:
+                configMapKeyRef:
+                  name: kubearchive-schema-version
+                  key: MIGRATION_VERSION
+            - name: BATCH_SIZE
+              value: "10000"
           envFrom:
             - secretRef:
                 name: kubearchive-database-credentials
@@ -32,5 +44,4 @@ spec:
               memory: 64Mi
           securityContext:
             runAsNonRoot: true
-            runAsUser: 1000
       restartPolicy: Never
