@@ -8,5 +8,6 @@ prometheus:
       type: Bearer
       credentials_file: /var/run/secrets/kubernetes.io/serviceaccount/token
     tls_config:
-      ca_file: /var/tls/tls.crt
+      # FIXME: if/when prometheus moves away from service-ca, we'll need to update this as well
+      ca_file: /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt
 waitTime: 15s

@@ -1,0 +1,10 @@
+# ROKS: DB port is assigned at provision time (not always 5432).
+# Override TektonConfig-injected DB_PORT with the vault secret key.
+- op: add
+  path: /spec/result/options/deployments/tekton-results-api/spec/template/spec/containers/0/env/-
+  value:
+    name: DB_PORT
+    valueFrom:
+      secretKeyRef:
+        name: tekton-results-database
+        key: db.port

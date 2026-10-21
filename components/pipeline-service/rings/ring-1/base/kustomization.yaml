@@ -1,0 +1,24 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - base-snapshot
+  - pipelines-as-code-es.yaml
+
+patches:
+  # TektonConfig updates
+  - path: patches/tektonconfig-disable-pruner-patch.yaml
+    target:
+      kind: TektonConfig
+      name: config
+  - path: patches/chains-slsa-artifact-format-patch.yaml
+    target:
+      kind: TektonConfig
+      name: config
+
+  # Pipelines Metrics Exporter Deployment
+  - path: ./patches/service-exporter-resources.yaml
+    target:
+      kind: Deployment
+      name: pipeline-metrics-exporter
+      namespace: openshift-pipelines

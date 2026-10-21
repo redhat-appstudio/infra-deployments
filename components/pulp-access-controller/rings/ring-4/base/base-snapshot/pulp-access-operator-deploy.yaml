@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pulp-access-operator
+  namespace: pulp-access-controller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pulp-access-operator
+  template:
+    metadata:
+      labels:
+        app: pulp-access-operator
+    spec:
+      serviceAccountName: pulp-access-operator
+      securityContext:
+         runAsNonRoot: true
+      containers:
+        - name: operator
+          image: quay.io/redhat-user-workloads/pulp-access-controller-tenant/pulp-access-controller-ca9ff:v1.3.1
+          imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          env: []
+          envFrom:
+            - secretRef:
+                name: pulp-secrets
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}

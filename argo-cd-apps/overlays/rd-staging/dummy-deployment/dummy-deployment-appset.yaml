@@ -23,6 +23,13 @@ spec:
                 clusterDir: "empty-base"
           - list:
               elements: [] # Populated via k-components (or manually if the cluster list is unusual)
+      # kflux-stg-p02 has no dummy-deployment ring overlay and must not generate an Application.
+      selector:
+          matchExpressions:
+            - key: nameNormalized
+              operator: NotIn
+              values:
+                - kflux-stg-p02
 
   template:
     metadata:
