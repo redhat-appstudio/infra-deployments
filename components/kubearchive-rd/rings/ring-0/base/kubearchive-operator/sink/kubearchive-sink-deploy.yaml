@@ -20,15 +20,6 @@ spec:
     spec:
       containers:
         - env:
-            - name: KUBEARCHIVE_OTEL_MODE
-              value: enabled
-            - name: OTEL_EXPORTER_OTLP_ENDPOINT
-              value: http://otel-collector:4318
-            - name: MIGRATION_VERSION
-              valueFrom:
-                configMapKeyRef:
-                  name: kubearchive-deployment-schema-version
-                  key: MIGRATION_VERSION
             - name: KUBEARCHIVE_ENABLE_PPROF
               value: "true"
             - name: GIN_MODE
@@ -37,6 +28,10 @@ spec:
               value: INFO
             - name: KLOG_LEVEL
               value: "0"
+            - name: KUBEARCHIVE_OTEL_MODE
+              value: disabled
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: ""
             - name: KUBEARCHIVE_OTLP_SEND_LOGS
               value: "false"
             - name: OTEL_GO_X_DEPRECATED_RUNTIME_METRICS
@@ -83,13 +78,10 @@ spec:
           resources:
             limits:
               cpu: 200m
-              memory: 128Mi
+              memory: 256Mi
             requests:
               cpu: 200m
-              memory: 128Mi
-          securityContext:
-            readOnlyRootFilesystem: true
-            runAsNonRoot: true
+              memory: 230Mi
           volumeMounts:
             - mountPath: /data/logging
               name: logging-config

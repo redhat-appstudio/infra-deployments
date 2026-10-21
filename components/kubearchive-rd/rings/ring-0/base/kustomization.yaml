@@ -88,4 +88,43 @@ configMapGenerator:
               cursor-increment: 1
 
 patches:
+  - path: patches/schema-migration-job-patch.yaml
+  - path: patches/schema-migration-job-name-patch.yaml
+    target:
+      kind: Job
+      name: kubearchive-schema-migration
+  - path: patches/api-server-service-cert-patch.yaml
+  - path: patches/operator-webhooks-service-cert-patch.yaml
+  - path: patches/mutating-webhook-inject-cabundle-patch.yaml
+  - path: patches/validating-webhook-inject-cabundle-patch.yaml
+  - path: patches/api-server-certificate-dnsnames-patch.yaml
+    target:
+      group: cert-manager.io
+      version: v1
+      kind: Certificate
+      name: kubearchive-api-server-certificate
+  - path: patches/api-server-certificate-secretname-patch.yaml
+    target:
+      group: cert-manager.io
+      version: v1
+      kind: Certificate
+      name: kubearchive-api-server-certificate
+  - path: patches/operator-certificate-dnsnames-patch.yaml
+    target:
+      group: cert-manager.io
+      version: v1
+      kind: Certificate
+      name: kubearchive-operator-certificate
+  - path: patches/operator-certificate-secretname-patch.yaml
+    target:
+      group: cert-manager.io
+      version: v1
+      kind: Certificate
+      name: kubearchive-operator-certificate
+  - path: patches/api-server-deployment-patch.yaml
+  - path: patches/operator-deployment-patch.yaml
+  - path: patches/sink-deployment-patch.yaml
   - path: patches/otel-collector-image-patch.yaml
+  - path: patches/cluster-vacuum-delete-patch.yaml
+  - path: patches/logging-writer-configmap-delete-patch.yaml
+  - path: patches/logging-reader-configmap-delete-patch.yaml

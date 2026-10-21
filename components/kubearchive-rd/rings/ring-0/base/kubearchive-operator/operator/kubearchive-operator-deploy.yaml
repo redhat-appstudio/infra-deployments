@@ -23,11 +23,8 @@ spec:
       containers:
         - args:
             - --health-probe-bind-address=:8081
+            - --leader-elect
           env:
-            - name: KUBEARCHIVE_OTEL_MODE
-              value: enabled
-            - name: OTEL_EXPORTER_OTLP_ENDPOINT
-              value: http://otel-collector:4318
             - name: KUBEARCHIVE_ENABLE_PPROF
               value: "true"
             - name: LOG_LEVEL
@@ -38,6 +35,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+            - name: KUBEARCHIVE_OTEL_MODE
+              value: disabled
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: ""
             - name: KUBEARCHIVE_OTLP_SEND_LOGS
               value: "false"
             - name: OTEL_GO_X_DEPRECATED_RUNTIME_METRICS
@@ -63,7 +64,6 @@ spec:
             periodSeconds: 20
           name: manager
           ports:
-            - containerPort: 8081
             - containerPort: 9443
               name: webhook-server
               protocol: TCP
@@ -79,17 +79,15 @@ spec:
           resources:
             limits:
               cpu: 500m
-              memory: 256Mi
+              memory: 128Mi
             requests:
               cpu: 10m
-              memory: 256Mi
+              memory: 64Mi
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
               drop:
                 - ALL
-            readOnlyRootFilesystem: true
-            runAsNonRoot: true
           volumeMounts:
             - mountPath: /tmp/k8s-webhook-server/serving-certs
               name: cert
@@ -99,6 +97,7 @@ spec:
               readOnly: true
       securityContext:
         runAsNonRoot: true
+        runAsUser: 1000
       serviceAccountName: kubearchive-operator
       terminationGracePeriodSeconds: 10
       volumes:

@@ -9,7 +9,7 @@ metadata:
   name: kubearchive-api-server
   namespace: kubearchive
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: kubearchive-api-server
@@ -18,28 +18,8 @@ spec:
       labels:
         app: kubearchive-api-server
     spec:
-      affinity:
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 50
-              podAffinityTerm:
-                labelSelector:
-                  matchLabels:
-                    app: kubearchive-api-server
-                topologyKey: kubernetes.io/hostname
       containers:
         - env:
-            - name: KUBEARCHIVE_OTEL_MODE
-              value: enabled
-            - name: OTEL_EXPORTER_OTLP_ENDPOINT
-              value: http://otel-collector:4318
-            - name: AUTH_IMPERSONATE
-              value: "true"
-            - name: MIGRATION_VERSION
-              valueFrom:
-                configMapKeyRef:
-                  name: kubearchive-deployment-schema-version
-                  key: MIGRATION_VERSION
             - name: KUBEARCHIVE_ENABLE_PPROF
               value: "true"
             - name: LOG_LEVEL
@@ -48,6 +28,10 @@ spec:
               value: "0"
             - name: GIN_MODE
               value: release
+            - name: KUBEARCHIVE_OTEL_MODE
+              value: disabled
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: ""
             - name: KUBEARCHIVE_OTLP_SEND_LOGS
               value: "false"
             - name: OTEL_GO_X_DEPRECATED_RUNTIME_METRICS
@@ -70,6 +54,8 @@ spec:
               value: 1m
             - name: KUBEARCHIVE_LOGGING_DIR
               value: /data/logging
+            - name: AUTH_IMPERSONATE
+              value: "false"
             - name: DATABASE_MAX_OPEN_CONNS
               value: "25"
             - name: DATABASE_MAX_IDLE_CONNS
@@ -97,9 +83,6 @@ spec:
               path: /livez
               port: 8081
               scheme: HTTPS
-            periodSeconds: 10
-            timeoutSeconds: 5
-            failureThreshold: 5
           name: kubearchive-api-server
           ports:
             - containerPort: 8081
@@ -113,29 +96,13 @@ spec:
               path: /readyz
               port: 8081
               scheme: HTTPS
-            periodSeconds: 10
-            timeoutSeconds: 5
-            failureThreshold: 3
-          # Raise CPU limit to eliminate CFS throttling of the HTTP/probe
-          # handlers during bursts (GOMAXPROCS is derived from limits.cpu).
           resources:
             limits:
-              cpu: "1"
-              memory: 512Mi
+              cpu: 700m
+              memory: 256Mi
             requests:
               cpu: 200m
               memory: 230Mi
-          securityContext:
-            readOnlyRootFilesystem: true
-            runAsNonRoot: true
-          startupProbe:
-            httpGet:
-              path: /livez
-              port: 8081
-              scheme: HTTPS
-            periodSeconds: 5
-            timeoutSeconds: 5
-            failureThreshold: 30
           volumeMounts:
             - mountPath: /etc/kubearchive/ssl/
               name: tls-secret
