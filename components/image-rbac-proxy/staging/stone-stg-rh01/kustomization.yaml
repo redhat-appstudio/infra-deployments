@@ -3,8 +3,8 @@ kind: Kustomization
 namespace: image-rbac-proxy
 resources:
 - ../base
-# Enable this to create/rotate oauth secret
-# - ../../base/oauth
+# Enable this to create/preserve oauth secret
+- ../../base/oauth-staging
 
 configMapGenerator:
   - name: dex
@@ -12,6 +12,15 @@ configMapGenerator:
       - dex-config.yaml
 
 patches:
+- target:
+    kind: Job
+    name: oauth-secret-generator
+  patch: |-
+    - op: add
+      path: /spec/template/spec/containers/0/env
+      value:
+      - name: SKIP_OAUTH_ROTATION
+        value: "true"
 - path: configmap.yaml
 - path: route-patch.yaml
   target:
