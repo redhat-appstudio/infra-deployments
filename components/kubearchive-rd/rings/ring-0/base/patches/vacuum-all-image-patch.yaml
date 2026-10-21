@@ -1,0 +1,13 @@
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: vacuum-all
+spec:
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: vacuum
+              image: quay.io/kubearchive/vacuum:v1.23.0
