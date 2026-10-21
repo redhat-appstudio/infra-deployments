@@ -12,9 +12,61 @@ data:
     retention_days="${RETENTION_DAYS:-30}"
     namespace_label_selector="${NAMESPACE_LABEL_SELECTOR:-}"
     dry_run="${DRY_RUN:-false}"
+    slack_webhook_url="${SLACK_WEBHOOK_URL:-}"
+    namespace="${POD_NAMESPACE:-application-cleaner}"
+    pod_name="${POD_NAME:-${HOSTNAME:-unknown}}"
+
+    send_slack_notification() {
+      local status="$1"
+      local summary="$2"
+
+      if [[ -z "${slack_webhook_url}" ]]; then
+        echo "SLACK_WEBHOOK_URL is not set; skipping Slack notification"
+        return 0
+      fi
+
+      local emoji
+      if [[ "${status}" == "success" ]]; then
+        emoji=":white_check_mark:"
+      else
+        emoji=":x:"
+      fi
+
+      local console_url=""
+      console_url="$(kubectl get configmap console-public -n openshift-config-managed \
+        -o jsonpath='{.data.consoleURL}' 2>/dev/null || true)"
+
+      local job_link=""
+      if [[ -n "${console_url}" ]]; then
+        job_link="${console_url}/k8s/ns/${namespace}/pods/${pod_name}"
+      fi
+
+      local message
+      message="${emoji} *application-cleaner* ${status} on ${namespace}"$'\n'
+      message+="${summary}"
+      if [[ -n "${job_link}" ]]; then
+        message+=$'\n'"<${job_link}|View Job Pod logs>"
+      else
+        message+=$'\n'"Pod: ${namespace}/${pod_name}"
+      fi
+
+      # Escape for JSON string interpolation (same approach as UI Tekton slack task)
+      local payload
+      payload="$(printf '%s' "${message}" | sed 's/\\/\\\\/g; s/"/\\"/g' | awk '{printf "%s\\n", $0}' | sed 's/\\n$//')"
+
+      echo "Sending Slack notification (${status})..."
+      if ! response="$(curl -sS --max-time 10 -X POST "${slack_webhook_url}" \
+        -H 'Content-Type: application/json; charset=utf-8' \
+        -d "{\"text\": \"${payload}\"}")"; then
+        echo "Failed to send Slack notification (curl error)"
+        return 0
+      fi
+      echo "Slack webhook response: ${response}"
+    }
 
     if [[ -z "${namespace_label_selector}" ]]; then
       echo "NAMESPACE_LABEL_SELECTOR is not set; skipping cleanup"
+      send_slack_notification "success" "Skipped: NAMESPACE_LABEL_SELECTOR is not set"
       exit 0
     fi
 
@@ -29,6 +81,7 @@ data:
 
     if [[ "${#namespaces[@]}" -eq 0 ]]; then
       echo "No namespaces found with label selector ${namespace_label_selector}"
+      send_slack_notification "success" "No namespaces matched label selector \`${namespace_label_selector}\`"
       exit 0
     fi
 
@@ -36,12 +89,12 @@ data:
     skipped=0
     failed=0
 
-    for namespace in "${namespaces[@]}"; do
-      [[ -z "${namespace}" ]] && continue
-      echo "Processing namespace: ${namespace}"
+    for ns in "${namespaces[@]}"; do
+      [[ -z "${ns}" ]] && continue
+      echo "Processing namespace: ${ns}"
 
       mapfile -t applications < <(
-        kubectl get applications.appstudio.redhat.com -n "${namespace}" \
+        kubectl get applications.appstudio.redhat.com -n "${ns}" \
           -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.metadata.creationTimestamp}{"\n"}{end}' \
           2>/dev/null || true
       )
@@ -59,11 +112,11 @@ data:
 
         if [[ "${created_epoch}" -lt "${cutoff_epoch}" ]]; then
           if [[ "${dry_run}" == "true" ]]; then
-            echo "[DRY RUN] Would delete application ${application_name} in ${namespace} (created ${created_at})"
+            echo "[DRY RUN] Would delete application ${application_name} in ${ns} (created ${created_at})"
             removed=$((removed + 1))
           else
-            echo -n "Deleting application ${application_name} in ${namespace} (created ${created_at})... "
-            if kubectl delete applications.appstudio.redhat.com "${application_name}" -n "${namespace}" --ignore-not-found=true; then
+            echo -n "Deleting application ${application_name} in ${ns} (created ${created_at})... "
+            if kubectl delete applications.appstudio.redhat.com "${application_name}" -n "${ns}" --ignore-not-found=true; then
               echo "DELETED"
               removed=$((removed + 1))
             else
@@ -77,7 +130,12 @@ data:
       done
     done
 
-    echo "Removed: ${removed}, Skipped: ${skipped}, Failed: ${failed}"
+    summary="Removed: ${removed}, Skipped: ${skipped}, Failed: ${failed}"
+    echo "${summary}"
+
     if [[ "${failed}" -gt 0 ]]; then
+      send_slack_notification "failure" "${summary}"
       exit 1
     fi
+
+    send_slack_notification "success" "${summary}"
