@@ -1,5 +1,10 @@
 #!/bin/bash -e
 
+# TODO(kubearchive team): this script still targets the legacy
+# components/kubearchive paths. Update it for the ring-0 layout
+# (components/kubearchive-rd/rings/ring-0/base/) once the ring
+# deployment migration is complete.
+
 # Usage: upgrade.sh <old-version> <new-version> [<new-migration-version>]
 # Example: upgrade.sh v1.21.3 v1.21.4
 # Example: upgrade.sh v1.21.4 v1.22.0 14
