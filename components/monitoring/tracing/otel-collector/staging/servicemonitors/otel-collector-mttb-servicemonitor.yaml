@@ -11,7 +11,6 @@ spec:
     - port: prometheus
       interval: 15s
       path: /metrics
-      honorLabels: true
       metricRelabelings:
         - sourceLabels: [__name__]
           regex: 'traces_span_metrics_.+'
