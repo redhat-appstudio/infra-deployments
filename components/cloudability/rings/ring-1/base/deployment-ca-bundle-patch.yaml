@@ -1,0 +1,126 @@
+---
+- op: add
+  path: /spec/template/spec/initContainers
+  value:
+    - name: prepare-ca-bundle
+      image: registry.access.redhat.com/ubi9/ubi-minimal:9.5
+      imagePullPolicy: IfNotPresent
+      command:
+        - /bin/sh
+        - -c
+        - |
+          set -e
+          echo "Creating CA bundle directory structure"
+          mkdir -p /ca-bundle/certs
+
+          echo "Combining CA certificates"
+          echo "Using CLOUDABILITY_FORCE_KUBE_PROXY mode - kubelet CA not required"
+
+          # Wait for OpenShift to inject the trusted CA bundle (up to 30 seconds)
+          echo "Waiting for OpenShift trusted CA bundle injection..."
+          TIMEOUT=30
+          ELAPSED=0
+          while [ ! -s /trusted-ca-bundle/ca-bundle.crt ] && [ $ELAPSED -lt $TIMEOUT ]; do
+            echo "Waiting for CA bundle injection... ($ELAPSED/$TIMEOUT seconds)"
+            sleep 2
+            ELAPSED=$((ELAPSED + 2))
+          done
+
+          # Require the OpenShift trusted CA bundle for external HTTPS
+          if [ ! -f /trusted-ca-bundle/ca-bundle.crt ]; then
+            echo "ERROR: OpenShift trusted CA bundle not found at /trusted-ca-bundle/ca-bundle.crt"
+            echo "This is required for HTTPS connections to Cloudability API"
+            exit 1
+          fi
+
+          if [ ! -s /trusted-ca-bundle/ca-bundle.crt ]; then
+            echo "ERROR: OpenShift trusted CA bundle is empty"
+            echo "ConfigMap injection may not have completed. Failing to prevent TLS issues."
+            exit 1
+          fi
+
+          cat /trusted-ca-bundle/ca-bundle.crt > /ca-bundle/certs/ca-bundle.crt
+          echo "Added OpenShift trusted CA bundle"
+
+          # Add service account CA for Kubernetes API calls via kube-proxy
+          if [ -f /var/run/secrets/kubernetes.io/serviceaccount/ca.crt ]; then
+            echo "" >> /ca-bundle/certs/ca-bundle.crt
+            cat /var/run/secrets/kubernetes.io/serviceaccount/ca.crt >> /ca-bundle/certs/ca-bundle.crt
+            echo "Added service account CA for API server via kube-proxy"
+          fi
+
+          chmod 644 /ca-bundle/certs/ca-bundle.crt
+
+          # Validate we have at least one certificate
+          CERT_COUNT=$(grep -c "BEGIN CERTIFICATE" /ca-bundle/certs/ca-bundle.crt || echo "0")
+          if [ "$CERT_COUNT" -eq 0 ]; then
+            echo "ERROR: No certificates found in combined CA bundle"
+            exit 1
+          fi
+
+          echo "CA bundle prepared successfully"
+          echo "Total certificates: $CERT_COUNT"
+          ls -lh /ca-bundle/certs/ca-bundle.crt
+      securityContext:
+        runAsNonRoot: true
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
+      volumeMounts:
+        - name: trusted-ca-bundle
+          mountPath: /trusted-ca-bundle
+          readOnly: true
+        - name: ca-bundle
+          mountPath: /ca-bundle
+      resources: {}
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
+    name: SSL_CERT_FILE
+    value: /ca-bundle/certs/ca-bundle.crt
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
+    name: SSL_CERT_DIR
+    value: /ca-bundle/certs
+- op: add
+  path: /spec/template/spec/containers/0/volumeMounts/-
+  value:
+    name: ca-bundle
+    mountPath: /ca-bundle
+    readOnly: true
+- op: add
+  path: /spec/template/spec/containers/0/volumeMounts/-
+  value:
+    name: ca-bundle
+    mountPath: /etc/ssl/certs/ca-certificates.crt
+    subPath: certs/ca-bundle.crt
+    readOnly: true
+- op: add
+  path: /spec/template/spec/containers/0/volumeMounts/-
+  value:
+    name: ca-bundle
+    mountPath: /etc/pki/tls/certs/ca-bundle.crt
+    subPath: certs/ca-bundle.crt
+    readOnly: true
+- op: add
+  path: /spec/template/spec/containers/0/volumeMounts/-
+  value:
+    name: ca-bundle
+    mountPath: /etc/ssl/cert.pem
+    subPath: certs/ca-bundle.crt
+    readOnly: true
+- op: add
+  path: /spec/template/spec/volumes/-
+  value:
+    name: trusted-ca-bundle
+    configMap:
+      name: trusted-ca-bundle
+      defaultMode: 420
+      optional: false
+- op: add
+  path: /spec/template/spec/volumes/-
+  value:
+    name: ca-bundle
+    emptyDir: {}

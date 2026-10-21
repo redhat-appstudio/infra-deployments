@@ -1,0 +1,84 @@
+# Staging-specific values for IBM FinOps Agent
+# Cluster-specific values (clusterId) are patched at the cluster level
+
+global:
+  # Cluster ID will be patched per cluster
+  clusterId: "PLACEHOLDER_CLUSTER_NAME"
+
+  # Use existing secret for CSP pricing API key
+  cspPricingApiKey:
+    existingSecret: "ibm-finops-agent-secrets"
+    apiKey: ""
+    useDefaultApiKey: false
+
+  # Force OpenShift compatibility for restricted-v2 SCC
+  compatibility:
+    openshift:
+      adaptSecurityContext: force
+
+# Use specific version
+image:
+  tag: v1.0.26
+
+# Log level
+logLevel: "info"
+
+# Resources - smaller requests than upstream defaults for staging
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+    ephemeral-storage: 50Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+    ephemeral-storage: 1Gi
+
+# Agent configuration
+agent:
+  collectorDataSource:
+    enabled: true
+    scrapeInterval: 60s
+    networkPort: 3001
+    retention10m: 6
+    retention1h: 3
+    retention1d: 2
+
+  exports:
+    resolution10m: true
+    heartbeat: true
+    diagnostics: true
+
+  exportIntervals:
+    allocation: 10m
+    asset: 10m
+    networkInsight: 10m
+    heartbeat: 5m
+    diagnostics: 10m
+
+  nodes:
+    backgroundStatsCollector: true
+
+  exporter:
+    emissionInterval: 1m
+
+  # Cloudability configuration
+  cloudability:
+    enabled: true
+    pathToCloudabilitySecrets: "/opt/cloudability"
+    apiKeyFile: "CLOUDABILITY_API_KEY"
+    keyAccessFile: "CLOUDABILITY_KEY_ACCESS"
+    keySecretFile: "CLOUDABILITY_KEY_SECRET"
+    envIDFile: "CLOUDABILITY_ENV_ID"
+    uploadRegion: "us-west-2"
+    httpsClientTimeout: 60
+    uploadRetryCount: 5
+    emissionInterval: 3m
+    forceKubeProxy: true
+    secret:
+      create: false
+      existingSecret: "ibm-finops-agent-secrets"
+
+  # Disable Kubecost emitter (Cloudability-only deployment)
+  kubecost:
+    enabled: false
