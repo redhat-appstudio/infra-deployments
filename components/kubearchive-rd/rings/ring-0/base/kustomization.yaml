@@ -10,6 +10,9 @@ resources:
 namespace: product-kubearchive
 secretGenerator:
   - behavior: replace
+    options:
+      annotations:
+        argocd.argoproj.io/sync-wave: "-2"
     literals:
       - DATABASE_KIND=postgresql
       - DATABASE_PORT=5432
@@ -84,12 +87,6 @@ configMapGenerator:
               cursor-increment: 1
 
 patches:
-  - path: patches/vacuum-all-image-patch.yaml
-  - path: patches/releases-vacuum-image-patch.yaml
-  - path: patches/pipelines-vacuum-image-patch.yaml
-  - path: patches/postgresql-sync-wave-patch.yaml
-  - path: patches/postgresql-service-sync-wave-patch.yaml
-  - path: patches/database-credentials-secret-sync-wave-patch.yaml
   - path: patches/schema-migration-job-patch.yaml
   - path: patches/schema-migration-job-name-patch.yaml
     target:

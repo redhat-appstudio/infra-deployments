@@ -6,6 +6,7 @@ metadata:
   labels:
     app: postgresql
   annotations:
+    argocd.argoproj.io/sync-wave: "-2"
     service.beta.openshift.io/serving-cert-secret-name: postgresql-tls
 spec:
   type: ClusterIP
