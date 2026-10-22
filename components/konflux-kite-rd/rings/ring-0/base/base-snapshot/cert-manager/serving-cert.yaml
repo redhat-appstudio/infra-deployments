@@ -1,0 +1,14 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: serving-cert
+  namespace: konflux-kite
+spec:
+  dnsNames:
+    - konflux-kite.konflux-kite.svc
+    - konflux-kite.konflux-kite.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: selfsigned-issuer
+  # TODO: Once the certificate is ready, change the secretName to konflux-kite-tls in a new PR
+  secretName: konflux-kite-tls-pending
