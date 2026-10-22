@@ -1,0 +1,139 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - base-snapshot
+  - postgresql
+  - database-es.yaml
+  - kubearchive-ckac.yaml
+  - kubearchive-operator
+  - kubearchive-logging-es.yaml
+  - kubearchive-rules-pr.yaml
+  - kubearchive-api-server-route.yaml
+
+namespace: product-kubearchive
+
+secretGenerator:
+  - behavior: replace
+    options:
+      annotations:
+        argocd.argoproj.io/sync-wave: "-2"
+    literals:
+      - DATABASE_KIND=postgresql
+      - DATABASE_PORT=5432
+      - DATABASE_DB=kubearchive
+      - DATABASE_USER=kubearchive
+      - DATABASE_URL=postgresql.product-kubearchive.svc.cluster.local
+      - DATABASE_PASSWORD=password # notsecret
+    name: kubearchive-database-credentials
+    namespace: kubearchive
+    type: Opaque
+
+# Generate kubearchive-logging ConfigMaps with hash for automatic restarts
+# Due to quoting limitations of generators we need to introduce the values with the |
+# See https://github.com/kubernetes-sigs/kustomize/issues/4845#issuecomment-1671570428
+configMapGenerator:
+  - name: kubearchive-schema-version
+    options:
+      annotations:
+        argocd.argoproj.io/sync-wave: "-2"
+    literals:
+      - MIGRATION_VERSION=13
+  - name: kubearchive-deployment-schema-version
+    literals:
+      - MIGRATION_VERSION=13
+  - name: kubearchive-logging-writer
+    literals:
+      - |
+        POD_ID=cel:metadata.uid
+      - |
+        NAMESPACE=cel:metadata.namespace
+      - |
+        START=cel:status.?startTime == optional.none() ? int(now()-duration('1h'))*1000000000: status.startTime
+      - |
+        END=cel:status.?startTime == optional.none() ? int(now()+duration('1h'))*1000000000: int(timestamp(status.startTime)+duration('6h'))*1000000000
+      - |
+        QUERY={stream="{NAMESPACE}"} | pod_id = `{POD_ID}` | container = `{CONTAINER_NAME}`
+      - |
+        LOG_URL=http://loki-gateway.product-kubearchive-logging.svc.cluster.local:80
+      - |
+        LOG_URL_JSONPATH=$.data.result[*].values[*][1]
+  - name: kubearchive-logging-reader
+    literals:
+      - |
+        LOG_PROVIDERS=
+        http://loki-gateway.product-kubearchive-logging.svc.cluster.local:80:
+          tail:
+            reverse: true
+            path: /loki/api/v1/query_range
+            method: GET
+            params:
+              query: ${QUERY}
+              start: ${START}
+              end: ${END}
+              limit: ${TAIL_LINES}
+              direction: backward
+            json-path: "$.data.result[*].values[*][1]"
+          full:
+            reverse: false
+            path: /loki/api/v1/query_range
+            method: GET
+            timeout: 1m
+            params:
+              query: ${QUERY}
+              start: ${START}
+              end: ${END}
+              limit: 300
+              direction: forward
+            json-path: "$.data.result[*].values[*][1]"
+            pagination:
+              next-cursor: "$.data.result[*].values[*][0]"
+              param: start
+              cursor-increment: 1
+
+patches:
+  - path: patches/schema-migration-job-patch.yaml
+  - path: patches/schema-migration-job-name-patch.yaml
+    target:
+      kind: Job
+      name: kubearchive-schema-migration
+  - path: patches/api-server-service-cert-patch.yaml
+  - path: patches/operator-webhooks-service-cert-patch.yaml
+  - path: patches/mutating-webhook-inject-cabundle-patch.yaml
+  - path: patches/validating-webhook-inject-cabundle-patch.yaml
+  - path: patches/api-server-certificate-dnsnames-patch.yaml
+    target:
+      group: cert-manager.io
+      version: v1
+      kind: Certificate
+      name: kubearchive-api-server-certificate
+  - path: patches/api-server-certificate-secretname-patch.yaml
+    target:
+      group: cert-manager.io
+      version: v1
+      kind: Certificate
+      name: kubearchive-api-server-certificate
+  - path: patches/operator-certificate-dnsnames-patch.yaml
+    target:
+      group: cert-manager.io
+      version: v1
+      kind: Certificate
+      name: kubearchive-operator-certificate
+  - path: patches/operator-certificate-secretname-patch.yaml
+    target:
+      group: cert-manager.io
+      version: v1
+      kind: Certificate
+      name: kubearchive-operator-certificate
+  - path: patches/api-server-deployment-patch.yaml
+  - path: patches/operator-deployment-patch.yaml
+  - path: patches/sink-deployment-patch.yaml
+  - path: patches/otel-collector-image-patch.yaml
+  - path: patches/cluster-vacuum-delete-patch.yaml
+  - path: patches/logging-writer-configmap-delete-patch.yaml
+  - path: patches/logging-reader-configmap-delete-patch.yaml
+  - path: patches/kubearchive-logging-secret-delete-patch.yaml
+  - path: patches/vacuum-all-resources-patch.yaml
+  - path: patches/database-secret-delete-patch.yaml
+  - path: patches/postgresql-deployment-delete-patch.yaml
+  - path: patches/postgresql-service-delete-patch.yaml

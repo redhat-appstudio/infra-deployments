@@ -1,0 +1,26 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kubearchive-schema-migration
+  namespace: kubearchive
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+    ignore-check.kube-linter.io/no-read-only-root-fs: >
+      "This job needs to clone a repository to do its job, so it needs write access to the FS."
+spec:
+  suspend: false
+  template:
+    spec:
+      containers:
+        - name: migration
+          env:
+            - name: MIGRATION_VERSION
+              valueFrom:
+                configMapKeyRef:
+                  name: kubearchive-schema-version
+                  key: MIGRATION_VERSION
+            - name: BATCH_SIZE
+              value: "10000"
+          securityContext:
+            runAsUser: null
