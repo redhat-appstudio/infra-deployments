@@ -43,18 +43,16 @@ data:
         job_link="${console_url}/k8s/ns/${namespace}/pods/${pod_name}"
       fi
 
+      # Escape strings for JSON (avoid heredoc — breaks YAML block scalar parsing)
+      json_escape() { printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'; }
       local payload
-      payload="$(cat <<EOF
-{
-  "status": "$(printf '%s' "${status}" | sed 's/\\/\\\\/g; s/"/\\"/g')",
-  "emoji": "$(printf '%s' "${emoji}" | sed 's/\\/\\\\/g; s/"/\\"/g')",
-  "summary": "$(printf '%s' "${summary}" | sed 's/\\/\\\\/g; s/"/\\"/g')",
-  "job_link": "$(printf '%s' "${job_link}" | sed 's/\\/\\\\/g; s/"/\\"/g')",
-  "namespace": "$(printf '%s' "${namespace}" | sed 's/\\/\\\\/g; s/"/\\"/g')",
-  "pod_name": "$(printf '%s' "${pod_name}" | sed 's/\\/\\\\/g; s/"/\\"/g')"
-}
-EOF
-)"
+      payload="$(printf '{"status":"%s","emoji":"%s","summary":"%s","job_link":"%s","namespace":"%s","pod_name":"%s"}' \
+        "$(json_escape "${status}")" \
+        "$(json_escape "${emoji}")" \
+        "$(json_escape "${summary}")" \
+        "$(json_escape "${job_link}")" \
+        "$(json_escape "${namespace}")" \
+        "$(json_escape "${pod_name}")")"
 
       echo "Sending Slack Workflow notification (${status})..."
       if ! response="$(curl -sS --max-time 10 -X POST "${slack_webhook_url}" \
