@@ -31,9 +31,6 @@ spec:
               configMapKeyRef:
                 name: kubearchive-deployment-schema-version
                 key: MIGRATION_VERSION
-          securityContext:
-            readOnlyRootFilesystem: true
-            runAsNonRoot: true
           startupProbe:
             httpGet:
               path: /livez

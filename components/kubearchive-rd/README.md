@@ -16,28 +16,29 @@ KubeArchive is configured to automatically delete Releases based on their retent
 - Release with `gracePeriodDays: 10`: deleted after 10 days
 - Release with `gracePeriodDays: 45`: deleted after 30 days (capped at maximum)
 
-### Important note
+### Important notes
 
-Deleted Releases are archived in KubeArchive and can still be accessed through the KubeArchive API. The deletion from the cluster is automatic, but the historical data is preserved.
+> Deleted Releases are archived in KubeArchive and can still be accessed through the KubeArchive API. The deletion from the cluster is automatic, but the historical data is preserved.
+
+> Because `kubearchive.yaml` is an upstream release artifact, it is located in the `base/` directory of the component and copied to each ring's `base/base-snapshot/` directory. Resources in it must be patched and not modified as an upgrade will overwrite any modifications with a new file.
 
 ## Upgrading
 
-Kargo *should* take care of promoting upgrades across rings. To start the upgrade promotion process, delete the current `base/kubearchive.yaml` file and run `curl -Lo components/kubearchive/base/kubearchive.yaml https://github.com/kubearchive/kubearchive/releases/download/<NEW_VERSION>/kubearchive.yaml` with the <NEW_VERSION>. Commit and merge this change.
+Kargo *should* take care of promoting upgrades across rings. To start the upgrade promotion process, delete the current `base/kubearchive.yaml` file and run `curl -Lo components/kubearchive-rd/base/kubearchive.yaml https://github.com/kubearchive/kubearchive/releases/download/<NEW_VERSION>/kubearchive.yaml` with the <NEW_VERSION>. Make sure to review the changes inside this file before committing and merging this change.
 
 If Kargo *is not* functioning properly:
 
 1. Checkout a new branch of infra-deployments.
-2. Delete the current `rings/ring-#/base/kubearchive.yaml` file and run `curl -Lo components/kubearchive/rings/ring-#/base/kubearchive.yaml https://github.com/kubearchive/kubearchive/releases/download/<NEW_VERSION>/kubearchive.yaml` with the <NEW_VERSION>.
+2. Delete the current `rings/ring-#/base/base-snapshot/kubearchive.yaml` file and run `curl -Lo components/kubearchive-rd/rings/ring-#/base/base-snapshot/kubearchive.yaml https://github.com/kubearchive/kubearchive/releases/download/<NEW_VERSION>/kubearchive.yaml` with the <NEW_VERSION>.
 3. Change the vacuum image versions in the `CronJob` resource files in the `rings/ring-#/base/vacuum/` folder.
+4. Update the `Job` name suffix in the `rings/ring-#/base/patches/schema-migration-job-name-patch.yaml` file to match the release (e.g. `kubearchive-schema-migration-v14-v1.23.0`).
 
-*If the upgrade requires a schema migration:*
+If the upgrade *requires a schema migration:*
 
-1. Checkout the branch in the PR for promoting this upgrade to ring #.
-2. Bump `MIGRATION_VERSION` in both `ConfigMap`s in `rings/ring-#/base/kustomization.yaml`:
-  * kubearchive-schema-version (used by the schema migration `Job`)
-  * kubearchive-deployment-schema-version (used by api-server and sink)
-  * Update the `Job` name suffix in the `rings/ring-#/base/patches/schema-migration-job-name-patch.yaml` file to match the release (e.g. `kubearchive-schema-migration-v14-v1.23.0`).
-3. Commit and push these changes.
+Bump `MIGRATION_VERSION` in both `ConfigMap`s in `rings/ring-#/base/kustomization.yaml`:
+* kubearchive-schema-version (used by the schema migration `Job`)
+* kubearchive-deployment-schema-version (used by api-server and sink)
+
 
 ArgoCD sync waves handle the ordering: the migration Job (wave -1) runs before deployments (wave 0) pick up the new version.
 

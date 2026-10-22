@@ -14,3 +14,19 @@ configMapGenerator:
     namespace: product-kubearchive
     files:
       - monitoring/otel/otel-collector-config.yaml
+
+# Since `kubearchive.yaml` is an upstream release artifact,
+# we need to patch these resources instead of modifying them directly.
+patches:
+  - path: patches/api-server-deployment-security-context-patch.yaml
+    target:
+      kind: Deployment
+      name: kubearchive-api-server
+  - path: patches/sink-deployment-security-context-patch.yaml
+    target:
+      kind: Deployment
+      name: kubearchive-sink
+  - path: patches/operator-deployment-security-context-patch.yaml
+    target:
+      kind: Deployment
+      name: kubearchive-operator
