@@ -1,0 +1,43 @@
+# View access for konflux-vanguard over operator-managed monitoring CRs
+# and konflux.konflux-ci.dev operand CRs (all Cluster-scoped).
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: konflux-operator-view
+rules:
+  - apiGroups:
+      - monitoring.coreos.com
+    resources:
+      - alertmanagers
+      - prometheuses
+      - prometheusrules
+      - servicemonitors
+      - podmonitors
+      - thanosrulers
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - konflux.konflux-ci.dev
+    resources:
+      - konfluxes
+      - konfluxapplicationapis
+      - konfluxbuildservices
+      - konfluxcertmanagers
+      - konfluxclis
+      - konfluxdefaulttenants
+      - konfluxenterprisecontracts
+      - konfluximagecontrollers
+      - konfluxinfoes
+      - konfluxintegrationservices
+      - konfluxinternalregistries
+      - konfluxnamespacelisters
+      - konfluxrbacs
+      - konfluxreleaseservices
+      - konfluxsegmentbridges
+      - konfluxuis
+    verbs:
+      - get
+      - list
+      - watch
