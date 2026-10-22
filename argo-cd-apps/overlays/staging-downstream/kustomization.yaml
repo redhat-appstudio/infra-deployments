@@ -5,7 +5,6 @@ resources:
   - ../../base/member
   - ../../base/all-clusters
   - ../../base/backup
-  - ../../base/eaas
   - ../../base/monitoring-blackbox
   - ../../base/ca-bundle
   - ../../base/cert-manager-trusted-ca
@@ -20,12 +19,7 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: kubelet-config
-  # Defer blackbox (o11y private overlay) and perf-team (tenant namespaces)
-  - path: exclude-kflux-stg-p02.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: monitoring-blackbox
+  # Defer perf-team (tenant namespaces)
   - path: exclude-kflux-stg-p02.yaml
     target:
       kind: ApplicationSet

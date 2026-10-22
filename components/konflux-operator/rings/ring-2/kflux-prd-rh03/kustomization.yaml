@@ -4,6 +4,9 @@ kind: Kustomization
 resources:
   - ../base
 
+components:
+  - ../base/cr/telemetry/segment-bridge-reader
+
 patches:
   - path: build/external-secret-path-patch.yaml
     target:

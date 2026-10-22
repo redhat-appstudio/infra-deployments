@@ -1,0 +1,33 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  labels:
+    app.kubernetes.io/component: api-server
+    app.kubernetes.io/name: kubearchive-api-server-certificate
+    app.kubernetes.io/part-of: kubearchive
+    app.kubernetes.io/version: v1.23.0
+  name: kubearchive-api-server-certificate
+  namespace: kubearchive
+spec:
+  commonName: kubearchive-api-server
+  dnsNames:
+    - localhost
+    - kubearchive-api-server
+    - kubearchive-api-server.kubearchive.svc
+  duration: 720h
+  isCA: false
+  issuerRef:
+    group: cert-manager.io
+    kind: Issuer
+    name: kubearchive
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  renewBefore: 360h
+  secretName: kubearchive-api-server-tls
+  subject:
+    organizations:
+      - kubearchive
+  usages:
+    - digital signature
+    - key encipherment
