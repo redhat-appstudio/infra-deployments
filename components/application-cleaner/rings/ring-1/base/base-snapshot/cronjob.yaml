@@ -8,10 +8,12 @@ spec:
   failedJobsHistoryLimit: 3
   jobTemplate:
     spec:
+      backoffLimit: 0
       template:
         spec:
           restartPolicy: Never
           serviceAccountName: application-cleaner
+
           volumes:
             - name: script-volume
               configMap:

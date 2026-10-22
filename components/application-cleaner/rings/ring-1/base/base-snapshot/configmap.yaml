@@ -55,10 +55,11 @@ data:
         "$(json_escape "${pod_name}")")"
 
       echo "Sending Slack Workflow notification (${status})..."
-      if ! response="$(curl -sS --max-time 10 -X POST "${slack_webhook_url}" \
+      # -f treats HTTP 4xx/5xx as failure so rejected webhooks are logged as such
+      if ! response="$(curl -sS -f --max-time 10 -X POST "${slack_webhook_url}" \
         -H 'Content-Type: application/json; charset=utf-8' \
         -d "${payload}")"; then
-        echo "Failed to send Slack notification (curl error)"
+        echo "Failed to send Slack notification (curl or HTTP error)"
         return 0
       fi
       echo "Slack webhook response: ${response}"
@@ -66,7 +67,7 @@ data:
 
     if [[ -z "${namespace_label_selector}" ]]; then
       echo "NAMESPACE_LABEL_SELECTOR is not set; skipping cleanup"
-      send_slack_notification "success" "Skipped: NAMESPACE_LABEL_SELECTOR is not set"
+      send_slack_notification "success" "Skipped: NAMESPACE_LABEL_SELECTOR is not set. Removed: 0, Skipped: 0, Failed: 0"
       exit 0
     fi
 
@@ -74,14 +75,21 @@ data:
     now_epoch="$(date +%s)"
     cutoff_epoch=$((now_epoch - retention_seconds))
 
-    mapfile -t namespaces < <(
-      kubectl get namespaces -l "${namespace_label_selector}" \
-        -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'
-    )
+    if ! namespaces_out="$(kubectl get namespaces -l "${namespace_label_selector}" \
+      -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')"; then
+      echo "Failed to list namespaces with label selector ${namespace_label_selector}"
+      send_slack_notification "failure" "Failed listing namespaces for selector \`${namespace_label_selector}\`. Removed: 0, Skipped: 0, Failed: 0"
+      exit 1
+    fi
+
+    namespaces=()
+    if [[ -n "${namespaces_out}" ]]; then
+      mapfile -t namespaces <<< "${namespaces_out}"
+    fi
 
     if [[ "${#namespaces[@]}" -eq 0 ]]; then
       echo "No namespaces found with label selector ${namespace_label_selector}"
-      send_slack_notification "success" "No namespaces matched label selector \`${namespace_label_selector}\`"
+      send_slack_notification "success" "No namespaces matched label selector \`${namespace_label_selector}\`. Removed: 0, Skipped: 0, Failed: 0"
       exit 0
     fi
 
@@ -93,11 +101,17 @@ data:
       [[ -z "${ns}" ]] && continue
       echo "Processing namespace: ${ns}"
 
-      mapfile -t applications < <(
-        kubectl get applications.appstudio.redhat.com -n "${ns}" \
-          -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.metadata.creationTimestamp}{"\n"}{end}' \
-          2>/dev/null || true
-      )
+      if ! applications_out="$(kubectl get applications.appstudio.redhat.com -n "${ns}" \
+        -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.metadata.creationTimestamp}{"\n"}{end}')"; then
+        echo "Failed listing applications in ${ns}"
+        failed=$((failed + 1))
+        continue
+      fi
+
+      applications=()
+      if [[ -n "${applications_out}" ]]; then
+        mapfile -t applications <<< "${applications_out}"
+      fi
 
       for application_line in "${applications[@]}"; do
         [[ -z "${application_line}" ]] && continue
