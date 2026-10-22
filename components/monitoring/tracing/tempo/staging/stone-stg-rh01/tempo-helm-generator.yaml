@@ -1,0 +1,12 @@
+apiVersion: builtin
+kind: HelmChartInflationGenerator
+metadata:
+  name: tempo
+name: tempo-distributed
+repo: https://grafana-community.github.io/helm-charts
+version: 2.9.0
+releaseName: tempo
+namespace: konflux-tempo
+valuesFile: tempo-helm-values.yaml
+additionalValuesFiles:
+  - tempo-helm-stg-values.yaml
