@@ -16,6 +16,8 @@ data:
     namespace="${POD_NAMESPACE:-application-cleaner}"
     pod_name="${POD_NAME:-${HOSTNAME:-unknown}}"
 
+    # Posts variables expected by a Slack Workflow "Webhook" trigger.
+    # Workflow variables: status, emoji, summary, job_link, namespace, pod_name
     send_slack_notification() {
       local status="$1"
       local summary="$2"
@@ -36,28 +38,28 @@ data:
       console_url="$(kubectl get configmap console-public -n openshift-config-managed \
         -o jsonpath='{.data.consoleURL}' 2>/dev/null || true)"
 
-      local job_link=""
+      local job_link="Pod: ${namespace}/${pod_name}"
       if [[ -n "${console_url}" ]]; then
         job_link="${console_url}/k8s/ns/${namespace}/pods/${pod_name}"
       fi
 
-      local message
-      message="${emoji} *application-cleaner* ${status} on ${namespace}"$'\n'
-      message+="${summary}"
-      if [[ -n "${job_link}" ]]; then
-        message+=$'\n'"<${job_link}|View Job Pod logs>"
-      else
-        message+=$'\n'"Pod: ${namespace}/${pod_name}"
-      fi
-
-      # Escape for JSON string interpolation (same approach as UI Tekton slack task)
       local payload
-      payload="$(printf '%s' "${message}" | sed 's/\\/\\\\/g; s/"/\\"/g' | awk '{printf "%s\\n", $0}' | sed 's/\\n$//')"
+      payload="$(cat <<EOF
+{
+  "status": "$(printf '%s' "${status}" | sed 's/\\/\\\\/g; s/"/\\"/g')",
+  "emoji": "$(printf '%s' "${emoji}" | sed 's/\\/\\\\/g; s/"/\\"/g')",
+  "summary": "$(printf '%s' "${summary}" | sed 's/\\/\\\\/g; s/"/\\"/g')",
+  "job_link": "$(printf '%s' "${job_link}" | sed 's/\\/\\\\/g; s/"/\\"/g')",
+  "namespace": "$(printf '%s' "${namespace}" | sed 's/\\/\\\\/g; s/"/\\"/g')",
+  "pod_name": "$(printf '%s' "${pod_name}" | sed 's/\\/\\\\/g; s/"/\\"/g')"
+}
+EOF
+)"
 
-      echo "Sending Slack notification (${status})..."
+      echo "Sending Slack Workflow notification (${status})..."
       if ! response="$(curl -sS --max-time 10 -X POST "${slack_webhook_url}" \
         -H 'Content-Type: application/json; charset=utf-8' \
-        -d "{\"text\": \"${payload}\"}")"; then
+        -d "${payload}")"; then
         echo "Failed to send Slack notification (curl error)"
         return 0
       fi
