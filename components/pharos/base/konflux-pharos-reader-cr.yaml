@@ -92,7 +92,7 @@ rules:
       - localqueues
       - workloads
     verbs: [get, list, watch]
-  # AppStudio / Konflux domain resources
+  # AppStudio domain resources
   - apiGroups: [appstudio.redhat.com]
     resources:
       - applications
@@ -101,6 +101,13 @@ rules:
       - releases
       - releaseplans
       - integrationtestscenarios
+    verbs: [get, list, watch]
+  # Konflux domain resources
+  - apiGroups: [konflux-ci.dev]
+    resources:
+      - components
+      - componentgroups
+      - imagerepositories
     verbs: [get, list, watch]
   # Pipelines as Code repositories
   - apiGroups: [pipelinesascode.tekton.dev]
