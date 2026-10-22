@@ -5,7 +5,6 @@ resources:
   - ../../base/all-clusters
   - ../../base/backup
   - ../../base/konflux-ci
-  - ../../base/eaas
   - ../../base/monitoring-blackbox
 
 namespace: konflux-public-production
@@ -89,11 +88,6 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: tracing-workload-tracing
-  - path: production-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: cluster-as-a-service
   - path: production-overlay-patch.yaml
     target:
       kind: ApplicationSet

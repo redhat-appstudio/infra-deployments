@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: sink
+    app.kubernetes.io/name: kubearchive-sink
+    app.kubernetes.io/part-of: kubearchive
+    app.kubernetes.io/version: v1.23.0
+  name: kubearchive-sink
+  namespace: kubearchive
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kubearchive-sink
+  template:
+    metadata:
+      labels:
+        app: kubearchive-sink
+    spec:
+      containers:
+        - env:
+            - name: KUBEARCHIVE_ENABLE_PPROF
+              value: "true"
+            - name: GIN_MODE
+              value: release
+            - name: LOG_LEVEL
+              value: INFO
+            - name: KLOG_LEVEL
+              value: "0"
+            - name: KUBEARCHIVE_OTEL_MODE
+              value: disabled
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: ""
+            - name: KUBEARCHIVE_OTLP_SEND_LOGS
+              value: "false"
+            - name: OTEL_GO_X_DEPRECATED_RUNTIME_METRICS
+              value: "false"
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: GOMEMLIMIT
+              valueFrom:
+                resourceFieldRef:
+                  resource: limits.memory
+            - name: GOMAXPROCS
+              valueFrom:
+                resourceFieldRef:
+                  resource: limits.cpu
+            - name: KUBEARCHIVE_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: KUBEARCHIVE_LOGGING_DIR
+              value: /data/logging
+          envFrom:
+            - secretRef:
+                name: kubearchive-database-credentials
+          image: quay.io/kubearchive/sink:v1.23.0@sha256:5702d91369e3bd2b786fbe6baf03ce747f7564fa16492b5e0823aa3c17f1f8ca
+          livenessProbe:
+            httpGet:
+              path: /livez
+              port: 8080
+          name: kubearchive-sink
+          ports:
+            - containerPort: 8080
+              name: sink
+              protocol: TCP
+            - containerPort: 8888
+              name: pprof
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8080
+            timeoutSeconds: 4
+          resources:
+            limits:
+              cpu: 200m
+              memory: 256Mi
+            requests:
+              cpu: 200m
+              memory: 230Mi
+          volumeMounts:
+            - mountPath: /data/logging
+              name: logging-config
+      serviceAccountName: kubearchive-sink
+      volumes:
+        - configMap:
+            name: kubearchive-logging-writer
+          name: logging-config
