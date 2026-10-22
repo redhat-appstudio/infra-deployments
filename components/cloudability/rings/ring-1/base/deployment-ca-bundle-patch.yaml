@@ -64,6 +64,7 @@
       securityContext:
         runAsNonRoot: true
         allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
         capabilities:
           drop:
             - ALL
@@ -73,7 +74,15 @@
           readOnly: true
         - name: ca-bundle
           mountPath: /ca-bundle
-      resources: {}
+      resources:
+        requests:
+          cpu: 100m
+          ephemeral-storage: 50Mi
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          ephemeral-storage: 1Gi
+          memory: 512Mi
 - op: add
   path: /spec/template/spec/containers/0/env/-
   value:
@@ -124,3 +133,10 @@
   value:
     name: ca-bundle
     emptyDir: {}
+# Suppress kube-linter false positive: env-var-secret
+# CLOUDABILITY_KEY_SECRET_FILEPATH and CLOUDABILITY_CUSTOM_AZURE_BLOB_CLIENT_SECRET_FILEPATH
+# are file paths to mounted secrets, not the secrets themselves.
+# Actual secrets are stored in vault and mounted as files via ExternalSecret.
+- op: add
+  path: /metadata/annotations/ignore-check.kube-linter.io~1env-var-secret
+  value: "CLOUDABILITY_KEY_SECRET_FILEPATH and CLOUDABILITY_CUSTOM_AZURE_BLOB_CLIENT_SECRET_FILEPATH are file paths, not secrets"
