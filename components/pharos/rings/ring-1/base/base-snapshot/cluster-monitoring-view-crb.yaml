@@ -1,0 +1,17 @@
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: konflux-pharos:cluster-monitoring-view
+subjects:
+# the pharos ServiceAccount is managed outside infra-deployments (Terraform,
+# KFLUXINFRA-4572, renamed from lumino in konflux-iac!233) and is used by
+# Pharos to query the tenant clusters
+- kind: ServiceAccount
+  apiGroup: ""
+  name: pharos
+  namespace: konflux-pharos
+roleRef:
+  kind: ClusterRole
+  apiGroup: rbac.authorization.k8s.io
+  name: cluster-monitoring-view
