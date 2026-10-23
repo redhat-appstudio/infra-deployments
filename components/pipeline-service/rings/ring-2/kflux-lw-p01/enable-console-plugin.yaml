@@ -1,0 +1,123 @@
+# KONFLUX-16249: enable the OpenShift Pipelines dynamic console plugin on kflux-lw-p01
+# by registering pipelines-console-plugin on consoles.operator.openshift.io/cluster as an
+# idempotent ArgoCD Sync hook. Rationale and OCP 4.21 context: see the commit message.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: enable-pipelines-console-plugin
+  namespace: openshift-pipelines
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: enable-pipelines-console-plugin
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+rules:
+# consoles.operator.openshift.io/cluster is a cluster-scoped singleton; restrict to it by name.
+- apiGroups:
+  - operator.openshift.io
+  resources:
+  - consoles
+  resourceNames:
+  - cluster
+  verbs:
+  - get
+  - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: enable-pipelines-console-plugin
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: enable-pipelines-console-plugin
+subjects:
+- kind: ServiceAccount
+  name: enable-pipelines-console-plugin
+  namespace: openshift-pipelines
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: enable-pipelines-console-plugin
+  namespace: openshift-pipelines
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded, BeforeHookCreation
+spec:
+  backoffLimit: 5
+  template:
+    spec:
+      serviceAccountName: enable-pipelines-console-plugin
+      restartPolicy: Never
+      containers:
+      - name: enable-plugin
+        image: registry.redhat.io/openshift4/ose-cli:v4.12
+        securityContext:
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+        env:
+        - name: PLUGIN
+          value: pipelines-console-plugin
+        command:
+        - /bin/bash
+        - -c
+        - |
+          set -euo pipefail
+          echo "Checking consoles.operator.openshift.io/cluster for plugin '$PLUGIN'..."
+          # A failed read must abort the Job (no "|| true") so backoffLimit retries,
+          # rather than acting on a false-empty list. An absent/empty .spec.plugins
+          # yields empty output with exit 0, so a real read and an empty list stay distinct.
+          EXISTING=$(oc get consoles.operator.openshift.io cluster \
+            -o go-template='{{range .spec.plugins}}{{println .}}{{end}}')
+          if echo "$EXISTING" | grep -qx "$PLUGIN"; then
+            echo "'$PLUGIN' is already enabled; nothing to do."
+            exit 0
+          fi
+          if [ -n "$(echo "$EXISTING" | tr -d '[:space:]')" ]; then
+            # Entries exist: append only. JSON-patch append never replaces the list, so
+            # plugins owned by other components (networking/monitoring) are preserved,
+            # and concurrent appends by other actors are not lost.
+            echo "Appending '$PLUGIN' to existing console plugins."
+            oc patch consoles.operator.openshift.io cluster --type=json \
+              -p="[{\"op\":\"add\",\"path\":\"/spec/plugins/-\",\"value\":\"$PLUGIN\"}]"
+          else
+            # List read as empty/absent. Prefer append (handles an existing empty []);
+            # only if the array is genuinely absent (append fails) do we create it. The
+            # create path therefore only runs when nothing exists to clobber, so it is
+            # safe under concurrency without needing an observedGeneration precondition.
+            echo "No console plugins set; enabling '$PLUGIN' safely."
+            if ! oc patch consoles.operator.openshift.io cluster --type=json \
+                 -p="[{\"op\":\"add\",\"path\":\"/spec/plugins/-\",\"value\":\"$PLUGIN\"}]"; then
+              echo "No plugins array present; initializing it with '$PLUGIN'."
+              oc patch consoles.operator.openshift.io cluster --type=json \
+                -p="[{\"op\":\"add\",\"path\":\"/spec/plugins\",\"value\":[\"$PLUGIN\"]}]"
+            fi
+          fi
+          echo "Done. Current console plugins:"
+          oc get consoles.operator.openshift.io cluster \
+            -o go-template='{{range .spec.plugins}}{{println .}}{{end}}'
