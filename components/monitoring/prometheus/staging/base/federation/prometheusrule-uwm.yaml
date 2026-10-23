@@ -60,8 +60,23 @@
       rules:
       - record: kube_pod_status_phase:excluding_jobs
         expr: |
-          kube_pod_status_phase{namespace!~".*-tenant|openshift-.*|kube-.*|mintmaker"}
-          unless on (namespace, pod) kube_pod_owner{owner_kind="Job"}
+          (
+            kube_pod_status_phase{
+              phase=~"Pending|Unknown",
+              namespace!~".*-tenant|openshift-.*|kube-.*|mintmaker"
+            } == 1
+            or
+            (
+              kube_pod_status_phase{
+                phase="Running",
+                namespace!~".*-tenant|openshift-.*|kube-.*|mintmaker"
+              } == 1
+              and on (namespace, pod)
+              kube_pod_status_ready{condition="true"} == 0
+            )
+          )
+          unless on (namespace, pod)
+          kube_pod_owner{owner_kind="Job"}
 
     - name: konflux_tenant_capacity
       rules:
