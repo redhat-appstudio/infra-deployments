@@ -59,15 +59,23 @@ spec:
         - name: tls
           mountPath: /etc/dex/tls
         livenessProbe:
-          initialDelaySeconds: 10
           httpGet:
             path: /healthz/ready
             port: telemetry
+          failureThreshold: 3
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          successThreshold: 1
+          timeoutSeconds: 1
         readinessProbe:
-          initialDelaySeconds: 10
           httpGet:
             path: /healthz/ready
             port: telemetry
+          failureThreshold: 3
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          successThreshold: 1
+          timeoutSeconds: 2
         env:
         - name: GODEBUG
           value: "http2server=0"
