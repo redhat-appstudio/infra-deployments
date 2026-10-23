@@ -5,7 +5,6 @@ resources:
   - ../../base/member
   - ../../base/all-clusters
   - ../../base/ca-bundle
-  - ../../base/eaas
   - ../../base/backup
   - ../rd-dev/kueue # TODO: Remove this once e2e tests use solely the rd-dev overlay
   - ../rd-dev/kyverno # TODO: Remove this once e2e tests use solely the rd-dev overlay
@@ -101,11 +100,6 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: crossplane-config
-  - path: development-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: vector-kubearchive-log-collector
   - path: development-overlay-patch.yaml
     target:
       kind: ApplicationSet

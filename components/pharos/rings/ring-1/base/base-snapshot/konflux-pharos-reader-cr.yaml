@@ -1,0 +1,145 @@
+---
+# Read-only access for Pharos, the SPRE multi-cluster MCP server running on the
+# common internal clusters. Rules mirror the pharos-reader ClusterRole in
+# infra-common-deployments (components/spre-automations/base/rbac), without
+# configmaps. Secrets are intentionally not included. Aggregated into
+# konflux-pharos-view via the konflux-ci.dev/scope label.
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: konflux-pharos-reader
+  labels:
+    konflux-ci.dev/scope: pharos-view
+rules:
+  # Core resources — namespace-scoped and cluster-scoped read
+  - apiGroups: [""]
+    resources:
+      - endpoints
+      - events
+      - limitranges
+      - namespaces
+      - nodes
+      - persistentvolumeclaims
+      - persistentvolumes
+      - pods
+      - pods/log
+      - replicationcontrollers
+      - resourcequotas
+      - serviceaccounts
+      - services
+    verbs: [get, list, watch]
+  # Workloads
+  - apiGroups: [apps]
+    resources:
+      - daemonsets
+      - deployments
+      - replicasets
+      - statefulsets
+    verbs: [get, list, watch]
+  # Jobs
+  - apiGroups: [batch]
+    resources:
+      - cronjobs
+      - jobs
+    verbs: [get, list, watch]
+  # Tekton pipelines
+  - apiGroups: [tekton.dev]
+    resources:
+      - pipelines
+      - pipelineruns
+      - taskruns
+      - tasks
+    verbs: [get, list, watch]
+  # Tekton Results
+  - apiGroups: [results.tekton.dev]
+    resources:
+      - logs
+      - records
+      - results
+    verbs: [get, list]
+  # OpenShift cluster operator status
+  - apiGroups: [config.openshift.io]
+    resources:
+      - apiservers
+      - clusteroperators
+      - clusterversions
+      - infrastructures
+      - networks
+      - proxies
+    verbs: [get, list, watch]
+  # Machine and node health
+  - apiGroups: [machine.openshift.io]
+    resources:
+      - machines
+      - machinesets
+    verbs: [get, list, watch]
+  # MachineConfigPool status — separate apiGroup from machine.openshift.io
+  - apiGroups: [machineconfiguration.openshift.io]
+    resources:
+      - machineconfigpools
+    verbs: [get, list, watch]
+  # Metrics and alerting context
+  - apiGroups: [monitoring.coreos.com]
+    resources:
+      - podmonitors
+      - prometheusrules
+      - servicemonitors
+    verbs: [get, list]
+  # Queue triage
+  - apiGroups: [kueue.x-k8s.io]
+    resources:
+      - clusterqueues
+      - localqueues
+      - workloads
+    verbs: [get, list, watch]
+  # AppStudio domain resources
+  - apiGroups: [appstudio.redhat.com]
+    resources:
+      - applications
+      - components
+      - snapshots
+      - releases
+      - releaseplans
+      - integrationtestscenarios
+    verbs: [get, list, watch]
+  # Konflux domain resources
+  - apiGroups: [konflux-ci.dev]
+    resources:
+      - components
+      - componentgroups
+      - imagerepositories
+    verbs: [get, list, watch]
+  # Pipelines as Code repositories
+  - apiGroups: [pipelinesascode.tekton.dev]
+    resources:
+      - repositories
+    verbs: [get, list, watch]
+  # Tekton triggers
+  - apiGroups: [triggers.tekton.dev]
+    resources:
+      - eventlisteners
+      - triggers
+      - triggerbindings
+      - triggertemplates
+    verbs: [get, list, watch]
+  # OpenShift routes
+  - apiGroups: [route.openshift.io]
+    resources:
+      - routes
+    verbs: [get, list, watch]
+  # Kubernetes ingresses
+  - apiGroups: [networking.k8s.io]
+    resources:
+      - ingresses
+    verbs: [get, list, watch]
+  # OpenShift builds
+  - apiGroups: [build.openshift.io]
+    resources:
+      - builds
+      - buildconfigs
+    verbs: [get, list, watch]
+  # OpenShift image streams
+  - apiGroups: [image.openshift.io]
+    resources:
+      - imagestreams
+    verbs: [get, list, watch]

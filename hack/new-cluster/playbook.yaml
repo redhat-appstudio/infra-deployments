@@ -85,7 +85,6 @@
       - pipeline-service
       - policies
       - smee-client
-      - vector-kubearchive-log-collector
 
     templated_rd_components:
       - authentication
@@ -93,6 +92,7 @@
       - konflux-operator
       - kueue
       - multi-platform-controller
+      - vector-kubearchive-log-collector
 
     templated_configs:
     - etcd-defrag
@@ -108,7 +108,6 @@
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/pipeline-service/pipeline-service.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/policies/policies.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/proactive-scaler/proactive-scaler.yaml"
-      - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/vector-kubearchive-log-collector/vector-kubearchive-log-collector.yaml"
 
     argo_cd_private_network_app_files:
       - "{{ dst }}/argo-cd-apps/base/smee-client/smee-client.yaml"
