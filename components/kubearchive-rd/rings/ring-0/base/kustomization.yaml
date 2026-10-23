@@ -88,11 +88,16 @@ configMapGenerator:
               cursor-increment: 1
 
 patches:
+  # NOTE: The job name patch MUST come after any patches to the schema migration Job otherwise
+  # the other patches's targeted Job will not exist since it has been renamed.
   - path: patches/schema-migration-job-patch.yaml
   - path: patches/schema-migration-job-name-patch.yaml
+    options:
+      allowNameChange: true
     target:
       kind: Job
       name: kubearchive-schema-migration
+
   - path: patches/api-server-service-cert-patch.yaml
   - path: patches/operator-webhooks-service-cert-patch.yaml
   - path: patches/mutating-webhook-inject-cabundle-patch.yaml
@@ -126,5 +131,7 @@ patches:
   - path: patches/sink-deployment-patch.yaml
   - path: patches/otel-collector-image-patch.yaml
   - path: patches/cluster-vacuum-delete-patch.yaml
+  # NOTE: These patches delete the old configmaps that are no longer used as they are manually
+  # generated in this Kustomize file.
   - path: patches/logging-writer-configmap-delete-patch.yaml
   - path: patches/logging-reader-configmap-delete-patch.yaml
