@@ -1,0 +1,35 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kubearchive-sink
+  namespace: kubearchive
+spec:
+  template:
+    spec:
+      containers:
+        - name: kubearchive-sink
+          env:
+          - name: KUBEARCHIVE_OTEL_MODE
+            value: enabled
+          - name: OTEL_EXPORTER_OTLP_ENDPOINT
+            value: http://otel-collector:4318
+          - name: MIGRATION_VERSION
+            valueFrom:
+              configMapKeyRef:
+                name: kubearchive-deployment-schema-version
+                key: MIGRATION_VERSION
+          - name: DATABASE_MAX_OPEN_CONNS
+            value: "25"
+          - name: DATABASE_MAX_IDLE_CONNS
+            value: "10"
+          securityContext:
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+          resources:
+            limits:
+              cpu: 200m
+              memory: 128Mi
+            requests:
+              cpu: 200m
+              memory: 128Mi
