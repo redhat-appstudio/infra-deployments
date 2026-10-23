@@ -2,8 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ../base
-  - ../base/cluster-logging-prerequisite
-  - ../base/configure-logforwarding
+  - openshift-logging-ns.yaml
   - minio.yaml
 
 patches:
@@ -12,6 +11,7 @@ patches:
       group: operators.coreos.com
       version: v1alpha1
       kind: Subscription
+      name: loki-operator
 
   - path: ./patches/lokistack-dev-patch.yaml
     target:
