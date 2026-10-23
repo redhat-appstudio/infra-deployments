@@ -1,0 +1,116 @@
+# KONFLUX-16249: Enable the OpenShift Pipelines dynamic console plugin on kflux-lw-p01.
+#
+# On OCP 4.21 the static/fallback Pipelines console navigation was removed, so the
+# "Pipelines" nav only appears when the "pipelines-console-plugin" is listed in
+# console.operator.openshift.io/cluster .spec.plugins. The OpenShift Pipelines operator
+# deploys the plugin workload but does not enable it on the Console (that step is normally
+# the OperatorHub UI checkbox, which never runs when the operator is installed via a
+# Subscription as it is on Konflux). Console is a cluster singleton whose .spec.plugins is
+# an atomic list not owned by GitOps, so we cannot append to it with a plain manifest;
+# instead we run the equivalent `oc patch` as an idempotent ArgoCD Sync hook Job.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: enable-pipelines-console-plugin
+  namespace: openshift-pipelines
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: enable-pipelines-console-plugin
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+rules:
+# console.operator.openshift.io/cluster is a cluster-scoped singleton; restrict to it by name.
+- apiGroups:
+  - operator.openshift.io
+  resources:
+  - consoles
+  resourceNames:
+  - cluster
+  verbs:
+  - get
+  - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: enable-pipelines-console-plugin
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: enable-pipelines-console-plugin
+subjects:
+- kind: ServiceAccount
+  name: enable-pipelines-console-plugin
+  namespace: openshift-pipelines
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: enable-pipelines-console-plugin
+  namespace: openshift-pipelines
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded, BeforeHookCreation
+spec:
+  backoffLimit: 5
+  template:
+    spec:
+      serviceAccountName: enable-pipelines-console-plugin
+      restartPolicy: Never
+      containers:
+      - name: enable-plugin
+        image: registry.redhat.io/openshift4/ose-cli:v4.12
+        securityContext:
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+        env:
+        - name: PLUGIN
+          value: pipelines-console-plugin
+        command:
+        - /bin/bash
+        - -c
+        - |
+          set -euo pipefail
+          echo "Checking console.operator.openshift.io/cluster for plugin '$PLUGIN'..."
+          EXISTING=$(oc get console.operator.openshift.io cluster \
+            -o go-template='{{range .spec.plugins}}{{println .}}{{end}}' || true)
+          if echo "$EXISTING" | grep -qx "$PLUGIN"; then
+            echo "'$PLUGIN' is already enabled; nothing to do."
+            exit 0
+          fi
+          if [ -z "$(echo "$EXISTING" | tr -d '[:space:]')" ]; then
+            echo "No console plugins set; initializing list with '$PLUGIN'."
+            oc patch console.operator.openshift.io cluster --type=json \
+              -p="[{\"op\":\"add\",\"path\":\"/spec/plugins\",\"value\":[\"$PLUGIN\"]}]"
+          else
+            echo "Appending '$PLUGIN' to existing console plugins."
+            oc patch console.operator.openshift.io cluster --type=json \
+              -p="[{\"op\":\"add\",\"path\":\"/spec/plugins/-\",\"value\":\"$PLUGIN\"}]"
+          fi
+          echo "Done. Current console plugins:"
+          oc get console.operator.openshift.io cluster \
+            -o go-template='{{range .spec.plugins}}{{println .}}{{end}}'

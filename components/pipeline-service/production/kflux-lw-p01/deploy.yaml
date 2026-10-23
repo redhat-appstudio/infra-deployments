@@ -29,6 +29,16 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+    argocd.argoproj.io/sync-wave: "2"
+  name: enable-pipelines-console-plugin
+  namespace: openshift-pipelines
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
     argocd.argoproj.io/sync-wave: "0"
   name: pipeline-service-exporter
@@ -138,6 +148,25 @@ rules:
   verbs:
   - get
   - describe
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+    argocd.argoproj.io/sync-wave: "2"
+  name: enable-pipelines-console-plugin
+rules:
+- apiGroups:
+  - operator.openshift.io
+  resourceNames:
+  - cluster
+  resources:
+  - consoles
+  verbs:
+  - get
+  - patch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -705,6 +734,23 @@ subjects:
 - kind: ServiceAccount
   name: tekton-results-tests
   namespace: plnsvc-tests
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+    argocd.argoproj.io/sync-wave: "2"
+  name: enable-pipelines-console-plugin
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: enable-pipelines-console-plugin
+subjects:
+- kind: ServiceAccount
+  name: enable-pipelines-console-plugin
+  namespace: openshift-pipelines
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -2016,6 +2062,66 @@ spec:
       - name: tls
         secret:
           secretName: tekton-results-for-watcher-tls
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded, BeforeHookCreation
+    argocd.argoproj.io/sync-wave: "2"
+  name: enable-pipelines-console-plugin
+  namespace: openshift-pipelines
+spec:
+  backoffLimit: 5
+  template:
+    spec:
+      containers:
+      - command:
+        - /bin/bash
+        - -c
+        - |
+          set -euo pipefail
+          echo "Checking console.operator.openshift.io/cluster for plugin '$PLUGIN'..."
+          EXISTING=$(oc get console.operator.openshift.io cluster \
+            -o go-template='{{range .spec.plugins}}{{println .}}{{end}}' || true)
+          if echo "$EXISTING" | grep -qx "$PLUGIN"; then
+            echo "'$PLUGIN' is already enabled; nothing to do."
+            exit 0
+          fi
+          if [ -z "$(echo "$EXISTING" | tr -d '[:space:]')" ]; then
+            echo "No console plugins set; initializing list with '$PLUGIN'."
+            oc patch console.operator.openshift.io cluster --type=json \
+              -p="[{\"op\":\"add\",\"path\":\"/spec/plugins\",\"value\":[\"$PLUGIN\"]}]"
+          else
+            echo "Appending '$PLUGIN' to existing console plugins."
+            oc patch console.operator.openshift.io cluster --type=json \
+              -p="[{\"op\":\"add\",\"path\":\"/spec/plugins/-\",\"value\":\"$PLUGIN\"}]"
+          fi
+          echo "Done. Current console plugins:"
+          oc get console.operator.openshift.io cluster \
+            -o go-template='{{range .spec.plugins}}{{println .}}{{end}}'
+        env:
+        - name: PLUGIN
+          value: pipelines-console-plugin
+        image: registry.redhat.io/openshift4/ose-cli:v4.12
+        name: enable-plugin
+        resources:
+          limits:
+            cpu: 200m
+            memory: 256Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+      restartPolicy: Never
+      serviceAccountName: enable-pipelines-console-plugin
 ---
 apiVersion: external-secrets.io/v1
 kind: ExternalSecret

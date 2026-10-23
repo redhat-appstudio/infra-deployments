@@ -2,6 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ../../rings/ring-2
+  - enable-console-plugin.yaml
 patches:
   - path: tekton-chains-public-key-path.yaml
     target:
