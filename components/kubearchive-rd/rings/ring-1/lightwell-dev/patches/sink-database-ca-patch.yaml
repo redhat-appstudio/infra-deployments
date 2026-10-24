@@ -1,0 +1,23 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kubearchive-sink
+  namespace: kubearchive
+spec:
+  template:
+    spec:
+      volumes:
+        - name: db-ca-cert
+          secret:
+            secretName: kubearchive-database-credentials
+            items:
+              - key: DATABASE_CA_CERT
+                path: ca.crt
+      containers:
+        - name: kubearchive-sink
+          volumeMounts:
+            - name: db-ca-cert
+              mountPath: /etc/ssl/certs/db-ca.crt
+              subPath: ca.crt
+              readOnly: true

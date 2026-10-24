@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: sink
+    app.kubernetes.io/name: kubearchive-sink
+    app.kubernetes.io/part-of: kubearchive
+    app.kubernetes.io/version: v1.23.0
+  name: kubearchive-sink
+  namespace: kubearchive
+spec:
+  ports:
+    - port: 80
+      protocol: TCP
+      targetPort: 8080
+  selector:
+    app: kubearchive-sink
