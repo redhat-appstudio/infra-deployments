@@ -1,0 +1,9 @@
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: pipelineruns-resource-quota
+  namespace: mintmaker
+spec:
+  hard:
+    count/pipelineruns.tekton.dev: "5000"
