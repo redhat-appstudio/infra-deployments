@@ -1,4 +1,22 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-resources: []
+resources:
+  - ../base
+  - ../base/logging-operator-prerequisite
+  - logs-writer-rbac.yaml
+
+patches:
+  - path: ./patches/subscription-dev-channel-patch.yaml
+    target:
+      group: operators.coreos.com
+      version: v1alpha1
+      kind: Subscription
+      name: cluster-logging
+
+  - path: ./patches/clusterlogforwarder-loki-patch.yaml
+    target:
+      group: observability.openshift.io
+      version: v1
+      kind: ClusterLogForwarder
+      name: instance
