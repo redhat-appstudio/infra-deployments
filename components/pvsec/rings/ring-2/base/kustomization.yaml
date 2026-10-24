@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - base-snapshot
+  - external-secret.yaml
+  - image-stream.yaml
+
+patches:
+  - target:
+      kind: ExternalSecret
+      name: crypto-rules-quay-pull-secret
+    path: patches/external-secret.yaml
