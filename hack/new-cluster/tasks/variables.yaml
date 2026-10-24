@@ -45,8 +45,8 @@
   tags: [always]
   fail:
     msg: >-
-      Operator-first bootstrap requires ring-1 for staging and ring-2 for
-      production (got env={{ env }} ring={{ ring }}). Supported rings for
+      Operator-first bootstrap requires a ring listed for this environment
+      (got env={{ env }} ring={{ ring }}). Supported rings for
       {{ env }}: {{ operator_rings_by_env[env] | join(', ') }}.
   when: ring not in operator_rings_by_env[env]
 - name: Check that konflux-operator ring base exists
