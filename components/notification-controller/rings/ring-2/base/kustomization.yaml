@@ -4,13 +4,13 @@ kind: Kustomization
 namespace: notification-controller
 
 resources:
-- https://github.com/konflux-ci/notification-service/config/default?ref=e10ea0e75259a450b375d33db062658f733ff79c
+- https://github.com/konflux-ci/notification-service/config/default?ref=7848fe43ef96f5ead4780633f203c2942b9680a3
 - aws-sns-es.yaml
 
 images:
   - name: quay.io/konflux-ci/notification-service
     newName: quay.io/konflux-ci/notification-service
-    newTag: e10ea0e75259a450b375d33db062658f733ff79c
+    newTag: 7848fe43ef96f5ead4780633f203c2942b9680a3
 
 patches:
   - path: patches/topic_region_add-patch.yaml
