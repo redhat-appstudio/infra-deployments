@@ -20,12 +20,32 @@
 set -euo pipefail
 
 MAX_DIFF_LINES="${MAX_DIFF_LINES:-80}"
+IGNORE_PATTERNS=()
 
 usage() {
-  echo "Usage: $0 <component-rd> <tier>" >&2
+  echo "Usage: $0 [--ignore-pattern PATTERN]... <component-rd> <tier>" >&2
   echo "  <tier> = dev | staging | production | ring-N | all" >&2
+  echo "  --ignore-pattern: Ignore diff lines containing PATTERN (can be specified multiple times)" >&2
   exit 2
 }
+
+# Parse arguments
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --ignore-pattern)
+      [ $# -gt 1 ] || usage
+      IGNORE_PATTERNS+=("$2")
+      shift 2
+      ;;
+    -*)
+      echo "ERROR: Unknown option: $1" >&2
+      usage
+      ;;
+    *)
+      break
+      ;;
+  esac
+done
 
 [ $# -eq 2 ] || usage
 
@@ -137,6 +157,25 @@ compare() {
         --label "$rd_path (ring)" \
         <(printf '%s\n' "$orig_out") \
         <(printf '%s\n' "$rd_out") || true)"
+
+  # Apply ignore patterns if any are set
+  if [ "${#IGNORE_PATTERNS[@]}" -gt 0 ] && [ -n "$d" ]; then
+    local filtered="$d"
+    local pattern
+    for pattern in "${IGNORE_PATTERNS[@]}"; do
+      filtered="$(printf '%s\n' "$filtered" | grep -v -F "$pattern" || true)"
+    done
+
+    # Check if any actual diff lines remain (lines starting with single - or +)
+    # Exclude --- and +++ headers by requiring a non-dash/plus character after the first
+    local changes
+    changes="$(printf '%s\n' "$filtered" | grep '^[-+][^-+]' || true)"
+    if [ -z "$changes" ]; then
+      d=""
+    else
+      d="$filtered"
+    fi
+  fi
 
   if [ -z "$d" ]; then
     echo "PASS: $label"
