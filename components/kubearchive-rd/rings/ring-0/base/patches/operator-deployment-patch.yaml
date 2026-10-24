@@ -17,9 +17,6 @@ spec:
             value: enabled
           - name: OTEL_EXPORTER_OTLP_ENDPOINT
             value: http://otel-collector:4318
-          securityContext:
-            readOnlyRootFilesystem: true
-            runAsNonRoot: true
           ports:
             - containerPort: 8081
           resources:
