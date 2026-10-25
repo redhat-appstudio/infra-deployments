@@ -1,0 +1,30 @@
+- name: Set staging smee-client ApplicationSet path
+  tags: [applicationsets]
+  set_fact:
+    smee_client_appset_file: "{{ dst }}/argo-cd-apps/overlays/rd-staging/smee-client/smee-client-appset.yaml"
+
+- name: Check whether {{ shortname }} is already in the staging smee-client cluster list
+  tags: [applicationsets]
+  command: |
+    yq eval '.spec.generators[0].merge.generators[1].list.elements[] | select(.nameNormalized == "{{ shortname }}")' "{{ smee_client_appset_file }}"
+  register: smee_client_list_entry
+  changed_when: false
+
+- name: Add {{ shortname }} to the staging smee-client cluster list
+  tags: [applicationsets]
+  command: |
+    yq -i eval '(.spec.generators[0].merge.generators[1].list.elements) += [{"values.ring": "{{ ring }}", "nameNormalized": "{{ shortname }}", "values.clusterDir": "{{ shortname }}"}]' "{{ smee_client_appset_file }}"
+  when: smee_client_list_entry.stdout == ""
+
+- name: Check whether {{ shortname }} is already in the staging smee-client selector
+  tags: [applicationsets]
+  command: |
+    yq eval '.spec.generators[0].merge.selector.matchExpressions[0].values[] | select(. == "{{ shortname }}")' "{{ smee_client_appset_file }}"
+  register: smee_client_selector_entry
+  changed_when: false
+
+- name: Add {{ shortname }} to the staging smee-client selector
+  tags: [applicationsets]
+  command: |
+    yq -i eval '.spec.generators[0].merge.selector.matchExpressions[0].values += ["{{ shortname }}"]' "{{ smee_client_appset_file }}"
+  when: smee_client_selector_entry.stdout == ""
