@@ -31,9 +31,54 @@ spec:
               configMapKeyRef:
                 name: kubearchive-deployment-schema-version
                 key: MIGRATION_VERSION
-          securityContext:
-            readOnlyRootFilesystem: true
-            runAsNonRoot: true
+          - name: KUBEARCHIVE_ENABLE_PPROF
+            value: "true"
+          - name: LOG_LEVEL
+            value: INFO
+          - name: KLOG_LEVEL
+            value: "0"
+          - name: GIN_MODE
+            value: release
+          - name: KUBEARCHIVE_OTLP_SEND_LOGS
+            value: "false"
+          - name: OTEL_GO_X_DEPRECATED_RUNTIME_METRICS
+            value: "false"
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: GOMEMLIMIT
+            valueFrom:
+              resourceFieldRef:
+                resource: requests.memory
+          - name: GOMAXPROCS
+            valueFrom:
+              resourceFieldRef:
+                resource: limits.cpu
+          - name: CACHE_EXPIRATION_AUTHORIZED
+            value: 10m
+          - name: CACHE_EXPIRATION_UNAUTHORIZED
+            value: 1m
+          - name: KUBEARCHIVE_LOGGING_DIR
+            value: /data/logging
+          - name: DATABASE_MAX_OPEN_CONNS
+            value: "25"
+          - name: DATABASE_MAX_IDLE_CONNS
+            value: "10"
+          - name: DATABASE_CONN_MAX_LIFETIME
+            value: "10m"
+          - name: DATABASE_CONN_MAX_IDLE_TIME
+            value: "3m"
+          - name: KUBEARCHIVE_QUERY_TIMEOUT
+            value: "5m"
+          - name: API_RATE_LIMIT_OVERALL_RPS
+            value: "200"
+          - name: API_RATE_LIMIT_LOG_RPS
+            value: "20"
+          - name: API_RATE_LIMIT_OVERALL_BURST
+            value: "600"
+          - name: API_RATE_LIMIT_LOG_BURST
+            value: "60"
           startupProbe:
             httpGet:
               path: /livez
