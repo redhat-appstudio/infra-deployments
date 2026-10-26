@@ -23,14 +23,23 @@ type RepoBuilder interface {
 type Engine struct {
 	head        RepoBuilder
 	base        RepoBuilder
-	affected    int
 	concurrency int
 }
 
 // NewEngine creates an Engine with the given head and base repo references.
-// Concurrency defaults to runtime.NumCPU() if zero.
-func NewEngine(head, base RepoBuilder, affected int) *Engine {
-	return &Engine{head: head, base: base, affected: affected, concurrency: runtime.NumCPU()}
+// Concurrency defaults to runtime.NumCPU().
+func NewEngine(head, base RepoBuilder) *Engine {
+	return &Engine{head: head, base: base, concurrency: runtime.NumCPU()}
+}
+
+// CountComponents returns the number of (component, environment) jobs in an
+// affected map.
+func CountComponents(affected map[detector.Environment][]appset.ComponentPath) int {
+	total := 0
+	for _, paths := range affected {
+		total += len(paths)
+	}
+	return total
 }
 
 // DiffResult holds the complete output of a render-diff run.
@@ -50,7 +59,7 @@ func (e *Engine) Run(ctx context.Context, affected map[detector.Environment][]ap
 	// RunProgressive sends each diff to the channel; without a reader (Run
 	// doesn't need progressive output), an unbuffered or undersized channel
 	// would deadlock the errgroup goroutines.
-	ch := make(chan ComponentDiff, e.affected)
+	ch := make(chan ComponentDiff, CountComponents(affected))
 	return e.RunProgressive(ctx, affected, ch)
 }
 
@@ -60,13 +69,14 @@ func (e *Engine) Run(ctx context.Context, affected map[detector.Environment][]ap
 func (e *Engine) RunProgressive(ctx context.Context, affected map[detector.Environment][]appset.ComponentPath, out chan<- ComponentDiff) (*DiffResult, error) {
 	defer close(out)
 
+	total := CountComponents(affected)
 	// Check if there's anything to process.
-	if e.affected == 0 {
+	if total == 0 {
 		return &DiffResult{}, nil
 	}
 
 	// Internal channel for collecting results from workers.
-	results := make(chan ComponentDiff, e.affected)
+	results := make(chan ComponentDiff, total)
 
 	// Collector goroutine: forwards diffs to the progressive output channel
 	// and aggregates stats. No mutex needed — only this goroutine writes

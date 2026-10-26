@@ -173,11 +173,7 @@ func run(ctx context.Context, opts options) error {
 		return fmt.Errorf("detecting affected components: %w", err)
 	}
 
-	// Count total jobs
-	totalJobs := 0
-	for _, paths := range affected {
-		totalJobs += len(paths)
-	}
+	totalJobs := renderdiff.CountComponents(affected)
 	if totalJobs == 0 {
 		fmt.Println("No affected components detected — nothing to diff.")
 		// Best-effort: update CI comment/summary so they don't stay stale.
@@ -188,7 +184,7 @@ func run(ctx context.Context, opts options) error {
 	slog.Info("Affected component paths detected", "count", totalJobs)
 
 	// Step 4: Run render-diff engine (once for all output modes).
-	engine := renderdiff.NewEngine(headRef, baseRefRepo, totalJobs)
+	engine := renderdiff.NewEngine(headRef, baseRefRepo)
 
 	// For local mode (single mode only), use progressive output.
 	if localOnly {

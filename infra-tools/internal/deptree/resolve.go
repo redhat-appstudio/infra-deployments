@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"sigs.k8s.io/kustomize/api/types"
 	"sigs.k8s.io/yaml"
@@ -20,6 +21,49 @@ var kustomizationFileNames = []string{
 	"kustomization.yaml",
 	"kustomization.yml",
 	"Kustomization",
+}
+
+// Resolver caches dependency trees per directory. Callers resolve the same
+// shared base directories once per cluster path, so without a cache a single
+// detection run walks the same tree dozens of times.
+//
+// A Resolver is safe for concurrent use; two goroutines may walk the same
+// uncached directory concurrently, which is harmless and cheaper than
+// serialising every walk behind one lock.
+type Resolver struct {
+	repoRoot string
+
+	mu    sync.Mutex
+	cache map[string]resolvedTree
+}
+
+// resolvedTree is a cached Resolve result, including failures, so a directory
+// without a kustomization is not walked again on every call.
+type resolvedTree struct {
+	deps map[string]bool
+	err  error
+}
+
+// NewResolver creates a Resolver rooted at repoRoot.
+func NewResolver(repoRoot string) *Resolver {
+	return &Resolver{repoRoot: repoRoot, cache: make(map[string]resolvedTree)}
+}
+
+// Resolve is Resolve(repoRoot, dir) with caching.
+func (r *Resolver) Resolve(dir string) (map[string]bool, error) {
+	r.mu.Lock()
+	if cached, ok := r.cache[dir]; ok {
+		r.mu.Unlock()
+		return cached.deps, cached.err
+	}
+	r.mu.Unlock()
+
+	deps, err := Resolve(r.repoRoot, dir)
+
+	r.mu.Lock()
+	r.cache[dir] = resolvedTree{deps: deps, err: err}
+	r.mu.Unlock()
+	return deps, err
 }
 
 // Resolve recursively walks the kustomization at dir and returns the set of

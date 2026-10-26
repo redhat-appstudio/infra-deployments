@@ -1292,9 +1292,9 @@ func TestMatchChangedFiles_DepTreeMatch(t *testing.T) {
 		},
 	}
 
-	matchChangedFiles(
-		[]string{"components/foo/base/deploy.yaml"},
-		resolved, nil, result,
+	applyComponentMatches(
+		matchComponents([]string{"components/foo/base/deploy.yaml"}, resolved),
+		nil, result,
 	)
 
 	g.Expect(result.AffectedEnvironments).To(HaveKey(Staging))
@@ -1316,9 +1316,9 @@ func TestMatchChangedFiles_PrefixFallback(t *testing.T) {
 		},
 	}
 
-	matchChangedFiles(
-		[]string{"configs/plain-dir/manifest.yaml"},
-		resolved, nil, result,
+	applyComponentMatches(
+		matchComponents([]string{"configs/plain-dir/manifest.yaml"}, resolved),
+		nil, result,
 	)
 
 	g.Expect(result.AffectedEnvironments).To(HaveKey(Production))
@@ -1341,10 +1341,7 @@ func TestMatchChangedFiles_NoMatch(t *testing.T) {
 		},
 	}
 
-	matchChangedFiles(
-		[]string{"README.md"},
-		resolved, nil, result,
-	)
+	applyComponentMatches(matchComponents([]string{"README.md"}, resolved), nil, result)
 
 	g.Expect(result.AffectedEnvironments).To(BeEmpty())
 	g.Expect(result.AffectedClusters).To(BeEmpty())
@@ -1367,9 +1364,9 @@ func TestMatchChangedFiles_WithClusters(t *testing.T) {
 		},
 	}
 
-	matchChangedFiles(
-		[]string{"components/foo/staging/stone-prod-p01/kustomization.yaml"},
-		resolved, nil, result,
+	applyComponentMatches(
+		matchComponents([]string{"components/foo/staging/stone-prod-p01/kustomization.yaml"}, resolved),
+		nil, result,
 	)
 
 	g.Expect(result.AffectedEnvironments).To(HaveKey(Staging))

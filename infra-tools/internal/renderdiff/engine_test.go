@@ -46,7 +46,7 @@ func TestEngine_NormalDiff(t *testing.T) {
 		yamls: map[string][]byte{"components/foo/staging": []byte("apiVersion: v1\nkind: ConfigMap\ndata:\n  key: old-value\n")},
 	}
 
-	engine := NewEngine(head, base, 2)
+	engine := NewEngine(head, base)
 	affected := map[detector.Environment][]appset.ComponentPath{
 		detector.Staging: {{Path: "components/foo/staging"}},
 	}
@@ -75,7 +75,7 @@ func TestEngine_NewComponent(t *testing.T) {
 		exist: map[string]bool{}, // does not exist on base
 	}
 
-	engine := NewEngine(head, base, 2)
+	engine := NewEngine(head, base)
 	affected := map[detector.Environment][]appset.ComponentPath{
 		detector.Development: {{Path: "components/new/dev"}},
 	}
@@ -99,7 +99,7 @@ func TestEngine_RemovedComponent(t *testing.T) {
 		yamls: map[string][]byte{"components/old/prod": []byte("apiVersion: v1\nkind: Deployment\n")},
 	}
 
-	engine := NewEngine(head, base, 2)
+	engine := NewEngine(head, base)
 	affected := map[detector.Environment][]appset.ComponentPath{
 		detector.Production: {{Path: "components/old/prod"}},
 	}
@@ -124,7 +124,7 @@ func TestEngine_BuildFailure_ReportsError(t *testing.T) {
 		yamls: map[string][]byte{"components/broken/staging": []byte("valid: yaml\n")},
 	}
 
-	engine := NewEngine(head, base, 2)
+	engine := NewEngine(head, base)
 	affected := map[detector.Environment][]appset.ComponentPath{
 		detector.Staging: {{Path: "components/broken/staging"}},
 	}
@@ -153,7 +153,7 @@ func TestEngine_NonKustomizationError_ExcludedFromDiffs(t *testing.T) {
 		},
 	}
 
-	engine := NewEngine(head, base, 1)
+	engine := NewEngine(head, base)
 	affected := map[detector.Environment][]appset.ComponentPath{
 		detector.Staging: {{Path: "components/plain/staging"}},
 	}
@@ -187,7 +187,7 @@ func TestEngine_MixedErrors_OnlyGenuineInDiffs(t *testing.T) {
 		yamls: map[string][]byte{"components/broken/staging": []byte("valid: yaml\n")},
 	}
 
-	engine := NewEngine(head, base, 2)
+	engine := NewEngine(head, base)
 	affected := map[detector.Environment][]appset.ComponentPath{
 		detector.Staging: {
 			{Path: "components/plain/staging"},
@@ -216,7 +216,7 @@ func TestEngine_NoEffectiveChange(t *testing.T) {
 		yamls: map[string][]byte{"components/foo/staging": sameYAML},
 	}
 
-	engine := NewEngine(head, base, 2)
+	engine := NewEngine(head, base)
 	affected := map[detector.Environment][]appset.ComponentPath{
 		detector.Staging: {{Path: "components/foo/staging"}},
 	}
@@ -240,7 +240,7 @@ func TestEngine_EmptyBase_NewComponent(t *testing.T) {
 		exist: map[string]bool{},
 	}
 
-	engine := NewEngine(head, base, 2)
+	engine := NewEngine(head, base)
 	affected := map[detector.Environment][]appset.ComponentPath{
 		detector.Staging: {{Path: "components/foo/staging/empty-base"}},
 	}
@@ -253,7 +253,7 @@ func TestEngine_EmptyBase_NewComponent(t *testing.T) {
 func TestEngine_EmptyInput(t *testing.T) {
 	g := NewWithT(t)
 
-	engine := NewEngine(&fakeBuilder{}, &fakeBuilder{}, 2)
+	engine := NewEngine(&fakeBuilder{}, &fakeBuilder{})
 	result, err := engine.Run(context.Background(), nil)
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(result.Diffs).To(BeEmpty())
@@ -277,7 +277,7 @@ func TestEngine_Progressive(t *testing.T) {
 		},
 	}
 
-	engine := NewEngine(head, base, 2)
+	engine := NewEngine(head, base)
 	affected := map[detector.Environment][]appset.ComponentPath{
 		detector.Development: {
 			{Path: "components/a/dev"},
