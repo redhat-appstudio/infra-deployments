@@ -1,0 +1,23 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: kubearchive-edit
+    app.kubernetes.io/part-of: kubearchive
+    app.kubernetes.io/version: v1.23.0
+    rbac.authorization.k8s.io/aggregate-to-edit: "true"
+  name: kubearchive-edit
+rules:
+  - apiGroups:
+      - kubearchive.org
+    resources:
+      - clusterkubearchiveconfigs
+      - clustervacuumconfigs
+      - kubearchiveconfigs
+      - namespacevacuumconfigs
+      - sinkfilters
+    verbs:
+      - create
+      - update
+      - patch
+      - delete

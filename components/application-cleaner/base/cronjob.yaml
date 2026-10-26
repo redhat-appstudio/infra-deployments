@@ -8,10 +8,12 @@ spec:
   failedJobsHistoryLimit: 3
   jobTemplate:
     spec:
+      backoffLimit: 0
       template:
         spec:
           restartPolicy: Never
           serviceAccountName: application-cleaner
+
           volumes:
             - name: script-volume
               configMap:
@@ -36,6 +38,20 @@ spec:
                       key: NAMESPACE_LABEL_SELECTOR
                 - name: DRY_RUN
                   value: "false"
+                - name: SLACK_WEBHOOK_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: application-cleaner-slack-webhook
+                      key: cleaner_slack_webhook_url
+                      optional: true
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: POD_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
               volumeMounts:
                 - name: script-volume
                   mountPath: /scripts

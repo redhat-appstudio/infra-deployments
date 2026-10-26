@@ -1,0 +1,9 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- redis-config-cm.yaml
+- redis-deploy.yaml
+- restrict-redis-access-np.yaml
+- redis-pvc.yaml
+- redis-svc.yaml
+namespace: mintmaker

@@ -80,19 +80,19 @@
       - knative-eventing
       - konflux-kite
       - kubearchive
-      - kyverno
       - mintmaker
-      - pipeline-service
-      - policies
-      - smee-client
-      - vector-kubearchive-log-collector
 
     templated_rd_components:
       - authentication
       - etcd-shield
       - konflux-operator
       - kueue
+      - kyverno
       - multi-platform-controller
+      - pipeline-service
+      - policies
+      - smee-client
+      - vector-kubearchive-log-collector
 
     templated_configs:
     - etcd-defrag
@@ -103,15 +103,8 @@
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/image-rbac-proxy/image-rbac-proxy.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/konflux-kite/konflux-kite.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/kubearchive/kubearchive.yaml"
-      - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/kyverno/kyverno.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/mintmaker/mintmaker.yaml"
-      - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/pipeline-service/pipeline-service.yaml"
-      - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/policies/policies.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/proactive-scaler/proactive-scaler.yaml"
-      - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/vector-kubearchive-log-collector/vector-kubearchive-log-collector.yaml"
-
-    argo_cd_private_network_app_files:
-      - "{{ dst }}/argo-cd-apps/base/smee-client/smee-client.yaml"
 
     expected_vault_secrets:
       - 'stonesoup/{{ env }}/platform/ansible/generated/{{ shortname }}/github-app'
@@ -168,13 +161,10 @@
       loop_control:
         loop_var: filename
 
-    - name: Patch private network cluster ApplicationSet files to include new cluster reference
+    - name: Wire private staging cluster into the smee-client ApplicationSet
       tags: [applicationsets]
-      include_tasks: tasks/applicationsets.yaml
-      loop: "{{ argo_cd_private_network_app_files }}"
-      loop_control:
-        loop_var: filename
-      when: network == 'private'
+      include_tasks: tasks/staging-smee-client-applicationset.yaml
+      when: network == 'private' and env == 'staging'
 
     - name: Add cluster to k-components for patching ring-deployment ApplicationSets
       tags: [applicationsets]
@@ -190,7 +180,6 @@
       loop: "{{ templated_components }}"
       loop_control:
         loop_var: component
-      when: component != 'smee-client' or network == 'private'
 
     - name: Copy cluster-specific ring-deployment component manifests
       tags: [components]
@@ -198,6 +187,7 @@
       loop: "{{ templated_rd_components }}"
       loop_control:
         loop_var: component
+      when: component != 'smee-client' or network == 'private'
 
     - name: Copy cluster-specific config manifests
       tags: [configs]
@@ -205,7 +195,3 @@
       loop: "{{ templated_configs }}"
       loop_control:
         loop_var: config
-
-    - name: Generate pipeline-service deploy config (special requirement)
-      tags: [components]
-      shell: "{{ dst }}/hack/generate-deploy-config.sh -c {{ dst }}/components/pipeline-service"

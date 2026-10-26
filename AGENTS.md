@@ -42,3 +42,5 @@ GitOps monorepo deploying 50+ Kubernetes components across multiple clusters via
 - When drafting or reviewing a production PR's Risk Assessment section, read `skills/risk-assessment.md`
 - When a CI check fails on a PR, read `skills/ci-troubleshooting.md`
 - When working interactively on new features or significant changes, read `skills/brainstorming-workflow.md` before making changes
+- When migrating a component to ring deployment structure, read `skills/ring-deployment-migration.md`
+- When reviewing a ring deployment migration PR or branch, read `skills/ring-deployment-review.md`
