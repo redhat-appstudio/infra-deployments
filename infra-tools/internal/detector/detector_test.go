@@ -153,6 +153,50 @@ spec:
 `, root, env, cluster, cluster)
 }
 
+// ringAppSet returns a ring-based ApplicationSet whose path carries no
+// environment; only the overlay that renders it identifies the environment.
+func ringAppSet(root, ring, cluster, env string) string {
+	return fmt.Sprintf(`apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: ring-app
+spec:
+  generators:
+    - clusters:
+        values:
+          sourceRoot: %s
+          ring: %s
+          clusterDir: %s
+          environment: %s
+  template:
+    metadata:
+      name: ring-{{nameNormalized}}
+    spec:
+      source:
+        path: '{{values.sourceRoot}}/rings/{{values.ring}}/{{values.clusterDir}}'
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+`, root, ring, cluster, env)
+}
+
+// matchAllAppSet returns an ApplicationSet that cannot be resolved; the parser
+// emits a MatchAll entry for it.
+const matchAllAppSet = `apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: unresolved
+spec:
+  generators:
+    - clusters: {}
+  templatePatch: '{{ . }}'
+  template:
+    metadata:
+      name: unresolved
+    spec:
+      source:
+        path: components/unresolved
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+`
+
 // ---------------------------------------------------------------------------
 // NewDetector
 // ---------------------------------------------------------------------------
@@ -1915,7 +1959,7 @@ func TestResolveComponentDeps_SamePathDifferentExtraFilesKept(t *testing.T) {
 		changedSet := map[string]bool{changed: true}
 		matching := 0
 		for _, cd := range resolved {
-			if cd.matches(changedSet, nil) {
+			if cd.matchesAny(changedSet) {
 				matching++
 				g.Expect(cd.cp.ExtraFiles).To(ConsistOf(changed))
 			}
@@ -2547,4 +2591,152 @@ func TestDetect_DepsResolvedOnHead(t *testing.T) {
 	result, err := d.Detect([]string{"components/foo/new-resource.yaml"})
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(result.AffectedEnvironments).To(HaveKey(Development))
+}
+
+// ---------------------------------------------------------------------------
+// FileEnvs (per-file environment attribution)
+// ---------------------------------------------------------------------------
+
+// A file specific to one environment is attributed to that environment only.
+func TestDetect_FileEnvsSingleEnvironment(t *testing.T) {
+	g := NewWithT(t)
+
+	yaml := appSetWithCluster("components/svc", "staging", "kflux-stg-p02")
+	head := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"staging-downstream"}},
+		yamls: map[string][]byte{"overlays/staging-downstream": []byte(yaml)},
+		exist: map[string]bool{
+			"overlays/staging-downstream":          true,
+			"components/svc/staging":               true,
+			"components/svc/staging/kflux-stg-p02": true,
+		},
+		deps: map[string]map[string]bool{
+			"components/svc/staging": {
+				"components/svc/staging/kustomization.yaml": true,
+			},
+			"components/svc/staging/kflux-stg-p02": {
+				"components/svc/staging/kflux-stg-p02/kustomization.yaml": true,
+			},
+		},
+	}
+	base := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"staging-downstream"}},
+		yamls: map[string][]byte{"overlays/staging-downstream": []byte(yaml)},
+		exist: map[string]bool{"overlays/staging-downstream": true},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	const file = "components/svc/staging/kflux-stg-p02/kustomization.yaml"
+	result, err := d.Detect([]string{file})
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.FileEnvs).To(HaveKey(file))
+	g.Expect(result.FileEnvs[file]).To(Equal(map[Environment]bool{Staging: true}))
+}
+
+// A file that both a staging and a production component depend on is attributed
+// to both, which is what the ring check uses to spot shared base files.
+func TestDetect_FileEnvsSharedBaseFile(t *testing.T) {
+	g := NewWithT(t)
+
+	stagingYAML := appSetWithCluster("components/svc", "staging", "kflux-stg-p02")
+	productionYAML := appSetWithCluster("components/svc", "production", "stone-prod-p01")
+
+	head := &fakeRepo{
+		dirs: map[string][]string{"overlays": {"staging-downstream", "production-downstream"}},
+		yamls: map[string][]byte{
+			"overlays/staging-downstream":    []byte(stagingYAML),
+			"overlays/production-downstream": []byte(productionYAML),
+		},
+		exist: map[string]bool{
+			"overlays/staging-downstream":              true,
+			"overlays/production-downstream":           true,
+			"components/svc/staging/kflux-stg-p02":     true,
+			"components/svc/production/stone-prod-p01": true,
+		},
+		deps: map[string]map[string]bool{
+			"components/svc/staging/kflux-stg-p02": {
+				"components/svc/base/shared.yaml": true,
+			},
+			"components/svc/production/stone-prod-p01": {
+				"components/svc/base/shared.yaml": true,
+			},
+		},
+	}
+	base := &fakeRepo{
+		dirs: map[string][]string{"overlays": {"staging-downstream", "production-downstream"}},
+		yamls: map[string][]byte{
+			"overlays/staging-downstream":    []byte(stagingYAML),
+			"overlays/production-downstream": []byte(productionYAML),
+		},
+		exist: map[string]bool{
+			"overlays/staging-downstream":    true,
+			"overlays/production-downstream": true,
+		},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	const shared = "components/svc/base/shared.yaml"
+	result, err := d.Detect([]string{shared})
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.FileEnvs[shared]).To(Equal(map[Environment]bool{Staging: true, Production: true}))
+	g.Expect(result.AffectedEnvironments).To(HaveKey(Staging))
+	g.Expect(result.AffectedEnvironments).To(HaveKey(Production))
+}
+
+// Ring-style paths carry no environment, so FileEnvs drives ring enforcement.
+// A MatchAll entry must not add a second environment to an otherwise
+// path-specific ring file and hide the direct conflict.
+func TestDetect_RingPathsDirectConflictWithMatchAll(t *testing.T) {
+	g := NewWithT(t)
+
+	stagingYAML := ringAppSet("components/svc", "ring-1", "kflux-stg-p02", "staging")
+	productionYAML := ringAppSet("components/svc", "ring-2", "stone-prod-p01", "production") +
+		"\n---\n" + matchAllAppSet
+
+	const stagingFile = "components/svc/rings/ring-1/kflux-stg-p02/kustomization.yaml"
+	const productionFile = "components/svc/rings/ring-2/stone-prod-p01/kustomization.yaml"
+
+	head := &fakeRepo{
+		dirs: map[string][]string{"overlays": {"staging-downstream", "production-downstream"}},
+		yamls: map[string][]byte{
+			"overlays/staging-downstream":    []byte(stagingYAML),
+			"overlays/production-downstream": []byte(productionYAML),
+		},
+		exist: map[string]bool{
+			"overlays/staging-downstream":                true,
+			"overlays/production-downstream":             true,
+			"components/svc/rings/ring-1/kflux-stg-p02":  true,
+			"components/svc/rings/ring-2/stone-prod-p01": true,
+		},
+		deps: map[string]map[string]bool{
+			"components/svc/rings/ring-1/kflux-stg-p02":  {stagingFile: true},
+			"components/svc/rings/ring-2/stone-prod-p01": {productionFile: true},
+		},
+	}
+	base := &fakeRepo{
+		dirs:  head.dirs,
+		yamls: head.yamls,
+		exist: map[string]bool{
+			"overlays/staging-downstream":    true,
+			"overlays/production-downstream": true,
+		},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	changed := []string{stagingFile, productionFile}
+	result, err := d.Detect(changed)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.FileEnvs[stagingFile]).To(Equal(map[Environment]bool{Staging: true}))
+	g.Expect(result.FileEnvs[productionFile]).To(Equal(map[Environment]bool{Production: true}))
+
+	ring := CheckRingDeployment(changed, result.AffectedEnvironments, result.FileEnvs)
+	g.Expect(ring.DirectConflict).To(BeTrue())
+	g.Expect(ring.StagingFiles).To(ConsistOf(stagingFile))
+	g.Expect(ring.ProductionFiles).To(ConsistOf(productionFile))
 }

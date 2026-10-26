@@ -64,6 +64,12 @@ type Result struct {
 	// They are reported as a warning instead of being treated as "no impact".
 	// A MatchAll entry matches every file, so it suppresses this list.
 	UnreferencedFiles []string
+	// FileEnvs maps each changed file to the environments it was matched to
+	// through a component. A file matched to both staging and production is a
+	// shared base file; a file matched to only one is specific to it. Ring-based
+	// layouts have no environment in their path, so this is the only reliable
+	// signal for ring policy enforcement.
+	FileEnvs map[string]map[Environment]bool
 }
 
 // Detector holds the validated configuration and runs the detection pipeline.
@@ -166,6 +172,7 @@ func (d *Detector) Detect(changedFiles []string) (*Result, error) {
 		AffectedEnvironments: make(map[Environment]bool),
 		AffectedClusters:     make(map[string]bool),
 		ChangedFiles:         changedFiles,
+		FileEnvs:             make(map[string]map[Environment]bool),
 	}
 
 	// Phase 1: Build ArgoCD ApplicationSet overlays on HEAD and base-ref
@@ -655,19 +662,43 @@ func (cd componentDeps) matchesFile(file string) bool {
 	return matchesPrefix(file, cd.cp.Path)
 }
 
-// matches reports whether any changed file affects this component. When matched
-// is non-nil, every matching file is recorded in it.
-func (cd componentDeps) matches(changedSet map[string]bool, matched map[string]bool) bool {
-	found := false
-	for f := range changedSet {
-		if cd.matchesFile(f) {
-			found = true
-			if matched != nil {
-				matched[f] = true
-			}
+// matchesFileStrongly reports whether file belongs to this component by an
+// exact dependency, an exact ExtraFile, or a fully resolved path, rather than a
+// broad MatchAll, prefix-only or prefix-fallback match. FileEnvs only keeps
+// strong matches so conservative over-attribution cannot turn a path-specific
+// file into a shared one for ring enforcement.
+func (cd componentDeps) matchesFileStrongly(file string) bool {
+	if cd.cp.MatchAll || cd.cp.PrefixOnly {
+		return false
+	}
+	for _, f := range cd.cp.ExtraFiles {
+		if f == file {
+			return true
 		}
 	}
-	return found
+	if cd.cp.Path == "" {
+		return false
+	}
+	if cd.deps[file] {
+		return true
+	}
+	if cd.prefixFallback {
+		return false
+	}
+	if cd.deps != nil {
+		return false
+	}
+	return matchesPrefix(file, cd.cp.Path)
+}
+
+// matchesAny reports whether any changed file affects this component.
+func (cd componentDeps) matchesAny(changedSet map[string]bool) bool {
+	for f := range changedSet {
+		if cd.matchesFile(f) {
+			return true
+		}
+	}
+	return false
 }
 
 // resolvePathDeps returns the union of the kustomize dependency trees of rel on
@@ -737,7 +768,8 @@ func (d *Detector) resolvePathDeps(rel string, headExists, baseExists bool) (dep
 // matchChangedFiles checks each resolved component against the set of changed
 // files.  For components with a dependency tree it uses an exact match; for
 // components without a kustomization.yaml it falls back to prefix matching.
-// It returns the changed files that matched at least one component.
+// It returns the changed files that matched at least one component and records
+// the per-file environment attribution in Result.FileEnvs.
 func matchChangedFiles(changedFiles []string, resolved []componentDeps, allClusters map[string][]string, result *Result) map[string]bool {
 	changedSet := make(map[string]bool, len(changedFiles))
 	for _, f := range changedFiles {
@@ -746,7 +778,27 @@ func matchChangedFiles(changedFiles []string, resolved []componentDeps, allClust
 	matched := make(map[string]bool)
 
 	for _, cd := range resolved {
-		if cd.matches(changedSet, matched) {
+		componentMatched := false
+		for f := range changedSet {
+			if !cd.matchesFile(f) {
+				continue
+			}
+			componentMatched = true
+			matched[f] = true
+			if !cd.matchesFileStrongly(f) {
+				// MatchAll and broad prefix matches are kept for environment
+				// attribution but must not classify a file for ring enforcement.
+				continue
+			}
+			if result.FileEnvs == nil {
+				result.FileEnvs = make(map[string]map[Environment]bool)
+			}
+			if result.FileEnvs[f] == nil {
+				result.FileEnvs[f] = make(map[Environment]bool)
+			}
+			result.FileEnvs[f][cd.env] = true
+		}
+		if componentMatched {
 			if cd.cp.MatchAll {
 				slog.Warn("An ApplicationSet template could not be resolved, conservatively marking its environment as affected", "env", cd.env)
 			}
@@ -776,7 +828,11 @@ func matchedHeadFiles(changedFiles []string, resolved []componentDeps) map[strin
 		head := cd
 		head.deps = cd.headDeps
 		head.prefixFallback = cd.headPrefixFallback
-		head.matches(changedSet, matched)
+		for f := range changedSet {
+			if head.matchesFile(f) {
+				matched[f] = true
+			}
+		}
 	}
 	return matched
 }
@@ -815,7 +871,7 @@ func matchAffectedComponents(changedFiles []string, resolved []componentDeps, al
 	affected := make(map[Environment][]appset.ComponentPath)
 	seen := make(map[string]bool)
 	for _, cd := range resolved {
-		if !cd.matches(changedSet, nil) {
+		if !cd.matchesAny(changedSet) {
 			continue
 		}
 		if cd.cp.MatchAll || cd.cp.Path == "" || cd.cp.PrefixOnly {
