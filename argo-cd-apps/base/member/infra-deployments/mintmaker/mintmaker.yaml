@@ -4,7 +4,22 @@ metadata:
   name: mintmaker
 spec:
   generators:
-    - merge:
+    # Exclude the ring-1 staging clusters from this legacy ApplicationSet in
+    # every ArgoCD instance that renders base/member directly (staging-downstream,
+    # konflux-public-staging), not just the ones with an explicit auto-sync
+    # disable patch. rd-staging now manages these clusters. Production clusters
+    # are unaffected since none of these names can match a production cluster
+    # secret. Same pattern as knative-eventing's base-level exclusion.
+    - selector:
+        matchExpressions:
+          - key: nameNormalized
+            operator: NotIn
+            values:
+              - stone-stage-p01
+              - stone-stg-rh01
+              - lightwell-dev
+              - kflux-stg-p02
+      merge:
         mergeKeys:
           - nameNormalized
         generators:
