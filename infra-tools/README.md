@@ -35,6 +35,9 @@ Key flags:
 - `--base-ref` — git ref to compare against (default: `main`)
 - `--overlays-dir` — path to ArgoCD overlays (default: `argo-cd-apps/overlays`)
 - `--cluster-labels` — include `cluster/<name>` labels
+- `--pr-head-sha` — PR head SHA from the workflow event (required for the Kargo promotion exemption; CI passes `${{ github.event.pull_request.head.sha }}`)
+- `--pr-head-ref` — PR head ref from the workflow event; scopes Kargo promotions to the promoted ring
+- `--pr-sender` — GitHub login that triggered the workflow; must be the Kargo bot for the exemption
 - `--dry-run` — print results without calling GitHub
 - `--log-file` — write debug logs to a file
 

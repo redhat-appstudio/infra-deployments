@@ -655,10 +655,11 @@ spec:
         - uses: git-push
           config:
             path: ./src
+            targetBranch: kargo-konflux-core/component-x/ring-0
         - uses: git-open-pr
           config:
             repoURL: https://github.com/redhat-appstudio/infra-deployments
-            sourceBranch: kargo/ring-0-dev/promotion
+            sourceBranch: kargo-konflux-core/component-x/ring-0
             targetBranch: main
             createTargetBranch: false
         - uses: git-merge-pr
@@ -719,13 +720,25 @@ spec:
           config:
             path: ./src
             message: "chore: promote component-x to prod ring-n"
+        # github-push creates a GitHub-API-signed commit and syncs the checkout
+        # to it. The following git-push copies that exact signed object to the
+        # promotion branch; the environment-label exemption trusts only verified
+        # promotion commits.
+        - uses: github-push
+          config:
+            path: ./src
+            targetBranch: kargo/signing/component-x/ring-n
+            force: true
+        # Promotion branches follow <project>/<component>/<ring>.
         - uses: git-push
           config:
             path: ./src
+            targetBranch: kargo-konflux-core/component-x/ring-n
+            force: true
         - uses: git-open-pr
           config:
             repoURL: https://github.com/redhat-appstudio/infra-deployments
-            sourceBranch: kargo/ring-n-prod/promotion
+            sourceBranch: kargo-konflux-core/component-x/ring-n
             targetBranch: main
         - uses: git-merge-pr
           config:
