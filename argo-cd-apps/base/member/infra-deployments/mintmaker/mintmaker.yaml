@@ -3,34 +3,8 @@ kind: ApplicationSet
 metadata:
   name: mintmaker
 spec:
-  # Dropping clusters from the generator below makes the ApplicationSet
-  # controller delete the Applications it no longer generates for them. Those
-  # Applications were synced with prune enabled, so deletion would cascade to
-  # everything mintmaker manages on each cluster (controller, redis + its PVC,
-  # cronjobs, RBAC, the token Secret, the pipelines-as-code-secret
-  # ExternalSecret with deletionPolicy: Delete). preserveResourcesOnDeletion
-  # orphans those resources instead, matching the existing
-  # staging-downstream/preserve-resources-on-deletion.yaml precedent used for
-  # the operator-owned-clusters exclusion.
-  syncPolicy:
-    preserveResourcesOnDeletion: true
   generators:
-    # Exclude the ring-1 staging clusters from this legacy ApplicationSet in
-    # every ArgoCD instance that renders base/member directly (staging-downstream,
-    # konflux-public-staging), not just the ones with an explicit auto-sync
-    # disable patch. rd-staging now manages these clusters. Production clusters
-    # are unaffected since none of these names can match a production cluster
-    # secret.
-    - selector:
-        matchExpressions:
-          - key: nameNormalized
-            operator: NotIn
-            values:
-              - stone-stage-p01
-              - stone-stg-rh01
-              - lightwell-dev
-              - kflux-stg-p02
-      merge:
+    - merge:
         mergeKeys:
           - nameNormalized
         generators:
@@ -39,10 +13,6 @@ spec:
                 sourceRoot: components/mintmaker
                 environment: staging
                 clusterDir: base
-          # The stone-stage-p01 and kflux-stg-p02 entries below are now dead
-          # (both excluded by the selector above) but left in place until
-          # Part 3 removes this whole ApplicationSet, to keep this diff
-          # minimal and avoid touching unrelated list entries.
           - list:
               elements:
                 - nameNormalized: kflux-ocp-p01
