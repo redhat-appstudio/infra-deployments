@@ -1414,14 +1414,8 @@ func TestResultLabels(t *testing.T) {
 	}))
 }
 
-// The tests in this file cover ApplicationSet shapes that exist in the repo but
-// are not handled by the parser yet. They are skipped until the parser learns
-// the shape; the follow-up change that implements it removes the skip.
-//
-// See internal/appset/pending_shapes_test.go for the parser-level equivalents
-// and internal/appset/audit_test.go for the end-to-end guard.
-
-const pendingSkipMsg = "TODO(render-diff-audit step 2): parser does not support this shape yet"
+// ApplicationSet shapes that were previously dropped silently. See
+// internal/appset/audit_test.go for the end-to-end guard.
 
 // topLevelListAppSet is the shape used by konflux-verifications-rd in the
 // rd-production overlay: a single list generator with per-element values.
@@ -1449,7 +1443,6 @@ spec:
 // A production component reached through a top-level list generator must be
 // detected as a production change (which also drives the hold labels).
 func TestDetect_TopLevelListGenerator(t *testing.T) {
-	t.Skip(pendingSkipMsg)
 	g := NewWithT(t)
 
 	const componentPath = "components/konflux-verifications-rd/rings/ring-2/stone-prod-p01"

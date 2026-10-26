@@ -7,6 +7,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
+	"maps"
+	"path"
+	"regexp"
+	"sort"
+	"strconv"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -17,19 +23,29 @@ import (
 // determined by the overlay that produced the ApplicationSet.
 type ComponentPath struct {
 	// Path is the resolved filesystem path (relative to repo root) that the
-	// ApplicationSet points to.
+	// ApplicationSet points to. It is empty when the ApplicationSet only
+	// references files through ExtraFiles (e.g. a chart-only source).
 	Path string
 	// ClusterDir is non-empty when the ApplicationSet targets a specific cluster
 	// subdirectory (e.g. "stone-prod-p01").
 	ClusterDir string
+	// ExtraFiles are individual files the ApplicationSet consumes from this
+	// repository without deploying their directory, such as Helm values files
+	// referenced as "$values/<path>" from a multi-source template. They are
+	// matched by exact path.
+	ExtraFiles []string
+	// PrefixOnly is true when the path template could not be fully resolved
+	// (unknown placeholder). Path then holds the longest static prefix, and
+	// callers must match changed files by prefix instead of by dependency tree.
+	PrefixOnly bool
 }
 
 // ParseResult holds the extracted data from all ApplicationSets in one overlay.
 type ParseResult struct {
 	// Paths contains all resolved component/config paths.
 	Paths []ComponentPath
-	// Clusters maps cluster names found in list.elements[].nameNormalized.
-	// Key: cluster name, Value: list of component paths for that cluster.
+	// Clusters maps cluster names found in list generator elements (or in a
+	// clusters generator's name) to the component paths for that cluster.
 	Clusters map[string][]string
 }
 
@@ -141,13 +157,7 @@ func ParseApplicationSets(renderedYAML []byte) (*ParseResult, error) {
 
 		paths, clusters, err := extractFromAppSet(doc)
 		if err != nil {
-			name := "unknown"
-			if md, ok := doc["metadata"].(map[string]interface{}); ok {
-				if n, ok := md["name"].(string); ok {
-					name = n
-				}
-			}
-			return nil, fmt.Errorf("extracting from ApplicationSet %s: %w", name, err)
+			return nil, fmt.Errorf("extracting from ApplicationSet %s: %w", appSetName(doc), err)
 		}
 		result.Paths = append(result.Paths, paths...)
 		for cluster, cpaths := range clusters {
@@ -172,221 +182,337 @@ func extractFromAppSet(doc map[string]interface{}) ([]ComponentPath, map[string]
 	if !ok {
 		return nil, nil, nil
 	}
-	source, ok := tmplSpec["source"].(map[string]interface{})
-	if !ok {
-		return nil, nil, nil
-	}
-	pathTemplate, ok := source["path"].(string)
-	if !ok {
+
+	sources := templateSources(tmplSpec)
+	if len(sources) == 0 {
 		return nil, nil, nil
 	}
 
-	generators, _ := spec["generators"].([]interface{})
-	if len(generators) == 0 {
+	name := appSetName(doc)
+	values := collectGeneratorValues(spec["generators"])
+	for _, unsupported := range values.unsupported {
+		slog.Warn("unsupported ApplicationSet generator, its component paths are not tracked",
+			"appset", name, "generator", unsupported)
+	}
+	if len(values.unsupported) > 0 {
 		return nil, nil, nil
 	}
 
-	// Determine if this is a templated or static path
-	if !strings.Contains(pathTemplate, "{{") {
-		// Static path — no templates at all
-		return []ComponentPath{{
-			Path: pathTemplate,
-		}}, nil, nil
-	}
-
-	// Templated path — extract values from generators
-	return extractTemplatedPaths(pathTemplate, generators)
+	return resolveSources(name, sources, values.sets())
 }
 
-// extractTemplatedPaths resolves templated paths from merge/cluster/list generators.
-func extractTemplatedPaths(pathTemplate string, generators []interface{}) ([]ComponentPath, map[string][]string, error) {
-	var paths []ComponentPath
-	clusters := make(map[string][]string)
+// templateSource is one entry of spec.template.spec.source(s) reduced to the
+// parts that reference files in this repository.
+type templateSource struct {
+	// pathTemplate is the (possibly templated) deployed directory, or "" when
+	// the source only contributes files.
+	pathTemplate string
+	// extraFileTemplates are templated individual files consumed by the source
+	// (e.g. Helm values files), with the "$values/" prefix removed.
+	extraFileTemplates []string
+}
 
-	for _, gen := range generators {
+// templateSources extracts the local references from a template spec. Both the
+// single-source (source) and multi-source (sources) forms are supported.
+func templateSources(tmplSpec map[string]interface{}) []templateSource {
+	var raw []map[string]interface{}
+	if source, ok := tmplSpec["source"].(map[string]interface{}); ok {
+		raw = append(raw, source)
+	}
+	if sources, ok := tmplSpec["sources"].([]interface{}); ok {
+		for _, s := range sources {
+			if source, ok := s.(map[string]interface{}); ok {
+				raw = append(raw, source)
+			}
+		}
+	}
+
+	var out []templateSource
+	for _, source := range raw {
+		ts := templateSource{}
+		ts.pathTemplate, _ = source["path"].(string)
+		ts.extraFileTemplates = helmValueFiles(source)
+		if ts.pathTemplate == "" && len(ts.extraFileTemplates) == 0 {
+			continue
+		}
+		out = append(out, ts)
+	}
+	return out
+}
+
+// helmValueFiles returns the valueFiles of a Helm source that live in this
+// repository. They are referenced as "$values/<path>"; other value files are
+// either chart-relative or baked into the chart and cannot be resolved here.
+func helmValueFiles(source map[string]interface{}) []string {
+	helm, ok := source["helm"].(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	valueFiles, _ := helm["valueFiles"].([]interface{})
+	var out []string
+	for _, vf := range valueFiles {
+		s, _ := vf.(string)
+		if after, found := strings.CutPrefix(s, "$values/"); found && after != "" {
+			out = append(out, after)
+		}
+	}
+	return out
+}
+
+// generatorValues is the set of template values known for one generated
+// Application, keyed by the name used in {{...}} placeholders (that is, without
+// the "values." prefix).
+type generatorValues map[string]string
+
+// valueSet is a single combination of generator values, together with the
+// cluster it belongs to (empty for the defaults-only combination).
+type valueSet struct {
+	values      generatorValues
+	clusterName string
+}
+
+// collectedValues holds everything gathered from an ApplicationSet's generators.
+type collectedValues struct {
+	defaults    generatorValues
+	elements    []valueSet
+	unsupported []string
+}
+
+// sets returns the value combinations to interpolate: the generator defaults
+// (when any) followed by each list element merged over the defaults. With no
+// generators at all it returns a single empty combination so static paths are
+// still resolved.
+func (c collectedValues) sets() []valueSet {
+	var sets []valueSet
+	if len(c.defaults) > 0 {
+		sets = append(sets, valueSet{values: c.defaults})
+	}
+	for _, e := range c.elements {
+		sets = append(sets, valueSet{values: mergeValues(c.defaults, e.values), clusterName: e.clusterName})
+	}
+	if len(sets) == 0 {
+		sets = append(sets, valueSet{values: generatorValues{}})
+	}
+	return sets
+}
+
+// collectGeneratorValues walks the generator tree (including merge and nested
+// merge generators), gathering cluster defaults and list elements.
+func collectGeneratorValues(generators interface{}) collectedValues {
+	out := collectedValues{defaults: generatorValues{}}
+	gens, _ := generators.([]interface{})
+	collectGenerators(gens, &out)
+	return out
+}
+
+func collectGenerators(gens []interface{}, out *collectedValues) {
+	for _, gen := range gens {
 		genMap, ok := gen.(map[string]interface{})
 		if !ok {
 			continue
 		}
 
-		// Handle merge generator
+		if clustersGen, ok := genMap["clusters"].(map[string]interface{}); ok {
+			values, _ := clustersGen["values"].(map[string]interface{})
+			maps.Copy(out.defaults, valuesFromMap(values))
+			continue
+		}
+
 		if mergeGen, ok := genMap["merge"].(map[string]interface{}); ok {
 			subGens, _ := mergeGen["generators"].([]interface{})
-			subPaths, subClusters, err := processMergeGenerators(pathTemplate, subGens)
-			if err != nil {
-				return nil, nil, err
-			}
-			paths = append(paths, subPaths...)
-			for k, v := range subClusters {
-				clusters[k] = append(clusters[k], v...)
-			}
+			collectGenerators(subGens, out)
 			continue
 		}
 
-		// Handle direct clusters generator
-		if clustersGen, ok := genMap["clusters"].(map[string]interface{}); ok {
-			subPaths := resolveClusterGenerator(pathTemplate, clustersGen)
-			paths = append(paths, subPaths...)
-			continue
-		}
-	}
-
-	return paths, clusters, nil
-}
-
-// generatorValues holds the ApplicationSet template placeholders we can resolve
-// from a clusters generator (defaults) plus list-generator overrides.
-type generatorValues struct {
-	sourceRoot  string
-	environment string
-	clusterDir  string
-	ring        string
-}
-
-func valuesFromMap(values map[string]interface{}) generatorValues {
-	if values == nil {
-		return generatorValues{}
-	}
-	v := generatorValues{}
-	v.sourceRoot, _ = values["sourceRoot"].(string)
-	v.environment, _ = values["environment"].(string)
-	v.clusterDir, _ = values["clusterDir"].(string)
-	v.ring, _ = values["ring"].(string)
-	return v
-}
-
-// interpolatePath substitutes known {{values.*}} placeholders in an ApplicationSet
-// source path. Empty trailing segments (e.g. clusterDir: "") are trimmed so
-// environment-based templates still resolve to sourceRoot/environment.
-func interpolatePath(pathTemplate string, v generatorValues) string {
-	resolved := strings.NewReplacer(
-		"{{values.sourceRoot}}", v.sourceRoot,
-		"{{values.environment}}", v.environment,
-		"{{values.clusterDir}}", v.clusterDir,
-		"{{values.ring}}", v.ring,
-	).Replace(pathTemplate)
-	return strings.TrimSuffix(resolved, "/")
-}
-
-func componentPathFromValues(pathTemplate string, v generatorValues) ComponentPath {
-	cp := ComponentPath{Path: interpolatePath(pathTemplate, v)}
-	if v.clusterDir != "" {
-		cp.ClusterDir = v.clusterDir
-	}
-	return cp
-}
-
-type listElement struct {
-	nameNormalized string
-	clusterDir     string
-	ring           string
-}
-
-func (v generatorValues) withListOverrides(le listElement) generatorValues {
-	out := v
-	if le.clusterDir != "" {
-		out.clusterDir = le.clusterDir
-	}
-	if le.ring != "" {
-		out.ring = le.ring
-	}
-	return out
-}
-
-// processMergeGenerators processes generators inside a merge generator.
-func processMergeGenerators(pathTemplate string, subGens []interface{}) ([]ComponentPath, map[string][]string, error) {
-	var defaults generatorValues
-	var listElements []listElement
-
-	for _, sg := range subGens {
-		sgMap, ok := sg.(map[string]interface{})
-		if !ok {
-			continue
-		}
-
-		if clustersGen, ok := sgMap["clusters"].(map[string]interface{}); ok {
-			values, _ := clustersGen["values"].(map[string]interface{})
-			defaults = valuesFromMap(values)
-		}
-
-		if listGen, ok := sgMap["list"].(map[string]interface{}); ok {
+		if listGen, ok := genMap["list"].(map[string]interface{}); ok {
 			elements, _ := listGen["elements"].([]interface{})
 			for _, elem := range elements {
 				elemMap, ok := elem.(map[string]interface{})
 				if !ok {
 					continue
 				}
-				le := listElement{}
-				if nn, ok := elemMap["nameNormalized"].(string); ok {
-					le.nameNormalized = nn
-				}
-				if cd, ok := elemMap["values.clusterDir"].(string); ok {
-					le.clusterDir = cd
-				}
-				if ring, ok := elemMap["values.ring"].(string); ok {
-					le.ring = ring
-				}
-				listElements = append(listElements, le)
-			}
-		}
-	}
-
-	var paths []ComponentPath
-	clusters := make(map[string][]string)
-
-	if defaults.sourceRoot == "" {
-		return nil, nil, nil
-	}
-
-	// Check if the path uses {{nameNormalized}} — treat as prefix
-	if strings.Contains(pathTemplate, "{{nameNormalized}}") {
-		basePath := defaults.sourceRoot + "/" + defaults.environment + "/"
-		paths = append(paths, ComponentPath{
-			Path: basePath,
-		})
-
-		for _, le := range listElements {
-			dir := le.clusterDir
-			if dir == "" {
-				dir = le.nameNormalized
-			}
-			if dir != "" {
-				p := defaults.sourceRoot + "/" + defaults.environment + "/" + dir
-				paths = append(paths, ComponentPath{
-					Path:       p,
-					ClusterDir: dir,
+				out.elements = append(out.elements, valueSet{
+					values:      valuesFromElement(elemMap),
+					clusterName: clusterNameFromElement(elemMap),
 				})
-				clusters[le.nameNormalized] = append(clusters[le.nameNormalized], p)
 			}
-		}
-		return paths, clusters, nil
-	}
-
-	// Interpolate the real source path template so both environment-based
-	// (sourceRoot/environment/clusterDir) and ring-based
-	// (sourceRoot/rings/ring/clusterDir) ApplicationSets resolve correctly.
-	paths = append(paths, componentPathFromValues(pathTemplate, defaults))
-
-	for _, le := range listElements {
-		if le.clusterDir == "" && le.ring == "" {
 			continue
 		}
-		cp := componentPathFromValues(pathTemplate, defaults.withListOverrides(le))
-		paths = append(paths, cp)
-		if le.nameNormalized != "" {
-			clusters[le.nameNormalized] = append(clusters[le.nameNormalized], cp.Path)
+
+		// matrix, git, scm, clusterDecisionResource, pullRequest, plugin, ...
+		// are not modelled: record them so the caller can warn instead of
+		// silently returning no paths.
+		keys := make([]string, 0, len(genMap))
+		for k := range genMap {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		out.unsupported = append(out.unsupported, keys...)
+	}
+}
+
+// valuesFromMap converts a generator "values" map into template values.
+func valuesFromMap(values map[string]interface{}) generatorValues {
+	out := make(generatorValues, len(values))
+	for k, v := range values {
+		if s, ok := v.(string); ok {
+			out[k] = s
+		}
+	}
+	return out
+}
+
+// valuesFromElement converts a list generator element into template values.
+// Both "values.<key>" entries and "nameNormalized"/"name" are supported.
+func valuesFromElement(elem map[string]interface{}) generatorValues {
+	out := make(generatorValues, len(elem))
+	for k, v := range elem {
+		s, ok := v.(string)
+		if !ok {
+			continue
+		}
+		if key, found := strings.CutPrefix(k, "values."); found {
+			out[key] = s
+			continue
+		}
+		switch k {
+		case "nameNormalized", "name":
+			out[k] = s
+		}
+	}
+	return out
+}
+
+// clusterNameFromElement returns the cluster a list element refers to, or "".
+func clusterNameFromElement(elem map[string]interface{}) string {
+	if nn, ok := elem["nameNormalized"].(string); ok && nn != "" {
+		return nn
+	}
+	name, _ := elem["name"].(string)
+	return name
+}
+
+// mergeValues returns base overlaid with overrides.
+func mergeValues(base, overrides generatorValues) generatorValues {
+	out := make(generatorValues, len(base)+len(overrides))
+	maps.Copy(out, base)
+	maps.Copy(out, overrides)
+	return out
+}
+
+// placeholderRe matches ApplicationSet template placeholders, with or without
+// the "values." prefix.
+var placeholderRe = regexp.MustCompile(`\{\{\s*([A-Za-z0-9_.\-]+)\s*\}\}`)
+
+// interpolatePath substitutes placeholders in an ApplicationSet source path.
+// The second return value is false when at least one placeholder could not be
+// resolved, in which case the returned path still contains the placeholder.
+func interpolatePath(pathTemplate string, values generatorValues) (string, bool) {
+	resolved := true
+	out := placeholderRe.ReplaceAllStringFunc(pathTemplate, func(match string) string {
+		key := strings.TrimSpace(strings.TrimSuffix(strings.TrimPrefix(match, "{{"), "}}"))
+		key = strings.TrimPrefix(key, "values.")
+		if v, ok := values[key]; ok {
+			return v
+		}
+		resolved = false
+		return match
+	})
+	if !resolved {
+		return out, false
+	}
+	return path.Clean(strings.TrimSuffix(out, "/")), true
+}
+
+// staticPrefix returns the longest directory prefix of a path template that is
+// free of placeholders. It is used to keep tracking a path that cannot be fully
+// resolved, instead of dropping the ApplicationSet entirely.
+func staticPrefix(pathTemplate string) string {
+	loc := placeholderRe.FindStringIndex(pathTemplate)
+	if loc == nil {
+		return path.Clean(strings.TrimSuffix(pathTemplate, "/"))
+	}
+	prefix := pathTemplate[:loc[0]]
+	if i := strings.LastIndex(prefix, "/"); i >= 0 {
+		prefix = prefix[:i]
+	} else {
+		prefix = ""
+	}
+	prefix = strings.TrimSuffix(prefix, "/")
+	if prefix == "" {
+		return ""
+	}
+	return path.Clean(prefix)
+}
+
+// resolveSources turns the template sources of one ApplicationSet into
+// ComponentPaths, one per generator value combination.
+func resolveSources(name string, sources []templateSource, sets []valueSet) ([]ComponentPath, map[string][]string, error) {
+	var paths []ComponentPath
+	clusters := make(map[string][]string)
+	seen := make(map[string]bool)
+
+	for _, source := range sources {
+		for _, set := range sets {
+			cp := ComponentPath{ClusterDir: set.values["clusterDir"]}
+
+			if source.pathTemplate != "" {
+				resolved, ok := interpolatePath(source.pathTemplate, set.values)
+				if ok {
+					cp.Path = resolved
+				} else {
+					// interpolatePath returns the template with every resolvable
+					// placeholder substituted, so the static prefix is computed
+					// on the partially resolved path.
+					cp.Path = staticPrefix(resolved)
+					cp.PrefixOnly = true
+					if cp.Path == "" {
+						slog.Warn("ApplicationSet path template cannot be resolved and has no static prefix",
+							"appset", name, "template", source.pathTemplate)
+						continue
+					}
+					slog.Warn("ApplicationSet path template has unresolved placeholders, falling back to prefix matching",
+						"appset", name, "template", source.pathTemplate, "prefix", cp.Path)
+				}
+			}
+
+			for _, fileTemplate := range source.extraFileTemplates {
+				resolved, ok := interpolatePath(fileTemplate, set.values)
+				if !ok {
+					slog.Warn("ApplicationSet value file template has unresolved placeholders, skipping",
+						"appset", name, "template", fileTemplate)
+					continue
+				}
+				cp.ExtraFiles = append(cp.ExtraFiles, resolved)
+			}
+
+			if cp.Path == "" && len(cp.ExtraFiles) == 0 {
+				continue
+			}
+			key := cp.Path + "|" + cp.ClusterDir + "|" + strings.Join(cp.ExtraFiles, ",") + "|" + strconv.FormatBool(cp.PrefixOnly)
+			if seen[key] {
+				continue
+			}
+			seen[key] = true
+			paths = append(paths, cp)
+
+			// Only a fully resolved path can be attributed to a cluster; a
+			// prefix is shared by several clusters and would over-match.
+			if set.clusterName != "" && cp.Path != "" && !cp.PrefixOnly {
+				clusters[set.clusterName] = append(clusters[set.clusterName], cp.Path)
+			}
 		}
 	}
 
 	return paths, clusters, nil
 }
 
-// resolveClusterGenerator processes a direct clusters generator (without merge).
-func resolveClusterGenerator(pathTemplate string, clustersGen map[string]interface{}) []ComponentPath {
-	values, _ := clustersGen["values"].(map[string]interface{})
-	v := valuesFromMap(values)
-	if v.sourceRoot == "" {
-		return nil
+// appSetName returns metadata.name of an ApplicationSet document, or "unknown".
+func appSetName(doc map[string]interface{}) string {
+	if md, ok := doc["metadata"].(map[string]interface{}); ok {
+		if n, ok := md["name"].(string); ok && n != "" {
+			return n
+		}
 	}
-	return []ComponentPath{componentPathFromValues(pathTemplate, v)}
+	return "unknown"
 }

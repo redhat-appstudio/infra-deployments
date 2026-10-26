@@ -352,20 +352,36 @@ type componentDeps struct {
 // and resolves its kustomize dependency tree.  When no kustomization.yaml exists,
 // deps is left nil to signal that prefix matching should be used instead.
 func (d *Detector) resolveComponentDeps(envPaths map[Environment][]appset.ComponentPath) []componentDeps {
-	type envPath struct {
-		env  Environment
-		path string
-	}
-	seen := make(map[envPath]bool)
+	seen := make(map[string]bool)
 
 	var resolved []componentDeps
 	for env, paths := range envPaths {
 		for _, cp := range paths {
-			key := envPath{env, cp.Path}
+			// The key must include ExtraFiles: several paths can share the same
+			// deployed directory while contributing different value files, and
+			// ExtraFiles-only entries all have an empty Path.
+			key := string(env) + "|" + cp.Path + "|" + strings.Join(cp.ExtraFiles, ",")
 			if seen[key] {
 				continue
 			}
 			seen[key] = true
+
+			// A component path may only carry individual files (e.g. a Helm
+			// values file from a multi-source template); there is nothing to
+			// resolve, the files are matched exactly.
+			if cp.Path == "" {
+				if len(cp.ExtraFiles) > 0 {
+					resolved = append(resolved, componentDeps{cp: cp, env: env})
+				}
+				continue
+			}
+
+			// A prefix-only path is an unresolved template: the directory may
+			// not exist (that is why it is a prefix), so match by prefix.
+			if cp.PrefixOnly {
+				resolved = append(resolved, componentDeps{cp: cp, env: env})
+				continue
+			}
 
 			// The path may not exist on HEAD when a component was deleted,
 			// the ApplicationSet reference is stale, or a templated path
@@ -389,6 +405,24 @@ func (d *Detector) resolveComponentDeps(envPaths map[Environment][]appset.Compon
 	return resolved
 }
 
+// matches reports whether any changed file affects this component. ExtraFiles
+// (e.g. Helm values files) are matched exactly; dependency trees are matched
+// exactly; anything else is matched by path prefix.
+func (cd componentDeps) matches(changedSet map[string]bool) bool {
+	for _, f := range cd.cp.ExtraFiles {
+		if changedSet[f] {
+			return true
+		}
+	}
+	if cd.cp.Path == "" {
+		return false
+	}
+	if cd.deps != nil && !cd.cp.PrefixOnly {
+		return matchDepTree(changedSet, cd.deps)
+	}
+	return matchByPrefix(changedSet, cd.cp.Path)
+}
+
 // matchChangedFiles checks each resolved component against the set of changed
 // files.  For components with a dependency tree it uses an exact match; for
 // components without a kustomization.yaml it falls back to prefix matching.
@@ -399,14 +433,7 @@ func matchChangedFiles(changedFiles []string, resolved []componentDeps, allClust
 	}
 
 	for _, cd := range resolved {
-		var matched bool
-		if cd.deps != nil {
-			matched = matchDepTree(changedSet, cd.deps)
-		} else {
-			matched = matchByPrefix(changedSet, cd.cp.Path)
-		}
-
-		if matched {
+		if cd.matches(changedSet) {
 			result.AffectedEnvironments[cd.env] = true
 			matchClusters(cd.cp, allClusters, result)
 			slog.Info("Changed files match component", "path", cd.cp.Path, "env", cd.env)
@@ -441,14 +468,7 @@ func matchAffectedComponents(changedFiles []string, resolved []componentDeps, al
 
 	affected := make(map[Environment][]appset.ComponentPath)
 	for _, cd := range resolved {
-		var matched bool
-		if cd.deps != nil {
-			matched = matchDepTree(changedSet, cd.deps)
-		} else {
-			matched = matchByPrefix(changedSet, cd.cp.Path)
-		}
-
-		if matched {
+		if cd.matches(changedSet) {
 			affected[cd.env] = append(affected[cd.env], cd.cp)
 			slog.Info("Changed files match component", "path", cd.cp.Path, "env", cd.env)
 		}

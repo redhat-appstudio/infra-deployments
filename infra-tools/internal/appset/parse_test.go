@@ -182,7 +182,9 @@ spec:
 	result, err := ParseApplicationSets([]byte(yaml))
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(result.Paths).To(HaveLen(1))
-	g.Expect(result.Paths[0].Path).To(Equal("configs/disable-self-provisioning-for-all-cluster/"))
+	// Trailing slashes are stripped: paths are used as map keys and compared
+	// with "<path>/" prefixes downstream.
+	g.Expect(result.Paths[0].Path).To(Equal("configs/disable-self-provisioning-for-all-cluster"))
 }
 
 func TestParseApplicationSets_MultipleDocuments(t *testing.T) {
@@ -622,15 +624,10 @@ spec:
 	g.Expect(result.Paths[0].Path).To(Equal("components/etcd-shield/rings/ring-0/base"))
 }
 
-// The tests in this file describe ApplicationSet shapes that exist in the repo
-// but are not handled by the parser yet. They are skipped until the parser
-// learns the shape, and are un-skipped by the follow-up change that implements
-// it. Keeping them here (instead of a TODO comment) documents the expected
-// output precisely and prevents the fix from drifting.
-//
+// ---------------------------------------------------------------------------
+// ApplicationSet shapes that were previously dropped silently.
 // See TestRealRepoApplicationSets in audit_test.go for the end-to-end guard.
-
-const pendingSkipMsg = "TODO(render-diff-audit step 2): parser does not support this shape yet"
+// ---------------------------------------------------------------------------
 
 // Top-level list generator (no merge, no clusters generator), as used by the
 // konflux-verifications-rd ApplicationSet in the rd-production overlay.
@@ -656,7 +653,6 @@ spec:
 `
 
 func TestParseApplicationSets_TopLevelListGenerator(t *testing.T) {
-	t.Skip(pendingSkipMsg)
 	g := NewWithT(t)
 
 	result, err := ParseApplicationSets([]byte(topLevelListYAML))
@@ -670,7 +666,6 @@ func TestParseApplicationSets_TopLevelListGenerator(t *testing.T) {
 // Unresolved placeholders must not silently produce a path that does not
 // exist: the static prefix is kept and flagged for prefix matching.
 func TestParseApplicationSets_UnknownPlaceholderUsesStaticPrefix(t *testing.T) {
-	t.Skip(pendingSkipMsg)
 	g := NewWithT(t)
 
 	yaml := `
@@ -703,13 +698,19 @@ spec:
 `
 	result, err := ParseApplicationSets([]byte(yaml))
 	g.Expect(err).NotTo(HaveOccurred())
-	g.Expect(result.Paths).NotTo(BeEmpty())
-	g.Expect(result.Paths[0].Path).To(Equal("components/k8s-groups/staging/rover/rh-sso-internal"))
+
+	paths := make([]string, 0, len(result.Paths))
+	for _, p := range result.Paths {
+		paths = append(paths, p.Path)
+	}
+	g.Expect(paths).To(ConsistOf(
+		"components/k8s-groups/staging/rover",
+		"components/k8s-groups/staging/rover/rh-sso-internal",
+	))
 }
 
 // List elements may override any values.* key, not just clusterDir/ring.
 func TestParseApplicationSets_ListOverrideOfEnvironment(t *testing.T) {
-	t.Skip(pendingSkipMsg)
 	g := NewWithT(t)
 
 	yaml := `
@@ -757,7 +758,6 @@ spec:
 // A {{nameNormalized}}-based template must be interpolated literally, without
 // inventing a sourceRoot/environment/name layout.
 func TestParseApplicationSets_NameNormalizedTemplate(t *testing.T) {
-	t.Skip(pendingSkipMsg)
 	g := NewWithT(t)
 
 	yaml := `
@@ -802,4 +802,123 @@ spec:
 	for _, p := range result.Paths {
 		g.Expect(p.Path).NotTo(HaveSuffix("/"))
 	}
+}
+
+// Multi-source templates reference repository files through "$values/" Helm
+// value files without deploying a directory of their own.
+func TestParseApplicationSets_MultiSourceHelmValues(t *testing.T) {
+	g := NewWithT(t)
+
+	yaml := `
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: tracing-workload-otel-collector
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              values:
+                clusterDir: ""
+                environment: staging
+                sourceRoot: components/monitoring/tracing/otel-collector
+          - list:
+              elements: []
+  template:
+    metadata:
+      name: tracing-{{nameNormalized}}
+    spec:
+      sources:
+        - chart: opentelemetry-collector
+          repoURL: https://open-telemetry.github.io/opentelemetry-helm-charts
+          targetRevision: 0.101.2
+          helm:
+            valueFiles:
+              - $values/{{values.sourceRoot}}/{{values.environment}}/otel-collector-helm-values.yaml
+        - ref: values
+          repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+          targetRevision: main
+`
+	result, err := ParseApplicationSets([]byte(yaml))
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.Paths).To(HaveLen(1))
+
+	cp := result.Paths[0]
+	g.Expect(cp.Path).To(BeEmpty())
+	g.Expect(cp.ExtraFiles).To(ConsistOf(
+		"components/monitoring/tracing/otel-collector/staging/otel-collector-helm-values.yaml",
+	))
+}
+
+// A source may deploy a directory and consume value files at the same time.
+func TestParseApplicationSets_PathWithHelmValues(t *testing.T) {
+	g := NewWithT(t)
+
+	yaml := `
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: chart-component
+spec:
+  generators:
+    - clusters:
+        values:
+          sourceRoot: components/chart-component
+          environment: production
+          clusterDir: base
+  template:
+    metadata:
+      name: chart-component
+    spec:
+      source:
+        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
+        repoURL: https://example.com/repo.git
+        helm:
+          valueFiles:
+            - $values/{{values.sourceRoot}}/{{values.environment}}/values.yaml
+            - values-local.yaml
+`
+	result, err := ParseApplicationSets([]byte(yaml))
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.Paths).To(HaveLen(1))
+
+	cp := result.Paths[0]
+	g.Expect(cp.Path).To(Equal("components/chart-component/production/base"))
+	// Only "$values/" references live in this repository.
+	g.Expect(cp.ExtraFiles).To(ConsistOf(
+		"components/chart-component/production/values.yaml",
+	))
+}
+
+// An unsupported generator must not be ignored silently: the ApplicationSet is
+// skipped and a warning is logged.
+func TestParseApplicationSets_UnsupportedGeneratorSkipped(t *testing.T) {
+	g := NewWithT(t)
+
+	yaml := `
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: matrix-generated
+spec:
+  generators:
+    - matrix:
+        generators:
+          - clusters: {}
+          - git:
+              repoURL: https://example.com/repo.git
+  template:
+    metadata:
+      name: matrix-generated
+    spec:
+      source:
+        path: '{{values.sourceRoot}}/{{values.environment}}'
+        repoURL: https://example.com/repo.git
+`
+	result, err := ParseApplicationSets([]byte(yaml))
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.Paths).To(BeEmpty())
 }
