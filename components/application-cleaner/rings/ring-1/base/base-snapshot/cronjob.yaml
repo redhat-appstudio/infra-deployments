@@ -36,6 +36,11 @@ spec:
                     configMapKeyRef:
                       name: application-cleaner-configmap
                       key: NAMESPACE_LABEL_SELECTOR
+                - name: CLUSTER_NAME
+                  valueFrom:
+                    configMapKeyRef:
+                      name: application-cleaner-configmap
+                      key: CLUSTER_NAME
                 - name: DRY_RUN
                   value: "false"
                 - name: SLACK_WEBHOOK_URL
