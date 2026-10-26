@@ -3,6 +3,7 @@ package detector
 import (
 	"fmt"
 	"slices"
+	"strings"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -136,6 +137,43 @@ spec:
       destination:
         server: '{{server}}'
 `, root, env, cluster, cluster)
+}
+
+// appSetWithClusterWithClusters is appSetWithCluster with several list elements.
+func appSetWithClusterWithClusters(root, env string, clusters []string) string {
+	var b strings.Builder
+	for _, c := range clusters {
+		fmt.Fprintf(&b, "                - nameNormalized: %s\n                  values.clusterDir: %s\n", c, c)
+	}
+	elements := b.String()
+	return fmt.Sprintf(`apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: test-app
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              values:
+                sourceRoot: %s
+                environment: %s
+                clusterDir: ""
+          - list:
+              elements:
+%s
+  template:
+    metadata:
+      name: test-{{nameNormalized}}
+    spec:
+      source:
+        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
+        repoURL: https://github.com/example/repo.git
+      destination:
+        server: '{{server}}'
+`, root, env, elements)
 }
 
 // ---------------------------------------------------------------------------
@@ -1773,4 +1811,106 @@ func TestDetect_FileEnvsSharedBaseFile(t *testing.T) {
 	g.Expect(result.FileEnvs[shared]).To(Equal(map[Environment]bool{Staging: true, Production: true}))
 	g.Expect(result.AffectedEnvironments).To(HaveKey(Staging))
 	g.Expect(result.AffectedEnvironments).To(HaveKey(Production))
+}
+
+// ---------------------------------------------------------------------------
+// AffectedComponents: ApplicationSet-only changes
+// ---------------------------------------------------------------------------
+
+// Adding a cluster to an ApplicationSet list changes what is rendered without
+// changing any file the list points at. render-diff must still render it.
+func TestAffectedComponents_NewClusterInAppSet(t *testing.T) {
+	g := NewWithT(t)
+
+	baseYAML := appSetWithCluster("components/svc", "production", "stone-prod-p01")
+	headYAML := appSetWithClusterWithClusters("components/svc", "production",
+		[]string{"stone-prod-p01", "stone-prod-p02"})
+
+	head := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"production-downstream"}},
+		yamls: map[string][]byte{"overlays/production-downstream": []byte(headYAML)},
+		exist: map[string]bool{
+			"overlays/production-downstream":           true,
+			"components/svc/production":                true,
+			"components/svc/production/stone-prod-p01": true,
+			"components/svc/production/stone-prod-p02": true,
+		},
+		deps: map[string]map[string]bool{
+			"components/svc/production": {
+				"components/svc/production/kustomization.yaml": true,
+			},
+			"components/svc/production/stone-prod-p01": {
+				"components/svc/production/stone-prod-p01/kustomization.yaml": true,
+			},
+			"components/svc/production/stone-prod-p02": {
+				"components/svc/production/stone-prod-p02/kustomization.yaml": true,
+			},
+		},
+	}
+	base := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"production-downstream"}},
+		yamls: map[string][]byte{"overlays/production-downstream": []byte(baseYAML)},
+		exist: map[string]bool{
+			"overlays/production-downstream":           true,
+			"components/svc/production":                true,
+			"components/svc/production/stone-prod-p01": true,
+		},
+		deps: map[string]map[string]bool{
+			"components/svc/production": {
+				"components/svc/production/kustomization.yaml": true,
+			},
+			"components/svc/production/stone-prod-p01": {
+				"components/svc/production/stone-prod-p01/kustomization.yaml": true,
+			},
+		},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	// No changed files at all: the change is purely in the ApplicationSet.
+	affected, err := d.AffectedComponents(nil)
+	g.Expect(err).NotTo(HaveOccurred())
+
+	paths := make([]string, 0, len(affected[Production]))
+	for _, cp := range affected[Production] {
+		paths = append(paths, cp.Path)
+	}
+	g.Expect(paths).To(ContainElement("components/svc/production/stone-prod-p02"))
+}
+
+// An unchanged overlay adds nothing, even when unchanged files are present.
+func TestAffectedComponents_UnchangedOverlayAddsNothing(t *testing.T) {
+	g := NewWithT(t)
+
+	yaml := appSetWithCluster("components/svc", "production", "stone-prod-p01")
+	head := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"production-downstream"}},
+		yamls: map[string][]byte{"overlays/production-downstream": []byte(yaml)},
+		exist: map[string]bool{
+			"overlays/production-downstream":           true,
+			"components/svc/production":                true,
+			"components/svc/production/stone-prod-p01": true,
+		},
+		deps: map[string]map[string]bool{
+			"components/svc/production": {
+				"components/svc/production/kustomization.yaml": true,
+			},
+			"components/svc/production/stone-prod-p01": {
+				"components/svc/production/stone-prod-p01/kustomization.yaml": true,
+			},
+		},
+	}
+	base := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"production-downstream"}},
+		yamls: map[string][]byte{"overlays/production-downstream": []byte(yaml)},
+		exist: map[string]bool{"overlays/production-downstream": true},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	affected, err := d.AffectedComponents(nil)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(affected).To(BeEmpty())
 }
