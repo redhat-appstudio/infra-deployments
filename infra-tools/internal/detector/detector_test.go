@@ -1472,3 +1472,87 @@ func TestDetect_TopLevelListGenerator(t *testing.T) {
 	g.Expect(result.AffectedEnvironments).To(HaveKey(Production))
 	g.Expect(result.AffectedClusters).To(HaveKey("stone-prod-p01"))
 }
+
+// ---------------------------------------------------------------------------
+// Unreferenced changes
+// ---------------------------------------------------------------------------
+
+// unreferencedDetector builds a detector whose only ApplicationSet deploys
+// components/foo, with foo/deploy.yaml as the sole dependency.
+func unreferencedDetector(t *testing.T) *Detector {
+	t.Helper()
+
+	head := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"development"}},
+		yamls: map[string][]byte{"overlays/development": []byte(minimalAppSetYAML)},
+		exist: map[string]bool{"components/foo": true, "overlays/development": true},
+		deps: map[string]map[string]bool{
+			"components/foo": {"components/foo/deploy.yaml": true},
+		},
+	}
+	base := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"development"}},
+		yamls: map[string][]byte{"overlays/development": []byte(minimalAppSetYAML)},
+		exist: map[string]bool{"overlays/development": true},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	NewWithT(t).Expect(err).NotTo(HaveOccurred())
+	return d
+}
+
+// A change in a component directory that no ApplicationSet references must be
+// reported as unreferenced, not silently treated as "no impact".
+func TestDetect_UnreferencedComponentChange(t *testing.T) {
+	g := NewWithT(t)
+
+	d := unreferencedDetector(t)
+	const orphan = "components/deleted-component/staging/kflux-stg-p02/deploy.yaml"
+
+	result, err := d.Detect([]string{orphan})
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.AffectedEnvironments).To(BeEmpty())
+	g.Expect(result.UnreferencedFiles).To(ConsistOf(orphan))
+}
+
+// A matched change is referenced, so it must not be reported.
+func TestDetect_ReferencedChangeIsNotUnreferenced(t *testing.T) {
+	g := NewWithT(t)
+
+	d := unreferencedDetector(t)
+
+	result, err := d.Detect([]string{"components/foo/deploy.yaml"})
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.AffectedEnvironments).To(HaveKey(Development))
+	g.Expect(result.UnreferencedFiles).To(BeEmpty())
+}
+
+// Files outside components/ and configs/, and documentation/ownership files,
+// are not reported: they are not deployable manifests by design.
+func TestDetect_UnreferencedIgnoresNonDeployableFiles(t *testing.T) {
+	g := NewWithT(t)
+
+	d := unreferencedDetector(t)
+
+	result, err := d.Detect([]string{
+		"README.md",
+		"hack/foo.sh",
+		"components/foo/README.md",
+		"components/foo/OWNERS",
+		"components/foo/diagram.png",
+	})
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.UnreferencedFiles).To(BeEmpty())
+}
+
+// Config files are deployable too: an orphaned config change is reported.
+func TestDetect_UnreferencedConfigChange(t *testing.T) {
+	g := NewWithT(t)
+
+	d := unreferencedDetector(t)
+	const orphan = "configs/orphaned/staging/kustomization.yaml"
+
+	result, err := d.Detect([]string{orphan})
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.UnreferencedFiles).To(ConsistOf(orphan))
+}

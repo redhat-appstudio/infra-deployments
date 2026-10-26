@@ -141,6 +141,13 @@ func main() {
 		labels = append(labels, "environment/none")
 	}
 
+	// Files under components/ or configs/ that no ApplicationSet references are
+	// not deployed by anything: flag them so reviewers know the change is inert
+	// instead of reading "environment/none" as "safe to merge".
+	if len(result.UnreferencedFiles) > 0 {
+		labels = append(labels, ghclient.UnreferencedChangesLabel)
+	}
+
 	// If production is affected and the PR is not opened by Kargo, add a hold label that Prow
 	// Tide can use to block merging until a human explicitly removes it after review.
 	if result.AffectedEnvironments[detector.Production] && *prAuthor != ghclient.KargoBot {
@@ -149,6 +156,11 @@ func main() {
 	}
 
 	printSummary(result, labels, headSHA, baseSHA)
+	if len(result.UnreferencedFiles) > 0 {
+		msg := formatUnreferencedChanges(result.UnreferencedFiles)
+		fmt.Println(msg)
+		writeStepSummary(msg)
+	}
 
 	if !*dryRun {
 		// Step 5: Sync labels via GitHub API
@@ -291,6 +303,13 @@ func printSummary(result *detector.Result, labels []string, headSHA, baseSHA str
 		}
 	}
 
+	if len(result.UnreferencedFiles) > 0 {
+		fmt.Println("\nUnreferenced files (not deployed by any ApplicationSet):")
+		for _, f := range result.UnreferencedFiles {
+			fmt.Printf("  %s\n", f)
+		}
+	}
+
 	fmt.Println("\nLabels that would be applied:")
 	if len(labels) == 0 {
 		fmt.Println("  (none)")
@@ -299,6 +318,20 @@ func printSummary(result *detector.Result, labels []string, headSHA, baseSHA str
 			fmt.Printf("  - %s\n", label)
 		}
 	}
+}
+
+// formatUnreferencedChanges returns a markdown warning listing changed files
+// that no ApplicationSet references, so they will not be deployed.
+func formatUnreferencedChanges(files []string) string {
+	var b strings.Builder
+	b.WriteString("\n## Unreferenced changes\n\n")
+	b.WriteString("These files changed in this PR, but no ApplicationSet in any overlay references them, so the change will not be deployed:\n\n")
+	for _, f := range files {
+		fmt.Fprintf(&b, "- `%s`\n", f)
+	}
+	b.WriteString("\nIf you expected these changes to reach a cluster, check that the component is still deployed by an overlay ")
+	b.WriteString("(the ApplicationSet may have moved to a ring layout or been removed).\n")
+	return b.String()
 }
 
 // syncLabels calls the GitHub API to sync labels on the PR.
