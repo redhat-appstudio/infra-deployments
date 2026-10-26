@@ -36,7 +36,6 @@ func main() {
 		logFile           = flag.String("log-file", "", "Write debug-level logs to this file (in addition to INFO-level logs on stdout)")
 		enforceRingDeploy = flag.Bool("enforce-ring-deployment", false, "Fail when both staging and production overlays are directly modified in the same PR")
 		ringReportFile    = flag.String("ring-report-file", "", "Write ring deployment check result (markdown) to this file for external consumers like PR comments")
-		prAuthor          = flag.String("pr-author", "", "GitHub login of the PR author; when set to a known bot (e.g. konflux-kargo-bot) the prod/needs-approval label is skipped")
 	)
 	flag.Parse()
 
@@ -148,9 +147,11 @@ func main() {
 		labels = append(labels, ghclient.UnreferencedChangesLabel)
 	}
 
-	// If production is affected and the PR is not opened by Kargo, add a hold label that Prow
-	// Tide can use to block merging until a human explicitly removes it after review.
-	if result.AffectedEnvironments[detector.Production] && *prAuthor != ghclient.KargoBot {
+	// If production is affected, add a hold label that Prow Tide can use to
+	// block merging until a human explicitly removes it after review. This
+	// applies to every PR, including automated promotions: the hold exists so a
+	// human looks at production changes before they land.
+	if result.AffectedEnvironments[detector.Production] {
 		labels = append(labels, ghclient.HoldProductionLabel)
 		labels = append(labels, ghclient.NeedsApprovalProductionLabel)
 	}
