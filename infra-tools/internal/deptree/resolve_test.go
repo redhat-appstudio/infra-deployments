@@ -529,6 +529,35 @@ helmCharts:
 	g.Expect(deps).To(HaveKey("shared/values.yaml"))
 }
 
+func TestResolve_RecordsDirectorySymlinkResource(t *testing.T) {
+	g := NewWithT(t)
+	tmpDir := t.TempDir()
+
+	sharedDir := filepath.Join(tmpDir, "shared")
+	g.Expect(os.MkdirAll(sharedDir, 0o755)).To(Succeed())
+	writeFile(t, filepath.Join(sharedDir, "kustomization.yaml"), `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - cm.yaml
+`)
+	writeFile(t, filepath.Join(sharedDir, "cm.yaml"), "kind: ConfigMap")
+
+	componentDir := filepath.Join(tmpDir, "component")
+	g.Expect(os.MkdirAll(componentDir, 0o755)).To(Succeed())
+	g.Expect(os.Symlink(sharedDir, filepath.Join(componentDir, "link"))).To(Succeed())
+	writeFile(t, filepath.Join(componentDir, "kustomization.yaml"), `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - link
+`)
+
+	deps, err := Resolve(tmpDir, "component")
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(deps).To(HaveKey("component/link"))
+}
+
 func TestResolve_KeepsSymlinkGeneratorDep(t *testing.T) {
 	g := NewWithT(t)
 	tmpDir := t.TempDir()

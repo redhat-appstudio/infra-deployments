@@ -31,6 +31,20 @@ func TestRepoRef_ContainedDirExists(t *testing.T) {
 	g.Expect(repo.ContainedDirExists("components/escape/secret")).To(BeFalse())
 }
 
+// A Git-tracked symlink is a file even when its target is a directory.
+func TestRepoRef_FileExistsTreatsSymlinkAsFile(t *testing.T) {
+	g := NewWithT(t)
+
+	root := t.TempDir()
+	outside := t.TempDir()
+	g.Expect(os.MkdirAll(filepath.Join(root, "components"), 0o755)).To(Succeed())
+	g.Expect(os.Symlink(outside, filepath.Join(root, "components", "link"))).To(Succeed())
+
+	repo := NewRepoRef(root)
+	g.Expect(repo.FileExists("components/link")).To(BeTrue())
+	g.Expect(repo.FileExists("components/missing")).To(BeFalse())
+}
+
 // prefixDeps never walks a prefix that escapes the checkout through a
 // symlink.
 func TestPrefixDeps_RefusesSymlinkEscape(t *testing.T) {

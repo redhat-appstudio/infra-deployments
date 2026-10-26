@@ -28,6 +28,11 @@ const HoldProductionLabel = "infra/hold-production"
 // environment, signalling that explicit approval is required before merging.
 const NeedsApprovalProductionLabel = "prod/needs-approval"
 
+// UnreferencedChangesLabel is applied when the PR changes files under
+// components/ or configs/ that no ApplicationSet references. Such changes are
+// not deployed by anything and are usually a sign of editing dead code.
+const UnreferencedChangesLabel = "infra/unreferenced-changes"
+
 // ApprovedProductionLabel is applied when the PR affects the production
 // environment, signalling that the PR has been approved.
 const ApprovedProductionLabel = "prod/approved"
@@ -160,6 +165,8 @@ func labelColor(label string) string {
 		return "c5def5" // light blue
 	case label == HoldProductionLabel:
 		return "e11d48" // bright red — blocks merge
+	case label == UnreferencedChangesLabel:
+		return "f9a825" // orange — changes nothing deploys
 	case strings.HasPrefix(label, "cluster/"):
 		return "1d76db" // blue
 	default:

@@ -15,6 +15,7 @@ import (
 type RepoQuerier interface {
 	ListSubDirs(rel string) ([]string, error)
 	DirExists(rel string) bool
+	FileExists(rel string) bool
 	// ContainedDirExists is like DirExists, but also requires the directory
 	// to stay inside the repository once symlinks (in rel itself or any of
 	// its ancestors) are resolved.
@@ -50,6 +51,13 @@ func (r *RepoRef) AbsPath(rel string) string {
 func (r *RepoRef) DirExists(rel string) bool {
 	info, err := os.Stat(r.AbsPath(rel))
 	return err == nil && info.IsDir()
+}
+
+// FileExists reports whether rel exists as a Git-tracked path. A symlink is a
+// file even when it points at a directory or outside the checkout.
+func (r *RepoRef) FileExists(rel string) bool {
+	_, err := os.Lstat(r.AbsPath(rel))
+	return err == nil
 }
 
 // ContainedDirExists reports whether rel is a directory whose real path, with

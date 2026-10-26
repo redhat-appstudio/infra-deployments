@@ -17,6 +17,7 @@ import (
 type fakeRepo struct {
 	dirs  map[string][]string        // ListSubDirs results keyed by rel path
 	exist map[string]bool            // DirExists results keyed by rel path
+	files map[string]bool            // FileExists results keyed by rel path
 	yamls map[string][]byte          // BuildKustomization results keyed by rel path
 	deps  map[string]map[string]bool // ResolveDeps results keyed by rel path
 }
@@ -30,6 +31,10 @@ func (f *fakeRepo) ListSubDirs(rel string) ([]string, error) {
 
 func (f *fakeRepo) DirExists(rel string) bool {
 	return f.exist[rel]
+}
+
+func (f *fakeRepo) FileExists(rel string) bool {
+	return f.files[rel]
 }
 
 func (f *fakeRepo) ContainedDirExists(rel string) bool {
@@ -1799,7 +1804,7 @@ func TestResolveComponentDeps_SamePathDifferentExtraFilesKept(t *testing.T) {
 		changedSet := map[string]bool{changed: true}
 		matching := 0
 		for _, cd := range resolved {
-			if cd.matches(changedSet) {
+			if cd.matches(changedSet, nil) {
 				matching++
 				g.Expect(cd.cp.ExtraFiles).To(ConsistOf(changed))
 			}
@@ -1885,4 +1890,205 @@ func TestPrefixDeps_RejectsPathsOutsideRepo(t *testing.T) {
 	for _, prefix := range []string{".", "..", "/etc", "../../.."} {
 		g.Expect(d.prefixDeps(prefix)).To(BeNil(), "prefix %q", prefix)
 	}
+}
+
+// ---------------------------------------------------------------------------
+// Unreferenced changes
+// ---------------------------------------------------------------------------
+
+// unreferencedDetector builds a detector whose only ApplicationSet deploys
+// components/foo, with foo/deploy.yaml as the sole dependency. files are the
+// changed paths that exist on HEAD.
+func unreferencedDetector(t *testing.T, files ...string) *Detector {
+	t.Helper()
+
+	fileSet := make(map[string]bool, len(files))
+	for _, f := range files {
+		fileSet[f] = true
+	}
+	head := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"development"}},
+		yamls: map[string][]byte{"overlays/development": []byte(minimalAppSetYAML)},
+		exist: map[string]bool{"components/foo": true, "overlays/development": true},
+		files: fileSet,
+		deps: map[string]map[string]bool{
+			"components/foo": {"components/foo/deploy.yaml": true},
+		},
+	}
+	base := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"development"}},
+		yamls: map[string][]byte{"overlays/development": []byte(minimalAppSetYAML)},
+		exist: map[string]bool{"overlays/development": true},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	NewWithT(t).Expect(err).NotTo(HaveOccurred())
+	return d
+}
+
+// A change in a component directory that no ApplicationSet references must be
+// reported as unreferenced, not silently treated as "no impact".
+func TestDetect_UnreferencedComponentChange(t *testing.T) {
+	g := NewWithT(t)
+
+	const orphan = "components/deleted-component/staging/kflux-stg-p02/deploy.yaml"
+	d := unreferencedDetector(t, orphan)
+
+	result, err := d.Detect([]string{orphan})
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.AffectedEnvironments).To(BeEmpty())
+	g.Expect(result.UnreferencedFiles).To(ConsistOf(orphan))
+}
+
+// A matched change is referenced, so it must not be reported.
+func TestDetect_ReferencedChangeIsNotUnreferenced(t *testing.T) {
+	g := NewWithT(t)
+
+	d := unreferencedDetector(t, "components/foo/deploy.yaml")
+
+	result, err := d.Detect([]string{"components/foo/deploy.yaml"})
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.AffectedEnvironments).To(HaveKey(Development))
+	g.Expect(result.UnreferencedFiles).To(BeEmpty())
+}
+
+// Files outside components/ and configs/, and documentation/ownership files,
+// are not reported: they are not deployable manifests by design.
+func TestDetect_UnreferencedIgnoresNonDeployableFiles(t *testing.T) {
+	g := NewWithT(t)
+
+	files := []string{
+		"README.md",
+		"hack/foo.sh",
+		"components/foo/README.md",
+		"components/foo/OWNERS",
+		"components/foo/diagram.png",
+		"components/policies/base/foo/.chainsaw-test/chainsaw-test.yaml",
+		"components/konflux-operator/ci/openshift-overlay-e2e/install.sh",
+		"components/konflux-info/banner-schema.json",
+	}
+	d := unreferencedDetector(t, files...)
+
+	result, err := d.Detect(files)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.UnreferencedFiles).To(BeEmpty())
+}
+
+func TestIsDeployableFile(t *testing.T) {
+	g := NewWithT(t)
+
+	cases := map[string]bool{
+		"components/foo/deploy.yaml":                                      true,
+		"configs/foo/kustomization.yaml":                                  true,
+		"components/foo/README.md":                                        false,
+		"components/foo/OWNERS":                                           false,
+		"components/foo/diagram.png":                                      false,
+		"components/policies/base/foo/.chainsaw-test/chainsaw-test.yaml":  false,
+		"components/konflux-operator/ci/openshift-overlay-e2e/install.sh": false,
+		"components/konflux-info/banner-schema.json":                      false,
+		"components/kubearchive/upgrade.sh":                               false,
+		"components/openshift-gitops/base/deploy.yaml":                    false,
+	}
+	for file, want := range cases {
+		g.Expect(isDeployableFile(file)).To(Equal(want), "file %q", file)
+	}
+}
+
+// Tier 1 base files are copied into each ring's base-snapshot by Kargo, so
+// they are deployed even when no kustomization references them directly.
+func TestDetect_RingBaseChangeIsReferenced(t *testing.T) {
+	g := NewWithT(t)
+
+	const file = "components/foo/base/deploy.yaml"
+	head := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"development"}},
+		yamls: map[string][]byte{"overlays/development": []byte(minimalAppSetYAML)},
+		exist: map[string]bool{
+			"components/foo":       true,
+			"components/foo/rings": true,
+			"overlays/development": true,
+		},
+		files: map[string]bool{file: true},
+		deps:  map[string]map[string]bool{"components/foo": {"components/foo/deploy.yaml": true}},
+	}
+	base := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"development"}},
+		yamls: map[string][]byte{"overlays/development": []byte(minimalAppSetYAML)},
+		exist: map[string]bool{"overlays/development": true},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	result, err := d.Detect([]string{file})
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.UnreferencedFiles).To(BeEmpty())
+}
+
+func TestMatchChangedFiles_RecordsAllMatchKinds(t *testing.T) {
+	g := NewWithT(t)
+
+	cases := []struct {
+		name    string
+		cp      appset.ComponentPath
+		changed string
+	}{
+		{"match all", appset.ComponentPath{MatchAll: true}, "components/x/anything.yaml"},
+		{"extra file", appset.ComponentPath{ExtraFiles: []string{"components/x/values.yaml"}}, "components/x/values.yaml"},
+		{"prefix only", appset.ComponentPath{Path: "components/x", PrefixOnly: true}, "components/x/sub/file.yaml"},
+		{"nil deps prefix", appset.ComponentPath{Path: "components/x"}, "components/x/sub/file.yaml"},
+	}
+
+	for _, tc := range cases {
+		result := &Result{
+			AffectedEnvironments: make(map[Environment]bool),
+			AffectedClusters:     make(map[string]bool),
+		}
+		matched := matchChangedFiles(
+			[]string{tc.changed},
+			[]componentDeps{{cp: tc.cp, env: Development}},
+			nil, result,
+		)
+		g.Expect(matched).To(HaveKey(tc.changed), tc.name)
+		g.Expect(result.AffectedEnvironments).To(HaveKey(Development), tc.name)
+	}
+}
+
+// A PR can contain both referenced and orphaned files.
+func TestDetect_ReferencedAndUnreferencedTogether(t *testing.T) {
+	g := NewWithT(t)
+
+	const referenced = "components/foo/deploy.yaml"
+	const orphan = "components/orphan/deploy.yaml"
+	d := unreferencedDetector(t, referenced, orphan)
+
+	result, err := d.Detect([]string{referenced, orphan})
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.AffectedEnvironments).To(HaveKey(Development))
+	g.Expect(result.UnreferencedFiles).To(ConsistOf(orphan))
+}
+
+// Config files are deployable too: an orphaned config change is reported.
+func TestDetect_UnreferencedConfigChange(t *testing.T) {
+	g := NewWithT(t)
+
+	const orphan = "configs/orphaned/staging/kustomization.yaml"
+	d := unreferencedDetector(t, orphan)
+
+	result, err := d.Detect([]string{orphan})
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.UnreferencedFiles).To(ConsistOf(orphan))
+}
+
+// A deleted file was referenced on the base ref; it must not be reported as
+// unreferenced merely because it no longer exists on HEAD.
+func TestDetect_DeletedFileIsNotUnreferenced(t *testing.T) {
+	g := NewWithT(t)
+
+	d := unreferencedDetector(t)
+	const deleted = "components/foo/deleted.yaml"
+
+	result, err := d.Detect([]string{deleted})
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.UnreferencedFiles).To(BeEmpty())
 }
