@@ -621,3 +621,197 @@ spec:
 	g.Expect(result.Paths).To(HaveLen(1))
 	g.Expect(result.Paths[0].Path).To(Equal("components/etcd-shield/rings/ring-0/base"))
 }
+
+// ---------------------------------------------------------------------------
+// ApplicationSet shapes that exist in the repo but are not handled by the parser
+// yet.
+//
+// The tests below are skipped until the parser learns the shape; the follow-up
+// change that implements it removes the skip. Keeping them (instead of a TODO
+// comment) documents the expected output precisely and stops the fix from
+// drifting. See TestRealRepoApplicationSets in audit_test.go for the end-to-end
+// guard.
+// ---------------------------------------------------------------------------
+
+const pendingSkipMsg = "TODO(render-diff-audit step 2): parser does not support this shape yet"
+
+// Top-level list generator (no merge, no clusters generator), as used by the
+// konflux-verifications-rd ApplicationSet in the rd-production overlay.
+const topLevelListYAML = `apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: konflux-verifications-rd
+spec:
+  generators:
+    - list:
+        elements:
+          - name: stone-prod-p01
+            values.clusterDir: stone-prod-p01
+            values.ring: ring-2
+            values.sourceRoot: components/konflux-verifications-rd
+  template:
+    metadata:
+      name: 'konflux-verifications-{{name}}'
+    spec:
+      source:
+        path: '{{values.sourceRoot}}/rings/{{values.ring}}/{{values.clusterDir}}'
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+`
+
+func TestParseApplicationSets_TopLevelListGenerator(t *testing.T) {
+	t.Skip(pendingSkipMsg)
+	g := NewWithT(t)
+
+	result, err := ParseApplicationSets([]byte(topLevelListYAML))
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.Paths).To(HaveLen(1))
+	g.Expect(result.Paths[0].Path).To(Equal("components/konflux-verifications-rd/rings/ring-2/stone-prod-p01"))
+	g.Expect(result.Paths[0].ClusterDir).To(Equal("stone-prod-p01"))
+	g.Expect(result.Clusters).To(HaveKey("stone-prod-p01"))
+}
+
+// A list element may override any values.* key, including ones the parser does
+// not special-case. Here the element overrides useCaseDir, which must be
+// interpolated like any other value.
+func TestParseApplicationSets_UseCaseDirInterpolated(t *testing.T) {
+	t.Skip(pendingSkipMsg)
+	g := NewWithT(t)
+
+	yaml := `
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: k8s-groups
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              values:
+                sourceRoot: components/k8s-groups
+                environment: staging
+                useCaseDir: rover
+          - list:
+              elements:
+                - nameNormalized: stone-stage-p01
+                  values.useCaseDir: rover/rh-sso-internal
+  template:
+    metadata:
+      name: k8s-groups-{{nameNormalized}}
+    spec:
+      source:
+        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.useCaseDir}}'
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+`
+	result, err := ParseApplicationSets([]byte(yaml))
+	g.Expect(err).NotTo(HaveOccurred())
+
+	paths := make([]string, 0, len(result.Paths))
+	for _, p := range result.Paths {
+		paths = append(paths, p.Path)
+	}
+	// Both the generator default and the element override must resolve.
+	g.Expect(paths).To(ConsistOf(
+		"components/k8s-groups/staging/rover",
+		"components/k8s-groups/staging/rover/rh-sso-internal",
+	))
+}
+
+// List elements may override any values.* key, not just clusterDir/ring.
+func TestParseApplicationSets_ListOverrideOfEnvironment(t *testing.T) {
+	t.Skip(pendingSkipMsg)
+	g := NewWithT(t)
+
+	yaml := `
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: mixed
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              values:
+                sourceRoot: components/mixed
+                environment: development
+                clusterDir: ""
+          - list:
+              elements:
+                - nameNormalized: stone-stage-p01
+                  values.environment: staging
+                  values.clusterDir: stone-stage-p01
+  template:
+    metadata:
+      name: mixed-{{nameNormalized}}
+    spec:
+      source:
+        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+`
+	result, err := ParseApplicationSets([]byte(yaml))
+	g.Expect(err).NotTo(HaveOccurred())
+
+	paths := make([]string, 0, len(result.Paths))
+	for _, p := range result.Paths {
+		paths = append(paths, p.Path)
+	}
+	g.Expect(paths).To(ConsistOf(
+		"components/mixed/development",
+		"components/mixed/staging/stone-stage-p01",
+	))
+}
+
+// A {{nameNormalized}}-based template must be interpolated literally, without
+// inventing a sourceRoot/environment/name layout.
+func TestParseApplicationSets_NameNormalizedTemplate(t *testing.T) {
+	t.Skip(pendingSkipMsg)
+	g := NewWithT(t)
+
+	yaml := `
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: by-name
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              values:
+                sourceRoot: components/by-name
+                environment: staging
+          - list:
+              elements:
+                - nameNormalized: kflux-stg-p02
+  template:
+    metadata:
+      name: by-name-{{nameNormalized}}
+    spec:
+      source:
+        path: '{{values.sourceRoot}}/{{values.environment}}/{{nameNormalized}}'
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+`
+	result, err := ParseApplicationSets([]byte(yaml))
+	g.Expect(err).NotTo(HaveOccurred())
+
+	paths := make([]string, 0, len(result.Paths))
+	for _, p := range result.Paths {
+		paths = append(paths, p.Path)
+	}
+	g.Expect(paths).To(ConsistOf(
+		"components/by-name/staging",
+		"components/by-name/staging/kflux-stg-p02",
+	))
+	// No path may end in a slash: trailing slashes break cluster matching and
+	// dependency deduplication downstream.
+	for _, p := range result.Paths {
+		g.Expect(p.Path).NotTo(HaveSuffix("/"))
+	}
+}

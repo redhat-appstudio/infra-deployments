@@ -44,6 +44,10 @@ vet: ## Run go vet against code.
 test: fmt vet ## Run unit tests.
 	go test ./... -coverprofile cover.out
 
+.PHONY: audit
+audit: ## Audit the real repo's ApplicationSets against the parser (requires a repo checkout).
+	go test -tags realrepo ./internal/appset/ -run TestRealRepoApplicationSets -v
+
 .PHONY: lint
 lint: golangci-lint ## Run golangci-lint linter.
 	$(GOLANGCI_LINT) run $(LINT_ARGS) ./...
