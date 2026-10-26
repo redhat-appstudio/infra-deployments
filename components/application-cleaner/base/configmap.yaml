@@ -12,9 +12,62 @@ data:
     retention_days="${RETENTION_DAYS:-30}"
     namespace_label_selector="${NAMESPACE_LABEL_SELECTOR:-}"
     dry_run="${DRY_RUN:-false}"
+    slack_webhook_url="${SLACK_WEBHOOK_URL:-}"
+    namespace="${POD_NAMESPACE:-application-cleaner}"
+    pod_name="${POD_NAME:-${HOSTNAME:-unknown}}"
+
+    # Posts variables expected by a Slack Workflow "Webhook" trigger.
+    # Workflow variables: status, emoji, summary, job_link, namespace, pod_name
+    send_slack_notification() {
+      local status="$1"
+      local summary="$2"
+
+      if [[ -z "${slack_webhook_url}" ]]; then
+        echo "SLACK_WEBHOOK_URL is not set; skipping Slack notification"
+        return 0
+      fi
+
+      local emoji
+      if [[ "${status}" == "success" ]]; then
+        emoji=":white_check_mark:"
+      else
+        emoji=":x:"
+      fi
+
+      local console_url=""
+      console_url="$(kubectl get configmap console-public -n openshift-config-managed \
+        -o jsonpath='{.data.consoleURL}' 2>/dev/null || true)"
+
+      local job_link="Pod: ${namespace}/${pod_name}"
+      if [[ -n "${console_url}" ]]; then
+        job_link="${console_url}/k8s/ns/${namespace}/pods/${pod_name}"
+      fi
+
+      # Escape strings for JSON (avoid heredoc — breaks YAML block scalar parsing)
+      json_escape() { printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'; }
+      local payload
+      payload="$(printf '{"status":"%s","emoji":"%s","summary":"%s","job_link":"%s","namespace":"%s","pod_name":"%s"}' \
+        "$(json_escape "${status}")" \
+        "$(json_escape "${emoji}")" \
+        "$(json_escape "${summary}")" \
+        "$(json_escape "${job_link}")" \
+        "$(json_escape "${namespace}")" \
+        "$(json_escape "${pod_name}")")"
+
+      echo "Sending Slack Workflow notification (${status})..."
+      # -f treats HTTP 4xx/5xx as failure so rejected webhooks are logged as such
+      if ! response="$(curl -sS -f --max-time 10 -X POST "${slack_webhook_url}" \
+        -H 'Content-Type: application/json; charset=utf-8' \
+        -d "${payload}")"; then
+        echo "Failed to send Slack notification (curl or HTTP error)"
+        return 0
+      fi
+      echo "Slack webhook response: ${response}"
+    }
 
     if [[ -z "${namespace_label_selector}" ]]; then
       echo "NAMESPACE_LABEL_SELECTOR is not set; skipping cleanup"
+      send_slack_notification "success" "Skipped: NAMESPACE_LABEL_SELECTOR is not set. Removed: 0, Skipped: 0, Failed: 0"
       exit 0
     fi
 
@@ -22,13 +75,21 @@ data:
     now_epoch="$(date +%s)"
     cutoff_epoch=$((now_epoch - retention_seconds))
 
-    mapfile -t namespaces < <(
-      kubectl get namespaces -l "${namespace_label_selector}" \
-        -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'
-    )
+    if ! namespaces_out="$(kubectl get namespaces -l "${namespace_label_selector}" \
+      -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')"; then
+      echo "Failed to list namespaces with label selector ${namespace_label_selector}"
+      send_slack_notification "failure" "Failed listing namespaces for selector \`${namespace_label_selector}\`. Removed: 0, Skipped: 0, Failed: 0"
+      exit 1
+    fi
+
+    namespaces=()
+    if [[ -n "${namespaces_out}" ]]; then
+      mapfile -t namespaces <<< "${namespaces_out}"
+    fi
 
     if [[ "${#namespaces[@]}" -eq 0 ]]; then
       echo "No namespaces found with label selector ${namespace_label_selector}"
+      send_slack_notification "success" "No namespaces matched label selector \`${namespace_label_selector}\`. Removed: 0, Skipped: 0, Failed: 0"
       exit 0
     fi
 
@@ -36,15 +97,21 @@ data:
     skipped=0
     failed=0
 
-    for namespace in "${namespaces[@]}"; do
-      [[ -z "${namespace}" ]] && continue
-      echo "Processing namespace: ${namespace}"
+    for ns in "${namespaces[@]}"; do
+      [[ -z "${ns}" ]] && continue
+      echo "Processing namespace: ${ns}"
 
-      mapfile -t applications < <(
-        kubectl get applications.appstudio.redhat.com -n "${namespace}" \
-          -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.metadata.creationTimestamp}{"\n"}{end}' \
-          2>/dev/null || true
-      )
+      if ! applications_out="$(kubectl get applications.appstudio.redhat.com -n "${ns}" \
+        -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.metadata.creationTimestamp}{"\n"}{end}')"; then
+        echo "Failed listing applications in ${ns}"
+        failed=$((failed + 1))
+        continue
+      fi
+
+      applications=()
+      if [[ -n "${applications_out}" ]]; then
+        mapfile -t applications <<< "${applications_out}"
+      fi
 
       for application_line in "${applications[@]}"; do
         [[ -z "${application_line}" ]] && continue
@@ -59,11 +126,11 @@ data:
 
         if [[ "${created_epoch}" -lt "${cutoff_epoch}" ]]; then
           if [[ "${dry_run}" == "true" ]]; then
-            echo "[DRY RUN] Would delete application ${application_name} in ${namespace} (created ${created_at})"
+            echo "[DRY RUN] Would delete application ${application_name} in ${ns} (created ${created_at})"
             removed=$((removed + 1))
           else
-            echo -n "Deleting application ${application_name} in ${namespace} (created ${created_at})... "
-            if kubectl delete applications.appstudio.redhat.com "${application_name}" -n "${namespace}" --ignore-not-found=true; then
+            echo -n "Deleting application ${application_name} in ${ns} (created ${created_at})... "
+            if kubectl delete applications.appstudio.redhat.com "${application_name}" -n "${ns}" --ignore-not-found=true; then
               echo "DELETED"
               removed=$((removed + 1))
             else
@@ -77,7 +144,12 @@ data:
       done
     done
 
-    echo "Removed: ${removed}, Skipped: ${skipped}, Failed: ${failed}"
+    summary="Removed: ${removed}, Skipped: ${skipped}, Failed: ${failed}"
+    echo "${summary}"
+
     if [[ "${failed}" -gt 0 ]]; then
+      send_slack_notification "failure" "${summary}"
       exit 1
     fi
+
+    send_slack_notification "success" "${summary}"

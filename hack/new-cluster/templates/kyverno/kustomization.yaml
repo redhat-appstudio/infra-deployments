@@ -3,25 +3,28 @@ kind: Kustomization
 
 namespace: konflux-kyverno
 
+resources:
+  - ../base
+
 generators:
   - kyverno-helm-generator.yaml
 
 images:
   - name: reg.kyverno.io/kyverno/kyverno
     newName: quay.io/konflux-ci/kyverno/kyverno
-    newTag: e0be82a528034df667a51f0adf4caada3fb15568
+    newTag: 2d38229661b7a29dbf6725c47cf9dd7d9b83b3d4
   - name: reg.kyverno.io/kyverno/kyvernopre
     newName: quay.io/konflux-ci/kyverno/kyverno-init
-    newTag: e0be82a528034df667a51f0adf4caada3fb15568
+    newTag: 2d38229661b7a29dbf6725c47cf9dd7d9b83b3d4
   - name: reg.kyverno.io/kyverno/background-controller
     newName: quay.io/konflux-ci/kyverno/kyverno-background
-    newTag: e0be82a528034df667a51f0adf4caada3fb15568
+    newTag: 2d38229661b7a29dbf6725c47cf9dd7d9b83b3d4
   - name: reg.kyverno.io/kyverno/cleanup-controller
     newName: quay.io/konflux-ci/kyverno/kyverno-cleanup
-    newTag: e0be82a528034df667a51f0adf4caada3fb15568
+    newTag: 2d38229661b7a29dbf6725c47cf9dd7d9b83b3d4
   - name: reg.kyverno.io/kyverno/kyverno-cli
     newName: quay.io/konflux-ci/kyverno/kyverno-cli
-    newTag: e0be82a528034df667a51f0adf4caada3fb15568
+    newTag: 2d38229661b7a29dbf6725c47cf9dd7d9b83b3d4
 
 # set resources to jobs
 patches:
