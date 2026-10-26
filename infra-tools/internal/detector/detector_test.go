@@ -1413,3 +1413,69 @@ func TestResultLabels(t *testing.T) {
 		"environment/production",
 	}))
 }
+
+// The tests in this file cover ApplicationSet shapes that exist in the repo but
+// are not handled by the parser yet. They are skipped until the parser learns
+// the shape; the follow-up change that implements it removes the skip.
+//
+// See internal/appset/pending_shapes_test.go for the parser-level equivalents
+// and internal/appset/audit_test.go for the end-to-end guard.
+
+const pendingSkipMsg = "TODO(render-diff-audit step 2): parser does not support this shape yet"
+
+// topLevelListAppSet is the shape used by konflux-verifications-rd in the
+// rd-production overlay: a single list generator with per-element values.
+const topLevelListAppSet = `apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: konflux-verifications-rd
+spec:
+  generators:
+    - list:
+        elements:
+          - name: stone-prod-p01
+            values.clusterDir: stone-prod-p01
+            values.ring: ring-2
+            values.sourceRoot: components/konflux-verifications-rd
+  template:
+    metadata:
+      name: 'konflux-verifications-{{name}}'
+    spec:
+      source:
+        path: '{{values.sourceRoot}}/rings/{{values.ring}}/{{values.clusterDir}}'
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+`
+
+// A production component reached through a top-level list generator must be
+// detected as a production change (which also drives the hold labels).
+func TestDetect_TopLevelListGenerator(t *testing.T) {
+	t.Skip(pendingSkipMsg)
+	g := NewWithT(t)
+
+	const componentPath = "components/konflux-verifications-rd/rings/ring-2/stone-prod-p01"
+
+	head := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"rd-production"}},
+		yamls: map[string][]byte{"overlays/rd-production": []byte(topLevelListAppSet)},
+		exist: map[string]bool{
+			"overlays/rd-production": true,
+			componentPath:            true,
+		},
+		deps: map[string]map[string]bool{
+			componentPath: {componentPath + "/kustomization.yaml": true},
+		},
+	}
+	base := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"rd-production"}},
+		yamls: map[string][]byte{"overlays/rd-production": []byte(topLevelListAppSet)},
+		exist: map[string]bool{"overlays/rd-production": true},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	result, err := d.Detect([]string{componentPath + "/kustomization.yaml"})
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.AffectedEnvironments).To(HaveKey(Production))
+	g.Expect(result.AffectedClusters).To(HaveKey("stone-prod-p01"))
+}

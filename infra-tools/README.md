@@ -136,6 +136,11 @@ make test
 # Run linter (downloads golangci-lint on first run)
 make lint
 
+# Audit the real repo's ApplicationSets against the parser
+# (needs a full repo checkout; catches ApplicationSet shapes the parser
+# silently ignores, which would otherwise degrade to "environment/none")
+make audit
+
 # Fix lint issues automatically
 make lint-fix
 
