@@ -46,10 +46,9 @@ func normalizeYAML(input []byte) []byte {
 		docs = append(docs, doc{key: extractKey(&node), node: node})
 	}
 
-	if len(docs) <= 1 {
-		return input
-	}
-
+	// Even a single document is re-encoded: multi-document streams are too, and
+	// mixing raw and re-encoded output makes a resource addition look like a
+	// whole-file rewrite (yaml.v3 defaults to 4-space indents, kustomize emits 2).
 	sort.SliceStable(docs, func(i, j int) bool {
 		a, b := docs[i].key, docs[j].key
 		if a.apiVersion != b.apiVersion {
@@ -66,6 +65,7 @@ func normalizeYAML(input []byte) []byte {
 
 	var buf bytes.Buffer
 	encoder := yaml.NewEncoder(&buf)
+	encoder.SetIndent(2)
 	for i := range docs {
 		if err := encoder.Encode(&docs[i].node); err != nil {
 			slog.Debug("YAML normalization: encode error, returning original", "err", err)

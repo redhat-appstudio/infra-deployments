@@ -41,8 +41,8 @@ vet: ## Run go vet against code.
 	go vet ./...
 
 .PHONY: test
-test: fmt vet ## Run unit tests.
-	go test ./... -coverprofile cover.out
+test: fmt vet ## Run unit tests with the race detector.
+	go test -race ./... -coverprofile cover.out
 
 .PHONY: audit
 audit: ## Audit the real repo's ApplicationSets against the parser (requires a repo checkout).
