@@ -27,6 +27,8 @@ spec:
   template:
     metadata:
       name: vector-kubearchive-log-collector-{{nameNormalized}}
+      labels:
+        app.kubernetes.io/part-of: vector-kubearchive-log-collector
       annotations:
         argocd.argoproj.io/sync-wave: "100"
         argocd.argoproj.io/refresh: "hard"
