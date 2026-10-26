@@ -2,10 +2,8 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - rbac.yaml
-  - kubearchive-maintainer.yaml
-  - monitoring-otel-collector.yaml
-  - monitoring-servicemonitor.yaml
+  - rbac
+  - monitoring
 
 # ROSA does not support namespaces starting with `kube`
 namespace: product-kubearchive
@@ -14,4 +12,4 @@ configMapGenerator:
   - name: otel-collector-conf
     namespace: product-kubearchive
     files:
-      - otel-collector-config.yaml
+      - monitoring/otel/otel-collector-config.yaml
