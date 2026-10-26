@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: mintmaker
+    app.kubernetes.io/managed-by: kustomize
+  name: git-platforms-exporter
+  namespace: mintmaker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: git-platforms-exporter
+  template:
+    metadata:
+      labels:
+        app: git-platforms-exporter
+        paas.redhat.com/appcode: MINT-001
+    spec:
+      containers:
+        - name: blackbox-exporter
+          image: quay.io/prometheus/blackbox-exporter:v0.27.0
+          args:
+            - "--config.file=/etc/blackbox/blackbox.yml"
+          ports:
+            - containerPort: 9115
+              name: http
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+          securityContext:
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/blackbox
+              readOnly: true
+      volumes:
+        - name: config-volume
+          configMap:
+            name: blackbox-config
