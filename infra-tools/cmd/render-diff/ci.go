@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"os"
 	"strings"
+	"unicode/utf8"
 
 	ghclient "github.com/redhat-appstudio/infra-deployments/infra-tools/internal/github"
 	"github.com/redhat-appstudio/infra-deployments/infra-tools/internal/renderdiff"
@@ -71,43 +72,103 @@ func writeCISummary(result *renderdiff.DiffResult) error {
 	}
 
 	w := bufio.NewWriter(dest)
+	if _, err := io.WriteString(w, renderCISummary(result)); err != nil {
+		return err
+	}
+	return w.Flush()
+}
 
+// GitHub truncates or rejects oversized output: the step summary is capped at
+// 1 MiB and a comment body at 65,536 characters. Stay comfortably below both.
+const (
+	summarySizeBudget = 900 * 1024
+	commentSizeBudget = 60_000
+)
+
+// perDiffSizeBudget is how much of a single diff is inlined in the summary.
+const perDiffSizeBudget = 50 * 1024
+
+// renderCISummary renders the markdown for $GITHUB_STEP_SUMMARY, dropping
+// component details once the size budget is reached so GitHub never truncates
+// the output mid-document.
+func renderCISummary(result *renderdiff.DiffResult) string {
 	if len(result.Diffs) == 0 {
-		_, _ = fmt.Fprintln(w, "No render differences detected.")
-		return w.Flush()
+		return "No render differences detected.\n"
 	}
 
 	sortDiffs(result.Diffs)
 
-	_, _ = fmt.Fprintln(w, "# Kustomize Render Diff")
-	_, _ = fmt.Fprintln(w)
-	_, _ = fmt.Fprintf(w, "**%d components** with differences (+%d -%d lines)\n\n", len(result.Diffs), result.TotalAdded, result.TotalRemoved)
+	shown := 0
+	for _, d := range result.Diffs {
+		if !d.SkipOutput {
+			shown++
+		}
+	}
 
-	const truncateThreshold = 50 * 1024 // 50KB
+	var b strings.Builder
+	fmt.Fprintf(&b, "# Kustomize Render Diff\n\n")
+	fmt.Fprintf(&b, "**%d components** with differences (+%d -%d lines)\n\n", shown, result.TotalAdded, result.TotalRemoved)
+
+	omitted := 0
 	for _, d := range result.Diffs {
 		if d.SkipOutput {
 			continue
 		}
-		if d.Error != "" {
-			summary := fmt.Sprintf("%s (%s) — build error", d.Path, d.Env)
-			_, _ = fmt.Fprintf(w, "<details>\n<summary>%s</summary>\n\n", summary)
-			_, _ = fmt.Fprintf(w, "```\n%s\n```\n\n", d.Error)
-			_, _ = fmt.Fprintln(w, "</details>")
-			_, _ = fmt.Fprintln(w)
+		block := renderSummaryBlock(d)
+		if b.Len()+len(block) > summarySizeBudget {
+			omitted++
 			continue
 		}
-		summary := fmt.Sprintf("%s (%s) — +%d -%d", d.Path, d.Env, d.Added, d.Removed)
-		_, _ = fmt.Fprintf(w, "<details>\n<summary>%s</summary>\n\n", summary)
-		if len(d.Diff) > truncateThreshold {
-			_, _ = fmt.Fprintf(w, "```diff\n%s\n```\n\n", d.Diff[:truncateThreshold])
-			_, _ = fmt.Fprintln(w, "⚠️ Diff truncated. Download the full artifact for the complete diff.")
-		} else {
-			_, _ = fmt.Fprintf(w, "```diff\n%s\n```\n\n", d.Diff)
-		}
-		_, _ = fmt.Fprintln(w, "</details>")
-		_, _ = fmt.Fprintln(w)
+		b.WriteString(block)
 	}
-	return w.Flush()
+	if omitted > 0 {
+		fmt.Fprintf(&b, "⚠️ %d components omitted: the summary would exceed the GitHub size limit. Download the artifact for the complete diff.\n", omitted)
+	}
+	return b.String()
+}
+
+// renderSummaryBlock renders one collapsible component section.
+func renderSummaryBlock(d renderdiff.ComponentDiff) string {
+	var b strings.Builder
+
+	if d.Error != "" {
+		fmt.Fprintf(&b, "<details>\n<summary>%s (%s) — build error</summary>\n\n", d.Path, d.Env)
+		fmt.Fprintf(&b, "```\n%s\n```\n\n", d.Error)
+		fmt.Fprintln(&b, "</details>")
+		fmt.Fprintln(&b)
+		return b.String()
+	}
+
+	fmt.Fprintf(&b, "<details>\n<summary>%s (%s) — +%d -%d</summary>\n\n", d.Path, d.Env, d.Added, d.Removed)
+	if len(d.Diff) > perDiffSizeBudget {
+		b.WriteString("```diff\n")
+		b.WriteString(truncateAtLine(d.Diff, perDiffSizeBudget))
+		b.WriteString("\n```\n\n")
+		fmt.Fprintln(&b, "⚠️ Diff truncated. Download the full artifact for the complete diff.")
+	} else {
+		fmt.Fprintf(&b, "```diff\n%s\n```\n\n", d.Diff)
+	}
+	fmt.Fprintln(&b, "</details>")
+	fmt.Fprintln(&b)
+	return b.String()
+}
+
+// truncateAtLine cuts text at the last newline before limit so the result never
+// ends mid-line or mid-rune (diffs are line-oriented, and a half UTF-8 sequence
+// would corrupt the markdown).
+func truncateAtLine(text string, limit int) string {
+	if len(text) <= limit {
+		return text
+	}
+	cut := text[:limit]
+	if i := strings.LastIndexByte(cut, '\n'); i > 0 {
+		return cut[:i]
+	}
+	// No newline in range: fall back to a rune-safe cut.
+	for limit > 0 && !utf8.RuneStart(text[limit]) {
+		limit--
+	}
+	return text[:limit]
 }
 
 // postCIComment generates the PR comment markdown and posts it to GitHub.
@@ -183,15 +244,27 @@ func buildCommentBody(result *renderdiff.DiffResult, headSHA, baseSHA, runURL st
 
 	fmt.Fprintln(&b, "| Component | Environment | Changes |")
 	fmt.Fprintln(&b, "|-----------|-------------|---------|")
+	omitted := 0
 	for _, d := range result.Diffs {
 		if d.SkipOutput {
 			continue
 		}
+		var row string
 		if d.Error != "" {
-			fmt.Fprintf(&b, "| `%s` | %s | build error |\n", d.Path, d.Env)
+			row = fmt.Sprintf("| `%s` | %s | build error |\n", d.Path, d.Env)
 		} else {
-			fmt.Fprintf(&b, "| `%s` | %s | +%d -%d |\n", d.Path, d.Env, d.Added, d.Removed)
+			row = fmt.Sprintf("| `%s` | %s | +%d -%d |\n", d.Path, d.Env, d.Added, d.Removed)
 		}
+		// Keep the body under GitHub's comment limit: a rejected comment would
+		// leave the PR with no render diff at all.
+		if b.Len()+len(row) > commentSizeBudget {
+			omitted++
+			continue
+		}
+		b.WriteString(row)
+	}
+	if omitted > 0 {
+		fmt.Fprintf(&b, "| … | %d more components | see the workflow summary |\n", omitted)
 	}
 	fmt.Fprintln(&b)
 	fmt.Fprintf(&b, "**Total:** %d components, +%d -%d lines\n\n", len(result.Diffs), result.TotalAdded, result.TotalRemoved)
