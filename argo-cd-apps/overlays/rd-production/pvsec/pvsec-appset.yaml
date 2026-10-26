@@ -22,7 +22,46 @@ spec:
                 ring: "empty-base"
                 clusterDir: "empty-base"
           - list:
-              elements: [] # Populated via a k-component (or manually if the cluster list is unusual)
+              elements:
+                # ring 2
+                - name: kflux-prd-rh03
+                  values.sourceRoot: components/pvsec
+                  values.ring: ring-2
+                  values.clusterDir: kflux-prd-rh03
+                - name: kflux-prd-es01
+                  values.sourceRoot: components/pvsec
+                  values.ring: ring-2
+                  values.clusterDir: kflux-prd-es01
+                - name: stone-prod-p01
+                  values.sourceRoot: components/pvsec
+                  values.ring: ring-2
+                  values.clusterDir: stone-prod-p01
+                - name: kflux-ocp-p01
+                  values.sourceRoot: components/pvsec
+                  values.ring: ring-2
+                  values.clusterDir: kflux-ocp-p01
+                - name: kflux-osp-p01
+                  values.sourceRoot: components/pvsec
+                  values.ring: ring-2
+                  values.clusterDir: kflux-osp-p01
+                - name: kflux-rhel-p01
+                  values.sourceRoot: components/pvsec
+                  values.ring: ring-2
+                  values.clusterDir: kflux-rhel-p01
+                - name: kflux-fedora-01
+                  values.sourceRoot: components/pvsec
+                  values.ring: ring-2
+                  values.clusterDir: kflux-fedora-01
+
+                # Ring 3
+                - name: stone-prod-p02
+                  values.sourceRoot: components/pvsec
+                  values.ring: ring-3
+                  values.clusterDir: stone-prod-p02
+                - name: stone-prd-rh01
+                  values.sourceRoot: components/pvsec
+                  values.ring: ring-3
+                  values.clusterDir: stone-prd-rh01
 
   template:
     metadata:
@@ -46,4 +85,3 @@ spec:
           limit: 50
           backoff:
             duration: 15s
-
