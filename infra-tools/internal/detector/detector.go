@@ -3,6 +3,7 @@
 package detector
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
 	"maps"
@@ -15,6 +16,8 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/redhat-appstudio/infra-deployments/infra-tools/internal/appset"
+	"github.com/redhat-appstudio/infra-deployments/infra-tools/internal/deptree"
+	"github.com/redhat-appstudio/infra-deployments/infra-tools/internal/logging"
 )
 
 type Environment string
@@ -139,7 +142,7 @@ func (d *Detector) AffectedComponents(changedFiles []string) (map[Environment][]
 	}
 
 	// Phase 3: Extract component paths from ApplicationSets
-	envPaths, allClusters, err := extractPathsFromOverlays(builds)
+	envPaths, allClusters, _, err := extractPathsFromOverlays(builds)
 	if err != nil {
 		return nil, err
 	}
@@ -178,17 +181,20 @@ func (d *Detector) Detect(changedFiles []string) (*Result, error) {
 	detectOverlayDiffs(builds, result)
 
 	// Phase 3: Extract component paths from ApplicationSets
-	envPaths, allClusters, err := extractPathsFromOverlays(builds)
+	envPaths, allClusters, headKeys, err := extractPathsFromOverlays(builds)
 	if err != nil {
 		return nil, err
 	}
 
 	// Phase 4: Resolve dependency trees for component paths
-	resolved := d.resolveComponentDeps(envPaths)
+	resolved := d.resolveComponentDepsWithHead(envPaths, headKeys)
 
-	// Phase 5: Match changed files against resolved dependencies
-	matched := matchChangedFiles(changedFiles, resolved, allClusters, result)
-	result.UnreferencedFiles = d.unreferencedFiles(changedFiles, matched)
+	// Phase 5: Match changed files against resolved dependencies. A file that
+	// HEAD still contains but only a removed (base-only) ApplicationSet
+	// references is dead after merge, so the unreferenced check uses HEAD
+	// paths alone.
+	matchChangedFiles(changedFiles, resolved, allClusters, result)
+	result.UnreferencedFiles = d.unreferencedFiles(changedFiles, matchedHeadFiles(changedFiles, resolved))
 
 	// Phase 6: Static rules (app-of-app-sets)
 	applyStaticRules(changedFiles, result)
@@ -200,11 +206,31 @@ func (d *Detector) Detect(changedFiles []string) (*Result, error) {
 // ApplicationSet manifests.  It runs kustomize build on every overlay
 // directory for both HEAD and the base-ref in parallel using an errgroup,
 // returning a build result per overlay.
+//
+// Overlay directories are taken from both refs: an overlay that a PR deletes
+// exists only on the base-ref, and its ApplicationSets still reference the
+// components whose removal must be visible to render-diff.
 func (d *Detector) buildAppSetOverlays() ([]overlayBuild, error) {
-	overlayNames, err := d.head.ListSubDirs(d.overlaysDir)
+	headNames, err := d.head.ListSubDirs(d.overlaysDir)
 	if err != nil {
 		return nil, fmt.Errorf("listing overlay dirs: %w", err)
 	}
+	baseNames, _ := d.base.ListSubDirs(d.overlaysDir) // no overlays dir yet on base is fine
+
+	headExists := make(map[string]bool, len(headNames))
+	for _, name := range headNames {
+		headExists[name] = true
+	}
+
+	overlayNames := make([]string, 0, len(headNames)+len(baseNames))
+	seen := make(map[string]bool, len(headNames)+len(baseNames))
+	for _, name := range append(headNames, baseNames...) {
+		if !seen[name] {
+			seen[name] = true
+			overlayNames = append(overlayNames, name)
+		}
+	}
+	sort.Strings(overlayNames)
 
 	var (
 		results = make(chan overlayBuild, len(overlayNames))
@@ -216,20 +242,28 @@ func (d *Detector) buildAppSetOverlays() ([]overlayBuild, error) {
 			env := d.overlayEnvs[overlayName] // pre-validated by NewDetector
 			overlayRel := filepath.Join(d.overlaysDir, overlayName)
 
-			headYAML, err := d.head.BuildKustomization(overlayRel)
-			if err != nil {
-				return fmt.Errorf("building overlay %s on HEAD: %w", overlayName, err)
+			// The overlay may not exist on one of the refs: an added overlay
+			// has no base, a removed one has no HEAD.
+			var headYAML []byte
+			if headExists[overlayName] {
+				var err error
+				headYAML, err = d.head.BuildKustomization(overlayRel)
+				if err != nil {
+					return fmt.Errorf("building overlay %s on HEAD: %w", overlayName, err)
+				}
+			} else {
+				slog.Info("Overlay does not exist on HEAD (removed overlay), treating as empty", "overlay", logging.Sanitize(overlayName))
 			}
 
-			// The overlay may not exist on the base-ref (new overlay in HEAD).
 			var baseYAML []byte
 			if d.base.DirExists(overlayRel) {
+				var err error
 				baseYAML, err = d.base.BuildKustomization(overlayRel)
 				if err != nil {
 					return fmt.Errorf("building overlay %s on base-ref: %w", overlayName, err)
 				}
 			} else {
-				slog.Info("Overlay does not exist on base-ref (new overlay), treating as empty", "overlay", overlayName)
+				slog.Info("Overlay does not exist on base-ref (new overlay), treating as empty", "overlay", logging.Sanitize(overlayName))
 			}
 
 			results <- overlayBuild{
@@ -267,7 +301,7 @@ func (d *Detector) detectRemovedAppSetOverlays(result *Result) {
 		if d.head.DirExists(overlayRel) {
 			continue // still exists on HEAD, handled by buildAppSetOverlays
 		}
-		slog.Info("Overlay removed in HEAD", "overlay", overlayName, "env", env)
+		slog.Info("Overlay removed in HEAD", "overlay", logging.Sanitize(overlayName), "env", env)
 		result.AffectedEnvironments[env] = true
 	}
 }
@@ -282,14 +316,14 @@ func detectOverlayDiffs(builds []overlayBuild, result *Result) {
 		if string(ob.headYAML) == string(ob.baseYAML) {
 			continue
 		}
-		slog.Info("Overlay diff detected", "overlay", ob.name)
+		slog.Info("Overlay diff detected", "overlay", logging.Sanitize(ob.name))
 
 		headSets, headErr := appset.AppSetsByName(ob.headYAML)
 		baseSets, baseErr := appset.AppSetsByName(ob.baseYAML)
 		if headErr != nil || baseErr != nil {
 			// Can't parse ApplicationSets; conservatively mark overlay environment.
 			slog.Warn("Failed to parse ApplicationSets, falling back to overlay env",
-				"overlay", ob.name, "headErr", headErr, "baseErr", baseErr)
+				"overlay", logging.Sanitize(ob.name), "headErr", sanitizedError(headErr), "baseErr", sanitizedError(baseErr))
 			result.AffectedEnvironments[ob.env] = true
 			continue
 		}
@@ -303,14 +337,14 @@ func detectOverlayDiffs(builds []overlayBuild, result *Result) {
 			}
 			env := appSetEnv(headDoc, ob.env)
 			result.AffectedEnvironments[env] = true
-			slog.Info("AppSet added/modified", "overlay", ob.name, "appset", name, "env", env)
+			slog.Info("AppSet added/modified", "overlay", logging.Sanitize(ob.name), "appset", logging.Sanitize(name), "env", env)
 			attributed = true
 		}
 		for name, baseDoc := range baseSets {
 			if _, exists := headSets[name]; !exists {
 				env := appSetEnv(baseDoc, ob.env)
 				result.AffectedEnvironments[env] = true
-				slog.Info("AppSet removed", "overlay", ob.name, "appset", name, "env", env)
+				slog.Info("AppSet removed", "overlay", logging.Sanitize(ob.name), "appset", logging.Sanitize(name), "env", env)
 				attributed = true
 			}
 		}
@@ -321,50 +355,135 @@ func detectOverlayDiffs(builds []overlayBuild, result *Result) {
 	}
 }
 
+// environmentFor returns the explicit environment declared by an ApplicationSet,
+// or fallback when none (or an unknown value) is set.
+func environmentFor(explicit string, fallback Environment) Environment {
+	switch e := Environment(explicit); e {
+	case Development, Staging, Production:
+		return e
+	}
+	return fallback
+}
+
+// sanitizedError renders an error for a log line without letting PR-controlled
+// content break out of it. A nil error renders empty.
+func sanitizedError(err error) string {
+	if err == nil {
+		return ""
+	}
+	return logging.Sanitize(err.Error())
+}
+
 // appSetEnv extracts the environment from an ApplicationSet's generator. Falls
 // back to overlayEnv when no explicit environment is set.
 func appSetEnv(doc map[string]interface{}, overlayEnv Environment) Environment {
 	if envStr, ok := appset.EnvironmentFromAppSet(doc); ok {
-		if e := Environment(envStr); e == Development || e == Staging || e == Production {
-			return e
-		}
+		return environmentFor(envStr, overlayEnv)
 	}
 	return overlayEnv
 }
 
-// extractPathsFromOverlays parses ApplicationSets from the HEAD builds and
-// returns per-environment component paths and a mapping from cluster name to
-// the component paths deployed on that cluster.
-func extractPathsFromOverlays(builds []overlayBuild) (map[Environment][]appset.ComponentPath, map[string][]string, error) {
+// extractPathsFromOverlays parses ApplicationSets from both the HEAD and the
+// base builds and returns per-environment component paths, a mapping from
+// cluster name to the component paths deployed on that cluster, and the set of
+// path keys that exist on HEAD (for telling base-only references apart).
+//
+// Both refs are needed: a component that this PR removes is only referenced on
+// the base ref, and a component this PR adds only on HEAD. Parsing HEAD alone
+// would hide removals from the diff.
+func extractPathsFromOverlays(builds []overlayBuild) (map[Environment][]appset.ComponentPath, map[string][]string, map[string]bool, error) {
 	envPaths := make(map[Environment][]appset.ComponentPath)
 	allClusters := make(map[string][]string)
+	headKeys := make(map[string]bool)
+	seen := make(map[string]bool)
 
 	for _, ob := range builds {
-		parsed, err := appset.ParseApplicationSets(ob.headYAML)
-		if err != nil {
-			return nil, nil, fmt.Errorf("parsing ApplicationSets from overlay %s: %w", ob.name, err)
-		}
+		for i, rendered := range [][]byte{ob.headYAML, ob.baseYAML} {
+			if len(rendered) == 0 {
+				continue
+			}
+			parsed, err := appset.ParseApplicationSets(rendered)
+			if err != nil {
+				if i == 0 {
+					// HEAD must be parseable: without it nothing can be detected.
+					return nil, nil, nil, fmt.Errorf("parsing ApplicationSets from overlay %s: %w", ob.name, err)
+				}
+				// The base render is best-effort context (it only adds removed
+				// components); a parse failure must not fail the whole run.
+				slog.Warn("failed to parse base-ref ApplicationSets, continuing with HEAD only",
+					"overlay", logging.Sanitize(ob.name), "err", sanitizedError(err))
+				continue
+			}
 
-		// Every path inherits the environment from the overlay that produced it.
-		envPaths[ob.env] = append(envPaths[ob.env], parsed.Paths...)
-		for cluster, cpaths := range parsed.Clusters {
-			allClusters[cluster] = append(allClusters[cluster], cpaths...)
+			for _, cp := range parsed.Paths {
+				// The overlay environment is the deployment target: a
+				// production overlay that includes a base ApplicationSet
+				// unpatched still deploys it to production, so never narrow
+				// attribution below the overlay. The declared environment is
+				// usually a path-template variable; record it as well so a path
+				// rendered by several overlays keeps its own environment too.
+				envs := []Environment{ob.env}
+				if declared := environmentFor(cp.Environment, ob.env); declared != ob.env {
+					envs = append(envs, declared)
+				}
+				for _, env := range envs {
+					key := componentPathKey(env, cp)
+					if i == 0 {
+						headKeys[key] = true
+					}
+					if seen[key] {
+						continue
+					}
+					seen[key] = true
+					envPaths[env] = append(envPaths[env], cp)
+				}
+			}
+			for cluster, cpaths := range parsed.Clusters {
+				for _, p := range cpaths {
+					key := "cluster|" + cluster + "|" + p
+					if seen[key] {
+						continue
+					}
+					seen[key] = true
+					allClusters[cluster] = append(allClusters[cluster], p)
+				}
+			}
 		}
 	}
-	return envPaths, allClusters, nil
+	return envPaths, allClusters, headKeys, nil
+}
+
+// componentPathKey identifies a resolved path for deduplication. The
+// environment is part of the key: the same path can be deployed by overlays in
+// different environments.
+func componentPathKey(env Environment, cp appset.ComponentPath) string {
+	return string(env) + "|" + cp.Path + "|" + cp.ClusterDir + "|" +
+		strings.Join(cp.ExtraFiles, ",") + "|" +
+		strconv.FormatBool(cp.PrefixOnly) + "|" + strconv.FormatBool(cp.MatchAll)
 }
 
 // componentDeps holds the resolved dependencies for a single component path.
 type componentDeps struct {
-	cp   appset.ComponentPath
-	env  Environment
-	deps map[string]bool // nil means no kustomization.yaml; use prefix matching
+	cp                 appset.ComponentPath
+	env                Environment
+	deps               map[string]bool // nil means no kustomization.yaml; use prefix matching
+	prefixFallback     bool            // at least one ref exists without a complete tree
+	headDeps           map[string]bool // HEAD-only dependency tree for the unreferenced check
+	headPrefixFallback bool            // HEAD alone exists without a complete tree
+	fromHead           bool            // the component path exists on HEAD
 }
 
 // resolveComponentDeps walks every component path extracted from ApplicationSets
 // and resolves its kustomize dependency tree.  When no kustomization.yaml exists,
 // deps is left nil to signal that prefix matching should be used instead.
 func (d *Detector) resolveComponentDeps(envPaths map[Environment][]appset.ComponentPath) []componentDeps {
+	return d.resolveComponentDepsWithHead(envPaths, nil)
+}
+
+// resolveComponentDepsWithHead is resolveComponentDeps, additionally marking
+// which component paths exist on HEAD. headKeys is the key set returned by
+// extractPathsFromOverlays; nil marks nothing as HEAD-derived.
+func (d *Detector) resolveComponentDepsWithHead(envPaths map[Environment][]appset.ComponentPath, headKeys map[string]bool) []componentDeps {
 	seen := make(map[string]bool)
 
 	var resolved []componentDeps
@@ -375,18 +494,17 @@ func (d *Detector) resolveComponentDeps(envPaths map[Environment][]appset.Compon
 			// targeting different clusters, contributing different value files,
 			// or using a different matching strategy. Collapsing them would lose
 			// cluster attribution or narrow a prefix-only match.
-			key := string(env) + "|" + cp.Path + "|" + cp.ClusterDir + "|" +
-				strings.Join(cp.ExtraFiles, ",") + "|" +
-				strconv.FormatBool(cp.PrefixOnly) + "|" + strconv.FormatBool(cp.MatchAll)
+			key := componentPathKey(env, cp)
 			if seen[key] {
 				continue
 			}
 			seen[key] = true
+			fromHead := headKeys[key]
 
 			// An unresolvable template with no static prefix: nothing to
 			// resolve, any change affects the environment (see matches).
 			if cp.MatchAll {
-				resolved = append(resolved, componentDeps{cp: cp, env: env})
+				resolved = append(resolved, componentDeps{cp: cp, env: env, fromHead: fromHead})
 				continue
 			}
 
@@ -395,7 +513,7 @@ func (d *Detector) resolveComponentDeps(envPaths map[Environment][]appset.Compon
 			// resolve, the files are matched exactly.
 			if cp.Path == "" {
 				if len(cp.ExtraFiles) > 0 {
-					resolved = append(resolved, componentDeps{cp: cp, env: env})
+					resolved = append(resolved, componentDeps{cp: cp, env: env, fromHead: fromHead})
 				}
 				continue
 			}
@@ -406,61 +524,94 @@ func (d *Detector) resolveComponentDeps(envPaths map[Environment][]appset.Compon
 			// every kustomization under it, which reach shared bases outside
 			// the prefix (e.g. ../../base/member).
 			if cp.PrefixOnly {
-				resolved = append(resolved, componentDeps{cp: cp, env: env, deps: d.prefixDeps(cp.Path)})
+				resolved = append(resolved, componentDeps{
+					cp: cp, env: env,
+					deps:     d.prefixDeps(cp.Path),
+					headDeps: prefixDepsFor(d.head, cp.Path),
+					fromHead: fromHead,
+				})
 				continue
 			}
 
-			// The path may not exist on HEAD when a component was deleted,
-			// the ApplicationSet reference is stale, or a templated path
-			// resolves to a directory that hasn't been created yet. It also
-			// happens for a source whose path lives in another repository
-			// while its "$values/" files live here: keep those files, they
-			// are still matched exactly.
-			if !d.head.DirExists(cp.Path) {
+			// The path may exist on neither ref when the ApplicationSet
+			// reference is stale or a templated path resolves to a directory
+			// that hasn't been created yet. It also happens for a source whose
+			// path lives in another repository while its "$values/" files live
+			// here: keep those files, they are still matched exactly.
+			headExists := d.head.DirExists(cp.Path)
+			baseExists := d.base.DirExists(cp.Path)
+			if !headExists && !baseExists {
 				if len(cp.ExtraFiles) > 0 {
 					filesOnly := cp
 					filesOnly.Path = ""
-					resolved = append(resolved, componentDeps{cp: filesOnly, env: env})
+					resolved = append(resolved, componentDeps{cp: filesOnly, env: env, fromHead: fromHead})
 				}
 				continue
 			}
 
-			deps, err := d.head.ResolveDeps(cp.Path)
-			if err != nil {
+			deps, headDeps, prefixFallback, headPrefixFallback := d.resolvePathDeps(cp.Path, headExists, baseExists)
+			switch {
+			case deps == nil:
 				// No kustomization.yaml — the ApplicationSet may deploy the
 				// directory as plain YAML manifests.
-				slog.Warn("no dep tree, will use prefix match", "path", cp.Path, "err", err)
-				resolved = append(resolved, componentDeps{cp: cp, env: env, deps: nil})
-				continue
+				slog.Warn("no dep tree, will use prefix match", "path", logging.Sanitize(cp.Path), "env", env)
+			case prefixFallback:
+				slog.Debug("partial dep tree, will also use prefix match", "path", logging.Sanitize(cp.Path), "env", env, "deps", len(deps))
+			default:
+				slog.Debug("resolved dependency tree", "path", logging.Sanitize(cp.Path), "env", env, "deps", deps)
 			}
-			slog.Debug("resolved dependency tree", "path", cp.Path, "env", env, "deps", deps)
-			resolved = append(resolved, componentDeps{cp: cp, env: env, deps: deps})
+			resolved = append(resolved, componentDeps{
+				cp: cp, env: env, deps: deps, prefixFallback: prefixFallback,
+				headDeps: headDeps, headPrefixFallback: headPrefixFallback, fromHead: fromHead,
+			})
 		}
 	}
 	return resolved
 }
 
 // prefixDeps returns the union of the dependency trees of every kustomization
-// in or below prefix on HEAD, or nil when there is none.
+// in or below prefix on HEAD and base, or nil when neither has one.
 func (d *Detector) prefixDeps(prefix string) map[string]bool {
+	deps := prefixDepsFor(d.head, prefix)
+	baseDeps := prefixDepsFor(d.base, prefix)
+	if deps == nil {
+		deps = baseDeps
+	} else {
+		maps.Copy(deps, baseDeps)
+	}
+	slog.Debug("resolved dependency trees under prefix", "prefix", logging.Sanitize(prefix), "deps", len(deps))
+	return deps
+}
+
+// prefixDepsFor returns the union of dependency trees in or below prefix on one
+// ref, or nil when the ref has no contained prefix or no kustomization there.
+func prefixDepsFor(repo RepoQuerier, prefix string) map[string]bool {
+	if repo == nil {
+		return nil
+	}
 	// The prefix comes from ApplicationSet YAML. The parser only emits
 	// repository-relative prefixes, but never walk the repository root, an
 	// absolute path or anything escaping the checkout, lexically or through
 	// a symlink in the prefix or its ancestors. (Symlinks below the prefix
 	// are not followed: ListSubDirs only returns real directories.)
-	if prefix == "." || !filepath.IsLocal(prefix) || !d.head.ContainedDirExists(prefix) {
+	if prefix == "." || !filepath.IsLocal(prefix) || !repo.ContainedDirExists(prefix) {
 		return nil
 	}
 	var deps map[string]bool
 	var walk func(dir string)
 	walk = func(dir string) {
-		if tree, err := d.head.ResolveDeps(dir); err == nil {
+		tree, err := repo.ResolveDeps(dir)
+		if len(tree) > 0 {
 			if deps == nil {
 				deps = make(map[string]bool, len(tree))
 			}
 			maps.Copy(deps, tree)
 		}
-		subDirs, err := d.head.ListSubDirs(dir)
+		if err != nil && !errors.Is(err, deptree.ErrIncomplete) {
+			// No kustomization here; still walk children that may have one.
+			slog.Debug("no dependency tree for prefix directory", "dir", logging.Sanitize(dir), "err", sanitizedError(err))
+		}
+		subDirs, err := repo.ListSubDirs(dir)
 		if err != nil {
 			return
 		}
@@ -472,7 +623,6 @@ func (d *Detector) prefixDeps(prefix string) map[string]bool {
 		}
 	}
 	walk(prefix)
-	slog.Debug("resolved dependency trees under prefix", "prefix", prefix, "deps", len(deps))
 	return deps
 }
 
@@ -496,6 +646,9 @@ func (cd componentDeps) matchesFile(file string) bool {
 	if cd.cp.PrefixOnly {
 		return matchesPrefix(file, cd.cp.Path) || cd.deps[file]
 	}
+	if cd.prefixFallback {
+		return cd.deps[file] || matchesPrefix(file, cd.cp.Path)
+	}
 	if cd.deps != nil {
 		return cd.deps[file]
 	}
@@ -517,6 +670,70 @@ func (cd componentDeps) matches(changedSet map[string]bool, matched map[string]b
 	return found
 }
 
+// resolvePathDeps returns the union of the kustomize dependency trees of rel on
+// the refs where it exists, plus the HEAD-only view.  Union matters at the
+// edges of a PR: a kustomization that gains a dependency in HEAD must not hide
+// a removal relative to base, and vice versa. A nil result means neither ref
+// has a kustomization there.
+//
+// prefixFallback is true when at least one ref has the directory but no
+// complete dependency tree (plain manifests, or an unreadable generator/chart).
+// headPrefixFallback is the same signal for HEAD alone: callers that ask
+// whether a file is still referenced on HEAD must not use base-only
+// dependencies, and must use HEAD's own prefix-fallback state.
+func (d *Detector) resolvePathDeps(rel string, headExists, baseExists bool) (deps, headDeps map[string]bool, prefixFallback, headPrefixFallback bool) {
+	merge := func(dst *map[string]bool, m map[string]bool) {
+		if len(m) == 0 {
+			return
+		}
+		if *dst == nil {
+			*dst = make(map[string]bool, len(m))
+		}
+		for k := range m {
+			(*dst)[k] = true
+		}
+	}
+	resolve := func(repo RepoQuerier, exists bool, name string, head bool) {
+		if !exists {
+			return
+		}
+		m, err := repo.ResolveDeps(rel)
+		switch {
+		case err == nil:
+			merge(&deps, m)
+			if head {
+				merge(&headDeps, m)
+			}
+		case errors.Is(err, deptree.ErrIncomplete):
+			prefixFallback = true
+			merge(&deps, m)
+			if head {
+				headPrefixFallback = true
+				merge(&headDeps, m)
+			}
+			slog.Warn("partial dependency tree, also using prefix match",
+				"path", logging.Sanitize(rel), "ref", name, "err", sanitizedError(err))
+		default:
+			prefixFallback = true
+			if head {
+				headPrefixFallback = true
+			}
+			slog.Debug("no dependency tree, also using prefix match",
+				"path", logging.Sanitize(rel), "ref", name, "err", sanitizedError(err))
+		}
+	}
+
+	resolve(d.head, headExists, "HEAD", true)
+	resolve(d.base, baseExists, "base", false)
+	if deps == nil {
+		prefixFallback = true
+	}
+	if headExists && headDeps == nil {
+		headPrefixFallback = true
+	}
+	return deps, headDeps, prefixFallback, headPrefixFallback
+}
+
 // matchChangedFiles checks each resolved component against the set of changed
 // files.  For components with a dependency tree it uses an exact match; for
 // components without a kustomization.yaml it falls back to prefix matching.
@@ -535,8 +752,31 @@ func matchChangedFiles(changedFiles []string, resolved []componentDeps, allClust
 			}
 			result.AffectedEnvironments[cd.env] = true
 			matchClusters(cd.cp, allClusters, result)
-			slog.Info("Changed files match component", "path", cd.cp.Path, "env", cd.env)
+			slog.Info("Changed files match component", "path", logging.Sanitize(cd.cp.Path), "env", cd.env)
 		}
+	}
+	return matched
+}
+
+// matchedHeadFiles records changed files that a component path existing on HEAD
+// references. Base-only paths deliberately do not count: a file HEAD still
+// contains but no current ApplicationSet deploys is dead after merge, which is
+// exactly what UnreferencedFiles reports.
+func matchedHeadFiles(changedFiles []string, resolved []componentDeps) map[string]bool {
+	changedSet := make(map[string]bool, len(changedFiles))
+	for _, f := range changedFiles {
+		changedSet[f] = true
+	}
+
+	matched := make(map[string]bool)
+	for _, cd := range resolved {
+		if !cd.fromHead {
+			continue
+		}
+		head := cd
+		head.deps = cd.headDeps
+		head.prefixFallback = cd.headPrefixFallback
+		head.matches(changedSet, matched)
 	}
 	return matched
 }
@@ -580,7 +820,7 @@ func matchAffectedComponents(changedFiles []string, resolved []componentDeps, al
 		}
 		if cd.cp.MatchAll || cd.cp.Path == "" || cd.cp.PrefixOnly {
 			slog.Warn("affected component has no renderable directory; render-diff will not show a diff",
-				"path", cd.cp.Path, "extraFiles", cd.cp.ExtraFiles, "env", cd.env)
+				"path", logging.Sanitize(cd.cp.Path), "extraFiles", cd.cp.ExtraFiles, "env", cd.env)
 			continue
 		}
 		key := string(cd.env) + "|" + cd.cp.Path + "|" + cd.cp.ClusterDir
@@ -589,7 +829,7 @@ func matchAffectedComponents(changedFiles []string, resolved []componentDeps, al
 		}
 		seen[key] = true
 		affected[cd.env] = append(affected[cd.env], cd.cp)
-		slog.Info("Changed files match component", "path", cd.cp.Path, "env", cd.env)
+		slog.Info("Changed files match component", "path", logging.Sanitize(cd.cp.Path), "env", cd.env)
 	}
 	return affected
 }

@@ -48,6 +48,7 @@ spec:
 	p := result.Paths[0]
 	g.Expect(p.Path).To(Equal("components/has/staging"))
 	g.Expect(p.ClusterDir).To(BeEmpty())
+	g.Expect(p.Environment).To(Equal("staging"))
 }
 
 func TestParseApplicationSets_WithClusterOverrides(t *testing.T) {

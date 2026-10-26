@@ -5,16 +5,16 @@ package kustomize
 import (
 	"fmt"
 	"os"
+	"sync"
 
 	"sigs.k8s.io/kustomize/api/krusty"
 	"sigs.k8s.io/kustomize/kyaml/filesys"
 )
 
-// Build runs kustomize build on the given directory and returns the rendered
-// YAML output as a byte slice. Deprecation warnings from kustomize are
-// silenced by temporarily redirecting stderr.
-func Build(dir string) ([]byte, error) {
-	fSys := filesys.MakeFsOnDisk()
+// newKustomizer builds a kustomizer configured the way every build needs it.
+// A new instance per build is cheap and keeps the options immutable, so builds
+// can run concurrently.
+func newKustomizer() *krusty.Kustomizer {
 	opts := krusty.MakeDefaultOptions()
 	// Allow loading files from outside the kustomization root since overlays
 	// reference ../../base/ paths.
@@ -23,12 +23,17 @@ func Build(dir string) ([]byte, error) {
 	// HelmChartInflationGenerator can be built.
 	opts.PluginConfig.HelmConfig.Enabled = true
 	opts.PluginConfig.HelmConfig.Command = "helm"
-	k := krusty.MakeKustomizer(opts)
+	return krusty.MakeKustomizer(opts)
+}
 
+// Build runs kustomize build on the given directory and returns the rendered
+// YAML output as a byte slice. Deprecation warnings from kustomize are
+// silenced by temporarily redirecting stderr.
+func Build(dir string) ([]byte, error) {
 	// Silence kustomize deprecation warnings (patchesStrategicMerge,
 	// commonLabels, etc.) which are written directly to stderr.
 	restoreStderr := muteStderr()
-	resMap, err := k.Run(fSys, dir)
+	resMap, err := newKustomizer().Run(filesys.MakeFsOnDisk(), dir)
 	restoreStderr()
 
 	if err != nil {
@@ -41,17 +46,53 @@ func Build(dir string) ([]byte, error) {
 	return yamlBytes, nil
 }
 
-// muteStderr redirects stderr to /dev/null and returns a function that
-// restores the original stderr.
+// Stderr muting is process-global because kustomize writes deprecation warnings
+// to os.Stderr directly. Builds run concurrently (overlay builds in the
+// detector and component builds in the render-diff engine), so the swap is
+// reference-counted: the first build redirects stderr, the last one restores it.
+var (
+	stderrMu      sync.Mutex
+	stderrRefs    int
+	stderrSaved   *os.File
+	stderrDevNull *os.File
+)
+
+// muteStderr redirects stderr to /dev/null until the returned function is
+// called. It is safe for concurrent use.
 func muteStderr() func() {
-	origStderr := os.Stderr
-	devNull, err := os.Open(os.DevNull)
-	if err != nil {
-		return func() {} // can't mute, no-op restore
+	stderrMu.Lock()
+	defer stderrMu.Unlock()
+
+	if stderrRefs == 0 {
+		devNull, err := os.Open(os.DevNull)
+		if err != nil {
+			// Can't mute: return a no-op restore rather than failing the build.
+			return func() {}
+		}
+		stderrSaved = os.Stderr
+		stderrDevNull = devNull
+		os.Stderr = devNull
 	}
-	os.Stderr = devNull
+	stderrRefs++
+
+	var once sync.Once
 	return func() {
-		os.Stderr = origStderr
-		_ = devNull.Close()
+		once.Do(func() {
+			stderrMu.Lock()
+			defer stderrMu.Unlock()
+
+			stderrRefs--
+			if stderrRefs > 0 {
+				return
+			}
+			if stderrSaved != nil {
+				os.Stderr = stderrSaved
+				stderrSaved = nil
+			}
+			if stderrDevNull != nil {
+				_ = stderrDevNull.Close()
+				stderrDevNull = nil
+			}
+		})
 	}
 }

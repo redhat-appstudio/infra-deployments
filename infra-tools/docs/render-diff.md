@@ -22,7 +22,9 @@ From anywhere in the repo:
 ```
 
 This auto-detects the repo root, computes the merge-base with main,
-and prints colored unified diffs for all affected components.
+and prints colored unified diffs for all affected components. Local runs
+include uncommitted and untracked working-tree changes; CI modes compare
+committed refs only.
 
 ## Flag reference
 
@@ -31,7 +33,7 @@ and prints colored unified diffs for all affected components.
 | Flag | Default | Description |
 |------|---------|-------------|
 | `--repo-root` | auto-detect | Path to the repository root. When omitted, detected via `git rev-parse --show-toplevel` from the current directory. Useful in CI where the checkout path is known. |
-| `--base-ref` | merge-base with main | Git ref to compare against (branch, tag, or commit SHA). By default, computes `git merge-base HEAD main` so the diff reflects only your branch's changes. Use an explicit ref when comparing against a release branch or a specific commit. |
+| `--base-ref` | merge-base with main | Git ref used to compute the merge-base with HEAD (branch, tag, or commit SHA). The diff compares HEAD against `git merge-base HEAD <ref>`, not directly against `<ref>`, so it reflects only changes made on your branch since it diverged from that ref. |
 | `--overlays-dir` | `argo-cd-apps/overlays` | Path to the ArgoCD overlays directory, relative to repo root. Only change this if the repo uses a non-standard layout. |
 
 ### Output control
@@ -41,7 +43,7 @@ and prints colored unified diffs for all affected components.
 | `--color` | `auto` | Color mode: `auto` (detect TTY), `always`, or `never`. Use `always` when piping to a pager that supports ANSI (e.g. `less -R`). |
 | `--open` | off | Write base and head YAML into two temp directories and open them in `$DIFFTOOL` (or `git difftool --no-index --dir-diff`). Files are named after component and environment for easy identification. |
 | `--output-dir` | — | Write per-component `.diff` files to this directory instead of stdout. Files are named like `components__foo__staging__staging.diff`. |
-| `--output-mode` | `local` | Output format: `local` (unified diff to stdout), `ci-summary` (markdown for `GITHUB_STEP_SUMMARY`), `ci-comment` (PR comment markdown), `ci-artifact-dir` (raw `.diff` files to `--output-dir`). In CI, accepts comma-separated values to produce multiple outputs in a single run (e.g. `--output-mode=ci-summary,ci-comment,ci-artifact-dir`). |
+| `--output-mode` | `local` | Output format: `local` (unified diff to stdout; uses the working tree and must be used alone), `ci-summary` (markdown for `GITHUB_STEP_SUMMARY`), `ci-comment` (PR comment markdown), `ci-artifact-dir` (raw `.diff` files to `--output-dir`). CI modes compare committed refs and accept comma-separated values to produce multiple outputs in a single run (e.g. `--output-mode=ci-summary,ci-comment,ci-artifact-dir`). |
 | `--log-file` | — | Write DEBUG-level logs to this file. INFO-level messages always go to stderr. |
 | `--version` | — | Print version and exit. |
 
@@ -99,15 +101,21 @@ delta < ./my-diffs/components__foo__staging__staging.diff
 ### Comparing against a specific ref
 
 ```bash
+# Compares HEAD against merge-base(HEAD, origin/release-1.0)
 ./bin/render-diff --base-ref origin/release-1.0
+
+# Also works with a commit SHA
 ./bin/render-diff --base-ref abc1234
 ```
 
 By default, render-diff computes `git merge-base HEAD main` so the diff
 only reflects your branch's changes — not everything that happened on
-main since you branched. Use `--base-ref` to compare against a different
-branch or commit, for example when working against a release branch
-instead of main.
+main since you branched. An explicit `--base-ref` selects the other input
+to merge-base, not a direct snapshot to compare against.
+
+If that ref has diverged, changes that only exist on the ref after the
+common ancestor are not shown; the diff remains the delta introduced by
+HEAD since the two histories split.
 
 ### Explicit repo root
 

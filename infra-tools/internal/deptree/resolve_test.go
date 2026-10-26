@@ -1,6 +1,7 @@
 package deptree
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -613,4 +614,129 @@ resources:
 func writeFile(t *testing.T, path, content string) {
 	t.Helper()
 	NewWithT(t).Expect(os.WriteFile(path, []byte(content), 0o644)).To(Succeed())
+}
+
+// 'bases' is a deprecated alias of 'resources'; kustomize still honours it, so
+// the dependency tree must too.
+func TestResolve_DeprecatedBases(t *testing.T) {
+	g := NewWithT(t)
+	tmpDir := t.TempDir()
+
+	baseDir := filepath.Join(tmpDir, "component", "base")
+	g.Expect(os.MkdirAll(baseDir, 0o755)).To(Succeed())
+	writeFile(t, filepath.Join(baseDir, "kustomization.yaml"), `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - deployment.yaml
+`)
+	writeFile(t, filepath.Join(baseDir, "deployment.yaml"), "kind: Deployment")
+
+	prodDir := filepath.Join(tmpDir, "component", "production")
+	g.Expect(os.MkdirAll(prodDir, 0o755)).To(Succeed())
+	writeFile(t, filepath.Join(prodDir, "kustomization.yaml"), `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+bases:
+  - ../base
+`)
+	writeFile(t, filepath.Join(prodDir, "prod-patch.yaml"), "kind: Deployment")
+
+	deps, err := Resolve(tmpDir, "component/production")
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(deps).To(HaveKey("component/base/deployment.yaml"))
+}
+
+// A chart that is not vendored locally (pulled from a remote repository at
+// build time) must not discard the rest of the dependency tree.
+func TestResolve_MissingHelmChartDirIsNotFatal(t *testing.T) {
+	g := NewWithT(t)
+	tmpDir := t.TempDir()
+
+	prodDir := filepath.Join(tmpDir, "component", "production")
+	g.Expect(os.MkdirAll(prodDir, 0o755)).To(Succeed())
+	writeFile(t, filepath.Join(prodDir, "kustomization.yaml"), `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - deployment.yaml
+helmCharts:
+  - name: remote-chart
+    repo: https://example.com/charts
+    version: 1.0.0
+    releaseName: remote
+    valuesFile: values.yaml
+`)
+	writeFile(t, filepath.Join(prodDir, "deployment.yaml"), "kind: Deployment")
+	writeFile(t, filepath.Join(prodDir, "values.yaml"), "key: value")
+
+	deps, err := Resolve(tmpDir, "component/production")
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(deps).To(HaveKey("component/production/deployment.yaml"))
+	g.Expect(deps).To(HaveKey("component/production/values.yaml"))
+}
+
+// An unreadable HelmChartInflationGenerator must not fail the whole tree.
+func TestResolve_UnreadableGeneratorIsNotFatal(t *testing.T) {
+	g := NewWithT(t)
+	tmpDir := t.TempDir()
+
+	prodDir := filepath.Join(tmpDir, "component", "production")
+	g.Expect(os.MkdirAll(prodDir, 0o755)).To(Succeed())
+	writeFile(t, filepath.Join(prodDir, "kustomization.yaml"), `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - deployment.yaml
+generators:
+  - missing-generator.yaml
+`)
+	writeFile(t, filepath.Join(prodDir, "deployment.yaml"), "kind: Deployment")
+
+	deps, err := Resolve(tmpDir, "component/production")
+	g.Expect(errors.Is(err, ErrIncomplete)).To(BeTrue())
+	g.Expect(deps).To(HaveKey("component/production/deployment.yaml"))
+	g.Expect(deps).To(HaveKey("component/production/missing-generator.yaml"))
+}
+
+// A generator that cannot be parsed must be treated like an unreadable one:
+// keep the partial tree, report it as incomplete and let the caller fall back
+// to prefix matching.
+func TestResolve_MalformedGeneratorIsNotFatal(t *testing.T) {
+	g := NewWithT(t)
+	tmpDir := t.TempDir()
+
+	prodDir := filepath.Join(tmpDir, "component", "production")
+	g.Expect(os.MkdirAll(prodDir, 0o755)).To(Succeed())
+	writeFile(t, filepath.Join(prodDir, "kustomization.yaml"), `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - deployment.yaml
+generators:
+  - generator.yaml
+`)
+	writeFile(t, filepath.Join(prodDir, "deployment.yaml"), "kind: Deployment")
+	writeFile(t, filepath.Join(prodDir, "generator.yaml"), "[")
+
+	deps, err := Resolve(tmpDir, "component/production")
+	g.Expect(errors.Is(err, ErrIncomplete)).To(BeTrue())
+	g.Expect(deps).To(HaveKey("component/production/deployment.yaml"))
+	g.Expect(deps).To(HaveKey("component/production/generator.yaml"))
+}
+
+// A chart directory that resolves outside the checkout is skipped without
+// discarding the rest of the tree.
+func TestAddDirTree_SkipsDirectoryOutsideRepo(t *testing.T) {
+	g := NewWithT(t)
+	repoRoot := t.TempDir()
+	outside := t.TempDir()
+	g.Expect(os.MkdirAll(filepath.Join(outside, "templates"), 0o755)).To(Succeed())
+	writeFile(t, filepath.Join(outside, "templates", "cm.yaml"), "kind: ConfigMap")
+
+	deps := make(map[string]bool)
+	incomplete := false
+	g.Expect(addDirTree(repoRoot, outside, deps, &incomplete)).To(Succeed())
+	g.Expect(deps).To(BeEmpty())
+	g.Expect(incomplete).To(BeFalse())
 }
