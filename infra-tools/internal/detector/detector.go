@@ -1,5 +1,15 @@
 // Package detector implements the core logic for determining which
 // environments and clusters a set of changed files affects.
+//
+// Environment attribution has two rules:
+//
+//   - A component path is attributed to the environment of the overlay whose
+//     ApplicationSet produced it and, when the ApplicationSet declares a
+//     different valid environment, to that environment as well.
+//   - An overlay diff is attributed to the environment declared in the
+//     ApplicationSet generator, falling back to the overlay's environment, so a
+//     change in a shared argo-cd-apps/base directory does not mark every
+//     environment as affected.
 package detector
 
 import (
@@ -9,6 +19,8 @@ import (
 	"maps"
 	"path/filepath"
 	"reflect"
+	"runtime"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -148,7 +160,7 @@ func (d *Detector) AffectedComponents(changedFiles []string) (map[Environment][]
 	}
 
 	// Phase 3: Extract component paths from ApplicationSets
-	envPaths, allClusters, _, err := extractPathsFromOverlays(builds)
+	envPaths, _, _, err := extractPathsFromOverlays(builds)
 	if err != nil {
 		return nil, err
 	}
@@ -157,7 +169,7 @@ func (d *Detector) AffectedComponents(changedFiles []string) (map[Environment][]
 	resolved := d.resolveComponentDeps(envPaths)
 
 	// Phase 5: Match changed files against resolved dependencies
-	affected := matchAffectedComponents(changedFiles, resolved, allClusters)
+	affected := matchAffectedComponents(changedFiles, resolved)
 
 	// Phase 6: An ApplicationSet change (new cluster in a generator list, new
 	// ApplicationSet, changed path template) affects components that no changed
@@ -661,9 +673,14 @@ func (d *Detector) resolveComponentDeps(envPaths map[Environment][]appset.Compon
 // which component paths exist on HEAD. headKeys is the key set returned by
 // extractPathsFromOverlays; nil marks nothing as HEAD-derived.
 func (d *Detector) resolveComponentDepsWithHead(envPaths map[Environment][]appset.ComponentPath, headKeys map[string]bool) []componentDeps {
-	seen := make(map[string]bool)
+	type componentJob struct {
+		env      Environment
+		cp       appset.ComponentPath
+		fromHead bool
+	}
 
-	var resolved []componentDeps
+	seen := make(map[string]bool)
+	var jobs []componentJob
 	for env, paths := range envPaths {
 		for _, cp := range paths {
 			// The key must include ClusterDir, ExtraFiles and the fallback flags:
@@ -676,74 +693,99 @@ func (d *Detector) resolveComponentDepsWithHead(envPaths map[Environment][]appse
 				continue
 			}
 			seen[key] = true
-			fromHead := headKeys[key]
-
-			// An unresolvable template with no static prefix: nothing to
-			// resolve, any change affects the environment (see matches).
-			if cp.MatchAll {
-				resolved = append(resolved, componentDeps{cp: cp, env: env, fromHead: fromHead})
-				continue
-			}
-
-			// A component path may only carry individual files (e.g. a Helm
-			// values file from a multi-source template); there is nothing to
-			// resolve, the files are matched exactly.
-			if cp.Path == "" {
-				if len(cp.ExtraFiles) > 0 {
-					resolved = append(resolved, componentDeps{cp: cp, env: env, fromHead: fromHead})
-				}
-				continue
-			}
-
-			// A prefix-only path is an unresolved template: the deployed
-			// directory is one of those under the prefix (which may not even
-			// exist), so match by prefix and also by the dependency trees of
-			// every kustomization under it, which reach shared bases outside
-			// the prefix (e.g. ../../base/member).
-			if cp.PrefixOnly {
-				resolved = append(resolved, componentDeps{
-					cp: cp, env: env,
-					deps:     d.prefixDeps(cp.Path),
-					headDeps: prefixDepsFor(d.head, cp.Path),
-					fromHead: fromHead,
-				})
-				continue
-			}
-
-			// The path may exist on neither ref when the ApplicationSet
-			// reference is stale or a templated path resolves to a directory
-			// that hasn't been created yet. It also happens for a source whose
-			// path lives in another repository while its "$values/" files live
-			// here: keep those files, they are still matched exactly.
-			headExists := d.head.DirExists(cp.Path)
-			baseExists := d.base.DirExists(cp.Path)
-			if !headExists && !baseExists {
-				if len(cp.ExtraFiles) > 0 {
-					filesOnly := cp
-					filesOnly.Path = ""
-					resolved = append(resolved, componentDeps{cp: filesOnly, env: env, fromHead: fromHead})
-				}
-				continue
-			}
-
-			deps, headDeps, prefixFallback, headPrefixFallback := d.resolvePathDeps(cp.Path, headExists, baseExists)
-			switch {
-			case deps == nil:
-				// No kustomization.yaml — the ApplicationSet may deploy the
-				// directory as plain YAML manifests.
-				slog.Warn("no dep tree, will use prefix match", "path", logging.Sanitize(cp.Path), "env", env)
-			case prefixFallback:
-				slog.Debug("partial dep tree, will also use prefix match", "path", logging.Sanitize(cp.Path), "env", env, "deps", len(deps))
-			default:
-				slog.Debug("resolved dependency tree", "path", logging.Sanitize(cp.Path), "env", env, "deps", deps)
-			}
-			resolved = append(resolved, componentDeps{
-				cp: cp, env: env, deps: deps, prefixFallback: prefixFallback,
-				headDeps: headDeps, headPrefixFallback: headPrefixFallback, fromHead: fromHead,
-			})
+			jobs = append(jobs, componentJob{env: env, cp: cp, fromHead: headKeys[key]})
 		}
 	}
+
+	// Dependency resolution walks files, so run it in parallel; the RepoRef
+	// resolver caches per directory, which makes shared base trees cheap.
+	results := make([][]componentDeps, len(jobs))
+	g := errgroup.Group{}
+	g.SetLimit(runtime.NumCPU())
+	for i, job := range jobs {
+		g.Go(func() error {
+			results[i] = d.resolveComponent(job.env, job.cp, job.fromHead)
+			return nil
+		})
+	}
+	if err := g.Wait(); err != nil {
+		// The workers never fail, but keep the error path honest.
+		slog.Warn("resolving dependency trees failed", "err", err)
+	}
+
+	resolved := make([]componentDeps, 0, len(jobs))
+	for _, r := range results {
+		resolved = append(resolved, r...)
+	}
 	return resolved
+}
+
+// resolveComponent resolves one component path, choosing the matching strategy:
+// exact extra files, prefix matching for unresolved templates, or a dependency
+// tree resolved on both refs. HEAD-only dependency information is kept for the
+// unreferenced-file check.
+func (d *Detector) resolveComponent(env Environment, cp appset.ComponentPath, fromHead bool) []componentDeps {
+	// An unresolvable template with no static prefix: nothing to resolve, any
+	// change affects the environment (see matchesFile).
+	if cp.MatchAll {
+		return []componentDeps{{cp: cp, env: env, fromHead: fromHead}}
+	}
+
+	// A component path may only carry individual files (e.g. a Helm values file
+	// from a multi-source template); there is nothing to resolve, the files are
+	// matched exactly.
+	if cp.Path == "" {
+		if len(cp.ExtraFiles) > 0 {
+			return []componentDeps{{cp: cp, env: env, fromHead: fromHead}}
+		}
+		return nil
+	}
+
+	// A prefix-only path is an unresolved template: the deployed directory is
+	// one of those under the prefix (which may not even exist), so match by
+	// prefix and also by the dependency trees of every kustomization under it,
+	// which reach shared bases outside the prefix (e.g. ../../base/member).
+	if cp.PrefixOnly {
+		return []componentDeps{{
+			cp:       cp,
+			env:      env,
+			deps:     d.prefixDeps(cp.Path),
+			headDeps: prefixDepsFor(d.head, cp.Path),
+			fromHead: fromHead,
+		}}
+	}
+
+	// The path may exist on neither ref when the ApplicationSet reference is
+	// stale or a templated path resolves to a directory that hasn't been created
+	// yet. It also happens for a source whose path lives in another repository
+	// while its "$values/" files live here: keep those files, they are still
+	// matched exactly.
+	headExists := d.head.DirExists(cp.Path)
+	baseExists := d.base.DirExists(cp.Path)
+	if !headExists && !baseExists {
+		if len(cp.ExtraFiles) > 0 {
+			filesOnly := cp
+			filesOnly.Path = ""
+			return []componentDeps{{cp: filesOnly, env: env, fromHead: fromHead}}
+		}
+		return nil
+	}
+
+	deps, headDeps, prefixFallback, headPrefixFallback := d.resolvePathDeps(cp.Path, headExists, baseExists)
+	switch {
+	case deps == nil:
+		// No kustomization.yaml — the ApplicationSet may deploy the directory as
+		// plain YAML manifests.
+		slog.Warn("no dep tree, will use prefix match", "path", logging.Sanitize(cp.Path), "env", env)
+	case prefixFallback:
+		slog.Debug("partial dep tree, will also use prefix match", "path", logging.Sanitize(cp.Path), "env", env, "deps", len(deps))
+	default:
+		slog.Debug("resolved dependency tree", "path", logging.Sanitize(cp.Path), "env", env, "deps", deps)
+	}
+	return []componentDeps{{
+		cp: cp, env: env, deps: deps, prefixFallback: prefixFallback,
+		headDeps: headDeps, headPrefixFallback: headPrefixFallback, fromHead: fromHead,
+	}}
 }
 
 // prefixDeps returns the union of the dependency trees of every kustomization
@@ -861,16 +903,6 @@ func (cd componentDeps) matchesFileStrongly(file string) bool {
 	return matchesPrefix(file, cd.cp.Path)
 }
 
-// matchesAny reports whether any changed file affects this component.
-func (cd componentDeps) matchesAny(changedSet map[string]bool) bool {
-	for f := range changedSet {
-		if cd.matchesFile(f) {
-			return true
-		}
-	}
-	return false
-}
-
 // resolvePathDeps returns the union of the kustomize dependency trees of rel on
 // the refs where it exists, plus the HEAD-only view.  Union matters at the
 // edges of a PR: a kustomization that gains a dependency in HEAD must not hide
@@ -935,49 +967,94 @@ func (d *Detector) resolvePathDeps(rel string, headExists, baseExists bool) (dep
 	return deps, headDeps, prefixFallback, headPrefixFallback
 }
 
-// matchChangedFiles checks each resolved component against the set of changed
-// files.  For components with a dependency tree it uses an exact match; for
-// components without a kustomization.yaml it falls back to prefix matching.
-// It returns the changed files that matched at least one component and records
-// the per-file environment attribution in Result.FileEnvs.
+// matchChangedFiles is the result-oriented wrapper around the shared match
+// pass. It records environment, cluster and per-file attribution in result and
+// returns the set of changed files that matched a component.
 func matchChangedFiles(changedFiles []string, resolved []componentDeps, allClusters map[string][]string, result *Result) map[string]bool {
-	changedSet := make(map[string]bool, len(changedFiles))
-	for _, f := range changedFiles {
-		changedSet[f] = true
-	}
-	matched := make(map[string]bool)
+	matched := matchComponents(changedFiles, resolved)
+	applyComponentMatches(matched, allClusters, result)
+	return matchedFileSet(matched)
+}
 
+// matchedComponent is a component affected by at least one changed file.
+type matchedComponent struct {
+	cp    appset.ComponentPath
+	env   Environment
+	files []string
+	// strongFiles are the files matched by an exact dependency, an exact
+	// ExtraFile or a fully resolved path. MatchAll and broad prefix matches are
+	// kept for environment attribution but must not classify a file for ring
+	// enforcement.
+	strongFiles []string
+}
+
+// matchComponents returns the components affected by changedFiles, together with
+// the files that matched each of them. It is the single matching pass shared by
+// Detect and AffectedComponents, so both always agree.
+func matchComponents(changedFiles []string, resolved []componentDeps) []matchedComponent {
+	changedFiles = slices.Clone(changedFiles)
+	sort.Strings(changedFiles)
+	changedFiles = slices.Compact(changedFiles)
+
+	var matched []matchedComponent
 	for _, cd := range resolved {
-		componentMatched := false
-		for f := range changedSet {
+		var files, strong []string
+		for _, f := range changedFiles {
 			if !cd.matchesFile(f) {
 				continue
 			}
-			componentMatched = true
-			matched[f] = true
-			if !cd.matchesFileStrongly(f) {
-				// MatchAll and broad prefix matches are kept for environment
-				// attribution but must not classify a file for ring enforcement.
-				continue
+			files = append(files, f)
+			if cd.matchesFileStrongly(f) {
+				strong = append(strong, f)
 			}
-			if result.FileEnvs == nil {
-				result.FileEnvs = make(map[string]map[Environment]bool)
-			}
+		}
+		if len(files) > 0 {
+			matched = append(matched, matchedComponent{
+				cp: cd.cp, env: cd.env, files: files, strongFiles: strong,
+			})
+		}
+	}
+
+	sort.SliceStable(matched, func(i, j int) bool {
+		if matched[i].env != matched[j].env {
+			return matched[i].env < matched[j].env
+		}
+		return matched[i].cp.Path < matched[j].cp.Path
+	})
+	return matched
+}
+
+// matchedFileSet returns the set of changed files that matched a component.
+func matchedFileSet(matched []matchedComponent) map[string]bool {
+	files := make(map[string]bool)
+	for _, mc := range matched {
+		for _, f := range mc.files {
+			files[f] = true
+		}
+	}
+	return files
+}
+
+// applyComponentMatches records environments, clusters and per-file environment
+// attribution for the components affected by the change.
+func applyComponentMatches(matched []matchedComponent, allClusters map[string][]string, result *Result) {
+	if result.FileEnvs == nil {
+		result.FileEnvs = make(map[string]map[Environment]bool)
+	}
+	for _, mc := range matched {
+		if mc.cp.MatchAll {
+			slog.Warn("An ApplicationSet template could not be resolved, conservatively marking its environment as affected", "env", mc.env)
+		}
+		result.AffectedEnvironments[mc.env] = true
+		matchClusters(mc.cp, allClusters, result)
+		for _, f := range mc.strongFiles {
 			if result.FileEnvs[f] == nil {
 				result.FileEnvs[f] = make(map[Environment]bool)
 			}
-			result.FileEnvs[f][cd.env] = true
+			result.FileEnvs[f][mc.env] = true
 		}
-		if componentMatched {
-			if cd.cp.MatchAll {
-				slog.Warn("An ApplicationSet template could not be resolved, conservatively marking its environment as affected", "env", cd.env)
-			}
-			result.AffectedEnvironments[cd.env] = true
-			matchClusters(cd.cp, allClusters, result)
-			slog.Info("Changed files match component", "path", logging.Sanitize(cd.cp.Path), "env", cd.env)
-		}
+		slog.Info("Changed files match component", "path", logging.Sanitize(mc.cp.Path), "env", mc.env)
 	}
-	return matched
 }
 
 // matchedHeadFiles records changed files that a component path existing on HEAD
@@ -1032,30 +1109,22 @@ func applyStaticRules(changedFiles []string, result *Result) {
 // otherwise be built as the repository root or as an unrelated prefix. Paths
 // are deduplicated per environment and cluster because render-diff builds each
 // one once.
-func matchAffectedComponents(changedFiles []string, resolved []componentDeps, allClusters map[string][]string) map[Environment][]appset.ComponentPath {
-	changedSet := make(map[string]bool, len(changedFiles))
-	for _, f := range changedFiles {
-		changedSet[f] = true
-	}
-
+func matchAffectedComponents(changedFiles []string, resolved []componentDeps) map[Environment][]appset.ComponentPath {
 	affected := make(map[Environment][]appset.ComponentPath)
 	seen := make(map[string]bool)
-	for _, cd := range resolved {
-		if !cd.matchesAny(changedSet) {
-			continue
-		}
-		if cd.cp.MatchAll || cd.cp.Path == "" || cd.cp.PrefixOnly {
+	for _, mc := range matchComponents(changedFiles, resolved) {
+		if mc.cp.MatchAll || mc.cp.Path == "" || mc.cp.PrefixOnly {
 			slog.Warn("affected component has no renderable directory; render-diff will not show a diff",
-				"path", logging.Sanitize(cd.cp.Path), "extraFiles", cd.cp.ExtraFiles, "env", cd.env)
+				"path", logging.Sanitize(mc.cp.Path), "extraFiles", mc.cp.ExtraFiles, "env", mc.env)
 			continue
 		}
-		key := string(cd.env) + "|" + cd.cp.Path + "|" + cd.cp.ClusterDir
+		key := string(mc.env) + "|" + mc.cp.Path + "|" + mc.cp.ClusterDir
 		if seen[key] {
 			continue
 		}
 		seen[key] = true
-		affected[cd.env] = append(affected[cd.env], cd.cp)
-		slog.Info("Changed files match component", "path", logging.Sanitize(cd.cp.Path), "env", cd.env)
+		affected[mc.env] = append(affected[mc.env], mc.cp)
+		slog.Info("Changed files match component", "path", logging.Sanitize(mc.cp.Path), "env", mc.env)
 	}
 	return affected
 }
