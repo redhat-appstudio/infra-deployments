@@ -6,16 +6,7 @@ metadata:
     appstudio.redhat.com/deployment-clusters: "tenant"
 spec:
   generators:
-    # mintmaker is not deployed to stone-stg-rh01 or lightwell-dev; drop them
-    # from the tenant cluster list populated by deploy-to-staging-tenant-clusters.
-    - selector:
-        matchExpressions:
-          - key: nameNormalized
-            operator: NotIn
-            values:
-              - stone-stg-rh01
-              - lightwell-dev
-      merge:
+    - merge:
         mergeKeys:
           - nameNormalized
         generators:
