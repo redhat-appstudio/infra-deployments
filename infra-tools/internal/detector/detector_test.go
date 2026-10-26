@@ -1415,16 +1415,11 @@ func TestResultLabels(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// ApplicationSet shapes that exist in the repo but are not handled by the parser
-// yet.
+// ApplicationSet shapes that were previously dropped silently.
 //
-// The test below is skipped until the parser learns the shape; the follow-up
-// change that implements it removes the skip. See the parser-level equivalents
-// in internal/appset/parse_test.go and the end-to-end guard in
-// internal/appset/audit_test.go.
+// See the parser-level tests in internal/appset/parse_test.go and the
+// end-to-end guard in internal/appset/audit_test.go.
 // ---------------------------------------------------------------------------
-
-const pendingSkipMsg = "TODO(render-diff-audit step 2): parser does not support this shape yet"
 
 // topLevelListAppSet is the shape used by konflux-verifications-rd in the
 // rd-production overlay: a single list generator with per-element values.
@@ -1452,7 +1447,6 @@ spec:
 // A production component reached through a top-level list generator must be
 // detected as a production change (which also drives the hold labels).
 func TestDetect_TopLevelListGenerator(t *testing.T) {
-	t.Skip(pendingSkipMsg)
 	g := NewWithT(t)
 
 	const componentPath = "components/konflux-verifications-rd/rings/ring-2/stone-prod-p01"
@@ -1481,4 +1475,39 @@ func TestDetect_TopLevelListGenerator(t *testing.T) {
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(result.AffectedEnvironments).To(HaveKey(Production))
 	g.Expect(result.AffectedClusters).To(HaveKey("stone-prod-p01"))
+}
+
+// A prefix-only component path (unresolved template) is matched by prefix: the
+// directory it was derived from may not even exist.
+func TestResolveComponentDeps_PrefixOnlyMatchesByPrefix(t *testing.T) {
+	g := NewWithT(t)
+
+	head := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"staging-downstream"}},
+		exist: map[string]bool{"overlays/staging-downstream": true},
+	}
+	base := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"staging-downstream"}},
+		exist: map[string]bool{"overlays/staging-downstream": true},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	resolved := d.resolveComponentDeps(map[Environment][]appset.ComponentPath{
+		Staging: {{Path: "components/partial/staging", PrefixOnly: true}},
+	})
+	g.Expect(resolved).To(HaveLen(1))
+
+	result := &Result{
+		AffectedEnvironments: make(map[Environment]bool),
+		AffectedClusters:     make(map[string]bool),
+		ChangedFiles:         []string{"components/partial/staging/base/deploy.yaml"},
+	}
+	matchChangedFiles(
+		[]string{"components/partial/staging/base/deploy.yaml"},
+		resolved, nil, result,
+	)
+
+	g.Expect(result.AffectedEnvironments).To(HaveKey(Staging))
 }

@@ -182,7 +182,9 @@ spec:
 	result, err := ParseApplicationSets([]byte(yaml))
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(result.Paths).To(HaveLen(1))
-	g.Expect(result.Paths[0].Path).To(Equal("configs/disable-self-provisioning-for-all-cluster/"))
+	// Trailing slashes are stripped: paths are used as map keys and compared
+	// with "<path>/" prefixes downstream.
+	g.Expect(result.Paths[0].Path).To(Equal("configs/disable-self-provisioning-for-all-cluster"))
 }
 
 func TestParseApplicationSets_MultipleDocuments(t *testing.T) {
@@ -623,17 +625,9 @@ spec:
 }
 
 // ---------------------------------------------------------------------------
-// ApplicationSet shapes that exist in the repo but are not handled by the parser
-// yet.
-//
-// The tests below are skipped until the parser learns the shape; the follow-up
-// change that implements it removes the skip. Keeping them (instead of a TODO
-// comment) documents the expected output precisely and stops the fix from
-// drifting. See TestRealRepoApplicationSets in audit_test.go for the end-to-end
-// guard.
+// ApplicationSet shapes that were previously dropped silently.
+// See TestRealRepoApplicationSets in audit_test.go for the end-to-end guard.
 // ---------------------------------------------------------------------------
-
-const pendingSkipMsg = "TODO(render-diff-audit step 2): parser does not support this shape yet"
 
 // Top-level list generator (no merge, no clusters generator), as used by the
 // konflux-verifications-rd ApplicationSet in the rd-production overlay.
@@ -659,7 +653,6 @@ spec:
 `
 
 func TestParseApplicationSets_TopLevelListGenerator(t *testing.T) {
-	t.Skip(pendingSkipMsg)
 	g := NewWithT(t)
 
 	result, err := ParseApplicationSets([]byte(topLevelListYAML))
@@ -674,7 +667,6 @@ func TestParseApplicationSets_TopLevelListGenerator(t *testing.T) {
 // not special-case. Here the element overrides useCaseDir, which must be
 // interpolated like any other value.
 func TestParseApplicationSets_UseCaseDirInterpolated(t *testing.T) {
-	t.Skip(pendingSkipMsg)
 	g := NewWithT(t)
 
 	yaml := `
@@ -721,7 +713,6 @@ spec:
 
 // List elements may override any values.* key, not just clusterDir/ring.
 func TestParseApplicationSets_ListOverrideOfEnvironment(t *testing.T) {
-	t.Skip(pendingSkipMsg)
 	g := NewWithT(t)
 
 	yaml := `
@@ -769,7 +760,6 @@ spec:
 // A {{nameNormalized}}-based template must be interpolated literally, without
 // inventing a sourceRoot/environment/name layout.
 func TestParseApplicationSets_NameNormalizedTemplate(t *testing.T) {
-	t.Skip(pendingSkipMsg)
 	g := NewWithT(t)
 
 	yaml := `
@@ -814,4 +804,196 @@ spec:
 	for _, p := range result.Paths {
 		g.Expect(p.Path).NotTo(HaveSuffix("/"))
 	}
+}
+
+// Multi-source templates reference repository files through "$values/" Helm
+// value files without deploying a directory of their own.
+func TestParseApplicationSets_MultiSourceHelmValues(t *testing.T) {
+	g := NewWithT(t)
+
+	yaml := `
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: tracing-workload-otel-collector
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              values:
+                clusterDir: ""
+                environment: staging
+                sourceRoot: components/monitoring/tracing/otel-collector
+          - list:
+              elements: []
+  template:
+    metadata:
+      name: tracing-{{nameNormalized}}
+    spec:
+      sources:
+        - chart: opentelemetry-collector
+          repoURL: https://open-telemetry.github.io/opentelemetry-helm-charts
+          targetRevision: 0.101.2
+          helm:
+            valueFiles:
+              - $values/{{values.sourceRoot}}/{{values.environment}}/otel-collector-helm-values.yaml
+        - ref: values
+          repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+          targetRevision: main
+`
+	result, err := ParseApplicationSets([]byte(yaml))
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.Paths).To(HaveLen(1))
+
+	cp := result.Paths[0]
+	g.Expect(cp.Path).To(BeEmpty())
+	g.Expect(cp.ExtraFiles).To(ConsistOf(
+		"components/monitoring/tracing/otel-collector/staging/otel-collector-helm-values.yaml",
+	))
+}
+
+// A source may deploy a directory and consume value files at the same time.
+func TestParseApplicationSets_PathWithHelmValues(t *testing.T) {
+	g := NewWithT(t)
+
+	yaml := `
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: chart-component
+spec:
+  generators:
+    - clusters:
+        values:
+          sourceRoot: components/chart-component
+          environment: production
+          clusterDir: base
+  template:
+    metadata:
+      name: chart-component
+    spec:
+      source:
+        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
+        repoURL: https://example.com/repo.git
+        helm:
+          valueFiles:
+            - $values/{{values.sourceRoot}}/{{values.environment}}/values.yaml
+            - values-local.yaml
+`
+	result, err := ParseApplicationSets([]byte(yaml))
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.Paths).To(HaveLen(1))
+
+	cp := result.Paths[0]
+	g.Expect(cp.Path).To(Equal("components/chart-component/production/base"))
+	// Only "$values/" references live in this repository.
+	g.Expect(cp.ExtraFiles).To(ConsistOf(
+		"components/chart-component/production/values.yaml",
+	))
+}
+
+// An unsupported generator must not be ignored silently: the ApplicationSet is
+// skipped and a warning is logged.
+func TestParseApplicationSets_UnsupportedGeneratorSkipped(t *testing.T) {
+	g := NewWithT(t)
+
+	yaml := `
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: matrix-generated
+spec:
+  generators:
+    - matrix:
+        generators:
+          - clusters: {}
+          - git:
+              repoURL: https://example.com/repo.git
+  template:
+    metadata:
+      name: matrix-generated
+    spec:
+      source:
+        path: '{{values.sourceRoot}}/{{values.environment}}'
+        repoURL: https://example.com/repo.git
+`
+	result, err := ParseApplicationSets([]byte(yaml))
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.Paths).To(BeEmpty())
+}
+
+// A template the generator defaults cannot fully resolve (here because no list
+// element supplies nameNormalized) keeps its longest static prefix and is
+// flagged for prefix matching, so the shared dependencies of the environment
+// still count as affected.
+func TestParseApplicationSets_PartialTemplateUsesStaticPrefix(t *testing.T) {
+	g := NewWithT(t)
+
+	yaml := `
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: partial
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              values:
+                sourceRoot: components/partial
+                environment: staging
+          - list:
+              elements: []
+  template:
+    metadata:
+      name: partial-{{nameNormalized}}
+    spec:
+      source:
+        path: '{{values.sourceRoot}}/{{values.environment}}/{{nameNormalized}}'
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+`
+	result, err := ParseApplicationSets([]byte(yaml))
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.Paths).To(HaveLen(1))
+
+	cp := result.Paths[0]
+	g.Expect(cp.Path).To(Equal("components/partial/staging"))
+	g.Expect(cp.PrefixOnly).To(BeTrue())
+}
+
+// A fully resolved path must not be flagged for prefix matching, otherwise the
+// dependency tree would be replaced by a much broader prefix match.
+func TestParseApplicationSets_ResolvedPathIsNotPrefixOnly(t *testing.T) {
+	g := NewWithT(t)
+
+	yaml := `
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: resolved
+spec:
+  generators:
+    - clusters:
+        values:
+          sourceRoot: components/resolved
+          environment: staging
+          clusterDir: ""
+  template:
+    metadata:
+      name: resolved
+    spec:
+      source:
+        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+`
+	result, err := ParseApplicationSets([]byte(yaml))
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.Paths).To(HaveLen(1))
+	g.Expect(result.Paths[0].Path).To(Equal("components/resolved/staging"))
+	g.Expect(result.Paths[0].PrefixOnly).To(BeFalse())
 }

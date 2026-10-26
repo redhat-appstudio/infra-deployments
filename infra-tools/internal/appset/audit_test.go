@@ -35,68 +35,11 @@ type knownFinding struct {
 // real source path are ignored by env-detector and render-diff. Entries must be
 // removed as the parser learns the corresponding generator shape — an entry
 // that no longer fails is reported as stale so the list cannot rot.
-//
-// TODO(render-diff-audit step 2): implement top-level list generators and
-// multi-source templates, then remove the entries below.
-var knownGaps = map[string]knownFinding{
-	"rd-production/konflux-verifications-rd": {
-		detail: "template has a source path but no component path was extracted",
-		reason: "top-level list generator is not supported",
-	},
-	"rd-production/pvsec": {
-		detail: "template has a source path but no component path was extracted",
-		reason: "top-level list generator is not supported",
-	},
-	"development/tracing-workload-otel-collector": {
-		detail: "no source path in template (multi-source or chart-only)",
-		reason: "multi-source template (sources) is not supported",
-	},
-	"development-operator/tracing-workload-otel-collector": {
-		detail: "no source path in template (multi-source or chart-only)",
-		reason: "multi-source template (sources) is not supported",
-	},
-	"konflux-public-production/tracing-workload-otel-collector": {
-		detail: "no source path in template (multi-source or chart-only)",
-		reason: "multi-source template (sources) is not supported",
-	},
-	"konflux-public-staging/tracing-workload-otel-collector": {
-		detail: "no source path in template (multi-source or chart-only)",
-		reason: "multi-source template (sources) is not supported",
-	},
-	"production-downstream/tracing-workload-otel-collector": {
-		detail: "no source path in template (multi-source or chart-only)",
-		reason: "multi-source template (sources) is not supported",
-	},
-	"rd-dev/tracing-workload-otel-collector": {
-		detail: "no source path in template (multi-source or chart-only)",
-		reason: "multi-source template (sources) is not supported",
-	},
-	"staging-downstream/tracing-workload-otel-collector": {
-		detail: "no source path in template (multi-source or chart-only)",
-		reason: "multi-source template (sources) is not supported",
-	},
-}
+var knownGaps = map[string]knownFinding{}
 
-// knownUnresolved lists ApplicationSets whose rendered path template contains
-// placeholders that interpolatePath does not know about.
-var knownUnresolved = map[string]knownFinding{
-	"konflux-public-production/k8s-groups": {
-		detail: "components/k8s-groups/production/{{values.useCaseDir}}",
-		reason: "{{values.useCaseDir}} is not interpolated",
-	},
-	"konflux-public-staging/k8s-groups": {
-		detail: "components/k8s-groups/staging/{{values.useCaseDir}}",
-		reason: "{{values.useCaseDir}} is not interpolated",
-	},
-	"production-downstream/k8s-groups": {
-		detail: "components/k8s-groups/production/{{values.useCaseDir}}",
-		reason: "{{values.useCaseDir}} is not interpolated",
-	},
-	"staging-downstream/k8s-groups": {
-		detail: "components/k8s-groups/staging/{{values.useCaseDir}}",
-		reason: "{{values.useCaseDir}} is not interpolated",
-	},
-}
+// knownUnresolved lists ApplicationSets whose rendered path template still
+// contains placeholders after interpolation.
+var knownUnresolved = map[string]knownFinding{}
 
 type auditFinding struct {
 	key    string
@@ -138,7 +81,7 @@ func TestRealRepoApplicationSets(t *testing.T) {
 
 		for _, doc := range decodeDocuments(t, overlay, rendered) {
 			name := appSetName(doc)
-			if name == "" {
+			if name == "unknown" {
 				continue
 			}
 			key := overlay + "/" + name
@@ -164,7 +107,11 @@ func TestRealRepoApplicationSets(t *testing.T) {
 
 			for _, p := range paths {
 				if p.Path == "" {
-					gaps = append(gaps, auditFinding{key, "empty component path"})
+					// A path-less entry is valid when it only consumes
+					// repository files (multi-source Helm value files).
+					if len(p.ExtraFiles) == 0 {
+						gaps = append(gaps, auditFinding{key, "empty component path"})
+					}
 					continue
 				}
 				if strings.Contains(p.Path, "{{") {
@@ -263,13 +210,6 @@ func decodeDocuments(t *testing.T, overlay string, rendered []byte) []map[string
 		docs = append(docs, doc)
 	}
 	return docs
-}
-
-// appSetName returns metadata.name of a document, or "" when absent.
-func appSetName(doc map[string]interface{}) string {
-	md, _ := doc["metadata"].(map[string]interface{})
-	name, _ := md["name"].(string)
-	return name
 }
 
 // templateHasPath reports whether the template declares a local source path,
