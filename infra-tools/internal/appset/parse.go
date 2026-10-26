@@ -471,7 +471,11 @@ func resolveSources(name string, sources []templateSource, sets []valueSet) ([]C
 							"appset", name, "template", source.pathTemplate)
 						continue
 					}
-					slog.Warn("ApplicationSet path template has unresolved placeholders, falling back to prefix matching",
+					// Expected for templates keyed on a list element field (for
+					// example {{nameNormalized}}): the defaults-only combination
+					// cannot be resolved, and the prefix keeps the shared
+					// dependencies of the whole environment tracked.
+					slog.Debug("ApplicationSet path template has unresolved placeholders, falling back to prefix matching",
 						"appset", name, "template", source.pathTemplate, "prefix", cp.Path)
 				}
 			}

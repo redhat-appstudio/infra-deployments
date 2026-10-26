@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"log/slog"
@@ -16,31 +17,49 @@ import (
 	"strings"
 	"syscall"
 
-	charmlog "github.com/charmbracelet/log"
-
 	"github.com/redhat-appstudio/infra-deployments/infra-tools/internal/detector"
 	"github.com/redhat-appstudio/infra-deployments/infra-tools/internal/git"
 	ghclient "github.com/redhat-appstudio/infra-deployments/infra-tools/internal/github"
+	"github.com/redhat-appstudio/infra-deployments/infra-tools/internal/logging"
 )
 
+// errRingViolation signals a ring deployment policy violation. The message has
+// already been printed; it only exists so main can exit non-zero after deferred
+// cleanup has run.
+var errRingViolation = errors.New("ring deployment violation")
+
+// options holds the parsed command-line configuration.
+type options struct {
+	repoRoot          string
+	baseRef           string
+	overlaysDir       string
+	githubToken       string
+	repo              string
+	logFile           string
+	ringReportFile    string
+	prNumber          int
+	dryRun            bool
+	clusterLabels     bool
+	enforceRingDeploy bool
+}
+
 func main() {
-	var (
-		repoRoot          = flag.String("repo-root", ".", "Path to the repository root")
-		baseRef           = flag.String("base-ref", "main", "Base git ref to compare against")
-		overlaysDir       = flag.String("overlays-dir", "argo-cd-apps/overlays", "Path to overlays directory relative to repo root")
-		dryRun            = flag.Bool("dry-run", false, "Print results without calling GitHub API")
-		prNumber          = flag.Int("pr-number", 0, "PR number to label (required if not --dry-run)")
-		githubToken       = flag.String("github-token", "", "GitHub token (required if not --dry-run)")
-		repo              = flag.String("repo", "", "GitHub repository in owner/repo format (required if not --dry-run)")
-		clusterLabels     = flag.Bool("cluster-labels", false, "Include cluster/<name> labels in addition to environment labels")
-		logFile           = flag.String("log-file", "", "Write debug-level logs to this file (in addition to INFO-level logs on stdout)")
-		enforceRingDeploy = flag.Bool("enforce-ring-deployment", false, "Fail when both staging and production overlays are directly modified in the same PR")
-		ringReportFile    = flag.String("ring-report-file", "", "Write ring deployment check result (markdown) to this file for external consumers like PR comments")
-	)
+	var opts options
+	flag.StringVar(&opts.repoRoot, "repo-root", ".", "Path to the repository root")
+	flag.StringVar(&opts.baseRef, "base-ref", "main", "Base git ref to compare against")
+	flag.StringVar(&opts.overlaysDir, "overlays-dir", "argo-cd-apps/overlays", "Path to overlays directory relative to repo root")
+	flag.BoolVar(&opts.dryRun, "dry-run", false, "Print results without calling GitHub API")
+	flag.IntVar(&opts.prNumber, "pr-number", 0, "PR number to label (required if not --dry-run)")
+	flag.StringVar(&opts.githubToken, "github-token", "", "GitHub token (required if not --dry-run)")
+	flag.StringVar(&opts.repo, "repo", "", "GitHub repository in owner/repo format (required if not --dry-run)")
+	flag.BoolVar(&opts.clusterLabels, "cluster-labels", false, "Include cluster/<name> labels in addition to environment labels")
+	flag.StringVar(&opts.logFile, "log-file", "", "Write debug-level logs to this file (in addition to INFO-level logs on stdout)")
+	flag.BoolVar(&opts.enforceRingDeploy, "enforce-ring-deployment", false, "Fail when both staging and production overlays are directly modified in the same PR")
+	flag.StringVar(&opts.ringReportFile, "ring-report-file", "", "Write ring deployment check result (markdown) to this file for external consumers like PR comments")
 	flag.Parse()
 
 	// Set up logging: INFO on stdout (always), DEBUG to file (when --log-file is set).
-	logCleanup, err := setupLogging(*logFile)
+	logCleanup, err := logging.Setup(opts.logFile)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to set up logging: %v\n", err)
 		os.Exit(1)
@@ -49,63 +68,74 @@ func main() {
 		defer logCleanup()
 	}
 
-	if !*dryRun {
-		if *prNumber == 0 || *githubToken == "" || *repo == "" {
-			fatal("--pr-number, --github-token, and --repo are required when not using --dry-run")
-		}
+	if !opts.dryRun && (opts.prNumber == 0 || opts.githubToken == "" || opts.repo == "") {
+		fmt.Fprintln(os.Stderr, "--pr-number, --github-token, and --repo are required when not using --dry-run")
+		os.Exit(1)
 	}
 
 	// Set up a context that is cancelled on SIGINT / SIGTERM.
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
+	// run owns the worktree cleanup: returning an error instead of calling
+	// os.Exit keeps the deferred cleanup reachable.
+	if err := run(ctx, opts); err != nil {
+		if !errors.Is(err, errRingViolation) {
+			slog.Error("env-detector failed", "err", err)
+		}
+		os.Exit(1)
+	}
+}
+
+// run executes the detection pipeline and returns any error.
+func run(ctx context.Context, opts options) error {
 	// Resolve repo root to absolute path
-	absRepoRoot, err := filepath.Abs(*repoRoot)
+	absRepoRoot, err := filepath.Abs(opts.repoRoot)
 	if err != nil {
-		fatal("resolving repo root", "err", err)
+		return fmt.Errorf("resolving repo root: %w", err)
 	}
 
 	// Resolve base ref: use merge-base so the diff only contains the PR's
 	// own changes, even when the branch is not rebased on top of base-ref
 	// or the GitHub merge ref is stale.  This mirrors the approach used by
 	// render-diff.
-	effectiveBaseRef, err := git.MergeBase(ctx, absRepoRoot, *baseRef)
+	effectiveBaseRef, err := git.MergeBase(ctx, absRepoRoot, opts.baseRef)
 	if err != nil {
-		fatal("computing merge-base", "ref", *baseRef, "err", err)
+		return fmt.Errorf("computing merge-base with %s: %w", opts.baseRef, err)
 	}
-	slog.Debug("Resolved merge-base", "baseRef", *baseRef, "mergeBase", effectiveBaseRef)
+	slog.Debug("Resolved merge-base", "baseRef", opts.baseRef, "mergeBase", effectiveBaseRef)
 
 	// Resolve HEAD and effective base to short commit SHAs for the summary.
 	headSHA, err := git.ResolveRef(ctx, absRepoRoot, "HEAD")
 	if err != nil {
-		fatal("resolving HEAD", "err", err)
+		return fmt.Errorf("resolving HEAD: %w", err)
 	}
 	baseSHA, err := git.ResolveRef(ctx, absRepoRoot, effectiveBaseRef)
 	if err != nil {
-		fatal("resolving base ref", "err", err)
+		return fmt.Errorf("resolving base ref: %w", err)
 	}
 
 	// Step 1: Get changed files via git diff
 	slog.Info("Getting changed files...")
 	changedFiles, err := git.ChangedFiles(ctx, absRepoRoot, effectiveBaseRef)
 	if err != nil {
-		fatal("getting changed files", "err", err)
+		return fmt.Errorf("getting changed files: %w", err)
 	}
 	if len(changedFiles) == 0 {
 		slog.Info("No changed files detected")
-		if !*dryRun {
-			if err := syncLabels(ctx, *githubToken, *repo, *prNumber, []string{"environment/none"}); err != nil {
-				fatal("syncing labels", "err", err)
+		if !opts.dryRun {
+			if err := syncLabels(ctx, opts.githubToken, opts.repo, opts.prNumber, []string{"environment/none"}); err != nil {
+				return fmt.Errorf("syncing labels: %w", err)
 			}
 		}
-		return
+		return nil
 	}
 
 	// Step 2: Create a temporary git worktree at the merge-base
 	slog.Info("Creating worktree...", "ref", effectiveBaseRef)
 	worktreePath, cleanup, err := git.CreateWorktree(ctx, absRepoRoot, effectiveBaseRef)
 	if err != nil {
-		fatal("creating worktree", "err", err)
+		return fmt.Errorf("creating worktree: %w", err)
 	}
 	defer cleanup()
 
@@ -114,21 +144,21 @@ func main() {
 	d, err := detector.NewDetector(
 		detector.NewRepoRef(absRepoRoot),
 		detector.NewRepoRef(worktreePath),
-		*overlaysDir,
+		opts.overlaysDir,
 	)
 	if err != nil {
-		fatal("initializing detector", "err", err)
+		return fmt.Errorf("initializing detector: %w", err)
 	}
 	result, err := d.Detect(changedFiles)
 	if err != nil {
-		fatal("detection failed", "err", err)
+		return fmt.Errorf("detection failed: %w", err)
 	}
 
 	// Step 4: Output results
 	labelSet := result.Labels()
 
 	var labels []string
-	if *clusterLabels {
+	if opts.clusterLabels {
 		labels = slices.Collect(labelSet.All())
 	} else {
 		labels = labelSet.Environments
@@ -163,114 +193,34 @@ func main() {
 		writeStepSummary(msg)
 	}
 
-	if !*dryRun {
+	if !opts.dryRun {
 		// Step 5: Sync labels via GitHub API
 		slog.Info("Syncing labels...")
-		if err := syncLabels(ctx, *githubToken, *repo, *prNumber, labels); err != nil {
-			fatal("syncing labels", "err", err)
+		if err := syncLabels(ctx, opts.githubToken, opts.repo, opts.prNumber, labels); err != nil {
+			return fmt.Errorf("syncing labels: %w", err)
 		}
 	}
 
 	// Step 6: Ring deployment enforcement (runs in both dry-run and normal mode)
-	if *enforceRingDeploy {
+	if opts.enforceRingDeploy {
 		ringResult := detector.CheckRingDeployment(changedFiles, result.AffectedEnvironments)
 		if ringResult.DirectConflict {
 			msg := formatRingViolation(ringResult)
 			fmt.Println(msg)
 			writeStepSummary(msg)
-			writeReportFile(*ringReportFile, msg)
-			os.Exit(1)
+			writeReportFile(opts.ringReportFile, msg)
+			return errRingViolation
 		}
 		if ringResult.IndirectConflict {
 			msg := formatRingWarning()
 			fmt.Println(msg)
 			writeStepSummary(msg)
-			writeReportFile(*ringReportFile, msg)
+			writeReportFile(opts.ringReportFile, msg)
 		}
 	}
 
 	slog.Info("Done!")
-}
-
-// fatal logs an error message and exits with code 1.
-func fatal(msg string, args ...any) {
-	slog.Error(msg, args...)
-	os.Exit(1)
-}
-
-// setupLogging configures slog with charmbracelet/log handlers.
-// When logFile is non-empty, a multi-handler is set up so that:
-//   - stdout receives INFO-level and above (with pretty charmbracelet formatting)
-//   - the file receives DEBUG-level and above (with timestamps)
-//
-// When logFile is empty, only the stdout handler at INFO level is used.
-// Returns a cleanup function (may be nil) that closes the log file.
-func setupLogging(logFile string) (func(), error) {
-	stdoutHandler := charmlog.NewWithOptions(os.Stderr, charmlog.Options{
-		Level: charmlog.InfoLevel,
-	})
-
-	if logFile == "" {
-		slog.SetDefault(slog.New(stdoutHandler))
-		return nil, nil
-	}
-
-	f, err := os.Create(logFile)
-	if err != nil {
-		return nil, fmt.Errorf("opening log file %s: %w", logFile, err)
-	}
-
-	fileHandler := charmlog.NewWithOptions(f, charmlog.Options{
-		Level:           charmlog.DebugLevel,
-		ReportTimestamp: true,
-	})
-
-	multi := &multiHandler{handlers: []slog.Handler{stdoutHandler, fileHandler}}
-	slog.SetDefault(slog.New(multi))
-
-	return func() { _ = f.Close() }, nil
-}
-
-// multiHandler is an slog.Handler that fans out log records to multiple
-// underlying handlers, each of which may have its own level filter.
-type multiHandler struct {
-	handlers []slog.Handler
-}
-
-func (m *multiHandler) Enabled(_ context.Context, level slog.Level) bool {
-	for _, h := range m.handlers {
-		if h.Enabled(context.Background(), level) {
-			return true
-		}
-	}
-	return false
-}
-
-func (m *multiHandler) Handle(ctx context.Context, r slog.Record) error {
-	for _, h := range m.handlers {
-		if h.Enabled(ctx, r.Level) {
-			if err := h.Handle(ctx, r); err != nil {
-				return err
-			}
-		}
-	}
 	return nil
-}
-
-func (m *multiHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
-	handlers := make([]slog.Handler, len(m.handlers))
-	for i, h := range m.handlers {
-		handlers[i] = h.WithAttrs(attrs)
-	}
-	return &multiHandler{handlers: handlers}
-}
-
-func (m *multiHandler) WithGroup(name string) slog.Handler {
-	handlers := make([]slog.Handler, len(m.handlers))
-	for i, h := range m.handlers {
-		handlers[i] = h.WithGroup(name)
-	}
-	return &multiHandler{handlers: handlers}
 }
 
 // printSummary prints the detection results in a human-friendly format.

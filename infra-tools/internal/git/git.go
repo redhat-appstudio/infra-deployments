@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"os"
 	"os/exec"
+	"sort"
 	"strings"
 )
 
@@ -38,22 +39,69 @@ func ResolveRef(ctx context.Context, repoRoot, ref string) (string, error) {
 // Callers should pass the merge-base commit (see MergeBase) rather than a
 // branch name so the diff only contains the current branch's own changes,
 // regardless of whether the branch has been rebased.
+//
+// Rename detection is disabled so that a moved file appears under both its old
+// and new path: the old path still belongs to the component it was removed
+// from, and dropping it would hide that environment.
 func ChangedFiles(ctx context.Context, repoRoot, baseRef string) ([]string, error) {
-	cmd := exec.CommandContext(ctx, "git", "diff", "--name-only", baseRef, "HEAD")
+	return gitDiffNames(ctx, repoRoot, baseRef, "HEAD")
+}
+
+// ChangedFilesWorkingTree returns the files changed between baseRef and the
+// working tree, including untracked files. Local runs need this: HEAD alone
+// ignores edits that have not been committed yet, while the render itself is
+// built from the working tree.
+func ChangedFilesWorkingTree(ctx context.Context, repoRoot, baseRef string) ([]string, error) {
+	tracked, err := gitDiffNames(ctx, repoRoot, baseRef)
+	if err != nil {
+		return nil, err
+	}
+
+	cmd := exec.CommandContext(ctx, "git", "ls-files", "--others", "--exclude-standard", "-z")
 	cmd.Dir = repoRoot
 	out, err := cmd.Output()
 	if err != nil {
-		return nil, fmt.Errorf("git diff %s HEAD: %w", baseRef, err)
+		return nil, fmt.Errorf("git ls-files --others: %w", err)
 	}
-	lines := strings.Split(strings.TrimSpace(string(out)), "\n")
-	var files []string
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if line != "" {
-			files = append(files, line)
+
+	seen := make(map[string]bool, len(tracked))
+	files := make([]string, 0, len(tracked))
+	for _, f := range append(tracked, splitNul(out)...) {
+		if !seen[f] {
+			seen[f] = true
+			files = append(files, f)
 		}
 	}
+	sort.Strings(files)
 	return files, nil
+}
+
+// gitDiffNames runs "git diff --name-only --no-renames -z" between the given
+// refs (or between ref and the working tree when head is empty).
+func gitDiffNames(ctx context.Context, repoRoot, baseRef string, head ...string) ([]string, error) {
+	args := make([]string, 0, 5+len(head))
+	args = append(args, "diff", "--name-only", "--no-renames", "-z", baseRef)
+	args = append(args, head...)
+	cmd := exec.CommandContext(ctx, "git", args...)
+	cmd.Dir = repoRoot
+	out, err := cmd.Output()
+	if err != nil {
+		return nil, fmt.Errorf("git %s: %w", strings.Join(args, " "), err)
+	}
+	return splitNul(out), nil
+}
+
+// splitNul splits NUL-separated git output, dropping empty entries. NUL
+// separation is required for paths containing spaces or quotes, which
+// newline-separated output would mangle.
+func splitNul(out []byte) []string {
+	var files []string
+	for _, f := range strings.Split(string(out), "\x00") {
+		if f != "" {
+			files = append(files, f)
+		}
+	}
+	return files
 }
 
 // MergeBase returns the merge-base commit between HEAD and the given ref.

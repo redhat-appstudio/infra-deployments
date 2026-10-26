@@ -6,6 +6,7 @@ package deptree
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -252,12 +253,17 @@ func addHelmGeneratorDeps(repoRoot, absDir, generatorPath string, deps map[strin
 	absPath := filepath.Join(absDir, generatorPath)
 	data, err := os.ReadFile(absPath)
 	if err != nil {
-		return fmt.Errorf("reading generator %s: %w", generatorPath, err)
+		// A generator may be generated at build time or live outside the
+		// repo; dropping the whole dependency tree would silently fall back to
+		// prefix matching and lose base dependencies.
+		slog.Warn("cannot read generator, skipping its dependencies", "generator", generatorPath, "err", err)
+		return nil
 	}
 
 	var cfg helmGeneratorConfig
 	if err := yaml.Unmarshal(data, &cfg); err != nil {
-		return fmt.Errorf("parsing generator %s: %w", generatorPath, err)
+		slog.Warn("cannot parse generator, skipping its dependencies", "generator", generatorPath, "err", err)
+		return nil
 	}
 	if cfg.Kind != "HelmChartInflationGenerator" {
 		return nil
@@ -302,10 +308,19 @@ func addGeneratorSources(repoRoot, absDir string, gen *types.GeneratorArgs, deps
 // contains to the dependency set. This is used for Helm chart directories
 // where any file change (templates, helpers, Chart.yaml, etc.) affects the
 // build output.
+//
+// A missing directory is not an error: charts are often pulled from a remote
+// repository at build time, and failing here would discard the rest of the
+// dependency tree.
 func addDirTree(repoRoot, absDir string, deps map[string]bool) error {
+	if _, err := os.Stat(absDir); err != nil {
+		slog.Debug("chart directory not present locally, skipping", "dir", absDir, "err", err)
+		return nil
+	}
 	return filepath.Walk(absDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			return err
+			slog.Warn("cannot walk chart directory entry, skipping", "path", path, "err", err)
+			return nil //nolint:nilerr // best-effort: keep the rest of the tree
 		}
 		if info.IsDir() {
 			return nil
@@ -344,6 +359,11 @@ func loadKustomization(dir string) (*types.Kustomization, string, error) {
 		if err := yaml.Unmarshal(data, &k); err != nil {
 			return nil, "", fmt.Errorf("parsing %s: %w", path, err)
 		}
+		// Apply kustomize's own normalisation so deprecated fields are handled
+		// the way kustomize handles them: 'bases' become 'resources',
+		// 'imageTags' become 'images', and the legacy
+		// HelmChartInflationGenerator entries become HelmCharts.
+		k.FixKustomization()
 		return &k, path, nil
 	}
 	return nil, "", fmt.Errorf("no kustomization file found in %s", dir)

@@ -312,3 +312,51 @@ func TestCountStats(t *testing.T) {
 	g.Expect(added).To(Equal(2))
 	g.Expect(removed).To(Equal(1))
 }
+
+// Adding a resource to a previously single-document manifest must show as an
+// addition, not as a whole-file rewrite: normalization has to produce the same
+// indentation and document separators for one and for several resources.
+func TestComponentDiff_NormalizeSingleToMultipleDocs(t *testing.T) {
+	g := NewWithT(t)
+
+	const single = `apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: first
+data:
+  key: value
+`
+	const two = single + `---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: second
+data:
+  key: value
+`
+
+	cd := &ComponentDiff{Path: "components/foo/staging", BaseYAML: []byte(single), HeadYAML: []byte(two)}
+	g.Expect(cd.computeDiff()).To(Succeed())
+	g.Expect(cd.Diff).To(ContainSubstring("+kind: ConfigMap"))
+	g.Expect(cd.Diff).To(ContainSubstring("+  name: second"))
+	// The existing resource must not be removed by the normalization change.
+	g.Expect(cd.Removed).To(BeZero(), "diff:\n%s", cd.Diff)
+	g.Expect(cd.Added).To(BeNumerically(">", 0))
+}
+
+// Normalization must be stable for a single document: identical input must not
+// produce a diff.
+func TestComponentDiff_SingleDocNoChange(t *testing.T) {
+	g := NewWithT(t)
+
+	const doc = `apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: only
+data:
+  key: value
+`
+	cd := &ComponentDiff{Path: "components/foo/staging", BaseYAML: []byte(doc), HeadYAML: []byte(doc)}
+	g.Expect(cd.computeDiff()).To(Succeed())
+	g.Expect(cd.HasDiff()).To(BeFalse())
+}

@@ -1556,3 +1556,127 @@ func TestDetect_UnreferencedConfigChange(t *testing.T) {
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(result.UnreferencedFiles).To(ConsistOf(orphan))
 }
+
+// ---------------------------------------------------------------------------
+// Components that only exist on one ref
+// ---------------------------------------------------------------------------
+
+// A PR that removes a component no longer has its ApplicationSet on HEAD. The
+// change must still be detected through the base ref, otherwise a removal looks
+// like "no impact".
+func TestDetect_ComponentRemovedInHead(t *testing.T) {
+	g := NewWithT(t)
+
+	const appSetYAML = `apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: foo
+spec:
+  generators:
+    - clusters: {}
+  template:
+    metadata:
+      name: foo
+    spec:
+      source:
+        path: components/foo
+        repoURL: https://example.com/repo.git
+`
+	// HEAD no longer renders any ApplicationSet.
+	const emptyHead = `apiVersion: v1
+kind: Namespace
+metadata:
+  name: placeholder
+`
+
+	head := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"development"}},
+		yamls: map[string][]byte{"overlays/development": []byte(emptyHead)},
+		exist: map[string]bool{"overlays/development": true},
+	}
+	base := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"development"}},
+		yamls: map[string][]byte{"overlays/development": []byte(appSetYAML)},
+		exist: map[string]bool{
+			"overlays/development": true,
+			"components/foo":       true,
+		},
+		deps: map[string]map[string]bool{
+			"components/foo": {"components/foo/deploy.yaml": true},
+		},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	result, err := d.Detect([]string{"components/foo/deploy.yaml"})
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.AffectedEnvironments).To(HaveKey(Development))
+	g.Expect(result.UnreferencedFiles).To(BeEmpty())
+}
+
+// Dependencies are resolved on both refs: a file that a component depended on
+// only on the base ref is still part of the change.
+func TestDetect_DepsResolvedOnBothRefs(t *testing.T) {
+	g := NewWithT(t)
+
+	head := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"development"}},
+		yamls: map[string][]byte{"overlays/development": []byte(minimalAppSetYAML)},
+		exist: map[string]bool{"overlays/development": true, "components/foo": true},
+		deps: map[string]map[string]bool{
+			"components/foo": {"components/foo/kustomization.yaml": true},
+		},
+	}
+	base := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"development"}},
+		yamls: map[string][]byte{"overlays/development": []byte(minimalAppSetYAML)},
+		exist: map[string]bool{"overlays/development": true, "components/foo": true},
+		deps: map[string]map[string]bool{
+			"components/foo": {
+				"components/foo/kustomization.yaml": true,
+				"components/foo/removed-resource.yaml": true,
+			},
+		},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	result, err := d.Detect([]string{"components/foo/removed-resource.yaml"})
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.AffectedEnvironments).To(HaveKey(Development))
+}
+
+// A component that exists on both refs and gains a dependency in HEAD pulls in
+// the new dependency even though the base tree does not know it.
+func TestDetect_DepsResolvedOnHead(t *testing.T) {
+	g := NewWithT(t)
+
+	head := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"development"}},
+		yamls: map[string][]byte{"overlays/development": []byte(minimalAppSetYAML)},
+		exist: map[string]bool{"overlays/development": true, "components/foo": true},
+		deps: map[string]map[string]bool{
+			"components/foo": {
+				"components/foo/kustomization.yaml": true,
+				"components/foo/new-resource.yaml":  true,
+			},
+		},
+	}
+	base := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"development"}},
+		yamls: map[string][]byte{"overlays/development": []byte(minimalAppSetYAML)},
+		exist: map[string]bool{"overlays/development": true, "components/foo": true},
+		deps: map[string]map[string]bool{
+			"components/foo": {"components/foo/kustomization.yaml": true},
+		},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	result, err := d.Detect([]string{"components/foo/new-resource.yaml"})
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.AffectedEnvironments).To(HaveKey(Development))
+}
