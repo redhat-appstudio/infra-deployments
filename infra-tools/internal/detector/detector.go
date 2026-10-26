@@ -59,6 +59,12 @@ type Result struct {
 	// no ApplicationSet references, so they will not be deployed by anything.
 	// They are reported as a warning instead of being treated as "no impact".
 	UnreferencedFiles []string
+	// FileEnvs maps each changed file to the environments it was matched to
+	// through a component. A file matched to both staging and production is a
+	// shared base file; a file matched to only one is specific to it. Ring-based
+	// layouts have no environment in their path, so this is the only reliable
+	// signal for ring policy enforcement.
+	FileEnvs map[string]map[Environment]bool
 }
 
 // Detector holds the validated configuration and runs the detection pipeline.
@@ -157,6 +163,7 @@ func (d *Detector) Detect(changedFiles []string) (*Result, error) {
 		AffectedEnvironments: make(map[Environment]bool),
 		AffectedClusters:     make(map[string]bool),
 		ChangedFiles:         changedFiles,
+		FileEnvs:             make(map[string]map[Environment]bool),
 	}
 
 	// Phase 1: Build ArgoCD ApplicationSet overlays on HEAD and base-ref
@@ -463,19 +470,14 @@ func (cd componentDeps) matchesFile(file string) bool {
 	return matchesPrefix(file, cd.cp.Path)
 }
 
-// matches reports whether any changed file affects this component. When matched
-// is non-nil, every matching file is recorded in it.
-func (cd componentDeps) matches(changedSet map[string]bool, matched map[string]bool) bool {
-	found := false
+// matchesAny reports whether any changed file affects this component.
+func (cd componentDeps) matchesAny(changedSet map[string]bool) bool {
 	for f := range changedSet {
 		if cd.matchesFile(f) {
-			found = true
-			if matched != nil {
-				matched[f] = true
-			}
+			return true
 		}
 	}
-	return found
+	return false
 }
 
 // resolvePathDeps returns the union of the kustomize dependency trees of rel on
@@ -516,7 +518,8 @@ func (d *Detector) resolvePathDeps(rel string, headExists, baseExists bool) map[
 // matchChangedFiles checks each resolved component against the set of changed
 // files.  For components with a dependency tree it uses an exact match; for
 // components without a kustomization.yaml it falls back to prefix matching.
-// It returns the changed files that matched at least one component.
+// It returns the changed files that matched at least one component and records
+// the per-file environment attribution in Result.FileEnvs.
 func matchChangedFiles(changedFiles []string, resolved []componentDeps, allClusters map[string][]string, result *Result) map[string]bool {
 	changedSet := make(map[string]bool, len(changedFiles))
 	for _, f := range changedFiles {
@@ -525,7 +528,22 @@ func matchChangedFiles(changedFiles []string, resolved []componentDeps, allClust
 	matched := make(map[string]bool)
 
 	for _, cd := range resolved {
-		if cd.matches(changedSet, matched) {
+		componentMatched := false
+		for f := range changedSet {
+			if !cd.matchesFile(f) {
+				continue
+			}
+			componentMatched = true
+			matched[f] = true
+			if result.FileEnvs == nil {
+				result.FileEnvs = make(map[string]map[Environment]bool)
+			}
+			if result.FileEnvs[f] == nil {
+				result.FileEnvs[f] = make(map[Environment]bool)
+			}
+			result.FileEnvs[f][cd.env] = true
+		}
+		if componentMatched {
 			result.AffectedEnvironments[cd.env] = true
 			matchClusters(cd.cp, allClusters, result)
 			slog.Info("Changed files match component", "path", cd.cp.Path, "env", cd.env)
@@ -561,7 +579,7 @@ func matchAffectedComponents(changedFiles []string, resolved []componentDeps, al
 
 	affected := make(map[Environment][]appset.ComponentPath)
 	for _, cd := range resolved {
-		if cd.matches(changedSet, nil) {
+		if cd.matchesAny(changedSet) {
 			affected[cd.env] = append(affected[cd.env], cd.cp)
 			slog.Info("Changed files match component", "path", cd.cp.Path, "env", cd.env)
 		}

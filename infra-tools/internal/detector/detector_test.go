@@ -1634,7 +1634,7 @@ func TestDetect_DepsResolvedOnBothRefs(t *testing.T) {
 		exist: map[string]bool{"overlays/development": true, "components/foo": true},
 		deps: map[string]map[string]bool{
 			"components/foo": {
-				"components/foo/kustomization.yaml": true,
+				"components/foo/kustomization.yaml":    true,
 				"components/foo/removed-resource.yaml": true,
 			},
 		},
@@ -1679,4 +1679,98 @@ func TestDetect_DepsResolvedOnHead(t *testing.T) {
 	result, err := d.Detect([]string{"components/foo/new-resource.yaml"})
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(result.AffectedEnvironments).To(HaveKey(Development))
+}
+
+// ---------------------------------------------------------------------------
+// FileEnvs (per-file environment attribution)
+// ---------------------------------------------------------------------------
+
+// A file specific to one environment is attributed to that environment only.
+func TestDetect_FileEnvsSingleEnvironment(t *testing.T) {
+	g := NewWithT(t)
+
+	yaml := appSetWithCluster("components/svc", "staging", "kflux-stg-p02")
+	head := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"staging-downstream"}},
+		yamls: map[string][]byte{"overlays/staging-downstream": []byte(yaml)},
+		exist: map[string]bool{
+			"overlays/staging-downstream":          true,
+			"components/svc/staging":               true,
+			"components/svc/staging/kflux-stg-p02": true,
+		},
+		deps: map[string]map[string]bool{
+			"components/svc/staging": {
+				"components/svc/staging/kustomization.yaml": true,
+			},
+			"components/svc/staging/kflux-stg-p02": {
+				"components/svc/staging/kflux-stg-p02/kustomization.yaml": true,
+			},
+		},
+	}
+	base := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"staging-downstream"}},
+		yamls: map[string][]byte{"overlays/staging-downstream": []byte(yaml)},
+		exist: map[string]bool{"overlays/staging-downstream": true},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	const file = "components/svc/staging/kflux-stg-p02/kustomization.yaml"
+	result, err := d.Detect([]string{file})
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.FileEnvs).To(HaveKey(file))
+	g.Expect(result.FileEnvs[file]).To(Equal(map[Environment]bool{Staging: true}))
+}
+
+// A file that both a staging and a production component depend on is attributed
+// to both, which is what the ring check uses to spot shared base files.
+func TestDetect_FileEnvsSharedBaseFile(t *testing.T) {
+	g := NewWithT(t)
+
+	stagingYAML := appSetWithCluster("components/svc", "staging", "kflux-stg-p02")
+	productionYAML := appSetWithCluster("components/svc", "production", "stone-prod-p01")
+
+	head := &fakeRepo{
+		dirs: map[string][]string{"overlays": {"staging-downstream", "production-downstream"}},
+		yamls: map[string][]byte{
+			"overlays/staging-downstream":    []byte(stagingYAML),
+			"overlays/production-downstream": []byte(productionYAML),
+		},
+		exist: map[string]bool{
+			"overlays/staging-downstream":              true,
+			"overlays/production-downstream":           true,
+			"components/svc/staging/kflux-stg-p02":     true,
+			"components/svc/production/stone-prod-p01": true,
+		},
+		deps: map[string]map[string]bool{
+			"components/svc/staging/kflux-stg-p02": {
+				"components/svc/base/shared.yaml": true,
+			},
+			"components/svc/production/stone-prod-p01": {
+				"components/svc/base/shared.yaml": true,
+			},
+		},
+	}
+	base := &fakeRepo{
+		dirs: map[string][]string{"overlays": {"staging-downstream", "production-downstream"}},
+		yamls: map[string][]byte{
+			"overlays/staging-downstream":    []byte(stagingYAML),
+			"overlays/production-downstream": []byte(productionYAML),
+		},
+		exist: map[string]bool{
+			"overlays/staging-downstream":    true,
+			"overlays/production-downstream": true,
+		},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	const shared = "components/svc/base/shared.yaml"
+	result, err := d.Detect([]string{shared})
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.FileEnvs[shared]).To(Equal(map[Environment]bool{Staging: true, Production: true}))
+	g.Expect(result.AffectedEnvironments).To(HaveKey(Staging))
+	g.Expect(result.AffectedEnvironments).To(HaveKey(Production))
 }

@@ -13,9 +13,12 @@ var segmentEnvironment = map[string]Environment{
 	"staging":                   Staging,
 	"staging-downstream":        Staging,
 	"konflux-public-staging":    Staging,
+	"rd-staging":                Staging,
 	"production":                Production,
 	"production-downstream":     Production,
 	"konflux-public-production": Production,
+	"rd-production":             Production,
+	"rd-dev":                    Development,
 }
 
 // RingCheckResult holds the outcome of the ring deployment validation.
@@ -36,18 +39,27 @@ type RingCheckResult struct {
 // CheckRingDeployment determines whether a set of changed files violates the
 // ring deployment policy.
 //
-// A direct conflict means files under both staging and production directories
-// are modified — the PR must be split. An indirect conflict means both
-// environments are affected (per the detector's kustomize analysis) but only
-// through shared base files — this is allowed with a warning.
-func CheckRingDeployment(changedFiles []string, affectedEnvs map[Environment]bool) *RingCheckResult {
+// A direct conflict means files that belong to staging only and files that
+// belong to production only are modified — the PR must be split. An indirect
+// conflict means both environments are affected (per the detector's kustomize
+// analysis) but through shared files — this is allowed with a warning.
+//
+// fileEnvs carries the environments each changed file was matched to by the
+// detector. It is what makes ring-based layouts work: a file under
+// components/X/rings/ring-1/ carries no environment in its path, its
+// environment is the overlay that deploys it. When fileEnvs has no entry for a
+// file (or is nil), the path segments are used instead.
+func CheckRingDeployment(changedFiles []string, affectedEnvs map[Environment]bool, fileEnvs map[string]map[Environment]bool) *RingCheckResult {
 	result := &RingCheckResult{}
 
 	for _, f := range changedFiles {
-		switch ClassifyFileEnv(f) {
-		case Staging:
+		envs := fileEnvironments(f, fileEnvs)
+		switch {
+		case envs[Staging] && envs[Production]:
+			// Shared by both environments: a base file, not a direct conflict.
+		case envs[Staging]:
 			result.StagingFiles = append(result.StagingFiles, f)
-		case Production:
+		case envs[Production]:
 			result.ProductionFiles = append(result.ProductionFiles, f)
 		}
 	}
@@ -62,6 +74,19 @@ func CheckRingDeployment(changedFiles []string, affectedEnvs map[Environment]boo
 	}
 
 	return result
+}
+
+// fileEnvironments returns the environments a changed file belongs to, falling
+// back to the path-based classification when the detector has no entry.
+func fileEnvironments(file string, fileEnvs map[string]map[Environment]bool) map[Environment]bool {
+	if envs := fileEnvs[file]; len(envs) > 0 {
+		return envs
+	}
+	envs := make(map[Environment]bool, 1)
+	if env := ClassifyFileEnv(file); env != "" {
+		envs[env] = true
+	}
+	return envs
 }
 
 // ClassifyFileEnv returns the environment a file directly belongs to based

@@ -203,7 +203,7 @@ func run(ctx context.Context, opts options) error {
 
 	// Step 6: Ring deployment enforcement (runs in both dry-run and normal mode)
 	if opts.enforceRingDeploy {
-		ringResult := detector.CheckRingDeployment(changedFiles, result.AffectedEnvironments)
+		ringResult := detector.CheckRingDeployment(changedFiles, result.AffectedEnvironments, result.FileEnvs)
 		if ringResult.DirectConflict {
 			msg := formatRingViolation(ringResult)
 			fmt.Println(msg)

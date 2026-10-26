@@ -90,7 +90,7 @@ func TestCheckRingDeployment_DirectConflict(t *testing.T) {
 	}
 	affected := map[detector.Environment]bool{detector.Staging: true, detector.Production: true}
 
-	result := detector.CheckRingDeployment(changed, affected)
+	result := detector.CheckRingDeployment(changed, affected, nil)
 
 	g.Expect(result.DirectConflict).To(BeTrue())
 	g.Expect(result.IndirectConflict).To(BeFalse())
@@ -107,7 +107,7 @@ func TestCheckRingDeployment_DirectConflictMixedComponents(t *testing.T) {
 	}
 	affected := map[detector.Environment]bool{detector.Staging: true, detector.Production: true}
 
-	result := detector.CheckRingDeployment(changed, affected)
+	result := detector.CheckRingDeployment(changed, affected, nil)
 
 	g.Expect(result.DirectConflict).To(BeTrue())
 	g.Expect(result.StagingFiles).To(HaveLen(1))
@@ -123,7 +123,7 @@ func TestCheckRingDeployment_DirectConflictDownstream(t *testing.T) {
 	}
 	affected := map[detector.Environment]bool{detector.Staging: true, detector.Production: true}
 
-	result := detector.CheckRingDeployment(changed, affected)
+	result := detector.CheckRingDeployment(changed, affected, nil)
 
 	g.Expect(result.DirectConflict).To(BeTrue())
 }
@@ -137,7 +137,7 @@ func TestCheckRingDeployment_DirectConflictArgoCDOverlays(t *testing.T) {
 	}
 	affected := map[detector.Environment]bool{detector.Staging: true, detector.Production: true}
 
-	result := detector.CheckRingDeployment(changed, affected)
+	result := detector.CheckRingDeployment(changed, affected, nil)
 
 	g.Expect(result.DirectConflict).To(BeTrue())
 }
@@ -151,7 +151,7 @@ func TestCheckRingDeployment_DirectConflictNestedComponent(t *testing.T) {
 	}
 	affected := map[detector.Environment]bool{detector.Staging: true, detector.Production: true}
 
-	result := detector.CheckRingDeployment(changed, affected)
+	result := detector.CheckRingDeployment(changed, affected, nil)
 
 	g.Expect(result.DirectConflict).To(BeTrue())
 }
@@ -168,7 +168,7 @@ func TestCheckRingDeployment_IndirectConflict(t *testing.T) {
 	}
 	affected := map[detector.Environment]bool{detector.Staging: true, detector.Production: true}
 
-	result := detector.CheckRingDeployment(changed, affected)
+	result := detector.CheckRingDeployment(changed, affected, nil)
 
 	g.Expect(result.DirectConflict).To(BeFalse())
 	g.Expect(result.IndirectConflict).To(BeTrue())
@@ -186,7 +186,7 @@ func TestCheckRingDeployment_IndirectConflictMultipleBaseFiles(t *testing.T) {
 	}
 	affected := map[detector.Environment]bool{detector.Staging: true, detector.Production: true}
 
-	result := detector.CheckRingDeployment(changed, affected)
+	result := detector.CheckRingDeployment(changed, affected, nil)
 
 	g.Expect(result.DirectConflict).To(BeFalse())
 	g.Expect(result.IndirectConflict).To(BeTrue())
@@ -205,7 +205,7 @@ func TestCheckRingDeployment_StagingOnly(t *testing.T) {
 	}
 	affected := map[detector.Environment]bool{detector.Staging: true}
 
-	result := detector.CheckRingDeployment(changed, affected)
+	result := detector.CheckRingDeployment(changed, affected, nil)
 
 	g.Expect(result.DirectConflict).To(BeFalse())
 	g.Expect(result.IndirectConflict).To(BeFalse())
@@ -226,7 +226,7 @@ func TestCheckRingDeployment_ProductionOnly(t *testing.T) {
 	}
 	affected := map[detector.Environment]bool{detector.Production: true}
 
-	result := detector.CheckRingDeployment(changed, affected)
+	result := detector.CheckRingDeployment(changed, affected, nil)
 
 	g.Expect(result.DirectConflict).To(BeFalse())
 	g.Expect(result.IndirectConflict).To(BeFalse())
@@ -244,7 +244,7 @@ func TestCheckRingDeployment_NoEnvsAffected(t *testing.T) {
 	changed := []string{"README.md", "docs/introduction/index.md"}
 	affected := map[detector.Environment]bool{}
 
-	result := detector.CheckRingDeployment(changed, affected)
+	result := detector.CheckRingDeployment(changed, affected, nil)
 
 	g.Expect(result.DirectConflict).To(BeFalse())
 	g.Expect(result.IndirectConflict).To(BeFalse())
@@ -265,7 +265,7 @@ func TestCheckRingDeployment_StagingDirectProductionIndirect(t *testing.T) {
 	}
 	affected := map[detector.Environment]bool{detector.Staging: true, detector.Production: true}
 
-	result := detector.CheckRingDeployment(changed, affected)
+	result := detector.CheckRingDeployment(changed, affected, nil)
 
 	g.Expect(result.DirectConflict).To(BeFalse(), "only staging files are directly changed; production is only indirectly affected")
 	g.Expect(result.IndirectConflict).To(BeTrue())
@@ -288,7 +288,7 @@ func TestCheckRingDeployment_OutputSorted(t *testing.T) {
 	}
 	affected := map[detector.Environment]bool{detector.Staging: true, detector.Production: true}
 
-	result := detector.CheckRingDeployment(changed, affected)
+	result := detector.CheckRingDeployment(changed, affected, nil)
 
 	g.Expect(result.DirectConflict).To(BeTrue())
 	g.Expect(result.StagingFiles).To(Equal([]string{
@@ -299,4 +299,77 @@ func TestCheckRingDeployment_OutputSorted(t *testing.T) {
 		"components/a-service/production/a.yaml",
 		"components/z-service/production/b.yaml",
 	}))
+}
+
+// ---------------------------------------------------------------------------
+// Ring-based layouts: the environment comes from the overlay, not the path
+// ---------------------------------------------------------------------------
+
+func TestClassifyFileEnv_RingOverlays(t *testing.T) {
+	g := NewWithT(t)
+
+	g.Expect(detector.ClassifyFileEnv("argo-cd-apps/overlays/rd-staging/kustomization.yaml")).To(Equal(detector.Staging))
+	g.Expect(detector.ClassifyFileEnv("argo-cd-apps/overlays/rd-production/kustomization.yaml")).To(Equal(detector.Production))
+	g.Expect(detector.ClassifyFileEnv("argo-cd-apps/overlays/rd-dev/kustomization.yaml")).To(Equal(detector.Development))
+	// A ring directory itself carries no environment.
+	g.Expect(detector.ClassifyFileEnv("components/foo/rings/ring-1/kflux-stg-p02/kustomization.yaml")).To(BeEmpty())
+}
+
+// A ring-based component has no environment in its path; the detector's per-file
+// attribution is what tells ring enforcement where it belongs.
+func TestCheckRingDeployment_RingPathsUseFileEnvs(t *testing.T) {
+	g := NewWithT(t)
+
+	stagingFile := "components/foo/rings/ring-1/kflux-stg-p02/kustomization.yaml"
+	productionFile := "components/foo/rings/ring-2/stone-prod-p01/kustomization.yaml"
+	changed := []string{stagingFile, productionFile}
+	affected := map[detector.Environment]bool{detector.Staging: true, detector.Production: true}
+	fileEnvs := map[string]map[detector.Environment]bool{
+		stagingFile:    {detector.Staging: true},
+		productionFile: {detector.Production: true},
+	}
+
+	result := detector.CheckRingDeployment(changed, affected, fileEnvs)
+
+	g.Expect(result.DirectConflict).To(BeTrue())
+	g.Expect(result.StagingFiles).To(ConsistOf(stagingFile))
+	g.Expect(result.ProductionFiles).To(ConsistOf(productionFile))
+}
+
+// Without the detector's attribution a ring path is invisible to the path-based
+// classification, which is exactly the bug this guards against.
+func TestCheckRingDeployment_RingPathsWithoutFileEnvs(t *testing.T) {
+	g := NewWithT(t)
+
+	changed := []string{
+		"components/foo/rings/ring-1/kflux-stg-p02/kustomization.yaml",
+		"components/foo/rings/ring-2/stone-prod-p01/kustomization.yaml",
+	}
+	affected := map[detector.Environment]bool{detector.Staging: true, detector.Production: true}
+
+	result := detector.CheckRingDeployment(changed, affected, nil)
+
+	g.Expect(result.DirectConflict).To(BeFalse())
+	g.Expect(result.IndirectConflict).To(BeTrue())
+}
+
+// A file matched to both environments is a shared base file: it is not a direct
+// conflict even when other files pin it to one environment.
+func TestCheckRingDeployment_SharedFileIsNotDirect(t *testing.T) {
+	g := NewWithT(t)
+
+	shared := "components/foo/base/kustomization.yaml"
+	stagingOnly := "components/foo/staging/kustomization.yaml"
+	changed := []string{shared, stagingOnly}
+	affected := map[detector.Environment]bool{detector.Staging: true, detector.Production: true}
+	fileEnvs := map[string]map[detector.Environment]bool{
+		shared:      {detector.Staging: true, detector.Production: true},
+		stagingOnly: {detector.Staging: true},
+	}
+
+	result := detector.CheckRingDeployment(changed, affected, fileEnvs)
+
+	g.Expect(result.DirectConflict).To(BeFalse())
+	g.Expect(result.IndirectConflict).To(BeTrue())
+	g.Expect(result.StagingFiles).To(ConsistOf(stagingOnly))
 }
