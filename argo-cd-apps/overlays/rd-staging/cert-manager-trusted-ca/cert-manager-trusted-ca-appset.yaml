@@ -1,0 +1,55 @@
+# This component intentionally deploys to a single internal cluster only
+# (kflux-stg-p02), not the generic staging tenant/internal-tenant cluster
+# set, so the cluster list is populated manually below rather than via a
+# k-component.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: cert-manager-trusted-ca
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              selector:
+                matchExpressions:
+                  - key: appstudio.redhat.com/select-none
+                    operator: Exists
+                  - key: appstudio.redhat.com/select-none
+                    operator: DoesNotExist
+              values:
+                sourceRoot: components/cert-manager-trusted-ca-rd
+                ring: "empty-base"
+                clusterDir: "empty-base"
+          - list:
+              elements:
+                - nameNormalized: kflux-stg-p02
+                  values.ring: ring-1
+                  values.clusterDir: kflux-stg-p02
+
+  template:
+    metadata:
+      name: cert-manager-trusted-ca-{{nameNormalized}}
+    spec:
+      project: default
+      source:
+        path: '{{values.sourceRoot}}/rings/{{values.ring}}/{{values.clusterDir}}'
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+        targetRevision: main
+      destination:
+        namespace: cert-manager
+        server: '{{server}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+        - CreateNamespace=false
+        retry:
+          limit: -1
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 3m
