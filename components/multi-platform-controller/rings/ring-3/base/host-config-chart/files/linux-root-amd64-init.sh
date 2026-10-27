@@ -1,9 +1,5 @@
 #!/bin/bash -ex
 
-# Format and mount NVMe disk
-mkfs -t xfs /dev/nvme1n1
-mount /dev/nvme1n1 /home
-
 # Create required directories
 mkdir -p /home/var-lib-containers /var/lib/containers /home/var-tmp /var/tmp /home/ec2-user/.ssh
 
