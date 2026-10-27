@@ -95,8 +95,10 @@
       - vector-kubearchive-log-collector
 
     templated_configs:
-    - etcd-defrag
-    - proactive-scaler
+      - proactive-scaler
+
+    templated_rd_configs:
+      - etcd-defrag
 
     argo_cd_app_files:
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/cert-manager/cert-manager.yaml"
@@ -193,5 +195,12 @@
       tags: [configs]
       include_tasks: tasks/configs.yaml
       loop: "{{ templated_configs }}"
+      loop_control:
+        loop_var: config
+
+    - name: Copy cluster-specific ring-deployment config manifests
+      tags: [configs]
+      include_tasks: tasks/configs.yaml
+      loop: "{{ templated_rd_configs }}"
       loop_control:
         loop_var: config
