@@ -44,7 +44,7 @@ spec:
 
   template:
     metadata:
-      name: pvsec-{{nameNormalized}}
+      name: pvsec-{{name}}
     spec:
       project: default
       source:
@@ -53,7 +53,7 @@ spec:
         targetRevision: main
       destination:
         namespace: crypto-scanner # (optional) IF the component is deployed to a single namespace
-        server: '{{server}}'
+        server: '{{name}}'
       syncPolicy:
         automated:
           prune: true
