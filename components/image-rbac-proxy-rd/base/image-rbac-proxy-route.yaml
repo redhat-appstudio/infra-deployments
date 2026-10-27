@@ -1,0 +1,12 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: image-rbac-proxy
+  namespace: image-rbac-proxy
+spec:
+  to:
+    kind: Service
+    name: image-rbac-proxy
+  tls:
+    insecureEdgeTerminationPolicy: Redirect
+    termination: reencrypt
