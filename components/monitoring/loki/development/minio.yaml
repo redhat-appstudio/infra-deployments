@@ -111,9 +111,10 @@ metadata:
   namespace: openshift-logging
   annotations:
     argocd.argoproj.io/sync-wave: "-1"
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded, BeforeHookCreation
 spec:
   backoffLimit: 5
-  ttlSecondsAfterFinished: 300
   template:
     metadata:
       labels:
