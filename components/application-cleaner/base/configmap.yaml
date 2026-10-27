@@ -5,6 +5,7 @@ metadata:
 data:
   RETENTION_DAYS: "30"
   NAMESPACE_LABEL_SELECTOR: "konflux-ci.dev/enable-application-cleaner=true"
+  CLUSTER_NAME: "unknown"
   application-cleaner.sh: |
     #!/bin/bash
     set -euo pipefail
@@ -15,9 +16,10 @@ data:
     slack_webhook_url="${SLACK_WEBHOOK_URL:-}"
     namespace="${POD_NAMESPACE:-application-cleaner}"
     pod_name="${POD_NAME:-${HOSTNAME:-unknown}}"
+    cluster_name="${CLUSTER_NAME:-unknown}"
 
     # Posts variables expected by a Slack Workflow "Webhook" trigger.
-    # Workflow variables: status, emoji, summary, job_link, namespace, pod_name
+    # Workflow variables: status, emoji, summary, job_link, namespace, pod_name, cluster
     send_slack_notification() {
       local status="$1"
       local summary="$2"
@@ -38,23 +40,33 @@ data:
       console_url="$(kubectl get configmap console-public -n openshift-config-managed \
         -o jsonpath='{.data.consoleURL}' 2>/dev/null || true)"
 
+      # Prefer configured CLUSTER_NAME; fall back to apps.<cluster>. from console URL
+      local cluster="${cluster_name}"
+      if [[ -z "${cluster}" || "${cluster}" == "unknown" ]] && [[ -n "${console_url}" ]]; then
+        cluster="$(printf '%s' "${console_url}" | sed -n 's|^https://console-openshift-console\.apps\.\([^.]*\)\..*$|\1|p')"
+        cluster="${cluster:-unknown}"
+      fi
+
       local job_link="Pod: ${namespace}/${pod_name}"
       if [[ -n "${console_url}" ]]; then
         job_link="${console_url}/k8s/ns/${namespace}/pods/${pod_name}"
       fi
 
+      summary="[${cluster}] ${summary}"
+
       # Escape strings for JSON (avoid heredoc — breaks YAML block scalar parsing)
       json_escape() { printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'; }
       local payload
-      payload="$(printf '{"status":"%s","emoji":"%s","summary":"%s","job_link":"%s","namespace":"%s","pod_name":"%s"}' \
+      payload="$(printf '{"status":"%s","emoji":"%s","summary":"%s","job_link":"%s","namespace":"%s","pod_name":"%s","cluster":"%s"}' \
         "$(json_escape "${status}")" \
         "$(json_escape "${emoji}")" \
         "$(json_escape "${summary}")" \
         "$(json_escape "${job_link}")" \
         "$(json_escape "${namespace}")" \
-        "$(json_escape "${pod_name}")")"
+        "$(json_escape "${pod_name}")" \
+        "$(json_escape "${cluster}")")"
 
-      echo "Sending Slack Workflow notification (${status})..."
+      echo "Sending Slack Workflow notification (${status}) for cluster ${cluster}..."
       # -f treats HTTP 4xx/5xx as failure so rejected webhooks are logged as such
       if ! response="$(curl -sS -f --max-time 10 -X POST "${slack_webhook_url}" \
         -H 'Content-Type: application/json; charset=utf-8' \
