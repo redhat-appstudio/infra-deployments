@@ -190,12 +190,9 @@ func extractFromAppSet(doc map[string]interface{}) ([]ComponentPath, map[string]
 
 	name := appSetName(doc)
 	values := collectGeneratorValues(spec["generators"])
-	for _, unsupported := range values.unsupported {
-		slog.Warn("unsupported ApplicationSet generator, its component paths are not tracked",
+	for _, unsupported := range values.unsupported() {
+		slog.Warn("unsupported ApplicationSet generator, falling back to static paths and prefixes for it",
 			"appset", name, "generator", unsupported)
-	}
-	if len(values.unsupported) > 0 {
-		return nil, nil, nil
 	}
 
 	return resolveSources(name, sources, values.sets())
@@ -271,24 +268,64 @@ type valueSet struct {
 	clusterName string
 }
 
-// collectedValues holds everything gathered from an ApplicationSet's generators.
-type collectedValues struct {
+// valueGroup holds the values produced by one top-level generator (and, for a
+// merge generator, everything nested in it). ArgoCD combines top-level
+// generators as a union, so values never flow from one group to another.
+type valueGroup struct {
 	defaults    generatorValues
 	elements    []valueSet
+	hasClusters bool
 	unsupported []string
 }
 
-// sets returns the value combinations to interpolate: the generator defaults
-// (when any) followed by each list element merged over the defaults. With no
-// generators at all it returns a single empty combination so static paths are
-// still resolved.
+// sets returns the value combinations of one group: the cluster defaults
+// followed by each list element merged over the defaults.
+func (g valueGroup) sets() []valueSet {
+	// An unmodelled generator may supply or override any value of its group,
+	// so none of them can be trusted. Interpolate without values instead: a
+	// static path still resolves exactly and a templated one falls back to its
+	// static prefix, rather than the group contributing nothing.
+	if len(g.unsupported) > 0 {
+		return []valueSet{{values: generatorValues{}}}
+	}
+	var sets []valueSet
+	// A clusters generator without list elements still generates one
+	// Application per cluster, even when it carries no values.
+	if len(g.defaults) > 0 || (g.hasClusters && len(g.elements) == 0) {
+		sets = append(sets, valueSet{values: g.defaults})
+	}
+	for _, e := range g.elements {
+		sets = append(sets, valueSet{values: mergeValues(g.defaults, e.values), clusterName: e.clusterName})
+	}
+	return sets
+}
+
+// collectedValues holds everything gathered from an ApplicationSet's generators,
+// one group per top-level generator.
+type collectedValues struct {
+	groups []valueGroup
+}
+
+// unsupported returns the unmodelled generator types found in any group.
+func (c collectedValues) unsupported() []string {
+	n := 0
+	for _, g := range c.groups {
+		n += len(g.unsupported)
+	}
+	out := make([]string, 0, n)
+	for _, g := range c.groups {
+		out = append(out, g.unsupported...)
+	}
+	return out
+}
+
+// sets returns the value combinations to interpolate: the union of the value
+// sets of every top-level generator. With no generators at all it returns a
+// single empty combination so static paths are still resolved.
 func (c collectedValues) sets() []valueSet {
 	var sets []valueSet
-	if len(c.defaults) > 0 {
-		sets = append(sets, valueSet{values: c.defaults})
-	}
-	for _, e := range c.elements {
-		sets = append(sets, valueSet{values: mergeValues(c.defaults, e.values), clusterName: e.clusterName})
+	for _, g := range c.groups {
+		sets = append(sets, g.sets()...)
 	}
 	if len(sets) == 0 {
 		sets = append(sets, valueSet{values: generatorValues{}})
@@ -297,15 +334,20 @@ func (c collectedValues) sets() []valueSet {
 }
 
 // collectGeneratorValues walks the generator tree (including merge and nested
-// merge generators), gathering cluster defaults and list elements.
+// merge generators), gathering cluster defaults and list elements separately
+// for each top-level generator.
 func collectGeneratorValues(generators interface{}) collectedValues {
-	out := collectedValues{defaults: generatorValues{}}
+	var out collectedValues
 	gens, _ := generators.([]interface{})
-	collectGenerators(gens, &out)
+	for _, gen := range gens {
+		group := valueGroup{defaults: generatorValues{}}
+		collectGenerators([]interface{}{gen}, &group)
+		out.groups = append(out.groups, group)
+	}
 	return out
 }
 
-func collectGenerators(gens []interface{}, out *collectedValues) {
+func collectGenerators(gens []interface{}, out *valueGroup) {
 	for _, gen := range gens {
 		genMap, ok := gen.(map[string]interface{})
 		if !ok {
@@ -315,6 +357,7 @@ func collectGenerators(gens []interface{}, out *collectedValues) {
 		if clustersGen, ok := genMap["clusters"].(map[string]interface{}); ok {
 			values, _ := clustersGen["values"].(map[string]interface{})
 			maps.Copy(out.defaults, valuesFromMap(values))
+			out.hasClusters = true
 			continue
 		}
 
@@ -340,8 +383,8 @@ func collectGenerators(gens []interface{}, out *collectedValues) {
 		}
 
 		// matrix, git, scm, clusterDecisionResource, pullRequest, plugin, ...
-		// are not modelled: record them so the caller can warn instead of
-		// silently returning no paths.
+		// are not modelled: record them so the caller can warn and the group
+		// falls back to static paths and prefixes.
 		keys := make([]string, 0, len(genMap))
 		for k := range genMap {
 			keys = append(keys, k)
@@ -407,6 +450,9 @@ var placeholderRe = regexp.MustCompile(`\{\{\s*([A-Za-z0-9_.\-]+)\s*\}\}`)
 // interpolatePath substitutes placeholders in an ApplicationSet source path.
 // The second return value is false when at least one placeholder could not be
 // resolved, in which case the returned path still contains the placeholder.
+// Template expressions placeholderRe does not understand (for example the
+// Go-template form "{{ .name | lower }}") also count as unresolved, so they
+// are never mistaken for a literal path.
 func interpolatePath(pathTemplate string, values generatorValues) (string, bool) {
 	resolved := true
 	out := placeholderRe.ReplaceAllStringFunc(pathTemplate, func(match string) string {
@@ -418,21 +464,21 @@ func interpolatePath(pathTemplate string, values generatorValues) (string, bool)
 		resolved = false
 		return match
 	})
-	if !resolved {
+	if !resolved || strings.Contains(out, "{{") {
 		return out, false
 	}
 	return path.Clean(strings.TrimSuffix(out, "/")), true
 }
 
 // staticPrefix returns the longest directory prefix of a path template that is
-// free of placeholders. It is used to keep tracking a path that cannot be fully
-// resolved, instead of dropping the ApplicationSet entirely.
+// free of template expressions. It is used to keep tracking a path that cannot
+// be fully resolved, instead of dropping the ApplicationSet entirely.
 func staticPrefix(pathTemplate string) string {
-	loc := placeholderRe.FindStringIndex(pathTemplate)
-	if loc == nil {
+	idx := strings.Index(pathTemplate, "{{")
+	if idx < 0 {
 		return path.Clean(strings.TrimSuffix(pathTemplate, "/"))
 	}
-	prefix := pathTemplate[:loc[0]]
+	prefix := pathTemplate[:idx]
 	if i := strings.LastIndex(prefix, "/"); i >= 0 {
 		prefix = prefix[:i]
 	} else {
@@ -451,6 +497,7 @@ func resolveSources(name string, sources []templateSource, sets []valueSet) ([]C
 	var paths []ComponentPath
 	clusters := make(map[string][]string)
 	seen := make(map[string]bool)
+	seenCluster := make(map[string]bool)
 
 	for _, source := range sources {
 		for _, set := range sets {
@@ -467,9 +514,10 @@ func resolveSources(name string, sources []templateSource, sets []valueSet) ([]C
 					cp.Path = staticPrefix(resolved)
 					cp.PrefixOnly = true
 					if cp.Path == "" {
-						slog.Warn("ApplicationSet path template cannot be resolved and has no static prefix",
-							"appset", name, "template", source.pathTemplate)
-						continue
+						// Nothing in the repository can be attributed to this
+						// source: fail detection loudly instead of silently
+						// reporting no affected environment.
+						return nil, nil, fmt.Errorf("path template %q cannot be resolved and has no static prefix", source.pathTemplate)
 					}
 					slog.Warn("ApplicationSet path template has unresolved placeholders, falling back to prefix matching",
 						"appset", name, "template", source.pathTemplate, "prefix", cp.Path)
@@ -489,18 +537,25 @@ func resolveSources(name string, sources []templateSource, sets []valueSet) ([]C
 			if cp.Path == "" && len(cp.ExtraFiles) == 0 {
 				continue
 			}
+
+			// Only a fully resolved path can be attributed to a cluster; a
+			// prefix is shared by several clusters and would over-match. The
+			// attribution happens before path deduplication: several clusters
+			// may deploy the same path and each must be recorded.
+			if set.clusterName != "" && cp.Path != "" && !cp.PrefixOnly {
+				clusterKey := set.clusterName + "|" + cp.Path
+				if !seenCluster[clusterKey] {
+					seenCluster[clusterKey] = true
+					clusters[set.clusterName] = append(clusters[set.clusterName], cp.Path)
+				}
+			}
+
 			key := cp.Path + "|" + cp.ClusterDir + "|" + strings.Join(cp.ExtraFiles, ",") + "|" + strconv.FormatBool(cp.PrefixOnly)
 			if seen[key] {
 				continue
 			}
 			seen[key] = true
 			paths = append(paths, cp)
-
-			// Only a fully resolved path can be attributed to a cluster; a
-			// prefix is shared by several clusters and would over-match.
-			if set.clusterName != "" && cp.Path != "" && !cp.PrefixOnly {
-				clusters[set.clusterName] = append(clusters[set.clusterName], cp.Path)
-			}
 		}
 	}
 

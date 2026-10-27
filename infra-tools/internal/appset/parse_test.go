@@ -895,12 +895,10 @@ spec:
 	))
 }
 
-// An unsupported generator must not be ignored silently: the ApplicationSet is
-// skipped and a warning is logged.
-func TestParseApplicationSets_UnsupportedGeneratorSkipped(t *testing.T) {
-	g := NewWithT(t)
-
-	yaml := `
+// matrixAppSet returns an ApplicationSet driven by an unmodelled matrix
+// generator with the given source path template.
+func matrixAppSet(pathTemplate string) string {
+	return `
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
@@ -909,7 +907,9 @@ spec:
   generators:
     - matrix:
         generators:
-          - clusters: {}
+          - clusters:
+              values:
+                sourceRoot: components/matrix
           - git:
               repoURL: https://example.com/repo.git
   template:
@@ -917,12 +917,172 @@ spec:
       name: matrix-generated
     spec:
       source:
-        path: '{{values.sourceRoot}}/{{values.environment}}'
+        path: '` + pathTemplate + `'
+        repoURL: https://example.com/repo.git
+`
+}
+
+// An unsupported generator must not drop the ApplicationSet: a static path is
+// still tracked exactly.
+func TestParseApplicationSets_UnsupportedGeneratorKeepsStaticPath(t *testing.T) {
+	g := NewWithT(t)
+
+	result, err := ParseApplicationSets([]byte(matrixAppSet("components/matrix/staging")))
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.Paths).To(HaveLen(1))
+	g.Expect(result.Paths[0].Path).To(Equal("components/matrix/staging"))
+	g.Expect(result.Paths[0].PrefixOnly).To(BeFalse())
+}
+
+// The values of an unsupported generator cannot be trusted, so a templated
+// path falls back to its static prefix instead of being dropped.
+func TestParseApplicationSets_UnsupportedGeneratorUsesStaticPrefix(t *testing.T) {
+	g := NewWithT(t)
+
+	result, err := ParseApplicationSets([]byte(matrixAppSet("components/matrix/{{values.environment}}")))
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.Paths).To(HaveLen(1))
+	g.Expect(result.Paths[0].Path).To(Equal("components/matrix"))
+	g.Expect(result.Paths[0].PrefixOnly).To(BeTrue())
+}
+
+// A path template with nothing static to fall back on cannot be attributed to
+// anything in the repository: parsing fails instead of silently reporting no
+// affected environment.
+func TestParseApplicationSets_NoStaticPrefixIsAnError(t *testing.T) {
+	g := NewWithT(t)
+
+	_, err := ParseApplicationSets([]byte(matrixAppSet("{{values.sourceRoot}}/{{values.environment}}")))
+	g.Expect(err).To(HaveOccurred())
+	g.Expect(err.Error()).To(ContainSubstring("matrix-generated"))
+	g.Expect(err.Error()).To(ContainSubstring("no static prefix"))
+}
+
+// Template expressions the placeholder syntax does not cover must not be taken
+// for a literal path: they fall back to the static prefix.
+func TestParseApplicationSets_UnparsedTemplateExpressionUsesStaticPrefix(t *testing.T) {
+	g := NewWithT(t)
+
+	yaml := `
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: gotemplate
+spec:
+  generators:
+    - clusters: {}
+  template:
+    metadata:
+      name: gotemplate
+    spec:
+      source:
+        path: 'components/gotemplate/{{ .name | lower }}'
         repoURL: https://example.com/repo.git
 `
 	result, err := ParseApplicationSets([]byte(yaml))
 	g.Expect(err).NotTo(HaveOccurred())
-	g.Expect(result.Paths).To(BeEmpty())
+	g.Expect(result.Paths).To(HaveLen(1))
+	g.Expect(result.Paths[0].Path).To(Equal("components/gotemplate"))
+	g.Expect(result.Paths[0].PrefixOnly).To(BeTrue())
+}
+
+// Several list elements may resolve to the same path; every one of their
+// clusters must still be attributed to it, even though the path is recorded
+// once.
+func TestParseApplicationSets_SharedPathAttributedToEveryCluster(t *testing.T) {
+	g := NewWithT(t)
+
+	yaml := `
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: k8s-groups
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              values:
+                sourceRoot: components/k8s-groups
+                environment: staging
+                useCaseDir: rover
+          - list:
+              elements:
+                - nameNormalized: stone-stage-p01
+                  values.useCaseDir: rover/rh-sso-internal
+                - nameNormalized: kflux-stg-p02
+                  values.useCaseDir: rover/rh-sso-internal
+  template:
+    metadata:
+      name: k8s-groups-{{nameNormalized}}
+    spec:
+      source:
+        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.useCaseDir}}'
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+`
+	result, err := ParseApplicationSets([]byte(yaml))
+	g.Expect(err).NotTo(HaveOccurred())
+
+	shared := "components/k8s-groups/staging/rover/rh-sso-internal"
+	sharedCount := 0
+	for _, p := range result.Paths {
+		if p.Path == shared {
+			sharedCount++
+		}
+	}
+	g.Expect(sharedCount).To(Equal(1))
+	g.Expect(result.Clusters).To(HaveKeyWithValue("stone-stage-p01", []string{shared}))
+	g.Expect(result.Clusters).To(HaveKeyWithValue("kflux-stg-p02", []string{shared}))
+}
+
+// Top-level generators are a union in ArgoCD: the values of one generator must
+// not leak into the Applications of another, and each generator contributes
+// its own paths.
+func TestParseApplicationSets_TopLevelGeneratorsAreAUnion(t *testing.T) {
+	g := NewWithT(t)
+
+	yaml := `
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: union
+spec:
+  generators:
+    - clusters:
+        values:
+          sourceRoot: components/union-a
+          environment: staging
+    - clusters:
+        values:
+          sourceRoot: components/union-b
+          environment: production
+    - list:
+        elements:
+          - name: stone-prod-p01
+            values.sourceRoot: components/union-c
+            values.environment: production
+  template:
+    metadata:
+      name: union-{{name}}
+    spec:
+      source:
+        path: '{{values.sourceRoot}}/{{values.environment}}'
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+`
+	result, err := ParseApplicationSets([]byte(yaml))
+	g.Expect(err).NotTo(HaveOccurred())
+
+	paths := make([]string, 0, len(result.Paths))
+	for _, p := range result.Paths {
+		paths = append(paths, p.Path)
+	}
+	g.Expect(paths).To(ConsistOf(
+		"components/union-a/staging",
+		"components/union-b/production",
+		"components/union-c/production",
+	))
 }
 
 // A template the generator defaults cannot fully resolve (here because no list

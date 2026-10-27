@@ -312,3 +312,31 @@ func TestCountStats(t *testing.T) {
 	g.Expect(added).To(Equal(2))
 	g.Expect(removed).To(Equal(1))
 }
+
+// A component that only consumes value files has no directory to render: it
+// must be skipped rather than rendering the repository root.
+func TestEngine_EmptyPathSkipped(t *testing.T) {
+	g := NewWithT(t)
+
+	head := &fakeBuilder{
+		exist: map[string]bool{"": true, "components/a/dev": true},
+		yamls: map[string][]byte{"": []byte("repo-root\n"), "components/a/dev": []byte("new-a\n")},
+	}
+	base := &fakeBuilder{
+		exist: map[string]bool{"": true, "components/a/dev": true},
+		yamls: map[string][]byte{"": []byte("old-root\n"), "components/a/dev": []byte("old-a\n")},
+	}
+
+	engine := NewEngine(head, base, 2)
+	affected := map[detector.Environment][]appset.ComponentPath{
+		detector.Development: {
+			{ExtraFiles: []string{"components/a/values.yaml"}},
+			{Path: "components/a/dev"},
+		},
+	}
+
+	result, err := engine.Run(context.Background(), affected)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.Diffs).To(HaveLen(1))
+	g.Expect(result.Diffs[0].Path).To(Equal("components/a/dev"))
+}

@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"path/filepath"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"golang.org/x/sync/errgroup"
@@ -359,8 +360,10 @@ func (d *Detector) resolveComponentDeps(envPaths map[Environment][]appset.Compon
 		for _, cp := range paths {
 			// The key must include ExtraFiles: several paths can share the same
 			// deployed directory while contributing different value files, and
-			// ExtraFiles-only entries all have an empty Path.
-			key := string(env) + "|" + cp.Path + "|" + strings.Join(cp.ExtraFiles, ",")
+			// ExtraFiles-only entries all have an empty Path. It must include
+			// PrefixOnly too, so a resolved entry cannot shadow a prefix-only
+			// entry with the same Path and narrow it to a dependency tree.
+			key := string(env) + "|" + cp.Path + "|" + strings.Join(cp.ExtraFiles, ",") + "|" + strconv.FormatBool(cp.PrefixOnly)
 			if seen[key] {
 				continue
 			}
@@ -385,8 +388,16 @@ func (d *Detector) resolveComponentDeps(envPaths map[Environment][]appset.Compon
 
 			// The path may not exist on HEAD when a component was deleted,
 			// the ApplicationSet reference is stale, or a templated path
-			// resolves to a directory that hasn't been created yet.
+			// resolves to a directory that hasn't been created yet. It also
+			// happens for a source whose path lives in another repository
+			// while its "$values/" files live here: keep those files, they
+			// are still matched exactly.
 			if !d.head.DirExists(cp.Path) {
+				if len(cp.ExtraFiles) > 0 {
+					filesOnly := cp
+					filesOnly.Path = ""
+					resolved = append(resolved, componentDeps{cp: filesOnly, env: env})
+				}
 				continue
 			}
 
@@ -509,6 +520,11 @@ func matchDepTree(changedSet, deps map[string]bool) bool {
 func matchClusters(cp appset.ComponentPath, allClusters map[string][]string, result *Result) {
 	if cp.ClusterDir != "" && !kustomizeReservedDirs[cp.ClusterDir] {
 		result.AffectedClusters[cp.ClusterDir] = true
+		return
+	}
+	// A prefix-only path is an unresolved template shared by several
+	// clusters: attributing every cluster under it would over-label.
+	if cp.PrefixOnly {
 		return
 	}
 	// ClusterDir is empty or a reserved name like "base" — check which real

@@ -90,6 +90,15 @@ func (e *Engine) RunProgressive(ctx context.Context, affected map[detector.Envir
 
 	for env, paths := range affected {
 		for _, cp := range paths {
+			// A component without a deployed directory only consumes
+			// repository files (e.g. "$values/" Helm value files of a chart
+			// source). There is no kustomization to render, so report it
+			// instead of building the repository root.
+			if cp.Path == "" {
+				slog.Warn("skipping component without a deployed directory, its value files are not rendered",
+					"env", env, "extraFiles", cp.ExtraFiles)
+				continue
+			}
 			g.Go(func() error {
 				if err := ctx.Err(); err != nil {
 					return err

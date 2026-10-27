@@ -1511,3 +1511,90 @@ func TestResolveComponentDeps_PrefixOnlyMatchesByPrefix(t *testing.T) {
 
 	g.Expect(result.AffectedEnvironments).To(HaveKey(Staging))
 }
+
+// A source whose directory is not in this repository (e.g. an external-repo
+// path) may still consume "$values/" files from it. Those files must keep
+// matching exactly even though the directory is missing.
+func TestResolveComponentDeps_MissingDirKeepsExtraFiles(t *testing.T) {
+	g := NewWithT(t)
+
+	head := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"staging-downstream"}},
+		exist: map[string]bool{}, // the source path does NOT exist here
+	}
+	base := &fakeRepo{dirs: map[string][]string{"overlays": {"staging-downstream"}}}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	valuesFile := "components/chart/staging/values.yaml"
+	resolved := d.resolveComponentDeps(map[Environment][]appset.ComponentPath{
+		Staging: {{Path: "charts/external", ExtraFiles: []string{valuesFile}}},
+	})
+	g.Expect(resolved).To(HaveLen(1))
+	g.Expect(resolved[0].cp.Path).To(BeEmpty())
+	g.Expect(resolved[0].cp.ExtraFiles).To(ConsistOf(valuesFile))
+
+	result := &Result{
+		AffectedEnvironments: make(map[Environment]bool),
+		AffectedClusters:     make(map[string]bool),
+	}
+	matchChangedFiles([]string{valuesFile}, resolved, nil, result)
+	g.Expect(result.AffectedEnvironments).To(HaveKey(Staging))
+}
+
+// A resolved entry and a prefix-only entry sharing the same Path must both be
+// kept, otherwise the resolved one could narrow prefix matching to its
+// dependency tree.
+func TestResolveComponentDeps_PrefixOnlyNotShadowedByResolved(t *testing.T) {
+	g := NewWithT(t)
+
+	head := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"staging-downstream"}},
+		exist: map[string]bool{"components/foo/staging": true},
+		deps: map[string]map[string]bool{
+			"components/foo/staging": {"components/foo/staging/kustomization.yaml": true},
+		},
+	}
+	base := &fakeRepo{dirs: map[string][]string{"overlays": {"staging-downstream"}}}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	resolved := d.resolveComponentDeps(map[Environment][]appset.ComponentPath{
+		Staging: {
+			{Path: "components/foo/staging"},
+			{Path: "components/foo/staging", PrefixOnly: true},
+		},
+	})
+	g.Expect(resolved).To(HaveLen(2))
+
+	// A file outside the dependency tree but under the prefix still matches.
+	result := &Result{
+		AffectedEnvironments: make(map[Environment]bool),
+		AffectedClusters:     make(map[string]bool),
+	}
+	matchChangedFiles([]string{"components/foo/staging/stone-stage-p01/patch.yaml"}, resolved, nil, result)
+	g.Expect(result.AffectedEnvironments).To(HaveKey(Staging))
+}
+
+// A prefix-only entry is shared by several clusters: it must not label every
+// cluster whose paths live under the prefix.
+func TestMatchClusters_PrefixOnlyDoesNotLabelClustersUnderPrefix(t *testing.T) {
+	g := NewWithT(t)
+	result := &Result{
+		AffectedEnvironments: make(map[Environment]bool),
+		AffectedClusters:     make(map[string]bool),
+	}
+	allClusters := map[string][]string{
+		"stone-stage-p01": {"components/foo/staging/stone-stage-p01"},
+		"kflux-stg-p02":   {"components/foo/staging/kflux-stg-p02"},
+	}
+
+	matchClusters(appset.ComponentPath{Path: "components/foo/staging", PrefixOnly: true}, allClusters, result)
+	g.Expect(result.AffectedClusters).To(BeEmpty())
+
+	// A resolved entry with the same path keeps the cluster fallback.
+	matchClusters(appset.ComponentPath{Path: "components/foo/staging"}, allClusters, result)
+	g.Expect(result.AffectedClusters).To(HaveLen(2))
+}

@@ -37,9 +37,29 @@ type knownFinding struct {
 // that no longer fails is reported as stale so the list cannot rot.
 var knownGaps = map[string]knownFinding{}
 
-// knownUnresolved lists ApplicationSets whose rendered path template still
-// contains placeholders after interpolation.
-var knownUnresolved = map[string]knownFinding{}
+// knownPrefixOnly lists ApplicationSets whose path template cannot be fully
+// resolved from the generator values, so they are only tracked by their static
+// prefix (PrefixOnly). The detail is the sorted, comma-separated list of
+// prefixes extracted for the ApplicationSet.
+var knownPrefixOnly = map[string]knownFinding{
+	"development-operator/backup":      backupPrefixOnly("development"),
+	"development/backup":               backupPrefixOnly("development"),
+	"konflux-public-production/backup": backupPrefixOnly("production"),
+	"konflux-public-staging/backup":    backupPrefixOnly("staging"),
+	"production-downstream/backup":     backupPrefixOnly("production"),
+	"rd-dev/backup":                    backupPrefixOnly("development"),
+	"staging-downstream/backup":        backupPrefixOnly("staging"),
+}
+
+// backupPrefixOnly is the expected finding for the backup ApplicationSet: its
+// path ends in {{nameNormalized}}, which only the clusters generator supplies at
+// runtime (the list generator has no elements).
+func backupPrefixOnly(env string) knownFinding {
+	return knownFinding{
+		detail: "components/backup/" + env,
+		reason: "path ends in {{nameNormalized}}, which only the clusters generator supplies at runtime",
+	}
+}
 
 type auditFinding struct {
 	key    string
@@ -63,7 +83,7 @@ func TestRealRepoApplicationSets(t *testing.T) {
 		t.Fatalf("reading overlays dir: %v", err)
 	}
 
-	var gaps, unresolved, missing []auditFinding
+	var gaps, prefixOnly, missing []auditFinding
 	// renderedKeys records every "<overlay>/<appset>" the audit actually sees,
 	// so stale allow-list entries can be distinguished from entries that now
 	// pass.
@@ -105,6 +125,7 @@ func TestRealRepoApplicationSets(t *testing.T) {
 				gaps = append(gaps, auditFinding{key, "no source path in template (multi-source or chart-only)"})
 			}
 
+			prefixes := make(map[string]bool)
 			for _, p := range paths {
 				if p.Path == "" {
 					// A path-less entry is valid when it only consumes
@@ -114,8 +135,8 @@ func TestRealRepoApplicationSets(t *testing.T) {
 					}
 					continue
 				}
-				if strings.Contains(p.Path, "{{") {
-					unresolved = append(unresolved, auditFinding{key, p.Path})
+				if p.PrefixOnly {
+					prefixes[p.Path] = true
 					continue
 				}
 				abs := filepath.Join(repoRoot, filepath.FromSlash(p.Path))
@@ -123,11 +144,21 @@ func TestRealRepoApplicationSets(t *testing.T) {
 					missing = append(missing, auditFinding{key, p.Path})
 				}
 			}
+			// Prefix fallbacks are reported once per ApplicationSet so a new
+			// one, or a different prefix on a known one, fails the audit.
+			if len(prefixes) > 0 {
+				sorted := make([]string, 0, len(prefixes))
+				for p := range prefixes {
+					sorted = append(sorted, p)
+				}
+				sort.Strings(sorted)
+				prefixOnly = append(prefixOnly, auditFinding{key, strings.Join(sorted, ", ")})
+			}
 		}
 	}
 
 	checkFindings(t, "ApplicationSets with no extracted component path", gaps, knownGaps, renderedKeys)
-	checkFindings(t, "component paths with unresolved placeholders", unresolved, knownUnresolved, renderedKeys)
+	checkFindings(t, "ApplicationSets tracked only by a static path prefix", prefixOnly, knownPrefixOnly, renderedKeys)
 
 	// Paths whose directory is absent are informational: ApplicationSets often
 	// list every cluster while only some clusters need a cluster-specific
