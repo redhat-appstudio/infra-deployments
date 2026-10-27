@@ -3,3 +3,15 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ../../base
+
+patches:
+  - patch: |-
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: config-tracing
+        namespace: knative-eventing
+      data:
+        backend: "zipkin"
+        zipkin-endpoint: "http://otel-collector.product-kubearchive.svc.cluster.local:9411/api/v2/spans"
+        sample-rate: "0.1"
