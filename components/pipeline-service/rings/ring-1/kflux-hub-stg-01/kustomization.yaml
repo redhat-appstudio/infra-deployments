@@ -1,40 +1,71 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+
 resources:
   - ../base
 
 patches:
-  - path: resources/tekton-chains-public-key-path.yaml
-    target:
-      name: tekton-chains-public-key
-      group: external-secrets.io
-      version: v1
+  # ExternalSecret patches
+  - target:
       kind: ExternalSecret
-  - path: resources/tekton-chains-signing-secret-path.yaml
-    target:
-      name: tekton-chains-signing-secret
-      group: external-secrets.io
-      version: v1
-      kind: ExternalSecret
-  - path: resources/tekton-results-database-secret-path.yaml
-    target:
-      name: tekton-results-database
-      group: external-secrets.io
-      version: v1
-      kind: ExternalSecret
-  - path: resources/tekton-results-s3-secret-path.yaml
-    target:
-      name: tekton-results-s3
-      group: external-secrets.io
-      version: v1
-      kind: ExternalSecret
-  - path: resources/pipelines-as-code-secret-path.yaml
-    target:
       name: pipelines-as-code-secret
-      group: external-secrets.io
-      version: v1
+      namespace: openshift-pipelines
+    path: patches/pipelines-as-code-es-key-patch.yaml
+  - target:
       kind: ExternalSecret
-  - path: resources/update-tekton-config-pac.yaml
-    target:
+      name: tekton-chains-public-key
+      namespace: openshift-pipelines
+    path: patches/tekton-chains-public-key-es-key-patch.yaml
+  - target:
+      kind: ExternalSecret
+      name: tekton-chains-signing-secret
+      namespace: openshift-pipelines
+    path: patches/tekton-chains-signing-es-key-patch.yaml
+  - target:
+      kind: ExternalSecret
+      name: tekton-results-s3
+      namespace: tekton-logging
+    path: patches/tekton-results-s3-es-key-patch.yaml
+  - target:
+      kind: ExternalSecret
+      name: tekton-results-database
+      namespace: openshift-pipelines
+    path: patches/tekton-results-db-es-key-patch.yaml
+  - target:
+      kind: ExternalSecret
+      name: tekton-results-s3
+      namespace: openshift-pipelines
+    path: patches/tekton-results-s3-es-key-patch.yaml
+  # TektonConfig patches
+  - target:
       kind: TektonConfig
       name: config
+    patch: |
+      - op: replace
+        path: /spec/chain/artifacts.pipelinerun.format
+        value: slsa/v2alpha3
+      - op: replace
+        path: /spec/chain/builddefinition.buildtype
+        value: https://tekton.dev/chains/v2/slsa-tekton
+  - target:
+      kind: TektonConfig
+      name: config
+    path: patches/update-tekton-cfg-settings-patch.yaml
+  # ROKS parity with kflux-lw-p01 (ring-2): dynamic DB port/CA + trusted-ca mounts
+  - target:
+      kind: TektonConfig
+      name: config
+    path: patches/tekton-results-db-port-patch.yaml
+  - target:
+      kind: TektonConfig
+      name: config
+    path: patches/tekton-results-db-ca-patch.yaml
+  - path: patches/delete-rds-root-crt-configmap.yaml
+  - target:
+      kind: TektonConfig
+      name: config
+    path: patches/update-tekton-config-pac-trusted-ca.yaml
+  - target:
+      kind: TektonConfig
+      name: config
+    path: patches/update-tekton-config-resolver-trusted-ca.yaml
