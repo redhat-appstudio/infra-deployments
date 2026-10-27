@@ -12,8 +12,7 @@ commonAnnotations:
     "Managed by upstream Loki chart (no value exposed for unhealthyPodEvictionPolicy)."
 
 resources:
+- loki
+- vector
 - ../base
-
-generators:
-- vector-helm-generator.yaml
-- loki-helm-generator.yaml
+- cos-credentials-es.yaml
