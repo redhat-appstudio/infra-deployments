@@ -36,8 +36,15 @@ type ComponentPath struct {
 	ExtraFiles []string
 	// PrefixOnly is true when the path template could not be fully resolved
 	// (unknown placeholder). Path then holds the longest static prefix, and
-	// callers must match changed files by prefix instead of by dependency tree.
+	// callers must match changed files by prefix, and by the dependency trees
+	// of the kustomizations under that prefix.
 	PrefixOnly bool
+	// MatchAll is true when a template could not be resolved and has no static
+	// prefix either, so nothing in the repository can be attributed to it. Path
+	// is then empty, and callers must treat any change as affecting the
+	// environment (fail closed) instead of ignoring the ApplicationSet or
+	// aborting detection.
+	MatchAll bool
 }
 
 // ParseResult holds the extracted data from all ApplicationSets in one overlay.
@@ -266,6 +273,10 @@ type generatorValues map[string]string
 type valueSet struct {
 	values      generatorValues
 	clusterName string
+	// prefixOnly is set when the values are incomplete because an unmodelled
+	// generator may supply or override any of them: templates resolved from
+	// this set are only ever tracked by prefix.
+	prefixOnly bool
 }
 
 // valueGroup holds the values produced by one top-level generator (and, for a
@@ -282,11 +293,19 @@ type valueGroup struct {
 // followed by each list element merged over the defaults.
 func (g valueGroup) sets() []valueSet {
 	// An unmodelled generator may supply or override any value of its group,
-	// so none of them can be trusted. Interpolate without values instead: a
-	// static path still resolves exactly and a templated one falls back to its
-	// static prefix, rather than the group contributing nothing.
+	// so the known values (cluster defaults and list elements) are only used to
+	// compute static prefixes: a static path still resolves exactly and a
+	// templated one is tracked by the prefix the known values give it (for
+	// example components/<x> from values.sourceRoot), rather than the group
+	// contributing nothing. The defaults are always included because the
+	// unmodelled generator may generate Applications no list element covers.
 	if len(g.unsupported) > 0 {
-		return []valueSet{{values: generatorValues{}}}
+		sets := make([]valueSet, 0, 1+len(g.elements))
+		sets = append(sets, valueSet{values: g.defaults, prefixOnly: true})
+		for _, e := range g.elements {
+			sets = append(sets, valueSet{values: mergeValues(g.defaults, e.values), prefixOnly: true})
+		}
+		return sets
 	}
 	var sets []valueSet
 	// A clusters generator without list elements still generates one
@@ -367,7 +386,27 @@ func collectGenerators(gens []interface{}, out *valueGroup) {
 			continue
 		}
 
+		// A matrix is not modelled (its children are combined as a cartesian
+		// product), but the values its modelled children carry are still
+		// known and give the group a usable static prefix.
+		if matrixGen, ok := genMap["matrix"].(map[string]interface{}); ok {
+			out.unsupported = append(out.unsupported, "matrix")
+			subGens, _ := matrixGen["generators"].([]interface{})
+			collectGenerators(subGens, out)
+			continue
+		}
+
 		if listGen, ok := genMap["list"].(map[string]interface{}); ok {
+			// Only "elements" is read. Elements supplied through elementsYaml,
+			// or a generator-level template replacing the source paths, are
+			// not modelled: the group must fall back to static prefixes
+			// instead of resolving from the other generators' values alone.
+			// An empty "elements" list is legitimate and not unsupported.
+			for _, key := range []string{"elementsYaml", "template"} {
+				if _, found := listGen[key]; found {
+					out.unsupported = append(out.unsupported, "list."+key)
+				}
+			}
 			elements, _ := listGen["elements"].([]interface{})
 			for _, elem := range elements {
 				elemMap, ok := elem.(map[string]interface{})
@@ -382,7 +421,7 @@ func collectGenerators(gens []interface{}, out *valueGroup) {
 			continue
 		}
 
-		// matrix, git, scm, clusterDecisionResource, pullRequest, plugin, ...
+		// git, scm, clusterDecisionResource, pullRequest, plugin, ...
 		// are not modelled: record them so the caller can warn and the group
 		// falls back to static paths and prefixes.
 		keys := make([]string, 0, len(genMap))
@@ -491,47 +530,91 @@ func staticPrefix(pathTemplate string) string {
 	return path.Clean(prefix)
 }
 
+// resolveTemplate resolves a path or file template against one value set. When
+// the template cannot be resolved exactly it returns the longest static prefix
+// of the partially resolved template and prefixOnly=true; that prefix is empty
+// when nothing static precedes the first unresolved placeholder.
+func resolveTemplate(template string, set valueSet) (resolvedPath string, prefixOnly bool) {
+	resolved, ok := interpolatePath(template, set.values)
+	// A template without placeholders is exact even when the values are
+	// incomplete: no generator can change it.
+	if ok && (!set.prefixOnly || !strings.Contains(template, "{{")) {
+		return resolved, false
+	}
+	// interpolatePath returns the template with every resolvable placeholder
+	// substituted, so the static prefix is computed on the partially resolved
+	// path (for a fully resolved one, the path itself).
+	return staticPrefix(resolved), true
+}
+
 // resolveSources turns the template sources of one ApplicationSet into
 // ComponentPaths, one per generator value combination.
+//
+// A template that cannot be resolved exactly is tracked by its static prefix
+// (PrefixOnly). A template that has no static prefix either is reported as a
+// MatchAll entry: detection then treats the environment as affected by any
+// change, rather than silently ignoring the source or aborting detection for
+// every overlay.
 func resolveSources(name string, sources []templateSource, sets []valueSet) ([]ComponentPath, map[string][]string, error) {
 	var paths []ComponentPath
 	clusters := make(map[string][]string)
 	seen := make(map[string]bool)
 	seenCluster := make(map[string]bool)
 
+	add := func(cp ComponentPath) {
+		key := cp.Path + "|" + cp.ClusterDir + "|" + strings.Join(cp.ExtraFiles, ",") + "|" +
+			strconv.FormatBool(cp.PrefixOnly) + "|" + strconv.FormatBool(cp.MatchAll)
+		if seen[key] {
+			return
+		}
+		seen[key] = true
+		paths = append(paths, cp)
+	}
+	matchAll := func(kind, template string) {
+		slog.Warn("ApplicationSet "+kind+" template cannot be resolved and has no static prefix, treating the environment as affected by any change",
+			"appset", name, "template", template)
+		add(ComponentPath{MatchAll: true})
+	}
+
 	for _, source := range sources {
 		for _, set := range sets {
-			cp := ComponentPath{ClusterDir: set.values["clusterDir"]}
+			cp := ComponentPath{}
+			// Values from an incomplete set may be overridden by an unmodelled
+			// generator, so they cannot attribute a cluster directory.
+			if !set.prefixOnly {
+				cp.ClusterDir = set.values["clusterDir"]
+			}
 
 			if source.pathTemplate != "" {
-				resolved, ok := interpolatePath(source.pathTemplate, set.values)
-				if ok {
+				resolved, prefixOnly := resolveTemplate(source.pathTemplate, set)
+				switch {
+				case !prefixOnly:
 					cp.Path = resolved
-				} else {
-					// interpolatePath returns the template with every resolvable
-					// placeholder substituted, so the static prefix is computed
-					// on the partially resolved path.
-					cp.Path = staticPrefix(resolved)
+				case resolved == "":
+					matchAll("path", source.pathTemplate)
+				default:
+					cp.Path = resolved
 					cp.PrefixOnly = true
-					if cp.Path == "" {
-						// Nothing in the repository can be attributed to this
-						// source: fail detection loudly instead of silently
-						// reporting no affected environment.
-						return nil, nil, fmt.Errorf("path template %q cannot be resolved and has no static prefix", source.pathTemplate)
-					}
 					slog.Warn("ApplicationSet path template has unresolved placeholders, falling back to prefix matching",
 						"appset", name, "template", source.pathTemplate, "prefix", cp.Path)
 				}
 			}
 
+			// Value files are matched exactly when resolved. An unresolved one
+			// is handled like an unresolved path: its own prefix-only entry,
+			// or a MatchAll entry when it has no static prefix.
 			for _, fileTemplate := range source.extraFileTemplates {
-				resolved, ok := interpolatePath(fileTemplate, set.values)
-				if !ok {
-					slog.Warn("ApplicationSet value file template has unresolved placeholders, skipping",
-						"appset", name, "template", fileTemplate)
-					continue
+				resolved, prefixOnly := resolveTemplate(fileTemplate, set)
+				switch {
+				case !prefixOnly:
+					cp.ExtraFiles = append(cp.ExtraFiles, resolved)
+				case resolved == "":
+					matchAll("value file", fileTemplate)
+				default:
+					slog.Warn("ApplicationSet value file template has unresolved placeholders, falling back to prefix matching",
+						"appset", name, "template", fileTemplate, "prefix", resolved)
+					add(ComponentPath{Path: resolved, ClusterDir: cp.ClusterDir, PrefixOnly: true})
 				}
-				cp.ExtraFiles = append(cp.ExtraFiles, resolved)
 			}
 
 			if cp.Path == "" && len(cp.ExtraFiles) == 0 {
@@ -550,12 +633,7 @@ func resolveSources(name string, sources []templateSource, sets []valueSet) ([]C
 				}
 			}
 
-			key := cp.Path + "|" + cp.ClusterDir + "|" + strings.Join(cp.ExtraFiles, ",") + "|" + strconv.FormatBool(cp.PrefixOnly)
-			if seen[key] {
-				continue
-			}
-			seen[key] = true
-			paths = append(paths, cp)
+			add(cp)
 		}
 	}
 

@@ -5,6 +5,7 @@ package detector
 import (
 	"fmt"
 	"log/slog"
+	"maps"
 	"path/filepath"
 	"reflect"
 	"strconv"
@@ -363,11 +364,19 @@ func (d *Detector) resolveComponentDeps(envPaths map[Environment][]appset.Compon
 			// ExtraFiles-only entries all have an empty Path. It must include
 			// PrefixOnly too, so a resolved entry cannot shadow a prefix-only
 			// entry with the same Path and narrow it to a dependency tree.
-			key := string(env) + "|" + cp.Path + "|" + strings.Join(cp.ExtraFiles, ",") + "|" + strconv.FormatBool(cp.PrefixOnly)
+			key := string(env) + "|" + cp.Path + "|" + strings.Join(cp.ExtraFiles, ",") + "|" +
+				strconv.FormatBool(cp.PrefixOnly) + "|" + strconv.FormatBool(cp.MatchAll)
 			if seen[key] {
 				continue
 			}
 			seen[key] = true
+
+			// An unresolvable template with no static prefix: nothing to
+			// resolve, any change affects the environment (see matches).
+			if cp.MatchAll {
+				resolved = append(resolved, componentDeps{cp: cp, env: env})
+				continue
+			}
 
 			// A component path may only carry individual files (e.g. a Helm
 			// values file from a multi-source template); there is nothing to
@@ -379,10 +388,13 @@ func (d *Detector) resolveComponentDeps(envPaths map[Environment][]appset.Compon
 				continue
 			}
 
-			// A prefix-only path is an unresolved template: the directory may
-			// not exist (that is why it is a prefix), so match by prefix.
+			// A prefix-only path is an unresolved template: the deployed
+			// directory is one of those under the prefix (which may not even
+			// exist), so match by prefix and also by the dependency trees of
+			// every kustomization under it, which reach shared bases outside
+			// the prefix (e.g. ../../base/member).
 			if cp.PrefixOnly {
-				resolved = append(resolved, componentDeps{cp: cp, env: env})
+				resolved = append(resolved, componentDeps{cp: cp, env: env, deps: d.prefixDeps(cp.Path)})
 				continue
 			}
 
@@ -416,10 +428,43 @@ func (d *Detector) resolveComponentDeps(envPaths map[Environment][]appset.Compon
 	return resolved
 }
 
+// prefixDeps returns the union of the dependency trees of every kustomization
+// in or below prefix on HEAD, or nil when there is none.
+func (d *Detector) prefixDeps(prefix string) map[string]bool {
+	if !d.head.DirExists(prefix) {
+		return nil
+	}
+	var deps map[string]bool
+	var walk func(dir string)
+	walk = func(dir string) {
+		if tree, err := d.head.ResolveDeps(dir); err == nil {
+			if deps == nil {
+				deps = make(map[string]bool, len(tree))
+			}
+			maps.Copy(deps, tree)
+		}
+		subDirs, err := d.head.ListSubDirs(dir)
+		if err != nil {
+			return
+		}
+		for _, sub := range subDirs {
+			walk(filepath.Join(dir, sub))
+		}
+	}
+	walk(prefix)
+	slog.Debug("resolved dependency trees under prefix", "prefix", prefix, "deps", len(deps))
+	return deps
+}
+
 // matches reports whether any changed file affects this component. ExtraFiles
 // (e.g. Helm values files) are matched exactly; dependency trees are matched
-// exactly; anything else is matched by path prefix.
+// exactly; anything else is matched by path prefix. A prefix-only path matches
+// by prefix or by the dependency trees found under the prefix. A MatchAll entry
+// matches any change.
 func (cd componentDeps) matches(changedSet map[string]bool) bool {
+	if cd.cp.MatchAll {
+		return len(changedSet) > 0
+	}
 	for _, f := range cd.cp.ExtraFiles {
 		if changedSet[f] {
 			return true
@@ -428,7 +473,10 @@ func (cd componentDeps) matches(changedSet map[string]bool) bool {
 	if cd.cp.Path == "" {
 		return false
 	}
-	if cd.deps != nil && !cd.cp.PrefixOnly {
+	if cd.cp.PrefixOnly {
+		return matchByPrefix(changedSet, cd.cp.Path) || matchDepTree(changedSet, cd.deps)
+	}
+	if cd.deps != nil {
 		return matchDepTree(changedSet, cd.deps)
 	}
 	return matchByPrefix(changedSet, cd.cp.Path)
@@ -445,6 +493,9 @@ func matchChangedFiles(changedFiles []string, resolved []componentDeps, allClust
 
 	for _, cd := range resolved {
 		if cd.matches(changedSet) {
+			if cd.cp.MatchAll {
+				slog.Warn("An ApplicationSet template could not be resolved, conservatively marking its environment as affected", "env", cd.env)
+			}
 			result.AffectedEnvironments[cd.env] = true
 			matchClusters(cd.cp, allClusters, result)
 			slog.Info("Changed files match component", "path", cd.cp.Path, "env", cd.env)
@@ -523,8 +574,9 @@ func matchClusters(cp appset.ComponentPath, allClusters map[string][]string, res
 		return
 	}
 	// A prefix-only path is an unresolved template shared by several
-	// clusters: attributing every cluster under it would over-label.
-	if cp.PrefixOnly {
+	// clusters, and a MatchAll entry has no path at all: attributing
+	// clusters to either would over-label.
+	if cp.PrefixOnly || cp.MatchAll {
 		return
 	}
 	// ClusterDir is empty or a reserved name like "base" — check which real

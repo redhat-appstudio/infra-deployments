@@ -1512,6 +1512,111 @@ func TestResolveComponentDeps_PrefixOnlyMatchesByPrefix(t *testing.T) {
 	g.Expect(result.AffectedEnvironments).To(HaveKey(Staging))
 }
 
+// A prefix-only component path also follows the dependency trees of the
+// kustomizations under the prefix: a cluster overlay referencing a shared base
+// outside the prefix (the backup ApplicationSet's ../../base/member) must make
+// a base-only change affect the environment.
+func TestResolveComponentDeps_PrefixOnlyFollowsDepsUnderPrefix(t *testing.T) {
+	g := NewWithT(t)
+
+	prefix := "components/backup/production"
+	clusterDir := prefix + "/stone-prod-p01"
+	nestedDir := clusterDir + "/extra"
+	head := &fakeRepo{
+		dirs: map[string][]string{
+			"overlays": {"production-downstream"},
+			prefix:     {"stone-prod-p01"},
+			clusterDir: {"extra"},
+			nestedDir:  {},
+		},
+		exist: map[string]bool{prefix: true},
+		deps: map[string]map[string]bool{
+			clusterDir: {
+				clusterDir + "/kustomization.yaml":                 true,
+				"components/backup/base/member/kustomization.yaml": true,
+				"components/backup/base/member/schedule.yaml":      true,
+			},
+			nestedDir: {
+				nestedDir + "/kustomization.yaml":         true,
+				"components/backup/base/extra/patch.yaml": true,
+			},
+		},
+	}
+	base := &fakeRepo{dirs: map[string][]string{"overlays": {"production-downstream"}}}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	resolved := d.resolveComponentDeps(map[Environment][]appset.ComponentPath{
+		Production: {{Path: prefix, PrefixOnly: true}},
+	})
+	g.Expect(resolved).To(HaveLen(1))
+
+	for _, changed := range []string{
+		"components/backup/base/member/schedule.yaml", // first-level kustomization
+		"components/backup/base/extra/patch.yaml",     // nested kustomization
+		prefix + "/stone-prod-p01/new-file.yaml",      // under the prefix
+	} {
+		result := &Result{
+			AffectedEnvironments: make(map[Environment]bool),
+			AffectedClusters:     make(map[string]bool),
+		}
+		matchChangedFiles([]string{changed}, resolved, nil, result)
+		g.Expect(result.AffectedEnvironments).To(HaveKey(Production), changed)
+	}
+
+	// Files outside the prefix and its dependency trees still do not match.
+	result := &Result{
+		AffectedEnvironments: make(map[Environment]bool),
+		AffectedClusters:     make(map[string]bool),
+	}
+	matchChangedFiles([]string{"components/backup/base/unused/x.yaml"}, resolved, nil, result)
+	g.Expect(result.AffectedEnvironments).To(BeEmpty())
+}
+
+// A MatchAll entry (unresolvable template without a static prefix) fails
+// closed: any change affects its environment, without attributing clusters,
+// and detection itself does not fail.
+func TestDetect_MatchAllMarksEnvironmentOnAnyChange(t *testing.T) {
+	g := NewWithT(t)
+
+	appSet := []byte(`apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: unresolvable
+spec:
+  generators:
+    - git:
+        repoURL: https://example.com/repo.git
+  template:
+    metadata:
+      name: unresolvable
+    spec:
+      source:
+        path: '{{values.sourceRoot}}/production'
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+`)
+	overlay := "overlays/production-downstream"
+	head := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"production-downstream"}},
+		exist: map[string]bool{overlay: true},
+		yamls: map[string][]byte{overlay: appSet},
+	}
+	base := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"production-downstream"}},
+		exist: map[string]bool{overlay: true},
+		yamls: map[string][]byte{overlay: appSet},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	result, err := d.Detect([]string{"components/unrelated/staging/kustomization.yaml"})
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.AffectedEnvironments).To(HaveKey(Production))
+	g.Expect(result.AffectedClusters).To(BeEmpty())
+}
+
 // A source whose directory is not in this repository (e.g. an external-repo
 // path) may still consume "$values/" files from it. Those files must keep
 // matching exactly even though the directory is missing.

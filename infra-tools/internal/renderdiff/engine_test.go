@@ -313,8 +313,9 @@ func TestCountStats(t *testing.T) {
 	g.Expect(removed).To(Equal(1))
 }
 
-// A component that only consumes value files has no directory to render: it
-// must be skipped rather than rendering the repository root.
+// A component that only consumes value files, or a MatchAll entry for an
+// unresolvable template, has no directory to render: it must be skipped rather
+// than rendering the repository root.
 func TestEngine_EmptyPathSkipped(t *testing.T) {
 	g := NewWithT(t)
 
@@ -331,6 +332,7 @@ func TestEngine_EmptyPathSkipped(t *testing.T) {
 	affected := map[detector.Environment][]appset.ComponentPath{
 		detector.Development: {
 			{ExtraFiles: []string{"components/a/values.yaml"}},
+			{MatchAll: true},
 			{Path: "components/a/dev"},
 		},
 	}

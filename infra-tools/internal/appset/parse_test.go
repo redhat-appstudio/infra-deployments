@@ -946,16 +946,195 @@ func TestParseApplicationSets_UnsupportedGeneratorUsesStaticPrefix(t *testing.T)
 	g.Expect(result.Paths[0].PrefixOnly).To(BeTrue())
 }
 
-// A path template with nothing static to fall back on cannot be attributed to
-// anything in the repository: parsing fails instead of silently reporting no
-// affected environment.
-func TestParseApplicationSets_NoStaticPrefixIsAnError(t *testing.T) {
+// The values known in a group with an unsupported generator (here the clusters
+// generator nested in the matrix) still give a templated path its static
+// prefix, so the usual "{{values.sourceRoot}}/..." template is tracked by
+// components/<x> instead of having no prefix at all.
+func TestParseApplicationSets_UnsupportedGeneratorKeepsKnownValues(t *testing.T) {
 	g := NewWithT(t)
 
-	_, err := ParseApplicationSets([]byte(matrixAppSet("{{values.sourceRoot}}/{{values.environment}}")))
-	g.Expect(err).To(HaveOccurred())
-	g.Expect(err.Error()).To(ContainSubstring("matrix-generated"))
-	g.Expect(err.Error()).To(ContainSubstring("no static prefix"))
+	result, err := ParseApplicationSets([]byte(matrixAppSet("{{values.sourceRoot}}/{{values.environment}}")))
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.Paths).To(HaveLen(1))
+	g.Expect(result.Paths[0].Path).To(Equal("components/matrix"))
+	g.Expect(result.Paths[0].PrefixOnly).To(BeTrue())
+	g.Expect(result.Paths[0].MatchAll).To(BeFalse())
+}
+
+// Same for a clusters generator merged with an unsupported one. Even a path the
+// known values fully resolve stays prefix-only, since the unsupported generator
+// may override them, and it is not attributed to a cluster directory.
+func TestParseApplicationSets_UnsupportedGeneratorInMergeKeepsKnownValues(t *testing.T) {
+	g := NewWithT(t)
+
+	yaml := `
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: merge-git
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              values:
+                sourceRoot: components/merge-git
+                environment: staging
+                clusterDir: stone-stg-rh01
+          - git:
+              repoURL: https://example.com/repo.git
+  template:
+    metadata:
+      name: merge-git-{{nameNormalized}}
+    spec:
+      source:
+        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+`
+	result, err := ParseApplicationSets([]byte(yaml))
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.Paths).To(HaveLen(1))
+	g.Expect(result.Paths[0].Path).To(Equal("components/merge-git/staging/stone-stg-rh01"))
+	g.Expect(result.Paths[0].PrefixOnly).To(BeTrue())
+	g.Expect(result.Paths[0].ClusterDir).To(BeEmpty())
+	g.Expect(result.Clusters).To(BeEmpty())
+}
+
+// A path template with nothing static to fall back on cannot be attributed to
+// anything in the repository. Parsing must not fail (that would abort detection
+// for every overlay and every PR); the source is reported as MatchAll so the
+// environment is conservatively treated as affected.
+func TestParseApplicationSets_NoStaticPrefixIsMatchAll(t *testing.T) {
+	g := NewWithT(t)
+
+	result, err := ParseApplicationSets([]byte(matrixAppSet("{{values.unknownRoot}}/{{values.environment}}")))
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.Paths).To(HaveLen(1))
+	g.Expect(result.Paths[0].MatchAll).To(BeTrue())
+	g.Expect(result.Paths[0].Path).To(BeEmpty())
+	g.Expect(result.Clusters).To(BeEmpty())
+}
+
+// helmValuesAppSet returns a chart-only multi-source ApplicationSet whose single
+// "$values/" value file uses the given template.
+func helmValuesAppSet(valueFileTemplate string) string {
+	return `
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: chart-only
+spec:
+  generators:
+    - clusters:
+        values:
+          sourceRoot: components/chart-only
+          environment: production
+  template:
+    metadata:
+      name: chart-only-{{name}}
+    spec:
+      sources:
+        - chart: some-chart
+          repoURL: https://charts.example.com
+          targetRevision: 1.0.0
+          helm:
+            valueFiles:
+              - $values/` + valueFileTemplate + `
+        - ref: values
+          repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+          targetRevision: main
+`
+}
+
+// An unresolved "$values/" value file is handled like an unresolved path: it
+// is tracked by its static prefix instead of being dropped.
+func TestParseApplicationSets_UnresolvedValueFileUsesStaticPrefix(t *testing.T) {
+	g := NewWithT(t)
+
+	result, err := ParseApplicationSets([]byte(helmValuesAppSet("{{values.sourceRoot}}/{{values.environment}}/{{name}}/values.yaml")))
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.Paths).To(HaveLen(1))
+	g.Expect(result.Paths[0].Path).To(Equal("components/chart-only/production"))
+	g.Expect(result.Paths[0].PrefixOnly).To(BeTrue())
+	g.Expect(result.Paths[0].ExtraFiles).To(BeEmpty())
+}
+
+// An unresolved value file with no static prefix is reported as MatchAll.
+func TestParseApplicationSets_UnresolvedValueFileWithoutPrefixIsMatchAll(t *testing.T) {
+	g := NewWithT(t)
+
+	result, err := ParseApplicationSets([]byte(helmValuesAppSet("{{server}}/values.yaml")))
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.Paths).To(HaveLen(1))
+	g.Expect(result.Paths[0].MatchAll).To(BeTrue())
+}
+
+// listWithClustersAppSet returns an ApplicationSet merging a clusters generator
+// with a list generator configured by the given YAML fragment.
+func listWithClustersAppSet(listYAML string) string {
+	return `
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: list-variant
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              values:
+                sourceRoot: components/list-variant
+                environment: staging
+                clusterDir: ""
+          - list:
+` + listYAML + `
+  template:
+    metadata:
+      name: list-variant-{{nameNormalized}}
+    spec:
+      source:
+        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+`
+}
+
+// List elements supplied through elementsYaml, or a generator-level template,
+// are not modelled: the group falls back to prefixes instead of resolving from
+// the clusters defaults alone.
+func TestParseApplicationSets_UnmodelledListFieldsAreUnsupported(t *testing.T) {
+	for name, listYAML := range map[string]string{
+		"elementsYaml": `              elementsYaml: '{{ .values.clusters | toJson }}'`,
+		"template": `              elements: []
+              template:
+                spec:
+                  source:
+                    path: components/elsewhere`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			g := NewWithT(t)
+
+			result, err := ParseApplicationSets([]byte(listWithClustersAppSet(listYAML)))
+			g.Expect(err).NotTo(HaveOccurred())
+			g.Expect(result.Paths).To(HaveLen(1))
+			g.Expect(result.Paths[0].Path).To(Equal("components/list-variant/staging"))
+			g.Expect(result.Paths[0].PrefixOnly).To(BeTrue())
+		})
+	}
+}
+
+// An empty "elements" list is legitimate and keeps exact resolution.
+func TestParseApplicationSets_EmptyListElementsIsSupported(t *testing.T) {
+	g := NewWithT(t)
+
+	result, err := ParseApplicationSets([]byte(listWithClustersAppSet(`              elements: []`)))
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.Paths).To(HaveLen(1))
+	g.Expect(result.Paths[0].Path).To(Equal("components/list-variant/staging"))
+	g.Expect(result.Paths[0].PrefixOnly).To(BeFalse())
 }
 
 // Template expressions the placeholder syntax does not cover must not be taken
@@ -1087,8 +1266,8 @@ spec:
 
 // A template the generator defaults cannot fully resolve (here because no list
 // element supplies nameNormalized) keeps its longest static prefix and is
-// flagged for prefix matching, so the shared dependencies of the environment
-// still count as affected.
+// flagged for prefix matching. The detector then matches changes under the
+// prefix and in the dependency trees of the kustomizations below it.
 func TestParseApplicationSets_PartialTemplateUsesStaticPrefix(t *testing.T) {
 	g := NewWithT(t)
 

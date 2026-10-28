@@ -127,6 +127,23 @@ func TestRealRepoApplicationSets(t *testing.T) {
 
 			prefixes := make(map[string]bool)
 			for _, p := range paths {
+				if p.MatchAll {
+					gaps = append(gaps, auditFinding{key, "template cannot be resolved and has no static prefix (environment-wide fallback)"})
+					continue
+				}
+				// Value files are matched by exact path, so a wrong resolution
+				// would never match the real file. For a path-less entry they
+				// are all that is tracked: a missing one is a gap.
+				for _, f := range p.ExtraFiles {
+					abs := filepath.Join(repoRoot, filepath.FromSlash(f))
+					if info, statErr := os.Stat(abs); statErr != nil || info.IsDir() {
+						if p.Path == "" {
+							gaps = append(gaps, auditFinding{key, "value file does not exist: " + f})
+						} else {
+							missing = append(missing, auditFinding{key, f})
+						}
+					}
+				}
 				if p.Path == "" {
 					// A path-less entry is valid when it only consumes
 					// repository files (multi-source Helm value files).
@@ -162,9 +179,10 @@ func TestRealRepoApplicationSets(t *testing.T) {
 
 	// Paths whose directory is absent are informational: ApplicationSets often
 	// list every cluster while only some clusters need a cluster-specific
-	// directory, so this is expected and not a parser gap.
+	// directory, so this is expected and not a parser gap. The same applies to
+	// value files of entries that also deploy a directory.
 	if len(missing) > 0 {
-		t.Logf("note: %d extracted paths point at directories that do not exist on disk", len(missing))
+		t.Logf("note: %d extracted paths or value files do not exist on disk", len(missing))
 		for i, f := range missing {
 			if i == 3 {
 				t.Logf("  ... and %d more", len(missing)-3)
