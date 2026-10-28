@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: image-rbac-proxy
+resources:
+- base-snapshot
+- oauth
+- https://github.com/konflux-ci/image-rbac-proxy/deploy/development/base?ref=0772be8a0ad1daa2e6a86ad6d3f33254e722d7c1
+
+images:
+- name: quay.io/konflux-ci/image-rbac-proxy
+  newName: quay.io/konflux-ci/image-rbac-proxy
+  newTag: 0772be8a0ad1daa2e6a86ad6d3f33254e722d7c1
+- name: memcached
+  newName: quay.io/kubearchive/memcached
+  newTag: 1.6.39
