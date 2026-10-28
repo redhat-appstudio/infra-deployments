@@ -341,6 +341,11 @@ func TestEngine_EmptyPathSkipped(t *testing.T) {
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(result.Diffs).To(HaveLen(1))
 	g.Expect(result.Diffs[0].Path).To(Equal("components/a/dev"))
+	// Skipped components are reported, not dropped silently.
+	g.Expect(result.Skipped).To(ConsistOf(
+		SkippedComponent{Env: detector.Development, ExtraFiles: []string{"components/a/values.yaml"}, Reason: SkipReasonNoPath},
+		SkippedComponent{Env: detector.Development, Reason: SkipReasonUnresolved},
+	))
 }
 
 // A PrefixOnly entry's Path is a static prefix, not the deployed kustomization:
@@ -370,4 +375,7 @@ func TestEngine_PrefixOnlySkipped(t *testing.T) {
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(result.Diffs).To(HaveLen(1))
 	g.Expect(result.Diffs[0].Path).To(Equal("components/a/dev"))
+	g.Expect(result.Skipped).To(ConsistOf(
+		SkippedComponent{Env: detector.Development, Path: "components/a", Reason: SkipReasonPrefixOnly},
+	))
 }

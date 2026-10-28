@@ -111,9 +111,15 @@ func colorDiff(diff string) {
 // printSummary prints aggregate statistics.
 func printSummary(result *renderdiff.DiffResult) {
 	if len(result.Diffs) == 0 {
-		fmt.Println("\nNo render differences detected.")
+		if len(result.Skipped) == 0 {
+			fmt.Println("\nNo render differences detected.")
+			return
+		}
+		fmt.Println("\nNo render differences in the rendered components.")
+		printSkipped(result.Skipped)
 		return
 	}
+	defer printSkipped(result.Skipped)
 
 	fmt.Println("\n--- Summary ---")
 	sortDiffs(result.Diffs)
@@ -128,6 +134,17 @@ func printSummary(result *renderdiff.DiffResult) {
 		}
 	}
 	fmt.Printf("\nTotal: %d components, +%d -%d lines\n", len(result.Diffs), result.TotalAdded, result.TotalRemoved)
+}
+
+// printSkipped lists affected components that were not rendered.
+func printSkipped(skipped []renderdiff.SkippedComponent) {
+	if len(skipped) == 0 {
+		return
+	}
+	fmt.Printf("\n--- Not rendered (%d affected components) ---\n", len(skipped))
+	for _, s := range skipped {
+		fmt.Printf("  %s (%s): %s\n", s.Label(), s.Env, s.Reason)
+	}
 }
 
 // shouldUseColor determines whether to use ANSI colors based on the --color flag.

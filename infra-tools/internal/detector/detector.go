@@ -433,8 +433,10 @@ func (d *Detector) resolveComponentDeps(envPaths map[Environment][]appset.Compon
 func (d *Detector) prefixDeps(prefix string) map[string]bool {
 	// The prefix comes from ApplicationSet YAML. The parser only emits
 	// repository-relative prefixes, but never walk the repository root, an
-	// absolute path or anything escaping the checkout.
-	if prefix == "." || !filepath.IsLocal(prefix) || !d.head.DirExists(prefix) {
+	// absolute path or anything escaping the checkout, lexically or through
+	// a symlink in the prefix or its ancestors. (Symlinks below the prefix
+	// are not followed: ListSubDirs only returns real directories.)
+	if prefix == "." || !filepath.IsLocal(prefix) || !d.head.ContainedDirExists(prefix) {
 		return nil
 	}
 	var deps map[string]bool

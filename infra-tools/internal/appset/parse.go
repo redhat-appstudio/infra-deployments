@@ -181,22 +181,35 @@ func extractFromAppSet(doc map[string]interface{}) ([]ComponentPath, map[string]
 	if !ok {
 		return nil, nil, nil
 	}
-	tmpl, ok := spec["template"].(map[string]interface{})
-	if !ok {
-		return nil, nil, nil
-	}
-	tmplSpec, ok := tmpl["spec"].(map[string]interface{})
-	if !ok {
-		return nil, nil, nil
-	}
-
-	sources := templateSources(tmplSpec)
-	if len(sources) == 0 {
-		return nil, nil, nil
-	}
-
 	name := appSetName(doc)
+
+	// spec.templatePatch (goTemplate) is applied over spec.template and can
+	// rewrite source.path(s) or Helm value files, so nothing in spec.template
+	// can be trusted to locate what is deployed.
+	if _, found := spec["templatePatch"]; found {
+		slog.Warn("ApplicationSet has a templatePatch, which may replace the source paths; treating the environment as affected by any change",
+			"appset", name)
+		return []ComponentPath{{MatchAll: true}}, map[string][]string{}, nil
+	}
+
+	// Generators are inspected before spec.template so that a generator-level
+	// template still fails closed when spec.template has no local source.
 	values := collectGeneratorValues(spec["generators"])
+	var sources []templateSource
+	if tmpl, ok := spec["template"].(map[string]interface{}); ok {
+		if tmplSpec, ok := tmpl["spec"].(map[string]interface{}); ok {
+			sources = templateSources(tmplSpec)
+		}
+	}
+	if len(sources) == 0 {
+		if values.templateOverride() {
+			slog.Warn("ApplicationSet generator carries its own template, which may replace the source paths; treating the environment as affected by any change",
+				"appset", name)
+			return []ComponentPath{{MatchAll: true}}, map[string][]string{}, nil
+		}
+		return nil, nil, nil
+	}
+
 	for _, unsupported := range values.unsupported() {
 		slog.Warn("unsupported ApplicationSet generator, falling back to static paths and prefixes for it",
 			"appset", name, "generator", unsupported)
@@ -349,9 +362,11 @@ func (g valueGroup) sets() []valueSet {
 		return []valueSet{{values: g.defaults, prefixOnly: true}}
 	}
 	var sets []valueSet
-	// A clusters generator without list elements still generates one
-	// Application per cluster, even when it carries no values.
-	if len(g.defaults) > 0 || (g.hasClusters && len(g.elements) == 0) {
+	// A clusters generator generates one Application per selected cluster,
+	// even when it carries no values and even when list elements are merged
+	// over it (they only override the clusters they match), so its defaults
+	// always form a combination of their own.
+	if g.hasClusters || len(g.defaults) > 0 {
 		sets = append(sets, valueSet{values: g.defaults})
 	}
 	for _, e := range g.elements {
@@ -381,6 +396,17 @@ func (c collectedValues) unsupported() []string {
 		out = append(out, g.unsupported...)
 	}
 	return out
+}
+
+// templateOverride reports whether any group carries a generator-level
+// template.
+func (c collectedValues) templateOverride() bool {
+	for _, g := range c.groups {
+		if g.templateOverride {
+			return true
+		}
+	}
+	return false
 }
 
 // sets returns the value combinations to interpolate: the union of the value

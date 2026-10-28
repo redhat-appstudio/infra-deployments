@@ -32,6 +32,10 @@ func (f *fakeRepo) DirExists(rel string) bool {
 	return f.exist[rel]
 }
 
+func (f *fakeRepo) ContainedDirExists(rel string) bool {
+	return f.exist[rel]
+}
+
 func (f *fakeRepo) BuildKustomization(rel string) ([]byte, error) {
 	if y, ok := f.yamls[rel]; ok {
 		return y, nil

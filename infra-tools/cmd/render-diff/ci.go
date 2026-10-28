@@ -73,7 +73,13 @@ func writeCISummary(result *renderdiff.DiffResult) error {
 	w := bufio.NewWriter(dest)
 
 	if len(result.Diffs) == 0 {
-		_, _ = fmt.Fprintln(w, "No render differences detected.")
+		if len(result.Skipped) == 0 {
+			_, _ = fmt.Fprintln(w, "No render differences detected.")
+			return w.Flush()
+		}
+		_, _ = fmt.Fprintln(w, "No render differences in the rendered components.")
+		_, _ = fmt.Fprintln(w)
+		writeSkippedMarkdown(w, result.Skipped)
 		return w.Flush()
 	}
 
@@ -82,6 +88,7 @@ func writeCISummary(result *renderdiff.DiffResult) error {
 	_, _ = fmt.Fprintln(w, "# Kustomize Render Diff")
 	_, _ = fmt.Fprintln(w)
 	_, _ = fmt.Fprintf(w, "**%d components** with differences (+%d -%d lines)\n\n", len(result.Diffs), result.TotalAdded, result.TotalRemoved)
+	writeSkippedMarkdown(w, result.Skipped)
 
 	const truncateThreshold = 50 * 1024 // 50KB
 	for _, d := range result.Diffs {
@@ -108,6 +115,21 @@ func writeCISummary(result *renderdiff.DiffResult) error {
 		_, _ = fmt.Fprintln(w)
 	}
 	return w.Flush()
+}
+
+// writeSkippedMarkdown lists affected components that were not rendered, so
+// that a render-diff report never hides them behind "no differences".
+func writeSkippedMarkdown(w io.Writer, skipped []renderdiff.SkippedComponent) {
+	if len(skipped) == 0 {
+		return
+	}
+	_, _ = fmt.Fprintf(w, "⚠️ **%d affected components were not rendered:**\n\n", len(skipped))
+	_, _ = fmt.Fprintln(w, "| Component | Environment | Reason |")
+	_, _ = fmt.Fprintln(w, "|-----------|-------------|--------|")
+	for _, s := range skipped {
+		_, _ = fmt.Fprintf(w, "| `%s` | %s | %s |\n", s.Label(), s.Env, s.Reason)
+	}
+	_, _ = fmt.Fprintln(w)
 }
 
 // postCIComment generates the PR comment markdown and posts it to GitHub.
@@ -175,11 +197,18 @@ func buildCommentBody(result *renderdiff.DiffResult, headSHA, baseSHA, runURL st
 	fmt.Fprintf(&b, "Comparing `%s` → `%s`\n\n", baseSHA, headSHA)
 
 	if len(result.Diffs) == 0 {
-		fmt.Fprintln(&b, "No render differences detected.")
+		if len(result.Skipped) == 0 {
+			fmt.Fprintln(&b, "No render differences detected.")
+			return b.String()
+		}
+		fmt.Fprintln(&b, "No render differences in the rendered components.")
+		fmt.Fprintln(&b)
+		writeSkippedMarkdown(&b, result.Skipped)
 		return b.String()
 	}
 
 	sortDiffs(result.Diffs)
+	writeSkippedMarkdown(&b, result.Skipped)
 
 	fmt.Fprintln(&b, "| Component | Environment | Changes |")
 	fmt.Fprintln(&b, "|-----------|-------------|---------|")

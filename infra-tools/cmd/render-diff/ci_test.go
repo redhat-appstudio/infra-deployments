@@ -68,6 +68,41 @@ func TestBuildCommentBody_NoDiffs(t *testing.T) {
 	g.Expect(body).To(ContainSubstring("No render differences detected."))
 }
 
+// Affected components that were not rendered must be listed, and the comment
+// must not claim that nothing changed.
+func TestBuildCommentBody_SkippedComponents(t *testing.T) {
+	g := NewWithT(t)
+
+	skipped := []renderdiff.SkippedComponent{
+		{Env: "production", ExtraFiles: []string{"components/otel/values.yaml"}, Reason: renderdiff.SkipReasonNoPath},
+		{Env: "staging", Path: "components/backup/staging", Reason: renderdiff.SkipReasonPrefixOnly},
+	}
+
+	body := buildCommentBody(&renderdiff.DiffResult{Skipped: skipped}, "abc123", "def456", "")
+	g.Expect(body).NotTo(ContainSubstring("No render differences detected."))
+	g.Expect(body).To(ContainSubstring("2 affected components were not rendered"))
+	g.Expect(body).To(ContainSubstring("| `components/otel/values.yaml` | production | " + renderdiff.SkipReasonNoPath + " |"))
+	g.Expect(body).To(ContainSubstring("| `components/backup/staging` | staging | " + renderdiff.SkipReasonPrefixOnly + " |"))
+
+	withDiff := &renderdiff.DiffResult{
+		Diffs:   []renderdiff.ComponentDiff{{Path: "components/foo/staging", Env: "staging", Added: 1, Diff: "d"}},
+		Skipped: skipped,
+	}
+	body = buildCommentBody(withDiff, "abc123", "def456", "")
+	g.Expect(body).To(ContainSubstring("2 affected components were not rendered"))
+	g.Expect(body).To(ContainSubstring("| `components/foo/staging` | staging | +1 -0 |"))
+}
+
+func TestWriteCISummary_SkippedComponents(t *testing.T) {
+	g := NewWithT(t)
+
+	body := writeCISummaryToString(t, &renderdiff.DiffResult{Skipped: []renderdiff.SkippedComponent{
+		{Env: "production", Reason: renderdiff.SkipReasonUnresolved},
+	}})
+	g.Expect(body).NotTo(ContainSubstring("No render differences detected."))
+	g.Expect(body).To(ContainSubstring("| `(unresolved ApplicationSet)` | production | " + renderdiff.SkipReasonUnresolved + " |"))
+}
+
 func TestBuildCommentBody_MixedDiffsAndErrors(t *testing.T) {
 	g := NewWithT(t)
 

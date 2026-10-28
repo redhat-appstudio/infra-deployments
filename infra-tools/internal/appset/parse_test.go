@@ -1544,3 +1544,122 @@ func TestParseApplicationSets_ElementWithoutPathChangeIsNotAttributed(t *testing
 	g.Expect(result.Clusters).To(HaveKeyWithValue("stone-prod-p01",
 		[]string{"components/merged/production/stone-prod-p01"}))
 }
+
+// A clusters generator without values, merged with list elements, still
+// deploys every selected cluster (elements only override the clusters they
+// match), so unlisted clusters must stay covered by the template's prefix.
+func TestParseApplicationSets_ValuelessClustersMergedWithListKeepsDefaults(t *testing.T) {
+	g := NewWithT(t)
+
+	result, err := ParseApplicationSets([]byte(`
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: foo
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              selector:
+                matchLabels:
+                  appstudio.redhat.com/member-cluster: "true"
+          - list:
+              elements:
+                - nameNormalized: a
+  template:
+    metadata:
+      name: foo-{{nameNormalized}}
+    spec:
+      source:
+        path: components/foo/{{nameNormalized}}
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+`))
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.Paths).To(ContainElement(SatisfyAll(
+		HaveField("Path", "components/foo"),
+		HaveField("PrefixOnly", BeTrue()),
+	)))
+	g.Expect(result.Paths).To(ContainElement(SatisfyAll(
+		HaveField("Path", "components/foo/a"),
+		HaveField("PrefixOnly", BeFalse()),
+	)))
+}
+
+// spec.templatePatch can rewrite the source paths, so the ApplicationSet
+// fails closed.
+func TestParseApplicationSets_TemplatePatchIsMatchAll(t *testing.T) {
+	g := NewWithT(t)
+
+	result, err := ParseApplicationSets([]byte(`
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: patched
+spec:
+  goTemplate: true
+  generators:
+    - clusters: {}
+  template:
+    metadata:
+      name: patched-{{.name}}
+    spec:
+      source:
+        path: components/patched/base
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+  templatePatch: |
+    spec:
+      source:
+        path: components/elsewhere
+`))
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.Paths).To(HaveLen(1))
+	g.Expect(result.Paths[0].MatchAll).To(BeTrue())
+	g.Expect(result.Paths[0].Path).To(BeEmpty())
+}
+
+// A generator-level template fails closed even when spec.template has no
+// local source (or no spec at all), instead of the ApplicationSet being
+// dropped by the early returns.
+func TestParseApplicationSets_GeneratorTemplateWithoutSpecSourceIsMatchAll(t *testing.T) {
+	for name, tmpl := range map[string]string{
+		"no template spec": `
+  template:
+    metadata:
+      name: gen-{{name}}`,
+		"no local source": `
+  template:
+    metadata:
+      name: gen-{{name}}
+    spec:
+      destination:
+        server: '{{server}}'`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			g := NewWithT(t)
+
+			result, err := ParseApplicationSets([]byte(`
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: gen
+spec:
+  generators:
+    - list:
+        elements:
+          - nameNormalized: a
+        template:
+          metadata: {}
+          spec:
+            source:
+              path: components/elsewhere
+              repoURL: https://github.com/redhat-appstudio/infra-deployments.git` + tmpl + `
+`))
+			g.Expect(err).NotTo(HaveOccurred())
+			g.Expect(result.Paths).To(HaveLen(1))
+			g.Expect(result.Paths[0].MatchAll).To(BeTrue())
+		})
+	}
+}

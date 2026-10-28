@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log/slog"
 	"runtime"
+	"sort"
+	"strings"
 
 	"golang.org/x/sync/errgroup"
 
@@ -41,6 +43,41 @@ type DiffResult struct {
 	TotalAdded int
 	// TotalRemoved is the aggregate lines removed across all diffs.
 	TotalRemoved int
+	// Skipped lists affected components that could not be rendered at all,
+	// so that output never claims "no differences" for them.
+	Skipped []SkippedComponent
+}
+
+// Reasons an affected component is skipped instead of rendered.
+const (
+	SkipReasonUnresolved = "ApplicationSet template could not be resolved; no directory to render"
+	SkipReasonNoPath     = "only consumes repository files (e.g. Helm value files); they are not rendered"
+	SkipReasonPrefixOnly = "deployed directory only known by its static prefix; it is not rendered"
+)
+
+// SkippedComponent is an affected component that render-diff did not render.
+type SkippedComponent struct {
+	Env detector.Environment
+	// Path is the deployed directory or, for a prefix-only entry, its static
+	// prefix. It is empty when the template could not be resolved or the
+	// component only consumes ExtraFiles.
+	Path string
+	// ExtraFiles are the individual files the component consumes.
+	ExtraFiles []string
+	// Reason explains why the component was not rendered.
+	Reason string
+}
+
+// Label returns a human-readable identifier for the skipped component.
+func (s SkippedComponent) Label() string {
+	switch {
+	case s.Path != "":
+		return s.Path
+	case len(s.ExtraFiles) > 0:
+		return strings.Join(s.ExtraFiles, ", ")
+	default:
+		return "(unresolved ApplicationSet)"
+	}
 }
 
 // Run builds each affected component path on both refs in parallel, computes
@@ -88,6 +125,15 @@ func (e *Engine) RunProgressive(ctx context.Context, affected map[detector.Envir
 	g, ctx := errgroup.WithContext(ctx)
 	g.SetLimit(e.concurrency)
 
+	// Skipped components are collected by this goroutine only and attached
+	// to the result once the workers are done.
+	var skipped []SkippedComponent
+	skip := func(env detector.Environment, cp appset.ComponentPath, reason string) {
+		slog.Warn("skipping affected component, it is not rendered",
+			"env", env, "path", cp.Path, "extraFiles", cp.ExtraFiles, "reason", reason)
+		skipped = append(skipped, SkippedComponent{Env: env, Path: cp.Path, ExtraFiles: cp.ExtraFiles, Reason: reason})
+	}
+
 	for env, paths := range affected {
 		for _, cp := range paths {
 			// A component without a deployed directory only consumes
@@ -95,13 +141,11 @@ func (e *Engine) RunProgressive(ctx context.Context, affected map[detector.Envir
 			// source). There is no kustomization to render, so report it
 			// instead of building the repository root.
 			if cp.MatchAll {
-				slog.Warn("skipping component whose ApplicationSet template could not be resolved, there is no directory to render",
-					"env", env)
+				skip(env, cp, SkipReasonUnresolved)
 				continue
 			}
 			if cp.Path == "" {
-				slog.Warn("skipping component without a deployed directory, its value files are not rendered",
-					"env", env, "extraFiles", cp.ExtraFiles)
+				skip(env, cp, SkipReasonNoPath)
 				continue
 			}
 			// A prefix-only Path is the static prefix of an unresolved
@@ -109,8 +153,7 @@ func (e *Engine) RunProgressive(ctx context.Context, affected map[detector.Envir
 			// either fail as a non-kustomization (and be dropped silently)
 			// or render an unrelated parent overlay.
 			if cp.PrefixOnly {
-				slog.Warn("skipping component whose ApplicationSet path is only known by its static prefix, the deployed directories are not rendered",
-					"env", env, "prefix", cp.Path)
+				skip(env, cp, SkipReasonPrefixOnly)
 				continue
 			}
 			g.Go(func() error {
@@ -152,6 +195,13 @@ func (e *Engine) RunProgressive(ctx context.Context, affected map[detector.Envir
 	}
 	close(results)
 	<-done
+	sort.SliceStable(skipped, func(i, j int) bool {
+		if skipped[i].Env != skipped[j].Env {
+			return skipped[i].Env < skipped[j].Env
+		}
+		return skipped[i].Label() < skipped[j].Label()
+	})
+	result.Skipped = skipped
 	return &result, nil
 }
 
