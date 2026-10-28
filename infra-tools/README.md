@@ -138,7 +138,8 @@ make lint
 
 # Audit the real repo's ApplicationSets against the parser
 # (needs a full repo checkout; catches ApplicationSet shapes the parser
-# silently ignores, which would otherwise degrade to "environment/none")
+# drops or cannot fully resolve — tracked only by a static prefix or as
+# MatchAll)
 make audit
 
 # Fix lint issues automatically

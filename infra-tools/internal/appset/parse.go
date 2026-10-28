@@ -7,6 +7,13 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
+	"maps"
+	"net/url"
+	"path"
+	"regexp"
+	"sort"
+	"strconv"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -17,19 +24,36 @@ import (
 // determined by the overlay that produced the ApplicationSet.
 type ComponentPath struct {
 	// Path is the resolved filesystem path (relative to repo root) that the
-	// ApplicationSet points to.
+	// ApplicationSet points to. It is empty when the ApplicationSet only
+	// references files through ExtraFiles (e.g. a chart-only source).
 	Path string
 	// ClusterDir is non-empty when the ApplicationSet targets a specific cluster
 	// subdirectory (e.g. "stone-prod-p01").
 	ClusterDir string
+	// ExtraFiles are individual files the ApplicationSet consumes from this
+	// repository without deploying their directory, such as Helm values files
+	// referenced as "$<ref>/<path>" from a multi-source template, or relative
+	// to the source path. They are matched by exact path.
+	ExtraFiles []string
+	// PrefixOnly is true when the path template could not be fully resolved
+	// (unknown placeholder). Path then holds the longest static prefix, and
+	// callers must match changed files by prefix, and by the dependency trees
+	// of the kustomizations under that prefix.
+	PrefixOnly bool
+	// MatchAll is true when a template could not be resolved and has no static
+	// prefix either, so nothing in the repository can be attributed to it. Path
+	// is then empty, and callers must treat any change as affecting the
+	// environment (fail closed) instead of ignoring the ApplicationSet or
+	// aborting detection.
+	MatchAll bool
 }
 
 // ParseResult holds the extracted data from all ApplicationSets in one overlay.
 type ParseResult struct {
 	// Paths contains all resolved component/config paths.
 	Paths []ComponentPath
-	// Clusters maps cluster names found in list.elements[].nameNormalized.
-	// Key: cluster name, Value: list of component paths for that cluster.
+	// Clusters maps cluster names found in list generator elements
+	// (nameNormalized or name) to the component paths for that cluster.
 	Clusters map[string][]string
 }
 
@@ -141,13 +165,7 @@ func ParseApplicationSets(renderedYAML []byte) (*ParseResult, error) {
 
 		paths, clusters, err := extractFromAppSet(doc)
 		if err != nil {
-			name := "unknown"
-			if md, ok := doc["metadata"].(map[string]interface{}); ok {
-				if n, ok := md["name"].(string); ok {
-					name = n
-				}
-			}
-			return nil, fmt.Errorf("extracting from ApplicationSet %s: %w", name, err)
+			return nil, fmt.Errorf("extracting from ApplicationSet %s: %w", appSetName(doc), err)
 		}
 		result.Paths = append(result.Paths, paths...)
 		for cluster, cpaths := range clusters {
@@ -164,229 +182,757 @@ func extractFromAppSet(doc map[string]interface{}) ([]ComponentPath, map[string]
 	if !ok {
 		return nil, nil, nil
 	}
-	tmpl, ok := spec["template"].(map[string]interface{})
-	if !ok {
-		return nil, nil, nil
+	name := appSetName(doc)
+
+	// spec.templatePatch (goTemplate) is applied over spec.template and can
+	// rewrite source.path(s) or Helm value files, so nothing in spec.template
+	// can be trusted to locate what is deployed.
+	if _, found := spec["templatePatch"]; found {
+		slog.Warn("ApplicationSet has a templatePatch, which may replace the source paths; treating the environment as affected by any change",
+			"appset", name)
+		return []ComponentPath{{MatchAll: true}}, map[string][]string{}, nil
 	}
-	tmplSpec, ok := tmpl["spec"].(map[string]interface{})
-	if !ok {
-		return nil, nil, nil
+
+	// Generators are inspected before spec.template so that a generator-level
+	// template still fails closed when spec.template has no local source.
+	values := collectGeneratorValues(spec["generators"])
+	var sources []templateSource
+	if tmpl, ok := spec["template"].(map[string]interface{}); ok {
+		if tmplSpec, ok := tmpl["spec"].(map[string]interface{}); ok {
+			sources = templateSources(tmplSpec)
+		}
 	}
-	source, ok := tmplSpec["source"].(map[string]interface{})
-	if !ok {
-		return nil, nil, nil
-	}
-	pathTemplate, ok := source["path"].(string)
-	if !ok {
+	if len(sources) == 0 {
+		if values.templateOverride() {
+			slog.Warn("ApplicationSet generator carries its own template, which may replace the source paths; treating the environment as affected by any change",
+				"appset", name)
+			return []ComponentPath{{MatchAll: true}}, map[string][]string{}, nil
+		}
 		return nil, nil, nil
 	}
 
-	generators, _ := spec["generators"].([]interface{})
-	if len(generators) == 0 {
-		return nil, nil, nil
+	for _, unsupported := range values.unsupported() {
+		slog.Warn("unsupported ApplicationSet generator, falling back to static paths and prefixes for it",
+			"appset", name, "generator", unsupported)
 	}
 
-	// Determine if this is a templated or static path
-	if !strings.Contains(pathTemplate, "{{") {
-		// Static path — no templates at all
-		return []ComponentPath{{
-			Path: pathTemplate,
-		}}, nil, nil
-	}
-
-	// Templated path — extract values from generators
-	return extractTemplatedPaths(pathTemplate, generators)
+	return resolveSources(name, sources, values.sets())
 }
 
-// extractTemplatedPaths resolves templated paths from merge/cluster/list generators.
-func extractTemplatedPaths(pathTemplate string, generators []interface{}) ([]ComponentPath, map[string][]string, error) {
-	var paths []ComponentPath
-	clusters := make(map[string][]string)
+// templateSource is one entry of spec.template.spec.source(s) reduced to the
+// parts that reference files in this repository.
+type templateSource struct {
+	// pathTemplate is the (possibly templated) deployed directory, or "" when
+	// the source only contributes files.
+	pathTemplate string
+	// extraFileTemplates are templated individual files consumed by the source
+	// (e.g. Helm values files), relative to the repository root: the
+	// "$<ref>/" prefix is removed and chart-relative files are joined to the
+	// source path.
+	extraFileTemplates []string
+	// unattributedFiles are value files that cannot be attributed to this
+	// checkout, so the caller must fail closed for them.
+	unattributedFiles []string
+	// pathUnknown is set when the source has a path but a templated repoURL
+	// that cannot be classified. The caller must fail closed for the path.
+	pathUnknown bool
+}
 
-	for _, gen := range generators {
+// templateSources extracts the local references from a template spec. Both the
+// single-source (source) and multi-source (sources) forms are supported.
+func templateSources(tmplSpec map[string]interface{}) []templateSource {
+	var raw []map[string]interface{}
+	if source, ok := tmplSpec["source"].(map[string]interface{}); ok {
+		raw = append(raw, source)
+	}
+	if sources, ok := tmplSpec["sources"].([]interface{}); ok {
+		for _, s := range sources {
+			if source, ok := s.(map[string]interface{}); ok {
+				raw = append(raw, source)
+			}
+		}
+	}
+
+	// Value files of a multi-source template are referenced as "$<ref>/<path>",
+	// where <ref> is the "ref" name of any source, not only "values".
+	refRepos := make(map[string]string)
+	for _, source := range raw {
+		if ref, _ := source["ref"].(string); ref != "" {
+			repoURL, _ := source["repoURL"].(string)
+			refRepos[ref] = repoURL
+		}
+	}
+
+	var out []templateSource
+	for _, source := range raw {
+		ts := templateSource{}
+		repoURL, _ := source["repoURL"].(string)
+		ts.pathTemplate, _ = source["path"].(string)
+		// A path from another repository is not in this checkout. Keep only
+		// local "$<ref>/" value files for such a source. A templated repoURL
+		// is unknown rather than external: the path may resolve to this
+		// checkout, so the caller must fail closed.
+		switch classifyRepoURL(repoURL) {
+		case repoExternal:
+			if ts.pathTemplate != "" {
+				slog.Debug("ignoring source path from outside this repository",
+					"repoURL", repoURL, "path", ts.pathTemplate)
+			}
+			ts.pathTemplate = ""
+		case repoUnknown:
+			if ts.pathTemplate != "" {
+				ts.pathUnknown = true
+				ts.pathTemplate = ""
+			}
+		case repoLocal:
+		}
+		ts.extraFileTemplates, ts.unattributedFiles = helmValueFiles(source, ts.pathTemplate, refRepos)
+		if ts.pathTemplate == "" && !ts.pathUnknown &&
+			len(ts.extraFileTemplates) == 0 && len(ts.unattributedFiles) == 0 {
+			continue
+		}
+		out = append(out, ts)
+	}
+	return out
+}
+
+// localRepoHost and localRepoPath identify the checkout this parser runs
+// against.
+const (
+	localRepoHost = "github.com"
+	localRepoPath = "redhat-appstudio/infra-deployments"
+)
+
+type repoLocality int
+
+const (
+	repoLocal repoLocality = iota
+	repoExternal
+	repoUnknown
+)
+
+// splitRepoURL returns the lower-case host and repository path for the HTTPS
+// and SCP-like SSH forms used in ApplicationSets.
+func splitRepoURL(repoURL string) (host, repoPath string, ok bool) {
+	if strings.Contains(repoURL, "://") {
+		u, err := url.Parse(repoURL)
+		if err != nil || u.Hostname() == "" {
+			return "", "", false
+		}
+		return strings.ToLower(u.Hostname()),
+			strings.ToLower(strings.TrimPrefix(u.Path, "/")), true
+	}
+	// SCP-like SSH form: [user@]host:owner/repo[.git]
+	if at := strings.LastIndex(repoURL, "@"); at >= 0 {
+		rest := repoURL[at+1:]
+		host, repoPath, found := strings.Cut(rest, ":")
+		if !found || host == "" || repoPath == "" {
+			return "", "", false
+		}
+		return strings.ToLower(host), strings.ToLower(repoPath), true
+	}
+	return "", "", false
+}
+
+// classifyRepoURL reports whether repoURL points at this repository. An empty
+// URL is treated as local because kustomize patches fill it in later. A
+// templated or unparseable URL cannot be classified, so callers must fail
+// closed for files that depend on it.
+func classifyRepoURL(repoURL string) repoLocality {
+	repoURL = strings.TrimSpace(repoURL)
+	if repoURL == "" {
+		return repoLocal
+	}
+	if strings.Contains(repoURL, "{{") {
+		return repoUnknown
+	}
+	host, repoPath, ok := splitRepoURL(repoURL)
+	if !ok {
+		return repoUnknown
+	}
+	repoPath = strings.TrimSuffix(strings.TrimSuffix(repoPath, "/"), ".git")
+	if host == localRepoHost && repoPath == localRepoPath {
+		return repoLocal
+	}
+	return repoExternal
+}
+
+// helmValueFiles returns the valueFiles of a Helm source that live in this
+// repository: "$<ref>/<path>" files of a declared local ref, and chart-relative
+// files of a local source that has a path in this repository (joined to that
+// path). Value files that cannot be attributed to this repository are returned
+// separately as unattributed so the caller can fail closed. Chart-relative files
+// of a known external source live in that source's repository, and remote URLs
+// are not in this repository either; both are only logged.
+func helmValueFiles(source map[string]interface{}, pathTemplate string, refRepos map[string]string) (files, unattributed []string) {
+	helm, ok := source["helm"].(map[string]interface{})
+	if !ok {
+		return nil, nil
+	}
+	sourceRepoURL, _ := source["repoURL"].(string)
+	sourceLocality := classifyRepoURL(sourceRepoURL)
+	valueFiles, _ := helm["valueFiles"].([]interface{})
+	for _, vf := range valueFiles {
+		s, _ := vf.(string)
+		switch {
+		case s == "":
+			continue
+		case strings.HasPrefix(s, "$"):
+			ref, rest, _ := strings.Cut(s[1:], "/")
+			refRepo, declared := refRepos[ref]
+			switch {
+			case !declared:
+				unattributed = append(unattributed, s)
+			case rest == "":
+				unattributed = append(unattributed, s)
+			default:
+				switch classifyRepoURL(refRepo) {
+				case repoLocal:
+					files = append(files, rest)
+				case repoExternal:
+					slog.Debug("Helm value file belongs to an external source ref, not tracked",
+						"valueFile", s, "repoURL", refRepo)
+				case repoUnknown:
+					unattributed = append(unattributed, s)
+				}
+			}
+		case strings.Contains(s, "://"):
+			slog.Warn("Helm value file is a remote URL, not tracked", "valueFile", s)
+		case sourceLocality == repoUnknown:
+			unattributed = append(unattributed, s)
+		case sourceLocality == repoExternal:
+			slog.Debug("Helm value file belongs to an external source, not tracked",
+				"valueFile", s, "repoURL", sourceRepoURL)
+		case pathTemplate != "":
+			files = append(files, pathTemplate+"/"+s)
+		default:
+			slog.Warn("Helm value file is relative to a remote chart, not tracked", "valueFile", s)
+		}
+	}
+	return files, unattributed
+}
+
+// generatorValues is the set of template parameters known for one generated
+// Application, keyed by the exact name used in {{...}} placeholders. ArgoCD
+// treats "{{values.X}}" and "{{X}}" as different parameters, so generator
+// "values" are stored as "values.<key>" and list element parameters under
+// their literal names.
+type generatorValues map[string]string
+
+// valueSet is a single combination of generator values, together with the
+// cluster it belongs to (empty for the defaults-only combination).
+type valueSet struct {
+	values      generatorValues
+	clusterName string
+	// defaults holds the cluster defaults a merged list element overrides. It
+	// is non-nil only for elements merged into a clusters generator, and is
+	// used to attribute the element's cluster only when the element actually
+	// changes the deployed path.
+	defaults generatorValues
+	// prefixOnly is set when the values are incomplete because an unmodelled
+	// generator may supply or override any of them: templates resolved from
+	// this set are only tracked by the static prefix of the raw template.
+	prefixOnly bool
+	// matchAll is set when a generator-level template may replace the source
+	// paths entirely, so nothing derived from spec.template can be trusted.
+	matchAll bool
+}
+
+// valueGroup holds the values produced by one top-level generator (and, for a
+// merge generator, everything nested in it). ArgoCD combines top-level
+// generators as a union, so values never flow from one group to another.
+type valueGroup struct {
+	defaults    generatorValues
+	elements    []valueSet
+	hasClusters bool
+	unsupported []string
+	// templateOverride is set when a generator in the group carries its own
+	// "template", which ArgoCD merges over spec.template and which can
+	// replace source.path(s) completely.
+	templateOverride bool
+}
+
+// sets returns the value combinations of one group: the cluster defaults
+// followed by each list element merged over the defaults.
+func (g valueGroup) sets() []valueSet {
+	if g.templateOverride {
+		return []valueSet{{matchAll: true}}
+	}
+	// An unmodelled generator may supply or override any value of its group,
+	// so no known value can be trusted to locate the deployed directory: a
+	// static path still resolves exactly and a templated one is tracked by
+	// the static prefix of the raw template (MatchAll when it has none). A
+	// single set is enough since the values are not used.
+	if len(g.unsupported) > 0 {
+		return []valueSet{{values: g.defaults, prefixOnly: true}}
+	}
+	var sets []valueSet
+	// A clusters generator generates one Application per selected cluster,
+	// even when it carries no values and even when list elements are merged
+	// over it (they only override the clusters they match), so its defaults
+	// always form a combination of their own.
+	if g.hasClusters || len(g.defaults) > 0 {
+		sets = append(sets, valueSet{values: g.defaults})
+	}
+	for _, e := range g.elements {
+		set := valueSet{values: mergeValues(g.defaults, e.values), clusterName: e.clusterName}
+		if g.hasClusters {
+			set.defaults = g.defaults
+		}
+		sets = append(sets, set)
+	}
+	return sets
+}
+
+// collectedValues holds everything gathered from an ApplicationSet's generators,
+// one group per top-level generator.
+type collectedValues struct {
+	groups []valueGroup
+}
+
+// unsupported returns the unmodelled generator types found in any group.
+func (c collectedValues) unsupported() []string {
+	n := 0
+	for _, g := range c.groups {
+		n += len(g.unsupported)
+	}
+	out := make([]string, 0, n)
+	for _, g := range c.groups {
+		out = append(out, g.unsupported...)
+	}
+	return out
+}
+
+// templateOverride reports whether any group carries a generator-level
+// template.
+func (c collectedValues) templateOverride() bool {
+	for _, g := range c.groups {
+		if g.templateOverride {
+			return true
+		}
+	}
+	return false
+}
+
+// sets returns the value combinations to interpolate: the union of the value
+// sets of every top-level generator. With no generators at all it returns a
+// single empty combination so static paths are still resolved.
+func (c collectedValues) sets() []valueSet {
+	var sets []valueSet
+	for _, g := range c.groups {
+		sets = append(sets, g.sets()...)
+	}
+	if len(sets) == 0 {
+		sets = append(sets, valueSet{values: generatorValues{}})
+	}
+	return sets
+}
+
+// collectGeneratorValues walks the generator tree (including merge and nested
+// merge generators), gathering cluster defaults and list elements separately
+// for each top-level generator.
+func collectGeneratorValues(generators interface{}) collectedValues {
+	var out collectedValues
+	gens, _ := generators.([]interface{})
+	for _, gen := range gens {
+		group := valueGroup{defaults: generatorValues{}}
+		collectGenerators([]interface{}{gen}, &group)
+		out.groups = append(out.groups, group)
+	}
+	return out
+}
+
+func collectGenerators(gens []interface{}, out *valueGroup) {
+	for _, gen := range gens {
 		genMap, ok := gen.(map[string]interface{})
 		if !ok {
 			continue
 		}
 
-		// Handle merge generator
+		// Any generator may carry its own template, merged over spec.template
+		// by ArgoCD. It can move source.path(s) anywhere, so the group cannot
+		// be tracked from spec.template at all.
+		kinds := make([]string, 0, len(genMap))
+		for kind := range genMap {
+			kinds = append(kinds, kind)
+		}
+		sort.Strings(kinds)
+		for _, kind := range kinds {
+			if bodyMap, ok := genMap[kind].(map[string]interface{}); ok {
+				if _, found := bodyMap["template"]; found {
+					out.unsupported = append(out.unsupported, kind+".template")
+					out.templateOverride = true
+				}
+			}
+		}
+
+		if clustersGen, ok := genMap["clusters"].(map[string]interface{}); ok {
+			values, _ := clustersGen["values"].(map[string]interface{})
+			maps.Copy(out.defaults, valuesFromMap(values))
+			out.hasClusters = true
+			continue
+		}
+
 		if mergeGen, ok := genMap["merge"].(map[string]interface{}); ok {
 			subGens, _ := mergeGen["generators"].([]interface{})
-			subPaths, subClusters, err := processMergeGenerators(pathTemplate, subGens)
-			if err != nil {
-				return nil, nil, err
+			collectGenerators(subGens, out)
+			continue
+		}
+
+		// A matrix is not modelled (its children are combined as a cartesian
+		// product). Its children are walked only to detect nested generator
+		// templates and unsupported generators; the group falls back to the raw
+		// template's static prefix, or MatchAll when there is none.
+		if matrixGen, ok := genMap["matrix"].(map[string]interface{}); ok {
+			out.unsupported = append(out.unsupported, "matrix")
+			subGens, _ := matrixGen["generators"].([]interface{})
+			collectGenerators(subGens, out)
+			continue
+		}
+
+		if listGen, ok := genMap["list"].(map[string]interface{}); ok {
+			// Only "elements" is read. Elements supplied through elementsYaml
+			// are not modelled and may override any value: the group falls
+			// back to the static prefix of the raw template. (A generator-level
+			// template is handled above.) An empty "elements" list is
+			// legitimate and not unsupported.
+			if _, found := listGen["elementsYaml"]; found {
+				out.unsupported = append(out.unsupported, "list.elementsYaml")
 			}
-			paths = append(paths, subPaths...)
-			for k, v := range subClusters {
-				clusters[k] = append(clusters[k], v...)
-			}
-			continue
-		}
-
-		// Handle direct clusters generator
-		if clustersGen, ok := genMap["clusters"].(map[string]interface{}); ok {
-			subPaths := resolveClusterGenerator(pathTemplate, clustersGen)
-			paths = append(paths, subPaths...)
-			continue
-		}
-	}
-
-	return paths, clusters, nil
-}
-
-// generatorValues holds the ApplicationSet template placeholders we can resolve
-// from a clusters generator (defaults) plus list-generator overrides.
-type generatorValues struct {
-	sourceRoot  string
-	environment string
-	clusterDir  string
-	ring        string
-}
-
-func valuesFromMap(values map[string]interface{}) generatorValues {
-	if values == nil {
-		return generatorValues{}
-	}
-	v := generatorValues{}
-	v.sourceRoot, _ = values["sourceRoot"].(string)
-	v.environment, _ = values["environment"].(string)
-	v.clusterDir, _ = values["clusterDir"].(string)
-	v.ring, _ = values["ring"].(string)
-	return v
-}
-
-// interpolatePath substitutes known {{values.*}} placeholders in an ApplicationSet
-// source path. Empty trailing segments (e.g. clusterDir: "") are trimmed so
-// environment-based templates still resolve to sourceRoot/environment.
-func interpolatePath(pathTemplate string, v generatorValues) string {
-	resolved := strings.NewReplacer(
-		"{{values.sourceRoot}}", v.sourceRoot,
-		"{{values.environment}}", v.environment,
-		"{{values.clusterDir}}", v.clusterDir,
-		"{{values.ring}}", v.ring,
-	).Replace(pathTemplate)
-	return strings.TrimSuffix(resolved, "/")
-}
-
-func componentPathFromValues(pathTemplate string, v generatorValues) ComponentPath {
-	cp := ComponentPath{Path: interpolatePath(pathTemplate, v)}
-	if v.clusterDir != "" {
-		cp.ClusterDir = v.clusterDir
-	}
-	return cp
-}
-
-type listElement struct {
-	nameNormalized string
-	clusterDir     string
-	ring           string
-}
-
-func (v generatorValues) withListOverrides(le listElement) generatorValues {
-	out := v
-	if le.clusterDir != "" {
-		out.clusterDir = le.clusterDir
-	}
-	if le.ring != "" {
-		out.ring = le.ring
-	}
-	return out
-}
-
-// processMergeGenerators processes generators inside a merge generator.
-func processMergeGenerators(pathTemplate string, subGens []interface{}) ([]ComponentPath, map[string][]string, error) {
-	var defaults generatorValues
-	var listElements []listElement
-
-	for _, sg := range subGens {
-		sgMap, ok := sg.(map[string]interface{})
-		if !ok {
-			continue
-		}
-
-		if clustersGen, ok := sgMap["clusters"].(map[string]interface{}); ok {
-			values, _ := clustersGen["values"].(map[string]interface{})
-			defaults = valuesFromMap(values)
-		}
-
-		if listGen, ok := sgMap["list"].(map[string]interface{}); ok {
 			elements, _ := listGen["elements"].([]interface{})
 			for _, elem := range elements {
 				elemMap, ok := elem.(map[string]interface{})
 				if !ok {
 					continue
 				}
-				le := listElement{}
-				if nn, ok := elemMap["nameNormalized"].(string); ok {
-					le.nameNormalized = nn
-				}
-				if cd, ok := elemMap["values.clusterDir"].(string); ok {
-					le.clusterDir = cd
-				}
-				if ring, ok := elemMap["values.ring"].(string); ok {
-					le.ring = ring
-				}
-				listElements = append(listElements, le)
-			}
-		}
-	}
-
-	var paths []ComponentPath
-	clusters := make(map[string][]string)
-
-	if defaults.sourceRoot == "" {
-		return nil, nil, nil
-	}
-
-	// Check if the path uses {{nameNormalized}} — treat as prefix
-	if strings.Contains(pathTemplate, "{{nameNormalized}}") {
-		basePath := defaults.sourceRoot + "/" + defaults.environment + "/"
-		paths = append(paths, ComponentPath{
-			Path: basePath,
-		})
-
-		for _, le := range listElements {
-			dir := le.clusterDir
-			if dir == "" {
-				dir = le.nameNormalized
-			}
-			if dir != "" {
-				p := defaults.sourceRoot + "/" + defaults.environment + "/" + dir
-				paths = append(paths, ComponentPath{
-					Path:       p,
-					ClusterDir: dir,
+				out.elements = append(out.elements, valueSet{
+					values:      valuesFromElement(elemMap),
+					clusterName: clusterNameFromElement(elemMap),
 				})
-				clusters[le.nameNormalized] = append(clusters[le.nameNormalized], p)
 			}
-		}
-		return paths, clusters, nil
-	}
-
-	// Interpolate the real source path template so both environment-based
-	// (sourceRoot/environment/clusterDir) and ring-based
-	// (sourceRoot/rings/ring/clusterDir) ApplicationSets resolve correctly.
-	paths = append(paths, componentPathFromValues(pathTemplate, defaults))
-
-	for _, le := range listElements {
-		if le.clusterDir == "" && le.ring == "" {
 			continue
 		}
-		cp := componentPathFromValues(pathTemplate, defaults.withListOverrides(le))
+
+		// git, scm, clusterDecisionResource, pullRequest, plugin, ...
+		// are not modelled: record them so the caller can warn and the group
+		// falls back to static paths and prefixes.
+		keys := make([]string, 0, len(genMap))
+		for k := range genMap {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		out.unsupported = append(out.unsupported, keys...)
+	}
+}
+
+// valuesFromMap converts a generator "values" map into template values, keyed
+// as the "{{values.<key>}}" placeholders that reference them.
+func valuesFromMap(values map[string]interface{}) generatorValues {
+	out := make(generatorValues, len(values))
+	for k, v := range values {
+		if s, ok := v.(string); ok {
+			out["values."+k] = s
+		}
+	}
+	return out
+}
+
+// valuesFromElement converts a list generator element into template values.
+// Every string-valued key is kept under its literal name ("values.clusterDir"
+// stays "values.clusterDir", "nameNormalized" stays "nameNormalized"), and a
+// nested "values" map is flattened into "values.<key>" entries the way ArgoCD
+// flattens element parameters. A flat "values.<key>" entry wins over the
+// nested form.
+func valuesFromElement(elem map[string]interface{}) generatorValues {
+	out := make(generatorValues, len(elem))
+	if nested, ok := elem["values"].(map[string]interface{}); ok {
+		maps.Copy(out, valuesFromMap(nested))
+	}
+	for k, v := range elem {
+		if s, ok := v.(string); ok {
+			out[k] = s
+		}
+	}
+	return out
+}
+
+// clusterNameFromElement returns the cluster a list element refers to, or "".
+func clusterNameFromElement(elem map[string]interface{}) string {
+	if nn, ok := elem["nameNormalized"].(string); ok && nn != "" {
+		return nn
+	}
+	name, _ := elem["name"].(string)
+	return name
+}
+
+// mergeValues returns base overlaid with overrides.
+func mergeValues(base, overrides generatorValues) generatorValues {
+	out := make(generatorValues, len(base)+len(overrides))
+	maps.Copy(out, base)
+	maps.Copy(out, overrides)
+	return out
+}
+
+// placeholderRe matches ApplicationSet template placeholders, with or without
+// the "values." prefix.
+var placeholderRe = regexp.MustCompile(`\{\{\s*([A-Za-z0-9_.\-]+)\s*\}\}`)
+
+// interpolatePath substitutes placeholders in an ApplicationSet source path.
+// The second return value is false when at least one placeholder could not be
+// resolved, in which case the returned path still contains the placeholder.
+// Template expressions placeholderRe does not understand (for example the
+// Go-template form "{{ .name | lower }}") also count as unresolved, so they
+// are never mistaken for a literal path.
+func interpolatePath(pathTemplate string, values generatorValues) (string, bool) {
+	resolved := true
+	out := placeholderRe.ReplaceAllStringFunc(pathTemplate, func(match string) string {
+		key := strings.TrimSpace(strings.TrimSuffix(strings.TrimPrefix(match, "{{"), "}}"))
+		if v, ok := values[key]; ok {
+			return v
+		}
+		resolved = false
+		return match
+	})
+	if !resolved || strings.Contains(out, "{{") {
+		return out, false
+	}
+	return path.Clean(out), true
+}
+
+// inRepo reports whether a cleaned path names something inside the repository
+// other than its root. The root ("." or ""), absolute paths and paths escaping
+// the repository ("..", "../...") can never match a repository-relative
+// changed file, and walking them would scan the whole checkout or the host
+// filesystem, so they must not be tracked as a path or prefix.
+func inRepo(p string) bool {
+	return p != "" && p != "." && p != ".." && !strings.HasPrefix(p, "../") && !path.IsAbs(p)
+}
+
+// staticPrefix returns the longest directory prefix of a path template that is
+// free of template expressions. It is used to keep tracking a path that cannot
+// be fully resolved, instead of dropping the ApplicationSet entirely. It
+// returns "" when that prefix is not a usable path inside the repository.
+func staticPrefix(pathTemplate string) string {
+	prefix := pathTemplate
+	if idx := strings.Index(pathTemplate, "{{"); idx >= 0 {
+		prefix = pathTemplate[:idx]
+		if i := strings.LastIndex(prefix, "/"); i >= 0 {
+			prefix = prefix[:i]
+		} else {
+			prefix = ""
+		}
+	}
+	prefix = path.Clean(prefix)
+	if !inRepo(prefix) {
+		return ""
+	}
+	return prefix
+}
+
+// resolveTemplate resolves a path or file template against one value set. When
+// the template cannot be resolved exactly it returns the longest static prefix
+// of the partially resolved template and prefixOnly=true; that prefix is empty
+// (MatchAll) when nothing static precedes the first unresolved placeholder, or
+// when the result is not a usable path inside the repository.
+func resolveTemplate(template string, set valueSet) (resolvedPath string, prefixOnly bool) {
+	// An unmodelled generator may override any value of the set, so only the
+	// static part of the raw template can be trusted. A template without
+	// placeholders is still exact: no generator can change it.
+	if set.prefixOnly {
+		if !strings.Contains(template, "{{") {
+			if p := path.Clean(template); inRepo(p) {
+				return p, false
+			}
+			return "", true
+		}
+		return staticPrefix(template), true
+	}
+	resolved, ok := interpolatePath(template, set.values)
+	if ok {
+		if inRepo(resolved) {
+			return resolved, false
+		}
+		return "", true
+	}
+	// interpolatePath returns the template with every resolvable placeholder
+	// substituted, so the static prefix is computed on the partially resolved
+	// path.
+	return staticPrefix(resolved), true
+}
+
+// templateValueKey returns the first placeholder in template that matches one
+// of keys, preserving the prefix ("values.X" vs bare "X") because ArgoCD treats
+// them as different parameters.
+func templateValueKey(template string, keys ...string) string {
+	for _, match := range placeholderRe.FindAllStringSubmatch(template, -1) {
+		for _, key := range keys {
+			if match[1] == key {
+				return key
+			}
+		}
+	}
+	return ""
+}
+
+// resolveSources turns the template sources of one ApplicationSet into
+// ComponentPaths, one per generator value combination.
+//
+// A template that cannot be resolved exactly is tracked by its static prefix
+// (PrefixOnly). A template that has no static prefix either is reported as a
+// MatchAll entry: detection then treats the environment as affected by any
+// change, rather than silently ignoring the source or aborting detection for
+// every overlay.
+func resolveSources(name string, sources []templateSource, sets []valueSet) ([]ComponentPath, map[string][]string, error) {
+	var paths []ComponentPath
+	clusters := make(map[string][]string)
+	seen := make(map[string]bool)
+	seenCluster := make(map[string]bool)
+
+	add := func(cp ComponentPath) {
+		key := cp.Path + "|" + cp.ClusterDir + "|" + strings.Join(cp.ExtraFiles, ",") + "|" +
+			strconv.FormatBool(cp.PrefixOnly) + "|" + strconv.FormatBool(cp.MatchAll)
+		if seen[key] {
+			return
+		}
+		seen[key] = true
 		paths = append(paths, cp)
-		if le.nameNormalized != "" {
-			clusters[le.nameNormalized] = append(clusters[le.nameNormalized], cp.Path)
+	}
+	matchAll := func(kind, template string) {
+		slog.Warn("ApplicationSet "+kind+" template cannot be resolved and has no static prefix, treating the environment as affected by any change",
+			"appset", name, "template", template)
+		add(ComponentPath{MatchAll: true})
+	}
+
+	for _, source := range sources {
+		if source.pathUnknown {
+			slog.Warn("ApplicationSet source path has a templated repoURL, treating the environment as affected by any change",
+				"appset", name)
+			add(ComponentPath{MatchAll: true})
+			continue
+		}
+
+		// Only a source whose path or value file is actually keyed on
+		// clusterDir is cluster-specific. A static shared path or value file
+		// must stay eligible for attribution through the generated-cluster
+		// mapping instead of naming one cluster from a generator default.
+		// Preserve the exact key: "{{clusterDir}}" and "{{values.clusterDir}}"
+		// are different ArgoCD parameters.
+		clusterDirKey := templateValueKey(source.pathTemplate, "values.clusterDir", "clusterDir")
+		if clusterDirKey == "" {
+			for _, fileTemplate := range source.extraFileTemplates {
+				if key := templateValueKey(fileTemplate, "values.clusterDir", "clusterDir"); key != "" {
+					clusterDirKey = key
+					break
+				}
+			}
+		}
+
+		// A value file under a ref no source declares cannot be located.
+		for _, file := range source.unattributedFiles {
+			slog.Warn("ApplicationSet value file cannot be attributed to this repository, treating the environment as affected by any change",
+				"appset", name, "valueFile", file)
+			add(ComponentPath{MatchAll: true})
+		}
+		for _, set := range sets {
+			if set.matchAll {
+				slog.Warn("ApplicationSet generator carries its own template, which may replace the source paths; treating the environment as affected by any change",
+					"appset", name)
+				add(ComponentPath{MatchAll: true})
+				continue
+			}
+			cp := ComponentPath{}
+			// Values from an incomplete set may be overridden by an unmodelled
+			// generator, so they cannot attribute a cluster directory.
+			if !set.prefixOnly && clusterDirKey != "" {
+				if value, ok := set.values[clusterDirKey]; ok && !strings.Contains(value, "{{") {
+					cp.ClusterDir = value
+				}
+			}
+
+			if source.pathTemplate != "" {
+				resolved, prefixOnly := resolveTemplate(source.pathTemplate, set)
+				switch {
+				case !prefixOnly:
+					cp.Path = resolved
+				case resolved == "":
+					matchAll("path", source.pathTemplate)
+				default:
+					cp.Path = resolved
+					cp.PrefixOnly = true
+					slog.Warn("ApplicationSet path template has unresolved placeholders, falling back to prefix matching",
+						"appset", name, "template", source.pathTemplate, "prefix", cp.Path)
+				}
+			}
+
+			// Value files are matched exactly when resolved. An unresolved one
+			// is handled like an unresolved path: its own prefix-only entry,
+			// or a MatchAll entry when it has no static prefix.
+			for _, fileTemplate := range source.extraFileTemplates {
+				resolved, prefixOnly := resolveTemplate(fileTemplate, set)
+				switch {
+				case !prefixOnly:
+					cp.ExtraFiles = append(cp.ExtraFiles, resolved)
+				case resolved == "":
+					matchAll("value file", fileTemplate)
+				default:
+					slog.Warn("ApplicationSet value file template has unresolved placeholders, falling back to prefix matching",
+						"appset", name, "template", fileTemplate, "prefix", resolved)
+					add(ComponentPath{Path: resolved, ClusterDir: cp.ClusterDir, PrefixOnly: true})
+				}
+			}
+
+			if cp.Path == "" && len(cp.ExtraFiles) == 0 {
+				continue
+			}
+
+			// Only a fully resolved path can be attributed to a cluster; a
+			// prefix is shared by several clusters and would over-match. The
+			// attribution happens before path deduplication: several clusters
+			// may deploy the same path and each must be recorded. An element
+			// merged into a clusters generator is only attributed when it
+			// changes the deployed path: ArgoCD discards merge elements that
+			// match no selected cluster, so an element that merely restates the
+			// defaults' path (or overrides unrelated values) may name a cluster
+			// of another environment.
+			//
+			// A merged list can still contain clusters from every environment
+			// (k8s-groups does this via values.useCaseDir), and the overlay does
+			// not scope which elements are attributed. That can over-label
+			// clusters but never hides an affected environment, so it is
+			// preferable to dropping a real cluster attribution.
+			if set.clusterName != "" && cp.Path != "" && !cp.PrefixOnly &&
+				changesPath(source.pathTemplate, set, cp.Path) {
+				clusterKey := set.clusterName + "|" + cp.Path
+				if !seenCluster[clusterKey] {
+					seenCluster[clusterKey] = true
+					clusters[set.clusterName] = append(clusters[set.clusterName], cp.Path)
+				}
+			}
+
+			add(cp)
 		}
 	}
 
 	return paths, clusters, nil
 }
 
-// resolveClusterGenerator processes a direct clusters generator (without merge).
-func resolveClusterGenerator(pathTemplate string, clustersGen map[string]interface{}) []ComponentPath {
-	values, _ := clustersGen["values"].(map[string]interface{})
-	v := valuesFromMap(values)
-	if v.sourceRoot == "" {
-		return nil
+// changesPath reports whether a list element's set resolves the path template
+// differently from the cluster defaults it was merged over. Sets without
+// defaults (top-level list elements) always generate their own Application.
+func changesPath(pathTemplate string, set valueSet, resolved string) bool {
+	if set.defaults == nil {
+		return true
 	}
-	return []ComponentPath{componentPathFromValues(pathTemplate, v)}
+	defaultPath, prefixOnly := resolveTemplate(pathTemplate, valueSet{values: set.defaults})
+	return prefixOnly || defaultPath != resolved
+}
+
+// appSetName returns metadata.name of an ApplicationSet document, or "unknown".
+func appSetName(doc map[string]interface{}) string {
+	if md, ok := doc["metadata"].(map[string]interface{}); ok {
+		if n, ok := md["name"].(string); ok && n != "" {
+			return n
+		}
+	}
+	return "unknown"
 }
