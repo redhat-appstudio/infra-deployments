@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: mintmaker
+    app.kubernetes.io/managed-by: kustomize
+  name: git-platforms-exporter
+  namespace: mintmaker
+spec:
+  selector:
+    app: git-platforms-exporter
+  ports:
+    - name: http
+      port: 9115
+      targetPort: 9115
