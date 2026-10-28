@@ -1,6 +1,7 @@
 package appset
 
 import (
+	"strings"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -855,11 +856,15 @@ spec:
 	))
 }
 
-// A source may deploy a directory and consume value files at the same time.
-func TestParseApplicationSets_PathWithHelmValues(t *testing.T) {
-	g := NewWithT(t)
-
-	yaml := `
+// pathWithHelmValuesAppSet returns a multi-source ApplicationSet whose first
+// source deploys a directory and consumes the given value files, and whose
+// second source declares the given ref.
+func pathWithHelmValuesAppSet(ref string, valueFiles ...string) string {
+	var files strings.Builder
+	for _, vf := range valueFiles {
+		files.WriteString("\n            - " + vf)
+	}
+	return `
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
@@ -875,24 +880,63 @@ spec:
     metadata:
       name: chart-component
     spec:
-      source:
-        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
-        repoURL: https://example.com/repo.git
-        helm:
-          valueFiles:
-            - $values/{{values.sourceRoot}}/{{values.environment}}/values.yaml
-            - values-local.yaml
+      sources:
+        - path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
+          repoURL: https://example.com/repo.git
+          helm:
+            valueFiles:` + files.String() + `
+        - ref: ` + ref + `
+          repoURL: https://example.com/repo.git
 `
-	result, err := ParseApplicationSets([]byte(yaml))
+}
+
+// A source may deploy a directory and consume value files at the same time:
+// "$<ref>/" files are relative to the repository root, chart-relative files to
+// the source path, and remote URLs are not tracked.
+func TestParseApplicationSets_PathWithHelmValues(t *testing.T) {
+	g := NewWithT(t)
+
+	result, err := ParseApplicationSets([]byte(pathWithHelmValuesAppSet("values",
+		"$values/{{values.sourceRoot}}/{{values.environment}}/values.yaml",
+		"values-local.yaml",
+		"https://example.com/remote-values.yaml",
+	)))
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(result.Paths).To(HaveLen(1))
 
 	cp := result.Paths[0]
 	g.Expect(cp.Path).To(Equal("components/chart-component/production/base"))
-	// Only "$values/" references live in this repository.
 	g.Expect(cp.ExtraFiles).To(ConsistOf(
 		"components/chart-component/production/values.yaml",
+		"components/chart-component/production/base/values-local.yaml",
 	))
+}
+
+// The ref name of a multi-source template is arbitrary: "$cfg/" resolves like
+// "$values/" when a source declares ref: cfg.
+func TestParseApplicationSets_HelmValuesCustomRef(t *testing.T) {
+	g := NewWithT(t)
+
+	result, err := ParseApplicationSets([]byte(pathWithHelmValuesAppSet("cfg",
+		"$cfg/{{values.sourceRoot}}/values.yaml",
+	)))
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.Paths).To(HaveLen(1))
+	g.Expect(result.Paths[0].ExtraFiles).To(ConsistOf("components/chart-component/values.yaml"))
+	g.Expect(result.Paths[0].MatchAll).To(BeFalse())
+}
+
+// A value file under a ref no source declares cannot be located, so it fails
+// closed (MatchAll) instead of being dropped silently.
+func TestParseApplicationSets_HelmValuesUndeclaredRefIsMatchAll(t *testing.T) {
+	g := NewWithT(t)
+
+	result, err := ParseApplicationSets([]byte(pathWithHelmValuesAppSet("values",
+		"$other/{{values.sourceRoot}}/values.yaml",
+	)))
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.Paths).To(ContainElement(HaveField("MatchAll", BeTrue())))
+	g.Expect(result.Paths).To(ContainElement(HaveField("Path", "components/chart-component/production/base")))
 }
 
 // matrixAppSet returns an ApplicationSet driven by an unmodelled matrix
@@ -947,24 +991,26 @@ func TestParseApplicationSets_UnsupportedGeneratorUsesStaticPrefix(t *testing.T)
 }
 
 // The values known in a group with an unsupported generator (here the clusters
-// generator nested in the matrix) still give a templated path its static
-// prefix, so the usual "{{values.sourceRoot}}/..." template is tracked by
-// components/<x> instead of having no prefix at all.
-func TestParseApplicationSets_UnsupportedGeneratorKeepsKnownValues(t *testing.T) {
+// generator nested in the matrix) may be overridden by that generator (a git
+// generator flattens file content into values.*), so they cannot locate the
+// deployed directory: a template starting with a placeholder has no trusted
+// static prefix and fails closed.
+func TestParseApplicationSets_UnsupportedGeneratorIgnoresKnownValues(t *testing.T) {
 	g := NewWithT(t)
 
 	result, err := ParseApplicationSets([]byte(matrixAppSet("{{values.sourceRoot}}/{{values.environment}}")))
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(result.Paths).To(HaveLen(1))
-	g.Expect(result.Paths[0].Path).To(Equal("components/matrix"))
-	g.Expect(result.Paths[0].PrefixOnly).To(BeTrue())
-	g.Expect(result.Paths[0].MatchAll).To(BeFalse())
+	g.Expect(result.Paths[0].MatchAll).To(BeTrue())
+	g.Expect(result.Paths[0].Path).To(BeEmpty())
 }
 
-// Same for a clusters generator merged with an unsupported one. Even a path the
-// known values fully resolve stays prefix-only, since the unsupported generator
-// may override them, and it is not attributed to a cluster directory.
-func TestParseApplicationSets_UnsupportedGeneratorInMergeKeepsKnownValues(t *testing.T) {
+// Same for a clusters generator merged with an unsupported one. A path the
+// known values would fully resolve is tracked by the static prefix of the raw
+// template, not by the resolved path (the unsupported generator may override
+// the values and deploy a sibling directory), and it is not attributed to a
+// cluster directory.
+func TestParseApplicationSets_UnsupportedGeneratorInMergeUsesRawPrefix(t *testing.T) {
 	g := NewWithT(t)
 
 	yaml := `
@@ -990,13 +1036,13 @@ spec:
       name: merge-git-{{nameNormalized}}
     spec:
       source:
-        path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
+        path: 'components/merge-git/{{values.environment}}/{{values.clusterDir}}'
         repoURL: https://github.com/redhat-appstudio/infra-deployments.git
 `
 	result, err := ParseApplicationSets([]byte(yaml))
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(result.Paths).To(HaveLen(1))
-	g.Expect(result.Paths[0].Path).To(Equal("components/merge-git/staging/stone-stg-rh01"))
+	g.Expect(result.Paths[0].Path).To(Equal("components/merge-git"))
 	g.Expect(result.Paths[0].PrefixOnly).To(BeTrue())
 	g.Expect(result.Paths[0].ClusterDir).To(BeEmpty())
 	g.Expect(result.Clusters).To(BeEmpty())
@@ -1102,9 +1148,11 @@ spec:
 `
 }
 
-// List elements supplied through elementsYaml, or a generator-level template,
-// are not modelled: the group falls back to prefixes instead of resolving from
-// the clusters defaults alone.
+// List elements supplied through elementsYaml may override any value, and a
+// generator-level template may replace the source path entirely (here with
+// components/elsewhere, outside any prefix of spec.template). Neither may be
+// resolved from the clusters defaults: both fail closed so a change anywhere,
+// including components/elsewhere, affects the environment.
 func TestParseApplicationSets_UnmodelledListFieldsAreUnsupported(t *testing.T) {
 	for name, listYAML := range map[string]string{
 		"elementsYaml": `              elementsYaml: '{{ .values.clusters | toJson }}'`,
@@ -1120,8 +1168,8 @@ func TestParseApplicationSets_UnmodelledListFieldsAreUnsupported(t *testing.T) {
 			result, err := ParseApplicationSets([]byte(listWithClustersAppSet(listYAML)))
 			g.Expect(err).NotTo(HaveOccurred())
 			g.Expect(result.Paths).To(HaveLen(1))
-			g.Expect(result.Paths[0].Path).To(Equal("components/list-variant/staging"))
-			g.Expect(result.Paths[0].PrefixOnly).To(BeTrue())
+			g.Expect(result.Paths[0].MatchAll).To(BeTrue())
+			g.Expect(result.Paths[0].Path).To(BeEmpty())
 		})
 	}
 }
@@ -1335,4 +1383,164 @@ spec:
 	g.Expect(result.Paths).To(HaveLen(1))
 	g.Expect(result.Paths[0].Path).To(Equal("components/resolved/staging"))
 	g.Expect(result.Paths[0].PrefixOnly).To(BeFalse())
+}
+
+// singleClusterAppSet returns an ApplicationSet with one clusters generator
+// (carrying the given values YAML) and the given source path template.
+func singleClusterAppSet(valuesYAML, pathTemplate string) string {
+	return `
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: single
+spec:
+  generators:
+    - clusters:
+        values:
+` + valuesYAML + `
+  template:
+    metadata:
+      name: single
+    spec:
+      source:
+        path: '` + pathTemplate + `'
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+`
+}
+
+// Paths and prefixes that clean to the repository root, an absolute path or a
+// path escaping the repository can never match a repository-relative changed
+// file (and walking them would scan the checkout or the host), so they fail
+// closed as MatchAll instead of becoming exact or prefix-only entries.
+func TestParseApplicationSets_PathsOutsideRepoAreMatchAll(t *testing.T) {
+	for name, tc := range map[string]struct{ values, path string }{
+		"empty resolution":  {`          dir: ""`, "{{values.dir}}"},
+		"dot prefix":        {`          dir: x`, "./{{nameNormalized}}"},
+		"parent prefix":     {`          dir: x`, "a/../../{{nameNormalized}}"},
+		"traversal prefix":  {`          dir: x`, "../../../../{{nameNormalized}}"},
+		"absolute prefix":   {`          dir: x`, "/components/{{nameNormalized}}"},
+		"escaping resolved": {`          dir: ../outside`, "{{values.dir}}"},
+		"absolute static":   {`          dir: x`, "/etc"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			g := NewWithT(t)
+
+			result, err := ParseApplicationSets([]byte(singleClusterAppSet(tc.values, tc.path)))
+			g.Expect(err).NotTo(HaveOccurred())
+			g.Expect(result.Paths).To(HaveLen(1))
+			g.Expect(result.Paths[0].MatchAll).To(BeTrue())
+			g.Expect(result.Paths[0].Path).To(BeEmpty())
+		})
+	}
+}
+
+// ArgoCD treats "{{values.X}}" and "{{X}}" as different parameters: a clusters
+// generator's values only resolve "{{values.X}}", and "{{name}}" is the
+// cluster name known only at runtime even when values.name is set.
+func TestParseApplicationSets_ValuesAndParamsAreDistinct(t *testing.T) {
+	for name, path := range map[string]string{
+		"unprefixed value": "components/x/{{environment}}",
+		"name vs values":   "components/x/{{name}}",
+	} {
+		t.Run(name, func(t *testing.T) {
+			g := NewWithT(t)
+
+			result, err := ParseApplicationSets([]byte(singleClusterAppSet(
+				"          environment: staging\n          name: not-the-cluster", path)))
+			g.Expect(err).NotTo(HaveOccurred())
+			g.Expect(result.Paths).To(HaveLen(1))
+			g.Expect(result.Paths[0].Path).To(Equal("components/x"))
+			g.Expect(result.Paths[0].PrefixOnly).To(BeTrue())
+		})
+	}
+}
+
+// mergedListAppSet returns an ApplicationSet merging a clusters generator with
+// a list generator whose elements are given as YAML, deploying pathTemplate.
+func mergedListAppSet(elementsYAML, pathTemplate string) string {
+	return `
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: merged
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              values:
+                sourceRoot: components/merged
+                environment: production
+                clusterDir: empty-base
+          - list:
+              elements:
+` + elementsYAML + `
+  template:
+    metadata:
+      name: merged-{{nameNormalized}}
+    spec:
+      source:
+        path: '` + pathTemplate + `'
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+`
+}
+
+// A list element's unprefixed key is the "{{clusterDir}}" parameter, not
+// values.clusterDir: it must resolve the template that references it, and
+// must not be confused with the clusters generator's values.clusterDir.
+func TestParseApplicationSets_ElementParamsKeepLiteralNames(t *testing.T) {
+	g := NewWithT(t)
+
+	result, err := ParseApplicationSets([]byte(mergedListAppSet(`                - nameNormalized: stone-prod-p01
+                  clusterDir: stone-prod-p01`,
+		"{{values.sourceRoot}}/{{values.environment}}/{{clusterDir}}")))
+	g.Expect(err).NotTo(HaveOccurred())
+	paths := make([]string, 0, len(result.Paths))
+	for _, p := range result.Paths {
+		paths = append(paths, p.Path)
+	}
+	g.Expect(paths).To(ContainElement("components/merged/production/stone-prod-p01"))
+	g.Expect(paths).NotTo(ContainElement("components/merged/production/empty-base"))
+}
+
+// The nested "values:" form of a list element overrides the defaults like the
+// flat "values.<key>" form.
+func TestParseApplicationSets_NestedElementValues(t *testing.T) {
+	g := NewWithT(t)
+
+	result, err := ParseApplicationSets([]byte(mergedListAppSet(`                - nameNormalized: stone-prod-p01
+                  values:
+                    clusterDir: stone-prod-p01`,
+		"{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}")))
+	g.Expect(err).NotTo(HaveOccurred())
+	paths := make([]string, 0, len(result.Paths))
+	for _, p := range result.Paths {
+		paths = append(paths, p.Path)
+	}
+	g.Expect(paths).To(ConsistOf(
+		"components/merged/production/empty-base",
+		"components/merged/production/stone-prod-p01",
+	))
+	g.Expect(result.Clusters).To(HaveKeyWithValue("stone-prod-p01",
+		[]string{"components/merged/production/stone-prod-p01"}))
+}
+
+// A merged element that does not change the deployed path (it restates the
+// defaults or overrides unrelated values) is not attributed to its cluster:
+// ArgoCD discards merge elements that match no selected cluster, so the
+// element may name a cluster of another environment.
+func TestParseApplicationSets_ElementWithoutPathChangeIsNotAttributed(t *testing.T) {
+	g := NewWithT(t)
+
+	result, err := ParseApplicationSets([]byte(mergedListAppSet(`                - nameNormalized: kflux-prd-rh02
+                  values.unrelated: x
+                - nameNormalized: stone-prod-p01
+                  values.clusterDir: stone-prod-p01`,
+		"{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}")))
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.Clusters).NotTo(HaveKey("kflux-prd-rh02"))
+	g.Expect(result.Clusters).To(HaveKeyWithValue("stone-prod-p01",
+		[]string{"components/merged/production/stone-prod-p01"}))
 }

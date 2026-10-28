@@ -431,7 +431,10 @@ func (d *Detector) resolveComponentDeps(envPaths map[Environment][]appset.Compon
 // prefixDeps returns the union of the dependency trees of every kustomization
 // in or below prefix on HEAD, or nil when there is none.
 func (d *Detector) prefixDeps(prefix string) map[string]bool {
-	if !d.head.DirExists(prefix) {
+	// The prefix comes from ApplicationSet YAML. The parser only emits
+	// repository-relative prefixes, but never walk the repository root, an
+	// absolute path or anything escaping the checkout.
+	if prefix == "." || !filepath.IsLocal(prefix) || !d.head.DirExists(prefix) {
 		return nil
 	}
 	var deps map[string]bool
@@ -448,6 +451,9 @@ func (d *Detector) prefixDeps(prefix string) map[string]bool {
 			return
 		}
 		for _, sub := range subDirs {
+			if sub == ".git" {
+				continue
+			}
 			walk(filepath.Join(dir, sub))
 		}
 	}

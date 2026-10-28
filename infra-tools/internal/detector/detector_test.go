@@ -1703,3 +1703,127 @@ func TestMatchClusters_PrefixOnlyDoesNotLabelClustersUnderPrefix(t *testing.T) {
 	matchClusters(appset.ComponentPath{Path: "components/foo/staging"}, allClusters, result)
 	g.Expect(result.AffectedClusters).To(HaveLen(2))
 }
+
+// multiSourceAppSetYAML is a chart-only multi-source ApplicationSet whose only
+// file in this repository is a "$values/" Helm value file.
+const multiSourceAppSetYAML = `apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: chart
+spec:
+  generators:
+    - clusters: {}
+  template:
+    spec:
+      sources:
+        - chart: some-chart
+          repoURL: https://charts.example.com
+          targetRevision: 1.0.0
+          helm:
+            valueFiles:
+              - $values/components/chart/staging/values.yaml
+        - ref: values
+          repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+`
+
+// A change to a "$values/" Helm value file of a multi-source ApplicationSet,
+// with nothing else changed, marks the overlay's environment through Detect
+// and AffectedComponents.
+func TestDetect_MultiSourceValueFileChange(t *testing.T) {
+	g := NewWithT(t)
+
+	head := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"staging-downstream"}},
+		yamls: map[string][]byte{"overlays/staging-downstream": []byte(multiSourceAppSetYAML)},
+		exist: map[string]bool{"overlays/staging-downstream": true},
+	}
+	base := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"staging-downstream"}},
+		yamls: map[string][]byte{"overlays/staging-downstream": []byte(multiSourceAppSetYAML)}, // no overlay diff
+		exist: map[string]bool{"overlays/staging-downstream": true},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	changed := []string{"components/chart/staging/values.yaml"}
+	result, err := d.Detect(changed)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.AffectedEnvironments).To(HaveKey(Staging))
+
+	affected, err := d.AffectedComponents(changed)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(affected[Staging]).To(ContainElement(HaveField("ExtraFiles",
+		ConsistOf("components/chart/staging/values.yaml"))))
+
+	// An unrelated file does not match the value file.
+	result, err = d.Detect([]string{"components/chart/staging/other.yaml"})
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.AffectedEnvironments).NotTo(HaveKey(Staging))
+}
+
+// Entries sharing a Path but carrying different ExtraFiles must not be
+// collapsed by the dedup key: each keeps its own value files and matches
+// independently.
+func TestResolveComponentDeps_SamePathDifferentExtraFilesKept(t *testing.T) {
+	g := NewWithT(t)
+
+	head := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"staging-downstream"}},
+		exist: map[string]bool{"components/chart/staging": true},
+		deps: map[string]map[string]bool{
+			"components/chart/staging": {"components/chart/staging/kustomization.yaml": true},
+		},
+	}
+	base := &fakeRepo{dirs: map[string][]string{"overlays": {"staging-downstream"}}}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	valuesA := "components/chart/values-a.yaml"
+	valuesB := "components/chart/values-b.yaml"
+	resolved := d.resolveComponentDeps(map[Environment][]appset.ComponentPath{
+		Staging: {
+			{Path: "components/chart/staging", ExtraFiles: []string{valuesA}},
+			{Path: "components/chart/staging", ExtraFiles: []string{valuesB}},
+		},
+	})
+	g.Expect(resolved).To(HaveLen(2))
+
+	for _, changed := range []string{valuesA, valuesB} {
+		changedSet := map[string]bool{changed: true}
+		matching := 0
+		for _, cd := range resolved {
+			if cd.matches(changedSet) {
+				matching++
+				g.Expect(cd.cp.ExtraFiles).To(ConsistOf(changed))
+			}
+		}
+		g.Expect(matching).To(Equal(1), "exactly one entry should match %s", changed)
+	}
+}
+
+// prefixDeps never walks the repository root, an absolute path or a path
+// escaping the checkout, even if such a prefix reaches the detector.
+func TestPrefixDeps_RejectsPathsOutsideRepo(t *testing.T) {
+	g := NewWithT(t)
+
+	head := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"development"}, ".": {"components"}, "..": {"x"}},
+		exist: map[string]bool{".": true, "..": true, "/etc": true, "../../..": true},
+		deps: map[string]map[string]bool{
+			".":        {"kustomization.yaml": true},
+			"..":       {"../kustomization.yaml": true},
+			"/etc":     {"/etc/kustomization.yaml": true},
+			"../../..": {"../../../kustomization.yaml": true},
+		},
+	}
+	base := &fakeRepo{dirs: map[string][]string{"overlays": {"development"}}}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	for _, prefix := range []string{".", "..", "/etc", "../../.."} {
+		g.Expect(d.prefixDeps(prefix)).To(BeNil(), "prefix %q", prefix)
+	}
+}

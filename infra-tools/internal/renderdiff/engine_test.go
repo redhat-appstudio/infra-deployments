@@ -342,3 +342,32 @@ func TestEngine_EmptyPathSkipped(t *testing.T) {
 	g.Expect(result.Diffs).To(HaveLen(1))
 	g.Expect(result.Diffs[0].Path).To(Equal("components/a/dev"))
 }
+
+// A PrefixOnly entry's Path is a static prefix, not the deployed kustomization:
+// even when the prefix directory holds a kustomization, it must not be
+// rendered as if it were the component.
+func TestEngine_PrefixOnlySkipped(t *testing.T) {
+	g := NewWithT(t)
+
+	head := &fakeBuilder{
+		exist: map[string]bool{"components/a": true, "components/a/dev": true},
+		yamls: map[string][]byte{"components/a": []byte("parent-new\n"), "components/a/dev": []byte("new-a\n")},
+	}
+	base := &fakeBuilder{
+		exist: map[string]bool{"components/a": true, "components/a/dev": true},
+		yamls: map[string][]byte{"components/a": []byte("parent-old\n"), "components/a/dev": []byte("old-a\n")},
+	}
+
+	engine := NewEngine(head, base, 2)
+	affected := map[detector.Environment][]appset.ComponentPath{
+		detector.Development: {
+			{Path: "components/a", PrefixOnly: true},
+			{Path: "components/a/dev"},
+		},
+	}
+
+	result, err := engine.Run(context.Background(), affected)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.Diffs).To(HaveLen(1))
+	g.Expect(result.Diffs[0].Path).To(Equal("components/a/dev"))
+}

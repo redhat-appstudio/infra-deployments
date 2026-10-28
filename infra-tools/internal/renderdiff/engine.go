@@ -104,6 +104,15 @@ func (e *Engine) RunProgressive(ctx context.Context, affected map[detector.Envir
 					"env", env, "extraFiles", cp.ExtraFiles)
 				continue
 			}
+			// A prefix-only Path is the static prefix of an unresolved
+			// template, not the deployed kustomization: building it would
+			// either fail as a non-kustomization (and be dropped silently)
+			// or render an unrelated parent overlay.
+			if cp.PrefixOnly {
+				slog.Warn("skipping component whose ApplicationSet path is only known by its static prefix, the deployed directories are not rendered",
+					"env", env, "prefix", cp.Path)
+				continue
+			}
 			g.Go(func() error {
 				if err := ctx.Err(); err != nil {
 					return err
