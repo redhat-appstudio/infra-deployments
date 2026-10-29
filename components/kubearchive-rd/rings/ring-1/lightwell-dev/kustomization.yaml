@@ -1,0 +1,36 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../base
+
+namespace: product-kubearchive
+
+configMapGenerator:
+  - name: kubearchive-api-url
+    options:
+      disableNameSuffixHash: true
+    literals:
+      - URL=https://kubearchive-api-server-product-kubearchive.lightwell-dev-3d9eec70183348a345ccd3ce3bdd95b9-0000.us-east.containers.appdomain.cloud
+  - name: otel-collector-conf
+    behavior: replace
+    namespace: product-kubearchive
+    files:
+      - otel-collector-config.yaml
+
+patches:
+  - path: patches/database-secret-path-patch.yaml
+    target:
+      name: database-secret
+      group: external-secrets.io
+      version: v1
+      kind: ExternalSecret
+  - path: patches/database-secret-config-patch.yaml
+    target:
+      name: database-secret
+      group: external-secrets.io
+      version: v1
+      kind: ExternalSecret
+  - path: patches/sink-database-ca-patch.yaml
+  - path: patches/api-server-database-ca-patch.yaml
+  - path: patches/schema-migration-database-ca-patch.yaml

@@ -1,0 +1,18 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kubearchive-operator
+  namespace: kubearchive
+spec:
+  template:
+    spec:
+      containers:
+        - name: manager
+          resources:
+            limits:
+              cpu: 1
+              memory: 15Gi
+            requests:
+              cpu: 200m
+              memory: 15Gi
