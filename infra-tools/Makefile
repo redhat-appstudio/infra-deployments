@@ -48,13 +48,17 @@ test: fmt vet ## Run unit tests.
 audit: ## Audit the real repo's ApplicationSets against the parser (requires a repo checkout).
 	go test -tags realrepo ./internal/appset/ -run TestRealRepoApplicationSets -v
 
+# golangci-lint v2.8.0 cannot read export data produced by newer Go
+# toolchains. Use the module's Go version so local lint runs match CI.
+LINT_ENV ?= GOTOOLCHAIN=go$(shell awk '/^go /{print $$2; exit}' go.mod)
+
 .PHONY: lint
 lint: golangci-lint ## Run golangci-lint linter.
-	$(GOLANGCI_LINT) run $(LINT_ARGS) ./...
+	$(LINT_ENV) $(GOLANGCI_LINT) run $(LINT_ARGS) ./...
 
 .PHONY: lint-fix
 lint-fix: golangci-lint ## Run golangci-lint linter and perform fixes.
-	$(GOLANGCI_LINT) run --fix ./...
+	$(LINT_ENV) $(GOLANGCI_LINT) run --fix ./...
 
 ##@ Build
 
