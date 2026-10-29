@@ -228,3 +228,29 @@ func TestSyncLabels_AddsNewLabels(t *testing.T) {
 	g.Expect(fake.removed).To(BeEmpty())
 	g.Expect(fake.added).To(ConsistOf(StagingLabel))
 }
+
+func TestLabelColor_UnreferencedChanges(t *testing.T) {
+	g := NewWithT(t)
+
+	g.Expect(labelColor(UnreferencedChangesLabel)).To(Equal("f9a825"))
+}
+
+// The unreferenced-changes label is managed by this tool, so a stale copy is
+// removed once the files become referenced again.
+func TestSyncLabels_RemovesStaleUnreferencedChanges(t *testing.T) {
+	g := NewWithT(t)
+
+	fake := &fakeIssuesService{
+		labels: []*gh.Label{
+			{Name: gh.Ptr(UnreferencedChangesLabel)},
+		},
+	}
+
+	client := &Client{issues: fake, owner: "o", repo: "r"}
+
+	err := client.SyncLabels(context.Background(), 1, []string{StagingLabel})
+	g.Expect(err).NotTo(HaveOccurred())
+
+	g.Expect(fake.removed).To(ConsistOf(UnreferencedChangesLabel))
+	g.Expect(fake.added).To(ConsistOf(StagingLabel))
+}

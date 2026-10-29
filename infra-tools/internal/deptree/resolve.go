@@ -156,6 +156,9 @@ func resolve(repoRoot, absDir string, deps, visited map[string]bool) error {
 			continue
 		}
 		if info.IsDir() {
+			if lst, lerr := os.Lstat(absPath); lerr == nil && lst.Mode()&os.ModeSymlink != 0 {
+				addDependency(repoRoot, absPath, deps)
+			}
 			if !withinRoot(repoRoot, absPath) {
 				slog.Warn("skipping kustomization resource outside repository", "path", absPath)
 				continue
@@ -202,6 +205,9 @@ func resolve(repoRoot, absDir string, deps, visited map[string]bool) error {
 			continue
 		}
 		absComp := filepath.Join(absDir, comp)
+		if lst, lerr := os.Lstat(absComp); lerr == nil && lst.Mode()&os.ModeSymlink != 0 {
+			addDependency(repoRoot, absComp, deps)
+		}
 		if !withinRoot(repoRoot, absComp) {
 			slog.Warn("skipping kustomization component outside repository", "path", absComp)
 			continue
