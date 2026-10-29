@@ -32,6 +32,10 @@ func (f *fakeRepo) DirExists(rel string) bool {
 	return f.exist[rel]
 }
 
+func (f *fakeRepo) ContainedDirExists(rel string) bool {
+	return f.exist[rel]
+}
+
 func (f *fakeRepo) BuildKustomization(rel string) ([]byte, error) {
 	if y, ok := f.yamls[rel]; ok {
 		return y, nil
@@ -64,7 +68,7 @@ spec:
     spec:
       source:
         path: components/foo
-        repoURL: https://example.com/repo.git
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
       destination:
         server: '{{server}}'
 `
@@ -98,7 +102,7 @@ spec:
     spec:
       source:
         path: '{{values.sourceRoot}}/rings/{{values.ring}}/{{values.clusterDir}}'
-        repoURL: https://github.com/example/repo.git
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
       destination:
         server: '{{server}}'
 `, root, defaultRing, defaultClusterDir, listCluster, listRing, listCluster)
@@ -132,7 +136,7 @@ spec:
     spec:
       source:
         path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
-        repoURL: https://github.com/example/repo.git
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
       destination:
         server: '{{server}}'
 `, root, env, cluster, cluster)
@@ -966,7 +970,7 @@ spec:
     spec:
       source:
         path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
-        repoURL: https://github.com/example/repo.git
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
       destination:
         server: '{{server}}'
 `
@@ -1009,7 +1013,7 @@ spec:
     spec:
       source:
         path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
-        repoURL: https://github.com/example/repo.git
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
       destination:
         server: '{{server}}'
 `
@@ -1082,7 +1086,7 @@ spec:
     spec:
       source:
         path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
-        repoURL: https://github.com/example/repo.git
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
       destination:
         server: '{{server}}'
 `
@@ -1119,7 +1123,7 @@ spec:
     spec:
       source:
         path: components/global
-        repoURL: https://github.com/example/repo.git
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
       destination:
         server: '{{server}}'
 `
@@ -1415,16 +1419,11 @@ func TestResultLabels(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// ApplicationSet shapes that exist in the repo but are not handled by the parser
-// yet.
+// ApplicationSet shapes that were previously dropped silently.
 //
-// The test below is skipped until the parser learns the shape; the follow-up
-// change that implements it removes the skip. See the parser-level equivalents
-// in internal/appset/parse_test.go and the end-to-end guard in
-// internal/appset/audit_test.go.
+// See the parser-level tests in internal/appset/parse_test.go and the
+// end-to-end guard in internal/appset/audit_test.go.
 // ---------------------------------------------------------------------------
-
-const pendingSkipMsg = "TODO(render-diff-audit step 2): parser does not support this shape yet"
 
 // topLevelListAppSet is the shape used by konflux-verifications-rd in the
 // rd-production overlay: a single list generator with per-element values.
@@ -1452,7 +1451,6 @@ spec:
 // A production component reached through a top-level list generator must be
 // detected as a production change (which also drives the hold labels).
 func TestDetect_TopLevelListGenerator(t *testing.T) {
-	t.Skip(pendingSkipMsg)
 	g := NewWithT(t)
 
 	const componentPath = "components/konflux-verifications-rd/rings/ring-2/stone-prod-p01"
@@ -1481,4 +1479,410 @@ func TestDetect_TopLevelListGenerator(t *testing.T) {
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(result.AffectedEnvironments).To(HaveKey(Production))
 	g.Expect(result.AffectedClusters).To(HaveKey("stone-prod-p01"))
+}
+
+// A prefix-only component path (unresolved template) is matched by prefix: the
+// directory it was derived from may not even exist.
+func TestResolveComponentDeps_PrefixOnlyMatchesByPrefix(t *testing.T) {
+	g := NewWithT(t)
+
+	head := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"staging-downstream"}},
+		exist: map[string]bool{"overlays/staging-downstream": true},
+	}
+	base := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"staging-downstream"}},
+		exist: map[string]bool{"overlays/staging-downstream": true},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	resolved := d.resolveComponentDeps(map[Environment][]appset.ComponentPath{
+		Staging: {{Path: "components/partial/staging", PrefixOnly: true}},
+	})
+	g.Expect(resolved).To(HaveLen(1))
+
+	result := &Result{
+		AffectedEnvironments: make(map[Environment]bool),
+		AffectedClusters:     make(map[string]bool),
+		ChangedFiles:         []string{"components/partial/staging/base/deploy.yaml"},
+	}
+	matchChangedFiles(
+		[]string{"components/partial/staging/base/deploy.yaml"},
+		resolved, nil, result,
+	)
+
+	g.Expect(result.AffectedEnvironments).To(HaveKey(Staging))
+}
+
+// A prefix-only component path also follows the dependency trees of the
+// kustomizations under the prefix: a cluster overlay referencing a shared base
+// outside the prefix (the backup ApplicationSet's ../../base/member) must make
+// a base-only change affect the environment.
+func TestResolveComponentDeps_PrefixOnlyFollowsDepsUnderPrefix(t *testing.T) {
+	g := NewWithT(t)
+
+	prefix := "components/backup/production"
+	clusterDir := prefix + "/stone-prod-p01"
+	nestedDir := clusterDir + "/extra"
+	head := &fakeRepo{
+		dirs: map[string][]string{
+			"overlays": {"production-downstream"},
+			prefix:     {"stone-prod-p01"},
+			clusterDir: {"extra"},
+			nestedDir:  {},
+		},
+		exist: map[string]bool{prefix: true},
+		deps: map[string]map[string]bool{
+			clusterDir: {
+				clusterDir + "/kustomization.yaml":                 true,
+				"components/backup/base/member/kustomization.yaml": true,
+				"components/backup/base/member/schedule.yaml":      true,
+			},
+			nestedDir: {
+				nestedDir + "/kustomization.yaml":         true,
+				"components/backup/base/extra/patch.yaml": true,
+			},
+		},
+	}
+	base := &fakeRepo{dirs: map[string][]string{"overlays": {"production-downstream"}}}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	resolved := d.resolveComponentDeps(map[Environment][]appset.ComponentPath{
+		Production: {{Path: prefix, PrefixOnly: true}},
+	})
+	g.Expect(resolved).To(HaveLen(1))
+
+	for _, changed := range []string{
+		"components/backup/base/member/schedule.yaml", // first-level kustomization
+		"components/backup/base/extra/patch.yaml",     // nested kustomization
+		prefix + "/stone-prod-p01/new-file.yaml",      // under the prefix
+	} {
+		result := &Result{
+			AffectedEnvironments: make(map[Environment]bool),
+			AffectedClusters:     make(map[string]bool),
+		}
+		matchChangedFiles([]string{changed}, resolved, nil, result)
+		g.Expect(result.AffectedEnvironments).To(HaveKey(Production), changed)
+	}
+
+	// Files outside the prefix and its dependency trees still do not match.
+	result := &Result{
+		AffectedEnvironments: make(map[Environment]bool),
+		AffectedClusters:     make(map[string]bool),
+	}
+	matchChangedFiles([]string{"components/backup/base/unused/x.yaml"}, resolved, nil, result)
+	g.Expect(result.AffectedEnvironments).To(BeEmpty())
+}
+
+// A MatchAll entry (unresolvable template without a static prefix) fails
+// closed: any change affects its environment, without attributing clusters,
+// and detection itself does not fail.
+func TestDetect_MatchAllMarksEnvironmentOnAnyChange(t *testing.T) {
+	g := NewWithT(t)
+
+	appSet := []byte(`apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: unresolvable
+spec:
+  generators:
+    - git:
+        repoURL: https://example.com/repo.git
+  template:
+    metadata:
+      name: unresolvable
+    spec:
+      source:
+        path: '{{values.sourceRoot}}/production'
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+`)
+	overlay := "overlays/production-downstream"
+	head := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"production-downstream"}},
+		exist: map[string]bool{overlay: true},
+		yamls: map[string][]byte{overlay: appSet},
+	}
+	base := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"production-downstream"}},
+		exist: map[string]bool{overlay: true},
+		yamls: map[string][]byte{overlay: appSet},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	result, err := d.Detect([]string{"components/unrelated/staging/kustomization.yaml"})
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.AffectedEnvironments).To(HaveKey(Production))
+	g.Expect(result.AffectedClusters).To(BeEmpty())
+}
+
+// A source whose directory is not in this repository (e.g. an external-repo
+// path) may still consume "$values/" files from it. Those files must keep
+// matching exactly even though the directory is missing.
+func TestResolveComponentDeps_MissingDirKeepsExtraFiles(t *testing.T) {
+	g := NewWithT(t)
+
+	head := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"staging-downstream"}},
+		exist: map[string]bool{}, // the source path does NOT exist here
+	}
+	base := &fakeRepo{dirs: map[string][]string{"overlays": {"staging-downstream"}}}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	valuesFile := "components/chart/staging/values.yaml"
+	resolved := d.resolveComponentDeps(map[Environment][]appset.ComponentPath{
+		Staging: {{Path: "charts/external", ExtraFiles: []string{valuesFile}}},
+	})
+	g.Expect(resolved).To(HaveLen(1))
+	g.Expect(resolved[0].cp.Path).To(BeEmpty())
+	g.Expect(resolved[0].cp.ExtraFiles).To(ConsistOf(valuesFile))
+
+	result := &Result{
+		AffectedEnvironments: make(map[Environment]bool),
+		AffectedClusters:     make(map[string]bool),
+	}
+	matchChangedFiles([]string{valuesFile}, resolved, nil, result)
+	g.Expect(result.AffectedEnvironments).To(HaveKey(Staging))
+}
+
+// A resolved entry and a prefix-only entry sharing the same Path must both be
+// kept, otherwise the resolved one could narrow prefix matching to its
+// dependency tree.
+func TestResolveComponentDeps_PrefixOnlyNotShadowedByResolved(t *testing.T) {
+	g := NewWithT(t)
+
+	head := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"staging-downstream"}},
+		exist: map[string]bool{"components/foo/staging": true},
+		deps: map[string]map[string]bool{
+			"components/foo/staging": {"components/foo/staging/kustomization.yaml": true},
+		},
+	}
+	base := &fakeRepo{dirs: map[string][]string{"overlays": {"staging-downstream"}}}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	resolved := d.resolveComponentDeps(map[Environment][]appset.ComponentPath{
+		Staging: {
+			{Path: "components/foo/staging"},
+			{Path: "components/foo/staging", PrefixOnly: true},
+		},
+	})
+	g.Expect(resolved).To(HaveLen(2))
+
+	// A file outside the dependency tree but under the prefix still matches.
+	result := &Result{
+		AffectedEnvironments: make(map[Environment]bool),
+		AffectedClusters:     make(map[string]bool),
+	}
+	matchChangedFiles([]string{"components/foo/staging/stone-stage-p01/patch.yaml"}, resolved, nil, result)
+	g.Expect(result.AffectedEnvironments).To(HaveKey(Staging))
+}
+
+// A prefix-only entry is shared by several clusters: it must not label every
+// cluster whose paths live under the prefix.
+func TestMatchClusters_PrefixOnlyDoesNotLabelClustersUnderPrefix(t *testing.T) {
+	g := NewWithT(t)
+	result := &Result{
+		AffectedEnvironments: make(map[Environment]bool),
+		AffectedClusters:     make(map[string]bool),
+	}
+	allClusters := map[string][]string{
+		"stone-stage-p01": {"components/foo/staging/stone-stage-p01"},
+		"kflux-stg-p02":   {"components/foo/staging/kflux-stg-p02"},
+	}
+
+	matchClusters(appset.ComponentPath{Path: "components/foo/staging", PrefixOnly: true}, allClusters, result)
+	g.Expect(result.AffectedClusters).To(BeEmpty())
+
+	// A resolved entry with the same path keeps the cluster fallback.
+	matchClusters(appset.ComponentPath{Path: "components/foo/staging"}, allClusters, result)
+	g.Expect(result.AffectedClusters).To(HaveLen(2))
+}
+
+// multiSourceAppSetYAML is a chart-only multi-source ApplicationSet whose only
+// file in this repository is a "$values/" Helm value file.
+const multiSourceAppSetYAML = `apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: chart
+spec:
+  generators:
+    - clusters: {}
+  template:
+    spec:
+      sources:
+        - chart: some-chart
+          repoURL: https://charts.example.com
+          targetRevision: 1.0.0
+          helm:
+            valueFiles:
+              - $values/components/chart/staging/values.yaml
+        - ref: values
+          repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+`
+
+// A change to a "$values/" Helm value file of a multi-source ApplicationSet,
+// with nothing else changed, marks the overlay's environment through Detect;
+// AffectedComponents has no deployed directory to return for render-diff.
+func TestDetect_MultiSourceValueFileChange(t *testing.T) {
+	g := NewWithT(t)
+
+	head := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"staging-downstream"}},
+		yamls: map[string][]byte{"overlays/staging-downstream": []byte(multiSourceAppSetYAML)},
+		exist: map[string]bool{"overlays/staging-downstream": true},
+	}
+	base := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"staging-downstream"}},
+		yamls: map[string][]byte{"overlays/staging-downstream": []byte(multiSourceAppSetYAML)}, // no overlay diff
+		exist: map[string]bool{"overlays/staging-downstream": true},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	changed := []string{"components/chart/staging/values.yaml"}
+	result, err := d.Detect(changed)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.AffectedEnvironments).To(HaveKey(Staging))
+
+	affected, err := d.AffectedComponents(changed)
+	g.Expect(err).NotTo(HaveOccurred())
+	// A value-file-only match has no directory for render-diff to build, so it
+	// is used for environment labels by Detect but not returned here.
+	g.Expect(affected[Staging]).To(BeEmpty())
+
+	// An unrelated file does not match the value file.
+	result, err = d.Detect([]string{"components/chart/staging/other.yaml"})
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.AffectedEnvironments).NotTo(HaveKey(Staging))
+}
+
+// Entries sharing a Path but carrying different ExtraFiles must not be
+// collapsed by the dedup key: each keeps its own value files and matches
+// independently.
+func TestResolveComponentDeps_SamePathDifferentExtraFilesKept(t *testing.T) {
+	g := NewWithT(t)
+
+	head := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"staging-downstream"}},
+		exist: map[string]bool{"components/chart/staging": true},
+		deps: map[string]map[string]bool{
+			"components/chart/staging": {"components/chart/staging/kustomization.yaml": true},
+		},
+	}
+	base := &fakeRepo{dirs: map[string][]string{"overlays": {"staging-downstream"}}}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	valuesA := "components/chart/values-a.yaml"
+	valuesB := "components/chart/values-b.yaml"
+	resolved := d.resolveComponentDeps(map[Environment][]appset.ComponentPath{
+		Staging: {
+			{Path: "components/chart/staging", ExtraFiles: []string{valuesA}},
+			{Path: "components/chart/staging", ExtraFiles: []string{valuesB}},
+		},
+	})
+	g.Expect(resolved).To(HaveLen(2))
+
+	for _, changed := range []string{valuesA, valuesB} {
+		changedSet := map[string]bool{changed: true}
+		matching := 0
+		for _, cd := range resolved {
+			if cd.matches(changedSet) {
+				matching++
+				g.Expect(cd.cp.ExtraFiles).To(ConsistOf(changed))
+			}
+		}
+		g.Expect(matching).To(Equal(1), "exactly one entry should match %s", changed)
+	}
+}
+
+// Entries that share a Path but target different clusters must both survive
+// the detector dedup key so matchClusters can label each one.
+func TestResolveComponentDeps_KeepsSamePathDifferentClusterDir(t *testing.T) {
+	g := NewWithT(t)
+
+	head := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"staging-downstream"}},
+		exist: map[string]bool{"components/chart/staging": true},
+		deps: map[string]map[string]bool{
+			"components/chart/staging": {"components/chart/staging/kustomization.yaml": true},
+		},
+	}
+	base := &fakeRepo{dirs: map[string][]string{"overlays": {"staging-downstream"}}}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	resolved := d.resolveComponentDeps(map[Environment][]appset.ComponentPath{
+		Staging: {
+			{Path: "components/chart/staging", ClusterDir: "stone-stage-p01"},
+			{Path: "components/chart/staging", ClusterDir: "kflux-stg-p02"},
+		},
+	})
+	g.Expect(resolved).To(HaveLen(2))
+	clusters := []string{resolved[0].cp.ClusterDir, resolved[1].cp.ClusterDir}
+	g.Expect(clusters).To(ConsistOf("stone-stage-p01", "kflux-stg-p02"))
+}
+
+// AffectedComponents feeds render-diff, which can only build a deployed
+// directory. MatchAll, PrefixOnly and value-file-only matches are filtered, and
+// duplicate paths are collapsed.
+func TestMatchAffectedComponents_FiltersNonRenderableAndDedupes(t *testing.T) {
+	g := NewWithT(t)
+
+	resolved := []componentDeps{
+		{env: Staging, cp: appset.ComponentPath{Path: "components/foo/staging", ClusterDir: "cluster-a"}},
+		{env: Staging, cp: appset.ComponentPath{
+			Path: "components/foo/staging", ClusterDir: "cluster-a",
+			ExtraFiles: []string{"components/foo/values.yaml"},
+		}},
+		{env: Staging, cp: appset.ComponentPath{Path: "components/foo/staging", PrefixOnly: true}},
+		{env: Staging, cp: appset.ComponentPath{MatchAll: true}},
+		{env: Staging, cp: appset.ComponentPath{ExtraFiles: []string{"components/foo/values.yaml"}}},
+	}
+
+	affected := matchAffectedComponents(
+		[]string{"components/foo/staging/kustomization.yaml", "components/foo/values.yaml"},
+		resolved, nil,
+	)
+
+	g.Expect(affected[Staging]).To(HaveLen(1))
+	g.Expect(affected[Staging][0].Path).To(Equal("components/foo/staging"))
+}
+
+// prefixDeps never walks the repository root, an absolute path or a path
+// escaping the checkout, even if such a prefix reaches the detector.
+func TestPrefixDeps_RejectsPathsOutsideRepo(t *testing.T) {
+	g := NewWithT(t)
+
+	head := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"development"}, ".": {"components"}, "..": {"x"}},
+		exist: map[string]bool{".": true, "..": true, "/etc": true, "../../..": true},
+		deps: map[string]map[string]bool{
+			".":        {"kustomization.yaml": true},
+			"..":       {"../kustomization.yaml": true},
+			"/etc":     {"/etc/kustomization.yaml": true},
+			"../../..": {"../../../kustomization.yaml": true},
+		},
+	}
+	base := &fakeRepo{dirs: map[string][]string{"overlays": {"development"}}}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	for _, prefix := range []string{".", "..", "/etc", "../../.."} {
+		g.Expect(d.prefixDeps(prefix)).To(BeNil(), "prefix %q", prefix)
+	}
 }

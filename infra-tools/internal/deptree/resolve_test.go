@@ -451,6 +451,136 @@ resources:
 	g.Expect(deps).To(HaveKey("b/kustomization.yaml"))
 }
 
+func TestResolve_SkipsResourceOutsideRepo(t *testing.T) {
+	g := NewWithT(t)
+	tmpDir := t.TempDir()
+	outside := t.TempDir()
+
+	writeFile(t, filepath.Join(outside, "kustomization.yaml"), `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - cm.yaml
+`)
+	writeFile(t, filepath.Join(outside, "cm.yaml"), "kind: ConfigMap")
+
+	dir := filepath.Join(tmpDir, "component")
+	g.Expect(os.MkdirAll(dir, 0o755)).To(Succeed())
+	writeFile(t, filepath.Join(dir, "cm.yaml"), "kind: ConfigMap")
+	rel, err := filepath.Rel(dir, outside)
+	g.Expect(err).NotTo(HaveOccurred())
+	writeFile(t, filepath.Join(dir, "kustomization.yaml"),
+		"resources:\n  - "+filepath.ToSlash(rel)+"\n  - cm.yaml\n")
+
+	deps, err := Resolve(tmpDir, "component")
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(deps).To(HaveKey("component/kustomization.yaml"))
+	g.Expect(deps).To(HaveKey("component/cm.yaml"))
+	for dep := range deps {
+		g.Expect(dep).NotTo(HavePrefix(".."))
+	}
+}
+
+func TestResolve_DoesNotFollowKustomizationSymlink(t *testing.T) {
+	g := NewWithT(t)
+	tmpDir := t.TempDir()
+	outside := t.TempDir()
+
+	writeFile(t, filepath.Join(outside, "kustomization.yaml"), `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - cm.yaml
+`)
+	writeFile(t, filepath.Join(outside, "cm.yaml"), "kind: ConfigMap")
+
+	dir := filepath.Join(tmpDir, "component")
+	g.Expect(os.MkdirAll(dir, 0o755)).To(Succeed())
+	g.Expect(os.Symlink(filepath.Join(outside, "kustomization.yaml"),
+		filepath.Join(dir, "kustomization.yaml"))).To(Succeed())
+
+	_, err := Resolve(tmpDir, "component")
+	g.Expect(err).To(HaveOccurred())
+}
+
+func TestResolve_RecordsInRepoSymlinkTarget(t *testing.T) {
+	g := NewWithT(t)
+	tmpDir := t.TempDir()
+
+	chartDir := filepath.Join(tmpDir, "component", "charts", "my-chart")
+	g.Expect(os.MkdirAll(chartDir, 0o755)).To(Succeed())
+	writeFile(t, filepath.Join(chartDir, "Chart.yaml"), "apiVersion: v2\nname: my-chart")
+	g.Expect(os.MkdirAll(filepath.Join(tmpDir, "shared"), 0o755)).To(Succeed())
+	writeFile(t, filepath.Join(tmpDir, "shared", "values.yaml"), "key: value")
+	g.Expect(os.Symlink(filepath.Join(tmpDir, "shared", "values.yaml"),
+		filepath.Join(chartDir, "values.yaml"))).To(Succeed())
+
+	writeFile(t, filepath.Join(tmpDir, "component", "kustomization.yaml"), `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+helmCharts:
+  - name: my-chart
+    releaseName: my-release
+`)
+
+	deps, err := Resolve(tmpDir, "component")
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(deps).To(HaveKey("component/charts/my-chart/values.yaml"))
+	g.Expect(deps).To(HaveKey("shared/values.yaml"))
+}
+
+func TestResolve_KeepsSymlinkGeneratorDep(t *testing.T) {
+	g := NewWithT(t)
+	tmpDir := t.TempDir()
+	outside := t.TempDir()
+
+	writeFile(t, filepath.Join(outside, "generator.yaml"), `
+apiVersion: builtin
+kind: HelmChartInflationGenerator
+metadata:
+  name: external
+name: external
+valuesFile: values.yaml
+`)
+	dir := filepath.Join(tmpDir, "component")
+	g.Expect(os.MkdirAll(dir, 0o755)).To(Succeed())
+	writeFile(t, filepath.Join(dir, "kustomization.yaml"), `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+generators:
+  - generator.yaml
+`)
+	g.Expect(os.Symlink(filepath.Join(outside, "generator.yaml"),
+		filepath.Join(dir, "generator.yaml"))).To(Succeed())
+
+	deps, err := Resolve(tmpDir, "component")
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(deps).To(HaveKey("component/generator.yaml"))
+	for dep := range deps {
+		g.Expect(dep).NotTo(HavePrefix(".."))
+	}
+}
+
+func TestResolve_RejectsSymlinkEscape(t *testing.T) {
+	g := NewWithT(t)
+	tmpDir := t.TempDir()
+	outside := t.TempDir()
+
+	writeFile(t, filepath.Join(outside, "kustomization.yaml"), `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - cm.yaml
+`)
+	writeFile(t, filepath.Join(outside, "cm.yaml"), "kind: ConfigMap")
+
+	g.Expect(os.MkdirAll(filepath.Join(tmpDir, "components"), 0o755)).To(Succeed())
+	g.Expect(os.Symlink(outside, filepath.Join(tmpDir, "components", "escape"))).To(Succeed())
+
+	_, err := Resolve(tmpDir, "components/escape")
+	g.Expect(err).To(HaveOccurred())
+}
+
 func writeFile(t *testing.T, path, content string) {
 	t.Helper()
 	NewWithT(t).Expect(os.WriteFile(path, []byte(content), 0o644)).To(Succeed())
