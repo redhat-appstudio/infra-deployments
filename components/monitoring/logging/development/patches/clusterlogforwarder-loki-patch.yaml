@@ -1,0 +1,38 @@
+- op: replace
+  path: /spec/outputs
+  value:
+    - name: loki-output
+      type: lokiStack
+      lokiStack:
+        target:
+          name: logging-loki
+          namespace: openshift-logging
+        authentication:
+          token:
+            from: serviceAccount
+      tls:
+        ca:
+          configMapName: logging-loki-gateway-ca-bundle
+          key: service-ca.crt
+
+- op: replace
+  path: /spec/pipelines
+  value:
+    - name: application-logs
+      inputRefs:
+        - application
+      outputRefs:
+        - loki-output
+    - name: infrastructure-logs
+      inputRefs:
+        - infrastructure
+      outputRefs:
+        - loki-output
+    - name: audit-logs
+      inputRefs:
+        - audit
+      outputRefs:
+        - loki-output
+
+- op: remove
+  path: /spec/filters

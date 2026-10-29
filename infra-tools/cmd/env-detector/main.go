@@ -15,6 +15,7 @@ import (
 	"sort"
 	"strings"
 	"syscall"
+	"unicode"
 
 	charmlog "github.com/charmbracelet/log"
 
@@ -141,6 +142,13 @@ func main() {
 		labels = append(labels, "environment/none")
 	}
 
+	// Files under components/ or configs/ that no ApplicationSet references are
+	// not deployed by anything: flag them so reviewers know the change is inert
+	// instead of reading "environment/none" as "safe to merge".
+	if len(result.UnreferencedFiles) > 0 {
+		labels = append(labels, ghclient.UnreferencedChangesLabel)
+	}
+
 	// If production is affected and the PR is not opened by Kargo, add a hold label that Prow
 	// Tide can use to block merging until a human explicitly removes it after review.
 	if result.AffectedEnvironments[detector.Production] && *prAuthor != ghclient.KargoBot {
@@ -149,6 +157,11 @@ func main() {
 	}
 
 	printSummary(result, labels, headSHA, baseSHA)
+	if len(result.UnreferencedFiles) > 0 {
+		msg := formatUnreferencedChanges(result.UnreferencedFiles)
+		fmt.Println(msg)
+		writeStepSummary(msg)
+	}
 
 	if !*dryRun {
 		// Step 5: Sync labels via GitHub API
@@ -268,7 +281,7 @@ func printSummary(result *detector.Result, labels []string, headSHA, baseSHA str
 	fmt.Println("\nChanged files:")
 	sort.Strings(result.ChangedFiles)
 	for _, f := range result.ChangedFiles {
-		fmt.Printf("  %s\n", f)
+		fmt.Printf("  %s\n", sanitizeLine(f))
 	}
 
 	fmt.Println("\nAffected environments:")
@@ -291,6 +304,13 @@ func printSummary(result *detector.Result, labels []string, headSHA, baseSHA str
 		}
 	}
 
+	if len(result.UnreferencedFiles) > 0 {
+		fmt.Println("\nUnreferenced files (not deployed by any ApplicationSet):")
+		for _, f := range result.UnreferencedFiles {
+			fmt.Printf("  %s\n", sanitizeLine(f))
+		}
+	}
+
 	fmt.Println("\nLabels that would be applied:")
 	if len(labels) == 0 {
 		fmt.Println("  (none)")
@@ -299,6 +319,41 @@ func printSummary(result *detector.Result, labels []string, headSHA, baseSHA str
 			fmt.Printf("  - %s\n", label)
 		}
 	}
+}
+
+// sanitizeLine removes characters that could break out of a log line or a
+// GitHub Actions workflow command. Changed paths are PR-controlled input.
+func sanitizeLine(s string) string {
+	// Both workflow-command syntaxes are matched anywhere in a line.
+	s = strings.ReplaceAll(s, "##[", "# #[")
+	s = strings.ReplaceAll(s, "::", ": :")
+	return strings.Map(func(r rune) rune {
+		if unicode.IsControl(r) || unicode.Is(unicode.Cf, r) ||
+			r == '\u2028' || r == '\u2029' {
+			return ' '
+		}
+		return r
+	}, s)
+}
+
+// markdownCode renders a changed path as a single-line code span. Backticks are
+// replaced so a crafted filename cannot escape the span.
+func markdownCode(s string) string {
+	return "`" + strings.ReplaceAll(sanitizeLine(s), "`", "'") + "`"
+}
+
+// formatUnreferencedChanges returns a markdown warning listing changed files
+// that no ApplicationSet references, so they will not be deployed.
+func formatUnreferencedChanges(files []string) string {
+	var b strings.Builder
+	b.WriteString("\n## Unreferenced changes\n\n")
+	b.WriteString("These files changed in this PR, but no ApplicationSet in any overlay references them, so the change will not be deployed:\n\n")
+	for _, f := range files {
+		fmt.Fprintf(&b, "- %s\n", markdownCode(f))
+	}
+	b.WriteString("\nIf you expected these changes to reach a cluster, check that the component is still deployed by an overlay ")
+	b.WriteString("(the ApplicationSet may have moved to a ring layout or been removed).\n")
+	return b.String()
 }
 
 // syncLabels calls the GitHub API to sync labels on the PR.
@@ -322,11 +377,11 @@ func formatRingViolation(r *detector.RingCheckResult) string {
 
 	b.WriteString("\n### Staging files\n")
 	for _, f := range r.StagingFiles {
-		fmt.Fprintf(&b, "- `%s`\n", f)
+		fmt.Fprintf(&b, "- %s\n", markdownCode(f))
 	}
 	b.WriteString("\n### Production files\n")
 	for _, f := range r.ProductionFiles {
-		fmt.Fprintf(&b, "- `%s`\n", f)
+		fmt.Fprintf(&b, "- %s\n", markdownCode(f))
 	}
 	return b.String()
 }

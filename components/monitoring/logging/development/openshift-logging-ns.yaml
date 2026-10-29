@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: openshift-logging
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+    openshift.io/node-selector: ""
+  labels:
+    openshift.io/cluster-monitoring: "true"

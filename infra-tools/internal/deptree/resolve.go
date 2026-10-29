@@ -6,6 +6,7 @@ package deptree
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -35,10 +36,60 @@ func Resolve(repoRoot, dir string) (map[string]bool, error) {
 	if err != nil {
 		return nil, err
 	}
+	if !withinRoot(absRoot, absDir) {
+		return nil, fmt.Errorf("path %q escapes repository root", dir)
+	}
 	if err := resolve(absRoot, absDir, deps, visited); err != nil {
 		return nil, err
 	}
 	return deps, nil
+}
+
+// lexicallyWithin reports whether path is inside root without resolving
+// symlinks. A symlink that points outside is still a dependency of the
+// repository when its own path is local: changing the link changes the build.
+func lexicallyWithin(root, path string) bool {
+	absRoot, err := filepath.Abs(root)
+	if err != nil {
+		return false
+	}
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return false
+	}
+	rel, err := filepath.Rel(absRoot, absPath)
+	return err == nil && filepath.IsLocal(rel)
+}
+
+// withinRoot reports whether path is lexically inside root and, when it and
+// root exist, does not escape root through a symlink. Use it before following
+// or reading a path; use lexicallyWithin to record an in-repo symlink itself.
+func withinRoot(root, path string) bool {
+	if !lexicallyWithin(root, path) {
+		return false
+	}
+	absRoot, err := filepath.Abs(root)
+	if err != nil {
+		return false
+	}
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return false
+	}
+
+	realRoot, err := filepath.EvalSymlinks(absRoot)
+	if err != nil {
+		// The root is not resolvable yet (for example a path that does not
+		// exist); the lexical check above is the best we can do.
+		return true
+	}
+	realPath, err := filepath.EvalSymlinks(absPath)
+	if err != nil {
+		// Missing paths are still allowed: kustomize may generate them.
+		return true
+	}
+	rel, err := filepath.Rel(realRoot, realPath)
+	return err == nil && filepath.IsLocal(rel)
 }
 
 // hasKustomization returns true if the directory contains a kustomization file.
@@ -58,7 +109,7 @@ func resolve(repoRoot, absDir string, deps, visited map[string]bool) error {
 	}
 	visited[absDir] = true
 
-	k, kustomFile, err := loadKustomization(absDir)
+	k, kustomFile, err := loadKustomization(repoRoot, absDir)
 	if err != nil {
 		// No kustomization file in this directory — fall back to scanning
 		// subdirectories. This handles the common pattern where an
@@ -105,15 +156,21 @@ func resolve(repoRoot, absDir string, deps, visited map[string]bool) error {
 			continue
 		}
 		if info.IsDir() {
+			if lst, lerr := os.Lstat(absPath); lerr == nil && lst.Mode()&os.ModeSymlink != 0 {
+				addDependency(repoRoot, absPath, deps)
+			}
+			if !withinRoot(repoRoot, absPath) {
+				slog.Warn("skipping kustomization resource outside repository", "path", absPath)
+				continue
+			}
 			if err := resolve(repoRoot, absPath, deps, visited); err != nil {
 				return err
 			}
 		} else {
-			rel, err := filepath.Rel(repoRoot, absPath)
-			if err != nil {
-				return err
-			}
-			deps[rel] = true
+			// Record the lexical path even when it is a symlink whose target
+			// lives outside the checkout: editing the link changes the build,
+			// but its target must not be followed.
+			addDependency(repoRoot, absPath, deps)
 		}
 	}
 
@@ -148,6 +205,13 @@ func resolve(repoRoot, absDir string, deps, visited map[string]bool) error {
 			continue
 		}
 		absComp := filepath.Join(absDir, comp)
+		if lst, lerr := os.Lstat(absComp); lerr == nil && lst.Mode()&os.ModeSymlink != 0 {
+			addDependency(repoRoot, absComp, deps)
+		}
+		if !withinRoot(repoRoot, absComp) {
+			slog.Warn("skipping kustomization component outside repository", "path", absComp)
+			continue
+		}
 		if err := resolve(repoRoot, absComp, deps, visited); err != nil {
 			return err
 		}
@@ -250,6 +314,12 @@ type helmGeneratorConfig struct {
 // Non-HelmChartInflationGenerator files are silently skipped.
 func addHelmGeneratorDeps(repoRoot, absDir, generatorPath string, deps map[string]bool) error {
 	absPath := filepath.Join(absDir, generatorPath)
+	// The generator path itself is already recorded by addFile. Do not read
+	// through a symlink whose target leaves the checkout.
+	if !withinRoot(repoRoot, absPath) {
+		slog.Warn("not reading generator outside repository", "path", absPath)
+		return nil
+	}
 	data, err := os.ReadFile(absPath)
 	if err != nil {
 		return fmt.Errorf("reading generator %s: %w", generatorPath, err)
@@ -303,6 +373,10 @@ func addGeneratorSources(repoRoot, absDir string, gen *types.GeneratorArgs, deps
 // where any file change (templates, helpers, Chart.yaml, etc.) affects the
 // build output.
 func addDirTree(repoRoot, absDir string, deps map[string]bool) error {
+	if !withinRoot(repoRoot, absDir) {
+		slog.Warn("skipping chart directory outside repository", "path", absDir)
+		return nil
+	}
 	return filepath.Walk(absDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -310,29 +384,53 @@ func addDirTree(repoRoot, absDir string, deps map[string]bool) error {
 		if info.IsDir() {
 			return nil
 		}
-		rel, relErr := filepath.Rel(repoRoot, path)
-		if relErr != nil {
-			return fmt.Errorf("computing relative path for %s: %w", path, relErr)
-		}
-		deps[rel] = true
+		addDependency(repoRoot, path, deps)
 		return nil
 	})
 }
 
-// addFile resolves a relative file path and adds it to the dependency set.
-func addFile(repoRoot, absDir, relFilePath string, deps map[string]bool) {
-	absPath := filepath.Join(absDir, relFilePath)
+// addDependency records a lexically contained path. For an in-repo symlink it
+// also records the target when that target stays inside the checkout; an
+// external target is never followed.
+func addDependency(repoRoot, absPath string, deps map[string]bool) {
+	if !lexicallyWithin(repoRoot, absPath) {
+		return
+	}
 	rel, err := filepath.Rel(repoRoot, absPath)
 	if err != nil {
 		return
 	}
 	deps[rel] = true
+
+	info, err := os.Lstat(absPath)
+	if err != nil || info.Mode()&os.ModeSymlink == 0 {
+		return
+	}
+	target, err := filepath.EvalSymlinks(absPath)
+	if err != nil || !withinRoot(repoRoot, target) {
+		return
+	}
+	if relTarget, err := filepath.Rel(repoRoot, target); err == nil {
+		deps[relTarget] = true
+	}
 }
 
-// loadKustomization finds and parses the kustomization file in dir.
-func loadKustomization(dir string) (*types.Kustomization, string, error) {
+// addFile resolves a relative file path and adds it to the dependency set. The
+// path is recorded even when it is a symlink to an external target: changing
+// the link itself changes the build, but the target is never followed here.
+func addFile(repoRoot, absDir, relFilePath string, deps map[string]bool) {
+	addDependency(repoRoot, filepath.Join(absDir, relFilePath), deps)
+}
+
+// loadKustomization finds and parses the kustomization file in dir. A
+// kustomization file that is a symlink out of the checkout is not read.
+func loadKustomization(repoRoot, dir string) (*types.Kustomization, string, error) {
 	for _, name := range kustomizationFileNames {
 		path := filepath.Join(dir, name)
+		if !withinRoot(repoRoot, path) {
+			slog.Warn("skipping kustomization file outside repository", "path", path)
+			continue
+		}
 		data, err := os.ReadFile(path)
 		if err != nil {
 			if os.IsNotExist(err) {
