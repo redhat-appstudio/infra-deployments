@@ -43,6 +43,12 @@ spec:
                   values.clusterDir: kflux-fedora-01
                 - nameNormalized: kflux-lw-p01
                   values.clusterDir: kflux-lw-p01
+      selector:
+        matchExpressions:
+          - key: nameNormalized
+            operator: NotIn
+            values:
+              - kflux-hub-stg-01
   template:
     metadata:
       name: monitoring-blackbox-{{nameNormalized}}
