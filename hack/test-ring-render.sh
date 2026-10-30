@@ -49,6 +49,7 @@ ORIG_DIR="components/${COMPONENT}"
 
 PASS=0
 FAIL=0
+WARNING=0
 
 # Scratch file for kustomize stderr; removed on exit.
 ERR_TMP="$(mktemp)"
@@ -72,10 +73,12 @@ ring_env() {
 # ring_clusters <ring-name> -> canonical clusters assigned to a ring.
 # Used to detect clusters whose RD overlay was never created (missed migration).
 # Intersected at call site with the clusters the original component actually
-# deploys, so a component that targets only a subset is not false-flagged.
+# deploys, so a component that targets only a subset is not false-flagged. A
+# shared legacy environment overlay does not identify its selected clusters,
+# so only explicit legacy cluster directories are considered for this check.
 ring_clusters() {
   case "$1" in
-    ring-1) echo "stone-stg-rh01 stone-stage-p01 lightwell-dev kflux-stg-es01" ;;
+    ring-1) echo "stone-stg-rh01 stone-stage-p01 lightwell-dev kflux-stg-p02" ;;
     ring-2) echo "kflux-prd-rh03 kflux-prd-es01 stone-prod-p01 kflux-ocp-p01 kflux-osp-p01 kflux-rhel-p01 kflux-fedora-01 kflux-lw-p01" ;;
     ring-3) echo "stone-prod-p02 stone-prd-rh01" ;;
     ring-4) echo "kflux-prd-rh02" ;;
@@ -83,8 +86,8 @@ ring_clusters() {
   esac
 }
 
-# env_top <env> -> deployment-level overlay dir for a non-per-cluster env (dev).
-# Some components place the top-level kustomization at <env>/base, others at <env>.
+# env_top <env> -> shared deployment-level overlay dir.
+# Some components place the shared kustomization at <env>/base, others at <env>.
 # Prints the resolved path, or empty if neither has a kustomization.yaml.
 env_top() {
   local env="$1"
@@ -95,6 +98,62 @@ env_top() {
   else
     echo ""
   fi
+}
+
+# overlay_shape <overlay-dir> -> empty|base-only|cluster-specific
+# Used when the legacy component has no overlay for a cluster. A base-only
+# overlay is valid because it adds no cluster-specific behavior.
+overlay_shape() {
+  local overlay_dir="$1"
+  local kustomization="$overlay_dir/kustomization.yaml"
+  local key has_extra_keys=0
+
+  command -v yq >/dev/null 2>&1 || return 1
+  [ -f "$kustomization" ] || return 1
+
+  # Only apiVersion, kind, and resources are safe in a base-only/empty
+  # cluster overlay. Any other Kustomize field can change its rendered output.
+  while IFS= read -r key; do
+    case "$key" in
+      apiVersion|kind|resources) ;;
+      *) has_extra_keys=1; break ;;
+    esac
+  done < <(yq -r 'keys | .[]' "$kustomization")
+
+  if [ "$has_extra_keys" -eq 1 ]; then
+    echo "cluster-specific"
+  elif yq -e '((.resources // []) | length == 0)' "$kustomization" >/dev/null 2>&1; then
+    echo "empty"
+  elif yq -e '((.resources // []) | length == 1) and ((.resources // [])[0] == "../base")' "$kustomization" >/dev/null 2>&1 || \
+       yq -e '((.resources // []) | length == 1) and ((.resources // [])[0] == "../base/")' "$kustomization" >/dev/null 2>&1; then
+    echo "base-only"
+  else
+    echo "cluster-specific"
+  fi
+}
+
+# check_cluster_without_legacy_overlay <label> <ring-overlay-dir>
+# Classify a ring cluster when its matching legacy cluster overlay is absent.
+check_cluster_without_legacy_overlay() {
+  local label="$1" ring_path="$2" shape
+
+  if ! shape="$(overlay_shape "$ring_path")"; then
+    echo "FAIL: $label"
+    echo "      could not classify ring overlay: $ring_path"
+    FAIL=$((FAIL + 1))
+    return
+  fi
+
+  case "$shape" in
+    empty|base-only)
+      echo "PASS: $label (legacy cluster absent; $shape overlay)"
+      PASS=$((PASS + 1))
+      ;;
+    cluster-specific)
+      echo "WARNING: $label adds cluster-specific content with no legacy counterpart"
+      WARNING=$((WARNING + 1))
+      ;;
+  esac
 }
 
 # compare <label> <rd-path> <orig-path>
@@ -187,7 +246,25 @@ check_ring() {
 
   local env
   env="$(ring_env "$ring")"
-  local found=0 cluster cdir
+  local found=0 cluster cdir orig_path shared_orig
+  local c expected has_legacy_cluster_overlay=0
+  read -ra expected <<< "$(ring_clusters "$ring")"
+
+  # One explicit legacy cluster overlay is enough to identify a mixed layout:
+  # a missing legacy cluster may simply be undeployed, so do not compare it to
+  # the shared environment overlay in that case.
+  for c in "${expected[@]}"; do
+    [ -n "$c" ] || continue
+    if [ -d "$ORIG_DIR/$env/$c" ]; then
+      has_legacy_cluster_overlay=1
+      break
+    fi
+  done
+
+  # With no explicit legacy cluster overlays, the shared environment overlay
+  # is the only legacy render to compare against for every ring cluster.
+  shared_orig="$(env_top "$env")"
+
   for cdir in "$ring_dir"/*/; do
     [ -d "$cdir" ] || continue
     cluster="$(basename "$cdir")"
@@ -195,7 +272,16 @@ check_ring() {
       base|base-snapshot) continue ;;
     esac
     found=1
-    compare "$ring/$cluster ($env)" "$ring_dir/$cluster" "$ORIG_DIR/$env/$cluster"
+    orig_path="$ORIG_DIR/$env/$cluster"
+    if [ -d "$orig_path" ]; then
+      compare "$ring/$cluster ($env)" "$ring_dir/$cluster" "$orig_path"
+    elif [ "$has_legacy_cluster_overlay" -eq 0 ] && [ -n "$shared_orig" ]; then
+      compare "$ring/$cluster ($env)" "$ring_dir/$cluster" "$shared_orig"
+    else
+      # In a mixed or missing legacy layout, only base-only/empty overlays are
+      # safe to accept without a legacy render for this specific cluster.
+      check_cluster_without_legacy_overlay "$ring/$cluster ($env)" "$ring_dir/$cluster"
+    fi
   done
   if [ "$found" -eq 0 ]; then
     echo "FAIL: $ring - no cluster overlays found (only base/base-snapshot)"
@@ -205,11 +291,20 @@ check_ring() {
   # Detect expected clusters (canonical ring assignment intersected with the
   # clusters the original component actually deploys) whose RD overlay is absent
   # - i.e. a cluster that was never migrated into this ring.
-  local c expected
-  read -ra expected <<< "$(ring_clusters "$ring")"
   for c in "${expected[@]}"; do
     [ -n "$c" ] || continue
-    [ -d "$ORIG_DIR/$env/$c" ] || continue   # component does not deploy here
+
+    # A shared legacy overlay does not prove that every canonical cluster is
+    # selected by the legacy AppSet, so an absent RD overlay is advisory here.
+    if [ "$has_legacy_cluster_overlay" -eq 0 ] && [ -n "$shared_orig" ]; then
+      if [ ! -d "$ring_dir/$c" ]; then
+        echo "WARNING: $ring/$c ($env) is missing from the RD ring overlay"
+        WARNING=$((WARNING + 1))
+      fi
+      continue
+    fi
+
+    [ -d "$ORIG_DIR/$env/$c" ] || continue   # component does not explicitly deploy here
     if [ ! -d "$ring_dir/$c" ]; then
       echo "FAIL: $ring/$c ($env) - expected RD overlay missing: $ring_dir/$c"
       echo "      original overlay exists ($ORIG_DIR/$env/$c) but was not migrated"
@@ -246,5 +341,5 @@ for ring in "${RINGS[@]}"; do
 done
 
 echo
-echo "Summary: $PASS passed, $FAIL failed"
+echo "Summary: $PASS passed, $FAIL failed, $WARNING warnings"
 [ "$FAIL" -eq 0 ]
