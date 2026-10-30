@@ -4,47 +4,27 @@ metadata:
   name: pvsec
 spec:
   generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              selector:
+                  matchExpressions: # Ensures that no clusters are selected; a k-component will replace this with the correct selector
+                    - key: appstudio.redhat.com/select-none
+                      operator: Exists
+                    - key: appstudio.redhat.com/select-none
+                      operator: DoesNotExist
+              values:
+                sourceRoot: components/pvsec
+                ring: "empty-base"
+                clusterDir: "empty-base"
           - list:
-              elements:
-                # ring 2
-                - name: kflux-prd-rh03
-                  values.sourceRoot: components/pvsec
-                  values.ring: ring-2
-                  values.clusterDir: kflux-prd-rh03
-                - name: stone-prod-p01
-                  values.sourceRoot: components/pvsec
-                  values.ring: ring-2
-                  values.clusterDir: stone-prod-p01
-                - name: kflux-ocp-p01
-                  values.sourceRoot: components/pvsec
-                  values.ring: ring-2
-                  values.clusterDir: kflux-ocp-p01
-                - name: kflux-osp-p01
-                  values.sourceRoot: components/pvsec
-                  values.ring: ring-2
-                  values.clusterDir: kflux-osp-p01
-                - name: kflux-rhel-p01
-                  values.sourceRoot: components/pvsec
-                  values.ring: ring-2
-                  values.clusterDir: kflux-rhel-p01
-                - name: kflux-fedora-01
-                  values.sourceRoot: components/pvsec
-                  values.ring: ring-2
-                  values.clusterDir: kflux-fedora-01
-
-                # Ring 3
-                - name: stone-prod-p02
-                  values.sourceRoot: components/pvsec
-                  values.ring: ring-3
-                  values.clusterDir: stone-prod-p02
-                - name: stone-prd-rh01
-                  values.sourceRoot: components/pvsec
-                  values.ring: ring-3
-                  values.clusterDir: stone-prd-rh01
+              elements: [] # Populated via a k-component (or manually if the cluster list is unusual)
 
   template:
     metadata:
-      name: pvsec-{{name}}
+      name: pvsec-{{nameNormalized}}
     spec:
       project: default
       source:
@@ -53,7 +33,7 @@ spec:
         targetRevision: main
       destination:
         namespace: crypto-scanner # (optional) IF the component is deployed to a single namespace
-        server: '{{name}}'
+        server: '{{nameNormalized}}'
       syncPolicy:
         automated:
           prune: true
