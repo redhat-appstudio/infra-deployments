@@ -2,7 +2,7 @@
 # On ROKS HCP, Proxy CR trustedCA cannot be set, so the OpenShift Pipelines
 # operator does not distribute the RH internal CA via tekton-custom-certs.
 # Surgical adds: ring-1 base already defines pac-controller/watcher options.
-# See components/cert-manager-trusted-ca/staging/kflux-hub-stg-01/ (and kflux-lw-p01).
+# See components/cert-manager-trusted-ca-rd/rings/ring-1/kflux-hub-stg-01/.
 ---
 - op: add
   path: /spec/platforms/openshift/pipelinesAsCode/options/deployments/pipelines-as-code-controller/spec/template/spec/containers/0/volumeMounts
