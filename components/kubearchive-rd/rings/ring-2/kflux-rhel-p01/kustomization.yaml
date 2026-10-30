@@ -1,0 +1,25 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../base
+
+namespace: product-kubearchive
+
+configMapGenerator:
+  - name: kubearchive-api-url
+    options:
+      disableNameSuffixHash: true
+    literals:
+      - URL=https://kubearchive-api-server-product-kubearchive.apps.kflux-rhel-p01.fc38.p1.openshiftapps.com
+
+patches:
+  - path: patches/database-secret-key-patch.yaml
+    target:
+      kind: ExternalSecret
+      name: database-secret
+  - path: patches/database-secret-store-patch.yaml
+    target:
+      kind: ExternalSecret
+      name: database-secret
+  - path: patches/api-server-rate-limits-patch.yaml

@@ -1,0 +1,12 @@
+# This is used during the Part 4 of the ring deployments migration to stop the automatic sync
+# of the production applications when migrating to the new ring deployment Argo CD instances.
+# It uses 'app-name' as the placeholder for the actual application name.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: app-name
+spec:
+  template:
+    spec:
+      syncPolicy:
+        automated: null

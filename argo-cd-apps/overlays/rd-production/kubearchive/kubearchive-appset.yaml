@@ -1,0 +1,65 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: kubearchive-rd
+  labels:
+    appstudio.redhat.com/deployment-clusters: "tenant"
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              selector:
+                matchExpressions:
+                  # Ensures that no clusters are selected; a k-component will replace this with the correct selector
+                  - key: appstudio.redhat.com/select-none
+                    operator: Exists
+                  - key: appstudio.redhat.com/select-none
+                    operator: DoesNotExist
+              values:
+                sourceRoot: components/kubearchive-rd
+                ring: "empty-base"
+                clusterDir: "empty-base"
+          - list:
+              elements: [] # Populated via k-component deploy-to-production-tenant-clusters
+
+  template:
+    metadata:
+      name: kubearchive-{{nameNormalized}}
+      labels:
+        appstudio.redhat.com/part-of: kubearchive
+    spec:
+      ignoreDifferences:
+        # ignore CRB that gets modified by KubeArchive
+        - kind: ClusterRoleBinding
+          group: rbac.authorization.k8s.io
+          name: clusterkubearchiveconfig-read
+          jsonPointers:
+            - /subjects
+        # ignore RoleBinding that gets modified by KubeArchive operator
+        - kind: RoleBinding
+          group: rbac.authorization.k8s.io
+          name: kubearchive-vacuum
+          jsonPointers:
+            - /subjects
+      project: default
+      source:
+        path: '{{values.sourceRoot}}/rings/{{values.ring}}/{{values.clusterDir}}'
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+        targetRevision: main
+      destination:
+        namespace: product-kubearchive
+        server: '{{server}}'
+      syncPolicy:
+        # automated:
+        #   prune: true
+        #   selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - SkipDryRunOnMissingResource=true
+        retry:
+          limit: 50
+          backoff:
+            duration: 15s
