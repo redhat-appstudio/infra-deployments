@@ -966,11 +966,15 @@ data:
   {{- if (index $config "throughput") }}
   dynamic.linux-root-arm64.throughput: {{ index $config "throughput" | quote }}
   {{ end }}
-  {{- if (index $config "user-data") }}
+  {{- if or (index $config "user-data") (.Files.Get "files/linux-root-arm64-init.sh") }}
   dynamic.linux-root-arm64.user-data: |
+  {{- if (index $config "user-data") }}
   {{- $lines := splitList "\n" (index $config "user-data") }}
   {{- range $line := $lines }}
     {{ $line }}
+  {{- end }}
+  {{- else }}
+{{ include "multi-platform-controller.cloud-init-userdata" (.Files.Get "files/linux-root-arm64-init.sh") | indent 4 }}
   {{- end }}
   {{- end }}
   {{ end }}
