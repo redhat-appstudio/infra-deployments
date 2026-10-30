@@ -614,7 +614,7 @@ resources:
 
 func writeFile(t *testing.T, path, content string) {
 	t.Helper()
-	NewWithT(t).Expect(os.WriteFile(path, []byte(content), 0o644)).To(Succeed())
+	NewWithT(t).Expect(os.WriteFile(path, []byte(content), 0o600)).To(Succeed())
 }
 
 // 'bases' is a deprecated alias of 'resources'; kustomize still honours it, so
