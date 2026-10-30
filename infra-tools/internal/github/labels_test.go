@@ -18,14 +18,31 @@ const (
 type fakeIssuesService struct {
 	// labels simulates the current labels on a PR.
 	labels []*gh.Label
+	// pages, when set, serves labels one page at a time (page numbers are
+	// 1-based) and returns NextPage the way the real API does.
+	pages map[int][]*gh.Label
 	// removed tracks which labels were removed.
 	removed []string
 	// added tracks which labels were added.
 	added []string
+	// listCalls counts ListLabelsByIssue calls.
+	listCalls int
 }
 
-func (f *fakeIssuesService) ListLabelsByIssue(_ context.Context, _, _ string, _ int, _ *gh.ListOptions) ([]*gh.Label, *gh.Response, error) {
-	return f.labels, nil, nil
+func (f *fakeIssuesService) ListLabelsByIssue(_ context.Context, _, _ string, _ int, opts *gh.ListOptions) ([]*gh.Label, *gh.Response, error) {
+	f.listCalls++
+	if f.pages == nil {
+		return f.labels, nil, nil
+	}
+	page := 1
+	if opts != nil && opts.Page > 0 {
+		page = opts.Page
+	}
+	resp := &gh.Response{}
+	if _, ok := f.pages[page+1]; ok {
+		resp.NextPage = page + 1
+	}
+	return f.pages[page], resp, nil
 }
 
 func (f *fakeIssuesService) RemoveLabelForIssue(_ context.Context, _, _ string, _ int, label string) (*gh.Response, error) {
@@ -253,4 +270,32 @@ func TestSyncLabels_RemovesStaleUnreferencedChanges(t *testing.T) {
 
 	g.Expect(fake.removed).To(ConsistOf(UnreferencedChangesLabel))
 	g.Expect(fake.added).To(ConsistOf(StagingLabel))
+}
+
+// The labels API is paginated: managed labels on later pages must still be
+// removed, otherwise stale environment/cluster labels stick to a PR.
+func TestSyncLabels_FollowsPagination(t *testing.T) {
+	g := NewWithT(t)
+
+	fake := &fakeIssuesService{
+		pages: map[int][]*gh.Label{
+			1: {
+				{Name: gh.Ptr("bug")},
+				{Name: gh.Ptr(StagingLabel)},
+			},
+			2: {
+				{Name: gh.Ptr(ProductionLabel)},
+				{Name: gh.Ptr("cluster/stone-prod-p01")},
+			},
+		},
+	}
+
+	client := &Client{issues: fake, owner: "o", repo: "r"}
+
+	err := client.SyncLabels(context.Background(), 1, []string{DevelopmentLabel})
+	g.Expect(err).NotTo(HaveOccurred())
+
+	g.Expect(fake.listCalls).To(Equal(2))
+	g.Expect(fake.removed).To(ConsistOf(StagingLabel, ProductionLabel, "cluster/stone-prod-p01"))
+	g.Expect(fake.added).To(ConsistOf(DevelopmentLabel))
 }
