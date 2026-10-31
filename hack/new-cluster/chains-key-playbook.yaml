@@ -1,0 +1,92 @@
+---
+# Standalone playbook to create a Tekton Chains signing key and store it in Vault.
+#
+# Usage:
+#   ansible-playbook hack/new-cluster/chains-key-playbook.yaml \
+#     -e 'vault_secret_path=staging/pipeline-service/lightwell-dev/chains-signing-secret'
+#
+
+- name: Create Tekton Chains signing key
+  hosts: localhost
+  gather_facts: no
+
+  vars_prompt:
+    - name: vault_secret_path
+      prompt: "Vault secret path (e.g. staging/pipeline-service/lightwell-dev/chains-signing-secret)"
+      private: false
+
+  vars:
+    vault_addr: "https://vault.devshift.net"
+
+  pre_tasks:
+    - name: Ensure vault_secret_path is defined
+      fail:
+        msg: "Required variable 'vault_secret_path' has not been provided"
+      when: vault_secret_path is undefined or vault_secret_path == ''
+
+  tasks:
+    - name: Login to vault
+      include_tasks: tasks/vault/login.yaml
+
+    - name: Check if the chains signing secret is already present
+      command: >
+        vault kv metadata get stonesoup/{{ vault_secret_path }}
+      register: check_result
+      environment:
+        VAULT_ADDR: "{{ vault_addr }}"
+        VAULT_TOKEN: "{{ vault_token }}"
+      changed_when: false
+      failed_when: "check_result.rc not in [0, 2]"
+
+    - name: Generate a random password
+      when: "check_result.rc == 2"
+      command: openssl rand -base64 30
+      register: password
+
+    - name: Make sure no cosign files are present
+      file:
+        path: "{{ item }}"
+        state: absent
+      when: "check_result.rc == 2"
+      loop: [cosign.key, cosign.pub]
+
+    - name: Generate cosign keypair
+      when: "check_result.rc == 2"
+      command: cosign generate-key-pair
+      environment:
+        COSIGN_PASSWORD: "{{ password.stdout }}"
+
+    - name: Insert into vault
+      when: "check_result.rc == 2"
+      command: >
+        vault kv put stonesoup/{{ vault_secret_path }}
+          cosign.password={{ password.stdout }}
+          cosign.key=@cosign.key
+          cosign.pub=@cosign.pub
+      environment:
+        VAULT_ADDR: "{{ vault_addr }}"
+        VAULT_TOKEN: "{{ vault_token }}"
+
+    - name: Verify that it is in place
+      command: >
+        vault kv metadata get stonesoup/{{ vault_secret_path }}
+      environment:
+        VAULT_ADDR: "{{ vault_addr }}"
+        VAULT_TOKEN: "{{ vault_token }}"
+      when: "check_result.rc == 2"
+      changed_when: false
+
+    - name: Clean up local cosign files
+      file:
+        path: "{{ item }}"
+        state: absent
+      when: "check_result.rc == 2"
+      loop: [cosign.key, cosign.pub]
+
+    - name: Report result
+      debug:
+        msg: >
+          {{ (check_result.rc == 2) | ternary(
+            'Created chains signing secret at stonesoup/' + vault_secret_path,
+            'Chains signing secret already exists at stonesoup/' + vault_secret_path + ' - skipped')
+          }}
