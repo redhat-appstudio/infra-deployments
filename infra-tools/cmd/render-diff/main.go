@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"log/slog"
@@ -21,42 +22,56 @@ import (
 // version is set via -ldflags at build time.
 var version = "dev"
 
+// options holds the parsed command-line configuration.
+type options struct {
+	repoRoot    string
+	baseRef     string
+	overlaysDir string
+	color       string
+	outputDir   string
+	outputMode  string
+	logFile     string
+	openDiff    bool
+	showVersion bool
+
+	// modes is the validated, deduplicated list of output modes.
+	modes []OutputMode
+}
+
 func main() {
-	var (
-		repoRoot    = flag.String("repo-root", "", "Path to the repository root (default: auto-detect via git)")
-		baseRef     = flag.String("base-ref", "", "Base git ref to compare against (default: merge-base with main)")
-		overlaysDir = flag.String("overlays-dir", "argo-cd-apps/overlays", "Path to overlays directory relative to repo root")
-		color       = flag.String("color", "auto", "Color output: auto, always, never")
-		openDiff    = flag.Bool("open", false, "Open diffs in $DIFFTOOL or git difftool")
-		outputDir   = flag.String("output-dir", "", "Write per-component .diff files to this directory")
-		outputMode  = flag.String("output-mode", "local", "Output mode: local, ci-summary, ci-comment, ci-artifact-dir")
-		showVersion = flag.Bool("version", false, "Print version and exit")
-		logFile     = flag.String("log-file", "", "Write debug-level logs to this file")
-	)
+	var opts options
+	flag.StringVar(&opts.repoRoot, "repo-root", "", "Path to the repository root (default: auto-detect via git)")
+	flag.StringVar(&opts.baseRef, "base-ref", "", "Git ref used to compute the merge-base with HEAD (default: main)")
+	flag.StringVar(&opts.overlaysDir, "overlays-dir", "argo-cd-apps/overlays", "Path to overlays directory relative to repo root")
+	flag.StringVar(&opts.color, "color", "auto", "Color output: auto, always, never")
+	flag.BoolVar(&opts.openDiff, "open", false, "Open diffs in $DIFFTOOL or git difftool")
+	flag.StringVar(&opts.outputDir, "output-dir", "", "Write per-component .diff files to this directory")
+	flag.StringVar(&opts.outputMode, "output-mode", "local", "Output mode: local (alone) or a comma-separated combination of ci-summary, ci-comment, ci-artifact-dir")
+	flag.BoolVar(&opts.showVersion, "version", false, "Print version and exit")
+	flag.StringVar(&opts.logFile, "log-file", "", "Write debug-level logs to this file")
 	flag.Parse()
 
-	if *showVersion {
+	if opts.showVersion {
 		fmt.Printf("render-diff %s\n", version)
-		os.Exit(0)
+		return
 	}
 
 	// Parse and validate output modes (comma-separated).
-	modes := parseOutputModes(*outputMode)
-	if len(modes) == 0 {
-		fmt.Fprintf(os.Stderr, "invalid --output-mode %q: must be one or more of local, ci-summary, ci-comment, ci-artifact-dir (comma-separated)\n", *outputMode)
+	opts.modes = parseOutputModes(opts.outputMode)
+	if len(opts.modes) == 0 {
+		fmt.Fprintf(os.Stderr, "invalid --output-mode %q: use local alone, or one or more of ci-summary, ci-comment, ci-artifact-dir (comma-separated)\n", opts.outputMode)
 		os.Exit(1)
 	}
 
-	switch *color {
+	switch opts.color {
 	case "auto", "always", "never":
 		// valid
 	default:
-		fmt.Fprintf(os.Stderr, "invalid --color %q: must be one of auto, always, never\n", *color)
+		fmt.Fprintf(os.Stderr, "invalid --color %q: must be one of auto, always, never\n", opts.color)
 		os.Exit(1)
 	}
 
-	// Set up logging
-	logCleanup, err := logging.Setup(*logFile)
+	logCleanup, err := logging.Setup(opts.logFile)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to set up logging: %v\n", err)
 		os.Exit(1)
@@ -68,58 +83,100 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
+	// run owns the worktree and other deferred cleanup: returning an error
+	// instead of calling os.Exit keeps those defers reachable.
+	if err := run(ctx, opts); err != nil {
+		logging.Fatal("render-diff failed", "err", logging.Sanitize(err.Error()))
+	}
+}
+
+// run executes the whole render-diff pipeline.
+func run(ctx context.Context, opts options) error {
 	// Auto-detect repo root via git if not specified.
-	if *repoRoot == "" {
+	repoRoot := opts.repoRoot
+	if repoRoot == "" {
 		detected, err := git.TopLevel(ctx)
 		if err != nil {
-			logging.Fatal("auto-detecting repo root; use --repo-root to specify explicitly", "err", err)
+			return fmt.Errorf("auto-detecting repo root (use --repo-root to specify explicitly): %w", err)
 		}
-		repoRoot = &detected
+		repoRoot = detected
 	}
 
-	absRepoRoot, err := filepath.Abs(*repoRoot)
+	absRepoRoot, err := filepath.Abs(repoRoot)
 	if err != nil {
-		logging.Fatal("resolving repo root", "err", err)
+		return fmt.Errorf("resolving repo root: %w", err)
 	}
 
-	// Resolve base ref: default to merge-base with main
-	effectiveBaseRef := *baseRef
-	if effectiveBaseRef == "" {
-		effectiveBaseRef, err = git.MergeBase(ctx, absRepoRoot, "main")
-		if err != nil {
-			logging.Fatal("could not compute merge-base with main; use --base-ref to specify explicitly", "err", err)
-		}
+	// Always compare against the merge-base, not the ref itself: with
+	// --base-ref=origin/main (how CI invokes this), a main that moved after the
+	// PR branch was created would otherwise appear as changes of this PR.
+	//
+	// CI checks out GitHub's pull/<N>/merge commit as HEAD. Taking its
+	// merge-base with origin/main normally yields origin/main itself, so the
+	// rendered diff remains the PR's net effect on latest main, including how
+	// same-file changes were merged. If the merge ref is stale relative to
+	// main, using origin/main directly would show reverse main changes; the
+	// merge-base keeps the comparison consistent. Local PR-head runs compare
+	// against the branch point instead.
+	baseRefName := opts.baseRef
+	if baseRefName == "" {
+		baseRefName = "main"
+	}
+	effectiveBaseRef, err := git.MergeBase(ctx, absRepoRoot, baseRefName)
+	if err != nil {
+		return fmt.Errorf("computing merge-base with %s (use --base-ref to specify explicitly): %w", baseRefName, err)
 	}
 
 	baseSHA, err := git.ResolveRef(ctx, absRepoRoot, effectiveBaseRef)
 	if err != nil {
-		logging.Fatal("resolving base ref", "err", err)
+		return fmt.Errorf("resolving base ref: %w", err)
 	}
-
 	headSHA, err := git.ResolveRef(ctx, absRepoRoot, "HEAD")
 	if err != nil {
-		logging.Fatal("resolving HEAD", "err", err)
+		return fmt.Errorf("resolving HEAD: %w", err)
+	}
+
+	// Local runs render the working tree, so uncommitted edits and untracked
+	// files are part of the change set. CI renders committed refs only.
+	localOnly := len(opts.modes) == 1 && opts.modes[0] == OutputModeLocal
+
+	if baseSHA == headSHA {
+		// An explicit ref that descends from HEAD, or HEAD itself, has its
+		// merge-base at HEAD. CI would diff nothing; local runs still see
+		// uncommitted work, so only warn when the diff really is empty.
+		if localOnly {
+			slog.Info("base ref merges at HEAD; showing only working-tree changes",
+				"base_ref", baseRefName, "head", headSHA)
+		} else {
+			slog.Warn("base ref merges at HEAD; no changes will be shown",
+				"base_ref", baseRefName, "head", headSHA)
+		}
 	}
 	slog.Info("Comparing refs", "head", headSHA, "base", baseSHA)
 
 	// Step 1: Get changed files
-	changedFiles, err := git.ChangedFiles(ctx, absRepoRoot, effectiveBaseRef)
+	var changedFiles []string
+	if localOnly {
+		changedFiles, err = git.ChangedFilesWorkingTree(ctx, absRepoRoot, effectiveBaseRef)
+	} else {
+		changedFiles, err = git.ChangedFiles(ctx, absRepoRoot, effectiveBaseRef)
+	}
 	if err != nil {
-		logging.Fatal("getting changed files", "err", err)
+		return fmt.Errorf("getting changed files: %w", err)
 	}
 	if len(changedFiles) == 0 {
 		fmt.Println("No changed files detected — nothing to diff.")
 		// Best-effort: update CI comment/summary so they don't stay stale.
 		// Failures here are non-fatal since there is nothing to report.
-		_ = runAllOutputModes(ctx, modes, &renderdiff.DiffResult{}, *color, *openDiff, *outputDir, headSHA, baseSHA)
-		return
+		_ = runAllOutputModes(ctx, opts.modes, &renderdiff.DiffResult{}, opts.color, opts.openDiff, opts.outputDir, headSHA, baseSHA)
+		return nil
 	}
 	slog.Info("Changed files detected", "count", len(changedFiles))
 
 	// Step 2: Create worktree at base ref
 	worktreePath, cleanup, err := git.CreateWorktree(ctx, absRepoRoot, effectiveBaseRef)
 	if err != nil {
-		logging.Fatal("creating worktree", "err", err)
+		return fmt.Errorf("creating worktree: %w", err)
 	}
 	defer cleanup()
 
@@ -128,13 +185,13 @@ func main() {
 
 	// Step 3: Detect affected components
 	slog.Info("Detecting affected components...")
-	d, err := detector.NewDetector(headRef, baseRefRepo, *overlaysDir)
+	d, err := detector.NewDetector(headRef, baseRefRepo, opts.overlaysDir)
 	if err != nil {
-		logging.Fatal("initializing detector", "err", err)
+		return fmt.Errorf("initializing detector: %w", err)
 	}
 	affected, err := d.AffectedComponents(changedFiles)
 	if err != nil {
-		logging.Fatal("detecting affected components", "err", err)
+		return fmt.Errorf("detecting affected components: %w", err)
 	}
 
 	// Count total jobs
@@ -146,8 +203,8 @@ func main() {
 		fmt.Println("No affected components detected — nothing to diff.")
 		// Best-effort: update CI comment/summary so they don't stay stale.
 		// Failures here are non-fatal since there is nothing to report.
-		_ = runAllOutputModes(ctx, modes, &renderdiff.DiffResult{}, *color, *openDiff, *outputDir, headSHA, baseSHA)
-		return
+		_ = runAllOutputModes(ctx, opts.modes, &renderdiff.DiffResult{}, opts.color, opts.openDiff, opts.outputDir, headSHA, baseSHA)
+		return nil
 	}
 	slog.Info("Affected component paths detected", "count", totalJobs)
 
@@ -155,18 +212,18 @@ func main() {
 	engine := renderdiff.NewEngine(headRef, baseRefRepo, totalJobs)
 
 	// For local mode (single mode only), use progressive output.
-	if len(modes) == 1 && modes[0] == OutputModeLocal {
-		runLocal(ctx, engine, affected, *color, *openDiff, *outputDir)
-		return
+	if localOnly {
+		return runLocal(ctx, engine, affected, opts.color, opts.openDiff, opts.outputDir)
 	}
 
 	// For CI modes (possibly multiple), build once and share the result.
 	result, err := engine.Run(ctx, affected)
 	if err != nil {
-		logging.Fatal("render-diff failed", "err", err)
+		return fmt.Errorf("running render-diff engine: %w", err)
 	}
 
-	if hadError := runAllOutputModes(ctx, modes, result, *color, *openDiff, *outputDir, headSHA, baseSHA); hadError {
-		os.Exit(1)
+	if hadError := runAllOutputModes(ctx, opts.modes, result, opts.color, opts.openDiff, opts.outputDir, headSHA, baseSHA); hadError {
+		return errors.New("one or more output modes failed")
 	}
+	return nil
 }
