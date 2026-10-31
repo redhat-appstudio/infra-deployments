@@ -72,3 +72,8 @@
             kube_resourcequota{namespace=~".*-tenant", resource=~"(requests|limits)\\.(cpu|memory)", type="hard"}
           )
         record: namespace:konflux_tenant_resourcequota_utilization:ratio
+      - expr: |
+          sum by (namespace, phase) (
+            kube_pod_status_phase{namespace=~"rhtap-releng-tenant|releng-integration-tenant|releng-dev-tenant|releng-dev-tools-tenant"}
+          )
+        record: namespace:kube_pod_status_phase:sum
