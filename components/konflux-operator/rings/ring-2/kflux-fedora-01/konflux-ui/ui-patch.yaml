@@ -1,0 +1,17 @@
+apiVersion: konflux.konflux-ci.dev/v1alpha1
+kind: Konflux
+metadata:
+  name: konflux
+spec:
+  ui:
+    spec:
+      ingress:
+        hostname: konflux-ui
+        additionalFQDNs:
+          - konflux.fedoraproject.org
+          - konflux-ci.fedoraproject.org
+      runtimeConfig:
+        chatBot:
+          enabled: false
+        monitoring:
+          cluster: kflux-fedora-01
