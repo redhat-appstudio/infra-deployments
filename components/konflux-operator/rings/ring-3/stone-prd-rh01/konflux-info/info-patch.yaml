@@ -1,0 +1,17 @@
+apiVersion: konflux.konflux-ci.dev/v1alpha1
+kind: Konflux
+metadata:
+  name: konflux
+spec:
+  info:
+    spec:
+      banner:
+        items:
+          - summary: "This cluster is being migrated to the Konflux Operator. Users are not expected to be affected."
+            type: info
+      publicInfo:
+        visibility: public
+        statusPageUrl: "https://grafana.app-sre.devshift.net/d/aes1ns0htwni8a/konflux-status-page?var-cluster=stone-prd-rh01"
+        integrations:
+          github:
+            application_url: "https://github.com/apps/red-hat-konflux"
