@@ -5,6 +5,17 @@ metadata:
 spec:
   info:
     spec:
+      # kflux-fedora-01 does not deploy artifact-registry-proxy.
+      clusterConfig:
+        data:
+          allowPackageRegistryProxy: false
+          packageRegistryProxyBundlerUrl: null
+          packageRegistryProxyCargoUrl: null
+          packageRegistryProxyGomodUrl: null
+          packageRegistryProxyNpmUrl: null
+          packageRegistryProxyPipUrl: null
+          packageRegistryProxyPnpmUrl: null
+          packageRegistryProxyYarnUrl: null
       banner:
         items:
           - summary: "This cluster is being migrated to the Konflux Operator. Users are not expected to be affected."
