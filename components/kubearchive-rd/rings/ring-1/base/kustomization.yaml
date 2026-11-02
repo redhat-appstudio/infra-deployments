@@ -3,7 +3,6 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - base-snapshot
-  - postgresql
   - vacuum
   - database-es.yaml
   - kubearchive-ckac.yaml
@@ -33,6 +32,11 @@ secretGenerator:
 # Due to quoting limitations of generators we need to introduce the values with the |
 # See https://github.com/kubernetes-sigs/kustomize/issues/4845#issuecomment-1671570428
 configMapGenerator:
+  - name: otel-collector-conf
+    behavior: replace
+    namespace: product-kubearchive
+    files:
+      - otel-collector-config.yaml
   - name: kubearchive-schema-version
     options:
       annotations:
@@ -139,5 +143,3 @@ patches:
   - path: patches/kubearchive-logging-secret-delete-patch.yaml
   - path: patches/vacuum-all-resources-patch.yaml
   - path: patches/database-secret-delete-patch.yaml
-  - path: patches/postgresql-deployment-delete-patch.yaml
-  - path: patches/postgresql-service-delete-patch.yaml

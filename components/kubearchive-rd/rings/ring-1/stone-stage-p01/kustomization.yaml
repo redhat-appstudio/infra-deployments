@@ -12,12 +12,6 @@ configMapGenerator:
       disableNameSuffixHash: true
     literals:
       - URL=https://kubearchive-api-server-product-kubearchive.apps.stone-stage-p01.hpmt.p1.openshiftapps.com
-  - name: otel-collector-conf
-    behavior: replace
-    namespace: product-kubearchive
-    files:
-      - otel-collector-config.yaml
-
 patches:
   - path: patches/database-secret-path-patch.yaml
     target:

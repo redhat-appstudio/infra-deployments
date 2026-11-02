@@ -12,12 +12,6 @@ configMapGenerator:
       disableNameSuffixHash: true
     literals:
       - URL=https://kubearchive-api-server-product-kubearchive.lightwell-dev-3d9eec70183348a345ccd3ce3bdd95b9-0000.us-east.containers.appdomain.cloud
-  - name: otel-collector-conf
-    behavior: replace
-    namespace: product-kubearchive
-    files:
-      - otel-collector-config.yaml
-
 patches:
   - path: patches/database-secret-path-patch.yaml
     target:
