@@ -15,6 +15,8 @@ do not generate for it.
 Public and private clusters both get the operator. Smee-client and webhook URL
 patches are generated only when `network` is `private`.
 
+Prometheus metrics are configured with the `source_cluster` label set to the cluster name.
+
 Operator-first bootstrap requires `ring-1` with `env=staging` and `ring-2` or
 `ring-3` with `env=production`. The playbook rejects other env/ring pairs. When
 later rings have operator bases, add them to `operator_rings_by_env` in

@@ -82,6 +82,7 @@
       - konflux-kite
       - kubearchive
       - mintmaker
+      - monitoring/prometheus
 
     templated_rd_components:
       - authentication
@@ -102,6 +103,7 @@
       - etcd-defrag
 
     argo_cd_app_files:
+      - "{{ dst }}/argo-cd-apps/base/all-clusters/infra-deployments/monitoring-workload-prometheus/monitoring-workload-prometheus.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/cert-manager/cert-manager.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/image-rbac-proxy/image-rbac-proxy.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/konflux-kite/konflux-kite.yaml"
