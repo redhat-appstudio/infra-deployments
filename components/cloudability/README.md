@@ -30,7 +30,7 @@ Managed by: `ibm-finops-agent-secrets` ExternalSecret
 
 Required vault fields:
 - `access_key` - Cloudability Access Key ID
-- `secret_key` - Cloudability Secret Key  
+- `secret_key` - Cloudability Secret Key
 - `env_id` - Cloudability Environment ID
 - `csp_pricing_api_key` - Cloud Service Provider Pricing API Key
 

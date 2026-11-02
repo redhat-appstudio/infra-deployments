@@ -4,17 +4,17 @@ namespace: ibm-finops-agent
 
 resources:
   - base-snapshot
-  - trusted-ca-bundle-configmap.yaml
+  - trusted-ca-bundle-cm.yaml
 
 generators:
   - finops-agent-helm-generator.yaml
 
 patches:
-  - path: ibm-finops-agent-secret-patch.yaml
+  - path: patches/ibm-finops-agent-secret-patch.yaml
     target:
       kind: ExternalSecret
       name: ibm-finops-agent-secrets
-  - path: deployment-ca-bundle-patch.yaml
+  - path: patches/deployment-ca-bundle-patch.yaml
     target:
       kind: Deployment
       name: ibm-finops-agent

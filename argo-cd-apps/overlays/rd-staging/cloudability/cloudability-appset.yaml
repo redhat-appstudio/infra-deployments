@@ -4,27 +4,16 @@ metadata:
   name: cloudability
 spec:
   generators:
-    - merge:
-        mergeKeys:
-          - nameNormalized
-        generators:
-          - clusters:
-              selector:
-                matchLabels:
-                  appstudio.redhat.com/cluster-type: "tenant"
-              values:
-                sourceRoot: components/cloudability
-                ring: "empty-base"
-                clusterDir: "empty-base"
-          - list:
-              elements:
-                - nameNormalized: stone-stg-rh01
-                  values.ring: ring-1
-                  values.clusterDir: stone-stg-rh01
+    - list:
+        elements:
+          - name: stone-stg-rh01
+            values.sourceRoot: components/cloudability
+            values.ring: ring-1
+            values.clusterDir: stone-stg-rh01
 
   template:
     metadata:
-      name: cloudability-{{nameNormalized}}
+      name: cloudability-{{name}}
     spec:
       project: default
       source:
@@ -33,7 +22,7 @@ spec:
         targetRevision: main
       destination:
         namespace: ibm-finops-agent
-        server: '{{server}}'
+        name: '{{name}}'
       syncPolicy:
         automated:
           prune: true
