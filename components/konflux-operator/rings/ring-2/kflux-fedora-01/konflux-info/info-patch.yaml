@@ -1,0 +1,26 @@
+apiVersion: konflux.konflux-ci.dev/v1alpha1
+kind: Konflux
+metadata:
+  name: konflux
+spec:
+  info:
+    spec:
+      # Pre-migration Fedora had no konflux-info cluster-config ConfigMap and does
+      # not deploy artifact-registry-proxy. Replace (do not merge) the ring-2
+      # clusterConfig so later additive edits here cannot re-inherit base proxy
+      # URLs. Use explicit false flags — empty data: {} is rejected by SSA as
+      # data: null, which the KonfluxInfo CRD does not allow.
+      clusterConfig:
+        $patch: replace
+        data:
+          allowCacheProxy: false
+          allowPackageRegistryProxy: false
+      banner:
+        items:
+          - summary: "This cluster is being migrated to the Konflux Operator. Users are not expected to be affected."
+            type: info
+      publicInfo:
+        visibility: public
+        integrations:
+          github:
+            application_url: "https://github.com/apps/red-hat-konflux-kflux-fedora-01"

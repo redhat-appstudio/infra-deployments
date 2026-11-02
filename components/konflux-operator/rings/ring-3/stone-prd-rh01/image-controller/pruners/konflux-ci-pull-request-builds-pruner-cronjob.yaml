@@ -1,0 +1,47 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: konflux-ci-pull-request-builds-pruner-cronjob
+spec:
+  schedule: "0 1 * * *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: konflux-ci-pull-request-builds-pruner
+            image: registry.redhat.io/rhel8/python-39:1-120.1684740828
+            env:
+              - name: QUAY_TOKEN
+                valueFrom:
+                  secretKeyRef:
+                    name: konflux-ci-pull-request-builds-pruner-token
+                    key: quaytoken
+            imagePullPolicy: IfNotPresent
+            command:
+              - /bin/bash
+              - '-c'
+              - python /image-pruner/prune_images.py --namespace=konflux-ci --repo-name=pull-request-builds
+            volumeMounts:
+              - name: konflux-ci-pull-request-builds-pruner-volume
+                mountPath: /image-pruner
+            resources:
+              limits:
+                cpu: 500m
+                memory: 512Mi
+              requests:
+                cpu: 150m
+                memory: 128Mi
+            securityContext:
+              readOnlyRootFilesystem: true
+          restartPolicy: OnFailure
+          securityContext:
+            runAsNonRoot: true
+          volumes:
+            - name: konflux-ci-pull-request-builds-pruner-volume
+              configMap:
+                name: single-image-pruner-configmap
+            - name: konflux-ci-pull-request-builds-pruner-token
+              secret:
+                secretName: konflux-ci-pull-request-builds-pruner-token

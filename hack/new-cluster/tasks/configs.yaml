@@ -3,6 +3,12 @@
   set_fact:
     subdir: "{{ env }}"
 
+- name: Adjust subdir for ring-deployment configs
+  tags: [configs]
+  set_fact:
+    subdir: "rings/{{ ring }}"
+  when: config in templated_rd_configs
+
 - name: "Create the configs/{{ config }}/{{ subdir }}/{{ shortname }} directory if it does not exist"
   tags: [configs]
   file:

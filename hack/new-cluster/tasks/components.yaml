@@ -36,6 +36,8 @@
   when:
     - item['state'] == 'file'
     - not (component == 'konflux-operator' and item['path'] == 'namespace-lister/resources-patch.yaml' and ring != 'ring-1')
+    - not (component == 'kubearchive' and env == 'staging' and item['path'] in ['external-secret.yaml', 'kubearchive.yaml'])
+    - not (component == 'kubearchive' and env == 'production' and item['path'] in ['database-secret.yaml', 'kubearchive-routes.yaml'])
 
 - name: "Create private-network-only files from template for components/{{ component }}/{{ subdir }}/{{ shortname }}"
   tags: [components]

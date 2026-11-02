@@ -1,7 +1,6 @@
-# This component intentionally deploys to a single internal cluster only
-# (kflux-stg-p02), not the generic staging tenant/internal-tenant cluster
-# set, so the cluster list is a plain static list generator rather than a
-# clusters generator + k-component.
+# This component deploys to selected ROKS HCP clusters, not the generic
+# staging tenant/internal-tenant cluster set, so the cluster list is a
+# plain static list generator rather than a clusters generator + k-component.
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
@@ -14,6 +13,10 @@ spec:
             values.sourceRoot: components/cert-manager-trusted-ca-rd
             values.ring: ring-1
             values.clusterDir: kflux-stg-p02
+          - name: kflux-hub-stg-01
+            values.sourceRoot: components/cert-manager-trusted-ca-rd
+            values.ring: ring-1
+            values.clusterDir: kflux-hub-stg-01
 
   template:
     metadata:

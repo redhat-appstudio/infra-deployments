@@ -1,0 +1,14 @@
+- op: replace
+  path: /spec/dataFrom/0/extract/key
+  value: staging/platform/terraform/generated/kflux-hub-stg-01/plnsvc-database
+- op: replace
+  path: /spec/secretStoreRef/name
+  value: appsre-stonesoup-vault
+# ROKS: DB CA is provisioned into vault (not the shared AWS RDS root ConfigMap).
+- op: add
+  path: /spec/target/template
+  value:
+    engineVersion: v2
+    mergePolicy: Merge
+    data:
+      tekton-results-db-ca.pem: '{{ index . "db.ca_cert" | b64dec }}'

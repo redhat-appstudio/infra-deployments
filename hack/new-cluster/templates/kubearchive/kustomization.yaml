@@ -2,22 +2,32 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
+{% if env == 'production' %}
   - ../../base
+{% endif %}
   - ../base
+{% if env == 'production' %}
   - external-secret.yaml
   - kubearchive.yaml
+{% else %}
+  - database-secret.yaml
+  - kubearchive-routes.yaml
+{% endif %}
 
 namespace: product-kubearchive
 
+{% if env == 'production' %}
 # Generate kubearchive-logging ConfigMaps with hash for automatic restarts
 # Due to quoting limitations of generators we need to introduce the values with the |
 # See https://github.com/kubernetes-sigs/kustomize/issues/4845#issuecomment-1671570428
+{% endif %}
 configMapGenerator:
     - name: kubearchive-api-url
       options:
         disableNameSuffixHash: true
       literals:
         - URL=https://kubearchive-api-server-product-kubearchive.apps.{{ longname }}.openshiftapps.com
+{% if env == 'production' %}
     - name: kubearchive-schema-version
       options:
         annotations:
@@ -75,8 +85,10 @@ configMapGenerator:
                     next-cursor: "$.data.result[*].values[*][0]"
                     param: start
                     cursor-increment: 1
+{% endif %}
 
 patches:
+{% if env == 'production' %}
   # Delete the original ConfigMaps since we're generating them with configMapGenerator
   - patch: |-
       $patch: delete
@@ -101,6 +113,7 @@ patches:
       metadata:
         name: kubearchive-logging
         namespace: kubearchive
+{% endif %}
 
   - patch: |-
       apiVersion: batch/v1
@@ -173,7 +186,91 @@ patches:
           name: appsre-stonesoup-vault
         dataFrom:
           - extract:
-              key: production/platform/terraform/generated/{{ shortname }}/kubearchive-database
+              key: {{ env }}/platform/terraform/generated/{{ shortname }}/kubearchive-database
+{% if env == 'staging' %}
+  # Staging uses the external database provided through the generated secret.
+  - patch: |-
+      $patch: delete
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: postgresql
+  - patch: |-
+      $patch: delete
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: postgresql
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: kubearchive-api-server
+        namespace: kubearchive
+      spec:
+        template:
+          spec:
+            volumes:
+              - name: db-ca-cert
+                secret:
+                  secretName: kubearchive-database-credentials
+                  items:
+                    - key: DATABASE_CA_CERT
+                      path: ca.crt
+            containers:
+              - name: kubearchive-api-server
+                volumeMounts:
+                  - name: db-ca-cert
+                    mountPath: /etc/ssl/certs/db-ca.crt
+                    subPath: ca.crt
+                    readOnly: true
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: kubearchive-sink
+        namespace: kubearchive
+      spec:
+        template:
+          spec:
+            volumes:
+              - name: db-ca-cert
+                secret:
+                  secretName: kubearchive-database-credentials
+                  items:
+                    - key: DATABASE_CA_CERT
+                      path: ca.crt
+            containers:
+              - name: kubearchive-sink
+                volumeMounts:
+                  - name: db-ca-cert
+                    mountPath: /etc/ssl/certs/db-ca.crt
+                    subPath: ca.crt
+                    readOnly: true
+  - patch: |-
+      apiVersion: batch/v1
+      kind: Job
+      metadata:
+        name: kubearchive-schema-migration
+        namespace: kubearchive
+      spec:
+        template:
+          spec:
+            volumes:
+              - name: db-ca-cert
+                secret:
+                  secretName: kubearchive-database-credentials
+                  items:
+                    - key: DATABASE_CA_CERT
+                      path: ca.crt
+            containers:
+              - name: migration
+                volumeMounts:
+                  - name: db-ca-cert
+                    mountPath: /etc/ssl/certs/db-ca.crt
+                    subPath: ca.crt
+                    readOnly: true
+{% endif %}
   # These patches add an annotation so an OpenShift service
   # creates the TLS secrets instead of Cert Manager
   - patch: |-
@@ -312,6 +409,7 @@ patches:
                     cpu: 200m
                     memory: 128Mi
 
+{% if env == 'production' %}
   # We don't need this CronJob as it is suspended, we can enable it later
   - patch: |-
       $patch: delete
@@ -320,6 +418,7 @@ patches:
       metadata:
         name: cluster-vacuum
         namespace: kubearchive
+{% endif %}
   # These patches remove Certificates and Issuer from Cert-Manager
   - patch: |-
       $patch: delete
