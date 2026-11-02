@@ -15,6 +15,7 @@ import (
 	"sort"
 	"strings"
 	"syscall"
+	"unicode"
 
 	charmlog "github.com/charmbracelet/log"
 
@@ -30,13 +31,15 @@ func main() {
 		overlaysDir       = flag.String("overlays-dir", "argo-cd-apps/overlays", "Path to overlays directory relative to repo root")
 		dryRun            = flag.Bool("dry-run", false, "Print results without calling GitHub API")
 		prNumber          = flag.Int("pr-number", 0, "PR number to label (required if not --dry-run)")
+		prHeadSHA         = flag.String("pr-head-sha", "", "PR head SHA from the workflow event; binds provenance checks to the analysed push")
+		prHeadRef         = flag.String("pr-head-ref", "", "PR head ref from the workflow event; used to scope Kargo promotions to one ring")
+		prSender          = flag.String("pr-sender", "", "GitHub login that triggered the workflow run; Kargo promotions require the Kargo bot")
 		githubToken       = flag.String("github-token", "", "GitHub token (required if not --dry-run)")
 		repo              = flag.String("repo", "", "GitHub repository in owner/repo format (required if not --dry-run)")
 		clusterLabels     = flag.Bool("cluster-labels", false, "Include cluster/<name> labels in addition to environment labels")
 		logFile           = flag.String("log-file", "", "Write debug-level logs to this file (in addition to INFO-level logs on stdout)")
 		enforceRingDeploy = flag.Bool("enforce-ring-deployment", false, "Fail when both staging and production overlays are directly modified in the same PR")
 		ringReportFile    = flag.String("ring-report-file", "", "Write ring deployment check result (markdown) to this file for external consumers like PR comments")
-		prAuthor          = flag.String("pr-author", "", "GitHub login of the PR author; when set to a known bot (e.g. konflux-kargo-bot) the prod/needs-approval label is skipped")
 	)
 	flag.Parse()
 
@@ -50,9 +53,14 @@ func main() {
 		defer logCleanup()
 	}
 
+	var ghClient *ghclient.Client
 	if !*dryRun {
 		if *prNumber == 0 || *githubToken == "" || *repo == "" {
 			fatal("--pr-number, --github-token, and --repo are required when not using --dry-run")
+		}
+		ghClient, err = ghclient.NewClient(*githubToken, *repo)
+		if err != nil {
+			fatal("creating GitHub client", "err", err)
 		}
 	}
 
@@ -95,7 +103,7 @@ func main() {
 	if len(changedFiles) == 0 {
 		slog.Info("No changed files detected")
 		if !*dryRun {
-			if err := syncLabels(ctx, *githubToken, *repo, *prNumber, []string{"environment/none"}); err != nil {
+			if err := ghClient.SyncLabels(ctx, *prNumber, []string{"environment/none"}); err != nil {
 				fatal("syncing labels", "err", err)
 			}
 		}
@@ -141,19 +149,60 @@ func main() {
 		labels = append(labels, "environment/none")
 	}
 
-	// If production is affected and the PR is not opened by Kargo, add a hold label that Prow
-	// Tide can use to block merging until a human explicitly removes it after review.
-	if result.AffectedEnvironments[detector.Production] && *prAuthor != ghclient.KargoBot {
-		labels = append(labels, ghclient.HoldProductionLabel)
-		labels = append(labels, ghclient.NeedsApprovalProductionLabel)
+	// Files under components/ or configs/ that no ApplicationSet references are
+	// not deployed by anything: flag them so reviewers know the change is inert
+	// instead of reading "environment/none" as "safe to merge".
+	if len(result.UnreferencedFiles) > 0 {
+		labels = append(labels, ghclient.UnreferencedChangesLabel)
+	}
+
+	// If production is affected, add a hold label that Prow Tide can use to
+	// block merging until a human explicitly removes it. Kargo promotion PRs
+	// are exempt when they contain Kargo's single verified promotion commit at
+	// the event head SHA: those are the pre-approved automated promotions. A
+	// human commit on the branch makes the PR require approval again.
+	if result.AffectedEnvironments[detector.Production] {
+		hold := true
+		if ghClient != nil {
+			hold = productionHoldRequired(ctx, ghClient, *prNumber, *prHeadSHA, *prSender)
+		}
+		if !hold && !kargoPromotionTouchesOnlyRing(changedFiles, *prHeadRef) {
+			slog.Warn("Kargo promotion changes files outside the promoted ring; keeping production hold",
+				"headRef", *prHeadRef)
+			hold = true
+		}
+		if hold {
+			labels = append(labels, ghclient.HoldProductionLabel)
+			labels = append(labels, ghclient.NeedsApprovalProductionLabel)
+		}
+	}
+
+	// Re-check the PR head immediately before syncing: a push can race the
+	// provenance check, and a stale no-hold decision must not win.
+	if result.AffectedEnvironments[detector.Production] && ghClient != nil {
+		currentHead, err := ghClient.PRHeadSHA(ctx, *prNumber)
+		switch {
+		case err != nil:
+			slog.Warn("could not re-check PR head; keeping production hold", "err", err)
+			labels = addProductionHold(labels)
+		case currentHead != *prHeadSHA:
+			slog.Warn("PR head changed during label run; keeping production hold",
+				"eventHead", *prHeadSHA, "currentHead", currentHead)
+			labels = addProductionHold(labels)
+		}
 	}
 
 	printSummary(result, labels, headSHA, baseSHA)
+	if len(result.UnreferencedFiles) > 0 {
+		msg := formatUnreferencedChanges(result.UnreferencedFiles)
+		fmt.Println(msg)
+		writeStepSummary(msg)
+	}
 
 	if !*dryRun {
 		// Step 5: Sync labels via GitHub API
 		slog.Info("Syncing labels...")
-		if err := syncLabels(ctx, *githubToken, *repo, *prNumber, labels); err != nil {
+		if err := ghClient.SyncLabels(ctx, *prNumber, labels); err != nil {
 			fatal("syncing labels", "err", err)
 		}
 	}
@@ -260,6 +309,72 @@ func (m *multiHandler) WithGroup(name string) slog.Handler {
 	return &multiHandler{handlers: handlers}
 }
 
+type kargoProvenanceChecker interface {
+	KargoSoleCommitter(ctx context.Context, prNumber int, headSHA, sender string) (bool, error)
+}
+
+// productionHoldRequired reports whether a production PR needs the hold
+// labels. Only a same-repository PR authored and pushed by Kargo with a single
+// verified promotion commit at the expected head SHA is exempt; everything
+// else, including API errors, keeps the hold.
+func productionHoldRequired(ctx context.Context, client kargoProvenanceChecker, prNumber int, headSHA, sender string) bool {
+	if client == nil {
+		return true
+	}
+	exempt, err := client.KargoSoleCommitter(ctx, prNumber, headSHA, sender)
+	if err != nil {
+		slog.Warn("could not verify Kargo provenance; keeping production hold", "err", err)
+		return true
+	}
+	if !exempt {
+		return true
+	}
+	slog.Info("Kargo is the sole verified committer; skipping production hold labels", "pr", prNumber)
+	return false
+}
+
+func addProductionHold(labels []string) []string {
+	if !slices.Contains(labels, ghclient.HoldProductionLabel) {
+		labels = append(labels, ghclient.HoldProductionLabel)
+	}
+	if !slices.Contains(labels, ghclient.NeedsApprovalProductionLabel) {
+		labels = append(labels, ghclient.NeedsApprovalProductionLabel)
+	}
+	return labels
+}
+
+// kargoPromotionTouchesOnlyRing reports whether every changed file is under the
+// base of the ring encoded in the Kargo promotion branch. This prevents
+// replaying a verified promotion commit from another component, ring or stage.
+func kargoPromotionTouchesOnlyRing(changedFiles []string, headRef string) bool {
+	parts := strings.Split(headRef, "/")
+	if len(parts) < 3 {
+		return false
+	}
+	component := parts[len(parts)-2]
+	ring := parts[len(parts)-1]
+	if !strings.HasPrefix(ring, "ring-") || len(changedFiles) == 0 {
+		return false
+	}
+	prefixes := []string{
+		"components/" + component + "/rings/" + ring + "/base/",
+		"configs/" + component + "/rings/" + ring + "/base/",
+	}
+	for _, file := range changedFiles {
+		allowed := false
+		for _, prefix := range prefixes {
+			if strings.HasPrefix(file, prefix) {
+				allowed = true
+				break
+			}
+		}
+		if !allowed {
+			return false
+		}
+	}
+	return true
+}
+
 // printSummary prints the detection results in a human-friendly format.
 func printSummary(result *detector.Result, labels []string, headSHA, baseSHA string) {
 	fmt.Printf("\nHEAD: %s\n", headSHA)
@@ -268,7 +383,7 @@ func printSummary(result *detector.Result, labels []string, headSHA, baseSHA str
 	fmt.Println("\nChanged files:")
 	sort.Strings(result.ChangedFiles)
 	for _, f := range result.ChangedFiles {
-		fmt.Printf("  %s\n", f)
+		fmt.Printf("  %s\n", sanitizeLine(f))
 	}
 
 	fmt.Println("\nAffected environments:")
@@ -291,6 +406,13 @@ func printSummary(result *detector.Result, labels []string, headSHA, baseSHA str
 		}
 	}
 
+	if len(result.UnreferencedFiles) > 0 {
+		fmt.Println("\nUnreferenced files (not deployed by any ApplicationSet):")
+		for _, f := range result.UnreferencedFiles {
+			fmt.Printf("  %s\n", sanitizeLine(f))
+		}
+	}
+
 	fmt.Println("\nLabels that would be applied:")
 	if len(labels) == 0 {
 		fmt.Println("  (none)")
@@ -301,13 +423,39 @@ func printSummary(result *detector.Result, labels []string, headSHA, baseSHA str
 	}
 }
 
-// syncLabels calls the GitHub API to sync labels on the PR.
-func syncLabels(ctx context.Context, token, repoName string, prNumber int, labels []string) error {
-	client, err := ghclient.NewClient(token, repoName)
-	if err != nil {
-		return err
+// sanitizeLine removes characters that could break out of a log line or a
+// GitHub Actions workflow command. Changed paths are PR-controlled input.
+func sanitizeLine(s string) string {
+	// Both workflow-command syntaxes are matched anywhere in a line.
+	s = strings.ReplaceAll(s, "##[", "# #[")
+	s = strings.ReplaceAll(s, "::", ": :")
+	return strings.Map(func(r rune) rune {
+		if unicode.IsControl(r) || unicode.Is(unicode.Cf, r) ||
+			r == '\u2028' || r == '\u2029' {
+			return ' '
+		}
+		return r
+	}, s)
+}
+
+// markdownCode renders a changed path as a single-line code span. Backticks are
+// replaced so a crafted filename cannot escape the span.
+func markdownCode(s string) string {
+	return "`" + strings.ReplaceAll(sanitizeLine(s), "`", "'") + "`"
+}
+
+// formatUnreferencedChanges returns a markdown warning listing changed files
+// that no ApplicationSet references, so they will not be deployed.
+func formatUnreferencedChanges(files []string) string {
+	var b strings.Builder
+	b.WriteString("\n## Unreferenced changes\n\n")
+	b.WriteString("These files changed in this PR, but no ApplicationSet in any overlay references them, so the change will not be deployed:\n\n")
+	for _, f := range files {
+		fmt.Fprintf(&b, "- %s\n", markdownCode(f))
 	}
-	return client.SyncLabels(ctx, prNumber, labels)
+	b.WriteString("\nIf you expected these changes to reach a cluster, check that the component is still deployed by an overlay ")
+	b.WriteString("(the ApplicationSet may have moved to a ring layout or been removed).\n")
+	return b.String()
 }
 
 // formatRingViolation returns a markdown message for a direct staging+production conflict.
@@ -322,11 +470,11 @@ func formatRingViolation(r *detector.RingCheckResult) string {
 
 	b.WriteString("\n### Staging files\n")
 	for _, f := range r.StagingFiles {
-		fmt.Fprintf(&b, "- `%s`\n", f)
+		fmt.Fprintf(&b, "- %s\n", markdownCode(f))
 	}
 	b.WriteString("\n### Production files\n")
 	for _, f := range r.ProductionFiles {
-		fmt.Fprintf(&b, "- `%s`\n", f)
+		fmt.Fprintf(&b, "- %s\n", markdownCode(f))
 	}
 	return b.String()
 }

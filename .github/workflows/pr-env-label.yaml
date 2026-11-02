@@ -22,6 +22,13 @@ on:
   pull_request_target:
     types: [opened, synchronize, reopened]
 
+# Serialize label runs for the same PR. An older run must finish rather than
+# being cancelled mid-sync; it re-checks the current head before syncing and
+# therefore keeps the hold when a newer push has already landed.
+concurrency:
+  group: pr-env-label-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
 jobs:
   label:
     runs-on: ubuntu-latest
@@ -58,16 +65,22 @@ jobs:
       - name: Detect and label
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          PR_SENDER: ${{ github.event.sender.login }}
         working-directory: infra-tools
         run: |
           ./bin/env-detector \
             --repo-root=.. \
-            --base-ref=origin/${{ github.event.pull_request.base.ref }} \
+            --base-ref="origin/${BASE_REF}" \
             --pr-number=${{ github.event.pull_request.number }} \
-            --github-token=$GITHUB_TOKEN \
+            --pr-head-sha="${PR_HEAD_SHA}" \
+            --pr-head-ref="${PR_HEAD_REF}" \
+            --pr-sender="${PR_SENDER}" \
+            --github-token="$GITHUB_TOKEN" \
             --repo=${{ github.repository }} \
-            --log-file=../debug.log \
-            --pr-author=${{ github.event.pull_request.user.login }}
+            --log-file=../debug.log
 
       - name: Upload debug log
         if: always()

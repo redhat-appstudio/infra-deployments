@@ -1,0 +1,11 @@
+# ROKS: mount DB CA from the vault-synced secret (parity with kflux-lw-p01),
+# instead of the ring-1 default AWS RDS root ConfigMap.
+- op: replace
+  path: /spec/result/options/deployments/tekton-results-api/spec/template/spec/volumes/0
+  value:
+    name: db-tls-ca
+    secret:
+      secretName: tekton-results-database
+      items:
+      - key: tekton-results-db-ca.pem
+        path: tekton-results-db-ca.pem

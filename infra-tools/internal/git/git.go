@@ -2,6 +2,7 @@
 package git
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"log/slog"
@@ -39,21 +40,30 @@ func ResolveRef(ctx context.Context, repoRoot, ref string) (string, error) {
 // branch name so the diff only contains the current branch's own changes,
 // regardless of whether the branch has been rebased.
 func ChangedFiles(ctx context.Context, repoRoot, baseRef string) ([]string, error) {
-	cmd := exec.CommandContext(ctx, "git", "diff", "--name-only", baseRef, "HEAD")
+	// -z keeps unusual filenames (newlines, quotes) unambiguous. Git then
+	// emits the literal path followed by NUL instead of a quoted C string.
+	cmd := exec.CommandContext(ctx, "git", "diff", "--name-only", "-z", baseRef, "HEAD")
 	cmd.Dir = repoRoot
 	out, err := cmd.Output()
 	if err != nil {
 		return nil, fmt.Errorf("git diff %s HEAD: %w", baseRef, err)
 	}
-	lines := strings.Split(strings.TrimSpace(string(out)), "\n")
-	var files []string
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if line != "" {
-			files = append(files, line)
-		}
+	return splitNullTerminated(out), nil
+}
+
+// splitNullTerminated splits git's -z output without trimming, so whitespace
+// and newlines are preserved as part of the filename.
+func splitNullTerminated(out []byte) []string {
+	out = bytes.TrimSuffix(out, []byte{0})
+	if len(out) == 0 {
+		return nil
 	}
-	return files, nil
+	parts := bytes.Split(out, []byte{0})
+	files := make([]string, len(parts))
+	for i, part := range parts {
+		files[i] = string(part)
+	}
+	return files
 }
 
 // MergeBase returns the merge-base commit between HEAD and the given ref.

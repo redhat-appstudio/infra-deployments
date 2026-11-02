@@ -5,8 +5,11 @@ package detector
 import (
 	"fmt"
 	"log/slog"
+	"maps"
 	"path/filepath"
 	"reflect"
+	"sort"
+	"strconv"
 	"strings"
 
 	"golang.org/x/sync/errgroup"
@@ -53,6 +56,11 @@ type Result struct {
 	AffectedClusters map[string]bool
 	// ChangedFiles is the list of changed files.
 	ChangedFiles []string
+	// UnreferencedFiles are changed files under components/ or configs/ that
+	// no ApplicationSet references, so they will not be deployed by anything.
+	// They are reported as a warning instead of being treated as "no impact".
+	// A MatchAll entry matches every file, so it suppresses this list.
+	UnreferencedFiles []string
 }
 
 // Detector holds the validated configuration and runs the detection pipeline.
@@ -119,6 +127,10 @@ type overlayBuild struct {
 // component paths are affected, grouped by environment.  Unlike Detect, it does
 // not diff overlays or apply static rules — it only returns the component-level
 // mapping needed by tools like render-diff.
+//
+// Only entries with a concrete deployed directory are returned. MatchAll,
+// PrefixOnly and value-file-only entries still affect Detect's environment and
+// cluster labels, but they have no kustomization for render-diff to build.
 func (d *Detector) AffectedComponents(changedFiles []string) (map[Environment][]appset.ComponentPath, error) {
 	// Phase 1: Build ArgoCD ApplicationSet overlays on HEAD and base-ref
 	builds, err := d.buildAppSetOverlays()
@@ -175,7 +187,8 @@ func (d *Detector) Detect(changedFiles []string) (*Result, error) {
 	resolved := d.resolveComponentDeps(envPaths)
 
 	// Phase 5: Match changed files against resolved dependencies
-	matchChangedFiles(changedFiles, resolved, allClusters, result)
+	matched := matchChangedFiles(changedFiles, resolved, allClusters, result)
+	result.UnreferencedFiles = d.unreferencedFiles(changedFiles, matched)
 
 	// Phase 6: Static rules (app-of-app-sets)
 	applyStaticRules(changedFiles, result)
@@ -352,25 +365,63 @@ type componentDeps struct {
 // and resolves its kustomize dependency tree.  When no kustomization.yaml exists,
 // deps is left nil to signal that prefix matching should be used instead.
 func (d *Detector) resolveComponentDeps(envPaths map[Environment][]appset.ComponentPath) []componentDeps {
-	type envPath struct {
-		env  Environment
-		path string
-	}
-	seen := make(map[envPath]bool)
+	seen := make(map[string]bool)
 
 	var resolved []componentDeps
 	for env, paths := range envPaths {
 		for _, cp := range paths {
-			key := envPath{env, cp.Path}
+			// The key must include ClusterDir, ExtraFiles and the fallback flags:
+			// several list elements can share the same deployed directory while
+			// targeting different clusters, contributing different value files,
+			// or using a different matching strategy. Collapsing them would lose
+			// cluster attribution or narrow a prefix-only match.
+			key := string(env) + "|" + cp.Path + "|" + cp.ClusterDir + "|" +
+				strings.Join(cp.ExtraFiles, ",") + "|" +
+				strconv.FormatBool(cp.PrefixOnly) + "|" + strconv.FormatBool(cp.MatchAll)
 			if seen[key] {
 				continue
 			}
 			seen[key] = true
 
+			// An unresolvable template with no static prefix: nothing to
+			// resolve, any change affects the environment (see matches).
+			if cp.MatchAll {
+				resolved = append(resolved, componentDeps{cp: cp, env: env})
+				continue
+			}
+
+			// A component path may only carry individual files (e.g. a Helm
+			// values file from a multi-source template); there is nothing to
+			// resolve, the files are matched exactly.
+			if cp.Path == "" {
+				if len(cp.ExtraFiles) > 0 {
+					resolved = append(resolved, componentDeps{cp: cp, env: env})
+				}
+				continue
+			}
+
+			// A prefix-only path is an unresolved template: the deployed
+			// directory is one of those under the prefix (which may not even
+			// exist), so match by prefix and also by the dependency trees of
+			// every kustomization under it, which reach shared bases outside
+			// the prefix (e.g. ../../base/member).
+			if cp.PrefixOnly {
+				resolved = append(resolved, componentDeps{cp: cp, env: env, deps: d.prefixDeps(cp.Path)})
+				continue
+			}
+
 			// The path may not exist on HEAD when a component was deleted,
 			// the ApplicationSet reference is stale, or a templated path
-			// resolves to a directory that hasn't been created yet.
+			// resolves to a directory that hasn't been created yet. It also
+			// happens for a source whose path lives in another repository
+			// while its "$values/" files live here: keep those files, they
+			// are still matched exactly.
 			if !d.head.DirExists(cp.Path) {
+				if len(cp.ExtraFiles) > 0 {
+					filesOnly := cp
+					filesOnly.Path = ""
+					resolved = append(resolved, componentDeps{cp: filesOnly, env: env})
+				}
 				continue
 			}
 
@@ -389,29 +440,105 @@ func (d *Detector) resolveComponentDeps(envPaths map[Environment][]appset.Compon
 	return resolved
 }
 
+// prefixDeps returns the union of the dependency trees of every kustomization
+// in or below prefix on HEAD, or nil when there is none.
+func (d *Detector) prefixDeps(prefix string) map[string]bool {
+	// The prefix comes from ApplicationSet YAML. The parser only emits
+	// repository-relative prefixes, but never walk the repository root, an
+	// absolute path or anything escaping the checkout, lexically or through
+	// a symlink in the prefix or its ancestors. (Symlinks below the prefix
+	// are not followed: ListSubDirs only returns real directories.)
+	if prefix == "." || !filepath.IsLocal(prefix) || !d.head.ContainedDirExists(prefix) {
+		return nil
+	}
+	var deps map[string]bool
+	var walk func(dir string)
+	walk = func(dir string) {
+		if tree, err := d.head.ResolveDeps(dir); err == nil {
+			if deps == nil {
+				deps = make(map[string]bool, len(tree))
+			}
+			maps.Copy(deps, tree)
+		}
+		subDirs, err := d.head.ListSubDirs(dir)
+		if err != nil {
+			return
+		}
+		for _, sub := range subDirs {
+			if sub == ".git" {
+				continue
+			}
+			walk(filepath.Join(dir, sub))
+		}
+	}
+	walk(prefix)
+	slog.Debug("resolved dependency trees under prefix", "prefix", prefix, "deps", len(deps))
+	return deps
+}
+
+// matchesFile reports whether a single changed file affects this component.
+// ExtraFiles (e.g. Helm values files) are matched exactly; dependency trees are
+// matched exactly; anything else is matched by path prefix. A prefix-only path
+// matches by prefix or by the dependency trees found under the prefix. A
+// MatchAll entry matches any change.
+func (cd componentDeps) matchesFile(file string) bool {
+	if cd.cp.MatchAll {
+		return true
+	}
+	for _, f := range cd.cp.ExtraFiles {
+		if f == file {
+			return true
+		}
+	}
+	if cd.cp.Path == "" {
+		return false
+	}
+	if cd.cp.PrefixOnly {
+		return matchesPrefix(file, cd.cp.Path) || cd.deps[file]
+	}
+	if cd.deps != nil {
+		return cd.deps[file]
+	}
+	return matchesPrefix(file, cd.cp.Path)
+}
+
+// matches reports whether any changed file affects this component. When matched
+// is non-nil, every matching file is recorded in it.
+func (cd componentDeps) matches(changedSet map[string]bool, matched map[string]bool) bool {
+	found := false
+	for f := range changedSet {
+		if cd.matchesFile(f) {
+			found = true
+			if matched != nil {
+				matched[f] = true
+			}
+		}
+	}
+	return found
+}
+
 // matchChangedFiles checks each resolved component against the set of changed
 // files.  For components with a dependency tree it uses an exact match; for
 // components without a kustomization.yaml it falls back to prefix matching.
-func matchChangedFiles(changedFiles []string, resolved []componentDeps, allClusters map[string][]string, result *Result) {
+// It returns the changed files that matched at least one component.
+func matchChangedFiles(changedFiles []string, resolved []componentDeps, allClusters map[string][]string, result *Result) map[string]bool {
 	changedSet := make(map[string]bool, len(changedFiles))
 	for _, f := range changedFiles {
 		changedSet[f] = true
 	}
+	matched := make(map[string]bool)
 
 	for _, cd := range resolved {
-		var matched bool
-		if cd.deps != nil {
-			matched = matchDepTree(changedSet, cd.deps)
-		} else {
-			matched = matchByPrefix(changedSet, cd.cp.Path)
-		}
-
-		if matched {
+		if cd.matches(changedSet, matched) {
+			if cd.cp.MatchAll {
+				slog.Warn("An ApplicationSet template could not be resolved, conservatively marking its environment as affected", "env", cd.env)
+			}
 			result.AffectedEnvironments[cd.env] = true
 			matchClusters(cd.cp, allClusters, result)
 			slog.Info("Changed files match component", "path", cd.cp.Path, "env", cd.env)
 		}
 	}
+	return matched
 }
 
 // applyStaticRules handles paths with hard-coded environment mappings that
@@ -429,10 +556,16 @@ func applyStaticRules(changedFiles []string, result *Result) {
 	}
 }
 
-// matchAffectedComponents returns the component paths that are affected by
-// changedFiles, grouped by environment.  It uses the same matching logic as
+// matchAffectedComponents returns the renderable component paths affected by
+// changedFiles, grouped by environment. It uses the same matching logic as
 // matchChangedFiles (dep tree or prefix fallback) but returns the matched
 // ComponentPath values instead of mutating a Result.
+//
+// Entries without a deployed directory are omitted: render-diff can only build
+// a kustomization, so MatchAll, PrefixOnly and value-file-only matches would
+// otherwise be built as the repository root or as an unrelated prefix. Paths
+// are deduplicated per environment and cluster because render-diff builds each
+// one once.
 func matchAffectedComponents(changedFiles []string, resolved []componentDeps, allClusters map[string][]string) map[Environment][]appset.ComponentPath {
 	changedSet := make(map[string]bool, len(changedFiles))
 	for _, f := range changedFiles {
@@ -440,18 +573,23 @@ func matchAffectedComponents(changedFiles []string, resolved []componentDeps, al
 	}
 
 	affected := make(map[Environment][]appset.ComponentPath)
+	seen := make(map[string]bool)
 	for _, cd := range resolved {
-		var matched bool
-		if cd.deps != nil {
-			matched = matchDepTree(changedSet, cd.deps)
-		} else {
-			matched = matchByPrefix(changedSet, cd.cp.Path)
+		if !cd.matches(changedSet, nil) {
+			continue
 		}
-
-		if matched {
-			affected[cd.env] = append(affected[cd.env], cd.cp)
-			slog.Info("Changed files match component", "path", cd.cp.Path, "env", cd.env)
+		if cd.cp.MatchAll || cd.cp.Path == "" || cd.cp.PrefixOnly {
+			slog.Warn("affected component has no renderable directory; render-diff will not show a diff",
+				"path", cd.cp.Path, "extraFiles", cd.cp.ExtraFiles, "env", cd.env)
+			continue
 		}
+		key := string(cd.env) + "|" + cd.cp.Path + "|" + cd.cp.ClusterDir
+		if seen[key] {
+			continue
+		}
+		seen[key] = true
+		affected[cd.env] = append(affected[cd.env], cd.cp)
+		slog.Info("Changed files match component", "path", cd.cp.Path, "env", cd.env)
 	}
 	return affected
 }
@@ -462,16 +600,120 @@ func matchAffectedComponents(changedFiles []string, resolved []componentDeps, al
 // Used as a fallback when a directory has no kustomization.yaml but might be
 // deployed by ArgoCD as plain YAML manifests.
 func matchByPrefix(changedSet map[string]bool, pathPrefix string) bool {
-	prefix := pathPrefix
-	if !strings.HasSuffix(prefix, "/") {
-		prefix += "/"
-	}
 	for f := range changedSet {
-		if strings.HasPrefix(f, prefix) || f == pathPrefix {
+		if matchesPrefix(f, pathPrefix) {
 			return true
 		}
 	}
 	return false
+}
+
+// matchesPrefix reports whether file is pathPrefix itself or lives under it.
+func matchesPrefix(file, pathPrefix string) bool {
+	if file == pathPrefix {
+		return true
+	}
+	prefix := pathPrefix
+	if !strings.HasSuffix(prefix, "/") {
+		prefix += "/"
+	}
+	return strings.HasPrefix(file, prefix)
+}
+
+// nonDeployableFiles are file names that live next to deployable manifests but
+// are never consumed by kustomize. Reporting them as unreferenced would be
+// technically true and practically noise.
+var nonDeployableFiles = map[string]bool{
+	"README.md":      true,
+	"OWNERS":         true,
+	"OWNERS_ALIASES": true,
+	".gitignore":     true,
+}
+
+// nonDeployablePaths is an escape hatch for individual files consumed by other
+// tooling (CI checks, schema validation) rather than by kustomize. Prefer a
+// basename or path-segment rule when one applies.
+var nonDeployablePaths = map[string]bool{
+	"components/konflux-info/banner-schema.json": true,
+	"components/kubearchive/upgrade.sh":          true,
+}
+
+// nonDeployablePathSegments are directories that hold tests or CI tooling for a
+// component, not manifests consumed by kustomize.
+var nonDeployablePathSegments = []string{
+	"/.chainsaw-test/",
+	"/ci/",
+}
+
+// nonDeployablePathPrefixes are component trees applied outside ArgoCD, for
+// example by the cluster bootstrap scripts.
+var nonDeployablePathPrefixes = []string{
+	"components/openshift-gitops/",
+}
+
+// isDeployableFile reports whether a changed file may be consumed by kustomize.
+func isDeployableFile(file string) bool {
+	if nonDeployableFiles[filepath.Base(file)] || nonDeployablePaths[file] {
+		return false
+	}
+	for _, segment := range nonDeployablePathSegments {
+		if strings.Contains(file, segment) {
+			return false
+		}
+	}
+	for _, prefix := range nonDeployablePathPrefixes {
+		if strings.HasPrefix(file, prefix) {
+			return false
+		}
+	}
+	switch strings.ToLower(filepath.Ext(file)) {
+	case ".md", ".png", ".jpg", ".jpeg", ".svg", ".gif":
+		return false
+	default:
+		return true
+	}
+}
+
+// isRingBaseFile reports whether file is a Tier 1 component base file whose
+// component uses the ring layout. Kargo copies that base into each ring's
+// base-snapshot, so it is deployed even though no kustomization references it
+// directly.
+func (d *Detector) isRingBaseFile(file string) bool {
+	parts := strings.Split(file, "/")
+	if len(parts) < 4 || parts[0] != "components" || parts[2] != "base" {
+		return false
+	}
+	return d.head.DirExists("components/" + parts[1] + "/rings")
+}
+
+// unreferencedFiles returns changed files under components/ or configs/ that no
+// component path, dependency tree or ApplicationSet reference matched. Such a
+// file is not deployed by anything, which used to be indistinguishable from a
+// change with no environment impact.
+func (d *Detector) unreferencedFiles(changedFiles []string, matched map[string]bool) []string {
+	var out []string
+	for _, f := range changedFiles {
+		if matched[f] || !isDeployableFile(f) {
+			continue
+		}
+		if !strings.HasPrefix(f, "components/") && !strings.HasPrefix(f, "configs/") {
+			continue
+		}
+		// Tier 1 base changes are consumed by Kargo through the ring
+		// base-snapshot copy, not by a direct kustomization reference.
+		if d.isRingBaseFile(f) {
+			continue
+		}
+		// A deleted file was referenced on the base ref and is not dead code
+		// just because it no longer exists on HEAD. Base-ref dependency
+		// resolution is handled separately.
+		if !d.head.FileExists(f) {
+			continue
+		}
+		out = append(out, f)
+	}
+	sort.Strings(out)
+	return out
 }
 
 // matchDepTree returns true if any key in changedSet is present in deps.
@@ -489,6 +731,12 @@ func matchDepTree(changedSet, deps map[string]bool) bool {
 func matchClusters(cp appset.ComponentPath, allClusters map[string][]string, result *Result) {
 	if cp.ClusterDir != "" && !kustomizeReservedDirs[cp.ClusterDir] {
 		result.AffectedClusters[cp.ClusterDir] = true
+		return
+	}
+	// A prefix-only path is an unresolved template shared by several
+	// clusters, and a MatchAll entry has no path at all: attributing
+	// clusters to either would over-label.
+	if cp.PrefixOnly || cp.MatchAll {
 		return
 	}
 	// ClusterDir is empty or a reserved name like "base" — check which real

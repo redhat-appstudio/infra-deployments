@@ -35,67 +35,30 @@ type knownFinding struct {
 // real source path are ignored by env-detector and render-diff. Entries must be
 // removed as the parser learns the corresponding generator shape — an entry
 // that no longer fails is reported as stale so the list cannot rot.
-//
-// TODO(render-diff-audit step 2): implement top-level list generators and
-// multi-source templates, then remove the entries below.
-var knownGaps = map[string]knownFinding{
-	"rd-production/konflux-verifications-rd": {
-		detail: "template has a source path but no component path was extracted",
-		reason: "top-level list generator is not supported",
-	},
-	"rd-production/pvsec": {
-		detail: "template has a source path but no component path was extracted",
-		reason: "top-level list generator is not supported",
-	},
-	"development/tracing-workload-otel-collector": {
-		detail: "no source path in template (multi-source or chart-only)",
-		reason: "multi-source template (sources) is not supported",
-	},
-	"development-operator/tracing-workload-otel-collector": {
-		detail: "no source path in template (multi-source or chart-only)",
-		reason: "multi-source template (sources) is not supported",
-	},
-	"konflux-public-production/tracing-workload-otel-collector": {
-		detail: "no source path in template (multi-source or chart-only)",
-		reason: "multi-source template (sources) is not supported",
-	},
-	"konflux-public-staging/tracing-workload-otel-collector": {
-		detail: "no source path in template (multi-source or chart-only)",
-		reason: "multi-source template (sources) is not supported",
-	},
-	"production-downstream/tracing-workload-otel-collector": {
-		detail: "no source path in template (multi-source or chart-only)",
-		reason: "multi-source template (sources) is not supported",
-	},
-	"rd-dev/tracing-workload-otel-collector": {
-		detail: "no source path in template (multi-source or chart-only)",
-		reason: "multi-source template (sources) is not supported",
-	},
-	"staging-downstream/tracing-workload-otel-collector": {
-		detail: "no source path in template (multi-source or chart-only)",
-		reason: "multi-source template (sources) is not supported",
-	},
+var knownGaps = map[string]knownFinding{}
+
+// knownPrefixOnly lists ApplicationSets whose path template cannot be fully
+// resolved from the generator values, so they are only tracked by their static
+// prefix (PrefixOnly). The detail is the sorted, comma-separated list of
+// prefixes extracted for the ApplicationSet.
+var knownPrefixOnly = map[string]knownFinding{
+	"development-operator/backup":      backupPrefixOnly("development"),
+	"development/backup":               backupPrefixOnly("development"),
+	"konflux-public-production/backup": backupPrefixOnly("production"),
+	"konflux-public-staging/backup":    backupPrefixOnly("staging"),
+	"production-downstream/backup":     backupPrefixOnly("production"),
+	"rd-dev/backup":                    backupPrefixOnly("development"),
+	"staging-downstream/backup":        backupPrefixOnly("staging"),
 }
 
-// knownUnresolved lists ApplicationSets whose rendered path template contains
-// placeholders that interpolatePath does not know about.
-var knownUnresolved = map[string]knownFinding{
-	"konflux-public-production/k8s-groups": {
-		detail: "components/k8s-groups/production/{{values.useCaseDir}}",
-		reason: "{{values.useCaseDir}} is not interpolated",
-	},
-	"konflux-public-staging/k8s-groups": {
-		detail: "components/k8s-groups/staging/{{values.useCaseDir}}",
-		reason: "{{values.useCaseDir}} is not interpolated",
-	},
-	"production-downstream/k8s-groups": {
-		detail: "components/k8s-groups/production/{{values.useCaseDir}}",
-		reason: "{{values.useCaseDir}} is not interpolated",
-	},
-	"staging-downstream/k8s-groups": {
-		detail: "components/k8s-groups/staging/{{values.useCaseDir}}",
-		reason: "{{values.useCaseDir}} is not interpolated",
-	},
+// backupPrefixOnly is the expected finding for the backup ApplicationSet: its
+// path ends in {{nameNormalized}}, which only the clusters generator supplies at
+// runtime (the list generator has no elements).
+func backupPrefixOnly(env string) knownFinding {
+	return knownFinding{
+		detail: "components/backup/" + env,
+		reason: "path ends in {{nameNormalized}}, which only the clusters generator supplies at runtime",
+	}
 }
 
 type auditFinding struct {
@@ -120,7 +83,7 @@ func TestRealRepoApplicationSets(t *testing.T) {
 		t.Fatalf("reading overlays dir: %v", err)
 	}
 
-	var gaps, unresolved, missing []auditFinding
+	var gaps, prefixOnly, missing []auditFinding
 	// renderedKeys records every "<overlay>/<appset>" the audit actually sees,
 	// so stale allow-list entries can be distinguished from entries that now
 	// pass.
@@ -138,7 +101,7 @@ func TestRealRepoApplicationSets(t *testing.T) {
 
 		for _, doc := range decodeDocuments(t, overlay, rendered) {
 			name := appSetName(doc)
-			if name == "" {
+			if name == "unknown" {
 				continue
 			}
 			key := overlay + "/" + name
@@ -155,6 +118,13 @@ func TestRealRepoApplicationSets(t *testing.T) {
 			tmplSpec, _ := tmpl["spec"].(map[string]interface{})
 			hasTemplatePath := templateHasPath(tmplSpec)
 
+			// An ApplicationSet that only references external repositories has
+			// nothing in this checkout to audit. This check is deliberately
+			// independent of the parser's repoURL classification so the audit
+			// still catches a parser that drops a local source.
+			if len(paths) == 0 && !templateHasLocalSource(tmplSpec) {
+				continue
+			}
 			switch {
 			case hasTemplatePath && len(paths) == 0:
 				gaps = append(gaps, auditFinding{key, "template has a source path but no component path was extracted"})
@@ -162,13 +132,35 @@ func TestRealRepoApplicationSets(t *testing.T) {
 				gaps = append(gaps, auditFinding{key, "no source path in template (multi-source or chart-only)"})
 			}
 
+			prefixes := make(map[string]bool)
 			for _, p := range paths {
-				if p.Path == "" {
-					gaps = append(gaps, auditFinding{key, "empty component path"})
+				if p.MatchAll {
+					gaps = append(gaps, auditFinding{key, "template cannot be resolved and has no static prefix (environment-wide fallback)"})
 					continue
 				}
-				if strings.Contains(p.Path, "{{") {
-					unresolved = append(unresolved, auditFinding{key, p.Path})
+				// Value files are matched by exact path, so a wrong resolution
+				// would never match the real file. For a path-less entry they
+				// are all that is tracked: a missing one is a gap.
+				for _, f := range p.ExtraFiles {
+					abs := filepath.Join(repoRoot, filepath.FromSlash(f))
+					if info, statErr := os.Stat(abs); statErr != nil || info.IsDir() {
+						if p.Path == "" {
+							gaps = append(gaps, auditFinding{key, "value file does not exist: " + f})
+						} else {
+							missing = append(missing, auditFinding{key, f})
+						}
+					}
+				}
+				if p.Path == "" {
+					// A path-less entry is valid when it only consumes
+					// repository files (multi-source Helm value files).
+					if len(p.ExtraFiles) == 0 {
+						gaps = append(gaps, auditFinding{key, "empty component path"})
+					}
+					continue
+				}
+				if p.PrefixOnly {
+					prefixes[p.Path] = true
 					continue
 				}
 				abs := filepath.Join(repoRoot, filepath.FromSlash(p.Path))
@@ -176,17 +168,28 @@ func TestRealRepoApplicationSets(t *testing.T) {
 					missing = append(missing, auditFinding{key, p.Path})
 				}
 			}
+			// Prefix fallbacks are reported once per ApplicationSet so a new
+			// one, or a different prefix on a known one, fails the audit.
+			if len(prefixes) > 0 {
+				sorted := make([]string, 0, len(prefixes))
+				for p := range prefixes {
+					sorted = append(sorted, p)
+				}
+				sort.Strings(sorted)
+				prefixOnly = append(prefixOnly, auditFinding{key, strings.Join(sorted, ", ")})
+			}
 		}
 	}
 
 	checkFindings(t, "ApplicationSets with no extracted component path", gaps, knownGaps, renderedKeys)
-	checkFindings(t, "component paths with unresolved placeholders", unresolved, knownUnresolved, renderedKeys)
+	checkFindings(t, "ApplicationSets tracked only by a static path prefix", prefixOnly, knownPrefixOnly, renderedKeys)
 
 	// Paths whose directory is absent are informational: ApplicationSets often
 	// list every cluster while only some clusters need a cluster-specific
-	// directory, so this is expected and not a parser gap.
+	// directory, so this is expected and not a parser gap. The same applies to
+	// value files of entries that also deploy a directory.
 	if len(missing) > 0 {
-		t.Logf("note: %d extracted paths point at directories that do not exist on disk", len(missing))
+		t.Logf("note: %d extracted paths or value files do not exist on disk", len(missing))
 		for i, f := range missing {
 			if i == 3 {
 				t.Logf("  ... and %d more", len(missing)-3)
@@ -265,27 +268,70 @@ func decodeDocuments(t *testing.T, overlay string, rendered []byte) []map[string
 	return docs
 }
 
-// appSetName returns metadata.name of a document, or "" when absent.
-func appSetName(doc map[string]interface{}) string {
-	md, _ := doc["metadata"].(map[string]interface{})
-	name, _ := md["name"].(string)
-	return name
-}
-
-// templateHasPath reports whether the template declares a local source path,
-// either single-source or as one of several sources.
+// templateHasPath reports whether the template declares a source path in this
+// repository, either single-source or as one of several sources.
 func templateHasPath(tmplSpec map[string]interface{}) bool {
-	if source, ok := tmplSpec["source"].(map[string]interface{}); ok {
-		if p, _ := source["path"].(string); p != "" {
+	for _, source := range auditTemplateSources(tmplSpec) {
+		if sourceHasLocalPath(source) {
 			return true
 		}
 	}
-	sources, _ := tmplSpec["sources"].([]interface{})
-	for _, s := range sources {
-		if source, ok := s.(map[string]interface{}); ok {
-			if p, _ := source["path"].(string); p != "" {
-				return true
+	return false
+}
+
+// templateHasLocalSource reports whether the template references anything in
+// this checkout. It deliberately does not use the parser's classifyRepoURL:
+// the audit must stay independent of the code it checks.
+func templateHasLocalSource(tmplSpec map[string]interface{}) bool {
+	for _, source := range auditTemplateSources(tmplSpec) {
+		if sourceHasLocalPath(source) || sourceHasDollarValueFile(source) {
+			return true
+		}
+	}
+	return false
+}
+
+func auditTemplateSources(tmplSpec map[string]interface{}) []map[string]interface{} {
+	var out []map[string]interface{}
+	if source, ok := tmplSpec["source"].(map[string]interface{}); ok {
+		out = append(out, source)
+	}
+	if sources, ok := tmplSpec["sources"].([]interface{}); ok {
+		for _, s := range sources {
+			if source, ok := s.(map[string]interface{}); ok {
+				out = append(out, source)
 			}
+		}
+	}
+	return out
+}
+
+func sourceIsExternal(source map[string]interface{}) bool {
+	repoURL, _ := source["repoURL"].(string)
+	repoURL = strings.TrimSpace(repoURL)
+	if repoURL == "" || strings.Contains(repoURL, "{{") {
+		return false
+	}
+	return !strings.Contains(strings.ToLower(repoURL), localRepoPath)
+}
+
+func sourceHasLocalPath(source map[string]interface{}) bool {
+	if sourceIsExternal(source) {
+		return false
+	}
+	p, _ := source["path"].(string)
+	return p != ""
+}
+
+func sourceHasDollarValueFile(source map[string]interface{}) bool {
+	helm, ok := source["helm"].(map[string]interface{})
+	if !ok {
+		return false
+	}
+	valueFiles, _ := helm["valueFiles"].([]interface{})
+	for _, vf := range valueFiles {
+		if s, ok := vf.(string); ok && strings.HasPrefix(s, "$") {
+			return true
 		}
 	}
 	return false
