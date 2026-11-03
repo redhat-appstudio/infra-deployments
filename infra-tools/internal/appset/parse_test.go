@@ -1,6 +1,8 @@
 package appset
 
 import (
+	"context"
+	"log/slog"
 	"strings"
 	"testing"
 
@@ -48,6 +50,7 @@ spec:
 	p := result.Paths[0]
 	g.Expect(p.Path).To(Equal("components/has/staging"))
 	g.Expect(p.ClusterDir).To(BeEmpty())
+	g.Expect(p.Environment).To(Equal("staging"))
 }
 
 func TestParseApplicationSets_WithClusterOverrides(t *testing.T) {
@@ -1667,6 +1670,119 @@ func TestParseApplicationSets_PathsOutsideRepoAreMatchAll(t *testing.T) {
 			g.Expect(result.Paths[0].Path).To(BeEmpty())
 		})
 	}
+}
+
+// A path template that only resolves to a static prefix must be visible at
+// INFO, once per ApplicationSet, even though individual generator sets log the
+// details at DEBUG.
+func TestParseApplicationSets_LogsPrefixFallbackOnce(t *testing.T) {
+	g := NewWithT(t)
+
+	var records captureHandler
+	original := slog.Default()
+	slog.SetDefault(slog.New(&records))
+	t.Cleanup(func() { slog.SetDefault(original) })
+
+	yaml := mergedListAppSet(`                - nameNormalized: one
+                - nameNormalized: two`, "components/merged/{{name}}")
+	result, err := ParseApplicationSets([]byte(yaml))
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.Paths).NotTo(BeEmpty())
+	for _, p := range result.Paths {
+		g.Expect(p.PrefixOnly).To(BeTrue())
+	}
+
+	count := 0
+	for _, r := range records.records {
+		if r.Level == slog.LevelInfo && strings.Contains(r.Message, "resolved only to a prefix") {
+			count++
+		}
+	}
+	g.Expect(count).To(Equal(1))
+}
+
+// captureHandler records slog records for assertions.
+type captureHandler struct {
+	records []slog.Record
+}
+
+func (h *captureHandler) Enabled(context.Context, slog.Level) bool { return true }
+
+func (h *captureHandler) Handle(_ context.Context, r slog.Record) error {
+	h.records = append(h.records, r.Clone())
+	return nil
+}
+
+func (h *captureHandler) WithAttrs([]slog.Attr) slog.Handler { return h }
+func (h *captureHandler) WithGroup(string) slog.Handler      { return h }
+
+// Two top-level generators can declare different environments. Each path must
+// keep the environment of the generator value set that produced it instead of
+// inheriting the first clusters generator's value.
+func TestParseApplicationSets_PerGeneratorEnvironment(t *testing.T) {
+	g := NewWithT(t)
+
+	yaml := `
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: two-envs
+spec:
+  generators:
+    - clusters:
+        values:
+          environment: staging
+          sourceRoot: components/foo
+    - clusters:
+        values:
+          environment: production
+          sourceRoot: components/bar
+  template:
+    metadata:
+      name: two-envs
+    spec:
+      source:
+        path: '{{values.sourceRoot}}/{{values.environment}}'
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+`
+	result, err := ParseApplicationSets([]byte(yaml))
+	g.Expect(err).NotTo(HaveOccurred())
+
+	environments := make(map[string]string, len(result.Paths))
+	for _, p := range result.Paths {
+		environments[p.Path] = p.Environment
+	}
+	g.Expect(environments).To(HaveKeyWithValue("components/foo/staging", "staging"))
+	g.Expect(environments).To(HaveKeyWithValue("components/bar/production", "production"))
+}
+
+// An environment that is itself templated cannot be attributed, so the path
+// keeps an empty value and the caller falls back to the overlay environment.
+func TestParseApplicationSets_UnresolvedEnvironmentIsEmpty(t *testing.T) {
+	g := NewWithT(t)
+
+	yaml := `
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: unresolved-env
+spec:
+  generators:
+    - clusters:
+        values:
+          environment: '{{name}}'
+  template:
+    metadata:
+      name: unresolved-env
+    spec:
+      source:
+        path: components/foo
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+`
+	result, err := ParseApplicationSets([]byte(yaml))
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.Paths).To(HaveLen(1))
+	g.Expect(result.Paths[0].Environment).To(BeEmpty())
 }
 
 // ArgoCD treats "{{values.X}}" and "{{X}}" as different parameters: a clusters

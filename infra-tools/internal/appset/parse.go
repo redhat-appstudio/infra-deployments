@@ -17,12 +17,20 @@ import (
 	"strings"
 
 	"gopkg.in/yaml.v3"
+
+	"github.com/redhat-appstudio/infra-deployments/infra-tools/internal/logging"
 )
 
 // ComponentPath represents a single path extracted from an ApplicationSet with
-// an optional cluster directory.  The environment is not stored here; it is
-// determined by the overlay that produced the ApplicationSet.
+// an optional cluster directory. Environment holds the environment declared by
+// the generator value set that produced the path, when it has one; callers fall
+// back to the environment of the overlay that produced the ApplicationSet
+// otherwise.
 type ComponentPath struct {
+	// Environment is the explicit environment declared by the generator value
+	// set (e.g. values.environment), or empty when none is declared or the
+	// value cannot be resolved.
+	Environment string
 	// Path is the resolved filesystem path (relative to repo root) that the
 	// ApplicationSet points to. It is empty when the ApplicationSet only
 	// references files through ExtraFiles (e.g. a chart-only source).
@@ -167,6 +175,9 @@ func ParseApplicationSets(renderedYAML []byte) (*ParseResult, error) {
 		if err != nil {
 			return nil, fmt.Errorf("extracting from ApplicationSet %s: %w", appSetName(doc), err)
 		}
+		// Each path carries the environment of the generator value set that
+		// produced it; there is no single AppSet-wide environment when several
+		// top-level generators declare different ones.
 		result.Paths = append(result.Paths, paths...)
 		for cluster, cpaths := range clusters {
 			result.Clusters[cluster] = append(result.Clusters[cluster], cpaths...)
@@ -189,7 +200,7 @@ func extractFromAppSet(doc map[string]interface{}) ([]ComponentPath, map[string]
 	// can be trusted to locate what is deployed.
 	if _, found := spec["templatePatch"]; found {
 		slog.Warn("ApplicationSet has a templatePatch, which may replace the source paths; treating the environment as affected by any change",
-			"appset", name)
+			"appset", logging.Sanitize(name))
 		return []ComponentPath{{MatchAll: true}}, map[string][]string{}, nil
 	}
 
@@ -205,7 +216,7 @@ func extractFromAppSet(doc map[string]interface{}) ([]ComponentPath, map[string]
 	if len(sources) == 0 {
 		if values.templateOverride() {
 			slog.Warn("ApplicationSet generator carries its own template, which may replace the source paths; treating the environment as affected by any change",
-				"appset", name)
+				"appset", logging.Sanitize(name))
 			return []ComponentPath{{MatchAll: true}}, map[string][]string{}, nil
 		}
 		return nil, nil, nil
@@ -213,7 +224,7 @@ func extractFromAppSet(doc map[string]interface{}) ([]ComponentPath, map[string]
 
 	for _, unsupported := range values.unsupported() {
 		slog.Warn("unsupported ApplicationSet generator, falling back to static paths and prefixes for it",
-			"appset", name, "generator", unsupported)
+			"appset", logging.Sanitize(name), "generator", logging.Sanitize(unsupported))
 	}
 
 	return resolveSources(name, sources, values.sets())
@@ -276,7 +287,7 @@ func templateSources(tmplSpec map[string]interface{}) []templateSource {
 		case repoExternal:
 			if ts.pathTemplate != "" {
 				slog.Debug("ignoring source path from outside this repository",
-					"repoURL", repoURL, "path", ts.pathTemplate)
+					"repoURL", logging.Sanitize(repoURL), "path", logging.Sanitize(ts.pathTemplate))
 			}
 			ts.pathTemplate = ""
 		case repoUnknown:
@@ -391,22 +402,22 @@ func helmValueFiles(source map[string]interface{}, pathTemplate string, refRepos
 					files = append(files, rest)
 				case repoExternal:
 					slog.Debug("Helm value file belongs to an external source ref, not tracked",
-						"valueFile", s, "repoURL", refRepo)
+						"valueFile", logging.Sanitize(s), "repoURL", logging.Sanitize(refRepo))
 				case repoUnknown:
 					unattributed = append(unattributed, s)
 				}
 			}
 		case strings.Contains(s, "://"):
-			slog.Warn("Helm value file is a remote URL, not tracked", "valueFile", s)
+			slog.Warn("Helm value file is a remote URL, not tracked", "valueFile", logging.Sanitize(s))
 		case sourceLocality == repoUnknown:
 			unattributed = append(unattributed, s)
 		case sourceLocality == repoExternal:
 			slog.Debug("Helm value file belongs to an external source, not tracked",
-				"valueFile", s, "repoURL", sourceRepoURL)
+				"valueFile", logging.Sanitize(s), "repoURL", logging.Sanitize(sourceRepoURL))
 		case pathTemplate != "":
 			files = append(files, pathTemplate+"/"+s)
 		default:
-			slog.Warn("Helm value file is relative to a remote chart, not tracked", "valueFile", s)
+			slog.Warn("Helm value file is relative to a remote chart, not tracked", "valueFile", logging.Sanitize(s))
 		}
 	}
 	return files, unattributed
@@ -420,10 +431,14 @@ func helmValueFiles(source map[string]interface{}, pathTemplate string, refRepos
 type generatorValues map[string]string
 
 // valueSet is a single combination of generator values, together with the
-// cluster it belongs to (empty for the defaults-only combination).
+// cluster it belongs to (empty for the defaults-only combination) and the
+// environment its generator declares.
 type valueSet struct {
 	values      generatorValues
 	clusterName string
+	// environment is the values.environment declared by this generator value
+	// set, or empty when it cannot be resolved.
+	environment string
 	// defaults holds the cluster defaults a merged list element overrides. It
 	// is non-nil only for elements merged into a clusters generator, and is
 	// used to attribute the element's cluster only when the element actually
@@ -472,10 +487,18 @@ func (g valueGroup) sets() []valueSet {
 	// over it (they only override the clusters they match), so its defaults
 	// always form a combination of their own.
 	if g.hasClusters || len(g.defaults) > 0 {
-		sets = append(sets, valueSet{values: g.defaults})
+		sets = append(sets, valueSet{
+			values:      g.defaults,
+			environment: environmentFromValues(g.defaults),
+		})
 	}
 	for _, e := range g.elements {
-		set := valueSet{values: mergeValues(g.defaults, e.values), clusterName: e.clusterName}
+		merged := mergeValues(g.defaults, e.values)
+		set := valueSet{
+			values:      merged,
+			clusterName: e.clusterName,
+			environment: environmentFromValues(merged),
+		}
 		if g.hasClusters {
 			set.defaults = g.defaults
 		}
@@ -673,6 +696,17 @@ func mergeValues(base, overrides generatorValues) generatorValues {
 	return out
 }
 
+// environmentFromValues returns the fully resolved values.environment of a
+// generator value set. An unresolved template expression yields "", so callers
+// fall back to the overlay environment instead of guessing.
+func environmentFromValues(values generatorValues) string {
+	env := values["values.environment"]
+	if env == "" || strings.Contains(env, "{{") {
+		return ""
+	}
+	return env
+}
+
 // placeholderRe matches ApplicationSet template placeholders, with or without
 // the "values." prefix.
 var placeholderRe = regexp.MustCompile(`\{\{\s*([A-Za-z0-9_.\-]+)\s*\}\}`)
@@ -790,6 +824,7 @@ func resolveSources(name string, sources []templateSource, sets []valueSet) ([]C
 
 	add := func(cp ComponentPath) {
 		key := cp.Path + "|" + cp.ClusterDir + "|" + strings.Join(cp.ExtraFiles, ",") + "|" +
+			cp.Environment + "|" +
 			strconv.FormatBool(cp.PrefixOnly) + "|" + strconv.FormatBool(cp.MatchAll)
 		if seen[key] {
 			return
@@ -797,16 +832,18 @@ func resolveSources(name string, sources []templateSource, sets []valueSet) ([]C
 		seen[key] = true
 		paths = append(paths, cp)
 	}
-	matchAll := func(kind, template string) {
+	matchAll := func(env, kind, template string) {
 		slog.Warn("ApplicationSet "+kind+" template cannot be resolved and has no static prefix, treating the environment as affected by any change",
-			"appset", name, "template", template)
-		add(ComponentPath{MatchAll: true})
+			"appset", logging.Sanitize(name), "template", logging.Sanitize(template))
+		add(ComponentPath{MatchAll: true, Environment: env})
 	}
+
+	pathPrefixFallback := false
 
 	for _, source := range sources {
 		if source.pathUnknown {
 			slog.Warn("ApplicationSet source path has a templated repoURL, treating the environment as affected by any change",
-				"appset", name)
+				"appset", logging.Sanitize(name))
 			add(ComponentPath{MatchAll: true})
 			continue
 		}
@@ -830,17 +867,17 @@ func resolveSources(name string, sources []templateSource, sets []valueSet) ([]C
 		// A value file under a ref no source declares cannot be located.
 		for _, file := range source.unattributedFiles {
 			slog.Warn("ApplicationSet value file cannot be attributed to this repository, treating the environment as affected by any change",
-				"appset", name, "valueFile", file)
+				"appset", logging.Sanitize(name), "valueFile", logging.Sanitize(file))
 			add(ComponentPath{MatchAll: true})
 		}
 		for _, set := range sets {
 			if set.matchAll {
 				slog.Warn("ApplicationSet generator carries its own template, which may replace the source paths; treating the environment as affected by any change",
-					"appset", name)
-				add(ComponentPath{MatchAll: true})
+					"appset", logging.Sanitize(name))
+				add(ComponentPath{MatchAll: true, Environment: set.environment})
 				continue
 			}
-			cp := ComponentPath{}
+			cp := ComponentPath{Environment: set.environment}
 			// Values from an incomplete set may be overridden by an unmodelled
 			// generator, so they cannot attribute a cluster directory.
 			if !set.prefixOnly && clusterDirKey != "" {
@@ -855,12 +892,19 @@ func resolveSources(name string, sources []templateSource, sets []valueSet) ([]C
 				case !prefixOnly:
 					cp.Path = resolved
 				case resolved == "":
-					matchAll("path", source.pathTemplate)
+					matchAll(set.environment, "path", source.pathTemplate)
 				default:
 					cp.Path = resolved
 					cp.PrefixOnly = true
-					slog.Warn("ApplicationSet path template has unresolved placeholders, falling back to prefix matching",
-						"appset", name, "template", source.pathTemplate, "prefix", cp.Path)
+					pathPrefixFallback = true
+					// Expected for templates keyed on a list element field (for
+					// example {{nameNormalized}}): the defaults-only combination
+					// cannot be resolved, and the prefix keeps the shared
+					// dependencies of the whole environment tracked. A single
+					// INFO line per ApplicationSet makes an unexpected fallback
+					// visible without one line per generator set.
+					slog.Debug("ApplicationSet path template has unresolved placeholders, falling back to prefix matching",
+						"appset", logging.Sanitize(name), "template", logging.Sanitize(source.pathTemplate), "prefix", logging.Sanitize(cp.Path))
 				}
 			}
 
@@ -873,11 +917,14 @@ func resolveSources(name string, sources []templateSource, sets []valueSet) ([]C
 				case !prefixOnly:
 					cp.ExtraFiles = append(cp.ExtraFiles, resolved)
 				case resolved == "":
-					matchAll("value file", fileTemplate)
+					matchAll(set.environment, "value file", fileTemplate)
 				default:
 					slog.Warn("ApplicationSet value file template has unresolved placeholders, falling back to prefix matching",
-						"appset", name, "template", fileTemplate, "prefix", resolved)
-					add(ComponentPath{Path: resolved, ClusterDir: cp.ClusterDir, PrefixOnly: true})
+						"appset", logging.Sanitize(name), "template", logging.Sanitize(fileTemplate), "prefix", logging.Sanitize(resolved))
+					add(ComponentPath{
+						Path: resolved, ClusterDir: cp.ClusterDir,
+						PrefixOnly: true, Environment: cp.Environment,
+					})
 				}
 			}
 
@@ -911,6 +958,11 @@ func resolveSources(name string, sources []templateSource, sets []valueSet) ([]C
 
 			add(cp)
 		}
+	}
+
+	if pathPrefixFallback {
+		slog.Info("ApplicationSet path template resolved only to a prefix; matching by prefix",
+			"appset", logging.Sanitize(name))
 	}
 
 	return paths, clusters, nil
