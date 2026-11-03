@@ -1,6 +1,5 @@
 ---
-# Exclude kflux-stg-p02 from ApplicationSets that are not ready for this
-# staging ROKS cluster yet (perf-team awaits perfscale tenant namespaces).
+# Perf-team awaits perfscale tenant namespaces on these staging ROKS clusters.
 - op: add
   path: /spec/generators/0/selector
   value:
@@ -9,3 +8,4 @@
         operator: NotIn
         values:
           - kflux-stg-p02
+          - kflux-hub-stg-01
