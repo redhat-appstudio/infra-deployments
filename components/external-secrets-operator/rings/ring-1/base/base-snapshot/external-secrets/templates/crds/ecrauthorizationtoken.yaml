@@ -9,7 +9,7 @@ metadata:
     {{- if and .Values.crds.conversion.enabled .Values.webhook.certManager.enabled .Values.webhook.certManager.addInjectorAnnotations }}
     cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ include "external-secrets.fullname" . }}-webhook
     {{- end }}
-    controller-gen.kubebuilder.io/version: v0.19.0
+    controller-gen.kubebuilder.io/version: v0.23.0
   labels:
     external-secrets.io/component: controller
   name: ecrauthorizationtokens.generators.external-secrets.io
@@ -67,8 +67,8 @@ spec:
                             audiences:
                               description: |-
                                 Audience specifies the `aud` claim for the service account token
-                                If the service account uses a well-known annotation for e.g. IRSA or GCP Workload Identity
-                                then this audiences will be appended to the list
+                                Some providers automatically extend the audience field based on well-known annotations for workload
+                                identity (e.g. IRSA or GCP Workload Identity)
                               items:
                                 type: string
                               type: array
