@@ -78,7 +78,7 @@ ring_env() {
 # so only explicit legacy cluster directories are considered for this check.
 ring_clusters() {
   case "$1" in
-    ring-1) echo "stone-stg-rh01 stone-stage-p01 lightwell-dev kflux-stg-p02" ;;
+    ring-1) echo "stone-stg-rh01 stone-stage-p01 lightwell-dev kflux-stg-p02 kflux-hub-stg-01" ;;
     ring-2) echo "kflux-prd-rh03 kflux-prd-es01 stone-prod-p01 kflux-ocp-p01 kflux-osp-p01 kflux-rhel-p01 kflux-fedora-01 kflux-lw-p01" ;;
     ring-3) echo "stone-prod-p02 stone-prd-rh01" ;;
     ring-4) echo "kflux-prd-rh02" ;;
