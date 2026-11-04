@@ -6,15 +6,7 @@ metadata:
     appstudio.redhat.com/deployment-clusters: "tenant"
 spec:
   generators:
-    # image-rbac-proxy is not deployed to lightwell-dev; drop it from the
-    # tenant cluster list populated by deploy-to-staging-tenant-clusters.
-    - selector:
-        matchExpressions:
-          - key: nameNormalized
-            operator: NotIn
-            values:
-              - lightwell-dev
-      merge:
+    - merge:
         mergeKeys:
           - nameNormalized
         generators:
