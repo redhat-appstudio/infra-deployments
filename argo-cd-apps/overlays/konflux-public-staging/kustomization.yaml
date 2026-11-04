@@ -11,12 +11,6 @@ patchesStrategicMerge:
   - delete-applications.yaml
 
 patches:
-  # Remove automated sync from vector-tekton-logs-collector for staging migration
-  - path: vector-tekton-logs-collector-remove-auto-sync-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: vector-tekton-logs-collector
   # Disable legacy build-templates auto-sync while rd-staging owns staging.
   - path: build-templates-remove-auto-sync-patch.yaml
     target:
