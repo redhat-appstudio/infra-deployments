@@ -1,5 +1,7 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
+namespace: crypto-scanner
 resources:
-  - role-binding.yaml
+  - image-puller-rb.yaml
+  - registry-viewer-rb.yaml
