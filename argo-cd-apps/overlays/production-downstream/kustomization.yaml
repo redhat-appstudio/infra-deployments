@@ -314,3 +314,11 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: enterprise-contract
+  # Restore automated sync on the legacy cert-manager-trusted-ca AppSet for
+  # production; Part 2 removed it from the shared base file for staging and
+  # inadvertently also disabled it here.
+  - path: cert-manager-trusted-ca-restore-auto-sync-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: cert-manager-trusted-ca
