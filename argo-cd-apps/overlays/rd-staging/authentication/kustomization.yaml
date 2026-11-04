@@ -3,3 +3,11 @@ kind: Kustomization
 
 resources:
   - authentication-appset.yaml
+
+patches:
+  - path: exclude-lightwell-dev-patch.yaml
+    target:
+      kind: ApplicationSet
+      group: argoproj.io
+      version: v1alpha1
+      name: authentication
