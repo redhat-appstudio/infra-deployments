@@ -11,17 +11,17 @@ configMapGenerator:
       - dex-config.yaml
 
 patches:
-- path: configmap.yaml
-- path: service-tls-patch.yaml
+- path: patches/configmap-patch.yaml
+- path: patches/service-tls-patch.yaml
   target:
     kind: Service
     name: image-rbac-proxy|dex
-- path: route-patch.yaml
+- path: patches/route-patch.yaml
   target:
     kind: Route
     group: route.openshift.io
     version: v1
-- path: sa-patch.yaml
+- path: patches/sa-patch.yaml
   target:
     kind: ServiceAccount
     name: dex-client
