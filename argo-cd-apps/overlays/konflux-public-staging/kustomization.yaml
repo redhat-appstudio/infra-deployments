@@ -11,12 +11,6 @@ patchesStrategicMerge:
   - delete-applications.yaml
 
 patches:
-  # Disable legacy Kubearchive auto-sync while rd-staging owns staging.
-  - path: kubearchive-remove-auto-sync-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: kubearchive
   # Remove automated sync from vector-tekton-logs-collector for staging migration
   - path: vector-tekton-logs-collector-remove-auto-sync-patch.yaml
     target:
@@ -29,3 +23,10 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: build-templates
+  # Remove automated sync from konflux-kite for staging migration; this AppSet is
+  # shared with production, so the base syncPolicy is left untouched
+  - path: konflux-kite-remove-auto-sync-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: konflux-kite

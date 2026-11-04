@@ -47,6 +47,15 @@ func TestParseOutputModes_Invalid(t *testing.T) {
 	g.Expect(parseOutputModes("local,bogus")).To(BeNil())
 }
 
+func TestParseOutputModes_LocalCannotBeCombined(t *testing.T) {
+	g := NewWithT(t)
+
+	// Local renders the working tree; CI modes compare committed refs.
+	g.Expect(parseOutputModes("local,ci-summary")).To(BeNil())
+	g.Expect(parseOutputModes("ci-comment,local")).To(BeNil())
+	g.Expect(parseOutputModes("local,ci-summary,ci-comment")).To(BeNil())
+}
+
 func TestParseOutputModes_Empty(t *testing.T) {
 	g := NewWithT(t)
 

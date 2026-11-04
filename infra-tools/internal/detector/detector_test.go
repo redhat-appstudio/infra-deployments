@@ -8,6 +8,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/redhat-appstudio/infra-deployments/infra-tools/internal/appset"
+	"github.com/redhat-appstudio/infra-deployments/infra-tools/internal/deptree"
 )
 
 // ---------------------------------------------------------------------------
@@ -15,11 +16,12 @@ import (
 // ---------------------------------------------------------------------------
 
 type fakeRepo struct {
-	dirs  map[string][]string        // ListSubDirs results keyed by rel path
-	exist map[string]bool            // DirExists results keyed by rel path
-	files map[string]bool            // FileExists results keyed by rel path
-	yamls map[string][]byte          // BuildKustomization results keyed by rel path
-	deps  map[string]map[string]bool // ResolveDeps results keyed by rel path
+	dirs    map[string][]string        // ListSubDirs results keyed by rel path
+	exist   map[string]bool            // DirExists results keyed by rel path
+	files   map[string]bool            // FileExists results keyed by rel path
+	yamls   map[string][]byte          // BuildKustomization results keyed by rel path
+	deps    map[string]map[string]bool // ResolveDeps results keyed by rel path
+	depsErr map[string]error           // ResolveDeps errors keyed by rel path
 }
 
 func (f *fakeRepo) ListSubDirs(rel string) ([]string, error) {
@@ -49,7 +51,11 @@ func (f *fakeRepo) BuildKustomization(rel string) ([]byte, error) {
 }
 
 func (f *fakeRepo) ResolveDeps(rel string) (map[string]bool, error) {
-	if d, ok := f.deps[rel]; ok {
+	d := f.deps[rel]
+	if err, ok := f.depsErr[rel]; ok {
+		return d, err
+	}
+	if d != nil {
 		return d, nil
 	}
 	return nil, fmt.Errorf("no deps for %s", rel)
@@ -1158,7 +1164,7 @@ func TestExtractPathsFromOverlays_Basic(t *testing.T) {
 		{name: "staging-downstream", env: Staging, headYAML: []byte(yaml)},
 	}
 
-	envPaths, allClusters, err := extractPathsFromOverlays(builds)
+	envPaths, allClusters, _, err := extractPathsFromOverlays(builds)
 	g.Expect(err).NotTo(HaveOccurred())
 
 	g.Expect(envPaths).To(HaveKey(Staging))
@@ -1194,7 +1200,7 @@ func TestExtractPathsFromOverlays_RingTemplateAttributedToOverlayEnv(t *testing.
 		{name: "rd-production", env: Production, headYAML: []byte(productionYAML)},
 	}
 
-	envPaths, allClusters, err := extractPathsFromOverlays(builds)
+	envPaths, allClusters, _, err := extractPathsFromOverlays(builds)
 	g.Expect(err).NotTo(HaveOccurred())
 
 	stagingPaths := make([]string, 0, len(envPaths[Staging]))
@@ -1223,7 +1229,7 @@ func TestExtractPathsFromOverlays_MultipleEnvs(t *testing.T) {
 		{name: "production-downstream", env: Production, headYAML: []byte(minimalAppSetYAML)},
 	}
 
-	envPaths, _, err := extractPathsFromOverlays(builds)
+	envPaths, _, _, err := extractPathsFromOverlays(builds)
 	g.Expect(err).NotTo(HaveOccurred())
 
 	g.Expect(envPaths).To(HaveKey(Staging))
@@ -1237,7 +1243,7 @@ func TestExtractPathsFromOverlays_InvalidYAML(t *testing.T) {
 		{name: "bad", env: Development, headYAML: []byte("not: valid: yaml: [}")},
 	}
 
-	_, _, err := extractPathsFromOverlays(builds)
+	_, _, _, err := extractPathsFromOverlays(builds)
 	g.Expect(err).To(HaveOccurred())
 }
 
@@ -1581,6 +1587,111 @@ func TestResolveComponentDeps_PrefixOnlyFollowsDepsUnderPrefix(t *testing.T) {
 	}
 	matchChangedFiles([]string{"components/backup/base/unused/x.yaml"}, resolved, nil, result)
 	g.Expect(result.AffectedEnvironments).To(BeEmpty())
+}
+
+// If HEAD turned a kustomization into plain manifests, a new plain manifest
+// must still mark the environment affected even though the base ref supplied a
+// dependency tree.
+func TestDetect_PlainManifestOnHeadUsesPrefixFallback(t *testing.T) {
+	g := NewWithT(t)
+
+	const changed = "components/foo/new-plain.yaml"
+	head := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"development"}},
+		yamls: map[string][]byte{"overlays/development": []byte(minimalAppSetYAML)},
+		exist: map[string]bool{"overlays/development": true, "components/foo": true},
+	}
+	base := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"development"}},
+		yamls: map[string][]byte{"overlays/development": []byte(minimalAppSetYAML)},
+		exist: map[string]bool{"overlays/development": true, "components/foo": true},
+		deps: map[string]map[string]bool{
+			"components/foo": {"components/foo/kustomization.yaml": true},
+		},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	result, err := d.Detect([]string{changed})
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.AffectedEnvironments).To(HaveKey(Development))
+}
+
+// An incomplete dependency tree (unreadable generator or chart subtree) must
+// still use prefix matching as well as the dependencies found so far.
+func TestDetect_PartialDepTreeUsesPrefixFallback(t *testing.T) {
+	g := NewWithT(t)
+
+	const changed = "components/foo/new-chart-value.yaml"
+	head := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"development"}},
+		yamls: map[string][]byte{"overlays/development": []byte(minimalAppSetYAML)},
+		exist: map[string]bool{"overlays/development": true, "components/foo": true},
+		deps: map[string]map[string]bool{
+			"components/foo": {"components/foo/kustomization.yaml": true},
+		},
+		depsErr: map[string]error{"components/foo": deptree.ErrIncomplete},
+	}
+	base := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"development"}},
+		yamls: map[string][]byte{"overlays/development": []byte(minimalAppSetYAML)},
+		exist: map[string]bool{"overlays/development": true, "components/foo": true},
+		deps: map[string]map[string]bool{
+			"components/foo": {"components/foo/kustomization.yaml": true},
+		},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	result, err := d.Detect([]string{changed})
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.AffectedEnvironments).To(HaveKey(Development))
+}
+
+// A prefix-only path may exist only on base. Its dependency trees must still be
+// walked there, so a dropped shared base is visible.
+func TestResolveComponentDeps_PrefixOnlyUsesBaseDeps(t *testing.T) {
+	g := NewWithT(t)
+
+	const prefix = "components/backup/production"
+	const clusterDir = prefix + "/stone-prod-p01"
+	const shared = "components/backup/base/member/schedule.yaml"
+
+	head := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"production-downstream"}},
+		exist: map[string]bool{prefix: true},
+	}
+	base := &fakeRepo{
+		dirs: map[string][]string{
+			"overlays": {"production-downstream"},
+			prefix:     {"stone-prod-p01"},
+			clusterDir: {},
+		},
+		exist: map[string]bool{prefix: true},
+		deps: map[string]map[string]bool{
+			clusterDir: {
+				clusterDir + "/kustomization.yaml": true,
+				shared:                             true,
+			},
+		},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	resolved := d.resolveComponentDeps(map[Environment][]appset.ComponentPath{
+		Production: {{Path: prefix, PrefixOnly: true}},
+	})
+	g.Expect(resolved).To(HaveLen(1))
+
+	result := &Result{
+		AffectedEnvironments: make(map[Environment]bool),
+		AffectedClusters:     make(map[string]bool),
+	}
+	matchChangedFiles([]string{shared}, resolved, nil, result)
+	g.Expect(result.AffectedEnvironments).To(HaveKey(Production))
 }
 
 // A MatchAll entry (unresolvable template without a static prefix) fails
@@ -2091,4 +2202,349 @@ func TestDetect_DeletedFileIsNotUnreferenced(t *testing.T) {
 	result, err := d.Detect([]string{deleted})
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(result.UnreferencedFiles).To(BeEmpty())
+}
+
+// ---------------------------------------------------------------------------
+// Components that only exist on one ref
+// ---------------------------------------------------------------------------
+
+// A PR that removes a component no longer has its ApplicationSet on HEAD. The
+// change must still be detected through the base ref, otherwise a removal looks
+// like "no impact".
+func TestDetect_ComponentRemovedInHead(t *testing.T) {
+	g := NewWithT(t)
+
+	const appSetYAML = `apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: foo
+spec:
+  generators:
+    - clusters: {}
+  template:
+    metadata:
+      name: foo
+    spec:
+      source:
+        path: components/foo
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+`
+	// HEAD no longer renders any ApplicationSet.
+	const emptyHead = `apiVersion: v1
+kind: Namespace
+metadata:
+  name: placeholder
+`
+
+	head := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"development"}},
+		yamls: map[string][]byte{"overlays/development": []byte(emptyHead)},
+		exist: map[string]bool{"overlays/development": true},
+		// The file still exists on HEAD, so it is a candidate for the
+		// unreferenced warning: only the removed (base-only) ApplicationSet
+		// references it.
+		files: map[string]bool{"components/foo/deploy.yaml": true},
+	}
+	base := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"development"}},
+		yamls: map[string][]byte{"overlays/development": []byte(appSetYAML)},
+		exist: map[string]bool{
+			"overlays/development": true,
+			"components/foo":       true,
+		},
+		deps: map[string]map[string]bool{
+			"components/foo": {"components/foo/deploy.yaml": true},
+		},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	const changed = "components/foo/deploy.yaml"
+
+	result, err := d.Detect([]string{changed})
+	g.Expect(err).NotTo(HaveOccurred())
+	// Detect already labels Development through its removed-overlay diff, so
+	// the environment label does not prove base-ref path extraction. The
+	// meaningful removal checks are the unreferenced warning below and
+	// AffectedComponents afterwards.
+	// The file exists on HEAD but only the removed (base-only) ApplicationSet
+	// references it, so it is dead after merge and must be reported as
+	// unreferenced even though the removal diff is still rendered.
+	g.Expect(result.UnreferencedFiles).To(ConsistOf(changed))
+
+	// render-diff uses AffectedComponents, so the base-only component must be
+	// returned there: the overlay diff alone does not name the component.
+	affected, err := d.AffectedComponents([]string{changed})
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(affected[Development]).To(HaveLen(1))
+	g.Expect(affected[Development][0].Path).To(Equal("components/foo"))
+}
+
+// A file that HEAD still contains but no longer references is dead, even if the
+// base ref still lists it. Base-only dependencies must not suppress the
+// unreferenced warning for a component that exists on HEAD.
+func TestDetect_HeadDroppedResourceIsUnreferenced(t *testing.T) {
+	g := NewWithT(t)
+
+	const changed = "components/foo/a.yaml"
+	head := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"development"}},
+		yamls: map[string][]byte{"overlays/development": []byte(minimalAppSetYAML)},
+		exist: map[string]bool{"overlays/development": true, "components/foo": true},
+		files: map[string]bool{changed: true},
+		deps: map[string]map[string]bool{
+			// HEAD dropped a.yaml from resources.
+			"components/foo": {"components/foo/kustomization.yaml": true},
+		},
+	}
+	base := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"development"}},
+		yamls: map[string][]byte{"overlays/development": []byte(minimalAppSetYAML)},
+		exist: map[string]bool{"overlays/development": true, "components/foo": true},
+		deps: map[string]map[string]bool{
+			"components/foo": {
+				"components/foo/kustomization.yaml": true,
+				changed:                             true,
+			},
+		},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	result, err := d.Detect([]string{changed})
+	g.Expect(err).NotTo(HaveOccurred())
+	// The union still attributes the change to the component's environment.
+	g.Expect(result.AffectedEnvironments).To(HaveKey(Development))
+	// But HEAD no longer references it, so it is dead after merge.
+	g.Expect(result.UnreferencedFiles).To(ConsistOf(changed))
+}
+
+// A PR can delete a whole overlay directory. Its ApplicationSets then exist
+// only on the base ref; render-diff still needs their component paths so the
+// removal is visible instead of silently producing no diff.
+func TestAffectedComponents_OverlayRemovedInHead(t *testing.T) {
+	g := NewWithT(t)
+
+	head := &fakeRepo{
+		dirs: map[string][]string{"overlays": {}},
+	}
+	base := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"production-downstream"}},
+		yamls: map[string][]byte{"overlays/production-downstream": []byte(minimalAppSetYAML)},
+		exist: map[string]bool{
+			"overlays/production-downstream": true,
+			"components/foo":                 true,
+		},
+		deps: map[string]map[string]bool{
+			"components/foo": {"components/foo/deploy.yaml": true},
+		},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	affected, err := d.AffectedComponents([]string{"components/foo/deploy.yaml"})
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(affected[Production]).To(HaveLen(1))
+	g.Expect(affected[Production][0].Path).To(Equal("components/foo"))
+}
+
+// An ApplicationSet can declare an environment that differs from the overlay
+// rendering it. The overlay environment is the deployment target and must
+// never be narrowed; the declared one is recorded in addition.
+func TestAffectedComponents_DeclaredEnvironmentDoesNotNarrowOverlay(t *testing.T) {
+	g := NewWithT(t)
+
+	const stagingAppSet = `apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: staged
+spec:
+  generators:
+    - clusters:
+        values:
+          environment: staging
+  template:
+    metadata:
+      name: staged
+    spec:
+      source:
+        path: components/foo
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+`
+	head := &fakeRepo{
+		dirs: map[string][]string{"overlays": {}},
+	}
+	base := &fakeRepo{
+		dirs: map[string][]string{
+			"overlays": {"development", "staging-downstream", "production-downstream"},
+		},
+		yamls: map[string][]byte{
+			"overlays/development":           []byte(stagingAppSet),
+			"overlays/staging-downstream":    []byte(stagingAppSet),
+			"overlays/production-downstream": []byte(stagingAppSet),
+		},
+		exist: map[string]bool{
+			"overlays/development":           true,
+			"overlays/staging-downstream":    true,
+			"overlays/production-downstream": true,
+			"components/foo":                 true,
+		},
+		deps: map[string]map[string]bool{
+			"components/foo": {"components/foo/deploy.yaml": true},
+		},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	affected, err := d.AffectedComponents([]string{"components/foo/deploy.yaml"})
+	g.Expect(err).NotTo(HaveOccurred())
+	for _, env := range []Environment{Development, Staging, Production} {
+		g.Expect(affected[env]).To(HaveLen(1), "environment %s", env)
+		g.Expect(affected[env][0].Path).To(Equal("components/foo"))
+	}
+}
+
+// Regression: a production overlay can include an unpatched base AppSet that
+// still declares values.environment: staging. That value is a path-template
+// variable, not the deployment target, so the path must keep Production.
+func TestAffectedComponents_ProductionOverlayKeepsProduction(t *testing.T) {
+	g := NewWithT(t)
+
+	const stagingAppSet = `apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: staged
+spec:
+  generators:
+    - clusters:
+        values:
+          environment: staging
+  template:
+    metadata:
+      name: staged
+    spec:
+      source:
+        path: components/foo
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+`
+	head := &fakeRepo{
+		dirs: map[string][]string{"overlays": {}},
+	}
+	base := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"production-downstream"}},
+		yamls: map[string][]byte{"overlays/production-downstream": []byte(stagingAppSet)},
+		exist: map[string]bool{
+			"overlays/production-downstream": true,
+			"components/foo":                 true,
+		},
+		deps: map[string]map[string]bool{
+			"components/foo": {"components/foo/deploy.yaml": true},
+		},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	affected, err := d.AffectedComponents([]string{"components/foo/deploy.yaml"})
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(affected[Production]).To(HaveLen(1))
+	g.Expect(affected[Production][0].Path).To(Equal("components/foo"))
+}
+
+// Dependencies are resolved on both refs: a file that a component depended on
+// only on the base ref is still part of the change.
+func TestDetect_DepsResolvedOnBothRefs(t *testing.T) {
+	g := NewWithT(t)
+
+	head := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"development"}},
+		yamls: map[string][]byte{"overlays/development": []byte(minimalAppSetYAML)},
+		exist: map[string]bool{"overlays/development": true, "components/foo": true},
+		deps: map[string]map[string]bool{
+			"components/foo": {"components/foo/kustomization.yaml": true},
+		},
+	}
+	base := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"development"}},
+		yamls: map[string][]byte{"overlays/development": []byte(minimalAppSetYAML)},
+		exist: map[string]bool{"overlays/development": true, "components/foo": true},
+		deps: map[string]map[string]bool{
+			"components/foo": {
+				"components/foo/kustomization.yaml":    true,
+				"components/foo/removed-resource.yaml": true,
+			},
+		},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	result, err := d.Detect([]string{"components/foo/removed-resource.yaml"})
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.AffectedEnvironments).To(HaveKey(Development))
+}
+
+// An empty dependency tree on one ref (a kustomization with no local
+// resources) must merge cleanly with the other ref's tree.
+func TestDetect_EmptyDepTreeOnOneRef(t *testing.T) {
+	g := NewWithT(t)
+
+	head := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"development"}},
+		yamls: map[string][]byte{"overlays/development": []byte(minimalAppSetYAML)},
+		exist: map[string]bool{"overlays/development": true, "components/foo": true},
+		deps:  map[string]map[string]bool{"components/foo": {}},
+	}
+	base := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"development"}},
+		yamls: map[string][]byte{"overlays/development": []byte(minimalAppSetYAML)},
+		exist: map[string]bool{"overlays/development": true, "components/foo": true},
+		deps: map[string]map[string]bool{
+			"components/foo": {"components/foo/base-only.yaml": true},
+		},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	result, err := d.Detect([]string{"components/foo/base-only.yaml"})
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.AffectedEnvironments).To(HaveKey(Development))
+}
+
+// A component that exists on both refs and gains a dependency in HEAD pulls in
+// the new dependency even though the base tree does not know it.
+func TestDetect_DepsResolvedOnHead(t *testing.T) {
+	g := NewWithT(t)
+
+	head := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"development"}},
+		yamls: map[string][]byte{"overlays/development": []byte(minimalAppSetYAML)},
+		exist: map[string]bool{"overlays/development": true, "components/foo": true},
+		deps: map[string]map[string]bool{
+			"components/foo": {
+				"components/foo/kustomization.yaml": true,
+				"components/foo/new-resource.yaml":  true,
+			},
+		},
+	}
+	base := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"development"}},
+		yamls: map[string][]byte{"overlays/development": []byte(minimalAppSetYAML)},
+		exist: map[string]bool{"overlays/development": true, "components/foo": true},
+		deps: map[string]map[string]bool{
+			"components/foo": {"components/foo/kustomization.yaml": true},
+		},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	result, err := d.Detect([]string{"components/foo/new-resource.yaml"})
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.AffectedEnvironments).To(HaveKey(Development))
 }

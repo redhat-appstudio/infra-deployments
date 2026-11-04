@@ -20,7 +20,7 @@ patches:
       version: v1alpha1
       name: kubelet-config
   # Defer perf-team (tenant namespaces)
-  - path: exclude-kflux-stg-p02.yaml
+  - path: exclude-perf-team-roks-clusters.yaml
     target:
       kind: ApplicationSet
       version: v1alpha1
@@ -127,17 +127,18 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: release
-  - path: kubearchive-remove-auto-sync-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: kubearchive
-  # Remove automated sync from vector-tekton-logs-collector for staging migration
   - path: vector-tekton-logs-collector-remove-auto-sync-patch.yaml
     target:
       kind: ApplicationSet
       version: v1alpha1
       name: vector-tekton-logs-collector
+  # Remove automated sync from konflux-kite for staging migration; this AppSet is
+  # shared with production, so the base syncPolicy is left untouched
+  - path: konflux-kite-remove-auto-sync-patch.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: konflux-kite
  # Disable legacy build-templates auto-sync while rd-staging owns staging.
   - path: build-templates-remove-auto-sync-patch.yaml
     target:
