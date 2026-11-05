@@ -115,14 +115,14 @@ dynamicConfigs:
     disk: "200"
     # user-data loaded from ../staging/base/host-config-chart/files/linux-root-amd64-init.sh
 
-  fedora-linux-root-arm64:
+  fedora-root-arm64:
     instance-type: "m6g.2xlarge"
     sudo-commands: "/usr/bin/podman, /usr/bin/rm /usr/share/containers/mounts.conf"
     ami: "ami-08c28532356e3b2b4"
     user-data-file: files/fedora/linux-root-arm64-init.sh
     provisioning-user: fedora
 
-  fedora-linux-root-amd64:
+  fedora-root-amd64:
     sudo-commands: "/usr/bin/podman, /usr/bin/rm /usr/share/containers/mounts.conf"
     ami: "ami-0f8ec1601c3fe1115"
     user-data-file: files/fedora/linux-root-amd64-init.sh
