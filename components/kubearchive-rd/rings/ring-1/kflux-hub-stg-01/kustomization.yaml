@@ -1,0 +1,30 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../base
+
+namespace: product-kubearchive
+
+configMapGenerator:
+  - name: kubearchive-api-url
+    options:
+      disableNameSuffixHash: true
+    literals:
+      - URL=https://kubearchive-api-server-product-kubearchive.kflux-hub-stg-01-ac9b3f84c360ccb9d8b9fc0809d652b1-0000.us-east.containers.appdomain.cloud
+patches:
+  - path: patches/database-secret-path-patch.yaml
+    target:
+      name: database-secret
+      group: external-secrets.io
+      version: v1
+      kind: ExternalSecret
+  - path: patches/database-secret-config-patch.yaml
+    target:
+      name: database-secret
+      group: external-secrets.io
+      version: v1
+      kind: ExternalSecret
+  - path: patches/sink-database-ca-patch.yaml
+  - path: patches/api-server-database-ca-patch.yaml
+  - path: patches/schema-migration-database-ca-patch.yaml

@@ -1,0 +1,23 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kubearchive-schema-migration
+  namespace: kubearchive
+spec:
+  template:
+    spec:
+      volumes:
+        - name: db-ca-cert
+          secret:
+            secretName: kubearchive-database-credentials
+            items:
+              - key: DATABASE_CA_CERT
+                path: ca.crt
+      containers:
+        - name: migration
+          volumeMounts:
+            - name: db-ca-cert
+              mountPath: /etc/ssl/certs/db-ca.crt
+              subPath: ca.crt
+              readOnly: true

@@ -32,7 +32,9 @@ func runAllOutputModes(ctx context.Context, modes []OutputMode, result *renderdi
 }
 
 // parseOutputModes splits a comma-separated output-mode string, validates each
-// value, and returns the deduplicated list. Returns nil if any value is invalid.
+// value, and returns the deduplicated list. Returns nil if any value is invalid
+// or if local is combined with a CI mode: local renders the working tree, while
+// CI modes compare committed refs, so they cannot share one run.
 func parseOutputModes(raw string) []OutputMode {
 	seen := make(map[OutputMode]bool)
 	var modes []OutputMode
@@ -51,6 +53,9 @@ func parseOutputModes(raw string) []OutputMode {
 		default:
 			return nil
 		}
+	}
+	if seen[OutputModeLocal] && len(modes) > 1 {
+		return nil
 	}
 	return modes
 }

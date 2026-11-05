@@ -1,10 +1,10 @@
 # External Secrets Operator Helm Chart Values
-# Version: 2.0.0
+# Version: 2.14.0
 # Configuration matches the OLM deployment OperatorConfig
-# Image configuration - matches OLM CSV version 2.0.0
+# Image configuration - matches OLM CSV version 2.14.0
 image:
   repository: ghcr.io/external-secrets/external-secrets
-  tag: "v2.0.0"
+  tag: "v2.14.0"
 # Replica count
 replicaCount: 1
 # Install CRDs - CRITICAL: Must be true to install CustomResourceDefinitions
@@ -50,6 +50,19 @@ webhook:
 metrics:
   listen:
     port: 8080
+    # Keep the metrics endpoint as plain HTTP without RBAC-based auth.
+    # Scrapes are already restricted to the openshift-user-workload-monitoring
+    # namespace by the allow-metrics-ingress NetworkPolicy. Enabling
+    # secure/auth here would make the chart mint a kubernetes.io/service-account-token
+    # Secret for the controller ServiceAccount and hand that token to
+    # Prometheus, i.e. expose the controller's cluster-wide RBAC to the
+    # monitoring stack (see templates/serviceaccount.yaml and
+    # templates/servicemonitor.yaml in the vendored chart).
+    # Pinned explicitly so a future chart default cannot enable it silently.
+    secure:
+      enabled: false
+    auth:
+      enabled: false
   service:
     enabled: true
     port: 8080

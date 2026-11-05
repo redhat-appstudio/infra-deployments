@@ -5,6 +5,7 @@
 package deptree
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -13,7 +14,14 @@ import (
 
 	"sigs.k8s.io/kustomize/api/types"
 	"sigs.k8s.io/yaml"
+
+	"github.com/redhat-appstudio/infra-deployments/infra-tools/internal/logging"
 )
+
+// ErrIncomplete is returned together with the dependencies found so far when
+// some generator or chart input could not be inspected. Callers must fall back
+// to prefix matching as well as using the partial tree.
+var ErrIncomplete = errors.New("dependency tree incomplete")
 
 // kustomizationFileNames are the recognized filenames for kustomization files.
 var kustomizationFileNames = []string{
@@ -39,8 +47,12 @@ func Resolve(repoRoot, dir string) (map[string]bool, error) {
 	if !withinRoot(absRoot, absDir) {
 		return nil, fmt.Errorf("path %q escapes repository root", dir)
 	}
-	if err := resolve(absRoot, absDir, deps, visited); err != nil {
+	incomplete := false
+	if err := resolve(absRoot, absDir, deps, visited, &incomplete); err != nil {
 		return nil, err
+	}
+	if incomplete {
+		return deps, ErrIncomplete
 	}
 	return deps, nil
 }
@@ -102,7 +114,7 @@ func hasKustomization(dir string) bool {
 	return false
 }
 
-func resolve(repoRoot, absDir string, deps, visited map[string]bool) error {
+func resolve(repoRoot, absDir string, deps, visited map[string]bool, incomplete *bool) error {
 	// Avoid infinite loops from circular references
 	if visited[absDir] {
 		return nil
@@ -126,7 +138,7 @@ func resolve(repoRoot, absDir string, deps, visited map[string]bool) error {
 			}
 			subDir := filepath.Join(absDir, entry.Name())
 			if hasKustomization(subDir) {
-				if subErr := resolve(repoRoot, subDir, deps, visited); subErr == nil {
+				if subErr := resolve(repoRoot, subDir, deps, visited, incomplete); subErr == nil {
 					found = true
 				}
 			}
@@ -160,10 +172,10 @@ func resolve(repoRoot, absDir string, deps, visited map[string]bool) error {
 				addDependency(repoRoot, absPath, deps)
 			}
 			if !withinRoot(repoRoot, absPath) {
-				slog.Warn("skipping kustomization resource outside repository", "path", absPath)
+				slog.Warn("skipping kustomization resource outside repository", "path", logging.Sanitize(absPath))
 				continue
 			}
-			if err := resolve(repoRoot, absPath, deps, visited); err != nil {
+			if err := resolve(repoRoot, absPath, deps, visited, incomplete); err != nil {
 				return err
 			}
 		} else {
@@ -209,10 +221,10 @@ func resolve(repoRoot, absDir string, deps, visited map[string]bool) error {
 			addDependency(repoRoot, absComp, deps)
 		}
 		if !withinRoot(repoRoot, absComp) {
-			slog.Warn("skipping kustomization component outside repository", "path", absComp)
+			slog.Warn("skipping kustomization component outside repository", "path", logging.Sanitize(absComp))
 			continue
 		}
-		if err := resolve(repoRoot, absComp, deps, visited); err != nil {
+		if err := resolve(repoRoot, absComp, deps, visited, incomplete); err != nil {
 			return err
 		}
 	}
@@ -237,7 +249,7 @@ func resolve(repoRoot, absDir string, deps, visited map[string]bool) error {
 		addFile(repoRoot, absDir, g, deps)
 		// If the generator is a HelmChartInflationGenerator, its valuesFile
 		// and additionalValuesFiles are also dependencies.
-		if err := addHelmGeneratorDeps(repoRoot, absDir, g, deps); err != nil {
+		if err := addHelmGeneratorDeps(repoRoot, absDir, g, deps, incomplete); err != nil {
 			return err
 		}
 	}
@@ -272,7 +284,7 @@ func resolve(repoRoot, absDir string, deps, visited map[string]bool) error {
 	for _, hc := range k.HelmCharts {
 		if hc.Name != "" {
 			chartDir := filepath.Join(absDir, chartHome, hc.Name)
-			if err := addDirTree(repoRoot, chartDir, deps); err != nil {
+			if err := addDirTree(repoRoot, chartDir, deps, incomplete); err != nil {
 				return fmt.Errorf("walking helm chart %s: %w", hc.Name, err)
 			}
 		}
@@ -312,22 +324,31 @@ type helmGeneratorConfig struct {
 // HelmChartInflationGenerator, adds its valuesFile, additionalValuesFiles,
 // and local chart directory (charts/<name>) as dependencies.
 // Non-HelmChartInflationGenerator files are silently skipped.
-func addHelmGeneratorDeps(repoRoot, absDir, generatorPath string, deps map[string]bool) error {
+func addHelmGeneratorDeps(repoRoot, absDir, generatorPath string, deps map[string]bool, incomplete *bool) error {
 	absPath := filepath.Join(absDir, generatorPath)
 	// The generator path itself is already recorded by addFile. Do not read
 	// through a symlink whose target leaves the checkout.
 	if !withinRoot(repoRoot, absPath) {
-		slog.Warn("not reading generator outside repository", "path", absPath)
+		slog.Warn("not reading generator outside repository", "path", logging.Sanitize(absPath))
 		return nil
 	}
 	data, err := os.ReadFile(absPath)
 	if err != nil {
-		return fmt.Errorf("reading generator %s: %w", generatorPath, err)
+		// A generator may be generated at build time or live outside the
+		// repo; keep the dependencies found so far, but tell the caller the
+		// tree is incomplete so it also uses prefix matching.
+		*incomplete = true
+		slog.Warn("cannot read generator, skipping its dependencies",
+			"generator", logging.Sanitize(generatorPath), "err", logging.Sanitize(err.Error()))
+		return nil
 	}
 
 	var cfg helmGeneratorConfig
 	if err := yaml.Unmarshal(data, &cfg); err != nil {
-		return fmt.Errorf("parsing generator %s: %w", generatorPath, err)
+		*incomplete = true
+		slog.Warn("cannot parse generator, skipping its dependencies",
+			"generator", logging.Sanitize(generatorPath), "err", logging.Sanitize(err.Error()))
+		return nil
 	}
 	if cfg.Kind != "HelmChartInflationGenerator" {
 		return nil
@@ -342,7 +363,7 @@ func addHelmGeneratorDeps(repoRoot, absDir, generatorPath string, deps map[strin
 	if cfg.Name != "" {
 		chartDir := filepath.Join(absDir, types.HelmDefaultHome, cfg.Name)
 		if info, err := os.Stat(chartDir); err == nil && info.IsDir() {
-			if err := addDirTree(repoRoot, chartDir, deps); err != nil {
+			if err := addDirTree(repoRoot, chartDir, deps, incomplete); err != nil {
 				return fmt.Errorf("walking local chart %s: %w", cfg.Name, err)
 			}
 		}
@@ -372,14 +393,32 @@ func addGeneratorSources(repoRoot, absDir string, gen *types.GeneratorArgs, deps
 // contains to the dependency set. This is used for Helm chart directories
 // where any file change (templates, helpers, Chart.yaml, etc.) affects the
 // build output.
-func addDirTree(repoRoot, absDir string, deps map[string]bool) error {
+//
+// A missing directory is not an error: charts are often pulled from a remote
+// repository at build time, and failing here would discard the rest of the
+// dependency tree.
+func addDirTree(repoRoot, absDir string, deps map[string]bool, incomplete *bool) error {
+	if _, err := os.Stat(absDir); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			slog.Debug("chart directory not present locally, skipping",
+				"dir", logging.Sanitize(absDir), "err", logging.Sanitize(err.Error()))
+		} else {
+			*incomplete = true
+			slog.Warn("cannot read chart directory, skipping",
+				"dir", logging.Sanitize(absDir), "err", logging.Sanitize(err.Error()))
+		}
+		return nil
+	}
 	if !withinRoot(repoRoot, absDir) {
-		slog.Warn("skipping chart directory outside repository", "path", absDir)
+		slog.Warn("skipping chart directory outside repository", "path", logging.Sanitize(absDir))
 		return nil
 	}
 	return filepath.Walk(absDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			return err
+			*incomplete = true
+			slog.Warn("cannot walk chart directory entry, skipping",
+				"path", logging.Sanitize(path), "err", logging.Sanitize(err.Error()))
+			return nil //nolint:nilerr // best-effort: keep the rest of the tree
 		}
 		if info.IsDir() {
 			return nil
@@ -428,7 +467,7 @@ func loadKustomization(repoRoot, dir string) (*types.Kustomization, string, erro
 	for _, name := range kustomizationFileNames {
 		path := filepath.Join(dir, name)
 		if !withinRoot(repoRoot, path) {
-			slog.Warn("skipping kustomization file outside repository", "path", path)
+			slog.Warn("skipping kustomization file outside repository", "path", logging.Sanitize(path))
 			continue
 		}
 		data, err := os.ReadFile(path)
@@ -442,6 +481,11 @@ func loadKustomization(repoRoot, dir string) (*types.Kustomization, string, erro
 		if err := yaml.Unmarshal(data, &k); err != nil {
 			return nil, "", fmt.Errorf("parsing %s: %w", path, err)
 		}
+		// Apply kustomize's own normalisation so deprecated fields are handled
+		// the way kustomize handles them: 'bases' become 'resources',
+		// 'imageTags' become 'images', and the legacy
+		// HelmChartInflationGenerator entries become HelmCharts.
+		k.FixKustomization()
 		return &k, path, nil
 	}
 	return nil, "", fmt.Errorf("no kustomization file found in %s", dir)
