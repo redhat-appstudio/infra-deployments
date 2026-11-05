@@ -8,7 +8,6 @@ import (
 	"log/slog"
 	"os"
 	"strings"
-	"unicode/utf8"
 
 	ghclient "github.com/redhat-appstudio/infra-deployments/infra-tools/internal/github"
 	"github.com/redhat-appstudio/infra-deployments/infra-tools/internal/renderdiff"
@@ -155,20 +154,18 @@ func renderSummaryBlock(d renderdiff.ComponentDiff) string {
 
 // truncateAtLine cuts text at the last newline before limit so the result never
 // ends mid-line or mid-rune (diffs are line-oriented, and a half UTF-8 sequence
-// would corrupt the markdown).
+// would corrupt the markdown). It returns "" when no complete line fits.
 func truncateAtLine(text string, limit int) string {
 	if len(text) <= limit {
 		return text
 	}
 	cut := text[:limit]
-	if i := strings.LastIndexByte(cut, '\n'); i > 0 {
+	// Only a complete line is safe to inline. If the budget cuts inside the
+	// first line, return no content rather than a partial line.
+	if i := strings.LastIndexByte(cut, '\n'); i >= 0 {
 		return cut[:i]
 	}
-	// No newline in range: fall back to a rune-safe cut.
-	for limit > 0 && !utf8.RuneStart(text[limit]) {
-		limit--
-	}
-	return text[:limit]
+	return ""
 }
 
 // postCIComment generates the PR comment markdown and posts it to GitHub.

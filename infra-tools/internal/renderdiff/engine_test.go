@@ -64,6 +64,35 @@ func TestEngine_NormalDiff(t *testing.T) {
 	g.Expect(result.TotalRemoved).To(Equal(1))
 }
 
+func TestEngine_NewDeploymentWithExistingBase(t *testing.T) {
+	g := NewWithT(t)
+
+	// The directory is identical on both refs, but the ApplicationSet only
+	// starts deploying it on HEAD. The base render must be treated as empty so
+	// the new deployment is not hidden by an empty diff.
+	same := []byte("apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: foo\n")
+	head := &fakeBuilder{
+		exist: map[string]bool{"components/foo/staging": true},
+		yamls: map[string][]byte{"components/foo/staging": same},
+	}
+	base := &fakeBuilder{
+		exist: map[string]bool{"components/foo/staging": true},
+		yamls: map[string][]byte{"components/foo/staging": same},
+	}
+
+	engine := NewEngine(head, base, 1)
+	affected := map[detector.Environment][]appset.ComponentPath{
+		detector.Staging: {{Path: "components/foo/staging", NewDeployment: true}},
+	}
+
+	result, err := engine.Run(context.Background(), affected)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.Diffs).To(HaveLen(1))
+	g.Expect(result.Diffs[0].BaseYAML).To(BeNil())
+	g.Expect(result.Diffs[0].Added).To(BeNumerically(">", 0))
+	g.Expect(result.Diffs[0].Removed).To(Equal(0))
+}
+
 func TestEngine_NewComponent(t *testing.T) {
 	g := NewWithT(t)
 
