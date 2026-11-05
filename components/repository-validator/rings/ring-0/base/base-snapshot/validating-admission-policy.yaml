@@ -26,10 +26,20 @@ spec:
         size(variables.allowedPrefixes) == 1 &&
         variables.allowedPrefixes[0] == "*"
   validations:
+    # Per prefix, require a real boundary right after it:
+    #   1. nothing more (exact match).
+    #   2. a ".git" clone-URL suffix (exact match).
+    #   3. or a "/" ending path (any repo under that org; if the prefix
+    #      itself already ends in "/", reuse it as-is so the check doesn't
+    #      require a double slash).
     - expression: |
         variables.allowAll ||
         variables.allowedPrefixes.exists(prefix,
-          prefix != "" && object.spec.url.startsWith(prefix)
+          prefix != "" && (
+            object.spec.url == prefix ||
+            object.spec.url == prefix + '.git' ||
+            object.spec.url.startsWith(prefix.endsWith('/') ? prefix : prefix + '/')
+          )
         )
       messageExpression: |
         'Repository URL "' + object.spec.url +
