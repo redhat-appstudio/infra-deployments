@@ -1,0 +1,40 @@
+# This component deploys to selected ROKS HCP clusters, not the generic
+# production tenant cluster set, so the cluster list is a plain static list
+# generator rather than a clusters generator + k-component.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: cert-manager-trusted-ca
+spec:
+  generators:
+    - list:
+        elements:
+          - name: kflux-lw-p01
+            values.sourceRoot: components/cert-manager-trusted-ca-rd
+            values.ring: ring-2
+            values.clusterDir: kflux-lw-p01
+
+  template:
+    metadata:
+      name: cert-manager-trusted-ca-{{name}}
+    spec:
+      project: default
+      source:
+        path: '{{values.sourceRoot}}/rings/{{values.ring}}/{{values.clusterDir}}'
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+        targetRevision: main
+      destination:
+        name: '{{name}}'
+        namespace: cert-manager
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+        - CreateNamespace=false
+        retry:
+          limit: -1
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 3m
