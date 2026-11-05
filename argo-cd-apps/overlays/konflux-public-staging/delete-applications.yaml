@@ -33,3 +33,11 @@ kind: ApplicationSet
 metadata:
   name: konflux-kite
 $patch: delete
+---
+# Owned by ring Argo CD (rd-staging) now that build-templates's
+# ring-1 staging clusters are migrated.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: build-templates
+$patch: delete
