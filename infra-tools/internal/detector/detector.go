@@ -174,18 +174,25 @@ func (d *Detector) AffectedComponents(changedFiles []string) (map[Environment][]
 }
 
 // appendNewComponentPaths appends the component paths of extra that are not yet
-// present in existing, preserving order.
+// present in existing, preserving order. Render jobs are deduplicated by
+// render target, not by ExtraFiles: the engine builds only the directory and
+// cluster, so two ApplicationSet entries with different value files are one job.
 func appendNewComponentPaths(existing, extra []appset.ComponentPath) []appset.ComponentPath {
-	seen := make(map[string]bool, len(existing))
-	for _, cp := range existing {
-		seen[renderPathKey(cp)] = true
+	index := make(map[string]int, len(existing))
+	for i, cp := range existing {
+		index[renderJobKey(cp)] = i
 	}
 	for _, cp := range extra {
-		key := renderPathKey(cp)
-		if seen[key] {
+		key := renderJobKey(cp)
+		if i, ok := index[key]; ok {
+			// A matched path that the ApplicationSet also starts deploying on
+			// HEAD must render as a new deployment.
+			if cp.NewDeployment {
+				existing[i].NewDeployment = true
+			}
 			continue
 		}
-		seen[key] = true
+		index[key] = len(existing)
 		existing = append(existing, cp)
 	}
 	return existing
@@ -195,34 +202,60 @@ func appendNewComponentPaths(existing, extra []appset.ComponentPath) []appset.Co
 // are rendered on HEAD but not on the base ref. These appear when a PR adds an
 // ApplicationSet, adds a cluster to a generator list, or changes a path
 // template, and they must be rendered even though no changed file lives there.
+//
+// Base deployments are collected across every overlay first: several overlays
+// can share an environment, and a target already deployed by one of them is not
+// new just because another overlay starts rendering it. When a base render
+// cannot be parsed, paths in that environment are still added but never marked
+// as new: the earlier base state is unknown.
 func (d *Detector) pathsAddedByOverlayChanges(builds []overlayBuild) (map[Environment][]appset.ComponentPath, error) {
 	added := make(map[Environment][]appset.ComponentPath)
+	known := make(map[string]bool)
+	coverage := make(map[Environment]*baseCoverage)
+	baseUsable := make([]bool, len(builds))
+	baseFailedEnvs := make(map[Environment]bool)
 
-	for _, ob := range builds {
+	for i, ob := range builds {
+		if len(ob.baseYAML) == 0 {
+			baseUsable[i] = true
+			continue
+		}
+		basePaths, err := appset.ParseApplicationSets(ob.baseYAML)
+		if err != nil {
+			// The base view is unknown. Keep the overlay's HEAD paths (they
+			// still rendered before added-path detection existed), but never
+			// call them new, and apply the same caution to its environment.
+			slog.Warn("failed to parse base-ref ApplicationSets, not marking paths as new",
+				"overlay", logging.Sanitize(ob.name), "err", sanitizedError(err))
+			baseFailedEnvs[ob.env] = true
+			continue
+		}
+		baseUsable[i] = true
+		for _, cp := range basePaths.Paths {
+			for _, env := range pathEnvironments(cp, ob.env) {
+				known[deploymentKey(env, cp)] = true
+				c := coverage[env]
+				if c == nil {
+					c = &baseCoverage{}
+					coverage[env] = c
+				}
+				if cp.MatchAll {
+					c.matchAll = true
+				}
+				if cp.PrefixOnly && cp.Path != "" {
+					c.prefixes = append(c.prefixes, cp.Path)
+				}
+			}
+		}
+	}
+
+	for i, ob := range builds {
 		if string(ob.headYAML) == string(ob.baseYAML) {
 			continue
 		}
-
 		headPaths, err := appset.ParseApplicationSets(ob.headYAML)
 		if err != nil {
 			return nil, fmt.Errorf("parsing ApplicationSets from overlay %s: %w", ob.name, err)
-		}
-		// The base render is best-effort: without it every head path looks new.
-		var basePaths *appset.ParseResult
-		if len(ob.baseYAML) > 0 {
-			basePaths, err = appset.ParseApplicationSets(ob.baseYAML)
-			if err != nil {
-				slog.Warn("failed to parse base-ref ApplicationSets, treating all paths as new",
-					"overlay", logging.Sanitize(ob.name), "err", sanitizedError(err))
-				basePaths = nil
-			}
-		}
-
-		known := make(map[string]bool)
-		if basePaths != nil {
-			for _, cp := range basePaths.Paths {
-				known[renderPathKey(cp)] = true
-			}
 		}
 		for _, cp := range headPaths.Paths {
 			// Only a concrete deployed directory can be rendered. MatchAll,
@@ -230,28 +263,75 @@ func (d *Detector) pathsAddedByOverlayChanges(builds []overlayBuild) (map[Enviro
 			if cp.MatchAll || cp.Path == "" || cp.PrefixOnly {
 				continue
 			}
-			if known[renderPathKey(cp)] {
-				continue
-			}
+			headExists := d.head.DirExists(cp.Path)
 			// A path that exists on neither ref is a stale reference, not
 			// something to diff.
-			if !d.head.DirExists(cp.Path) && !d.base.DirExists(cp.Path) {
+			if !headExists && !d.base.DirExists(cp.Path) {
 				continue
 			}
-			// The path keeps the environment its ApplicationSet declares; only
-			// when it declares none does it inherit the overlay environment.
-			env := environmentFor(cp.Environment, ob.env)
-			added[env] = append(added[env], cp)
+			for _, env := range pathEnvironments(cp, ob.env) {
+				if known[deploymentKey(env, cp)] {
+					continue
+				}
+				addedPath := cp
+				// Only mark a deployment new when HEAD can render it and the
+				// base view is trustworthy: a failed base parse or a base
+				// prefix/MatchAll that covers this path means the target may
+				// already have been deployed.
+				addedPath.NewDeployment = headExists &&
+					baseUsable[i] && !baseFailedEnvs[env] && !coverage[env].covers(cp.Path)
+				added[env] = appendNewComponentPaths(added[env], []appset.ComponentPath{addedPath})
+			}
 		}
 	}
 	return added, nil
 }
 
-// renderPathKey identifies a ComponentPath in a comparable form for
-// ApplicationSet-added paths. Environment is excluded because the result is
-// already grouped per environment.
-func renderPathKey(cp appset.ComponentPath) string {
-	return cp.Path + "|" + cp.ClusterDir + "|" + strings.Join(cp.ExtraFiles, ",")
+// baseCoverage records base entries that cannot be compared exactly: a
+// MatchAll entry, or a PrefixOnly path whose prefix may cover a resolved HEAD
+// path.
+type baseCoverage struct {
+	matchAll bool
+	prefixes []string
+}
+
+func (c *baseCoverage) covers(path string) bool {
+	if c == nil {
+		return false
+	}
+	if c.matchAll {
+		return true
+	}
+	for _, prefix := range c.prefixes {
+		if matchesPrefix(path, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
+// pathEnvironments returns the overlay environment and, when different, the
+// valid environment the ApplicationSet declares. This is the attribution used
+// by both extractPathsFromOverlays and the added-path phase.
+func pathEnvironments(cp appset.ComponentPath, overlayEnv Environment) []Environment {
+	envs := []Environment{overlayEnv}
+	if declared := environmentFor(cp.Environment, overlayEnv); declared != overlayEnv {
+		envs = append(envs, declared)
+	}
+	return envs
+}
+
+// deploymentKey compares a deployment across refs: the effective environment,
+// path and cluster directory. ExtraFiles are excluded because they do not
+// change what the render engine builds.
+func deploymentKey(env Environment, cp appset.ComponentPath) string {
+	return string(env) + "|" + cp.Path + "|" + cp.ClusterDir
+}
+
+// renderJobKey deduplicates render jobs within one environment. The engine
+// builds only the directory and cluster, so ExtraFiles must not split a job.
+func renderJobKey(cp appset.ComponentPath) string {
+	return cp.Path + "|" + cp.ClusterDir
 }
 
 // Detect runs the full detection pipeline:
@@ -523,11 +603,7 @@ func extractPathsFromOverlays(builds []overlayBuild) (map[Environment][]appset.C
 				// attribution below the overlay. The declared environment is
 				// usually a path-template variable; record it as well so a path
 				// rendered by several overlays keeps its own environment too.
-				envs := []Environment{ob.env}
-				if declared := environmentFor(cp.Environment, ob.env); declared != ob.env {
-					envs = append(envs, declared)
-				}
-				for _, env := range envs {
+				for _, env := range pathEnvironments(cp, ob.env) {
 					key := componentPathKey(env, cp)
 					if i == 0 {
 						headKeys[key] = true

@@ -235,6 +235,28 @@ spec:
 `, root, env, elements)
 }
 
+// appSetStaticPathWithEnv returns a static-path ApplicationSet that declares
+// the given environment.
+func appSetStaticPathWithEnv(path, env string) string {
+	return fmt.Sprintf(`apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: static
+spec:
+  generators:
+    - clusters:
+        values:
+          environment: %s
+  template:
+    metadata:
+      name: static
+    spec:
+      source:
+        path: %s
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+`, env, path)
+}
+
 // ---------------------------------------------------------------------------
 // NewDetector
 // ---------------------------------------------------------------------------
@@ -2879,4 +2901,404 @@ func TestAffectedComponents_UnchangedOverlayAddsNothing(t *testing.T) {
 	affected, err := d.AffectedComponents(nil)
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(affected).To(BeEmpty())
+}
+
+// A new ApplicationSet reference must render even when the component directory
+// already existed, unchanged, on the base ref.
+func TestAffectedComponents_NewReferenceToExistingDirectory(t *testing.T) {
+	g := NewWithT(t)
+
+	const path = "components/svc/production/stone-prod-p02"
+	baseYAML := appSetWithCluster("components/svc", "production", "stone-prod-p01")
+	headYAML := appSetWithCluster("components/svc", "production", "stone-prod-p02")
+
+	head := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"production-downstream"}},
+		yamls: map[string][]byte{"overlays/production-downstream": []byte(headYAML)},
+		exist: map[string]bool{
+			"overlays/production-downstream": true,
+			"components/svc/production":      true,
+			path:                             true,
+		},
+	}
+	base := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"production-downstream"}},
+		yamls: map[string][]byte{"overlays/production-downstream": []byte(baseYAML)},
+		exist: map[string]bool{
+			"overlays/production-downstream":           true,
+			"components/svc/production":                true,
+			"components/svc/production/stone-prod-p01": true,
+			path: true,
+		},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	affected, err := d.AffectedComponents(nil)
+	g.Expect(err).NotTo(HaveOccurred())
+
+	var found *appset.ComponentPath
+	for i := range affected[Production] {
+		if affected[Production][i].Path == path {
+			found = &affected[Production][i]
+			break
+		}
+	}
+	if found == nil {
+		t.Fatalf("path %s not found in %v", path, affected[Production])
+	}
+	g.Expect(found.NewDeployment).To(BeTrue())
+}
+
+// Moving a deployment between declared environments without changing its path
+// is still a new deployment for the new environment.
+func TestAffectedComponents_EnvironmentMoveIsNewDeployment(t *testing.T) {
+	g := NewWithT(t)
+
+	const path = "components/svc/shared"
+	headYAML := appSetStaticPathWithEnv(path, "production")
+	baseYAML := appSetStaticPathWithEnv(path, "staging")
+
+	head := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"development"}},
+		yamls: map[string][]byte{"overlays/development": []byte(headYAML)},
+		exist: map[string]bool{"overlays/development": true, path: true},
+	}
+	base := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"development"}},
+		yamls: map[string][]byte{"overlays/development": []byte(baseYAML)},
+		exist: map[string]bool{"overlays/development": true, path: true},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	affected, err := d.AffectedComponents(nil)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(affected[Production]).To(HaveLen(1))
+	g.Expect(affected[Production][0].Path).To(Equal(path))
+	g.Expect(affected[Production][0].NewDeployment).To(BeTrue())
+}
+
+// An added path is attributed to the overlay environment and to a different
+// declared environment, matching extractPathsFromOverlays.
+func TestAffectedComponents_AddedPathUsesBothEnvironments(t *testing.T) {
+	g := NewWithT(t)
+
+	const path = "components/svc/new"
+	headYAML := appSetStaticPathWithEnv(path, "staging")
+	baseYAML := `apiVersion: v1
+kind: Namespace
+metadata:
+  name: placeholder
+`
+
+	head := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"development"}},
+		yamls: map[string][]byte{"overlays/development": []byte(headYAML)},
+		exist: map[string]bool{"overlays/development": true, path: true},
+	}
+	base := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"development"}},
+		yamls: map[string][]byte{"overlays/development": []byte(baseYAML)},
+		exist: map[string]bool{"overlays/development": true},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	affected, err := d.AffectedComponents(nil)
+	g.Expect(err).NotTo(HaveOccurred())
+	for _, env := range []Environment{Development, Staging} {
+		g.Expect(affected[env]).To(HaveLen(1), "environment %s", env)
+		g.Expect(affected[env][0].Path).To(Equal(path))
+		g.Expect(affected[env][0].NewDeployment).To(BeTrue())
+	}
+}
+
+// Different value files for the same directory and cluster are one render job.
+func TestAppendNewComponentPaths_DedupesRenderTarget(t *testing.T) {
+	g := NewWithT(t)
+
+	paths := appendNewComponentPaths(nil, []appset.ComponentPath{
+		{Path: "components/svc/new", ExtraFiles: []string{"a.yaml"}, NewDeployment: true},
+		{Path: "components/svc/new", ExtraFiles: []string{"b.yaml"}, NewDeployment: true},
+	})
+	g.Expect(paths).To(HaveLen(1))
+}
+
+// A base-ref parse failure must not turn every HEAD path into a new deployment.
+func TestAffectedComponents_BaseParseFailureDoesNotMarkNew(t *testing.T) {
+	g := NewWithT(t)
+
+	const path = "components/svc/dev"
+	headYAML := appSetStaticPathWithEnv(path, "development")
+	head := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"development"}},
+		yamls: map[string][]byte{"overlays/development": []byte(headYAML)},
+		exist: map[string]bool{"overlays/development": true, path: true},
+		deps: map[string]map[string]bool{
+			path: {path + "/kustomization.yaml": true},
+		},
+	}
+	base := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"development"}},
+		yamls: map[string][]byte{"overlays/development": []byte("not: valid: yaml: [}")},
+		exist: map[string]bool{"overlays/development": true},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	affected, err := d.AffectedComponents([]string{path + "/kustomization.yaml"})
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(affected[Development]).To(HaveLen(1))
+	g.Expect(affected[Development][0].NewDeployment).To(BeFalse())
+}
+
+// A target already deployed by one overlay in an environment is not new just
+// because another overlay in the same environment starts rendering it.
+func TestAffectedComponents_SharedTargetAcrossOverlaysIsNotNew(t *testing.T) {
+	g := NewWithT(t)
+
+	const path = "components/svc/production/shared"
+	appSet := appSetStaticPathWithEnv(path, "production")
+	empty := `apiVersion: v1
+kind: Namespace
+metadata:
+  name: placeholder
+`
+	head := &fakeRepo{
+		dirs: map[string][]string{"overlays": {"production-downstream", "konflux-public-production"}},
+		yamls: map[string][]byte{
+			"overlays/production-downstream":     []byte(appSet),
+			"overlays/konflux-public-production": []byte(appSet),
+		},
+		exist: map[string]bool{
+			"overlays/production-downstream":     true,
+			"overlays/konflux-public-production": true,
+			path:                                 true,
+		},
+	}
+	base := &fakeRepo{
+		dirs: head.dirs,
+		yamls: map[string][]byte{
+			"overlays/production-downstream":     []byte(appSet),
+			"overlays/konflux-public-production": []byte(empty),
+		},
+		exist: map[string]bool{
+			"overlays/production-downstream":     true,
+			"overlays/konflux-public-production": true,
+			path:                                 true,
+		},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	affected, err := d.AffectedComponents(nil)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(affected).To(BeEmpty())
+}
+
+// A new reference to a directory that exists only on the base ref stays a
+// removal: it must not be marked NewDeployment, which would suppress both
+// builds.
+func TestAffectedComponents_NewReferenceToBaseOnlyDirectory(t *testing.T) {
+	g := NewWithT(t)
+
+	const path = "components/svc/old"
+	headYAML := appSetStaticPathWithEnv(path, "development")
+	head := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"development"}},
+		yamls: map[string][]byte{"overlays/development": []byte(headYAML)},
+		exist: map[string]bool{"overlays/development": true},
+	}
+	base := &fakeRepo{
+		dirs: map[string][]string{"overlays": {"development"}},
+		yamls: map[string][]byte{"overlays/development": []byte(`apiVersion: v1
+kind: Namespace
+metadata:
+  name: placeholder
+`)},
+		exist: map[string]bool{"overlays/development": true, path: true},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	affected, err := d.AffectedComponents(nil)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(affected[Development]).To(HaveLen(1))
+	g.Expect(affected[Development][0].Path).To(Equal(path))
+	g.Expect(affected[Development][0].NewDeployment).To(BeFalse())
+}
+
+// A path that changed files already matched and the ApplicationSet also starts
+// deploying must keep a single job and be marked as a new deployment.
+func TestAffectedComponents_ChangedFileInNewDeployment(t *testing.T) {
+	g := NewWithT(t)
+
+	const basePath = "components/svc/production/stone-prod-p01"
+	const newPath = "components/svc/production/stone-prod-p02"
+	head := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"production-downstream"}},
+		yamls: map[string][]byte{"overlays/production-downstream": []byte(appSetStaticPathWithEnv(newPath, "production"))},
+		exist: map[string]bool{
+			"overlays/production-downstream": true,
+			newPath:                          true,
+		},
+		deps: map[string]map[string]bool{
+			newPath: {newPath + "/kustomization.yaml": true},
+		},
+	}
+	base := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"production-downstream"}},
+		yamls: map[string][]byte{"overlays/production-downstream": []byte(appSetStaticPathWithEnv(basePath, "production"))},
+		exist: map[string]bool{
+			"overlays/production-downstream": true,
+			basePath:                         true,
+		},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	affected, err := d.AffectedComponents([]string{newPath + "/kustomization.yaml"})
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(affected[Production]).To(HaveLen(1))
+	g.Expect(affected[Production][0].Path).To(Equal(newPath))
+	g.Expect(affected[Production][0].NewDeployment).To(BeTrue())
+}
+
+func TestAppendNewComponentPaths_PromotesMatchedPath(t *testing.T) {
+	g := NewWithT(t)
+
+	const path = "components/svc/new"
+	paths := appendNewComponentPaths(
+		[]appset.ComponentPath{{Path: path}},
+		[]appset.ComponentPath{{Path: path, NewDeployment: true}},
+	)
+	g.Expect(paths).To(HaveLen(1))
+	g.Expect(paths[0].NewDeployment).To(BeTrue())
+}
+
+// A failed base parse must not stop HEAD paths from being rendered.
+func TestAffectedComponents_BaseParseFailureStillAddsHeadPaths(t *testing.T) {
+	g := NewWithT(t)
+
+	const path = "components/svc/dev"
+	head := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"development"}},
+		yamls: map[string][]byte{"overlays/development": []byte(appSetStaticPathWithEnv(path, "development"))},
+		exist: map[string]bool{"overlays/development": true, path: true},
+	}
+	base := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"development"}},
+		yamls: map[string][]byte{"overlays/development": []byte("not: valid: yaml: [}")},
+		exist: map[string]bool{"overlays/development": true},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	affected, err := d.AffectedComponents(nil)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(affected[Development]).To(HaveLen(1))
+	g.Expect(affected[Development][0].Path).To(Equal(path))
+	g.Expect(affected[Development][0].NewDeployment).To(BeFalse())
+}
+
+// An unparseable base overlay makes every path in its environment untrusted:
+// another overlay in the same environment must not mark paths as new.
+func TestAffectedComponents_BaseParseFailureBlocksNewDeploymentInEnv(t *testing.T) {
+	g := NewWithT(t)
+
+	const path = "components/svc/production/shared"
+	head := &fakeRepo{
+		dirs: map[string][]string{"overlays": {"production-downstream", "konflux-public-production"}},
+		yamls: map[string][]byte{
+			"overlays/production-downstream":     []byte("apiVersion: v1\nkind: Namespace\nmetadata:\n  name: placeholder\n"),
+			"overlays/konflux-public-production": []byte(appSetStaticPathWithEnv(path, "production")),
+		},
+		exist: map[string]bool{
+			"overlays/production-downstream":     true,
+			"overlays/konflux-public-production": true,
+			path:                                 true,
+		},
+	}
+	base := &fakeRepo{
+		dirs: head.dirs,
+		yamls: map[string][]byte{
+			"overlays/production-downstream":     []byte("not: valid: yaml: [}"),
+			"overlays/konflux-public-production": []byte("apiVersion: v1\nkind: Namespace\nmetadata:\n  name: placeholder\n"),
+		},
+		exist: map[string]bool{
+			"overlays/production-downstream":     true,
+			"overlays/konflux-public-production": true,
+		},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	affected, err := d.AffectedComponents(nil)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(affected[Production]).To(HaveLen(1))
+	g.Expect(affected[Production][0].Path).To(Equal(path))
+	g.Expect(affected[Production][0].NewDeployment).To(BeFalse())
+}
+
+// A resolved HEAD path covered by a base PrefixOnly entry was already deployed;
+// it must render against base, not as a full addition.
+func TestAffectedComponents_BasePrefixOnlyCoverDoesNotMarkNew(t *testing.T) {
+	g := NewWithT(t)
+
+	const path = "components/svc/dev/base"
+	head := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"development"}},
+		yamls: map[string][]byte{"overlays/development": []byte(appSetStaticPathWithEnv(path, "development"))},
+		exist: map[string]bool{"overlays/development": true, path: true},
+	}
+	base := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"development"}},
+		yamls: map[string][]byte{"overlays/development": []byte(appSetStaticPathWithEnv("components/svc/{{name}}/base", "development"))},
+		exist: map[string]bool{"overlays/development": true, path: true},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	affected, err := d.AffectedComponents(nil)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(affected[Development]).To(HaveLen(1))
+	g.Expect(affected[Development][0].Path).To(Equal(path))
+	g.Expect(affected[Development][0].NewDeployment).To(BeFalse())
+}
+
+// A base MatchAll entry covers every resolved HEAD path in its environment.
+func TestAffectedComponents_BaseMatchAllCoverDoesNotMarkNew(t *testing.T) {
+	g := NewWithT(t)
+
+	const path = "components/svc/dev/base"
+	head := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"development"}},
+		yamls: map[string][]byte{"overlays/development": []byte(appSetStaticPathWithEnv(path, "development"))},
+		exist: map[string]bool{"overlays/development": true, path: true},
+	}
+	base := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"development"}},
+		yamls: map[string][]byte{"overlays/development": []byte(matchAllAppSet)},
+		exist: map[string]bool{"overlays/development": true, path: true},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	affected, err := d.AffectedComponents(nil)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(affected[Development]).To(HaveLen(1))
+	g.Expect(affected[Development][0].Path).To(Equal(path))
+	g.Expect(affected[Development][0].NewDeployment).To(BeFalse())
 }

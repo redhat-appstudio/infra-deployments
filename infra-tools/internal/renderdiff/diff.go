@@ -19,6 +19,10 @@ type ComponentDiff struct {
 	ClusterDir string
 	// Env is the environment this component belongs to.
 	Env detector.Environment
+	// NewDeployment is true when the ApplicationSet starts deploying this path
+	// on HEAD even though the directory may exist on the base ref. The base
+	// render is then treated as empty so the deployment shows as a full add.
+	NewDeployment bool
 	// BaseYAML is the rendered YAML from the base ref (nil for new components).
 	BaseYAML []byte
 	// HeadYAML is the rendered YAML from HEAD (nil for removed components).
@@ -74,9 +78,10 @@ func (cd *ComponentDiff) HasDiff() bool {
 // FromComponentPath creates a ComponentDiff from an appset.ComponentPath and environment.
 func FromComponentPath(cp appset.ComponentPath, env detector.Environment) *ComponentDiff {
 	return &ComponentDiff{
-		Path:       cp.Path,
-		ClusterDir: cp.ClusterDir,
-		Env:        env,
+		Path:          cp.Path,
+		ClusterDir:    cp.ClusterDir,
+		Env:           env,
+		NewDeployment: cp.NewDeployment,
 	}
 }
 

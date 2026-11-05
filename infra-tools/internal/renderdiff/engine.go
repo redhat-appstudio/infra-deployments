@@ -150,8 +150,11 @@ func (e *Engine) buildPair(cd *ComponentDiff) error {
 		cd.HeadYAML = headYAML
 	}
 
-	// Build base — may not exist for new components.
-	if e.base.DirExists(cd.Path) {
+	// Build base — may not exist for new components. A path that the
+	// ApplicationSet newly deploys is treated as absent on base even when its
+	// directory already exists there, otherwise an unchanged directory would
+	// render an empty diff and hide the new deployment.
+	if !cd.NewDeployment && e.base.DirExists(cd.Path) {
 		baseYAML, err := e.base.BuildKustomization(cd.Path)
 		if err != nil {
 			return fmt.Errorf("building %s on base: %w", cd.Path, err)

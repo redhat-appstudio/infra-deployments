@@ -315,8 +315,9 @@ func TestTruncateAtLine(t *testing.T) {
 
 	g.Expect(truncateAtLine("short", 100)).To(Equal("short"))
 	g.Expect(truncateAtLine("one\ntwo\nthree\n", 9)).To(Equal("one\ntwo"))
-	// No newline in range: cut on a rune boundary.
-	g.Expect(utf8.ValidString(truncateAtLine("ääääää", 5))).To(BeTrue())
+	// A budget that cuts inside the first line returns no partial line.
+	g.Expect(truncateAtLine("ääääää", 5)).To(BeEmpty())
+	g.Expect(truncateAtLine(strings.Repeat("x", perDiffSizeBudget+10), perDiffSizeBudget)).To(BeEmpty())
 }
 
 // A PR comment body above GitHub's 65,536 character limit is rejected, which
