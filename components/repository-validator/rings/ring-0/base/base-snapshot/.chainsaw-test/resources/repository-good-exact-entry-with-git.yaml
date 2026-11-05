@@ -1,0 +1,9 @@
+apiVersion: pipelinesascode.tekton.dev/v1alpha1
+kind: Repository
+metadata:
+  name: test-good-exact-entry-with-git
+spec:
+  # The allowlist entry "https://github.com/redhat-appstudio/tekton-tools" is
+  # a complete repo URL with no trailing slash. Real clone URLs conventionally
+  # add ".git"; this must still be allowed
+  url: "https://github.com/redhat-appstudio/tekton-tools.git"
