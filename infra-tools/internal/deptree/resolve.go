@@ -8,9 +8,11 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"maps"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"sigs.k8s.io/kustomize/api/types"
 	"sigs.k8s.io/yaml"
@@ -30,10 +32,82 @@ var kustomizationFileNames = []string{
 	"Kustomization",
 }
 
+// Resolver caches dependency trees per directory. Callers resolve the same
+// shared base directories once per cluster path, so without a cache a single
+// detection run walks the same tree dozens of times.
+//
+// A Resolver is safe for concurrent use; two goroutines may walk the same
+// uncached directory concurrently, which is harmless and cheaper than
+// serialising every walk behind one lock.
+type Resolver struct {
+	repoRoot string
+
+	mu        sync.Mutex
+	cache     map[string]resolvedTree
+	walkCache map[string]resolvedTree
+}
+
+// resolvedTree is a cached Resolve result, including failures, so a directory
+// without a kustomization is not walked again on every call.
+type resolvedTree struct {
+	deps       map[string]bool
+	incomplete bool
+	err        error
+}
+
+// NewResolver creates a Resolver rooted at repoRoot.
+func NewResolver(repoRoot string) *Resolver {
+	return &Resolver{
+		repoRoot:  repoRoot,
+		cache:     make(map[string]resolvedTree),
+		walkCache: make(map[string]resolvedTree),
+	}
+}
+
+// Resolve returns the dependency tree of dir, caching the result including
+// errors. The returned map must not be modified: it is shared with the cache and
+// with parallel callers.
+func (r *Resolver) Resolve(dir string) (map[string]bool, error) {
+	r.mu.Lock()
+	if cached, ok := r.cache[dir]; ok {
+		r.mu.Unlock()
+		return cached.deps, cached.err
+	}
+	r.mu.Unlock()
+
+	deps, err := resolveTree(r.repoRoot, dir, r)
+
+	r.mu.Lock()
+	r.cache[dir] = resolvedTree{deps: deps, err: err}
+	r.mu.Unlock()
+	return deps, err
+}
+
+// lookupWalk returns a cached subtree result for an absolute directory.
+func (r *Resolver) lookupWalk(absDir string) (resolvedTree, bool) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	cached, ok := r.walkCache[absDir]
+	return cached, ok
+}
+
+// storeWalk caches the deps contributed by one directory subtree.
+func (r *Resolver) storeWalk(absDir string, deps map[string]bool, incomplete bool, err error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.walkCache[absDir] = resolvedTree{deps: deps, incomplete: incomplete, err: err}
+}
+
 // Resolve recursively walks the kustomization at dir and returns the set of
 // all local file paths (relative to repoRoot) that are dependencies. The
-// returned map keys are repo-root-relative paths.
+// returned map keys are repo-root-relative paths. The returned map must not be
+// modified.
 func Resolve(repoRoot, dir string) (map[string]bool, error) {
+	return resolveTree(repoRoot, dir, nil)
+}
+
+// resolveTree is Resolve with optional subtree caching.
+func resolveTree(repoRoot, dir string, cache *Resolver) (map[string]bool, error) {
 	visited := make(map[string]bool)
 	deps := make(map[string]bool)
 	absDir, err := filepath.Abs(filepath.Join(repoRoot, dir))
@@ -48,7 +122,7 @@ func Resolve(repoRoot, dir string) (map[string]bool, error) {
 		return nil, fmt.Errorf("path %q escapes repository root", dir)
 	}
 	incomplete := false
-	if err := resolve(absRoot, absDir, deps, visited, &incomplete); err != nil {
+	if err := resolve(absRoot, absDir, deps, visited, &incomplete, cache); err != nil {
 		return nil, err
 	}
 	if incomplete {
@@ -114,12 +188,45 @@ func hasKustomization(dir string) bool {
 	return false
 }
 
-func resolve(repoRoot, absDir string, deps, visited map[string]bool, incomplete *bool) error {
+func resolve(repoRoot, absDir string, deps, visited map[string]bool, incomplete *bool, cache *Resolver) (err error) {
+	// A cached subtree is complete; merge it without walking it again.
+	if cache != nil {
+		if cached, ok := cache.lookupWalk(absDir); ok {
+			if cached.err != nil {
+				return cached.err
+			}
+			maps.Copy(deps, cached.deps)
+			if cached.incomplete {
+				*incomplete = true
+			}
+			return nil
+		}
+	}
+
 	// Avoid infinite loops from circular references
 	if visited[absDir] {
 		return nil
 	}
 	visited[absDir] = true
+
+	// Accumulate this subtree in its own map so it can be cached and merged
+	// into the parent only once it resolves successfully.
+	if cache != nil {
+		parentDeps, parentIncomplete := deps, incomplete
+		localDeps := make(map[string]bool)
+		localIncomplete := false
+		deps, incomplete = localDeps, &localIncomplete
+		defer func() {
+			if err != nil {
+				return
+			}
+			maps.Copy(parentDeps, localDeps)
+			if localIncomplete {
+				*parentIncomplete = true
+			}
+			cache.storeWalk(absDir, localDeps, localIncomplete, nil)
+		}()
+	}
 
 	k, kustomFile, err := loadKustomization(repoRoot, absDir)
 	if err != nil {
@@ -138,7 +245,7 @@ func resolve(repoRoot, absDir string, deps, visited map[string]bool, incomplete 
 			}
 			subDir := filepath.Join(absDir, entry.Name())
 			if hasKustomization(subDir) {
-				if subErr := resolve(repoRoot, subDir, deps, visited, incomplete); subErr == nil {
+				if subErr := resolve(repoRoot, subDir, deps, visited, incomplete, cache); subErr == nil {
 					found = true
 				}
 			}
@@ -175,7 +282,7 @@ func resolve(repoRoot, absDir string, deps, visited map[string]bool, incomplete 
 				slog.Warn("skipping kustomization resource outside repository", "path", logging.Sanitize(absPath))
 				continue
 			}
-			if err := resolve(repoRoot, absPath, deps, visited, incomplete); err != nil {
+			if err := resolve(repoRoot, absPath, deps, visited, incomplete, cache); err != nil {
 				return err
 			}
 		} else {
@@ -224,7 +331,7 @@ func resolve(repoRoot, absDir string, deps, visited map[string]bool, incomplete 
 			slog.Warn("skipping kustomization component outside repository", "path", logging.Sanitize(absComp))
 			continue
 		}
-		if err := resolve(repoRoot, absComp, deps, visited, incomplete); err != nil {
+		if err := resolve(repoRoot, absComp, deps, visited, incomplete, cache); err != nil {
 			return err
 		}
 	}

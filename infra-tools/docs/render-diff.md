@@ -164,10 +164,13 @@ comment markdown to stdout instead.
 
 - **ci-summary** — markdown with collapsible `<details>` blocks per
   component, suitable for `$GITHUB_STEP_SUMMARY`. Diffs over 50KB per
-  component are truncated with a pointer to the artifact.
+  component are truncated at a line boundary with a pointer to the
+  artifact. The whole document is kept under GitHub's 1 MiB limit;
+  components that do not fit are listed as omitted.
 - **ci-comment** — markdown table with component, environment, and +/-
   line counts. Posted to the PR using an HTML comment marker for
-  idempotent updates.
+  idempotent updates. The body is kept under GitHub's 65,536 character
+  limit, with a note when rows were dropped.
 - **ci-artifact-dir** — one `.diff` file per component/environment pair,
   written to `--output-dir`. Uploaded as GitHub Actions artifacts.
 
@@ -190,3 +193,44 @@ diffnav < file.diff        # interactive TUI with file tree
 bat file.diff              # highlighted with bat
 less file.diff             # plain viewer
 ```
+
+## How components are matched
+
+For every changed file, render-diff needs to answer "which deployed
+components does this affect?". The detector builds each ArgoCD overlay on
+both refs, parses the ApplicationSets it renders, and then matches:
+
+1. **Extra files** — multi-source templates reference repository files
+   through `$values/<path>` (typically Helm values files). Those exact
+   paths count as a match.
+2. **Dependency tree** — the kustomization tree of the component path on
+   both refs (resources, patches, components, generators, helm values and
+   charts). A file in that tree matches exactly.
+3. **Path prefix** — directories without a kustomization, or paths whose
+   template could not be fully resolved (for example a template keyed on
+   `{{nameNormalized}}`), match by prefix.
+
+Components referenced only on the base ref are still considered, so a PR
+that removes a component shows the removal. Paths that an ApplicationSet
+newly deploys on HEAD are rendered as well, even when no changed file
+points at them.
+
+### Environment attribution
+
+Two rules decide which environment a component belongs to:
+
+- A **component path** is attributed to the environment of the overlay
+  whose ApplicationSet produced it (`staging-downstream` -> staging,
+  `rd-production` -> production, ...). When the ApplicationSet declares a
+  different environment in its generator, the path is attributed to that
+  environment as well, so a staging ApplicationSet rendered by a
+  production overlay keeps both labels.
+- An **overlay diff** is attributed to the environment declared in the
+  ApplicationSet generator
+  (`spec.generators[].clusters.values.environment`), falling back to the
+  overlay's environment. This keeps a shared change in
+  `argo-cd-apps/base` from marking every environment.
+
+Ring-based components (`components/X/rings/ring-N/<cluster>`) carry no
+environment in their path; the overlay and generator attribution above is
+what `env-detector` uses for ring enforcement.
