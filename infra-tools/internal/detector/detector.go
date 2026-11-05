@@ -157,7 +157,101 @@ func (d *Detector) AffectedComponents(changedFiles []string) (map[Environment][]
 	resolved := d.resolveComponentDeps(envPaths)
 
 	// Phase 5: Match changed files against resolved dependencies
-	return matchAffectedComponents(changedFiles, resolved, allClusters), nil
+	affected := matchAffectedComponents(changedFiles, resolved, allClusters)
+
+	// Phase 6: An ApplicationSet change (new cluster in a generator list, new
+	// ApplicationSet, changed path template) affects components that no changed
+	// file points at. Render the paths that only exist because of that change.
+	addedPaths, err := d.pathsAddedByOverlayChanges(builds)
+	if err != nil {
+		return nil, err
+	}
+	for env, paths := range addedPaths {
+		affected[env] = appendNewComponentPaths(affected[env], paths)
+	}
+
+	return affected, nil
+}
+
+// appendNewComponentPaths appends the component paths of extra that are not yet
+// present in existing, preserving order.
+func appendNewComponentPaths(existing, extra []appset.ComponentPath) []appset.ComponentPath {
+	seen := make(map[string]bool, len(existing))
+	for _, cp := range existing {
+		seen[renderPathKey(cp)] = true
+	}
+	for _, cp := range extra {
+		key := renderPathKey(cp)
+		if seen[key] {
+			continue
+		}
+		seen[key] = true
+		existing = append(existing, cp)
+	}
+	return existing
+}
+
+// pathsAddedByOverlayChanges returns, per environment, the component paths that
+// are rendered on HEAD but not on the base ref. These appear when a PR adds an
+// ApplicationSet, adds a cluster to a generator list, or changes a path
+// template, and they must be rendered even though no changed file lives there.
+func (d *Detector) pathsAddedByOverlayChanges(builds []overlayBuild) (map[Environment][]appset.ComponentPath, error) {
+	added := make(map[Environment][]appset.ComponentPath)
+
+	for _, ob := range builds {
+		if string(ob.headYAML) == string(ob.baseYAML) {
+			continue
+		}
+
+		headPaths, err := appset.ParseApplicationSets(ob.headYAML)
+		if err != nil {
+			return nil, fmt.Errorf("parsing ApplicationSets from overlay %s: %w", ob.name, err)
+		}
+		// The base render is best-effort: without it every head path looks new.
+		var basePaths *appset.ParseResult
+		if len(ob.baseYAML) > 0 {
+			basePaths, err = appset.ParseApplicationSets(ob.baseYAML)
+			if err != nil {
+				slog.Warn("failed to parse base-ref ApplicationSets, treating all paths as new",
+					"overlay", logging.Sanitize(ob.name), "err", sanitizedError(err))
+				basePaths = nil
+			}
+		}
+
+		known := make(map[string]bool)
+		if basePaths != nil {
+			for _, cp := range basePaths.Paths {
+				known[renderPathKey(cp)] = true
+			}
+		}
+		for _, cp := range headPaths.Paths {
+			// Only a concrete deployed directory can be rendered. MatchAll,
+			// PrefixOnly and value-file-only entries have no kustomization.
+			if cp.MatchAll || cp.Path == "" || cp.PrefixOnly {
+				continue
+			}
+			if known[renderPathKey(cp)] {
+				continue
+			}
+			// A path that exists on neither ref is a stale reference, not
+			// something to diff.
+			if !d.head.DirExists(cp.Path) && !d.base.DirExists(cp.Path) {
+				continue
+			}
+			// The path keeps the environment its ApplicationSet declares; only
+			// when it declares none does it inherit the overlay environment.
+			env := environmentFor(cp.Environment, ob.env)
+			added[env] = append(added[env], cp)
+		}
+	}
+	return added, nil
+}
+
+// renderPathKey identifies a ComponentPath in a comparable form for
+// ApplicationSet-added paths. Environment is excluded because the result is
+// already grouped per environment.
+func renderPathKey(cp appset.ComponentPath) string {
+	return cp.Path + "|" + cp.ClusterDir + "|" + strings.Join(cp.ExtraFiles, ",")
 }
 
 // Detect runs the full detection pipeline:
