@@ -127,13 +127,6 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: release
-  # Remove automated sync from konflux-kite for staging migration; this AppSet is
-  # shared with production, so the base syncPolicy is left untouched
-  - path: konflux-kite-remove-auto-sync-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: konflux-kite
  # Disable legacy build-templates auto-sync while rd-staging owns staging.
   - path: build-templates-remove-auto-sync-patch.yaml
     target:
