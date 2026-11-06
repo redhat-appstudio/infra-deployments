@@ -3014,10 +3014,10 @@ metadata:
 }
 
 // Different value files for the same directory and cluster are one render job.
-func TestAppendNewComponentPaths_DedupesRenderTarget(t *testing.T) {
+func TestAppendComponentPaths_DedupesRenderTarget(t *testing.T) {
 	g := NewWithT(t)
 
-	paths := appendNewComponentPaths(nil, []appset.ComponentPath{
+	paths := appendComponentPaths(nil, []appset.ComponentPath{
 		{Path: "components/svc/new", ExtraFiles: []string{"a.yaml"}, NewDeployment: true},
 		{Path: "components/svc/new", ExtraFiles: []string{"b.yaml"}, NewDeployment: true},
 	})
@@ -3163,16 +3163,33 @@ func TestAffectedComponents_ChangedFileInNewDeployment(t *testing.T) {
 
 	affected, err := d.AffectedComponents([]string{newPath + "/kustomization.yaml"})
 	g.Expect(err).NotTo(HaveOccurred())
-	g.Expect(affected[Production]).To(HaveLen(1))
-	g.Expect(affected[Production][0].Path).To(Equal(newPath))
-	g.Expect(affected[Production][0].NewDeployment).To(BeTrue())
+	g.Expect(affected[Production]).To(HaveLen(2))
+
+	byPath := make(map[string]appset.ComponentPath, len(affected[Production]))
+	for _, cp := range affected[Production] {
+		byPath[cp.Path] = cp
+	}
+	g.Expect(byPath[newPath].NewDeployment).To(BeTrue())
+	g.Expect(byPath[basePath].RemovedDeployment).To(BeTrue())
 }
 
-func TestAppendNewComponentPaths_PromotesMatchedPath(t *testing.T) {
+func TestAppendComponentPaths_PromotesRemovedPath(t *testing.T) {
+	g := NewWithT(t)
+
+	const path = "components/svc/removed"
+	paths := appendComponentPaths(
+		[]appset.ComponentPath{{Path: path}},
+		[]appset.ComponentPath{{Path: path, RemovedDeployment: true}},
+	)
+	g.Expect(paths).To(HaveLen(1))
+	g.Expect(paths[0].RemovedDeployment).To(BeTrue())
+}
+
+func TestAppendComponentPaths_PromotesMatchedPath(t *testing.T) {
 	g := NewWithT(t)
 
 	const path = "components/svc/new"
-	paths := appendNewComponentPaths(
+	paths := appendComponentPaths(
 		[]appset.ComponentPath{{Path: path}},
 		[]appset.ComponentPath{{Path: path, NewDeployment: true}},
 	)
@@ -3407,4 +3424,280 @@ func TestDetectAndAffectedComponentsAgree(t *testing.T) {
 	for env := range affected {
 		g.Expect(result.AffectedEnvironments).To(HaveKey(env))
 	}
+}
+
+// Removing an ApplicationSet must render its components as removals even when
+// the component directory still exists on HEAD.
+func TestAffectedComponents_RemovedAppSetRendersRemoval(t *testing.T) {
+	g := NewWithT(t)
+
+	const path = "components/svc/production/removed"
+	base := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"production-downstream"}},
+		yamls: map[string][]byte{"overlays/production-downstream": []byte(appSetStaticPathWithEnv(path, "production"))},
+		exist: map[string]bool{"overlays/production-downstream": true, path: true},
+	}
+	head := &fakeRepo{
+		dirs: map[string][]string{"overlays": {"production-downstream"}},
+		yamls: map[string][]byte{"overlays/production-downstream": []byte(`apiVersion: v1
+kind: Namespace
+metadata:
+  name: placeholder
+`)},
+		exist: map[string]bool{"overlays/production-downstream": true, path: true},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	affected, err := d.AffectedComponents(nil)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(affected[Production]).To(HaveLen(1))
+	g.Expect(affected[Production][0].Path).To(Equal(path))
+	g.Expect(affected[Production][0].RemovedDeployment).To(BeTrue())
+}
+
+// A target still rendered by another overlay in the same environment is not
+// removed just because one overlay stopped referencing it.
+func TestAffectedComponents_SharedTargetAcrossOverlaysIsNotRemoved(t *testing.T) {
+	g := NewWithT(t)
+
+	const path = "components/svc/production/shared"
+	appSet := appSetStaticPathWithEnv(path, "production")
+	empty := `apiVersion: v1
+kind: Namespace
+metadata:
+  name: placeholder
+`
+	head := &fakeRepo{
+		dirs: map[string][]string{"overlays": {"production-downstream", "konflux-public-production"}},
+		yamls: map[string][]byte{
+			"overlays/production-downstream":     []byte(empty),
+			"overlays/konflux-public-production": []byte(appSet),
+		},
+		exist: map[string]bool{
+			"overlays/production-downstream":     true,
+			"overlays/konflux-public-production": true,
+			path:                                 true,
+		},
+	}
+	base := &fakeRepo{
+		dirs: head.dirs,
+		yamls: map[string][]byte{
+			"overlays/production-downstream":     []byte(appSet),
+			"overlays/konflux-public-production": []byte(appSet),
+		},
+		exist: map[string]bool{
+			"overlays/production-downstream":     true,
+			"overlays/konflux-public-production": true,
+			path:                                 true,
+		},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	affected, err := d.AffectedComponents(nil)
+	g.Expect(err).NotTo(HaveOccurred())
+	for _, cp := range affected[Production] {
+		g.Expect(cp.Path).NotTo(Equal(path))
+	}
+}
+
+// HEAD coverage from an unresolved template means the base path may still be
+// deployed, so it must not be reported as removed.
+func TestAffectedComponents_HeadCoverageDoesNotMarkRemoval(t *testing.T) {
+	g := NewWithT(t)
+
+	const path = "components/svc/dev/base"
+	base := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"development"}},
+		yamls: map[string][]byte{"overlays/development": []byte(appSetStaticPathWithEnv(path, "development"))},
+		exist: map[string]bool{"overlays/development": true, path: true},
+	}
+	head := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"development"}},
+		yamls: map[string][]byte{"overlays/development": []byte(matchAllAppSet)},
+		exist: map[string]bool{"overlays/development": true, path: true},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	affected, err := d.AffectedComponents(nil)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(affected[Development]).To(BeEmpty())
+}
+
+// Deleting a whole overlay directory must render the components its base
+// ApplicationSets referenced as removals.
+func TestAffectedComponents_RemovedOverlayRendersRemovals(t *testing.T) {
+	g := NewWithT(t)
+
+	const path = "components/svc/development/removed"
+	head := &fakeRepo{
+		dirs: map[string][]string{"overlays": {}},
+	}
+	base := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"development"}},
+		yamls: map[string][]byte{"overlays/development": []byte(appSetStaticPathWithEnv(path, "development"))},
+		exist: map[string]bool{"overlays/development": true, path: true},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	affected, err := d.AffectedComponents(nil)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(affected[Development]).To(HaveLen(1))
+	g.Expect(affected[Development][0].Path).To(Equal(path))
+	g.Expect(affected[Development][0].RemovedDeployment).To(BeTrue())
+}
+
+// A HEAD PrefixOnly entry that covers a base path also withholds its removal.
+func TestAffectedComponents_HeadPrefixCoverageDoesNotMarkRemoval(t *testing.T) {
+	g := NewWithT(t)
+
+	const path = "components/svc/dev/base"
+	base := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"development"}},
+		yamls: map[string][]byte{"overlays/development": []byte(appSetStaticPathWithEnv(path, "development"))},
+		exist: map[string]bool{"overlays/development": true, path: true},
+	}
+	head := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"development"}},
+		yamls: map[string][]byte{"overlays/development": []byte(appSetStaticPathWithEnv("components/svc/{{name}}/base", "development"))},
+		exist: map[string]bool{"overlays/development": true, path: true},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	affected, err := d.AffectedComponents(nil)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(affected[Development]).To(BeEmpty())
+}
+
+// A removed path whose directory exists only on HEAD still reaches the renderer
+// so it can report the broken missing-base reference.
+func TestAffectedComponents_RemovedPathMissingOnBase(t *testing.T) {
+	g := NewWithT(t)
+
+	const path = "components/svc/production/broken"
+	base := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"production-downstream"}},
+		yamls: map[string][]byte{"overlays/production-downstream": []byte(appSetStaticPathWithEnv(path, "production"))},
+		exist: map[string]bool{"overlays/production-downstream": true},
+	}
+	head := &fakeRepo{
+		dirs: map[string][]string{"overlays": {"production-downstream"}},
+		yamls: map[string][]byte{"overlays/production-downstream": []byte(`apiVersion: v1
+kind: Namespace
+metadata:
+  name: placeholder
+`)},
+		exist: map[string]bool{"overlays/production-downstream": true, path: true},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	affected, err := d.AffectedComponents(nil)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(affected[Production]).To(HaveLen(1))
+	g.Expect(affected[Production][0].Path).To(Equal(path))
+	g.Expect(affected[Production][0].RemovedDeployment).To(BeTrue())
+}
+
+// A templatePatch fallback loses the concrete deployed path but keeps the
+// generator's declared environment. Coverage stays in that environment, so it
+// does not suppress removals attributed only to another environment.
+func TestAffectedComponents_TemplatePatchCoverageStaysInDeclaredEnv(t *testing.T) {
+	g := NewWithT(t)
+
+	const path = "components/svc/production/kept"
+	headYAML := `apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: patched
+spec:
+  generators:
+    - clusters:
+        values:
+          environment: production
+  templatePatch: '{{ . }}'
+  template:
+    metadata:
+      name: patched
+    spec:
+      source:
+        path: components/svc/production/kept
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+`
+	base := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"development"}},
+		yamls: map[string][]byte{"overlays/development": []byte(appSetStaticPathWithEnv(path, "production"))},
+		exist: map[string]bool{"overlays/development": true, path: true},
+	}
+	head := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"development"}},
+		yamls: map[string][]byte{"overlays/development": []byte(headYAML)},
+		exist: map[string]bool{"overlays/development": true, path: true},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	affected, err := d.AffectedComponents(nil)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(affected[Production]).To(BeEmpty())
+	g.Expect(affected[Development]).To(HaveLen(1))
+	g.Expect(affected[Development][0].Path).To(Equal(path))
+	g.Expect(affected[Development][0].RemovedDeployment).To(BeTrue())
+}
+
+// A surviving multi-generator ApplicationSet must cover every declared
+// environment, including the second one.
+func TestAffectedComponents_MultiEnvTemplatePatchCoversSecondEnv(t *testing.T) {
+	g := NewWithT(t)
+
+	const path = "components/svc/production/kept"
+	headYAML := `apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: multi-env-patched
+spec:
+  generators:
+    - clusters:
+        values:
+          environment: staging
+    - clusters:
+        values:
+          environment: production
+  templatePatch: '{{ . }}'
+  template:
+    metadata:
+      name: multi-env-patched
+    spec:
+      source:
+        path: components/svc/production/kept
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+`
+	base := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"production-downstream"}},
+		yamls: map[string][]byte{"overlays/production-downstream": []byte(appSetStaticPathWithEnv(path, "production"))},
+		exist: map[string]bool{"overlays/production-downstream": true, path: true},
+	}
+	head := &fakeRepo{
+		dirs:  map[string][]string{"overlays": {"production-downstream"}},
+		yamls: map[string][]byte{"overlays/production-downstream": []byte(headYAML)},
+		exist: map[string]bool{"overlays/production-downstream": true, path: true},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	affected, err := d.AffectedComponents(nil)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(affected[Production]).To(BeEmpty())
 }
