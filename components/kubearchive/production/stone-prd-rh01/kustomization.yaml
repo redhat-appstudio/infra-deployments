@@ -292,7 +292,7 @@ patches:
                 args: [--health-probe-bind-address=:8081]
                 env:
                 - name: GOMEMLIMIT
-                  value: 10GiB
+                  value: 18GiB
                   valueFrom: null # required because valueFrom comes from the original
                 - name: KUBEARCHIVE_OTEL_MODE
                   value: enabled
@@ -306,10 +306,10 @@ patches:
                 resources:
                   limits:
                     cpu: 1
-                    memory: 15Gi
+                    memory: 20Gi
                   requests:
                     cpu: 1
-                    memory: 15Gi
+                    memory: 20Gi
 
   - patch: |-
       apiVersion: apps/v1
