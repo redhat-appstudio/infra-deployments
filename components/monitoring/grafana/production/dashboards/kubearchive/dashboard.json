@@ -1296,8 +1296,8 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "avg by (method) (kubearchive:sink:db_latency{method!=\"sql.conn.ping\"} > 0)",
-          "legendFormat": "{{ method }}",
+          "expr": "avg by (db_operation_name) (kubearchive:sink:db_latency{db_operation_name!=\"sql.conn.ping\"} > 0)",
+          "legendFormat": "{{ db_operation_name }}",
           "range": true,
           "refId": "A"
         }
@@ -1798,8 +1798,8 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "avg by (method) (kubearchive:api:db_latency{method!=\"sql.conn.ping\"} > 0)",
-          "legendFormat": "{{ method }}",
+          "expr": "avg by (db_operation_name) (kubearchive:api:db_latency{db_operation_name!=\"sql.conn.ping\"} > 0)",
+          "legendFormat": "{{ db_operation_name }}",
           "range": true,
           "refId": "A"
         }
