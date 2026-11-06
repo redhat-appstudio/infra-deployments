@@ -2,9 +2,9 @@
 
 ## Release Retention and gracePeriodDays
 
-KubeArchive is configured to automatically delete Releases based on their retention period. The retention period can be customized using the `gracePeriodDays` field in the Release spec.
+KubeArchive is configured to automatically delete Releases based on their retention period. The retention period can be customized using the `gracePeriodDays` field in the Release spec. KubeArchive is an exception to the typical [component layout standard](../../docs/ring-deployments/directory-layout.md) because its resources are released as a single YAML manifest named `kubearchive.yaml`. 
 
-### How it works
+### How It Works
 
 - **Default behavior**: If a Release does not have `gracePeriodDays` specified, it will be deleted 5 days after creation.
 - **Custom retention**: If a Release has `spec.gracePeriodDays` set, that value will be used instead.
@@ -16,75 +16,66 @@ KubeArchive is configured to automatically delete Releases based on their retent
 - Release with `gracePeriodDays: 10`: deleted after 10 days
 - Release with `gracePeriodDays: 45`: deleted after 30 days (capped at maximum)
 
-### Important note
+### Important notes
 
-Deleted Releases are archived in KubeArchive and can still be accessed through the KubeArchive API. The deletion from the cluster is automatic, but the historical data is preserved.
+> Deleted Releases are archived in KubeArchive and can still be accessed through the KubeArchive API. The deletion from the cluster is automatic, but the historical data is preserved.
 
-## Upgrading
+> Because `kubearchive.yaml` is an upstream release artifact, it is located in the `base/` directory of the component and copied to each ring's `base/base-snapshot/` directory. Resources in it **must** be patched and not modified directly as a new upgrade will overwrite any modifications with a brand new file.
 
-To upgrade start by upgrading development, which also upgrades staging:
+## Promoting Changes
 
-1. Replace `development/kubearchive.yaml` with the manifest from the new release.
-2. Update the vacuum image tags in `development/kustomization.yaml`.
-3. If the new release includes a schema change:
-   * Bump `MIGRATION_VERSION` in both configmaps in `development/kustomization.yaml`:
-     `kubearchive-schema-version` (used by the migration Job) and
-     `kubearchive-deployment-schema-version` (used by api-server and sink).
-   * Update the Job name suffix in `development/kustomization.yaml` to match
-     (e.g. `kubearchive-schema-migration-v14`).
+*This section is meant to be referenced once the component's migration is complete and it is onboarded to Kargo*
 
-All changes go in a single commit. ArgoCD sync waves handle the ordering:
-the migration Job (wave -1) runs before deployments (wave 0) pick up the new
-version.
+Kargo takes care of promoting upgrades across rings by watching for changes to the `components/kubearchive/base/` directory and promoting the changes to each ring's `base/base-snapshot/` directory starting with ring 0 (development). In other words, to trigger any promotions across rings, **a PR with changes to the `components/kubearchive/base/` directory must be created and merged.**
+
+If Kargo **is not** functioning properly, a user will need to **manually execute** Kargo's workflow to promote the changes across the rings. Start with the **lowest** ring possible.
+
+1. Checkout a new branch of infra-deployments.
+2. Delete the `rings/ring-#/base/base-snapshot/` directory.
+3. Copy the `base/` directory from the commit with the desired changes into the `rings/ring-#/base/` directory and rename it `base-snapshot.
+4. Commit these changes and open a PR.
+
+### Upgrading
+
+Upgrading is a special type of promotion where the old `kubearchive.yaml` release artifact is replaced by then desired version's `kubearchive.yaml` release artifact.
+
+> These steps must be executed, regardless of Kargo's functionality status.
+
+1. Checkout a new branch of infra-deployments. 
+2. Delete the current `base/kubearchive.yaml` file and run `curl -Lo components/kubearchive/base/kubearchive.yaml https://github.com/kubearchive/kubearchive/releases/download/<NEW_VERSION>/kubearchive.yaml`. *Make sure to review the changes inside this new file before committing and merging anything.*
+3. Update the `version` field in the `base/VERSION.yaml` file.
+4. Commit these changes and open a PR.
+
+If Kargo **is not** functioning properly, a user will need to **manually execute** Kargo's workflow to promote the upgrade across the rings. Start with the **lowest** ring possible.
+
+1. Checkout a new branch of infra-deployments.
+2. Delete the current `rings/ring-#/base/base-snapshot/kubearchive.yaml` file and run `curl -Lo components/kubearchive/rings/ring-#/base/base-snapshot/kubearchive.yaml https://github.com/kubearchive/kubearchive/releases/download/<NEW_VERSION>/kubearchive.yaml`.
+3. Change the vacuum image versions in the `CronJob` resource files in the `rings/ring-#/base/vacuum/` folder.
+4. Update the `Job` name suffix in the `rings/ring-#/base/patches/schema-migration-job-name-patch.yaml` file to match the release (e.g. `kubearchive-schema-migration-v14-v1.23.0`).
+5. Update the `version` field in the `rings/ring-#/base/VERSION.yaml` file.
+
+If the upgrade *requires a schema migration:*
+6. Bump `MIGRATION_VERSION` in both `ConfigMap`s in `rings/ring-#/base/kustomization.yaml`:
+  * kubearchive-schema-version (used by the schema migration `Job`)
+  * kubearchive-deployment-schema-version (used by api-server and sink)
+7. Commit these changes and open a PR.
+8. Once the PR is merged, repeat these steps for the next ring.
+
+ArgoCD sync waves handle the ordering: the migration Job (wave -1) runs before deployments (wave 0) pick up the new version.
+
+### Schema Version ConfigMaps
+
+There are two `ConfigMap`s for `MIGRATION_VERSION`:
+
+* **kubearchive-schema-version** (sync-wave -2) — used by the schema migration Job.
+* **kubearchive-deployment-schema-version** (no sync-wave) — used by api-server
+  and sink deployments. Protects running deployments from restarting during
+  migration if the `ConfigMap` hash changes.
 
 If the release introduces a breaking schema change that requires deployments
-to be upgraded between two migration phases, split the work into two commits:
-first bump `kubearchive-schema-version` and the Job name suffix, then after
-migration completes bump `kubearchive-deployment-schema-version`.
+to be upgraded between two migration phases, split the work into two promotions:
+the first bumping the 'kubearchive-schema-version' and Job name suffix, the second bumping the 'kubearchive-deployment-schema-version'.
 
-### Schema version configmaps
+### Versioned Job Name
 
-There are two configmaps for `MIGRATION_VERSION`:
-
-* `kubearchive-schema-version` (sync-wave -2) — used by the migration Job.
-* `kubearchive-deployment-schema-version` (no sync-wave) — used by api-server
-  and sink deployments. Protects running deployments from restarting during
-  migration if the configmap hash changes.
-
-### Versioned Job name
-
-A versioned Job name suffix (e.g. `kubearchive-schema-migration-v13`) is used
-so that ArgoCD resyncs do not restart the immutable migration Job. When
-changing `MIGRATION_VERSION`, update the suffix in
-`development/kustomization.yaml` to match.
-
-### Production
-
-After the staging upgrade is successful, start upgrading production clusters.
-Make sure to review the changes inside the KubeArchive YAML pulled from GitHub.
-Some resources may change so some patches may not be useful/wrong after upgrading.
-
-### Upgrade Script
-
-There is a simple bash script you can use to upgrade, run it as follows:
-
-```
-cd infra-deployments/
-bash components/kubearchive/upgrade.sh <current-version> <new-version> [<new-migration-version>]
-```
-
-Examples:
-
-```bash
-# No schema change:
-bash components/kubearchive/upgrade.sh v1.21.3 v1.21.4
-
-# With schema change (migration version bumps to 14):
-bash components/kubearchive/upgrade.sh v1.21.4 v1.22.0 14
-```
-
-The script downloads the new manifests from the GitHub repository
-and replaces the `<current-version>` string with the `<new-version>`
-string on all `kustomization.yaml` files. When `<new-migration-version>`
-is provided, it also updates `MIGRATION_VERSION` in both configmaps and
-the Job name suffix in `development/kustomization.yaml`.
+A versioned Job name suffix, `kubearchive-schema-migration-v<MIGRATION_VERSION>-v<KUBEARCHIVE_VERSION>`, is used so that ArgoCD resyncs do not restart the immutable migration Job. When changing either version, update the value in the `rings/ring-#/base/patches/schema-migration-job-name-patch.yaml` file to match.
