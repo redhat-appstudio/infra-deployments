@@ -1,0 +1,18 @@
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  pipeline:
+    options:
+      configMaps:
+        bundleresolver-config:
+          data:
+            backoff-cap: "15m"
+            backoff-duration: "15s"
+            backoff-factor: "2.0"
+            backoff-steps: "10"
+            fetch-timeout: "2m"
+        git-resolver-config:
+          data:
+            fetch-timeout: "2m"
