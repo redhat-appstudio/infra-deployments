@@ -1,9 +1,9 @@
 #!/bin/bash -ex
 
-# Format and mount NVMe disk
-mkfs -t xfs /dev/nvme1n1
-mount /dev/nvme1n1 /home
+# The `fedora` user doesn't have permissions to execute the following commands directly.
+# It needs to escalate via sudo.
 
+sudo bash << EOF
 # Create required directories
 mkdir -p /home/var-lib-containers /var/lib/containers /home/var-tmp /var/tmp /home/fedora/.ssh
 
@@ -21,3 +21,4 @@ chown fedora /home/fedora/.ssh/authorized_keys
 chmod 600 /home/fedora/.ssh/authorized_keys
 chmod 700 /home/fedora/.ssh
 restorecon -r /home/fedora
+EOF
