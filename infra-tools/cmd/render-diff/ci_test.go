@@ -332,3 +332,34 @@ func TestBuildCommentBody_RespectsSizeBudget(t *testing.T) {
 	g.Expect(len(body)).To(BeNumerically("<=", commentSizeBudget+1024))
 	g.Expect(body).To(ContainSubstring("more components"))
 }
+
+// Build errors are PR-controlled output and must not break out of the summary's
+// HTML or inject markdown.
+func TestRenderSummaryBlock_EscapesBuildError(t *testing.T) {
+	g := NewWithT(t)
+
+	block := renderSummaryBlock(renderdiff.ComponentDiff{
+		Path:  "components/<script>",
+		Env:   "staging",
+		Error: "failed: ```\n# heading\n[link](https://example.com)\n</pre>",
+	})
+
+	g.Expect(block).To(ContainSubstring("<pre>"))
+	g.Expect(block).To(ContainSubstring("&lt;script&gt;"))
+	g.Expect(block).To(ContainSubstring("&lt;/pre&gt;"))
+	g.Expect(block).NotTo(ContainSubstring("</pre>\n# heading"))
+}
+
+func TestDiffFenceAvoidsContentFence(t *testing.T) {
+	g := NewWithT(t)
+
+	g.Expect(diffFence("plain")).To(Equal("```"))
+	g.Expect(diffFence("a\n```\nb")).To(Equal("````"))
+}
+
+func TestMarkdownTableCellEscapes(t *testing.T) {
+	g := NewWithT(t)
+
+	g.Expect(markdownTableCell("a|b")).To(Equal(`a\|b`))
+	g.Expect(markdownTableCell("a`b")).To(Equal("a'b"))
+}
