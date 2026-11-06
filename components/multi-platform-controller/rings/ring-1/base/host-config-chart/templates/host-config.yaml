@@ -1103,7 +1103,10 @@ data:
 {{ include "multi-platform-controller.cloud-init-userdata" (.Files.Get "files/fedora/fedora-root-arm64-init.sh") | indent 4 }}
   {{- end }}
   {{- end }}
-  {{ end }}
+  {{- if (index $config "provisioning-user") }}
+  dynamic.fedora-root-arm64.provisioning-user: {{ index $config "provisioning-user" | quote }}
+  {{- end }}
+  {{end}}
 
   {{- if hasKey .Values.dynamicConfigs "fedora-root-amd64" }}
   {{- $config := index .Values.dynamicConfigs "fedora-root-amd64" | default (dict) }}
@@ -1134,6 +1137,9 @@ data:
   {{- else if (.Files.Get "files/fedora/fedora-root-amd64-init.sh") }}
 {{ include "multi-platform-controller.cloud-init-userdata" (.Files.Get "files/fedora/fedora-root-amd64-init.sh") | indent 4 }}
   {{- end }}
+  {{- end }}
+  {{- if (index $config "provisioning-user") }}
+  dynamic.fedora-root-amd64.provisioning-user: {{ index $config "provisioning-user" | quote }}
   {{- end }}
   {{ end }}
 
