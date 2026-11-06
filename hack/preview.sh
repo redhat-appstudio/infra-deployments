@@ -464,11 +464,7 @@ apply_service_image_overrides() {
     [[ -n "${RELEASE_SERVICE_PR_OWNER}" && "${RELEASE_SERVICE_PR_SHA}" ]] && yq -i e "(.resources[] | select(. ==\"*github.com/konflux-ci/release-service*\")) |= \"https://github.com/${RELEASE_SERVICE_PR_OWNER}/release-service/config/default?ref=${RELEASE_SERVICE_PR_SHA}\"" $ROOT/components/release/development/kustomization.yaml
 
     # Mintmaker
-    if [ "$TARGET_PREVIEW_OVERLAY" = "rd-dev" ]; then
-        MINTMAKER_KUST=$ROOT/components/mintmaker-rd/rings/ring-0/base/kustomization.yaml
-    else
-        MINTMAKER_KUST=$ROOT/components/mintmaker/development/kustomization.yaml
-    fi
+    MINTMAKER_KUST=$ROOT/components/mintmaker/rings/ring-0/base/kustomization.yaml
     if [ -n "${MINTMAKER_IMAGE_REPO}" ] || [ -n "${MINTMAKER_IMAGE_TAG}" ] || [ -n "${MINTMAKER_PR_OWNER}" ]; then
         log_substep "Configuring Mintmaker overrides"
         [ -n "${MINTMAKER_IMAGE_REPO}" ] && log_info "  - Image repo: ${MINTMAKER_IMAGE_REPO}" && has_overrides=true
