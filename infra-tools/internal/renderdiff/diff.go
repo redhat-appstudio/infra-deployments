@@ -23,6 +23,10 @@ type ComponentDiff struct {
 	// on HEAD even though the directory may exist on the base ref. The base
 	// render is then treated as empty so the deployment shows as a full add.
 	NewDeployment bool
+	// RemovedDeployment is true when the ApplicationSet stops deploying this
+	// path on HEAD even though the directory may still exist there. The HEAD
+	// render is then treated as empty so the removal shows as a full delete.
+	RemovedDeployment bool
 	// BaseYAML is the rendered YAML from the base ref (nil for new components).
 	BaseYAML []byte
 	// HeadYAML is the rendered YAML from HEAD (nil for removed components).
@@ -78,10 +82,11 @@ func (cd *ComponentDiff) HasDiff() bool {
 // FromComponentPath creates a ComponentDiff from an appset.ComponentPath and environment.
 func FromComponentPath(cp appset.ComponentPath, env detector.Environment) *ComponentDiff {
 	return &ComponentDiff{
-		Path:          cp.Path,
-		ClusterDir:    cp.ClusterDir,
-		Env:           env,
-		NewDeployment: cp.NewDeployment,
+		Path:              cp.Path,
+		ClusterDir:        cp.ClusterDir,
+		Env:               env,
+		NewDeployment:     cp.NewDeployment,
+		RemovedDeployment: cp.RemovedDeployment,
 	}
 }
 
