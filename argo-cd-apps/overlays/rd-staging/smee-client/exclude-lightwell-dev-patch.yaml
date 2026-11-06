@@ -1,0 +1,10 @@
+---
+# Custom case: exclude lightwell-dev cluster
+- op: add
+  path: /spec/generators/0/selector
+  value:
+    matchExpressions:
+      - key: nameNormalized
+        operator: NotIn
+        values:
+          - lightwell-dev

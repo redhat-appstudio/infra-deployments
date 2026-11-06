@@ -3,3 +3,11 @@ kind: Kustomization
 
 resources:
   - smee-client-appset.yaml
+
+patches:
+  - path: exclude-lightwell-dev-patch.yaml
+    target:
+      kind: ApplicationSet
+      group: argoproj.io
+      version: v1alpha1
+      name: smee-client
