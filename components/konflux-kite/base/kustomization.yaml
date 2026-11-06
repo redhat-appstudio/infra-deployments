@@ -2,12 +2,12 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - ns.yaml
-  - rbac.yaml
-  - deployment.yaml
-  - service.yaml
-  - routes.yaml
-  - scale.yaml
+  - konflux-kite-ns.yaml
+  - rbac
+  - konflux-kite-deploy.yaml
+  - konflux-kite-svc.yaml
+  - konflux-kite-api-route.yaml
+  - konflux-kite-hpa.yaml
 
 namespace: konflux-kite
 
@@ -30,15 +30,3 @@ configMapGenerator:
       - KITE_IDLE_TIMEOUT=60s
       - KITE_SHUTDOWN_TIMEOUT=10s
       - AUTH_IMPERSONATE=true
-
-# Not using external secrets here for development env.
-secretGenerator:
-  - name: kite-database-credentials
-    namespace: konflux-kite
-    type: Opaque
-    literals:
-      - DB_USER=kite
-      - DB_PASSWORD=postgres
-      - DB_HOST=postgresql
-      - DB_PORT=5432
-      - DB_NAME=issuesdb
