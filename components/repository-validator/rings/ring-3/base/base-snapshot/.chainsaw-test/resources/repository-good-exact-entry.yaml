@@ -1,0 +1,8 @@
+apiVersion: pipelinesascode.tekton.dev/v1alpha1
+kind: Repository
+metadata:
+  name: test-good-exact-entry
+spec:
+  # Exactly equals an allowlist entry that is itself a complete repo URL,
+  # with nothing after it (no trailing slash or path).
+  url: "https://github.com/redhat-appstudio/tekton-tools"

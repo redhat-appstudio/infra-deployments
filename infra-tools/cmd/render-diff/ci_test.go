@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"strings"
 	"testing"
+	"unicode/utf8"
 
 	. "github.com/onsi/gomega"
 
@@ -259,4 +261,105 @@ func TestWriteCISummary_TruncatesLargeDiff(t *testing.T) {
 
 	g.Expect(body).To(ContainSubstring("Diff truncated"))
 	g.Expect(len(body)).To(BeNumerically("<", len(largeDiff)))
+}
+
+// buildLargeResult returns a result whose rendered output would exceed a
+// document budget, with distinct component names.
+func buildLargeResult(count, diffSize int) *renderdiff.DiffResult {
+	diff := strings.Repeat("+added line\n", diffSize/len("+added line\n"))
+	result := &renderdiff.DiffResult{}
+	for i := range count {
+		result.Diffs = append(result.Diffs, renderdiff.ComponentDiff{
+			Path:  fmt.Sprintf("components/component-%03d/staging", i),
+			Env:   "staging",
+			Added: diffSize / len("+added line\n"),
+			Diff:  diff,
+		})
+		result.TotalAdded += diffSize / len("+added line\n")
+	}
+	return result
+}
+
+// GitHub rejects step summaries above 1 MiB: the summary must stay under the
+// budget and say what it left out instead of being cut server-side.
+func TestRenderCISummary_RespectsSizeBudget(t *testing.T) {
+	g := NewWithT(t)
+
+	result := buildLargeResult(200, 10*1024) // ~2 MB of diffs
+	body := renderCISummary(result)
+
+	g.Expect(len(body)).To(BeNumerically("<=", summarySizeBudget+1024))
+	g.Expect(body).To(ContainSubstring("components omitted"))
+	g.Expect(body).To(ContainSubstring("Download the artifact"))
+}
+
+// A diff larger than the per-diff budget is cut at a line boundary, never in
+// the middle of a line or a UTF-8 sequence.
+func TestRenderSummaryBlock_TruncatesAtLineBoundary(t *testing.T) {
+	g := NewWithT(t)
+
+	diff := strings.Repeat("+héllo wörld\n", 5000)
+	block := renderSummaryBlock(renderdiff.ComponentDiff{
+		Path: "components/foo/staging",
+		Env:  "staging",
+		Diff: diff,
+	})
+
+	g.Expect(block).To(ContainSubstring("Diff truncated"))
+	g.Expect(block).To(ContainSubstring("+héllo wörld"))
+	g.Expect(utf8.ValidString(block)).To(BeTrue())
+}
+
+func TestTruncateAtLine(t *testing.T) {
+	g := NewWithT(t)
+
+	g.Expect(truncateAtLine("short", 100)).To(Equal("short"))
+	g.Expect(truncateAtLine("one\ntwo\nthree\n", 9)).To(Equal("one\ntwo"))
+	// A budget that cuts inside the first line returns no partial line.
+	g.Expect(truncateAtLine("ääääää", 5)).To(BeEmpty())
+	g.Expect(truncateAtLine(strings.Repeat("x", perDiffSizeBudget+10), perDiffSizeBudget)).To(BeEmpty())
+}
+
+// A PR comment body above GitHub's 65,536 character limit is rejected, which
+// would leave the PR without any render diff: keep it under the budget and say
+// how many rows were dropped.
+func TestBuildCommentBody_RespectsSizeBudget(t *testing.T) {
+	g := NewWithT(t)
+
+	result := buildLargeResult(2000, 100)
+	body := buildCommentBody(result, "abc123", "def456", "")
+
+	g.Expect(len(body)).To(BeNumerically("<=", commentSizeBudget+1024))
+	g.Expect(body).To(ContainSubstring("more components"))
+}
+
+// Build errors are PR-controlled output and must not break out of the summary's
+// HTML or inject markdown.
+func TestRenderSummaryBlock_EscapesBuildError(t *testing.T) {
+	g := NewWithT(t)
+
+	block := renderSummaryBlock(renderdiff.ComponentDiff{
+		Path:  "components/<script>",
+		Env:   "staging",
+		Error: "failed: ```\n# heading\n[link](https://example.com)\n</pre>",
+	})
+
+	g.Expect(block).To(ContainSubstring("<pre>"))
+	g.Expect(block).To(ContainSubstring("&lt;script&gt;"))
+	g.Expect(block).To(ContainSubstring("&lt;/pre&gt;"))
+	g.Expect(block).NotTo(ContainSubstring("</pre>\n# heading"))
+}
+
+func TestDiffFenceAvoidsContentFence(t *testing.T) {
+	g := NewWithT(t)
+
+	g.Expect(diffFence("plain")).To(Equal("```"))
+	g.Expect(diffFence("a\n```\nb")).To(Equal("````"))
+}
+
+func TestMarkdownTableCellEscapes(t *testing.T) {
+	g := NewWithT(t)
+
+	g.Expect(markdownTableCell("a|b")).To(Equal(`a\|b`))
+	g.Expect(markdownTableCell("a`b")).To(Equal("a'b"))
 }

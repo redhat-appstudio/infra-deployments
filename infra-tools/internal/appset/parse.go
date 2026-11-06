@@ -31,6 +31,10 @@ type ComponentPath struct {
 	// set (e.g. values.environment), or empty when none is declared or the
 	// value cannot be resolved.
 	Environment string
+	// NewDeployment is set by callers, not by parsing, when the ApplicationSet
+	// starts deploying this path on HEAD even though its directory may already
+	// exist on the base ref. Renderers must treat the base render as empty.
+	NewDeployment bool
 	// Path is the resolved filesystem path (relative to repo root) that the
 	// ApplicationSet points to. It is empty when the ApplicationSet only
 	// references files through ExtraFiles (e.g. a chart-only source).

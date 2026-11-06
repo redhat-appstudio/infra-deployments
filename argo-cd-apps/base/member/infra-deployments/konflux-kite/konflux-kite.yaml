@@ -16,11 +16,6 @@ spec:
                 clusterDir: ""
           - list:
               elements:
-                # Staging clusters
-                - nameNormalized: stone-stg-rh01
-                  values.clusterDir: stone-stg-rh01
-                - nameNormalized: stone-stage-p01
-                  values.clusterDir: stone-stage-p01
                 # Production clusters
                 - nameNormalized: kflux-ocp-p01
                   values.clusterDir: kflux-ocp-p01
@@ -43,10 +38,6 @@ spec:
                   values.clusterDir: kflux-fedora-01
                 - nameNormalized: kflux-lw-p01
                   values.clusterDir: kflux-lw-p01
-                - nameNormalized: kflux-stg-p02
-                  values.clusterDir: kflux-stg-p02
-                - nameNormalized: kflux-hub-stg-01
-                  values.clusterDir: kflux-hub-stg-01
   template:
     metadata:
       name: konflux-kite-{{nameNormalized}}
