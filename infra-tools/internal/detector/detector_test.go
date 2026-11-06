@@ -1373,9 +1373,9 @@ func TestMatchChangedFiles_DepTreeMatch(t *testing.T) {
 		},
 	}
 
-	matchChangedFiles(
-		[]string{"components/foo/base/deploy.yaml"},
-		resolved, nil, result,
+	applyComponentMatches(
+		matchComponents([]string{"components/foo/base/deploy.yaml"}, resolved),
+		nil, result,
 	)
 
 	g.Expect(result.AffectedEnvironments).To(HaveKey(Staging))
@@ -1397,9 +1397,9 @@ func TestMatchChangedFiles_PrefixFallback(t *testing.T) {
 		},
 	}
 
-	matchChangedFiles(
-		[]string{"configs/plain-dir/manifest.yaml"},
-		resolved, nil, result,
+	applyComponentMatches(
+		matchComponents([]string{"configs/plain-dir/manifest.yaml"}, resolved),
+		nil, result,
 	)
 
 	g.Expect(result.AffectedEnvironments).To(HaveKey(Production))
@@ -1422,10 +1422,7 @@ func TestMatchChangedFiles_NoMatch(t *testing.T) {
 		},
 	}
 
-	matchChangedFiles(
-		[]string{"README.md"},
-		resolved, nil, result,
-	)
+	applyComponentMatches(matchComponents([]string{"README.md"}, resolved), nil, result)
 
 	g.Expect(result.AffectedEnvironments).To(BeEmpty())
 	g.Expect(result.AffectedClusters).To(BeEmpty())
@@ -1448,9 +1445,9 @@ func TestMatchChangedFiles_WithClusters(t *testing.T) {
 		},
 	}
 
-	matchChangedFiles(
-		[]string{"components/foo/staging/stone-prod-p01/kustomization.yaml"},
-		resolved, nil, result,
+	applyComponentMatches(
+		matchComponents([]string{"components/foo/staging/stone-prod-p01/kustomization.yaml"}, resolved),
+		nil, result,
 	)
 
 	g.Expect(result.AffectedEnvironments).To(HaveKey(Staging))
@@ -1623,9 +1620,9 @@ func TestResolveComponentDeps_PrefixOnlyMatchesByPrefix(t *testing.T) {
 		AffectedClusters:     make(map[string]bool),
 		ChangedFiles:         []string{"components/partial/staging/base/deploy.yaml"},
 	}
-	matchChangedFiles(
-		[]string{"components/partial/staging/base/deploy.yaml"},
-		resolved, nil, result,
+	applyComponentMatches(
+		matchComponents([]string{"components/partial/staging/base/deploy.yaml"}, resolved),
+		nil, result,
 	)
 
 	g.Expect(result.AffectedEnvironments).To(HaveKey(Staging))
@@ -2016,10 +2013,9 @@ func TestResolveComponentDeps_SamePathDifferentExtraFilesKept(t *testing.T) {
 	g.Expect(resolved).To(HaveLen(2))
 
 	for _, changed := range []string{valuesA, valuesB} {
-		changedSet := map[string]bool{changed: true}
 		matching := 0
 		for _, cd := range resolved {
-			if cd.matchesAny(changedSet) {
+			if cd.matchesFile(changed) {
 				matching++
 				g.Expect(cd.cp.ExtraFiles).To(ConsistOf(changed))
 			}
@@ -2075,7 +2071,7 @@ func TestMatchAffectedComponents_FiltersNonRenderableAndDedupes(t *testing.T) {
 
 	affected := matchAffectedComponents(
 		[]string{"components/foo/staging/kustomization.yaml", "components/foo/values.yaml"},
-		resolved, nil,
+		resolved,
 	)
 
 	g.Expect(affected[Staging]).To(HaveLen(1))
@@ -3301,4 +3297,114 @@ func TestAffectedComponents_BaseMatchAllCoverDoesNotMarkNew(t *testing.T) {
 	g.Expect(affected[Development]).To(HaveLen(1))
 	g.Expect(affected[Development][0].Path).To(Equal(path))
 	g.Expect(affected[Development][0].NewDeployment).To(BeFalse())
+}
+
+// matchComponents is the single matching pass: it must sort by environment and
+// path, deduplicate changed files, and keep weak matches out of strongFiles.
+func TestMatchComponents_StrongWeakOrderAndDuplicates(t *testing.T) {
+	g := NewWithT(t)
+
+	resolved := []componentDeps{
+		{
+			cp:   appset.ComponentPath{Path: "components/a"},
+			env:  Staging,
+			deps: map[string]bool{"components/a/x.yaml": true},
+		},
+		{
+			cp:  appset.ComponentPath{MatchAll: true},
+			env: Production,
+		},
+		{
+			cp:  appset.ComponentPath{Path: "components/b", PrefixOnly: true},
+			env: Development,
+		},
+		{
+			cp:  appset.ComponentPath{ExtraFiles: []string{"values.yaml"}},
+			env: Staging,
+		},
+	}
+	changed := []string{
+		"components/b/y.yaml",
+		"components/a/x.yaml",
+		"values.yaml",
+		"components/a/x.yaml", // duplicate
+	}
+
+	matched := matchComponents(changed, resolved)
+	g.Expect(matched).To(HaveLen(4))
+
+	// Sorted by environment, then by path.
+	g.Expect(matched[0].env).To(Equal(Development))
+	g.Expect(matched[0].cp.Path).To(Equal("components/b"))
+	g.Expect(matched[0].files).To(ConsistOf("components/b/y.yaml"))
+	g.Expect(matched[0].strongFiles).To(BeEmpty())
+
+	g.Expect(matched[1].env).To(Equal(Production))
+	g.Expect(matched[1].cp.MatchAll).To(BeTrue())
+	g.Expect(matched[1].files).To(ConsistOf("components/a/x.yaml", "components/b/y.yaml", "values.yaml"))
+	g.Expect(matched[1].strongFiles).To(BeEmpty())
+
+	g.Expect(matched[2].env).To(Equal(Staging))
+	g.Expect(matched[2].cp.Path).To(BeEmpty())
+	g.Expect(matched[2].files).To(ConsistOf("values.yaml"))
+	g.Expect(matched[2].strongFiles).To(ConsistOf("values.yaml"))
+
+	g.Expect(matched[3].env).To(Equal(Staging))
+	g.Expect(matched[3].cp.Path).To(Equal("components/a"))
+	g.Expect(matched[3].files).To(ConsistOf("components/a/x.yaml"))
+	g.Expect(matched[3].strongFiles).To(ConsistOf("components/a/x.yaml"))
+}
+
+// Detect and AffectedComponents derive from the same match pass: a shared base
+// file must produce the same environment attribution in both.
+func TestDetectAndAffectedComponentsAgree(t *testing.T) {
+	g := NewWithT(t)
+
+	stagingYAML := appSetWithCluster("components/svc", "staging", "kflux-stg-p02")
+	productionYAML := appSetWithCluster("components/svc", "production", "stone-prod-p01")
+	const shared = "components/svc/base/shared.yaml"
+
+	head := &fakeRepo{
+		dirs: map[string][]string{"overlays": {"staging-downstream", "production-downstream"}},
+		yamls: map[string][]byte{
+			"overlays/staging-downstream":    []byte(stagingYAML),
+			"overlays/production-downstream": []byte(productionYAML),
+		},
+		exist: map[string]bool{
+			"overlays/staging-downstream":              true,
+			"overlays/production-downstream":           true,
+			"components/svc/staging/kflux-stg-p02":     true,
+			"components/svc/production/stone-prod-p01": true,
+		},
+		deps: map[string]map[string]bool{
+			"components/svc/staging/kflux-stg-p02":     {shared: true},
+			"components/svc/production/stone-prod-p01": {shared: true},
+		},
+	}
+	base := &fakeRepo{
+		dirs: map[string][]string{"overlays": {"staging-downstream", "production-downstream"}},
+		yamls: map[string][]byte{
+			"overlays/staging-downstream":    []byte(stagingYAML),
+			"overlays/production-downstream": []byte(productionYAML),
+		},
+		exist: map[string]bool{
+			"overlays/staging-downstream":    true,
+			"overlays/production-downstream": true,
+		},
+	}
+
+	d, err := NewDetector(head, base, "overlays")
+	g.Expect(err).NotTo(HaveOccurred())
+
+	result, err := d.Detect([]string{shared})
+	g.Expect(err).NotTo(HaveOccurred())
+	affected, err := d.AffectedComponents([]string{shared})
+	g.Expect(err).NotTo(HaveOccurred())
+
+	g.Expect(affected[Staging]).To(HaveLen(1))
+	g.Expect(affected[Production]).To(HaveLen(1))
+	g.Expect(result.FileEnvs[shared]).To(Equal(map[Environment]bool{Staging: true, Production: true}))
+	for env := range affected {
+		g.Expect(result.AffectedEnvironments).To(HaveKey(env))
+	}
 }

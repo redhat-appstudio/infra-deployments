@@ -1,0 +1,12 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kubearchive-sink
+spec:
+  template:
+    spec:
+      containers:
+      - name: kubearchive-sink
+        securityContext:
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true

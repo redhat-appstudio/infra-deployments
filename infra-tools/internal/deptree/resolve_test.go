@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -739,4 +740,146 @@ func TestAddDirTree_SkipsDirectoryOutsideRepo(t *testing.T) {
 	g.Expect(addDirTree(repoRoot, outside, deps, &incomplete)).To(Succeed())
 	g.Expect(deps).To(BeEmpty())
 	g.Expect(incomplete).To(BeFalse())
+}
+
+// The resolver caches per directory: a second call must not walk the tree again,
+// which is what keeps shared base directories cheap when dozens of cluster paths
+// include them.
+func TestResolver_CachesResults(t *testing.T) {
+	g := NewWithT(t)
+	tmpDir := t.TempDir()
+
+	baseDir := filepath.Join(tmpDir, "component", "base")
+	g.Expect(os.MkdirAll(baseDir, 0o755)).To(Succeed())
+	writeFile(t, filepath.Join(baseDir, "kustomization.yaml"), `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - deployment.yaml
+`)
+	writeFile(t, filepath.Join(baseDir, "deployment.yaml"), "kind: Deployment")
+
+	resolver := NewResolver(tmpDir)
+	first, err := resolver.Resolve("component/base")
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(first).To(HaveKey("component/base/deployment.yaml"))
+
+	// Remove the files: a cached resolver must still answer from memory.
+	g.Expect(os.RemoveAll(filepath.Join(tmpDir, "component"))).To(Succeed())
+
+	second, err := resolver.Resolve("component/base")
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(second).To(HaveKey("component/base/deployment.yaml"))
+}
+
+// Failures are cached too, so a directory without kustomization is not walked
+// on every call.
+func TestResolver_CachesErrors(t *testing.T) {
+	g := NewWithT(t)
+	tmpDir := t.TempDir()
+	g.Expect(os.MkdirAll(filepath.Join(tmpDir, "empty"), 0o755)).To(Succeed())
+
+	resolver := NewResolver(tmpDir)
+	_, err := resolver.Resolve("empty")
+	g.Expect(err).To(HaveOccurred())
+
+	// Create a kustomization after the failure: the cached error still applies.
+	writeFile(t, filepath.Join(tmpDir, "empty", "kustomization.yaml"), `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources: []
+`)
+	_, err = resolver.Resolve("empty")
+	g.Expect(err).To(HaveOccurred())
+}
+
+// Resolution runs concurrently in the detector, so the resolver must be safe for
+// parallel use (run with -race).
+func TestResolver_Concurrent(t *testing.T) {
+	g := NewWithT(t)
+	tmpDir := t.TempDir()
+
+	baseDir := filepath.Join(tmpDir, "component", "base")
+	g.Expect(os.MkdirAll(baseDir, 0o755)).To(Succeed())
+	writeFile(t, filepath.Join(baseDir, "kustomization.yaml"), `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - deployment.yaml
+`)
+	writeFile(t, filepath.Join(baseDir, "deployment.yaml"), "kind: Deployment")
+
+	resolver := NewResolver(tmpDir)
+
+	const workers = 16
+	results := make([]map[string]bool, workers)
+	errs := make([]error, workers)
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		wg := sync.WaitGroup{}
+		for i := range workers {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				results[i], errs[i] = resolver.Resolve("component/base")
+			}()
+		}
+		wg.Wait()
+	}()
+	<-done
+
+	for i := range workers {
+		g.Expect(errs[i]).NotTo(HaveOccurred())
+		g.Expect(results[i]).To(HaveKey("component/base/deployment.yaml"))
+	}
+}
+
+// A base directory shared by two overlays is walked once: the second overlay
+// reuses the cached subtree instead of walking it again.
+func TestResolver_SharedSubtreeIsCached(t *testing.T) {
+	g := NewWithT(t)
+	tmpDir := t.TempDir()
+
+	baseDir := filepath.Join(tmpDir, "component", "base")
+	g.Expect(os.MkdirAll(baseDir, 0o755)).To(Succeed())
+	writeFile(t, filepath.Join(baseDir, "kustomization.yaml"), `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - deployment.yaml
+`)
+	writeFile(t, filepath.Join(baseDir, "deployment.yaml"), "kind: Deployment")
+
+	for _, overlay := range []string{"overlay1", "overlay2"} {
+		dir := filepath.Join(tmpDir, "component", overlay)
+		g.Expect(os.MkdirAll(dir, 0o755)).To(Succeed())
+		writeFile(t, filepath.Join(dir, "kustomization.yaml"), `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../base
+`)
+	}
+
+	resolver := NewResolver(tmpDir)
+	first, err := resolver.Resolve("component/overlay1")
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(first).To(HaveKey("component/base/deployment.yaml"))
+
+	// Change the base after it has been resolved: the cached subtree is reused,
+	// which proves the second overlay did not walk it again.
+	writeFile(t, filepath.Join(baseDir, "additional.yaml"), "kind: ConfigMap")
+	writeFile(t, filepath.Join(baseDir, "kustomization.yaml"), `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - deployment.yaml
+  - additional.yaml
+`)
+
+	second, err := resolver.Resolve("component/overlay2")
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(second).To(HaveKey("component/base/deployment.yaml"))
+	g.Expect(second).NotTo(HaveKey("component/base/additional.yaml"))
 }
