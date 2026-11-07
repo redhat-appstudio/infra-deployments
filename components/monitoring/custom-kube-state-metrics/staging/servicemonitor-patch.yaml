@@ -1,0 +1,12 @@
+---
+- op: add
+  path: /spec/endpoints/0/metricRelabelings
+  value:
+    # Test PipelineRuns store PAC event-type under pac.test.appstudio.openshift.io.
+    # Copy a non-empty value onto event_type so build and test share one label.
+    - sourceLabels: [pac_test_event_type]
+      regex: (.+)
+      targetLabel: event_type
+      action: replace
+    - regex: pac_test_event_type
+      action: labeldrop
