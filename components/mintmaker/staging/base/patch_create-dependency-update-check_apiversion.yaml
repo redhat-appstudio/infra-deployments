@@ -1,0 +1,27 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: create-dependencyupdatecheck
+  namespace: mintmaker
+spec:
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: origin-cli
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  echo 'apiVersion: konflux-ci.dev/v1alpha1
+                  kind: DependencyUpdateCheck
+                  metadata:
+                    labels:
+                      app.kubernetes.io/name: dependencyupdatecheck
+                      app.kubernetes.io/part-of: mintmaker
+                      app.kubernetes.io/managed-by: kustomize
+                      app.kubernetes.io/created-by: mintmaker
+                    generateName: dependencyupdatecheck-
+                  spec:
+                  ' | oc create -f-
