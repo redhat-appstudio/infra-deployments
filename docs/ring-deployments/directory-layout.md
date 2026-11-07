@@ -46,7 +46,7 @@ A change must pass verification in Ring N before it is promoted to Ring N+1. Bet
 | Ring | Cluster(s) | Environment |
 |------|------------|-------------|
 | Ring 0 | N/A | Development |
-| Ring 1 | stone-stg-rh01, stone-stage-p01, lightwell-dev, klfux-stg-es01 | Staging |
+| Ring 1 | stone-stg-rh01, stone-stage-p01, lightwell-dev, kflux-stg-es01 | Staging |
 | Ring 2 | kflux-prd-rh03, kflux-prd-es01, stone-prod-p01, kflux-ocp-p01, kflux-osp-p01, kflux-rhel-p01, kflux-fedora-01, kflux-lw-p01* | Production (low impact) |
 | Ring 3 | stone-prod-p02, stone-prd-rh01 | Production (medium impact) |
 | Ring 4 | kflux-prd-rh02 | Production (high impact)
