@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../base
+  - konflux-ui/backstage-serviceaccount.yaml
+  - release/release-service-github-token.yaml
+
+patches:
+  - path: integration/console-name-patch.yaml
+  - path: konflux-info/info-patch.yaml
+  - path: konflux-ui/ui-patch.yaml
+  - path: namespace-lister/resources-patch.yaml
