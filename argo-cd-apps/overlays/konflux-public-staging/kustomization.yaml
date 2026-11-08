@@ -24,3 +24,56 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: image-rbac-proxy
+  # Orphan resources when an Application is later removed from an operator-owned
+  # ApplicationSet. This must be synced before any cluster is excluded, so Argo
+  # does not prune those workloads. konflux-public-staging only.
+  - path: preserve-resources-on-deletion.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: application-api
+  - path: preserve-resources-on-deletion.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: build-service
+  - path: preserve-resources-on-deletion.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: integration
+  - path: preserve-resources-on-deletion.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: image-controller
+  - path: preserve-resources-on-deletion.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: namespace-lister
+  - path: preserve-resources-on-deletion.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: konflux-info
+  - path: preserve-resources-on-deletion.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: konflux-ui
+  - path: preserve-resources-on-deletion.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: enterprise-contract
+  - path: preserve-resources-on-deletion.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: konflux-rbac
+  - path: preserve-resources-on-deletion.yaml
+    target:
+      kind: ApplicationSet
+      version: v1alpha1
+      name: release
