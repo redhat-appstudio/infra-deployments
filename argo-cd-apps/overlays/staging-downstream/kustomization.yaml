@@ -127,14 +127,8 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: release
- # Disable legacy build-templates auto-sync while rd-staging owns staging.
-  - path: build-templates-remove-auto-sync-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: build-templates
-  # Remove automated sync from image-rbac-proxy for staging migration; this
-  # AppSet is shared with production, so the base syncPolicy is left untouched
+  # Remove automated sync from image-rbac-proxy for staging migration; this AppSet is
+  # shared with production, so the base syncPolicy is left untouched
   - path: image-rbac-proxy-remove-auto-sync-patch.yaml
     target:
       kind: ApplicationSet
