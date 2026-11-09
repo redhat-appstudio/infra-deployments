@@ -171,25 +171,30 @@ func (d *Detector) AffectedComponents(changedFiles []string) (map[Environment][]
 	// Phase 5: Match changed files against resolved dependencies
 	affected := matchAffectedComponents(changedFiles, resolved)
 
-	// Phase 6: An ApplicationSet change (new cluster in a generator list, new
+	// Phase 6: An ApplicationSet change (added/removed cluster, added/removed
 	// ApplicationSet, changed path template) affects components that no changed
-	// file points at. Render the paths that only exist because of that change.
-	addedPaths, err := d.pathsAddedByOverlayChanges(builds)
+	// file points at. Render the paths that only exist because of that change,
+	// including removals.
+	addedPaths, removedPaths, err := d.pathsChangedByOverlayChanges(builds)
 	if err != nil {
 		return nil, err
 	}
 	for env, paths := range addedPaths {
-		affected[env] = appendNewComponentPaths(affected[env], paths)
+		affected[env] = appendComponentPaths(affected[env], paths)
+	}
+	for env, paths := range removedPaths {
+		affected[env] = appendComponentPaths(affected[env], paths)
 	}
 
 	return affected, nil
 }
 
-// appendNewComponentPaths appends the component paths of extra that are not yet
-// present in existing, preserving order. Render jobs are deduplicated by
-// render target, not by ExtraFiles: the engine builds only the directory and
-// cluster, so two ApplicationSet entries with different value files are one job.
-func appendNewComponentPaths(existing, extra []appset.ComponentPath) []appset.ComponentPath {
+// appendComponentPaths appends the component paths of extra that are not yet
+// present in existing, preserving order. Render jobs are deduplicated by render
+// target, not by ExtraFiles: the engine builds only the directory and cluster,
+// so two ApplicationSet entries with different value files are one job. Flags
+// from colliding entries are merged.
+func appendComponentPaths(existing, extra []appset.ComponentPath) []appset.ComponentPath {
 	index := make(map[string]int, len(existing))
 	for i, cp := range existing {
 		index[renderJobKey(cp)] = i
@@ -197,10 +202,11 @@ func appendNewComponentPaths(existing, extra []appset.ComponentPath) []appset.Co
 	for _, cp := range extra {
 		key := renderJobKey(cp)
 		if i, ok := index[key]; ok {
-			// A matched path that the ApplicationSet also starts deploying on
-			// HEAD must render as a new deployment.
 			if cp.NewDeployment {
 				existing[i].NewDeployment = true
+			}
+			if cp.RemovedDeployment {
+				existing[i].RemovedDeployment = true
 			}
 			continue
 		}
@@ -210,66 +216,67 @@ func appendNewComponentPaths(existing, extra []appset.ComponentPath) []appset.Co
 	return existing
 }
 
-// pathsAddedByOverlayChanges returns, per environment, the component paths that
-// are rendered on HEAD but not on the base ref. These appear when a PR adds an
-// ApplicationSet, adds a cluster to a generator list, or changes a path
-// template, and they must be rendered even though no changed file lives there.
+// pathsChangedByOverlayChanges returns, per environment, the component paths
+// that are newly deployed on HEAD and those that are no longer deployed. These
+// appear when a PR adds or removes an ApplicationSet, adds or removes a cluster
+// from a generator list, or changes a path template, and must be rendered even
+// though no changed file points at them.
 //
-// Base deployments are collected across every overlay first: several overlays
-// can share an environment, and a target already deployed by one of them is not
-// new just because another overlay starts rendering it. When a base render
-// cannot be parsed, paths in that environment are still added but never marked
-// as new: the earlier base state is unknown.
-func (d *Detector) pathsAddedByOverlayChanges(builds []overlayBuild) (map[Environment][]appset.ComponentPath, error) {
+// Deployments are collected across every overlay first: several overlays can
+// share an environment, and a target still deployed by one of them is not
+// removed just because another overlay stopped rendering it, nor new when
+// another overlay already deploys it. A failed base parse withholds the "new"
+// flag and skips removal detection for that overlay because its base paths are
+// unknown. A failed HEAD parse stops the run: HEAD must be parseable.
+func (d *Detector) pathsChangedByOverlayChanges(builds []overlayBuild) (map[Environment][]appset.ComponentPath, map[Environment][]appset.ComponentPath, error) {
 	added := make(map[Environment][]appset.ComponentPath)
-	known := make(map[string]bool)
-	coverage := make(map[Environment]*baseCoverage)
+	removed := make(map[Environment][]appset.ComponentPath)
+	baseKnown := make(map[string]bool)
+	headKnown := make(map[string]bool)
+	baseCoverage := make(map[Environment]*pathCoverage)
+	headCoverage := make(map[Environment]*pathCoverage)
+	basePaths := make([][]appset.ComponentPath, len(builds))
+	headPaths := make([][]appset.ComponentPath, len(builds))
 	baseUsable := make([]bool, len(builds))
 	baseFailedEnvs := make(map[Environment]bool)
 
 	for i, ob := range builds {
 		if len(ob.baseYAML) == 0 {
 			baseUsable[i] = true
-			continue
-		}
-		basePaths, err := appset.ParseApplicationSets(ob.baseYAML)
-		if err != nil {
-			// The base view is unknown. Keep the overlay's HEAD paths (they
-			// still rendered before added-path detection existed), but never
-			// call them new, and apply the same caution to its environment.
-			slog.Warn("failed to parse base-ref ApplicationSets, not marking paths as new",
-				"overlay", logging.Sanitize(ob.name), "err", sanitizedError(err))
-			baseFailedEnvs[ob.env] = true
-			continue
-		}
-		baseUsable[i] = true
-		for _, cp := range basePaths.Paths {
-			for _, env := range pathEnvironments(cp, ob.env) {
-				known[deploymentKey(env, cp)] = true
-				c := coverage[env]
-				if c == nil {
-					c = &baseCoverage{}
-					coverage[env] = c
-				}
-				if cp.MatchAll {
-					c.matchAll = true
-				}
-				if cp.PrefixOnly && cp.Path != "" {
-					c.prefixes = append(c.prefixes, cp.Path)
-				}
+		} else {
+			parsed, err := appset.ParseApplicationSets(ob.baseYAML)
+			if err != nil {
+				// The base view is unknown. Keep the overlay's HEAD paths (they
+				// still rendered before changed-path detection existed), but
+				// never call them new, and apply the same caution to its
+				// environment.
+				slog.Warn("failed to parse base-ref ApplicationSets, not marking paths as new and skipping removal detection",
+					"overlay", logging.Sanitize(ob.name), "err", sanitizedError(err))
+				baseFailedEnvs[ob.env] = true
+			} else {
+				baseUsable[i] = true
+				basePaths[i] = parsed.Paths
+				collectDeployments(parsed.Paths, ob.env, baseKnown, baseCoverage)
 			}
 		}
+
+		if len(ob.headYAML) == 0 {
+			continue
+		}
+		parsed, err := appset.ParseApplicationSets(ob.headYAML)
+		if err != nil {
+			return nil, nil, fmt.Errorf("parsing ApplicationSets from overlay %s: %w", ob.name, err)
+		}
+		headPaths[i] = parsed.Paths
+		collectDeployments(parsed.Paths, ob.env, headKnown, headCoverage)
 	}
 
 	for i, ob := range builds {
 		if string(ob.headYAML) == string(ob.baseYAML) {
 			continue
 		}
-		headPaths, err := appset.ParseApplicationSets(ob.headYAML)
-		if err != nil {
-			return nil, fmt.Errorf("parsing ApplicationSets from overlay %s: %w", ob.name, err)
-		}
-		for _, cp := range headPaths.Paths {
+
+		for _, cp := range headPaths[i] {
 			// Only a concrete deployed directory can be rendered. MatchAll,
 			// PrefixOnly and value-file-only entries have no kustomization.
 			if cp.MatchAll || cp.Path == "" || cp.PrefixOnly {
@@ -282,7 +289,7 @@ func (d *Detector) pathsAddedByOverlayChanges(builds []overlayBuild) (map[Enviro
 				continue
 			}
 			for _, env := range pathEnvironments(cp, ob.env) {
-				if known[deploymentKey(env, cp)] {
+				if baseKnown[deploymentKey(env, cp)] {
 					continue
 				}
 				addedPath := cp
@@ -291,23 +298,83 @@ func (d *Detector) pathsAddedByOverlayChanges(builds []overlayBuild) (map[Enviro
 				// prefix/MatchAll that covers this path means the target may
 				// already have been deployed.
 				addedPath.NewDeployment = headExists &&
-					baseUsable[i] && !baseFailedEnvs[env] && !coverage[env].covers(cp.Path)
-				added[env] = appendNewComponentPaths(added[env], []appset.ComponentPath{addedPath})
+					baseUsable[i] && !baseFailedEnvs[env] && !baseCoverage[env].covers(cp.Path)
+				added[env] = appendComponentPaths(added[env], []appset.ComponentPath{addedPath})
+			}
+		}
+
+		// A base path is removed when no HEAD overlay still deploys it. It is
+		// kept even if the directory is missing on base so the renderer can
+		// report the broken reference; only a path missing on both refs is
+		// stale noise. HEAD PrefixOnly/MatchAll coverage means the template may
+		// still resolve to this directory, so it is not removed.
+		for _, cp := range basePaths[i] {
+			if cp.MatchAll || cp.Path == "" || cp.PrefixOnly {
+				continue
+			}
+			if !d.head.DirExists(cp.Path) && !d.base.DirExists(cp.Path) {
+				continue
+			}
+			for _, env := range pathEnvironments(cp, ob.env) {
+				if headKnown[deploymentKey(env, cp)] {
+					continue
+				}
+				if headCoverage[env].covers(cp.Path) {
+					continue
+				}
+				removedPath := cp
+				removedPath.RemovedDeployment = true
+				removed[env] = appendComponentPaths(removed[env], []appset.ComponentPath{removedPath})
 			}
 		}
 	}
-	return added, nil
+	return added, removed, nil
 }
 
-// baseCoverage records base entries that cannot be compared exactly: a
-// MatchAll entry, or a PrefixOnly path whose prefix may cover a resolved HEAD
-// path.
-type baseCoverage struct {
+// collectDeployments records the deployment keys and non-exact coverage of one
+// overlay render, for comparison against the other ref.
+func collectDeployments(paths []appset.ComponentPath, overlayEnv Environment, known map[string]bool, coverage map[Environment]*pathCoverage) {
+	coverageFor := func(env Environment) *pathCoverage {
+		c := coverage[env]
+		if c == nil {
+			c = &pathCoverage{}
+			coverage[env] = c
+		}
+		return c
+	}
+	for _, cp := range paths {
+		for _, env := range pathEnvironments(cp, overlayEnv) {
+			known[deploymentKey(env, cp)] = true
+			c := coverageFor(env)
+			if cp.PrefixOnly && cp.Path != "" {
+				c.prefixes = append(c.prefixes, cp.Path)
+			}
+		}
+		// A MatchAll entry has no environment-specific path. When its generator
+		// declares an environment, coverage stays in that environment so an
+		// unrelated target elsewhere is not suppressed. Without a declaration,
+		// treat it as covering every environment.
+		if cp.MatchAll {
+			envs := []Environment{Development, Staging, Production}
+			switch declared := Environment(cp.Environment); declared {
+			case Development, Staging, Production:
+				envs = []Environment{declared}
+			}
+			for _, env := range envs {
+				coverageFor(env).matchAll = true
+			}
+		}
+	}
+}
+
+// pathCoverage records entries that cannot be compared exactly: a MatchAll
+// entry, or a PrefixOnly path whose prefix may cover a resolved path.
+type pathCoverage struct {
 	matchAll bool
 	prefixes []string
 }
 
-func (c *baseCoverage) covers(path string) bool {
+func (c *pathCoverage) covers(path string) bool {
 	if c == nil {
 		return false
 	}

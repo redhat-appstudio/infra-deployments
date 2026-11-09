@@ -212,8 +212,9 @@ both refs, parses the ApplicationSets it renders, and then matches:
 
 Components referenced only on the base ref are still considered, so a PR
 that removes a component shows the removal. Paths that an ApplicationSet
-newly deploys on HEAD are rendered as well, even when no changed file
-points at them.
+newly deploys on HEAD, or stops deploying on HEAD, are rendered even when no
+changed file points at them. This covers adding or removing a generator
+entry, an ApplicationSet, or a whole overlay.
 
 ### Environment attribution
 

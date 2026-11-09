@@ -35,6 +35,10 @@ type ComponentPath struct {
 	// starts deploying this path on HEAD even though its directory may already
 	// exist on the base ref. Renderers must treat the base render as empty.
 	NewDeployment bool
+	// RemovedDeployment is set by callers when the ApplicationSet stops
+	// deploying this path on HEAD even though its directory may still exist
+	// there. Renderers must treat the HEAD render as empty.
+	RemovedDeployment bool
 	// Path is the resolved filesystem path (relative to repo root) that the
 	// ApplicationSet points to. It is empty when the ApplicationSet only
 	// references files through ExtraFiles (e.g. a chart-only source).
@@ -103,24 +107,42 @@ func AppSetsByName(renderedYAML []byte) (map[string]map[string]interface{}, erro
 	return result, nil
 }
 
-// EnvironmentFromAppSet extracts the environment value from an ApplicationSet's
-// generator configuration. It looks for a clusters generator (direct or nested
-// inside a merge generator) with a values.environment field.
-// Returns the environment string and true if an explicit environment is found.
+// EnvironmentFromAppSet returns the first environment declared by an
+// ApplicationSet generator.
 func EnvironmentFromAppSet(doc map[string]interface{}) (string, bool) {
-	spec, ok := doc["spec"].(map[string]interface{})
-	if !ok {
+	envs := EnvironmentsFromAppSet(doc)
+	if len(envs) == 0 {
 		return "", false
 	}
+	return envs[0], true
+}
+
+// EnvironmentsFromAppSet returns every environment declared by a clusters
+// generator (direct or nested inside a merge generator), deduplicated in
+// declaration order.
+func EnvironmentsFromAppSet(doc map[string]interface{}) []string {
+	spec, ok := doc["spec"].(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	var envs []string
+	seen := make(map[string]bool)
+	add := func(v interface{}) {
+		env, ok := envFromClusters(v)
+		if !ok || seen[env] {
+			return
+		}
+		seen[env] = true
+		envs = append(envs, env)
+	}
+
 	generators, _ := spec["generators"].([]interface{})
 	for _, gen := range generators {
 		genMap, ok := gen.(map[string]interface{})
 		if !ok {
 			continue
 		}
-		if env, ok := envFromClusters(genMap["clusters"]); ok {
-			return env, true
-		}
+		add(genMap["clusters"])
 		merge, _ := genMap["merge"].(map[string]interface{})
 		subGens, _ := merge["generators"].([]interface{})
 		for _, sg := range subGens {
@@ -128,12 +150,10 @@ func EnvironmentFromAppSet(doc map[string]interface{}) (string, bool) {
 			if !ok {
 				continue
 			}
-			if env, ok := envFromClusters(sgMap["clusters"]); ok {
-				return env, true
-			}
+			add(sgMap["clusters"])
 		}
 	}
-	return "", false
+	return envs
 }
 
 func envFromClusters(v interface{}) (string, bool) {
@@ -191,6 +211,21 @@ func ParseApplicationSets(renderedYAML []byte) (*ParseResult, error) {
 	return result, nil
 }
 
+// matchAllPaths returns one unresolvable-path entry per declared environment.
+// With no declaration the entry stays environment-less so the detector applies
+// its conservative all-environment coverage.
+func matchAllPaths(doc map[string]interface{}) []ComponentPath {
+	envs := EnvironmentsFromAppSet(doc)
+	if len(envs) == 0 {
+		return []ComponentPath{{MatchAll: true}}
+	}
+	paths := make([]ComponentPath, 0, len(envs))
+	for _, env := range envs {
+		paths = append(paths, ComponentPath{MatchAll: true, Environment: env})
+	}
+	return paths
+}
+
 // extractFromAppSet processes a single ApplicationSet document.
 func extractFromAppSet(doc map[string]interface{}) ([]ComponentPath, map[string][]string, error) {
 	spec, ok := doc["spec"].(map[string]interface{})
@@ -205,7 +240,7 @@ func extractFromAppSet(doc map[string]interface{}) ([]ComponentPath, map[string]
 	if _, found := spec["templatePatch"]; found {
 		slog.Warn("ApplicationSet has a templatePatch, which may replace the source paths; treating the environment as affected by any change",
 			"appset", logging.Sanitize(name))
-		return []ComponentPath{{MatchAll: true}}, map[string][]string{}, nil
+		return matchAllPaths(doc), map[string][]string{}, nil
 	}
 
 	// Generators are inspected before spec.template so that a generator-level
@@ -221,7 +256,7 @@ func extractFromAppSet(doc map[string]interface{}) ([]ComponentPath, map[string]
 		if values.templateOverride() {
 			slog.Warn("ApplicationSet generator carries its own template, which may replace the source paths; treating the environment as affected by any change",
 				"appset", logging.Sanitize(name))
-			return []ComponentPath{{MatchAll: true}}, map[string][]string{}, nil
+			return matchAllPaths(doc), map[string][]string{}, nil
 		}
 		return nil, nil, nil
 	}

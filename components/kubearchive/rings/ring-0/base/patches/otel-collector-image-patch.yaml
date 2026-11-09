@@ -1,0 +1,13 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otel-collector
+  labels:
+    app: otel-collector
+spec:
+  template:
+    spec:
+      containers:
+        - name: otel-collector
+          image: quay.io/kubearchive/opentelemetry-collector@sha256:30619e2a6e7ec84debb478a60ffecdcf493a68d8206120c4a4b01b83f31ea3e4

@@ -1716,6 +1716,44 @@ func (h *captureHandler) Handle(_ context.Context, r slog.Record) error {
 func (h *captureHandler) WithAttrs([]slog.Attr) slog.Handler { return h }
 func (h *captureHandler) WithGroup(string) slog.Handler      { return h }
 
+// An unresolved template must carry every declared environment, not only the
+// first one, so detector coverage is complete.
+func TestParseApplicationSets_MatchAllKeepsEveryEnvironment(t *testing.T) {
+	g := NewWithT(t)
+
+	yaml := `
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: multi-env-unresolved
+spec:
+  generators:
+    - clusters:
+        values:
+          environment: staging
+    - clusters:
+        values:
+          environment: production
+  templatePatch: '{{ . }}'
+  template:
+    metadata:
+      name: multi-env-unresolved
+    spec:
+      source:
+        path: components/foo
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+`
+	result, err := ParseApplicationSets([]byte(yaml))
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.Paths).To(HaveLen(2))
+	envs := make([]string, 0, len(result.Paths))
+	for _, cp := range result.Paths {
+		g.Expect(cp.MatchAll).To(BeTrue())
+		envs = append(envs, cp.Environment)
+	}
+	g.Expect(envs).To(ConsistOf("staging", "production"))
+}
+
 // Two top-level generators can declare different environments. Each path must
 // keep the environment of the generator value set that produced it instead of
 // inheriting the first clusters generator's value.

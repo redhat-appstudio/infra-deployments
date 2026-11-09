@@ -38,9 +38,9 @@ jobs:
             ! -path 'components/*/chainsaw/*' \
             ! -path 'components/etcd-shield/base/*' \
             ! -path 'components/kueue/base/*' \
+            ! -path 'components/kubearchive/rings/*/base/vacuum/*' \
+            ! -path 'components/kubearchive/base/*' \
             ! -path 'components/kube-shard/base/*' \
-            ! -path 'components/kubearchive-rd/base/*' \
-            ! -path 'components/kubearchive-rd/rings/*/base/vacuum/*' \
             ! -path 'components/*/rings/*/base/base-snapshot/*' \
             | \
             xargs -I {} -n1 -P8  bash -c 'dir=$(dirname "{}"); output_file=$(echo "$dir" | tr / -)-kustomization.yaml; ./hack/kustomize-build-with-retry.sh "$dir" -o "kustomizedfiles/$output_file"'

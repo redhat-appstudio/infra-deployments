@@ -1,0 +1,13 @@
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: kubearchive-maintainer
+rules:
+  - apiGroups:
+      - kubearchive.org
+    resources:
+      - "*"
+    verbs:
+      - get
+      - list
+      - watch
