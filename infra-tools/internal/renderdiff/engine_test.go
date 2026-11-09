@@ -46,7 +46,7 @@ func TestEngine_NormalDiff(t *testing.T) {
 		yamls: map[string][]byte{"components/foo/staging": []byte("apiVersion: v1\nkind: ConfigMap\ndata:\n  key: old-value\n")},
 	}
 
-	engine := NewEngine(head, base, 2)
+	engine := NewEngine(head, base)
 	affected := map[detector.Environment][]appset.ComponentPath{
 		detector.Staging: {{Path: "components/foo/staging"}},
 	}
@@ -64,6 +64,35 @@ func TestEngine_NormalDiff(t *testing.T) {
 	g.Expect(result.TotalRemoved).To(Equal(1))
 }
 
+func TestEngine_NewDeploymentWithExistingBase(t *testing.T) {
+	g := NewWithT(t)
+
+	// The directory is identical on both refs, but the ApplicationSet only
+	// starts deploying it on HEAD. The base render must be treated as empty so
+	// the new deployment is not hidden by an empty diff.
+	same := []byte("apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: foo\n")
+	head := &fakeBuilder{
+		exist: map[string]bool{"components/foo/staging": true},
+		yamls: map[string][]byte{"components/foo/staging": same},
+	}
+	base := &fakeBuilder{
+		exist: map[string]bool{"components/foo/staging": true},
+		yamls: map[string][]byte{"components/foo/staging": same},
+	}
+
+	engine := NewEngine(head, base)
+	affected := map[detector.Environment][]appset.ComponentPath{
+		detector.Staging: {{Path: "components/foo/staging", NewDeployment: true}},
+	}
+
+	result, err := engine.Run(context.Background(), affected)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.Diffs).To(HaveLen(1))
+	g.Expect(result.Diffs[0].BaseYAML).To(BeNil())
+	g.Expect(result.Diffs[0].Added).To(BeNumerically(">", 0))
+	g.Expect(result.Diffs[0].Removed).To(Equal(0))
+}
+
 func TestEngine_NewComponent(t *testing.T) {
 	g := NewWithT(t)
 
@@ -75,7 +104,7 @@ func TestEngine_NewComponent(t *testing.T) {
 		exist: map[string]bool{}, // does not exist on base
 	}
 
-	engine := NewEngine(head, base, 2)
+	engine := NewEngine(head, base)
 	affected := map[detector.Environment][]appset.ComponentPath{
 		detector.Development: {{Path: "components/new/dev"}},
 	}
@@ -86,6 +115,57 @@ func TestEngine_NewComponent(t *testing.T) {
 	g.Expect(result.Diffs[0].Added).To(BeNumerically(">", 0))
 	g.Expect(result.Diffs[0].Removed).To(Equal(0))
 	g.Expect(result.Diffs[0].BaseYAML).To(BeNil())
+}
+
+func TestEngine_RemovedDeploymentMissingBase(t *testing.T) {
+	g := NewWithT(t)
+
+	const path = "components/foo/staging"
+	head := &fakeBuilder{
+		exist: map[string]bool{path: true},
+		yamls: map[string][]byte{path: []byte("apiVersion: v1\nkind: ConfigMap\n")},
+	}
+	base := &fakeBuilder{exist: map[string]bool{}}
+
+	engine := NewEngine(head, base)
+	affected := map[detector.Environment][]appset.ComponentPath{
+		detector.Staging: {{Path: path, RemovedDeployment: true}},
+	}
+
+	result, err := engine.Run(context.Background(), affected)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.Diffs).To(HaveLen(1))
+	g.Expect(result.Diffs[0].Error).To(ContainSubstring("marked removed"))
+}
+
+func TestEngine_RemovedDeploymentWithExistingHead(t *testing.T) {
+	g := NewWithT(t)
+
+	// The directory is identical on both refs, but the ApplicationSet stops
+	// deploying it on HEAD. The HEAD render must be skipped so the removal is
+	// visible instead of producing an empty diff.
+	same := []byte("apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: foo\n")
+	head := &fakeBuilder{
+		exist: map[string]bool{"components/foo/staging": true},
+		yamls: map[string][]byte{"components/foo/staging": same},
+	}
+	base := &fakeBuilder{
+		exist: map[string]bool{"components/foo/staging": true},
+		yamls: map[string][]byte{"components/foo/staging": same},
+	}
+
+	engine := NewEngine(head, base)
+	affected := map[detector.Environment][]appset.ComponentPath{
+		detector.Staging: {{Path: "components/foo/staging", RemovedDeployment: true}},
+	}
+
+	result, err := engine.Run(context.Background(), affected)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(result.Diffs).To(HaveLen(1))
+	g.Expect(result.Diffs[0].HeadYAML).To(BeNil())
+	g.Expect(result.Diffs[0].BaseYAML).NotTo(BeNil())
+	g.Expect(result.Diffs[0].Removed).To(BeNumerically(">", 0))
+	g.Expect(result.Diffs[0].Added).To(Equal(0))
 }
 
 func TestEngine_RemovedComponent(t *testing.T) {
@@ -99,7 +179,7 @@ func TestEngine_RemovedComponent(t *testing.T) {
 		yamls: map[string][]byte{"components/old/prod": []byte("apiVersion: v1\nkind: Deployment\n")},
 	}
 
-	engine := NewEngine(head, base, 2)
+	engine := NewEngine(head, base)
 	affected := map[detector.Environment][]appset.ComponentPath{
 		detector.Production: {{Path: "components/old/prod"}},
 	}
@@ -124,7 +204,7 @@ func TestEngine_BuildFailure_ReportsError(t *testing.T) {
 		yamls: map[string][]byte{"components/broken/staging": []byte("valid: yaml\n")},
 	}
 
-	engine := NewEngine(head, base, 2)
+	engine := NewEngine(head, base)
 	affected := map[detector.Environment][]appset.ComponentPath{
 		detector.Staging: {{Path: "components/broken/staging"}},
 	}
@@ -153,7 +233,7 @@ func TestEngine_NonKustomizationError_ExcludedFromDiffs(t *testing.T) {
 		},
 	}
 
-	engine := NewEngine(head, base, 1)
+	engine := NewEngine(head, base)
 	affected := map[detector.Environment][]appset.ComponentPath{
 		detector.Staging: {{Path: "components/plain/staging"}},
 	}
@@ -187,7 +267,7 @@ func TestEngine_MixedErrors_OnlyGenuineInDiffs(t *testing.T) {
 		yamls: map[string][]byte{"components/broken/staging": []byte("valid: yaml\n")},
 	}
 
-	engine := NewEngine(head, base, 2)
+	engine := NewEngine(head, base)
 	affected := map[detector.Environment][]appset.ComponentPath{
 		detector.Staging: {
 			{Path: "components/plain/staging"},
@@ -216,7 +296,7 @@ func TestEngine_NoEffectiveChange(t *testing.T) {
 		yamls: map[string][]byte{"components/foo/staging": sameYAML},
 	}
 
-	engine := NewEngine(head, base, 2)
+	engine := NewEngine(head, base)
 	affected := map[detector.Environment][]appset.ComponentPath{
 		detector.Staging: {{Path: "components/foo/staging"}},
 	}
@@ -240,7 +320,7 @@ func TestEngine_EmptyBase_NewComponent(t *testing.T) {
 		exist: map[string]bool{},
 	}
 
-	engine := NewEngine(head, base, 2)
+	engine := NewEngine(head, base)
 	affected := map[detector.Environment][]appset.ComponentPath{
 		detector.Staging: {{Path: "components/foo/staging/empty-base"}},
 	}
@@ -253,7 +333,7 @@ func TestEngine_EmptyBase_NewComponent(t *testing.T) {
 func TestEngine_EmptyInput(t *testing.T) {
 	g := NewWithT(t)
 
-	engine := NewEngine(&fakeBuilder{}, &fakeBuilder{}, 2)
+	engine := NewEngine(&fakeBuilder{}, &fakeBuilder{})
 	result, err := engine.Run(context.Background(), nil)
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(result.Diffs).To(BeEmpty())
@@ -277,7 +357,7 @@ func TestEngine_Progressive(t *testing.T) {
 		},
 	}
 
-	engine := NewEngine(head, base, 2)
+	engine := NewEngine(head, base)
 	affected := map[detector.Environment][]appset.ComponentPath{
 		detector.Development: {
 			{Path: "components/a/dev"},
@@ -311,4 +391,52 @@ func TestCountStats(t *testing.T) {
 	added, removed := countStats(diff)
 	g.Expect(added).To(Equal(2))
 	g.Expect(removed).To(Equal(1))
+}
+
+// Adding a resource to a previously single-document manifest must show as an
+// addition, not as a whole-file rewrite: normalization has to produce the same
+// indentation and document separators for one and for several resources.
+func TestComponentDiff_NormalizeSingleToMultipleDocs(t *testing.T) {
+	g := NewWithT(t)
+
+	const single = `apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: first
+data:
+  key: value
+`
+	const two = single + `---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: second
+data:
+  key: value
+`
+
+	cd := &ComponentDiff{Path: "components/foo/staging", BaseYAML: []byte(single), HeadYAML: []byte(two)}
+	g.Expect(cd.computeDiff()).To(Succeed())
+	g.Expect(cd.Diff).To(ContainSubstring("+kind: ConfigMap"))
+	g.Expect(cd.Diff).To(ContainSubstring("+  name: second"))
+	// The existing resource must not be removed by the normalization change.
+	g.Expect(cd.Removed).To(BeZero(), "diff:\n%s", cd.Diff)
+	g.Expect(cd.Added).To(BeNumerically(">", 0))
+}
+
+// Normalization must be stable for a single document: identical input must not
+// produce a diff.
+func TestComponentDiff_SingleDocNoChange(t *testing.T) {
+	g := NewWithT(t)
+
+	const doc = `apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: only
+data:
+  key: value
+`
+	cd := &ComponentDiff{Path: "components/foo/staging", BaseYAML: []byte(doc), HeadYAML: []byte(doc)}
+	g.Expect(cd.computeDiff()).To(Succeed())
+	g.Expect(cd.HasDiff()).To(BeFalse())
 }

@@ -1,0 +1,60 @@
+# OpenShift-only delta for operator-managed user-action roles.
+# The aggregated konflux-*-user-actions ClusterRoles omit get on
+# projects.project.openshift.io; label these into the aggregation so
+# automation that checks Project existence keeps working on OCP.
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: konflux-admin-user-actions-openshift-projects
+  labels:
+    rbac.konflux-ci.dev/aggregate-to-admin: "true"
+rules:
+  - apiGroups:
+      - project.openshift.io
+    resources:
+      - projects
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: konflux-maintainer-user-actions-openshift-projects
+  labels:
+    rbac.konflux-ci.dev/aggregate-to-maintainer: "true"
+rules:
+  - apiGroups:
+      - project.openshift.io
+    resources:
+      - projects
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: konflux-contributor-user-actions-openshift-projects
+  labels:
+    rbac.konflux-ci.dev/aggregate-to-contributor: "true"
+rules:
+  - apiGroups:
+      - project.openshift.io
+    resources:
+      - projects
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: konflux-viewer-user-actions-openshift-projects
+  labels:
+    rbac.konflux-ci.dev/aggregate-to-viewer: "true"
+rules:
+  - apiGroups:
+      - project.openshift.io
+    resources:
+      - projects
+    verbs:
+      - get

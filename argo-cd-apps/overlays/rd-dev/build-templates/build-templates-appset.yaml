@@ -1,0 +1,53 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: build-templates-rd
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              selector:
+                matchLabels:
+                  appstudio.redhat.com/member-cluster: "true"
+              values:
+                sourceRoot: components/build-templates-rd
+                ring: "ring-0"
+                clusterDir: base
+          - list:
+              elements: []
+
+  template:
+    metadata:
+      name: build-templates-{{nameNormalized}}
+      labels:
+        app.kubernetes.io/part-of: build-templates
+    spec:
+      project: default
+      source:
+        path: '{{values.sourceRoot}}/rings/{{values.ring}}/{{values.clusterDir}}'
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+        targetRevision: main
+      destination:
+        namespace: build-templates
+        server: '{{server}}'
+      ignoreDifferences:
+        - group: ""
+          kind: ServiceAccount
+          name: konflux-integration-runner
+          jqPathExpressions:
+          - .imagePullSecrets[] | select(.name | startswith("konflux-integration-runner-dockercfg"))
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+        - CreateNamespace=true
+        retry:
+          limit: -1
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 3m

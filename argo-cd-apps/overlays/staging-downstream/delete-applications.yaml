@@ -9,12 +9,6 @@ $patch: delete
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: nvme-storage-configurator
-$patch: delete
----
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
   name: knative-eventing
 $patch: delete
 ---
@@ -24,4 +18,28 @@ apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
   name: konflux-verifications-rd
+$patch: delete
+---
+# Owned by ring Argo CD (rd-staging) now that mintmaker's ring-1 staging
+# clusters are migrated.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: mintmaker
+$patch: delete
+---
+# Owned by ring Argo CD (rd-staging) now that cert-manager-trusted-ca's
+# only ring-1 staging cluster (kflux-stg-p02) is migrated.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: cert-manager-trusted-ca
+$patch: delete
+---
+# Owned by ring Argo CD (rd-staging) now that konflux-kite's ring-1 staging
+# clusters are migrated.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: konflux-kite
 $patch: delete

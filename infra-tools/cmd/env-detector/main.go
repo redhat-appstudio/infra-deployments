@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"log/slog"
@@ -16,32 +17,55 @@ import (
 	"strings"
 	"syscall"
 
-	charmlog "github.com/charmbracelet/log"
-
 	"github.com/redhat-appstudio/infra-deployments/infra-tools/internal/detector"
 	"github.com/redhat-appstudio/infra-deployments/infra-tools/internal/git"
 	ghclient "github.com/redhat-appstudio/infra-deployments/infra-tools/internal/github"
+	"github.com/redhat-appstudio/infra-deployments/infra-tools/internal/logging"
 )
 
+// errRingViolation signals a ring deployment policy violation. The message has
+// already been printed; it only exists so main can exit non-zero after deferred
+// cleanup has run.
+var errRingViolation = errors.New("ring deployment violation")
+
+// options holds the parsed command-line configuration.
+type options struct {
+	repoRoot          string
+	baseRef           string
+	overlaysDir       string
+	githubToken       string
+	repo              string
+	logFile           string
+	ringReportFile    string
+	prNumber          int
+	prHeadSHA         string
+	prHeadRef         string
+	prSender          string
+	dryRun            bool
+	clusterLabels     bool
+	enforceRingDeploy bool
+}
+
 func main() {
-	var (
-		repoRoot          = flag.String("repo-root", ".", "Path to the repository root")
-		baseRef           = flag.String("base-ref", "main", "Base git ref to compare against")
-		overlaysDir       = flag.String("overlays-dir", "argo-cd-apps/overlays", "Path to overlays directory relative to repo root")
-		dryRun            = flag.Bool("dry-run", false, "Print results without calling GitHub API")
-		prNumber          = flag.Int("pr-number", 0, "PR number to label (required if not --dry-run)")
-		githubToken       = flag.String("github-token", "", "GitHub token (required if not --dry-run)")
-		repo              = flag.String("repo", "", "GitHub repository in owner/repo format (required if not --dry-run)")
-		clusterLabels     = flag.Bool("cluster-labels", false, "Include cluster/<name> labels in addition to environment labels")
-		logFile           = flag.String("log-file", "", "Write debug-level logs to this file (in addition to INFO-level logs on stdout)")
-		enforceRingDeploy = flag.Bool("enforce-ring-deployment", false, "Fail when both staging and production overlays are directly modified in the same PR")
-		ringReportFile    = flag.String("ring-report-file", "", "Write ring deployment check result (markdown) to this file for external consumers like PR comments")
-		prAuthor          = flag.String("pr-author", "", "GitHub login of the PR author; when set to a known bot (e.g. konflux-kargo-bot) the prod/needs-approval label is skipped")
-	)
+	var opts options
+	flag.StringVar(&opts.repoRoot, "repo-root", ".", "Path to the repository root")
+	flag.StringVar(&opts.baseRef, "base-ref", "main", "Base git ref to compare against")
+	flag.StringVar(&opts.overlaysDir, "overlays-dir", "argo-cd-apps/overlays", "Path to overlays directory relative to repo root")
+	flag.BoolVar(&opts.dryRun, "dry-run", false, "Print results without calling GitHub API")
+	flag.IntVar(&opts.prNumber, "pr-number", 0, "PR number to label (required if not --dry-run)")
+	flag.StringVar(&opts.prHeadSHA, "pr-head-sha", "", "PR head SHA from the workflow event; binds provenance checks to the analysed push")
+	flag.StringVar(&opts.prHeadRef, "pr-head-ref", "", "PR head ref from the workflow event; used to scope Kargo promotions to one ring")
+	flag.StringVar(&opts.prSender, "pr-sender", "", "GitHub login that triggered the workflow run; Kargo promotions require the Kargo bot")
+	flag.StringVar(&opts.githubToken, "github-token", "", "GitHub token (required if not --dry-run)")
+	flag.StringVar(&opts.repo, "repo", "", "GitHub repository in owner/repo format (required if not --dry-run)")
+	flag.BoolVar(&opts.clusterLabels, "cluster-labels", false, "Include cluster/<name> labels in addition to environment labels")
+	flag.StringVar(&opts.logFile, "log-file", "", "Write debug-level logs to this file (in addition to INFO-level logs on stdout)")
+	flag.BoolVar(&opts.enforceRingDeploy, "enforce-ring-deployment", false, "Fail when both staging and production overlays are directly modified in the same PR")
+	flag.StringVar(&opts.ringReportFile, "ring-report-file", "", "Write ring deployment check result (markdown) to this file for external consumers like PR comments")
 	flag.Parse()
 
 	// Set up logging: INFO on stdout (always), DEBUG to file (when --log-file is set).
-	logCleanup, err := setupLogging(*logFile)
+	logCleanup, err := logging.Setup(opts.logFile)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to set up logging: %v\n", err)
 		os.Exit(1)
@@ -50,63 +74,82 @@ func main() {
 		defer logCleanup()
 	}
 
-	if !*dryRun {
-		if *prNumber == 0 || *githubToken == "" || *repo == "" {
-			fatal("--pr-number, --github-token, and --repo are required when not using --dry-run")
-		}
+	if !opts.dryRun && (opts.prNumber == 0 || opts.githubToken == "" || opts.repo == "") {
+		fmt.Fprintln(os.Stderr, "--pr-number, --github-token, and --repo are required when not using --dry-run")
+		os.Exit(1)
 	}
 
 	// Set up a context that is cancelled on SIGINT / SIGTERM.
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
+	// run owns the worktree cleanup: returning an error instead of calling
+	// os.Exit keeps the deferred cleanup reachable.
+	if err := run(ctx, opts); err != nil {
+		if !errors.Is(err, errRingViolation) {
+			slog.Error("env-detector failed", "err", logging.Sanitize(err.Error()))
+		}
+		os.Exit(1)
+	}
+}
+
+// run executes the detection pipeline and returns any error.
+func run(ctx context.Context, opts options) error {
 	// Resolve repo root to absolute path
-	absRepoRoot, err := filepath.Abs(*repoRoot)
+	absRepoRoot, err := filepath.Abs(opts.repoRoot)
 	if err != nil {
-		fatal("resolving repo root", "err", err)
+		return fmt.Errorf("resolving repo root: %w", err)
+	}
+
+	var ghClient *ghclient.Client
+	if !opts.dryRun {
+		ghClient, err = ghclient.NewClient(opts.githubToken, opts.repo)
+		if err != nil {
+			return fmt.Errorf("creating GitHub client: %w", err)
+		}
 	}
 
 	// Resolve base ref: use merge-base so the diff only contains the PR's
 	// own changes, even when the branch is not rebased on top of base-ref
 	// or the GitHub merge ref is stale.  This mirrors the approach used by
 	// render-diff.
-	effectiveBaseRef, err := git.MergeBase(ctx, absRepoRoot, *baseRef)
+	effectiveBaseRef, err := git.MergeBase(ctx, absRepoRoot, opts.baseRef)
 	if err != nil {
-		fatal("computing merge-base", "ref", *baseRef, "err", err)
+		return fmt.Errorf("computing merge-base with %s: %w", opts.baseRef, err)
 	}
-	slog.Debug("Resolved merge-base", "baseRef", *baseRef, "mergeBase", effectiveBaseRef)
+	slog.Debug("Resolved merge-base", "baseRef", opts.baseRef, "mergeBase", effectiveBaseRef)
 
 	// Resolve HEAD and effective base to short commit SHAs for the summary.
 	headSHA, err := git.ResolveRef(ctx, absRepoRoot, "HEAD")
 	if err != nil {
-		fatal("resolving HEAD", "err", err)
+		return fmt.Errorf("resolving HEAD: %w", err)
 	}
 	baseSHA, err := git.ResolveRef(ctx, absRepoRoot, effectiveBaseRef)
 	if err != nil {
-		fatal("resolving base ref", "err", err)
+		return fmt.Errorf("resolving base ref: %w", err)
 	}
 
 	// Step 1: Get changed files via git diff
 	slog.Info("Getting changed files...")
 	changedFiles, err := git.ChangedFiles(ctx, absRepoRoot, effectiveBaseRef)
 	if err != nil {
-		fatal("getting changed files", "err", err)
+		return fmt.Errorf("getting changed files: %w", err)
 	}
 	if len(changedFiles) == 0 {
 		slog.Info("No changed files detected")
-		if !*dryRun {
-			if err := syncLabels(ctx, *githubToken, *repo, *prNumber, []string{"environment/none"}); err != nil {
-				fatal("syncing labels", "err", err)
+		if !opts.dryRun {
+			if err := ghClient.SyncLabels(ctx, opts.prNumber, []string{"environment/none"}); err != nil {
+				return fmt.Errorf("syncing labels: %w", err)
 			}
 		}
-		return
+		return nil
 	}
 
 	// Step 2: Create a temporary git worktree at the merge-base
 	slog.Info("Creating worktree...", "ref", effectiveBaseRef)
 	worktreePath, cleanup, err := git.CreateWorktree(ctx, absRepoRoot, effectiveBaseRef)
 	if err != nil {
-		fatal("creating worktree", "err", err)
+		return fmt.Errorf("creating worktree: %w", err)
 	}
 	defer cleanup()
 
@@ -115,21 +158,21 @@ func main() {
 	d, err := detector.NewDetector(
 		detector.NewRepoRef(absRepoRoot),
 		detector.NewRepoRef(worktreePath),
-		*overlaysDir,
+		opts.overlaysDir,
 	)
 	if err != nil {
-		fatal("initializing detector", "err", err)
+		return fmt.Errorf("initializing detector: %w", err)
 	}
 	result, err := d.Detect(changedFiles)
 	if err != nil {
-		fatal("detection failed", "err", err)
+		return fmt.Errorf("detection failed: %w", err)
 	}
 
 	// Step 4: Output results
 	labelSet := result.Labels()
 
 	var labels []string
-	if *clusterLabels {
+	if opts.clusterLabels {
 		labels = slices.Collect(labelSet.All())
 	} else {
 		labels = labelSet.Environments
@@ -141,123 +184,150 @@ func main() {
 		labels = append(labels, "environment/none")
 	}
 
-	// If production is affected and the PR is not opened by Kargo, add a hold label that Prow
-	// Tide can use to block merging until a human explicitly removes it after review.
-	if result.AffectedEnvironments[detector.Production] && *prAuthor != ghclient.KargoBot {
-		labels = append(labels, ghclient.HoldProductionLabel)
-		labels = append(labels, ghclient.NeedsApprovalProductionLabel)
+	// Files under components/ or configs/ that no ApplicationSet references are
+	// not deployed by anything: flag them so reviewers know the change is inert
+	// instead of reading "environment/none" as "safe to merge".
+	if len(result.UnreferencedFiles) > 0 {
+		labels = append(labels, ghclient.UnreferencedChangesLabel)
+	}
+
+	// If production is affected, add a hold label that Prow Tide can use to
+	// block merging until a human explicitly removes it. Kargo promotion PRs
+	// are exempt when they contain Kargo's single verified promotion commit at
+	// the event head SHA: those are the pre-approved automated promotions. A
+	// human commit on the branch makes the PR require approval again.
+	if result.AffectedEnvironments[detector.Production] {
+		hold := true
+		if ghClient != nil {
+			hold = productionHoldRequired(ctx, ghClient, opts.prNumber, opts.prHeadSHA, opts.prSender)
+		}
+		if !hold && !kargoPromotionTouchesOnlyRing(changedFiles, opts.prHeadRef) {
+			slog.Warn("Kargo promotion changes files outside the promoted ring; keeping production hold",
+				"headRef", opts.prHeadRef)
+			hold = true
+		}
+		if hold {
+			labels = append(labels, ghclient.HoldProductionLabel)
+			labels = append(labels, ghclient.NeedsApprovalProductionLabel)
+		}
+	}
+
+	// Re-check the PR head immediately before syncing: a push can race the
+	// provenance check, and a stale no-hold decision must not win.
+	if result.AffectedEnvironments[detector.Production] && ghClient != nil {
+		currentHead, err := ghClient.PRHeadSHA(ctx, opts.prNumber)
+		switch {
+		case err != nil:
+			slog.Warn("could not re-check PR head; keeping production hold", "err", err)
+			labels = addProductionHold(labels)
+		case currentHead != opts.prHeadSHA:
+			slog.Warn("PR head changed during label run; keeping production hold",
+				"eventHead", opts.prHeadSHA, "currentHead", currentHead)
+			labels = addProductionHold(labels)
+		}
 	}
 
 	printSummary(result, labels, headSHA, baseSHA)
+	if len(result.UnreferencedFiles) > 0 {
+		msg := formatUnreferencedChanges(result.UnreferencedFiles)
+		fmt.Println(msg)
+		writeStepSummary(msg)
+	}
 
-	if !*dryRun {
+	if !opts.dryRun {
 		// Step 5: Sync labels via GitHub API
 		slog.Info("Syncing labels...")
-		if err := syncLabels(ctx, *githubToken, *repo, *prNumber, labels); err != nil {
-			fatal("syncing labels", "err", err)
+		if err := ghClient.SyncLabels(ctx, opts.prNumber, labels); err != nil {
+			return fmt.Errorf("syncing labels: %w", err)
 		}
 	}
 
 	// Step 6: Ring deployment enforcement (runs in both dry-run and normal mode)
-	if *enforceRingDeploy {
-		ringResult := detector.CheckRingDeployment(changedFiles, result.AffectedEnvironments)
+	if opts.enforceRingDeploy {
+		ringResult := detector.CheckRingDeployment(changedFiles, result.AffectedEnvironments, result.FileEnvs)
 		if ringResult.DirectConflict {
 			msg := formatRingViolation(ringResult)
 			fmt.Println(msg)
 			writeStepSummary(msg)
-			writeReportFile(*ringReportFile, msg)
-			os.Exit(1)
+			writeReportFile(opts.ringReportFile, msg)
+			return errRingViolation
 		}
 		if ringResult.IndirectConflict {
 			msg := formatRingWarning()
 			fmt.Println(msg)
 			writeStepSummary(msg)
-			writeReportFile(*ringReportFile, msg)
+			writeReportFile(opts.ringReportFile, msg)
 		}
 	}
 
 	slog.Info("Done!")
-}
-
-// fatal logs an error message and exits with code 1.
-func fatal(msg string, args ...any) {
-	slog.Error(msg, args...)
-	os.Exit(1)
-}
-
-// setupLogging configures slog with charmbracelet/log handlers.
-// When logFile is non-empty, a multi-handler is set up so that:
-//   - stdout receives INFO-level and above (with pretty charmbracelet formatting)
-//   - the file receives DEBUG-level and above (with timestamps)
-//
-// When logFile is empty, only the stdout handler at INFO level is used.
-// Returns a cleanup function (may be nil) that closes the log file.
-func setupLogging(logFile string) (func(), error) {
-	stdoutHandler := charmlog.NewWithOptions(os.Stderr, charmlog.Options{
-		Level: charmlog.InfoLevel,
-	})
-
-	if logFile == "" {
-		slog.SetDefault(slog.New(stdoutHandler))
-		return nil, nil
-	}
-
-	f, err := os.Create(logFile)
-	if err != nil {
-		return nil, fmt.Errorf("opening log file %s: %w", logFile, err)
-	}
-
-	fileHandler := charmlog.NewWithOptions(f, charmlog.Options{
-		Level:           charmlog.DebugLevel,
-		ReportTimestamp: true,
-	})
-
-	multi := &multiHandler{handlers: []slog.Handler{stdoutHandler, fileHandler}}
-	slog.SetDefault(slog.New(multi))
-
-	return func() { _ = f.Close() }, nil
-}
-
-// multiHandler is an slog.Handler that fans out log records to multiple
-// underlying handlers, each of which may have its own level filter.
-type multiHandler struct {
-	handlers []slog.Handler
-}
-
-func (m *multiHandler) Enabled(_ context.Context, level slog.Level) bool {
-	for _, h := range m.handlers {
-		if h.Enabled(context.Background(), level) {
-			return true
-		}
-	}
-	return false
-}
-
-func (m *multiHandler) Handle(ctx context.Context, r slog.Record) error {
-	for _, h := range m.handlers {
-		if h.Enabled(ctx, r.Level) {
-			if err := h.Handle(ctx, r); err != nil {
-				return err
-			}
-		}
-	}
 	return nil
 }
 
-func (m *multiHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
-	handlers := make([]slog.Handler, len(m.handlers))
-	for i, h := range m.handlers {
-		handlers[i] = h.WithAttrs(attrs)
-	}
-	return &multiHandler{handlers: handlers}
+type kargoProvenanceChecker interface {
+	KargoSoleCommitter(ctx context.Context, prNumber int, headSHA, sender string) (bool, error)
 }
 
-func (m *multiHandler) WithGroup(name string) slog.Handler {
-	handlers := make([]slog.Handler, len(m.handlers))
-	for i, h := range m.handlers {
-		handlers[i] = h.WithGroup(name)
+// productionHoldRequired reports whether a production PR needs the hold
+// labels. Only a same-repository PR authored and pushed by Kargo with a single
+// verified promotion commit at the expected head SHA is exempt; everything
+// else, including API errors, keeps the hold.
+func productionHoldRequired(ctx context.Context, client kargoProvenanceChecker, prNumber int, headSHA, sender string) bool {
+	if client == nil {
+		return true
 	}
-	return &multiHandler{handlers: handlers}
+	exempt, err := client.KargoSoleCommitter(ctx, prNumber, headSHA, sender)
+	if err != nil {
+		slog.Warn("could not verify Kargo provenance; keeping production hold", "err", err)
+		return true
+	}
+	if !exempt {
+		return true
+	}
+	slog.Info("Kargo is the sole verified committer; skipping production hold labels", "pr", prNumber)
+	return false
+}
+
+func addProductionHold(labels []string) []string {
+	if !slices.Contains(labels, ghclient.HoldProductionLabel) {
+		labels = append(labels, ghclient.HoldProductionLabel)
+	}
+	if !slices.Contains(labels, ghclient.NeedsApprovalProductionLabel) {
+		labels = append(labels, ghclient.NeedsApprovalProductionLabel)
+	}
+	return labels
+}
+
+// kargoPromotionTouchesOnlyRing reports whether every changed file is under the
+// base of the ring encoded in the Kargo promotion branch. This prevents
+// replaying a verified promotion commit from another component, ring or stage.
+func kargoPromotionTouchesOnlyRing(changedFiles []string, headRef string) bool {
+	parts := strings.Split(headRef, "/")
+	if len(parts) < 3 {
+		return false
+	}
+	component := parts[len(parts)-2]
+	ring := parts[len(parts)-1]
+	if !strings.HasPrefix(ring, "ring-") || len(changedFiles) == 0 {
+		return false
+	}
+	prefixes := []string{
+		"components/" + component + "/rings/" + ring + "/base/",
+		"configs/" + component + "/rings/" + ring + "/base/",
+	}
+	for _, file := range changedFiles {
+		allowed := false
+		for _, prefix := range prefixes {
+			if strings.HasPrefix(file, prefix) {
+				allowed = true
+				break
+			}
+		}
+		if !allowed {
+			return false
+		}
+	}
+	return true
 }
 
 // printSummary prints the detection results in a human-friendly format.
@@ -268,7 +338,7 @@ func printSummary(result *detector.Result, labels []string, headSHA, baseSHA str
 	fmt.Println("\nChanged files:")
 	sort.Strings(result.ChangedFiles)
 	for _, f := range result.ChangedFiles {
-		fmt.Printf("  %s\n", f)
+		fmt.Printf("  %s\n", sanitizeLine(f))
 	}
 
 	fmt.Println("\nAffected environments:")
@@ -291,6 +361,13 @@ func printSummary(result *detector.Result, labels []string, headSHA, baseSHA str
 		}
 	}
 
+	if len(result.UnreferencedFiles) > 0 {
+		fmt.Println("\nUnreferenced files (not deployed by any ApplicationSet):")
+		for _, f := range result.UnreferencedFiles {
+			fmt.Printf("  %s\n", sanitizeLine(f))
+		}
+	}
+
 	fmt.Println("\nLabels that would be applied:")
 	if len(labels) == 0 {
 		fmt.Println("  (none)")
@@ -301,13 +378,30 @@ func printSummary(result *detector.Result, labels []string, headSHA, baseSHA str
 	}
 }
 
-// syncLabels calls the GitHub API to sync labels on the PR.
-func syncLabels(ctx context.Context, token, repoName string, prNumber int, labels []string) error {
-	client, err := ghclient.NewClient(token, repoName)
-	if err != nil {
-		return err
+// sanitizeLine removes characters that could break out of a log line or a
+// GitHub Actions workflow command. Changed paths are PR-controlled input.
+func sanitizeLine(s string) string {
+	return logging.Sanitize(s)
+}
+
+// markdownCode renders a changed path as a single-line code span. Backticks are
+// replaced so a crafted filename cannot escape the span.
+func markdownCode(s string) string {
+	return "`" + strings.ReplaceAll(sanitizeLine(s), "`", "'") + "`"
+}
+
+// formatUnreferencedChanges returns a markdown warning listing changed files
+// that no ApplicationSet references, so they will not be deployed.
+func formatUnreferencedChanges(files []string) string {
+	var b strings.Builder
+	b.WriteString("\n## Unreferenced changes\n\n")
+	b.WriteString("These files changed in this PR, but no ApplicationSet in any overlay references them, so the change will not be deployed:\n\n")
+	for _, f := range files {
+		fmt.Fprintf(&b, "- %s\n", markdownCode(f))
 	}
-	return client.SyncLabels(ctx, prNumber, labels)
+	b.WriteString("\nIf you expected these changes to reach a cluster, check that the component is still deployed by an overlay ")
+	b.WriteString("(the ApplicationSet may have moved to a ring layout or been removed).\n")
+	return b.String()
 }
 
 // formatRingViolation returns a markdown message for a direct staging+production conflict.
@@ -322,11 +416,11 @@ func formatRingViolation(r *detector.RingCheckResult) string {
 
 	b.WriteString("\n### Staging files\n")
 	for _, f := range r.StagingFiles {
-		fmt.Fprintf(&b, "- `%s`\n", f)
+		fmt.Fprintf(&b, "- %s\n", markdownCode(f))
 	}
 	b.WriteString("\n### Production files\n")
 	for _, f := range r.ProductionFiles {
-		fmt.Fprintf(&b, "- `%s`\n", f)
+		fmt.Fprintf(&b, "- %s\n", markdownCode(f))
 	}
 	return b.String()
 }

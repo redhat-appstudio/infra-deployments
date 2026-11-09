@@ -22,7 +22,9 @@ From anywhere in the repo:
 ```
 
 This auto-detects the repo root, computes the merge-base with main,
-and prints colored unified diffs for all affected components.
+and prints colored unified diffs for all affected components. Local runs
+include uncommitted and untracked working-tree changes; CI modes compare
+committed refs only.
 
 ## Flag reference
 
@@ -31,7 +33,7 @@ and prints colored unified diffs for all affected components.
 | Flag | Default | Description |
 |------|---------|-------------|
 | `--repo-root` | auto-detect | Path to the repository root. When omitted, detected via `git rev-parse --show-toplevel` from the current directory. Useful in CI where the checkout path is known. |
-| `--base-ref` | merge-base with main | Git ref to compare against (branch, tag, or commit SHA). By default, computes `git merge-base HEAD main` so the diff reflects only your branch's changes. Use an explicit ref when comparing against a release branch or a specific commit. |
+| `--base-ref` | merge-base with main | Git ref used to compute the merge-base with HEAD (branch, tag, or commit SHA). The diff compares HEAD against `git merge-base HEAD <ref>`, not directly against `<ref>`, so it reflects only changes made on your branch since it diverged from that ref. |
 | `--overlays-dir` | `argo-cd-apps/overlays` | Path to the ArgoCD overlays directory, relative to repo root. Only change this if the repo uses a non-standard layout. |
 
 ### Output control
@@ -41,7 +43,7 @@ and prints colored unified diffs for all affected components.
 | `--color` | `auto` | Color mode: `auto` (detect TTY), `always`, or `never`. Use `always` when piping to a pager that supports ANSI (e.g. `less -R`). |
 | `--open` | off | Write base and head YAML into two temp directories and open them in `$DIFFTOOL` (or `git difftool --no-index --dir-diff`). Files are named after component and environment for easy identification. |
 | `--output-dir` | — | Write per-component `.diff` files to this directory instead of stdout. Files are named like `components__foo__staging__staging.diff`. |
-| `--output-mode` | `local` | Output format: `local` (unified diff to stdout), `ci-summary` (markdown for `GITHUB_STEP_SUMMARY`), `ci-comment` (PR comment markdown), `ci-artifact-dir` (raw `.diff` files to `--output-dir`). In CI, accepts comma-separated values to produce multiple outputs in a single run (e.g. `--output-mode=ci-summary,ci-comment,ci-artifact-dir`). |
+| `--output-mode` | `local` | Output format: `local` (unified diff to stdout; uses the working tree and must be used alone), `ci-summary` (markdown for `GITHUB_STEP_SUMMARY`), `ci-comment` (PR comment markdown), `ci-artifact-dir` (raw `.diff` files to `--output-dir`). CI modes compare committed refs and accept comma-separated values to produce multiple outputs in a single run (e.g. `--output-mode=ci-summary,ci-comment,ci-artifact-dir`). |
 | `--log-file` | — | Write DEBUG-level logs to this file. INFO-level messages always go to stderr. |
 | `--version` | — | Print version and exit. |
 
@@ -99,15 +101,21 @@ delta < ./my-diffs/components__foo__staging__staging.diff
 ### Comparing against a specific ref
 
 ```bash
+# Compares HEAD against merge-base(HEAD, origin/release-1.0)
 ./bin/render-diff --base-ref origin/release-1.0
+
+# Also works with a commit SHA
 ./bin/render-diff --base-ref abc1234
 ```
 
 By default, render-diff computes `git merge-base HEAD main` so the diff
 only reflects your branch's changes — not everything that happened on
-main since you branched. Use `--base-ref` to compare against a different
-branch or commit, for example when working against a release branch
-instead of main.
+main since you branched. An explicit `--base-ref` selects the other input
+to merge-base, not a direct snapshot to compare against.
+
+If that ref has diverged, changes that only exist on the ref after the
+common ancestor are not shown; the diff remains the delta introduced by
+HEAD since the two histories split.
 
 ### Explicit repo root
 
@@ -156,10 +164,13 @@ comment markdown to stdout instead.
 
 - **ci-summary** — markdown with collapsible `<details>` blocks per
   component, suitable for `$GITHUB_STEP_SUMMARY`. Diffs over 50KB per
-  component are truncated with a pointer to the artifact.
+  component are truncated at a line boundary with a pointer to the
+  artifact. The whole document is kept under GitHub's 1 MiB limit;
+  components that do not fit are listed as omitted.
 - **ci-comment** — markdown table with component, environment, and +/-
   line counts. Posted to the PR using an HTML comment marker for
-  idempotent updates.
+  idempotent updates. The body is kept under GitHub's 65,536 character
+  limit, with a note when rows were dropped.
 - **ci-artifact-dir** — one `.diff` file per component/environment pair,
   written to `--output-dir`. Uploaded as GitHub Actions artifacts.
 
@@ -182,3 +193,45 @@ diffnav < file.diff        # interactive TUI with file tree
 bat file.diff              # highlighted with bat
 less file.diff             # plain viewer
 ```
+
+## How components are matched
+
+For every changed file, render-diff needs to answer "which deployed
+components does this affect?". The detector builds each ArgoCD overlay on
+both refs, parses the ApplicationSets it renders, and then matches:
+
+1. **Extra files** — multi-source templates reference repository files
+   through `$values/<path>` (typically Helm values files). Those exact
+   paths count as a match.
+2. **Dependency tree** — the kustomization tree of the component path on
+   both refs (resources, patches, components, generators, helm values and
+   charts). A file in that tree matches exactly.
+3. **Path prefix** — directories without a kustomization, or paths whose
+   template could not be fully resolved (for example a template keyed on
+   `{{nameNormalized}}`), match by prefix.
+
+Components referenced only on the base ref are still considered, so a PR
+that removes a component shows the removal. Paths that an ApplicationSet
+newly deploys on HEAD, or stops deploying on HEAD, are rendered even when no
+changed file points at them. This covers adding or removing a generator
+entry, an ApplicationSet, or a whole overlay.
+
+### Environment attribution
+
+Two rules decide which environment a component belongs to:
+
+- A **component path** is attributed to the environment of the overlay
+  whose ApplicationSet produced it (`staging-downstream` -> staging,
+  `rd-production` -> production, ...). When the ApplicationSet declares a
+  different environment in its generator, the path is attributed to that
+  environment as well, so a staging ApplicationSet rendered by a
+  production overlay keeps both labels.
+- An **overlay diff** is attributed to the environment declared in the
+  ApplicationSet generator
+  (`spec.generators[].clusters.values.environment`), falling back to the
+  overlay's environment. This keeps a shared change in
+  `argo-cd-apps/base` from marking every environment.
+
+Ring-based components (`components/X/rings/ring-N/<cluster>`) carry no
+environment in their path; the overlay and generator attribution above is
+what `env-detector` uses for ring enforcement.

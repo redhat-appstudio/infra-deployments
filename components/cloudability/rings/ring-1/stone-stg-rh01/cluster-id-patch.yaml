@@ -1,0 +1,14 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ibm-finops-agent
+spec:
+  template:
+    spec:
+      containers:
+        - name: finops-agent
+          env:
+            - name: CLUSTER_ID
+              value: "stone-stg-rh01"
+            - name: CLOUDABILITY_CLUSTER_NAME
+              value: "stone-stg-rh01"

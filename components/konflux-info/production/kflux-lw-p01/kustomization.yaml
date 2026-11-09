@@ -14,5 +14,8 @@ configMapGenerator:
   # cluster-config (cluster-config.env with proxy settings, added in PR #9617)
   # are present on all production and staging clusters but not yet in this template.
   # Adding them requires also templating the corresponding files.
+  - name: cluster-config
+    envs:
+      - cluster-config.env
 
 namespace: konflux-info

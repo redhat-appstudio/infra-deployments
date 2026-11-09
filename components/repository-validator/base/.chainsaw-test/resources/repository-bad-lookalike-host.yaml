@@ -1,0 +1,8 @@
+apiVersion: pipelinesascode.tekton.dev/v1alpha1
+kind: Repository
+metadata:
+  name: test-bad-lookalike-host
+spec:
+  # Shares a character-prefix with the allowed "https://gitlab.cee.redhat.com"
+  # host but is actually a different, attacker-controlled domain.
+  url: "https://gitlab.cee.redhat.com.attacker.com/some/repo"

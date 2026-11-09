@@ -1,0 +1,10 @@
+apiVersion: pipelinesascode.tekton.dev/v1alpha1
+kind: Repository
+metadata:
+  name: test-bad-git-boundary-bypass
+spec:
+  # The ".git" boundary check must be an exact match (url == prefix + '.git'),
+  # not startsWith(prefix + '.git'). Otherwise this URL would bypass the
+  # "https://github.com/rhtap-perf-test" allowlist entry by embedding ".git"
+  # mid-string instead of at the end.
+  url: "https://github.com/rhtap-perf-test.gitevil/x"

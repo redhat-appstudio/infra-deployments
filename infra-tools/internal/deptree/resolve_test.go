@@ -1,8 +1,10 @@
 package deptree
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -451,7 +453,433 @@ resources:
 	g.Expect(deps).To(HaveKey("b/kustomization.yaml"))
 }
 
+func TestResolve_SkipsResourceOutsideRepo(t *testing.T) {
+	g := NewWithT(t)
+	tmpDir := t.TempDir()
+	outside := t.TempDir()
+
+	writeFile(t, filepath.Join(outside, "kustomization.yaml"), `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - cm.yaml
+`)
+	writeFile(t, filepath.Join(outside, "cm.yaml"), "kind: ConfigMap")
+
+	dir := filepath.Join(tmpDir, "component")
+	g.Expect(os.MkdirAll(dir, 0o755)).To(Succeed())
+	writeFile(t, filepath.Join(dir, "cm.yaml"), "kind: ConfigMap")
+	rel, err := filepath.Rel(dir, outside)
+	g.Expect(err).NotTo(HaveOccurred())
+	writeFile(t, filepath.Join(dir, "kustomization.yaml"),
+		"resources:\n  - "+filepath.ToSlash(rel)+"\n  - cm.yaml\n")
+
+	deps, err := Resolve(tmpDir, "component")
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(deps).To(HaveKey("component/kustomization.yaml"))
+	g.Expect(deps).To(HaveKey("component/cm.yaml"))
+	for dep := range deps {
+		g.Expect(dep).NotTo(HavePrefix(".."))
+	}
+}
+
+func TestResolve_DoesNotFollowKustomizationSymlink(t *testing.T) {
+	g := NewWithT(t)
+	tmpDir := t.TempDir()
+	outside := t.TempDir()
+
+	writeFile(t, filepath.Join(outside, "kustomization.yaml"), `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - cm.yaml
+`)
+	writeFile(t, filepath.Join(outside, "cm.yaml"), "kind: ConfigMap")
+
+	dir := filepath.Join(tmpDir, "component")
+	g.Expect(os.MkdirAll(dir, 0o755)).To(Succeed())
+	g.Expect(os.Symlink(filepath.Join(outside, "kustomization.yaml"),
+		filepath.Join(dir, "kustomization.yaml"))).To(Succeed())
+
+	_, err := Resolve(tmpDir, "component")
+	g.Expect(err).To(HaveOccurred())
+}
+
+func TestResolve_RecordsInRepoSymlinkTarget(t *testing.T) {
+	g := NewWithT(t)
+	tmpDir := t.TempDir()
+
+	chartDir := filepath.Join(tmpDir, "component", "charts", "my-chart")
+	g.Expect(os.MkdirAll(chartDir, 0o755)).To(Succeed())
+	writeFile(t, filepath.Join(chartDir, "Chart.yaml"), "apiVersion: v2\nname: my-chart")
+	g.Expect(os.MkdirAll(filepath.Join(tmpDir, "shared"), 0o755)).To(Succeed())
+	writeFile(t, filepath.Join(tmpDir, "shared", "values.yaml"), "key: value")
+	g.Expect(os.Symlink(filepath.Join(tmpDir, "shared", "values.yaml"),
+		filepath.Join(chartDir, "values.yaml"))).To(Succeed())
+
+	writeFile(t, filepath.Join(tmpDir, "component", "kustomization.yaml"), `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+helmCharts:
+  - name: my-chart
+    releaseName: my-release
+`)
+
+	deps, err := Resolve(tmpDir, "component")
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(deps).To(HaveKey("component/charts/my-chart/values.yaml"))
+	g.Expect(deps).To(HaveKey("shared/values.yaml"))
+}
+
+func TestResolve_RecordsDirectorySymlinkResource(t *testing.T) {
+	g := NewWithT(t)
+	tmpDir := t.TempDir()
+
+	sharedDir := filepath.Join(tmpDir, "shared")
+	g.Expect(os.MkdirAll(sharedDir, 0o755)).To(Succeed())
+	writeFile(t, filepath.Join(sharedDir, "kustomization.yaml"), `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - cm.yaml
+`)
+	writeFile(t, filepath.Join(sharedDir, "cm.yaml"), "kind: ConfigMap")
+
+	componentDir := filepath.Join(tmpDir, "component")
+	g.Expect(os.MkdirAll(componentDir, 0o755)).To(Succeed())
+	g.Expect(os.Symlink(sharedDir, filepath.Join(componentDir, "link"))).To(Succeed())
+	writeFile(t, filepath.Join(componentDir, "kustomization.yaml"), `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - link
+`)
+
+	deps, err := Resolve(tmpDir, "component")
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(deps).To(HaveKey("component/link"))
+}
+
+func TestResolve_KeepsSymlinkGeneratorDep(t *testing.T) {
+	g := NewWithT(t)
+	tmpDir := t.TempDir()
+	outside := t.TempDir()
+
+	writeFile(t, filepath.Join(outside, "generator.yaml"), `
+apiVersion: builtin
+kind: HelmChartInflationGenerator
+metadata:
+  name: external
+name: external
+valuesFile: values.yaml
+`)
+	dir := filepath.Join(tmpDir, "component")
+	g.Expect(os.MkdirAll(dir, 0o755)).To(Succeed())
+	writeFile(t, filepath.Join(dir, "kustomization.yaml"), `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+generators:
+  - generator.yaml
+`)
+	g.Expect(os.Symlink(filepath.Join(outside, "generator.yaml"),
+		filepath.Join(dir, "generator.yaml"))).To(Succeed())
+
+	deps, err := Resolve(tmpDir, "component")
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(deps).To(HaveKey("component/generator.yaml"))
+	for dep := range deps {
+		g.Expect(dep).NotTo(HavePrefix(".."))
+	}
+}
+
+func TestResolve_RejectsSymlinkEscape(t *testing.T) {
+	g := NewWithT(t)
+	tmpDir := t.TempDir()
+	outside := t.TempDir()
+
+	writeFile(t, filepath.Join(outside, "kustomization.yaml"), `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - cm.yaml
+`)
+	writeFile(t, filepath.Join(outside, "cm.yaml"), "kind: ConfigMap")
+
+	g.Expect(os.MkdirAll(filepath.Join(tmpDir, "components"), 0o755)).To(Succeed())
+	g.Expect(os.Symlink(outside, filepath.Join(tmpDir, "components", "escape"))).To(Succeed())
+
+	_, err := Resolve(tmpDir, "components/escape")
+	g.Expect(err).To(HaveOccurred())
+}
+
 func writeFile(t *testing.T, path, content string) {
 	t.Helper()
-	NewWithT(t).Expect(os.WriteFile(path, []byte(content), 0o644)).To(Succeed())
+	NewWithT(t).Expect(os.WriteFile(path, []byte(content), 0o600)).To(Succeed())
+}
+
+// 'bases' is a deprecated alias of 'resources'; kustomize still honours it, so
+// the dependency tree must too.
+func TestResolve_DeprecatedBases(t *testing.T) {
+	g := NewWithT(t)
+	tmpDir := t.TempDir()
+
+	baseDir := filepath.Join(tmpDir, "component", "base")
+	g.Expect(os.MkdirAll(baseDir, 0o755)).To(Succeed())
+	writeFile(t, filepath.Join(baseDir, "kustomization.yaml"), `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - deployment.yaml
+`)
+	writeFile(t, filepath.Join(baseDir, "deployment.yaml"), "kind: Deployment")
+
+	prodDir := filepath.Join(tmpDir, "component", "production")
+	g.Expect(os.MkdirAll(prodDir, 0o755)).To(Succeed())
+	writeFile(t, filepath.Join(prodDir, "kustomization.yaml"), `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+bases:
+  - ../base
+`)
+	writeFile(t, filepath.Join(prodDir, "prod-patch.yaml"), "kind: Deployment")
+
+	deps, err := Resolve(tmpDir, "component/production")
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(deps).To(HaveKey("component/base/deployment.yaml"))
+}
+
+// A chart that is not vendored locally (pulled from a remote repository at
+// build time) must not discard the rest of the dependency tree.
+func TestResolve_MissingHelmChartDirIsNotFatal(t *testing.T) {
+	g := NewWithT(t)
+	tmpDir := t.TempDir()
+
+	prodDir := filepath.Join(tmpDir, "component", "production")
+	g.Expect(os.MkdirAll(prodDir, 0o755)).To(Succeed())
+	writeFile(t, filepath.Join(prodDir, "kustomization.yaml"), `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - deployment.yaml
+helmCharts:
+  - name: remote-chart
+    repo: https://example.com/charts
+    version: 1.0.0
+    releaseName: remote
+    valuesFile: values.yaml
+`)
+	writeFile(t, filepath.Join(prodDir, "deployment.yaml"), "kind: Deployment")
+	writeFile(t, filepath.Join(prodDir, "values.yaml"), "key: value")
+
+	deps, err := Resolve(tmpDir, "component/production")
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(deps).To(HaveKey("component/production/deployment.yaml"))
+	g.Expect(deps).To(HaveKey("component/production/values.yaml"))
+}
+
+// An unreadable HelmChartInflationGenerator must not fail the whole tree.
+func TestResolve_UnreadableGeneratorIsNotFatal(t *testing.T) {
+	g := NewWithT(t)
+	tmpDir := t.TempDir()
+
+	prodDir := filepath.Join(tmpDir, "component", "production")
+	g.Expect(os.MkdirAll(prodDir, 0o755)).To(Succeed())
+	writeFile(t, filepath.Join(prodDir, "kustomization.yaml"), `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - deployment.yaml
+generators:
+  - missing-generator.yaml
+`)
+	writeFile(t, filepath.Join(prodDir, "deployment.yaml"), "kind: Deployment")
+
+	deps, err := Resolve(tmpDir, "component/production")
+	g.Expect(errors.Is(err, ErrIncomplete)).To(BeTrue())
+	g.Expect(deps).To(HaveKey("component/production/deployment.yaml"))
+	g.Expect(deps).To(HaveKey("component/production/missing-generator.yaml"))
+}
+
+// A generator that cannot be parsed must be treated like an unreadable one:
+// keep the partial tree, report it as incomplete and let the caller fall back
+// to prefix matching.
+func TestResolve_MalformedGeneratorIsNotFatal(t *testing.T) {
+	g := NewWithT(t)
+	tmpDir := t.TempDir()
+
+	prodDir := filepath.Join(tmpDir, "component", "production")
+	g.Expect(os.MkdirAll(prodDir, 0o755)).To(Succeed())
+	writeFile(t, filepath.Join(prodDir, "kustomization.yaml"), `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - deployment.yaml
+generators:
+  - generator.yaml
+`)
+	writeFile(t, filepath.Join(prodDir, "deployment.yaml"), "kind: Deployment")
+	writeFile(t, filepath.Join(prodDir, "generator.yaml"), "[")
+
+	deps, err := Resolve(tmpDir, "component/production")
+	g.Expect(errors.Is(err, ErrIncomplete)).To(BeTrue())
+	g.Expect(deps).To(HaveKey("component/production/deployment.yaml"))
+	g.Expect(deps).To(HaveKey("component/production/generator.yaml"))
+}
+
+// A chart directory that resolves outside the checkout is skipped without
+// discarding the rest of the tree.
+func TestAddDirTree_SkipsDirectoryOutsideRepo(t *testing.T) {
+	g := NewWithT(t)
+	repoRoot := t.TempDir()
+	outside := t.TempDir()
+	g.Expect(os.MkdirAll(filepath.Join(outside, "templates"), 0o755)).To(Succeed())
+	writeFile(t, filepath.Join(outside, "templates", "cm.yaml"), "kind: ConfigMap")
+
+	deps := make(map[string]bool)
+	incomplete := false
+	g.Expect(addDirTree(repoRoot, outside, deps, &incomplete)).To(Succeed())
+	g.Expect(deps).To(BeEmpty())
+	g.Expect(incomplete).To(BeFalse())
+}
+
+// The resolver caches per directory: a second call must not walk the tree again,
+// which is what keeps shared base directories cheap when dozens of cluster paths
+// include them.
+func TestResolver_CachesResults(t *testing.T) {
+	g := NewWithT(t)
+	tmpDir := t.TempDir()
+
+	baseDir := filepath.Join(tmpDir, "component", "base")
+	g.Expect(os.MkdirAll(baseDir, 0o755)).To(Succeed())
+	writeFile(t, filepath.Join(baseDir, "kustomization.yaml"), `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - deployment.yaml
+`)
+	writeFile(t, filepath.Join(baseDir, "deployment.yaml"), "kind: Deployment")
+
+	resolver := NewResolver(tmpDir)
+	first, err := resolver.Resolve("component/base")
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(first).To(HaveKey("component/base/deployment.yaml"))
+
+	// Remove the files: a cached resolver must still answer from memory.
+	g.Expect(os.RemoveAll(filepath.Join(tmpDir, "component"))).To(Succeed())
+
+	second, err := resolver.Resolve("component/base")
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(second).To(HaveKey("component/base/deployment.yaml"))
+}
+
+// Failures are cached too, so a directory without kustomization is not walked
+// on every call.
+func TestResolver_CachesErrors(t *testing.T) {
+	g := NewWithT(t)
+	tmpDir := t.TempDir()
+	g.Expect(os.MkdirAll(filepath.Join(tmpDir, "empty"), 0o755)).To(Succeed())
+
+	resolver := NewResolver(tmpDir)
+	_, err := resolver.Resolve("empty")
+	g.Expect(err).To(HaveOccurred())
+
+	// Create a kustomization after the failure: the cached error still applies.
+	writeFile(t, filepath.Join(tmpDir, "empty", "kustomization.yaml"), `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources: []
+`)
+	_, err = resolver.Resolve("empty")
+	g.Expect(err).To(HaveOccurred())
+}
+
+// Resolution runs concurrently in the detector, so the resolver must be safe for
+// parallel use (run with -race).
+func TestResolver_Concurrent(t *testing.T) {
+	g := NewWithT(t)
+	tmpDir := t.TempDir()
+
+	baseDir := filepath.Join(tmpDir, "component", "base")
+	g.Expect(os.MkdirAll(baseDir, 0o755)).To(Succeed())
+	writeFile(t, filepath.Join(baseDir, "kustomization.yaml"), `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - deployment.yaml
+`)
+	writeFile(t, filepath.Join(baseDir, "deployment.yaml"), "kind: Deployment")
+
+	resolver := NewResolver(tmpDir)
+
+	const workers = 16
+	results := make([]map[string]bool, workers)
+	errs := make([]error, workers)
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		wg := sync.WaitGroup{}
+		for i := range workers {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				results[i], errs[i] = resolver.Resolve("component/base")
+			}()
+		}
+		wg.Wait()
+	}()
+	<-done
+
+	for i := range workers {
+		g.Expect(errs[i]).NotTo(HaveOccurred())
+		g.Expect(results[i]).To(HaveKey("component/base/deployment.yaml"))
+	}
+}
+
+// A base directory shared by two overlays is walked once: the second overlay
+// reuses the cached subtree instead of walking it again.
+func TestResolver_SharedSubtreeIsCached(t *testing.T) {
+	g := NewWithT(t)
+	tmpDir := t.TempDir()
+
+	baseDir := filepath.Join(tmpDir, "component", "base")
+	g.Expect(os.MkdirAll(baseDir, 0o755)).To(Succeed())
+	writeFile(t, filepath.Join(baseDir, "kustomization.yaml"), `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - deployment.yaml
+`)
+	writeFile(t, filepath.Join(baseDir, "deployment.yaml"), "kind: Deployment")
+
+	for _, overlay := range []string{"overlay1", "overlay2"} {
+		dir := filepath.Join(tmpDir, "component", overlay)
+		g.Expect(os.MkdirAll(dir, 0o755)).To(Succeed())
+		writeFile(t, filepath.Join(dir, "kustomization.yaml"), `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../base
+`)
+	}
+
+	resolver := NewResolver(tmpDir)
+	first, err := resolver.Resolve("component/overlay1")
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(first).To(HaveKey("component/base/deployment.yaml"))
+
+	// Change the base after it has been resolved: the cached subtree is reused,
+	// which proves the second overlay did not walk it again.
+	writeFile(t, filepath.Join(baseDir, "additional.yaml"), "kind: ConfigMap")
+	writeFile(t, filepath.Join(baseDir, "kustomization.yaml"), `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - deployment.yaml
+  - additional.yaml
+`)
+
+	second, err := resolver.Resolve("component/overlay2")
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(second).To(HaveKey("component/base/deployment.yaml"))
+	g.Expect(second).NotTo(HaveKey("component/base/additional.yaml"))
 }

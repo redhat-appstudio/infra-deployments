@@ -1,0 +1,13 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kubearchive-schema-migration
+spec:
+  template:
+    spec:
+      containers:
+        - name: migration
+          env:
+            - name: BATCH_SIZE
+              $patch: delete

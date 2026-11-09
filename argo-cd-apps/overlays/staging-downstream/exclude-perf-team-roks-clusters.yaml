@@ -1,0 +1,11 @@
+---
+# Perf-team awaits perfscale tenant namespaces on these staging ROKS clusters.
+- op: add
+  path: /spec/generators/0/selector
+  value:
+    matchExpressions:
+      - key: nameNormalized
+        operator: NotIn
+        values:
+          - kflux-stg-p02
+          - kflux-hub-stg-01

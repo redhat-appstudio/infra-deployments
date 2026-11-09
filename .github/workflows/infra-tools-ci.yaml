@@ -6,11 +6,18 @@ on:
       - main
     paths:
       - "infra-tools/**"
+      # The ApplicationSet audit renders the real overlays, so a new shape added
+      # under argo-cd-apps/ can break it even when infra-tools/ is untouched.
+      - "argo-cd-apps/**"
   pull_request:
     branches:
       - main
     paths:
       - "infra-tools/**"
+      - "argo-cd-apps/**"
+
+permissions:
+  contents: read
 
 defaults:
   run:
@@ -24,6 +31,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
@@ -42,3 +50,10 @@ jobs:
 
       - name: Run tests
         run: make test
+
+      # Renders every overlay in this checkout and fails when an ApplicationSet
+      # shape silently yields no component path (the "environment/none" bug
+      # class). It also fails on stale allow-list entries, so the known-gap list
+      # cannot rot between releases.
+      - name: Audit ApplicationSet coverage
+        run: make audit

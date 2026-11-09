@@ -10,52 +10,57 @@ import (
 
 	"github.com/redhat-appstudio/infra-deployments/infra-tools/internal/appset"
 	"github.com/redhat-appstudio/infra-deployments/infra-tools/internal/detector"
-	"github.com/redhat-appstudio/infra-deployments/infra-tools/internal/logging"
 	"github.com/redhat-appstudio/infra-deployments/infra-tools/internal/renderdiff"
 )
 
 // runLocal handles the default local output mode with progressive output.
-func runLocal(ctx context.Context, engine *renderdiff.Engine, affected map[detector.Environment][]appset.ComponentPath, colorMode string, openDiff bool, outputDir string) {
+func runLocal(ctx context.Context, engine *renderdiff.Engine, affected map[detector.Environment][]appset.ComponentPath, colorMode string, openDiff bool, outputDir string) error {
 	useColor := shouldUseColor(colorMode)
 
 	if outputDir != "" {
 		// Write to directory mode
 		result, err := engine.Run(ctx, affected)
 		if err != nil {
-			logging.Fatal("render-diff failed", "err", err)
+			return fmt.Errorf("running render-diff engine: %w", err)
 		}
 		if err := writeDiffFiles(result, outputDir); err != nil {
-			logging.Fatal("writing diff files", "err", err)
+			return fmt.Errorf("writing diff files: %w", err)
 		}
 		printSummary(result)
-		return
+		return nil
 	}
 
 	if openDiff {
 		// Open in external diff tool
 		result, err := engine.Run(ctx, affected)
 		if err != nil {
-			logging.Fatal("render-diff failed", "err", err)
+			return fmt.Errorf("running render-diff engine: %w", err)
 		}
 		if err := openInDiffTool(result); err != nil {
-			logging.Fatal("opening diff tool", "err", err)
+			return fmt.Errorf("opening diff tool: %w", err)
 		}
-		return
+		return nil
 	}
 
-	// Progressive output to stdout
+	// Progressive output to stdout. Wait for the printer before printing the
+	// summary, otherwise the summary can overtake the last diffs (or the
+	// process can exit before they are written).
 	ch := make(chan renderdiff.ComponentDiff, 10)
+	printerDone := make(chan struct{})
 	go func() {
+		defer close(printerDone)
 		for cd := range ch {
 			printComponentDiff(cd, useColor)
 		}
 	}()
 
 	result, err := engine.RunProgressive(ctx, affected, ch)
+	<-printerDone
 	if err != nil {
-		logging.Fatal("render-diff failed", "err", err)
+		return fmt.Errorf("running render-diff engine: %w", err)
 	}
 	printSummary(result)
+	return nil
 }
 
 // printComponentDiff prints a single component's diff to stdout.

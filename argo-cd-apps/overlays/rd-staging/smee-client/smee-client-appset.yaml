@@ -24,6 +24,9 @@ spec:
                 - values.ring: ring-1
                   nameNormalized: kflux-stg-p02
                   values.clusterDir: kflux-stg-p02
+                - values.ring: ring-1
+                  nameNormalized: kflux-hub-stg-01
+                  values.clusterDir: kflux-hub-stg-01
         selector: # Custom case: internal staging clusters, but not lightwell-dev
           matchExpressions:
             - key: nameNormalized
@@ -31,6 +34,7 @@ spec:
               values:
                 - stone-stage-p01
                 - kflux-stg-p02
+                - kflux-hub-stg-01
   template:
     metadata:
       name: smee-client-{{nameNormalized}}

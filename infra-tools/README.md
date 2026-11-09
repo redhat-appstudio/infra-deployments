@@ -12,6 +12,13 @@ Detects which environments and clusters a PR affects by building ArgoCD
 ApplicationSet overlays, resolving kustomize dependency trees, and matching
 changed files. Used in CI to auto-label PRs.
 
+It also flags changed files under `components/` or `configs/` that no
+ApplicationSet references with the managed `infra/unreferenced-changes` label
+and a job-summary warning. Deleted files, documentation/ownership files,
+chainsaw tests, component CI tooling and a small allowlist of known
+non-kustomize files are excluded. Other non-kustomize files under those trees
+may still be reported.
+
 ```bash
 # Dry-run (prints affected environments/clusters without calling GitHub)
 go run ./cmd/env-detector --repo-root /path/to/infra-deployments --dry-run
@@ -25,9 +32,12 @@ go run ./cmd/env-detector \
 ```
 
 Key flags:
-- `--base-ref` — git ref to compare against (default: `main`)
+- `--base-ref` — git ref used to compute the merge-base with HEAD (default: `main`)
 - `--overlays-dir` — path to ArgoCD overlays (default: `argo-cd-apps/overlays`)
 - `--cluster-labels` — include `cluster/<name>` labels
+- `--pr-head-sha` — PR head SHA from the workflow event (required for the Kargo promotion exemption; CI passes `${{ github.event.pull_request.head.sha }}`)
+- `--pr-head-ref` — PR head ref from the workflow event; scopes Kargo promotions to the promoted ring
+- `--pr-sender` — GitHub login that triggered the workflow; must be the Kargo bot for the exemption
 - `--dry-run` — print results without calling GitHub
 - `--log-file` — write debug logs to a file
 
@@ -62,21 +72,22 @@ DIFFTOOL=meld ./bin/render-diff --open
 ```
 
 Key flags:
-- `--base-ref` — git ref to compare against (default: merge-base with `main`)
+- `--base-ref` — git ref used to compute the merge-base with HEAD (default: `main`)
 - `--color` — color output: `auto` (default), `always`, `never`
 - `--open` — open diffs in `$DIFFTOOL` or `git difftool` (directory comparison mode)
 - `--output-dir` — write per-component `.diff` files to a directory
-- `--output-mode` — output format (comma-separated): `local` (default), `ci-summary`, `ci-comment`, `ci-artifact-dir`
+- `--output-mode` — output format: `local` (default, must be used alone), or a comma-separated combination of `ci-summary`, `ci-comment`, `ci-artifact-dir`
 - `--log-file` — write debug logs to a file
 - `--version` — print version and exit
 
 #### CI output modes
 
-The `--output-mode` flag selects how output is formatted. Multiple modes can
+The `--output-mode` flag selects how output is formatted. The `local` mode uses
+the working tree and must be used alone. CI modes compare committed refs and can
 be combined with commas (e.g., `--output-mode=ci-summary,ci-comment,ci-artifact-dir`).
-When multiple modes are specified, each mode runs independently — if one fails,
-the remaining modes still execute. The CI modes are used by the `pr-render-diff`
-GitHub Actions workflow and are not intended for local use:
+When multiple CI modes are specified, each mode runs independently — if one
+fails, the remaining modes still execute. The CI modes are used by the
+`pr-render-diff` GitHub Actions workflow and are not intended for local use:
 
 | Mode | Description |
 |------|-------------|
@@ -136,6 +147,12 @@ make test
 # Run linter (downloads golangci-lint on first run)
 make lint
 
+# Audit the real repo's ApplicationSets against the parser
+# (needs a full repo checkout; catches ApplicationSet shapes the parser
+# drops or cannot fully resolve — tracked only by a static prefix or as
+# MatchAll)
+make audit
+
 # Fix lint issues automatically
 make lint-fix
 
@@ -146,7 +163,10 @@ make clean
 ### Running tests
 
 ```bash
-# All tests
+# All tests with the race detector (what CI runs)
+make test
+
+# Quick run without the race detector
 go test ./...
 
 # Specific package with verbose output

@@ -1,0 +1,44 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+labels:
+- pairs:
+    paas.redhat.com/appcode: MINT-001
+resources:
+  - base-snapshot
+  - base-snapshot/external-secrets
+  - blackbox
+  - mintmaker-plrs-rq.yaml
+  - https://github.com/konflux-ci/mintmaker/config/default?ref=81900c4d36ba18c32ff2e7a4e5de3644b1ca8504
+  - https://github.com/konflux-ci/mintmaker/config/renovate?ref=81900c4d36ba18c32ff2e7a4e5de3644b1ca8504
+
+namespace: mintmaker
+
+images:
+  - name: quay.io/konflux-ci/mintmaker
+    newName: quay.io/konflux-ci/mintmaker
+    newTag: 81900c4d36ba18c32ff2e7a4e5de3644b1ca8504
+  - name: quay.io/konflux-ci/mintmaker-renovate-image
+    newName: quay.io/konflux-ci/mintmaker-renovate-image
+    newTag: 1a4ba1141b224ad50fa6180184842c5947db07b1
+  - name: quay.io/konflux-ci/mintmaker-schedule-calculator
+    newName: quay.io/konflux-ci/mintmaker-schedule-calculator
+    newTag: dcda93c47b269d9b250ef62b0bd2e2e2f18aea6f
+
+commonAnnotations:
+  argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+
+configMapGenerator:
+  - name: controller-config
+    files:
+    - config.json
+
+patches:
+  - path: patches/manager-mount-config-patch.yaml
+  - path: patches/manager-set-resources-patch.yaml
+  - path: patches/manager-enable-pprof-patch.yaml
+
+configurations:
+- kustomizeconfig.yaml
+
+components:
+  - ../../../components/rh-certs

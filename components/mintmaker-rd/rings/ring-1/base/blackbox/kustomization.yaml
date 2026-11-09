@@ -1,0 +1,9 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- blackbox-config-cm.yaml
+- git-platforms-exporter-deploy.yaml
+- git-platforms-exporter-svc.yaml
+- github-probe.yaml
+
+namespace: mintmaker

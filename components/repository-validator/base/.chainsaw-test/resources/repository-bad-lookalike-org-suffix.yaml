@@ -1,0 +1,8 @@
+apiVersion: pipelinesascode.tekton.dev/v1alpha1
+kind: Repository
+metadata:
+  name: test-bad-lookalike-org-suffix
+spec:
+  # Shares a character-prefix with the allowed "github.com/rhtap-perf-test"
+  # org but is actually a different, attacker-controlled org.
+  url: "https://github.com/rhtap-perf-testevil-org/anything"

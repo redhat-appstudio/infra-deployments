@@ -1,0 +1,51 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: konflux-san
+  annotations:
+    haproxy.router.openshift.io/set-forwarded-headers: replace
+    route.openshift.io/destination-ca-certificate-secret: ui-ca
+    route.openshift.io/termination: reencrypt
+spec:
+  ingressClassName: openshift-default
+  rules:
+    - host: konflux.fedoraproject.org
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: proxy
+                port:
+                  name: web-tls
+  tls:
+    - hosts:
+        - konflux.fedoraproject.org
+      secretName: konflux-ci-certificate
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: konflux-nice
+  annotations:
+    haproxy.router.openshift.io/set-forwarded-headers: replace
+    route.openshift.io/destination-ca-certificate-secret: ui-ca
+    route.openshift.io/termination: reencrypt
+spec:
+  ingressClassName: openshift-default
+  rules:
+    - host: konflux-ci.fedoraproject.org
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: proxy
+                port:
+                  name: web-tls
+  tls:
+    - hosts:
+        - konflux-ci.fedoraproject.org
+      secretName: konflux-ci-certificate

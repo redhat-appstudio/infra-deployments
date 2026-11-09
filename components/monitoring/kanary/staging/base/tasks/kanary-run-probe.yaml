@@ -98,6 +98,8 @@ spec:
           value: $(params.member-cluster)
         - name: TENANT_NAMESPACE
           value: $(params.tenant-namespace)
+        - name: PROBE_PREFIX
+          value: $(params.user-prefix)
         - name: RELEASE_MANAGED_NAMESPACE
           value: $(params.release-managed-namespace)
         - name: RELEASE_MANAGED_TOKEN
@@ -108,14 +110,19 @@ spec:
       script: |
         #!/usr/bin/env bash
         set -u
+        : "${PROBE_PREFIX:?Missing probe prefix}"
         MAX_AGE_SECONDS=43200
-        echo "Pre-cleanup: removing orphaned resources older than $((MAX_AGE_SECONDS / 3600))h"
+        echo "Pre-cleanup: removing ${PROBE_PREFIX}-app-* resources older than $((MAX_AGE_SECONDS / 3600))h"
         if ! oc login --token="$(cat /opt/users-secret/token)" --server="$SERVER_API_URL" --insecure-skip-tls-verify; then
           echo "WARNING: failed to login as tenant SA, skipping tenant cleanup"
         else
           for resource in ReleasePlan IntegrationTestScenario Application ImageRepository; do
             names=$(oc -n "$TENANT_NAMESPACE" get "$resource" -o json 2>/dev/null \
-              | jq -r --argjson max "$MAX_AGE_SECONDS" '.items[] | select((now - (.metadata.creationTimestamp | fromdateiso8601)) > $max) | .metadata.name')
+              | jq -r --arg prefix "${PROBE_PREFIX}-app-" --argjson max "$MAX_AGE_SECONDS" '
+                  .items[]
+                  | select(.metadata.name | startswith($prefix))
+                  | select((now - (.metadata.creationTimestamp | fromdateiso8601)) > $max)
+                  | .metadata.name')
             if [[ -n "$names" ]]; then
               count=$(echo "$names" | wc -l)
               echo "Deleting $count orphaned $resource in $TENANT_NAMESPACE:"
@@ -128,7 +135,12 @@ spec:
           echo "WARNING: failed to login as managed SA, skipping RPA cleanup"
         else
           names=$(oc -n "$RELEASE_MANAGED_NAMESPACE" get ReleasePlanAdmission -o json \
-            | jq -r --arg ns "$TENANT_NAMESPACE" --argjson max "$MAX_AGE_SECONDS" '.items[] | select(.spec.origin == $ns) | select((now - (.metadata.creationTimestamp | fromdateiso8601)) > $max) | .metadata.name')
+            | jq -r --arg ns "$TENANT_NAMESPACE" --arg prefix "${PROBE_PREFIX}-app-" --argjson max "$MAX_AGE_SECONDS" '
+                .items[]
+                | select(.spec.origin == $ns)
+                | select(.metadata.name | startswith($prefix))
+                | select((now - (.metadata.creationTimestamp | fromdateiso8601)) > $max)
+                | .metadata.name')
           if [[ -n "$names" ]]; then
             count=$(echo "$names" | wc -l)
             echo "Deleting $count orphaned ReleasePlanAdmission in $RELEASE_MANAGED_NAMESPACE:"

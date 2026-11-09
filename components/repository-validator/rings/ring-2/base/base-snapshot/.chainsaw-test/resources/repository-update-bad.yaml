@@ -1,0 +1,9 @@
+apiVersion: pipelinesascode.tekton.dev/v1alpha1
+kind: Repository
+metadata:
+  name: test-update-enforcement
+spec:
+  # The policy's matchConstraints cover both CREATE and UPDATE; this exercises
+  # the UPDATE path by changing an already-allowed Repository's url to a
+  # lookalike-host attack URL, which must be denied just like on CREATE.
+  url: "https://gitlab.cee.redhat.com.attacker.com/some/repo"

@@ -10,9 +10,8 @@
 # Usage:
 #   hack/test-base-common.sh <component-rd>
 #
-# The unit of comparison is a whole rendered document (one Kubernetes object).
-# Comparison is never done below the document level. A document is "common" when it
-# is byte-identical across every environment that exists for the component.
+# Compare whole rendered Kubernetes objects after removing environment-only Helm
+# and annotation inputs.
 #
 # Exit 0 if base captures all common ground, 1 otherwise (or on setup error).
 
@@ -38,6 +37,7 @@ RD_BASE="components/${COMPONENT_RD}/base"
 ORIG_DIR="components/${COMPONENT}"
 [ -d "$RD_BASE" ] || { echo "ERROR: $RD_BASE not found." >&2; exit 1; }
 [ -d "$ORIG_DIR" ] || { echo "ERROR: $ORIG_DIR not found." >&2; exit 1; }
+command -v yq >/dev/null 2>&1 || { echo "ERROR: yq is required." >&2; exit 1; }
 
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
@@ -45,6 +45,35 @@ trap 'rm -rf "$WORK"' EXIT
 PROBLEMS=0
 
 build() { kustomize build --enable-helm "$1"; }
+
+# prepare_comparison_view <env-top> <tag> -> temporary env-top path.
+# Copy the component to preserve relative paths, then sanitize only the copy.
+prepare_comparison_view() {
+  local top="$1" tag="$2"
+  local relative env view_root kustomization kustomization_dir
+
+  relative="${top#"$ORIG_DIR/"}"
+  env="${relative%%/*}"
+  view_root="$WORK/views/$tag"
+  mkdir -p "$view_root"
+  cp -a "$ORIG_DIR" "$view_root/"
+
+  # Sanitize every copied Kustomization so Helm generators and environment
+  # annotations cannot affect the common-object comparison. `find -print0`
+  # and `read -d ''` pass each path as one value, keeping unusual filenames safe.
+  while IFS= read -r -d '' kustomization; do
+    kustomization_dir="$(dirname "$kustomization")"
+    KUSTOMIZATION_DIR="$kustomization_dir" yq -i \
+      'del(.helmCharts, .commonAnnotations) |
+       .generators |= map(select(
+         tag != "!!str" or
+         load(strenv(KUSTOMIZATION_DIR) + "/" + .).kind != "HelmChartInflationGenerator"
+       ))' \
+      "$kustomization"
+  done < <(find "$view_root/$COMPONENT/$env" -type f -name kustomization.yaml -print0)
+
+  echo "$view_root/$COMPONENT/$relative"
+}
 
 # env_top <env> -> deployment/base overlay dir for an env, or empty if absent.
 env_top() {
@@ -131,14 +160,15 @@ echo "Base:      $RD_BASE"
 echo
 
 # Resolve env-tops.
-ENVS=()
+ENV_VIEWS=()
 ENV_TAGS=()
 for e in development staging production; do
   top="$(env_top "$e")"
   if [ -n "$top" ]; then
     tag="env_$e"
-    if split_build "$top" "$tag"; then
-      ENVS+=("$top")
+    view_top="$(prepare_comparison_view "$top" "$tag")"
+    if split_build "$view_top" "$tag"; then
+      ENV_VIEWS+=("$view_top")
       ENV_TAGS+=("$tag")
       echo "env: $e -> $top"
     else
@@ -221,22 +251,25 @@ echo "=== Pass 2: sub-folders with common ground absent from base ==="
 
 # Subfolder names present at EVERY env-top.
 : > "$WORK/subdirs.all"
-for top in "${ENVS[@]}"; do
+for top in "${ENV_VIEWS[@]}"; do
   for d in "$top"/*/; do
     if [ -d "$d" ]; then basename "$d"; fi
   done | sort -u
 done > "$WORK/subdirs.all"
-n_envs="${#ENVS[@]}"
+n_envs="${#ENV_VIEWS[@]}"
 mapfile -t COMMON_SUBS < <(sort "$WORK/subdirs.all" | uniq -c \
   | awk -v n="$n_envs" '$1 == n { print $2 }')
 
 flagged=0
 for sub in "${COMMON_SUBS[@]}"; do
+  # Vendored charts are not Kustomize overlays; exclude them from this pass.
+  [ "$sub" = "charts" ] && continue
+
   # Build the subfolder in each env; intersect its documents.
   sub_tags=()
   ok=1
   i=0
-  for top in "${ENVS[@]}"; do
+  for top in "${ENV_VIEWS[@]}"; do
     tag="sub_${sub}_${i}"
     if split_build "$top/$sub" "$tag"; then
       sub_tags+=("$tag")

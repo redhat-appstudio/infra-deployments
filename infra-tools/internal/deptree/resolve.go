@@ -5,14 +5,25 @@
 package deptree
 
 import (
+	"errors"
 	"fmt"
+	"log/slog"
+	"maps"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"sigs.k8s.io/kustomize/api/types"
 	"sigs.k8s.io/yaml"
+
+	"github.com/redhat-appstudio/infra-deployments/infra-tools/internal/logging"
 )
+
+// ErrIncomplete is returned together with the dependencies found so far when
+// some generator or chart input could not be inspected. Callers must fall back
+// to prefix matching as well as using the partial tree.
+var ErrIncomplete = errors.New("dependency tree incomplete")
 
 // kustomizationFileNames are the recognized filenames for kustomization files.
 var kustomizationFileNames = []string{
@@ -21,10 +32,82 @@ var kustomizationFileNames = []string{
 	"Kustomization",
 }
 
+// Resolver caches dependency trees per directory. Callers resolve the same
+// shared base directories once per cluster path, so without a cache a single
+// detection run walks the same tree dozens of times.
+//
+// A Resolver is safe for concurrent use; two goroutines may walk the same
+// uncached directory concurrently, which is harmless and cheaper than
+// serialising every walk behind one lock.
+type Resolver struct {
+	repoRoot string
+
+	mu        sync.Mutex
+	cache     map[string]resolvedTree
+	walkCache map[string]resolvedTree
+}
+
+// resolvedTree is a cached Resolve result, including failures, so a directory
+// without a kustomization is not walked again on every call.
+type resolvedTree struct {
+	deps       map[string]bool
+	incomplete bool
+	err        error
+}
+
+// NewResolver creates a Resolver rooted at repoRoot.
+func NewResolver(repoRoot string) *Resolver {
+	return &Resolver{
+		repoRoot:  repoRoot,
+		cache:     make(map[string]resolvedTree),
+		walkCache: make(map[string]resolvedTree),
+	}
+}
+
+// Resolve returns the dependency tree of dir, caching the result including
+// errors. The returned map must not be modified: it is shared with the cache and
+// with parallel callers.
+func (r *Resolver) Resolve(dir string) (map[string]bool, error) {
+	r.mu.Lock()
+	if cached, ok := r.cache[dir]; ok {
+		r.mu.Unlock()
+		return cached.deps, cached.err
+	}
+	r.mu.Unlock()
+
+	deps, err := resolveTree(r.repoRoot, dir, r)
+
+	r.mu.Lock()
+	r.cache[dir] = resolvedTree{deps: deps, err: err}
+	r.mu.Unlock()
+	return deps, err
+}
+
+// lookupWalk returns a cached subtree result for an absolute directory.
+func (r *Resolver) lookupWalk(absDir string) (resolvedTree, bool) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	cached, ok := r.walkCache[absDir]
+	return cached, ok
+}
+
+// storeWalk caches the deps contributed by one directory subtree.
+func (r *Resolver) storeWalk(absDir string, deps map[string]bool, incomplete bool, err error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.walkCache[absDir] = resolvedTree{deps: deps, incomplete: incomplete, err: err}
+}
+
 // Resolve recursively walks the kustomization at dir and returns the set of
 // all local file paths (relative to repoRoot) that are dependencies. The
-// returned map keys are repo-root-relative paths.
+// returned map keys are repo-root-relative paths. The returned map must not be
+// modified.
 func Resolve(repoRoot, dir string) (map[string]bool, error) {
+	return resolveTree(repoRoot, dir, nil)
+}
+
+// resolveTree is Resolve with optional subtree caching.
+func resolveTree(repoRoot, dir string, cache *Resolver) (map[string]bool, error) {
 	visited := make(map[string]bool)
 	deps := make(map[string]bool)
 	absDir, err := filepath.Abs(filepath.Join(repoRoot, dir))
@@ -35,10 +118,64 @@ func Resolve(repoRoot, dir string) (map[string]bool, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := resolve(absRoot, absDir, deps, visited); err != nil {
+	if !withinRoot(absRoot, absDir) {
+		return nil, fmt.Errorf("path %q escapes repository root", dir)
+	}
+	incomplete := false
+	if err := resolve(absRoot, absDir, deps, visited, &incomplete, cache); err != nil {
 		return nil, err
 	}
+	if incomplete {
+		return deps, ErrIncomplete
+	}
 	return deps, nil
+}
+
+// lexicallyWithin reports whether path is inside root without resolving
+// symlinks. A symlink that points outside is still a dependency of the
+// repository when its own path is local: changing the link changes the build.
+func lexicallyWithin(root, path string) bool {
+	absRoot, err := filepath.Abs(root)
+	if err != nil {
+		return false
+	}
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return false
+	}
+	rel, err := filepath.Rel(absRoot, absPath)
+	return err == nil && filepath.IsLocal(rel)
+}
+
+// withinRoot reports whether path is lexically inside root and, when it and
+// root exist, does not escape root through a symlink. Use it before following
+// or reading a path; use lexicallyWithin to record an in-repo symlink itself.
+func withinRoot(root, path string) bool {
+	if !lexicallyWithin(root, path) {
+		return false
+	}
+	absRoot, err := filepath.Abs(root)
+	if err != nil {
+		return false
+	}
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return false
+	}
+
+	realRoot, err := filepath.EvalSymlinks(absRoot)
+	if err != nil {
+		// The root is not resolvable yet (for example a path that does not
+		// exist); the lexical check above is the best we can do.
+		return true
+	}
+	realPath, err := filepath.EvalSymlinks(absPath)
+	if err != nil {
+		// Missing paths are still allowed: kustomize may generate them.
+		return true
+	}
+	rel, err := filepath.Rel(realRoot, realPath)
+	return err == nil && filepath.IsLocal(rel)
 }
 
 // hasKustomization returns true if the directory contains a kustomization file.
@@ -51,14 +188,47 @@ func hasKustomization(dir string) bool {
 	return false
 }
 
-func resolve(repoRoot, absDir string, deps, visited map[string]bool) error {
+func resolve(repoRoot, absDir string, deps, visited map[string]bool, incomplete *bool, cache *Resolver) (err error) {
+	// A cached subtree is complete; merge it without walking it again.
+	if cache != nil {
+		if cached, ok := cache.lookupWalk(absDir); ok {
+			if cached.err != nil {
+				return cached.err
+			}
+			maps.Copy(deps, cached.deps)
+			if cached.incomplete {
+				*incomplete = true
+			}
+			return nil
+		}
+	}
+
 	// Avoid infinite loops from circular references
 	if visited[absDir] {
 		return nil
 	}
 	visited[absDir] = true
 
-	k, kustomFile, err := loadKustomization(absDir)
+	// Accumulate this subtree in its own map so it can be cached and merged
+	// into the parent only once it resolves successfully.
+	if cache != nil {
+		parentDeps, parentIncomplete := deps, incomplete
+		localDeps := make(map[string]bool)
+		localIncomplete := false
+		deps, incomplete = localDeps, &localIncomplete
+		defer func() {
+			if err != nil {
+				return
+			}
+			maps.Copy(parentDeps, localDeps)
+			if localIncomplete {
+				*parentIncomplete = true
+			}
+			cache.storeWalk(absDir, localDeps, localIncomplete, nil)
+		}()
+	}
+
+	k, kustomFile, err := loadKustomization(repoRoot, absDir)
 	if err != nil {
 		// No kustomization file in this directory — fall back to scanning
 		// subdirectories. This handles the common pattern where an
@@ -75,7 +245,7 @@ func resolve(repoRoot, absDir string, deps, visited map[string]bool) error {
 			}
 			subDir := filepath.Join(absDir, entry.Name())
 			if hasKustomization(subDir) {
-				if subErr := resolve(repoRoot, subDir, deps, visited); subErr == nil {
+				if subErr := resolve(repoRoot, subDir, deps, visited, incomplete, cache); subErr == nil {
 					found = true
 				}
 			}
@@ -105,15 +275,21 @@ func resolve(repoRoot, absDir string, deps, visited map[string]bool) error {
 			continue
 		}
 		if info.IsDir() {
-			if err := resolve(repoRoot, absPath, deps, visited); err != nil {
+			if lst, lerr := os.Lstat(absPath); lerr == nil && lst.Mode()&os.ModeSymlink != 0 {
+				addDependency(repoRoot, absPath, deps)
+			}
+			if !withinRoot(repoRoot, absPath) {
+				slog.Warn("skipping kustomization resource outside repository", "path", logging.Sanitize(absPath))
+				continue
+			}
+			if err := resolve(repoRoot, absPath, deps, visited, incomplete, cache); err != nil {
 				return err
 			}
 		} else {
-			rel, err := filepath.Rel(repoRoot, absPath)
-			if err != nil {
-				return err
-			}
-			deps[rel] = true
+			// Record the lexical path even when it is a symlink whose target
+			// lives outside the checkout: editing the link changes the build,
+			// but its target must not be followed.
+			addDependency(repoRoot, absPath, deps)
 		}
 	}
 
@@ -148,7 +324,14 @@ func resolve(repoRoot, absDir string, deps, visited map[string]bool) error {
 			continue
 		}
 		absComp := filepath.Join(absDir, comp)
-		if err := resolve(repoRoot, absComp, deps, visited); err != nil {
+		if lst, lerr := os.Lstat(absComp); lerr == nil && lst.Mode()&os.ModeSymlink != 0 {
+			addDependency(repoRoot, absComp, deps)
+		}
+		if !withinRoot(repoRoot, absComp) {
+			slog.Warn("skipping kustomization component outside repository", "path", logging.Sanitize(absComp))
+			continue
+		}
+		if err := resolve(repoRoot, absComp, deps, visited, incomplete, cache); err != nil {
 			return err
 		}
 	}
@@ -173,7 +356,7 @@ func resolve(repoRoot, absDir string, deps, visited map[string]bool) error {
 		addFile(repoRoot, absDir, g, deps)
 		// If the generator is a HelmChartInflationGenerator, its valuesFile
 		// and additionalValuesFiles are also dependencies.
-		if err := addHelmGeneratorDeps(repoRoot, absDir, g, deps); err != nil {
+		if err := addHelmGeneratorDeps(repoRoot, absDir, g, deps, incomplete); err != nil {
 			return err
 		}
 	}
@@ -208,7 +391,7 @@ func resolve(repoRoot, absDir string, deps, visited map[string]bool) error {
 	for _, hc := range k.HelmCharts {
 		if hc.Name != "" {
 			chartDir := filepath.Join(absDir, chartHome, hc.Name)
-			if err := addDirTree(repoRoot, chartDir, deps); err != nil {
+			if err := addDirTree(repoRoot, chartDir, deps, incomplete); err != nil {
 				return fmt.Errorf("walking helm chart %s: %w", hc.Name, err)
 			}
 		}
@@ -248,16 +431,31 @@ type helmGeneratorConfig struct {
 // HelmChartInflationGenerator, adds its valuesFile, additionalValuesFiles,
 // and local chart directory (charts/<name>) as dependencies.
 // Non-HelmChartInflationGenerator files are silently skipped.
-func addHelmGeneratorDeps(repoRoot, absDir, generatorPath string, deps map[string]bool) error {
+func addHelmGeneratorDeps(repoRoot, absDir, generatorPath string, deps map[string]bool, incomplete *bool) error {
 	absPath := filepath.Join(absDir, generatorPath)
+	// The generator path itself is already recorded by addFile. Do not read
+	// through a symlink whose target leaves the checkout.
+	if !withinRoot(repoRoot, absPath) {
+		slog.Warn("not reading generator outside repository", "path", logging.Sanitize(absPath))
+		return nil
+	}
 	data, err := os.ReadFile(absPath)
 	if err != nil {
-		return fmt.Errorf("reading generator %s: %w", generatorPath, err)
+		// A generator may be generated at build time or live outside the
+		// repo; keep the dependencies found so far, but tell the caller the
+		// tree is incomplete so it also uses prefix matching.
+		*incomplete = true
+		slog.Warn("cannot read generator, skipping its dependencies",
+			"generator", logging.Sanitize(generatorPath), "err", logging.Sanitize(err.Error()))
+		return nil
 	}
 
 	var cfg helmGeneratorConfig
 	if err := yaml.Unmarshal(data, &cfg); err != nil {
-		return fmt.Errorf("parsing generator %s: %w", generatorPath, err)
+		*incomplete = true
+		slog.Warn("cannot parse generator, skipping its dependencies",
+			"generator", logging.Sanitize(generatorPath), "err", logging.Sanitize(err.Error()))
+		return nil
 	}
 	if cfg.Kind != "HelmChartInflationGenerator" {
 		return nil
@@ -272,7 +470,7 @@ func addHelmGeneratorDeps(repoRoot, absDir, generatorPath string, deps map[strin
 	if cfg.Name != "" {
 		chartDir := filepath.Join(absDir, types.HelmDefaultHome, cfg.Name)
 		if info, err := os.Stat(chartDir); err == nil && info.IsDir() {
-			if err := addDirTree(repoRoot, chartDir, deps); err != nil {
+			if err := addDirTree(repoRoot, chartDir, deps, incomplete); err != nil {
 				return fmt.Errorf("walking local chart %s: %w", cfg.Name, err)
 			}
 		}
@@ -302,37 +500,83 @@ func addGeneratorSources(repoRoot, absDir string, gen *types.GeneratorArgs, deps
 // contains to the dependency set. This is used for Helm chart directories
 // where any file change (templates, helpers, Chart.yaml, etc.) affects the
 // build output.
-func addDirTree(repoRoot, absDir string, deps map[string]bool) error {
+//
+// A missing directory is not an error: charts are often pulled from a remote
+// repository at build time, and failing here would discard the rest of the
+// dependency tree.
+func addDirTree(repoRoot, absDir string, deps map[string]bool, incomplete *bool) error {
+	if _, err := os.Stat(absDir); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			slog.Debug("chart directory not present locally, skipping",
+				"dir", logging.Sanitize(absDir), "err", logging.Sanitize(err.Error()))
+		} else {
+			*incomplete = true
+			slog.Warn("cannot read chart directory, skipping",
+				"dir", logging.Sanitize(absDir), "err", logging.Sanitize(err.Error()))
+		}
+		return nil
+	}
+	if !withinRoot(repoRoot, absDir) {
+		slog.Warn("skipping chart directory outside repository", "path", logging.Sanitize(absDir))
+		return nil
+	}
 	return filepath.Walk(absDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			return err
+			*incomplete = true
+			slog.Warn("cannot walk chart directory entry, skipping",
+				"path", logging.Sanitize(path), "err", logging.Sanitize(err.Error()))
+			return nil //nolint:nilerr // best-effort: keep the rest of the tree
 		}
 		if info.IsDir() {
 			return nil
 		}
-		rel, relErr := filepath.Rel(repoRoot, path)
-		if relErr != nil {
-			return fmt.Errorf("computing relative path for %s: %w", path, relErr)
-		}
-		deps[rel] = true
+		addDependency(repoRoot, path, deps)
 		return nil
 	})
 }
 
-// addFile resolves a relative file path and adds it to the dependency set.
-func addFile(repoRoot, absDir, relFilePath string, deps map[string]bool) {
-	absPath := filepath.Join(absDir, relFilePath)
+// addDependency records a lexically contained path. For an in-repo symlink it
+// also records the target when that target stays inside the checkout; an
+// external target is never followed.
+func addDependency(repoRoot, absPath string, deps map[string]bool) {
+	if !lexicallyWithin(repoRoot, absPath) {
+		return
+	}
 	rel, err := filepath.Rel(repoRoot, absPath)
 	if err != nil {
 		return
 	}
 	deps[rel] = true
+
+	info, err := os.Lstat(absPath)
+	if err != nil || info.Mode()&os.ModeSymlink == 0 {
+		return
+	}
+	target, err := filepath.EvalSymlinks(absPath)
+	if err != nil || !withinRoot(repoRoot, target) {
+		return
+	}
+	if relTarget, err := filepath.Rel(repoRoot, target); err == nil {
+		deps[relTarget] = true
+	}
 }
 
-// loadKustomization finds and parses the kustomization file in dir.
-func loadKustomization(dir string) (*types.Kustomization, string, error) {
+// addFile resolves a relative file path and adds it to the dependency set. The
+// path is recorded even when it is a symlink to an external target: changing
+// the link itself changes the build, but the target is never followed here.
+func addFile(repoRoot, absDir, relFilePath string, deps map[string]bool) {
+	addDependency(repoRoot, filepath.Join(absDir, relFilePath), deps)
+}
+
+// loadKustomization finds and parses the kustomization file in dir. A
+// kustomization file that is a symlink out of the checkout is not read.
+func loadKustomization(repoRoot, dir string) (*types.Kustomization, string, error) {
 	for _, name := range kustomizationFileNames {
 		path := filepath.Join(dir, name)
+		if !withinRoot(repoRoot, path) {
+			slog.Warn("skipping kustomization file outside repository", "path", logging.Sanitize(path))
+			continue
+		}
 		data, err := os.ReadFile(path)
 		if err != nil {
 			if os.IsNotExist(err) {
@@ -344,6 +588,11 @@ func loadKustomization(dir string) (*types.Kustomization, string, error) {
 		if err := yaml.Unmarshal(data, &k); err != nil {
 			return nil, "", fmt.Errorf("parsing %s: %w", path, err)
 		}
+		// Apply kustomize's own normalisation so deprecated fields are handled
+		// the way kustomize handles them: 'bases' become 'resources',
+		// 'imageTags' become 'images', and the legacy
+		// HelmChartInflationGenerator entries become HelmCharts.
+		k.FixKustomization()
 		return &k, path, nil
 	}
 	return nil, "", fmt.Errorf("no kustomization file found in %s", dir)

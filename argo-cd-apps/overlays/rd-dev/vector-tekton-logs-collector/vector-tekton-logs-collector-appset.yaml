@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: vector-tekton-logs-collector-rd
+  name: vector-tekton-logs-collector
 spec:
   generators:
     - merge:
@@ -13,7 +13,7 @@ spec:
                 matchLabels:
                   appstudio.redhat.com/member-cluster: "true"
               values:
-                sourceRoot: components/vector-tekton-logs-collector-rd
+                sourceRoot: components/vector-tekton-logs-collector
                 ring: "ring-0"
                 clusterDir: base
           - list:

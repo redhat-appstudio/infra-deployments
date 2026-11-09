@@ -1,0 +1,11 @@
+---
+apiVersion: kubearchive.org/v1
+kind: ClusterVacuumConfig
+metadata:
+  name: pipelines-vacuum-config
+spec:
+  namespaces:
+    ___all-namespaces___:
+      resources:
+        - apiVersion: tekton.dev/v1
+          kind: PipelineRun

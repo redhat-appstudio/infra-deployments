@@ -15,7 +15,14 @@ import (
 type RepoQuerier interface {
 	ListSubDirs(rel string) ([]string, error)
 	DirExists(rel string) bool
+	FileExists(rel string) bool
+	// ContainedDirExists is like DirExists, but also requires the directory
+	// to stay inside the repository once symlinks (in rel itself or any of
+	// its ancestors) are resolved.
+	ContainedDirExists(rel string) bool
 	BuildKustomization(rel string) ([]byte, error)
+	// ResolveDeps returns the dependency tree of rel. The returned map is
+	// shared with a cache and must not be modified.
 	ResolveDeps(rel string) (map[string]bool, error)
 }
 
@@ -25,11 +32,14 @@ type RepoQuerier interface {
 // work against either ref without manual filepath.Join / os.Stat boilerplate.
 type RepoRef struct {
 	root string
+	// resolver caches kustomize dependency trees: the same base directory is
+	// resolved once per cluster path that includes it.
+	resolver *deptree.Resolver
 }
 
 // NewRepoRef creates a RepoRef rooted at the given absolute path.
 func NewRepoRef(root string) *RepoRef {
-	return &RepoRef{root: root}
+	return &RepoRef{root: root, resolver: deptree.NewResolver(root)}
 }
 
 // Root returns the absolute root path of this ref.
@@ -46,6 +56,33 @@ func (r *RepoRef) AbsPath(rel string) string {
 func (r *RepoRef) DirExists(rel string) bool {
 	info, err := os.Stat(r.AbsPath(rel))
 	return err == nil && info.IsDir()
+}
+
+// FileExists reports whether rel exists as a Git-tracked path. A symlink is a
+// file even when it points at a directory or outside the checkout.
+func (r *RepoRef) FileExists(rel string) bool {
+	_, err := os.Lstat(r.AbsPath(rel))
+	return err == nil
+}
+
+// ContainedDirExists reports whether rel is a directory whose real path, with
+// every symlink resolved, is inside the real repository root. A lexically
+// local path can still escape the checkout through a symlink (e.g.
+// "components/x -> /"), and the tree is controlled by the PR author.
+func (r *RepoRef) ContainedDirExists(rel string) bool {
+	if !r.DirExists(rel) {
+		return false
+	}
+	root, err := filepath.EvalSymlinks(r.root)
+	if err != nil {
+		return false
+	}
+	resolved, err := filepath.EvalSymlinks(r.AbsPath(rel))
+	if err != nil {
+		return false
+	}
+	within, err := filepath.Rel(root, resolved)
+	return err == nil && filepath.IsLocal(within)
 }
 
 // ReadDir returns the directory entries at rel.
@@ -75,7 +112,8 @@ func (r *RepoRef) BuildKustomization(rel string) ([]byte, error) {
 }
 
 // ResolveDeps walks the kustomization dependency tree starting at rel and
-// returns the set of all files (repo-root-relative) it depends on.
+// returns the set of all files (repo-root-relative) it depends on. The returned
+// map is shared with the resolver cache and must not be modified.
 func (r *RepoRef) ResolveDeps(rel string) (map[string]bool, error) {
-	return deptree.Resolve(r.root, rel)
+	return r.resolver.Resolve(rel)
 }
