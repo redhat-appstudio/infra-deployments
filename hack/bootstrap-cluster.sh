@@ -37,7 +37,7 @@ log_step() {
 # =============================================================================
 
 main() {
-    local mode obo eaas operator_overlay
+    local mode obo eaas
     local start_time end_time total_time
     start_time=$(date +%s)
     
@@ -54,8 +54,14 @@ main() {
             shift
             ;;
         --operator-overlay)
-            operator_overlay="--operator-overlay"
-            shift
+            log_error "--operator-overlay was removed. Preview is always operator-only (rd-dev)."
+            log_error "Use: preview without that flag."
+            exit 1
+            ;;
+        --development | development)
+            log_error "Bare development preview is no longer supported."
+            log_error "Preview is operator-only (rd-dev). Use: preview"
+            exit 1
             ;;
         preview | upstream)
             mode=$1
@@ -73,7 +79,7 @@ main() {
 
     log_step "Starting Konflux Cluster Bootstrap"
     log_info "Mode: ${mode:-upstream}"
-    log_info "Options: OBO=${obo:-disabled}, EAAS=${eaas:-disabled}, OPERATOR_OVERLAY=${operator_overlay:-disabled}"
+    log_info "Options: OBO=${obo:-disabled}, EAAS=${eaas:-disabled}"
     log_info "Start time: $(date '+%Y-%m-%d %H:%M:%S %Z')"
 
     # Deploy ArgoCD
@@ -120,14 +126,10 @@ main() {
         log_success "Upstream configuration deployed"
         ;;
     "preview")
-        if [ -n "$operator_overlay" ]; then
-            log_step "Configuring operator-overlay Argo CD health checks"
-            # shellcheck source=/dev/null
-            source "${ROOT}/hack/deploy-argocd.sh"
-            configure_operator_overlay_health_customizations
-        fi
-        log_info "Deploying preview configuration"
-        $ROOT/hack/preview.sh $obo $eaas $operator_overlay
+        # Konflux CR Argo health customization is applied inside preview.sh so
+        # direct ./hack/preview.sh and bootstrap-cluster.sh preview stay aligned.
+        log_info "Deploying preview configuration (rd-dev / operator overlay)"
+        $ROOT/hack/preview.sh $obo $eaas
         ;;
     esac
 
@@ -149,27 +151,25 @@ main() {
 }
 
 print_help() {
-    echo "Usage: $0 MODE [-o|--obo] [-e|--eaas] [--operator-overlay] [-h|--help]"
+    echo "Usage: $0 MODE [-o|--obo] [-e|--eaas] [-h|--help]"
     echo ""
     echo "Bootstrap a Konflux cluster with ArgoCD and required components."
     echo ""
     echo "Arguments:"
     echo "  MODE             Deployment mode: 'upstream' or 'preview' (default: upstream)"
+    echo "                   preview always uses the rd-dev (operator) overlay"
     echo ""
     echo "Options:"
     echo "  -o, --obo        Install Observability operator and Prometheus for federation"
     echo "                   (only applicable in preview mode)"
     echo "  -e, --eaas       Install Environment-as-a-Service components"
     echo "                   (only applicable in preview mode)"
-    echo "  --operator-overlay  Preview using rd-dev (development minus legacy member appsets)"
-    echo "                      (only applicable in preview mode)"
     echo "  -h, --help       Show this help message and exit"
     echo ""
     echo "Examples:"
     echo "  $0                      # Bootstrap in upstream mode"
-    echo "  $0 preview              # Bootstrap in preview mode"
-    echo "  $0 preview --obo --eaas             # Preview mode with OBO and EaaS"
-    echo "  $0 preview --operator-overlay       # Preview mode with rd-dev overlay"
+    echo "  $0 preview              # Bootstrap preview (rd-dev / operator overlay)"
+    echo "  $0 preview --obo --eaas # Preview with OBO and EaaS"
     echo ""
     echo "Environment variables:"
     echo "  MY_GIT_FORK_REMOTE      Git remote name for your fork (required for preview)"
