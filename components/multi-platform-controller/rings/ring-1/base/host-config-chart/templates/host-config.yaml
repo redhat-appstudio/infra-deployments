@@ -1090,7 +1090,7 @@ data:
   {{- if (index $config "throughput") }}
   dynamic.fedora-root-arm64.throughput: {{ index $config "throughput" | quote }}
   {{ end }}
-  {{- if or (index $config "user-data") (.Files.Get "files/fedora-root-arm64-init.sh") (and (index $config "user-data-file") (.Files.Get (index $config "user-data-file"))) }}
+  {{- if or (index $config "user-data") (.Files.Get "files/fedora/fedora-root-arm64-init.sh") (and (index $config "user-data-file") (.Files.Get (index $config "user-data-file"))) }}
   dynamic.fedora-root-arm64.user-data: |
   {{- if (index $config "user-data") }}
   {{- $lines := splitList "\n" (index $config "user-data") }}
@@ -1099,11 +1099,14 @@ data:
   {{- end }}
   {{- else if (index $config "user-data-file") }}{{- $f := .Files.Get (index $config "user-data-file") | required (printf "user-data-file %s not found in chart" (index $config "user-data-file")) }}
 {{ include "multi-platform-controller.cloud-init-userdata" $f | indent 4 }}
-  {{- else if (.Files.Get "files/fedora-root-arm64-init.sh") }}
-{{ include "multi-platform-controller.cloud-init-userdata" (.Files.Get "files/fedora-root-arm64-init.sh") | indent 4 }}
+  {{- else if (.Files.Get "files/fedora/fedora-root-arm64-init.sh") }}
+{{ include "multi-platform-controller.cloud-init-userdata" (.Files.Get "files/fedora/fedora-root-arm64-init.sh") | indent 4 }}
   {{- end }}
   {{- end }}
-  {{ end }}
+  {{- if (index $config "provisioning-user") }}
+  dynamic.fedora-root-arm64.provisioning-user: {{ index $config "provisioning-user" | quote }}
+  {{- end }}
+  {{end}}
 
   {{- if hasKey .Values.dynamicConfigs "fedora-root-amd64" }}
   {{- $config := index .Values.dynamicConfigs "fedora-root-amd64" | default (dict) }}
@@ -1122,7 +1125,7 @@ data:
   dynamic.fedora-root-amd64.disk: {{index $config "disk" | default "200" | quote }}
   dynamic.fedora-root-amd64.check-interval: {{ (index $config "check-interval") | default "60" | quote }}
   dynamic.fedora-root-amd64.allocation-timeout: "1200"
-  {{- if or (index $config "user-data") (.Files.Get "files/fedora-root-amd64-init.sh") (and (index $config "user-data-file") (.Files.Get (index $config "user-data-file"))) }}
+  {{- if or (index $config "user-data") (.Files.Get "files/fedora/fedora-root-amd64-init.sh") (and (index $config "user-data-file") (.Files.Get (index $config "user-data-file"))) }}
   dynamic.fedora-root-amd64.user-data: |
   {{- if (index $config "user-data") }}
   {{- $lines := splitList "\n" (index $config "user-data") }}
@@ -1131,9 +1134,12 @@ data:
   {{- end }}
   {{- else if (index $config "user-data-file") }}{{- $f := .Files.Get (index $config "user-data-file") | required (printf "user-data-file %s not found in chart" (index $config "user-data-file")) }}
 {{ include "multi-platform-controller.cloud-init-userdata" $f | indent 4 }}
-  {{- else if (.Files.Get "files/fedora-root-amd64-init.sh") }}
-{{ include "multi-platform-controller.cloud-init-userdata" (.Files.Get "files/fedora-root-amd64-init.sh") | indent 4 }}
+  {{- else if (.Files.Get "files/fedora/fedora-root-amd64-init.sh") }}
+{{ include "multi-platform-controller.cloud-init-userdata" (.Files.Get "files/fedora/fedora-root-amd64-init.sh") | indent 4 }}
   {{- end }}
+  {{- end }}
+  {{- if (index $config "provisioning-user") }}
+  dynamic.fedora-root-amd64.provisioning-user: {{ index $config "provisioning-user" | quote }}
   {{- end }}
   {{ end }}
 

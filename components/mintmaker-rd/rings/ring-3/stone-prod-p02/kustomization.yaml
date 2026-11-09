@@ -1,0 +1,21 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- ../base
+- create-dependencyupdatecheck-ansible-tenant-cronjob.yaml
+- create-dependencyupdatecheck-osci-rhel-containers-tenant-cronjob.yaml
+patches:
+  - path: patches/pipelines-as-code-secret-path-patch.yaml
+    target:
+      name: pipelines-as-code-secret
+      group: external-secrets.io
+      version: v1
+      kind: ExternalSecret
+  - path: patches/create-dependencyupdatecheck-cron-patch.yaml
+    target:
+      group: batch
+      kind: CronJob
+      name: create-dependencyupdatecheck
+      namespace: mintmaker
+      version: v1
+  - path: patches/manager-enable-profiling-patch.yaml

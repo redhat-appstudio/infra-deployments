@@ -1,0 +1,63 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kubearchive-api-server
+  namespace: kubearchive
+spec:
+  replicas: 2
+  template:
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 50
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: kubearchive-api-server
+                topologyKey: kubernetes.io/hostname
+      containers:
+        - name: kubearchive-api-server
+          env:
+          - name: KUBEARCHIVE_OTEL_MODE
+            value: enabled
+          - name: OTEL_EXPORTER_OTLP_ENDPOINT
+            value: http://otel-collector:4318
+          - name: AUTH_IMPERSONATE
+            value: "true"
+          - name: MIGRATION_VERSION
+            valueFrom:
+              configMapKeyRef:
+                name: kubearchive-deployment-schema-version
+                key: MIGRATION_VERSION
+          - name: DATABASE_MAX_OPEN_CONNS
+            value: "25"
+          - name: DATABASE_MAX_IDLE_CONNS
+            value: "10"
+          securityContext:
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+          startupProbe:
+            httpGet:
+              path: /livez
+              port: 8081
+              scheme: HTTPS
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 30
+          livenessProbe:
+            timeoutSeconds: 5
+            periodSeconds: 10
+            failureThreshold: 5
+          readinessProbe:
+            timeoutSeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
+          resources:
+            limits:
+              cpu: "1"
+              memory: 512Mi
+            requests:
+              cpu: 200m
+              memory: 230Mi

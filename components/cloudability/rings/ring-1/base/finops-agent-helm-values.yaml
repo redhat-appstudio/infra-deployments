@@ -23,15 +23,15 @@ image:
 # Log level
 logLevel: "info"
 
-# Resources - smaller requests than upstream defaults for staging
+# Memory and CPU requests match upstream (512Mi, 500m)
 resources:
   requests:
-    cpu: 100m
-    memory: 256Mi
-    ephemeral-storage: 50Mi
-  limits:
     cpu: 500m
     memory: 512Mi
+    ephemeral-storage: 50Mi
+  limits:
+    cpu: 1000m
+    memory: 2048Mi
     ephemeral-storage: 1Gi
 
 # Agent configuration

@@ -4,12 +4,14 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"html"
 	"io"
 	"log/slog"
 	"os"
 	"strings"
 
 	ghclient "github.com/redhat-appstudio/infra-deployments/infra-tools/internal/github"
+	"github.com/redhat-appstudio/infra-deployments/infra-tools/internal/logging"
 	"github.com/redhat-appstudio/infra-deployments/infra-tools/internal/renderdiff"
 )
 
@@ -131,25 +133,46 @@ func renderSummaryBlock(d renderdiff.ComponentDiff) string {
 	var b strings.Builder
 
 	if d.Error != "" {
-		fmt.Fprintf(&b, "<details>\n<summary>%s (%s) — build error</summary>\n\n", d.Path, d.Env)
-		fmt.Fprintf(&b, "```\n%s\n```\n\n", d.Error)
+		// Error text is PR-controlled build output. Escape it inside a <pre>
+		// element so it cannot close the surrounding HTML or inject markdown
+		// (a triple-backtick fence would end the code block).
+		fmt.Fprintf(&b, "<details>\n<summary>%s (%s) — build error</summary>\n\n",
+			html.EscapeString(logging.Sanitize(d.Path)), html.EscapeString(logging.Sanitize(string(d.Env))))
+		fmt.Fprintf(&b, "<pre>%s</pre>\n\n", html.EscapeString(d.Error))
 		fmt.Fprintln(&b, "</details>")
 		fmt.Fprintln(&b)
 		return b.String()
 	}
 
-	fmt.Fprintf(&b, "<details>\n<summary>%s (%s) — +%d -%d</summary>\n\n", d.Path, d.Env, d.Added, d.Removed)
+	fmt.Fprintf(&b, "<details>\n<summary>%s (%s) — +%d -%d</summary>\n\n",
+		html.EscapeString(logging.Sanitize(d.Path)), html.EscapeString(logging.Sanitize(string(d.Env))), d.Added, d.Removed)
+	fence := diffFence(d.Diff)
 	if len(d.Diff) > perDiffSizeBudget {
-		b.WriteString("```diff\n")
-		b.WriteString(truncateAtLine(d.Diff, perDiffSizeBudget))
-		b.WriteString("\n```\n\n")
+		fmt.Fprintf(&b, "%sdiff\n%s\n%s\n\n", fence, truncateAtLine(d.Diff, perDiffSizeBudget), fence)
 		fmt.Fprintln(&b, "⚠️ Diff truncated. Download the full artifact for the complete diff.")
 	} else {
-		fmt.Fprintf(&b, "```diff\n%s\n```\n\n", d.Diff)
+		fmt.Fprintf(&b, "%sdiff\n%s\n%s\n\n", fence, d.Diff, fence)
 	}
 	fmt.Fprintln(&b, "</details>")
 	fmt.Fprintln(&b)
 	return b.String()
+}
+
+// diffFence returns a fence longer than any backtick run in text, so PR
+// content cannot close the code block early.
+func diffFence(text string) string {
+	fence := "```"
+	for strings.Contains(text, fence) {
+		fence += "`"
+	}
+	return fence
+}
+
+// markdownTableCell keeps PR-controlled path/environment text inside its table
+// cell.
+func markdownTableCell(s string) string {
+	s = logging.Sanitize(s)
+	return strings.ReplaceAll(strings.ReplaceAll(s, "|", "\\|"), "`", "'")
 }
 
 // truncateAtLine cuts text at the last newline before limit so the result never
@@ -248,9 +271,9 @@ func buildCommentBody(result *renderdiff.DiffResult, headSHA, baseSHA, runURL st
 		}
 		var row string
 		if d.Error != "" {
-			row = fmt.Sprintf("| `%s` | %s | build error |\n", d.Path, d.Env)
+			row = fmt.Sprintf("| `%s` | %s | build error |\n", markdownTableCell(d.Path), markdownTableCell(string(d.Env)))
 		} else {
-			row = fmt.Sprintf("| `%s` | %s | +%d -%d |\n", d.Path, d.Env, d.Added, d.Removed)
+			row = fmt.Sprintf("| `%s` | %s | +%d -%d |\n", markdownTableCell(d.Path), markdownTableCell(string(d.Env)), d.Added, d.Removed)
 		}
 		// Keep the body under GitHub's comment limit: a rejected comment would
 		// leave the PR with no render diff at all.
