@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Bootstrap the claimed OpenShift cluster with development-operator overlay preview.
+# Bootstrap the claimed OpenShift cluster with rd-dev (operator) overlay preview.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -19,8 +19,8 @@ echo "[INFO] Marking control-plane nodes schedulable (small CI clusters)..."
 oc patch scheduler cluster --type=merge -p '{"spec":{"mastersSchedulable":true}}' 2>&1 \
   || echo "[WARN] Could not patch scheduler (may be HyperShift)"
 
-echo "[INFO] Running hack/bootstrap-cluster.sh preview --operator-overlay..."
-./hack/bootstrap-cluster.sh preview --operator-overlay
+echo "[INFO] Running hack/bootstrap-cluster.sh preview (rd-dev / operator overlay)..."
+./hack/bootstrap-cluster.sh preview
 
 echo "[INFO] Creating e2e-secrets/quay-repository..."
 ci_create_e2e_quay_secret "${QUAY_TOKEN}"
@@ -28,4 +28,4 @@ ci_create_e2e_quay_secret "${QUAY_TOKEN}"
 echo "[INFO] Registering PAC with SprayProxy..."
 ci_register_sprayproxy_pac_route "${SECRETS_DIR}"
 
-echo "[INFO] install.sh complete (development-operator overlay)"
+echo "[INFO] install.sh complete (rd-dev / operator overlay)"
