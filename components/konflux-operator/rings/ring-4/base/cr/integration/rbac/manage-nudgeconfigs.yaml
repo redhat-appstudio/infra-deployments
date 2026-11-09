@@ -1,0 +1,41 @@
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: manage-nudgeconfigs
+rules:
+  - apiGroups:
+    - ""
+    resources:
+    - "namespaces"
+    verbs:
+    - "list"
+  - apiGroups:
+    - "appstudio.redhat.com"
+    resources:
+    - "components"
+    verbs:
+    - "list"
+  - apiGroups:
+    - "appstudio.redhat.com"
+    resources:
+    - "nudgeconfigs"
+    verbs:
+    - "create"
+    - "delete"
+    - "get"
+    - "list"
+    - "patch"
+    - "update"
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: manage-nudgeconfigs
+subjects:
+  - kind: Group
+    apiGroup: rbac.authorization.k8s.io
+    name: konflux-integration
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: manage-nudgeconfigs

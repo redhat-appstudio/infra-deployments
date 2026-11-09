@@ -151,8 +151,10 @@ func (e *Engine) RunProgressive(ctx context.Context, affected map[detector.Envir
 // When a directory doesn't exist, kustomize build would fail, so we skip that side
 // and let computeDiff treat the missing YAML as empty (showing a full add or remove).
 func (e *Engine) buildPair(cd *ComponentDiff) error {
-	// Build HEAD — may not exist for removed components.
-	if e.head.DirExists(cd.Path) {
+	// Build HEAD — may not exist for removed components, and a path the
+	// ApplicationSet stops deploying is treated as absent on HEAD even when its
+	// directory still exists there, so the removal renders as a full delete.
+	if !cd.RemovedDeployment && e.head.DirExists(cd.Path) {
 		headYAML, err := e.head.BuildKustomization(cd.Path)
 		if err != nil {
 			return fmt.Errorf("building %s on HEAD: %w", cd.Path, err)
@@ -176,6 +178,9 @@ func (e *Engine) buildPair(cd *ComponentDiff) error {
 	// Empty-base overlays (resources: []) intentionally produce no output;
 	// treat them as a no-op instead of an error.
 	if cd.HeadYAML == nil && cd.BaseYAML == nil {
+		if cd.RemovedDeployment && !e.base.DirExists(cd.Path) {
+			return fmt.Errorf("component %s is marked removed but does not exist on base", cd.Path)
+		}
 		if e.head.DirExists(cd.Path) || e.base.DirExists(cd.Path) {
 			return nil
 		}
