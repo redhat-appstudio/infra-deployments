@@ -1,0 +1,41 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: segment-bridge-reader
+  namespace: segment-bridge
+rules:
+  - apiGroups:
+      - ''
+    resources:
+      - configmaps
+      - events
+      - pods
+      - pods/log
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - batch
+    resources:
+      - cronjobs
+      - jobs
+    verbs:
+      - get
+      - list
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: segment-bridge-reader
+  namespace: segment-bridge
+subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: konflux-service-enhancement
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: segment-bridge-reader

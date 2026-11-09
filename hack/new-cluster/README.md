@@ -17,11 +17,11 @@ patches are generated only when `network` is `private`.
 
 Prometheus metrics are configured with the `source_cluster` label set to the cluster name.
 
-Operator-first bootstrap requires `ring-1` with `env=staging` and `ring-2` or
-`ring-3` with `env=production`. The playbook rejects other env/ring pairs. When
-later rings have operator bases, add them to `operator_rings_by_env` in
-`playbook.yaml`. The cluster is also appended to the konflux-operator
-ApplicationSet `nameNormalized In` selector in
+Operator-first bootstrap requires `ring-1` with `env=staging` and `ring-2`,
+`ring-3`, or `ring-4` with `env=production`. The playbook rejects other
+env/ring pairs. When later rings have operator bases, add them to
+`operator_rings_by_env` in `playbook.yaml`. The cluster is also appended to
+the konflux-operator ApplicationSet `nameNormalized In` selector in
 `argo-cd-apps/overlays/rd-<env>/konflux-operator/`.
 
 Staging and production both gate the operator with that `In` selector (staging
@@ -47,9 +47,8 @@ includes them.
 * `cutename` - Example: `rh09`
 * `env` - One of `production` or `staging`.
 * `network` - One of `public` or `private`.
-* `ring` - `ring-1` when `env=staging`; `ring-2` or `ring-3` when
-  `env=production`. Other combinations fail. `ring-4` is listed for a later
-  operator base; it fails until added to `operator_rings_by_env`.
+* `ring` - `ring-1` when `env=staging`; `ring-2`, `ring-3`, or `ring-4` when
+  `env=production`. Other combinations fail.
 * `awsaccount` - The 12-digit AWS account ID for the cluster
 
 4. You are connected to the VPN.
