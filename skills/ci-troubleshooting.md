@@ -63,7 +63,7 @@ Comment on the PR to retry flaky CI without write access:
 
 - **`/rerun`** — re-runs failed or cancelled **GitHub Actions** checks (yamllint, chainsaw, kube-linter, render-diff, etc.). Available to repository members and collaborators. `/rerun` can appear anywhere in the comment (e.g. `please /rerun`).
 
-- **`/retest`** — re-triggers **Prow / OpenShift CI** E2E checks (`ci/prow/appstudio-e2e-tests`, etc.). Handled by the OpenShift CI bot.
+- **`/retest`** — re-triggers **Prow / OpenShift CI** E2E checks (`ci/prow/konflux-ring-deployments-conformance-tests`, etc.). Handled by the OpenShift CI bot.
 
 ## Common Failures
 
@@ -95,7 +95,8 @@ Scans Kubernetes manifests for security and best practice violations. Check the 
 
 ### Prow E2E tests (dev PRs only)
 
-`ci/prow/appstudio-e2e-tests` and `ci/prow/appstudio-operator-overlay-e2e-tests` run on OpenShift CI. These only trigger on dev PRs, not staging or production.
+`ci/prow/konflux-ring-deployments-conformance-tests` runs on OpenShift CI against the
+rd-dev (operator) preview overlay. These only trigger on dev PRs, not staging or production.
 
 If failed, fetch the log and check whether the failure is an intermittent infrastructure issue (cluster provisioning timeout, image pull failure, TLS handshake errors) or a real test failure. If intermittent, `/retest`.
 

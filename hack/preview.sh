@@ -256,22 +256,28 @@ dump_pending_apps_details() {
 # =============================================================================
 
 print_help() {
-    echo "Usage: $0 MODE [--obo] [--grafana] [--eaas] [--operator-overlay] [-h|--help]"
-    echo "  MODE             upstream/preview (default: upstream)"
-    echo "  --obo        (only in preview mode) Install Observability operator and Prometheus instance for federation"
-    echo "  --grafana    (only in preview mode) Enable Grafana dashboard (removed by default in dev)"
-    echo "  --eaas       (only in preview mode) Install environment as a service components"
-    echo "  --operator-overlay  (preview mode) Use the rd-dev Argo overlay: same platform apps as"
-    echo "                       development, but ApplicationSets for legacy Konflux microservices are removed."
+    echo "Usage: $0 [MODE] [--obo] [--grafana] [--eaas] [--operator-overlay] [-h|--help]"
+    echo "  MODE             Optional positional (e.g. preview); accepted for compatibility and ignored."
+    echo "                   Preview always uses the rd-dev (operator) Argo overlay."
+    echo "                   Bare development preview is not supported."
+    echo "  --obo        Install Observability operator and Prometheus instance for federation"
+    echo "  --grafana    Enable Grafana dashboard (removed by default in preview)"
+    echo "  --eaas       Install environment as a service components"
+    echo "  --operator-overlay  Deprecated compat alias; preview is already operator-only (rd-dev)."
+    echo "                       Passing the flag has the same effect as omitting it."
     echo
-    echo "  With --operator-overlay, preview always waits for the Konflux operator controller Deployment to finish"
+    echo "  Preview always waits for the Konflux operator controller Deployment to finish"
     echo "  rolling out (namespace konflux-operator). That is independent of the Konflux CR Ready status."
+    echo "  By default the Argo sync wait also treats a Synced konflux-operator app as done even if"
+    echo "  the Konflux CR is still Progressing (custom health check). Set the env var below to also"
+    echo "  require Konflux Ready=True before preview exits."
     echo
     echo "Environment (optional):"
-    echo "  PREVIEW_WAIT_KONFLUX_CR_READY=true  When using --operator-overlay, additionally wait for the Konflux"
-    echo "                       custom resource konflux to exist and report Ready=True (off by default)."
-    echo "  IMAGE_CONTROLLER_QUAY_ORG, IMAGE_CONTROLLER_QUAY_TOKEN  With --operator-overlay, both must be set in"
+    echo "  PREVIEW_WAIT_KONFLUX_CR_READY=true  Additionally wait for the Konflux custom resource"
+    echo "                       konflux to exist and report Ready=True (off by default)."
+    echo "  IMAGE_CONTROLLER_QUAY_ORG, IMAGE_CONTROLLER_QUAY_TOKEN  Both must be set in"
     echo "                       hack/preview.env to enable image-controller on the Konflux CR (off by default)."
+    echo "  TARGET_PREVIEW_OVERLAY  Must be unset or rd-dev. Setting development fails; preview is operator-only."
     echo
     echo "Example: \`$0 preview --obo --grafana --eaas\`"
 }
@@ -317,7 +323,7 @@ label_cluster_nodes() {
 
 # Filter applications based on DEPLOY_ONLY environment variable
 configure_deploy_only() {
-    [ "$TARGET_PREVIEW_OVERLAY" != "development" ] && [ "$TARGET_PREVIEW_OVERLAY" != "rd-dev" ] && return
+    [ "$TARGET_PREVIEW_OVERLAY" != "rd-dev" ] && return
     [ -z "$DEPLOY_ONLY" ] && return
 
     log_step "Configuring selective deployment (DEPLOY_ONLY mode)"
@@ -345,7 +351,7 @@ configure_deploy_only() {
 
 # Disable Kueue for OCP versions < 4.16
 configure_kueue_for_ocp_version() {
-    [ "$TARGET_PREVIEW_OVERLAY" != "development" ] && [ "$TARGET_PREVIEW_OVERLAY" != "rd-dev" ] && return
+    [ "$TARGET_PREVIEW_OVERLAY" != "rd-dev" ] && return
     log_step "Checking OCP version for Kueue compatibility"
 
     local ocp_version ocp_minor delete_file
@@ -407,30 +413,66 @@ configure_operator_image_controller() {
     fi
 }
 
-# Apply service image overrides from environment variables
+# Fail when legacy per-microservice image/PR override env vars are set.
+# Those used to patch components/*/development; rd-dev deletes those AppSets and
+# deploys the services via the Konflux operator instead. Do not silently install
+# pinned operator images when a caller requested candidate-image testing.
+reject_unsupported_legacy_service_overrides() {
+    local -a unsupported=()
+    # Reject any nonempty image/tag/PR field — including a lone PR owner or SHA.
+    if [ -n "${BUILD_SERVICE_IMAGE_REPO:-}" ] || [ -n "${BUILD_SERVICE_IMAGE_TAG:-}" ] || [ -n "${BUILD_SERVICE_PR_OWNER:-}" ] || [ -n "${BUILD_SERVICE_PR_SHA:-}" ]; then
+        unsupported+=("BUILD_SERVICE_IMAGE_*/PR_*")
+    fi
+    if [ -n "${INTEGRATION_SERVICE_IMAGE_REPO:-}" ] || [ -n "${INTEGRATION_SERVICE_IMAGE_TAG:-}" ] || [ -n "${INTEGRATION_SERVICE_PR_OWNER:-}" ] || [ -n "${INTEGRATION_SERVICE_PR_SHA:-}" ]; then
+        unsupported+=("INTEGRATION_SERVICE_IMAGE_*/PR_*")
+    fi
+    if [ -n "${RELEASE_SERVICE_IMAGE_REPO:-}" ] || [ -n "${RELEASE_SERVICE_IMAGE_TAG:-}" ] || [ -n "${RELEASE_SERVICE_PR_OWNER:-}" ] || [ -n "${RELEASE_SERVICE_PR_SHA:-}" ]; then
+        unsupported+=("RELEASE_SERVICE_IMAGE_*/PR_*")
+    fi
+    if [ -n "${IMAGE_CONTROLLER_IMAGE_REPO:-}" ] || [ -n "${IMAGE_CONTROLLER_IMAGE_TAG:-}" ] || [ -n "${IMAGE_CONTROLLER_PR_OWNER:-}" ] || [ -n "${IMAGE_CONTROLLER_PR_SHA:-}" ]; then
+        unsupported+=("IMAGE_CONTROLLER_IMAGE_*/PR_*")
+    fi
+
+    if [ "${#unsupported[@]}" -gt 0 ]; then
+        log_error "Unsupported legacy service image/PR overrides under operator preview: ${unsupported[*]}"
+        log_error "Those services are deployed by the Konflux operator, not components/*/development AppSets."
+        log_error "Unset the variables above, or patch the Konflux CR / use a supported operator override path."
+        log_error "Still supported via AppSets: HAS_*, MINTMAKER_*, MULTI_ARCH_CONTROLLER_*, PIPELINE_PR_*."
+        log_error "Still supported via Konflux CR: BUILD_SERVICE_IMAGE_TAG_EXPIRATION, SMEE_CHANNEL."
+        exit 1
+    fi
+}
+
+# Apply operator-preview config and remaining (non-legacy) service image overrides.
 apply_service_image_overrides() {
     log_step "Applying service image overrides from environment variables"
 
     local has_overrides=false
+    local konflux_build_cr="$ROOT/components/konflux-operator/rings/ring-0/base/cr/build/build-service.yaml"
+    local mintmaker_kust="$ROOT/components/mintmaker/rings/ring-0/base/kustomization.yaml"
 
-    # Build Service
-    if [ -n "${BUILD_SERVICE_IMAGE_REPO}" ] || [ -n "${BUILD_SERVICE_IMAGE_TAG}" ] || [ -n "${BUILD_SERVICE_PR_OWNER}" ]; then
-        log_substep "Configuring Build Service overrides"
-        [ -n "${BUILD_SERVICE_IMAGE_REPO}" ] && log_info "  - Image repo: ${BUILD_SERVICE_IMAGE_REPO}" && has_overrides=true
-        [ -n "${BUILD_SERVICE_IMAGE_TAG}" ] && log_info "  - Image tag: ${BUILD_SERVICE_IMAGE_TAG}" && has_overrides=true
-        [ -n "${BUILD_SERVICE_IMAGE_TAG_EXPIRATION}" ] && log_info "  - Tag expiration: ${BUILD_SERVICE_IMAGE_TAG_EXPIRATION}" && has_overrides=true
-        [[ -n "${BUILD_SERVICE_PR_OWNER}" && -n "${BUILD_SERVICE_PR_SHA}" ]] && log_info "  - PR source: ${BUILD_SERVICE_PR_OWNER}@${BUILD_SERVICE_PR_SHA}" && has_overrides=true
+    # Build-service knobs that still apply via the Konflux CR (operator path).
+    if [ -n "${BUILD_SERVICE_IMAGE_TAG_EXPIRATION:-}" ]; then
+        log_substep "Configuring Build Service IMAGE_TAG_ON_PR_EXPIRATION on Konflux CR"
+        log_info "  - Tag expiration: ${BUILD_SERVICE_IMAGE_TAG_EXPIRATION}"
+        yq -i e \
+            "(.spec.buildService.spec.buildControllerManager.manager.env[] | select(.name==\"IMAGE_TAG_ON_PR_EXPIRATION\") | .value) |= \"${BUILD_SERVICE_IMAGE_TAG_EXPIRATION}\"" \
+            "$konflux_build_cr"
+        has_overrides=true
     fi
-    [ -n "${BUILD_SERVICE_IMAGE_REPO}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/konflux-ci/build-service\")) |=.newName=\"${BUILD_SERVICE_IMAGE_REPO}\"" $ROOT/components/build-service/development/kustomization.yaml
-    [ -n "${BUILD_SERVICE_IMAGE_TAG}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/konflux-ci/build-service\")) |=.newTag=\"${BUILD_SERVICE_IMAGE_TAG}\"" $ROOT/components/build-service/development/kustomization.yaml
-    [ -n "${BUILD_SERVICE_IMAGE_TAG_EXPIRATION}" ] && yq -i e "(.spec.template.spec.containers[].env[] | select(.name==\"IMAGE_TAG_ON_PR_EXPIRATION\") | .value) |= \"${BUILD_SERVICE_IMAGE_TAG_EXPIRATION}\"" $ROOT/components/build-service/development/image-expiration-patch.yaml
-    [[ -n "${BUILD_SERVICE_PR_OWNER}" && "${BUILD_SERVICE_PR_SHA}" ]] && yq -i e "(.resources[] | select(. ==\"*github.com/konflux-ci/build-service*\")) |= \"https://github.com/${BUILD_SERVICE_PR_OWNER}/build-service/config/default?ref=${BUILD_SERVICE_PR_SHA}\"" $ROOT/components/build-service/development/kustomization.yaml
-    # Configure webhook forwarding channel URL (used for Forgejo/Codeberg testing, use hook.pipelinesascode.com not smee.io)
-    [ -n "${SMEE_CHANNEL}" ] && yq -i e ".[].value = \"${SMEE_CHANNEL}\"" $ROOT/components/smee-client/rings/ring-0/base/patches/server-url-patch.yaml
-    # Configure build-service webhook-config for Codeberg to use the smee channel
-    [ -n "${SMEE_CHANNEL}" ] && sed -i.bak "s|SMEE_CHANNEL_PLACEHOLDER|${SMEE_CHANNEL}|g" $ROOT/components/build-service/development/webhook-config.json && rm -f $ROOT/components/build-service/development/webhook-config.json.bak
 
-    # Application Service (HAS)
+    # Webhook forwarding channel (Forgejo/Codeberg; prefer hook.pipelinesascode.com over smee.io).
+    if [ -n "${SMEE_CHANNEL:-}" ]; then
+        log_substep "Configuring SMEE_CHANNEL for smee-client and Konflux build-service CR"
+        # Use yq/env (not sed): sed treats '&' in the replacement as the matched text.
+        yq -i e ".[].value = strenv(SMEE_CHANNEL)" \
+            "$ROOT/components/smee-client/rings/ring-0/base/patches/server-url-patch.yaml"
+        yq -i e '.spec.buildService.spec.webhookURLs["https://codeberg.org"] = strenv(SMEE_CHANNEL)' \
+            "$konflux_build_cr"
+        has_overrides=true
+    fi
+
+    # Application Service (HAS) — still an Argo AppSet, not operator-managed.
     if [ -n "${HAS_IMAGE_REPO}" ] || [ -n "${HAS_IMAGE_TAG}" ] || [ -n "${HAS_PR_OWNER}" ]; then
         log_substep "Configuring Application Service (HAS) overrides"
         [ -n "${HAS_IMAGE_REPO}" ] && log_info "  - Image repo: ${HAS_IMAGE_REPO}" && has_overrides=true
@@ -441,39 +483,16 @@ apply_service_image_overrides() {
     [ -n "${HAS_IMAGE_TAG}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/redhat-appstudio/application-service\")) |=.newTag=\"${HAS_IMAGE_TAG}\"" $ROOT/components/has/base/kustomization.yaml
     [[ -n "${HAS_PR_OWNER}" && "${HAS_PR_SHA}" ]] && yq -i e "(.resources[] | select(. ==\"*github.com/redhat-appstudio/application-service*\")) |= \"https://github.com/${HAS_PR_OWNER}/application-service/config/default?ref=${HAS_PR_SHA}\"" $ROOT/components/has/base/kustomization.yaml
 
-    # Integration Service
-    if [ -n "${INTEGRATION_SERVICE_IMAGE_REPO}" ] || [ -n "${INTEGRATION_SERVICE_IMAGE_TAG}" ] || [ -n "${INTEGRATION_SERVICE_PR_OWNER}" ]; then
-        log_substep "Configuring Integration Service overrides"
-        [ -n "${INTEGRATION_SERVICE_IMAGE_REPO}" ] && log_info "  - Image repo: ${INTEGRATION_SERVICE_IMAGE_REPO}" && has_overrides=true
-        [ -n "${INTEGRATION_SERVICE_IMAGE_TAG}" ] && log_info "  - Image tag: ${INTEGRATION_SERVICE_IMAGE_TAG}" && has_overrides=true
-        [[ -n "${INTEGRATION_SERVICE_PR_OWNER}" && -n "${INTEGRATION_SERVICE_PR_SHA}" ]] && log_info "  - PR source: ${INTEGRATION_SERVICE_PR_OWNER}@${INTEGRATION_SERVICE_PR_SHA}" && has_overrides=true
-    fi
-    [ -n "${INTEGRATION_SERVICE_IMAGE_REPO}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/konflux-ci/integration-service\")) |=.newName=\"${INTEGRATION_SERVICE_IMAGE_REPO}\"" $ROOT/components/integration/development/kustomization.yaml
-    [ -n "${INTEGRATION_SERVICE_IMAGE_TAG}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/konflux-ci/integration-service\")) |=.newTag=\"${INTEGRATION_SERVICE_IMAGE_TAG}\"" $ROOT/components/integration/development/kustomization.yaml
-    [[ -n "${INTEGRATION_SERVICE_PR_OWNER}" && "${INTEGRATION_SERVICE_PR_SHA}" ]] && yq -i e "(.resources[] | select(. ==\"*github.com/konflux-ci/integration-service*\")) |= (sub(\"\?ref=.+\", \"?ref=${INTEGRATION_SERVICE_PR_SHA}\" ) | sub(\"github.com/redhat-appstudio\", \"github.com/${INTEGRATION_SERVICE_PR_OWNER}\"))" $ROOT/components/integration/development/kustomization.yaml
-
-    # Release Service
-    if [ -n "${RELEASE_SERVICE_IMAGE_REPO}" ] || [ -n "${RELEASE_SERVICE_IMAGE_TAG}" ] || [ -n "${RELEASE_SERVICE_PR_OWNER}" ]; then
-        log_substep "Configuring Release Service overrides"
-        [ -n "${RELEASE_SERVICE_IMAGE_REPO}" ] && log_info "  - Image repo: ${RELEASE_SERVICE_IMAGE_REPO}" && has_overrides=true
-        [ -n "${RELEASE_SERVICE_IMAGE_TAG}" ] && log_info "  - Image tag: ${RELEASE_SERVICE_IMAGE_TAG}" && has_overrides=true
-        [[ -n "${RELEASE_SERVICE_PR_OWNER}" && -n "${RELEASE_SERVICE_PR_SHA}" ]] && log_info "  - PR source: ${RELEASE_SERVICE_PR_OWNER}@${RELEASE_SERVICE_PR_SHA}" && has_overrides=true
-    fi
-    [ -n "${RELEASE_SERVICE_IMAGE_REPO}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/konflux-ci/release-service\")) |=.newName=\"${RELEASE_SERVICE_IMAGE_REPO}\"" $ROOT/components/release/development/kustomization.yaml
-    [ -n "${RELEASE_SERVICE_IMAGE_TAG}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/konflux-ci/release-service\")) |=.newTag=\"${RELEASE_SERVICE_IMAGE_TAG}\"" $ROOT/components/release/development/kustomization.yaml
-    [[ -n "${RELEASE_SERVICE_PR_OWNER}" && "${RELEASE_SERVICE_PR_SHA}" ]] && yq -i e "(.resources[] | select(. ==\"*github.com/konflux-ci/release-service*\")) |= \"https://github.com/${RELEASE_SERVICE_PR_OWNER}/release-service/config/default?ref=${RELEASE_SERVICE_PR_SHA}\"" $ROOT/components/release/development/kustomization.yaml
-
-    # Mintmaker
-    MINTMAKER_KUST=$ROOT/components/mintmaker/rings/ring-0/base/kustomization.yaml
+    # Mintmaker (ring-deployed; legacy mintmaker-rd path was renamed in #15423)
     if [ -n "${MINTMAKER_IMAGE_REPO}" ] || [ -n "${MINTMAKER_IMAGE_TAG}" ] || [ -n "${MINTMAKER_PR_OWNER}" ]; then
         log_substep "Configuring Mintmaker overrides"
         [ -n "${MINTMAKER_IMAGE_REPO}" ] && log_info "  - Image repo: ${MINTMAKER_IMAGE_REPO}" && has_overrides=true
         [ -n "${MINTMAKER_IMAGE_TAG}" ] && log_info "  - Image tag: ${MINTMAKER_IMAGE_TAG}" && has_overrides=true
         [[ -n "${MINTMAKER_PR_OWNER}" && -n "${MINTMAKER_PR_SHA}" ]] && log_info "  - PR source: ${MINTMAKER_PR_OWNER}@${MINTMAKER_PR_SHA}" && has_overrides=true
     fi
-    [ -n "${MINTMAKER_IMAGE_REPO}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/konflux-ci/mintmaker\")) |=.newName=\"${MINTMAKER_IMAGE_REPO}\"" $MINTMAKER_KUST
-    [ -n "${MINTMAKER_IMAGE_TAG}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/konflux-ci/mintmaker\")) |=.newTag=\"${MINTMAKER_IMAGE_TAG}\"" $MINTMAKER_KUST
-    [[ -n "${MINTMAKER_PR_OWNER}" && "${MINTMAKER_PR_SHA}" ]] && yq -i "(.resources[] | select(contains(\"konflux-ci/mintmaker\"))) |= (sub(\"konflux-ci/mintmaker\", \"${MINTMAKER_PR_OWNER}/mintmaker\") | sub(\"ref=.*\", \"ref=${MINTMAKER_PR_SHA}\"))" $MINTMAKER_KUST
+    [ -n "${MINTMAKER_IMAGE_REPO}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/konflux-ci/mintmaker\")) |=.newName=\"${MINTMAKER_IMAGE_REPO}\"" "$mintmaker_kust"
+    [ -n "${MINTMAKER_IMAGE_TAG}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/konflux-ci/mintmaker\")) |=.newTag=\"${MINTMAKER_IMAGE_TAG}\"" "$mintmaker_kust"
+    [[ -n "${MINTMAKER_PR_OWNER}" && "${MINTMAKER_PR_SHA}" ]] && yq -i "(.resources[] | select(contains(\"konflux-ci/mintmaker\"))) |= (sub(\"konflux-ci/mintmaker\", \"${MINTMAKER_PR_OWNER}/mintmaker\") | sub(\"ref=.*\", \"ref=${MINTMAKER_PR_SHA}\"))" "$mintmaker_kust"
 
     # Mintmaker Renovate
     if [ -n "${MINTMAKER_RENOVATE_IMAGE_REPO}" ] || [ -n "${MINTMAKER_RENOVATE_IMAGE_TAG}" ]; then
@@ -481,19 +500,8 @@ apply_service_image_overrides() {
         [ -n "${MINTMAKER_RENOVATE_IMAGE_REPO}" ] && log_info "  - Image repo: ${MINTMAKER_RENOVATE_IMAGE_REPO}" && has_overrides=true
         [ -n "${MINTMAKER_RENOVATE_IMAGE_TAG}" ] && log_info "  - Image tag: ${MINTMAKER_RENOVATE_IMAGE_TAG}" && has_overrides=true
     fi
-    [ -n "${MINTMAKER_RENOVATE_IMAGE_REPO}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/konflux-ci/mintmaker-renovate-image\")) |=.newName=\"${MINTMAKER_RENOVATE_IMAGE_REPO}\"" $MINTMAKER_KUST
-    [ -n "${MINTMAKER_RENOVATE_IMAGE_TAG}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/konflux-ci/mintmaker-renovate-image\")) |=.newTag=\"${MINTMAKER_RENOVATE_IMAGE_TAG}\"" $MINTMAKER_KUST
-
-    # Image Controller
-    if [ -n "${IMAGE_CONTROLLER_IMAGE_REPO}" ] || [ -n "${IMAGE_CONTROLLER_IMAGE_TAG}" ] || [ -n "${IMAGE_CONTROLLER_PR_OWNER}" ]; then
-        log_substep "Configuring Image Controller overrides"
-        [ -n "${IMAGE_CONTROLLER_IMAGE_REPO}" ] && log_info "  - Image repo: ${IMAGE_CONTROLLER_IMAGE_REPO}" && has_overrides=true
-        [ -n "${IMAGE_CONTROLLER_IMAGE_TAG}" ] && log_info "  - Image tag: ${IMAGE_CONTROLLER_IMAGE_TAG}" && has_overrides=true
-        [[ -n "${IMAGE_CONTROLLER_PR_OWNER}" && -n "${IMAGE_CONTROLLER_PR_SHA}" ]] && log_info "  - PR source: ${IMAGE_CONTROLLER_PR_OWNER}@${IMAGE_CONTROLLER_PR_SHA}" && has_overrides=true
-    fi
-    [ -n "${IMAGE_CONTROLLER_IMAGE_REPO}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/konflux-ci/image-controller\")) |=.newName=\"${IMAGE_CONTROLLER_IMAGE_REPO}\"" $ROOT/components/image-controller/development/kustomization.yaml
-    [ -n "${IMAGE_CONTROLLER_IMAGE_TAG}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/konflux-ci/image-controller\")) |=.newTag=\"${IMAGE_CONTROLLER_IMAGE_TAG}\"" $ROOT/components/image-controller/development/kustomization.yaml
-    [[ -n "${IMAGE_CONTROLLER_PR_OWNER}" && "${IMAGE_CONTROLLER_PR_SHA}" ]] && yq -i e "(.resources[] | select(. ==\"*github.com/konflux-ci/image-controller*\")) |= \"https://github.com/${IMAGE_CONTROLLER_PR_OWNER}/image-controller/config/default?ref=${IMAGE_CONTROLLER_PR_SHA}\"" $ROOT/components/image-controller/development/kustomization.yaml
+    [ -n "${MINTMAKER_RENOVATE_IMAGE_REPO}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/konflux-ci/mintmaker-renovate-image\")) |=.newName=\"${MINTMAKER_RENOVATE_IMAGE_REPO}\"" "$mintmaker_kust"
+    [ -n "${MINTMAKER_RENOVATE_IMAGE_TAG}" ] && yq -i e "(.images.[] | select(.name==\"quay.io/konflux-ci/mintmaker-renovate-image\")) |=.newTag=\"${MINTMAKER_RENOVATE_IMAGE_TAG}\"" "$mintmaker_kust"
 
     # Multi-Arch Controller
     if [ -n "${MULTI_ARCH_CONTROLLER_IMAGE_REPO}" ] || [ -n "${MULTI_ARCH_CONTROLLER_IMAGE_TAG}" ] || [ -n "${MULTI_ARCH_CONTROLLER_PR_OWNER}" ]; then
@@ -584,6 +592,11 @@ deploy_and_wait_for_argocd() {
     # Wait for all applications to sync and become healthy
     log_step "Waiting for all ArgoCD applications to sync and become healthy"
     log_info "Timeout: $MAX_SYNC_TIMEOUT seconds ($((MAX_SYNC_TIMEOUT / 60)) minutes)"
+    if [ "${PREVIEW_WAIT_KONFLUX_CR_READY:-}" = "true" ]; then
+        log_info "PREVIEW_WAIT_KONFLUX_CR_READY=true: konflux-operator must be Synced and Healthy (Konflux CR Ready)"
+    else
+        log_info "PREVIEW_WAIT_KONFLUX_CR_READY unset: konflux-operator may finish Synced while Konflux CR is still Progressing"
+    fi
 
     local sync_start_time last_detailed_status_time elapsed_time
     sync_start_time=$(date +%s)
@@ -618,6 +631,14 @@ deploy_and_wait_for_argocd() {
         total_apps=$(echo "$state" | grep -c "." || echo "0")
         synced_apps=$(echo "$state" | grep -c "Synced[[:blank:]]*Healthy" || echo "0")
         not_done=$(echo "$state" | grep -v "Synced[[:blank:]]*Healthy" | grep -v "$skip_apps_pattern" || true)
+        # Documented contract: without PREVIEW_WAIT_KONFLUX_CR_READY=true, do not gate on
+        # Konflux CR Ready. The operator app includes the Konflux CR, and the custom Argo
+        # health check reports Progressing until Ready — so treat Synced konflux-operator
+        # as done here. Controller rollout is still gated later; CR Ready is gated only
+        # when the flag is set.
+        if [ "${PREVIEW_WAIT_KONFLUX_CR_READY:-}" != "true" ]; then
+            not_done=$(echo "$not_done" | awk '!($1 ~ /konflux-operator/ && $2 == "Synced")' || true)
+        fi
         pending_apps=$(echo "$not_done" | grep -c "." || echo "0")
 
         local elapsed_min=$((elapsed_time / 60))
@@ -941,6 +962,11 @@ while [[ $# -gt 0 ]]; do
             OPERATOR_OVERLAY=true
             shift
             ;;
+        --development|development)
+            log_error "Bare development preview is no longer supported."
+            log_error "Preview is operator-only (rd-dev). Use: preview or preview --operator-overlay (same behavior)."
+            exit 1
+            ;;
         -h|--help)
             print_help
             exit 0
@@ -951,21 +977,20 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-TARGET_PREVIEW_OVERLAY="development"
+# Preview is operator-only. --operator-overlay remains accepted as a no-op compat alias.
+reject_legacy_preview_overlay() {
+    if [ "${1:-}" = "development" ]; then
+        log_error "TARGET_PREVIEW_OVERLAY=development is no longer supported."
+        log_error "Preview is operator-only (rd-dev). Use: preview or preview --operator-overlay (same behavior)."
+        exit 1
+    fi
+}
+
+# Fail fast on a pre-exported legacy overlay before any cluster work.
+reject_legacy_preview_overlay "${TARGET_PREVIEW_OVERLAY:-}"
+TARGET_PREVIEW_OVERLAY="rd-dev"
 if $OPERATOR_OVERLAY; then
-    TARGET_PREVIEW_OVERLAY="rd-dev"
-fi
-TARGET_APP_OF_APPS_PATH="$ROOT/argo-cd-apps/app-of-app-sets/$TARGET_PREVIEW_OVERLAY"
-TARGET_OVERLAY_PATH="argo-cd-apps/overlays/$TARGET_PREVIEW_OVERLAY"
-TARGET_DELETE_FILE="$ROOT/argo-cd-apps/overlays/$TARGET_PREVIEW_OVERLAY/delete-applications.yaml"
-# rd-dev has its own delete-applications.yaml evaluated at the rd-dev overlay level so
-# DEPLOY_ONLY patches can target both development-inherited and rd-dev-local ApplicationSets.
-# Touch it now so yq reads in configure_deploy_only / configure_kueue_for_ocp_version and
-# the --grafana handler never hit a missing-file error. The file stays empty unless those
-# handlers actually append content; only then is it wired into rd-dev/kustomization.yaml.
-if [ "$TARGET_PREVIEW_OVERLAY" = "rd-dev" ]; then
-    # Truncate (or create) the file so stale content from a previous aborted run is cleared.
-    > "$TARGET_DELETE_FILE"
+    log_info "--operator-overlay is now the default preview mode; the flag is optional (compat only)."
 fi
 
 # =============================================================================
@@ -991,6 +1016,18 @@ OCP_VERSION=$(oc get clusterversion version -o jsonpath='{.status.desired.versio
 if [ -f $ROOT/hack/preview.env ]; then
     source $ROOT/hack/preview.env
 fi
+
+# Reject legacy overlay / service overrides before creating a preview branch or editing files,
+# so a failed reject does not leave the user's branch dirty via the EXIT trap.
+reject_legacy_preview_overlay "${TARGET_PREVIEW_OVERLAY}"
+reject_unsupported_legacy_service_overrides
+TARGET_PREVIEW_OVERLAY="rd-dev"
+TARGET_APP_OF_APPS_PATH="$ROOT/argo-cd-apps/app-of-app-sets/$TARGET_PREVIEW_OVERLAY"
+TARGET_OVERLAY_PATH="argo-cd-apps/overlays/$TARGET_PREVIEW_OVERLAY"
+TARGET_DELETE_FILE="$ROOT/argo-cd-apps/overlays/$TARGET_PREVIEW_OVERLAY/delete-applications.yaml"
+# rd-dev has its own delete-applications.yaml evaluated at the rd-dev overlay level so
+# DEPLOY_ONLY patches can target both development-inherited and rd-dev-local ApplicationSets.
+# Create/truncate it only after the dirty-tree checks below so we never wipe local edits first.
 
 if [ -z "$MY_GIT_FORK_REMOTE" ]; then
     log_error "MY_GIT_FORK_REMOTE environment variable is not set"
@@ -1025,6 +1062,17 @@ if ! git diff --exit-code --quiet; then
     log_error "Run 'git status' to see pending changes"
     exit 1
 fi
+
+# The delete file is often untracked; git diff above would not protect its contents.
+if [ -s "$TARGET_DELETE_FILE" ]; then
+    log_error "Non-empty deletion rules file already exists: $TARGET_DELETE_FILE"
+    log_error "Preview would overwrite it. Remove or empty the file (or commit intentional changes) and re-run."
+    exit 1
+fi
+
+# Touch/truncate so yq reads in configure_deploy_only / configure_kueue_for_ocp_version and
+# the --grafana handler never hit a missing-file error. Stays empty unless those handlers append.
+: >| "$TARGET_DELETE_FILE"
 
 # Create preview branch for preview configuration
 PREVIEW_BRANCH=preview-${MY_GIT_BRANCH}${TEST_BRANCH_ID+-$TEST_BRANCH_ID}
@@ -1061,42 +1109,28 @@ log_success "All ArgoCD patch files updated"
 # Optional Components
 # =============================================================================
 if $OBO; then
-    if [ "$TARGET_PREVIEW_OVERLAY" != "development" ] && [ "$TARGET_PREVIEW_OVERLAY" != "rd-dev" ]; then
-        log_warn "Ignoring --obo for overlay '$TARGET_PREVIEW_OVERLAY'"
-    else
     log_step "Enabling Observability (OBO) components"
     log_info "Adding Observability operator and Prometheus for federation"
     yq -i '.resources += ["federation/"]' $ROOT/components/monitoring/prometheus/development/kustomization.yaml
     log_success "Observability components enabled"
-    fi
 fi
 
 if $GRAFANA; then
-    if [ "$TARGET_PREVIEW_OVERLAY" != "development" ] && [ "$TARGET_PREVIEW_OVERLAY" != "rd-dev" ]; then
-        log_warn "Ignoring --grafana for overlay '$TARGET_PREVIEW_OVERLAY'"
-    else
     log_step "Enabling Grafana dashboard"
     log_info "Removing monitoring-workload-grafana from delete-applications.yaml"
     yq -i 'select(.metadata.name != "monitoring-workload-grafana")' "$TARGET_DELETE_FILE"
-    # For rd-dev the Grafana deletion lives in the inherited development overlay, not TARGET_DELETE_FILE.
-    if [ "$TARGET_PREVIEW_OVERLAY" = "rd-dev" ]; then
-        yq -i 'select(.metadata.name != "monitoring-workload-grafana")' \
-            "$ROOT/argo-cd-apps/overlays/development/delete-applications.yaml"
-    fi
+    # Grafana deletion also lives in the inherited development overlay used by rd-dev.
+    yq -i 'select(.metadata.name != "monitoring-workload-grafana")' \
+        "$ROOT/argo-cd-apps/overlays/development/delete-applications.yaml"
     log_success "Grafana enabled: monitoring-workload-grafana will be deployed"
-    fi
 fi
 
 if $EAAS; then
-    if [ "$TARGET_PREVIEW_OVERLAY" != "development" ] && [ "$TARGET_PREVIEW_OVERLAY" != "rd-dev" ]; then
-        log_warn "Ignoring --eaas for overlay '$TARGET_PREVIEW_OVERLAY'"
-    else
-        log_step "Enabling Environment-as-a-Service (EaaS) workloads"
-        log_info "Assigning the EaaS role to the local cluster"
-        yq -i '.components += ["../../../k-components/assign-eaas-role-to-local-cluster"]' \
-            $ROOT/argo-cd-apps/base/local-cluster-secret/all-in-one/kustomization.yaml
-        log_success "Local cluster labeled for EaaS workloads"
-    fi
+    log_step "Enabling Environment-as-a-Service (EaaS) workloads"
+    log_info "Assigning the EaaS role to the local cluster"
+    yq -i '.components += ["../../../k-components/assign-eaas-role-to-local-cluster"]' \
+        $ROOT/argo-cd-apps/base/local-cluster-secret/all-in-one/kustomization.yaml
+    log_success "Local cluster labeled for EaaS workloads"
 fi
 
 # =============================================================================
@@ -1104,50 +1138,46 @@ fi
 # =============================================================================
 label_cluster_nodes
 
-if [ "$TARGET_PREVIEW_OVERLAY" = "development" ] || [ "$TARGET_PREVIEW_OVERLAY" = "rd-dev" ]; then
-    configure_deploy_only
-    configure_kueue_for_ocp_version
-    configure_operator_image_controller
+configure_deploy_only
+configure_kueue_for_ocp_version
+configure_operator_image_controller
 
-    # Wire rd-dev/delete-applications.yaml into the rd-dev kustomization only if it was
-    # populated by configure_deploy_only or configure_kueue_for_ocp_version above.
-    if [ "$TARGET_PREVIEW_OVERLAY" = "rd-dev" ] && [ -s "$TARGET_DELETE_FILE" ]; then
-        rd_kust="$ROOT/argo-cd-apps/overlays/rd-dev/kustomization.yaml"
-        if ! grep -q "delete-applications.yaml" "$rd_kust"; then
-            yq -i '.patchesStrategicMerge += ["delete-applications.yaml"]' "$rd_kust"
-            log_info "Wired rd-dev/delete-applications.yaml into rd-dev kustomization"
-        fi
+# Wire rd-dev/delete-applications.yaml into the rd-dev kustomization only if it was
+# populated by configure_deploy_only or configure_kueue_for_ocp_version above.
+if [ -s "$TARGET_DELETE_FILE" ]; then
+    rd_kust="$ROOT/argo-cd-apps/overlays/rd-dev/kustomization.yaml"
+    if ! grep -q "delete-applications.yaml" "$rd_kust"; then
+        yq -i '.patchesStrategicMerge += ["delete-applications.yaml"]' "$rd_kust"
+        log_info "Wired rd-dev/delete-applications.yaml into rd-dev kustomization"
     fi
-
-    # Configure GitHub org
-    log_step "Configuring GitHub organization"
-    log_info "Setting GitHub org to: $MY_GITHUB_ORG"
-    $ROOT/hack/util-set-github-org $MY_GITHUB_ORG
-    log_success "GitHub organization configured"
-
-    # Configure Rekor server hostname
-    log_step "Configuring Rekor server hostname"
-    domain=$(oc get ingresses.config.openshift.io cluster --template={{.spec.domain}})
-    rekor_server="rekor.$domain"
-    log_info "Cluster domain: $domain"
-    log_info "Rekor server hostname: $rekor_server"
-    sed -i.bak "s/rekor-server.enterprise-contract-service.svc/$rekor_server/" $ROOT/argo-cd-apps/base/member/optional/helm/rekor/rekor.yaml && rm $ROOT/argo-cd-apps/base/member/optional/helm/rekor/rekor.yaml.bak
-    log_success "Rekor server hostname configured"
-
-    # =============================================================================
-    # Service Image Overrides
-    # =============================================================================
-    apply_service_image_overrides
-else
-    log_info "Skipping full development overlay customizations for '$TARGET_PREVIEW_OVERLAY'"
 fi
+
+# Configure GitHub org
+log_step "Configuring GitHub organization"
+log_info "Setting GitHub org to: $MY_GITHUB_ORG"
+$ROOT/hack/util-set-github-org $MY_GITHUB_ORG
+log_success "GitHub organization configured"
+
+# Configure Rekor server hostname
+log_step "Configuring Rekor server hostname"
+domain=$(oc get ingresses.config.openshift.io cluster --template={{.spec.domain}})
+rekor_server="rekor.$domain"
+log_info "Cluster domain: $domain"
+log_info "Rekor server hostname: $rekor_server"
+sed -i.bak "s/rekor-server.enterprise-contract-service.svc/$rekor_server/" $ROOT/argo-cd-apps/base/member/optional/helm/rekor/rekor.yaml && rm $ROOT/argo-cd-apps/base/member/optional/helm/rekor/rekor.yaml.bak
+log_success "Rekor server hostname configured"
+
+# =============================================================================
+# Service Image Overrides
+# =============================================================================
+apply_service_image_overrides
 
 # =============================================================================
 # Commit and Push - INLINE (not in function) as per original script
 # =============================================================================
 log_step "Committing and pushing preview changes"
 # Stage the dynamically created rd-dev delete file if it was populated and wired in.
-if [ "$TARGET_PREVIEW_OVERLAY" = "rd-dev" ] && [ -s "$TARGET_DELETE_FILE" ]; then
+if [ -s "$TARGET_DELETE_FILE" ]; then
     git add "$TARGET_DELETE_FILE"
 fi
 if ! git diff --exit-code --quiet || ! git diff --cached --exit-code --quiet; then
@@ -1159,20 +1189,28 @@ else
 fi
 
 # =============================================================================
+# Operator preview Argo CD health checks (rd-dev / Konflux CR)
+# =============================================================================
+# Apply before deploying apps so both bootstrap-cluster.sh preview and direct
+# hack/preview.sh evaluate Konflux readiness the same way. Idempotent merge patch.
+log_step "Configuring operator-overlay Argo CD health checks"
+# shellcheck source=/dev/null
+source "${ROOT}/hack/deploy-argocd.sh"
+configure_operator_overlay_health_customizations || log_warn "Continuing without Konflux CR health customization"
+
+# =============================================================================
 # Deploy Applications
 # =============================================================================
 deploy_and_wait_for_argocd
 
 # =============================================================================
-# Wait for Konflux CR (rd-dev overlay on OpenShift)
+# Wait for Konflux operator controller (and optionally the Konflux CR)
 # =============================================================================
-if [ "$TARGET_PREVIEW_OVERLAY" = "rd-dev" ]; then
-    wait_for_konflux_operator_controller_ready
-    if [ "${PREVIEW_WAIT_KONFLUX_CR_READY:-}" = "true" ]; then
-        wait_for_konflux_cr_ready
-    else
-        log_info "Skipping wait for Konflux CR Ready=True (set PREVIEW_WAIT_KONFLUX_CR_READY=true to gate preview on the instance)"
-    fi
+wait_for_konflux_operator_controller_ready
+if [ "${PREVIEW_WAIT_KONFLUX_CR_READY:-}" = "true" ]; then
+    wait_for_konflux_cr_ready
+else
+    log_info "Skipping wait for Konflux CR Ready=True (set PREVIEW_WAIT_KONFLUX_CR_READY=true to gate preview on the instance)"
 fi
 
 # =============================================================================
@@ -1184,13 +1222,9 @@ wait_for_tekton_crds
 # =============================================================================
 # Final Configuration
 # =============================================================================
-if [ "$TARGET_PREVIEW_OVERLAY" = "development" ] || [ "$TARGET_PREVIEW_OVERLAY" = "rd-dev" ]; then
-    log_step "Configuring Pipelines as Code integration"
-    TARGET_PREVIEW_OVERLAY="$TARGET_PREVIEW_OVERLAY" "$ROOT/hack/build/setup-pac-integration.sh"
-    log_success "Pipelines as Code configured"
-else
-    log_info "Skipping Pipelines as Code integration for '$TARGET_PREVIEW_OVERLAY'"
-fi
+log_step "Configuring Pipelines as Code integration"
+TARGET_PREVIEW_OVERLAY="$TARGET_PREVIEW_OVERLAY" "$ROOT/hack/build/setup-pac-integration.sh"
+log_success "Pipelines as Code configured"
 
 # =============================================================================
 # Complete

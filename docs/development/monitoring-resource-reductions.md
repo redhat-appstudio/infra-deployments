@@ -12,9 +12,9 @@ When using the **development** overlay for monitoring workloads, the following c
 | **Cluster Observability operator** (Subscription) | `components/monitoring/prometheus/development/federation/observability-operator-dev-resources-patch.yaml` | — | **50m** (limit: **200m**) | **256Mi** (limit: **1Gi**) |
 | **Vector Tekton logs collector** (DaemonSet) | `components/vector-tekton-logs-collector/development/vector-helm-values.yaml` | — | 512m → **100m** (limit: **500m**) | 4096Mi → **512Mi** (limit: **512Mi**) |
 
-All of these apply only when the corresponding ApplicationSet is deployed from the **development** path (e.g. `monitoring-workload-prometheus` from `components/monitoring/prometheus/development`, `monitoring-workload-grafana` from `components/monitoring/grafana/development`). Ensure the development overlay is used for those apps (e.g. via `preview.sh`).
+All of these apply only when the corresponding ApplicationSet is deployed from the **development** path (e.g. `monitoring-workload-prometheus` from `components/monitoring/prometheus/development`, `monitoring-workload-grafana` from `components/monitoring/grafana/development`). Preview uses the rd-dev overlay, which inherits those development component paths.
 
-> **Note:** `monitoring-workload-grafana` is **skipped by default** in the development overlay. Pass `--grafana` to `preview.sh` to enable it:
+> **Note:** `monitoring-workload-grafana` is **skipped by default** in preview. Pass `--grafana` to `preview.sh` to enable it:
 > ```
 > ./hack/preview.sh --obo --grafana
 > ```
