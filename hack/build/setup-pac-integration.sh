@@ -256,6 +256,7 @@ log_info "Creating required namespaces"
 create_namespace_if_needed "$PAC_NAMESPACE"
 create_namespace_if_needed "build-service"
 create_namespace_if_needed "$INTEGRATION_NAMESPACE"
+create_namespace_if_needed "mintmaker"
 
 # Create PAC secrets in all required namespaces
 log_info "Configuring PAC secrets across namespaces"
