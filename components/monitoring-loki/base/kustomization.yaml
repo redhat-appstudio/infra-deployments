@@ -1,8 +1,10 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - install-loki-operator.yaml
-  - ./configure-loki/
+  - loki-namespace.yaml
+  - loki-operatorgroup.yaml
+  - loki-subscription.yaml
+  - loki-lokistack.yaml
 
 generatorOptions:
   disableNameSuffixHash: true

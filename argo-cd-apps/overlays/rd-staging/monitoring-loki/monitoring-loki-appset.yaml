@@ -1,0 +1,58 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: monitoring-loki
+  # NOTE: Current deployment only is done for a subset of ring-1 clusters
+  # labels:
+    # appstudio.redhat.com/deployment-clusters: all
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              selector:
+                  matchExpressions: # Ensures that no clusters are selected; a k-component will replace this with the correct selector
+                    - key: appstudio.redhat.com/select-none
+                      operator: Exists
+                    - key: appstudio.redhat.com/select-none
+                      operator: DoesNotExist
+              values:
+                sourceRoot: components/monitoring-loki
+                ring: "empty-base"
+                clusterDir: "empty-base"
+          - list:
+              elements:
+                # NOTE: Current deployment only is done for a subset of ring-1 clusters
+                - name: stone-stage-p01
+                  values.sourceRoot: components/monitoring-loki
+                  values.ring: ring-1
+                  values.clusterDir: stone-stage-p01
+                - name: stone-stg-rh01
+                  values.sourceRoot: components/monitoring-loki
+                  values.ring: ring-1
+                  values.clusterDir: stone-stg-rh01
+
+  template:
+    metadata:
+      name: monitoring-loki-{{nameNormalized}}
+    spec:
+      project: default
+      source:
+        path: '{{values.sourceRoot}}/rings/{{values.ring}}/{{values.clusterDir}}'
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+        targetRevision: main
+      destination:
+        namespace: appstudio-workload-monitoring
+        server: '{{server}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+        - CreateNamespace=true
+        retry:
+          limit: 50
+          backoff:
+            duration: 15s
