@@ -1,5 +1,12 @@
 codecov:
   require_ci_to_pass: true
+  notify:
+    # This repo has no Python test suite yet, so the python-tests job's
+    # coverage upload always fails client-side ("No coverage reports
+    # found") and never reaches Codecov. Without this, Codecov waits
+    # indefinitely for that upload before posting the project status,
+    # stalling every PR. Post status once any build (e.g. go) uploads.
+    after_n_builds: 1
 
 coverage:
   status:
