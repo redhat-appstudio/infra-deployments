@@ -4,32 +4,9 @@
 # per-microservice Konflux ApplicationSets superseded by the Konflux operator.
 #
 # Only ApplicationSets that actually appear in ../development can be deleted here
-# (Kustomize requires a merge target). konflux-ui and namespace-lister are not in
-# that graph, so no delete entries for them.
----
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
-  name: application-api
-$patch: delete
----
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
-  name: release
-$patch: delete
----
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
-  name: integration
-$patch: delete
----
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
-  name: build-service
-$patch: delete
+# (Kustomize requires a merge target). application-api, build-service,
+# enterprise-contract, image-controller, integration, konflux-info, konflux-rbac,
+# release, konflux-ui, and namespace-lister are already removed there.
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
@@ -40,31 +17,7 @@ $patch: delete
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: image-controller
-$patch: delete
----
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
   name: internal-services
-$patch: delete
----
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
-  name: konflux-info
-$patch: delete
----
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
-  name: konflux-rbac
-$patch: delete
----
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
-  name: enterprise-contract
 $patch: delete
 ---
 apiVersion: argoproj.io/v1alpha1
