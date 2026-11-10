@@ -14,3 +14,17 @@ images:
 
   - name: quay.io/konflux-ci/kite-init
     newTag: a2b99c1c998be3809ceab810849ac1860cc2bb45
+
+patches:
+  - target:
+      kind: Service
+      name: konflux-kite
+    patch: |-
+      - op: remove
+        path: /metadata/annotations/service.beta.openshift.io~1serving-cert-secret-name
+  - target:
+      kind: Route
+      name: konflux-kite-api
+    patch: |-
+      - op: remove
+        path: /metadata/annotations/service.beta.openshift.io~1serving-cert-secret-name
