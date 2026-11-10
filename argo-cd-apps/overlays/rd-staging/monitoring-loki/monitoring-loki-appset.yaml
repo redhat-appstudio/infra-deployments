@@ -2,30 +2,23 @@ apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
   name: monitoring-loki
-  # NOTE: Current deployment only is done for a subset of ring-1 clusters
-  # labels:
-    # appstudio.redhat.com/deployment-clusters: all
 spec:
   generators:
-    - merge:
-        mergeKeys:
-          - nameNormalized
-        generators:
-          - list:
-              elements:
-                # NOTE: Current deployment only is done for a subset of ring-1 clusters
-                - nameNormalized: stone-stage-p01
-                  values.sourceRoot: components/monitoring-loki
-                  values.ring: ring-1
-                  values.clusterDir: stone-stage-p01
-                - nameNormalized: stone-stg-rh01
-                  values.sourceRoot: components/monitoring-loki
-                  values.ring: ring-1
-                  values.clusterDir: stone-stg-rh01
+    - list:
+        elements:
+          # NOTE: Current deployment only is done for a subset of ring-1 clusters
+          - name: stone-stage-p01
+            values.sourceRoot: components/monitoring-loki
+            values.ring: ring-1
+            values.clusterDir: stone-stage-p01
+          - name: stone-stg-rh01
+            values.sourceRoot: components/monitoring-loki
+            values.ring: ring-1
+            values.clusterDir: stone-stg-rh01
 
   template:
     metadata:
-      name: monitoring-loki-{{nameNormalized}}
+      name: monitoring-loki-{{name}}
     spec:
       project: default
       source:
@@ -34,7 +27,7 @@ spec:
         targetRevision: main
       destination:
         namespace: appstudio-workload-monitoring
-        server: '{{server}}'
+        name: '{{name}}'
       syncPolicy:
         automated:
           prune: true
