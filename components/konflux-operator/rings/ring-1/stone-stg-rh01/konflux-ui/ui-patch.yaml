@@ -5,6 +5,10 @@ metadata:
 spec:
   ui:
     spec:
+      ingress:
+        # Temporary: restore legacy Dex oauth2-proxy redirect for local UI (https://localhost:8080/oauth2/callback)
+        additionalFQDNs:
+          - localhost:8080
       runtimeConfig:
         chatBot:
           enabled: false
