@@ -26,7 +26,7 @@ spec:
                   - key: appstudio.redhat.com/select-none
                     operator: DoesNotExist
               values:
-                sourceRoot: components/konflux-kite-rd
+                sourceRoot: components/konflux-kite
                 ring: "empty-base"
                 clusterDir: "empty-base"
           - list:
@@ -57,9 +57,9 @@ spec:
         namespace: konflux-kite
         server: '{{server}}'
       syncPolicy:
-        # automated:
-        #   prune: true
-        #   selfHeal: true
+        automated:
+          prune: true
+          selfHeal: true
         syncOptions:
           - CreateNamespace=true
           - SkipDryRunOnMissingResource=true
