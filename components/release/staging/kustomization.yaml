@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
   - ../base
   - external-secrets/release-service-github-token.yaml
+  - otel-collector-egress-networkpolicy.yaml
   - https://github.com/konflux-ci/release-service/config/default?ref=5c67a2aa1153ee9aae931553d6ac7c330592be4f
   - release_service_config.yaml
   - signing_configs.yaml
