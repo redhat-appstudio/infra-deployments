@@ -11,13 +11,6 @@ patchesStrategicMerge:
   - delete-applications.yaml
 
 patches:
-  # Remove automated sync from image-rbac-proxy for staging migration; this AppSet is
-  # shared with production, so the base syncPolicy is left untouched
-  - path: image-rbac-proxy-remove-auto-sync-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: image-rbac-proxy
   # Drop stone-stg-rh01 from operator-owned ApplicationSets, and orphan
   # resources when those Applications are removed. preserveResourcesOnDeletion
   # must be synced before any cluster is excluded, so Argo does not prune
