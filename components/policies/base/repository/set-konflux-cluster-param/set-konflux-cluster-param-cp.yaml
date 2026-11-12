@@ -1,0 +1,45 @@
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: set-konflux-cluster-param
+  annotations:
+    policies.kyverno.io/title: Set konflux_cluster on Repository
+    policies.kyverno.io/category: Repository
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/subject: Repository
+    policies.kyverno.io/description: >-
+      Ensures Repository CRs in the rhoai-tenant namespace have a
+      spec.params entry named konflux_cluster set to this cluster's name.
+      Uses mutateExistingOnPolicyUpdate so existing Repositories are
+      patched when the policy is installed or updated. The cluster name
+      placeholder is replaced per-cluster via kustomize.
+spec:
+  background: true
+  failurePolicy: Ignore
+  rules:
+    - name: add-konflux-cluster-param
+      match:
+        any:
+          - resources:
+              kinds:
+                - repositories.pipelinesascode.tekton.dev
+              namespaces:
+                - rhoai-tenant
+      preconditions:
+        all:
+          - key: "{{ request.object.spec.params[?name=='konflux_cluster'] || `[]` | length(@) }}"
+            operator: Equals
+            value: 0
+      mutate:
+        mutateExistingOnPolicyUpdate: true
+        targets:
+          - apiVersion: pipelinesascode.tekton.dev/v1alpha1
+            kind: Repository
+            name: "{{ request.object.metadata.name }}"
+            namespace: "{{ request.object.metadata.namespace }}"
+        patchStrategicMerge:
+          spec:
+            params:
+              - +(name): konflux_cluster
+                value: CLUSTER_NAME
