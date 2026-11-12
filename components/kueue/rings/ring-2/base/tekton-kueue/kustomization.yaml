@@ -1,16 +1,16 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-- https://github.com/konflux-ci/tekton-kueue/config/default?ref=e50da9e13c5e2a330f0ddc8b1a8ab7ab1465e0f2
+- https://github.com/openshift-pipelines/tekton-kueue/upstream/config/default?ref=v1.24.2
 namespace: tekton-kueue
 # ensure that installation starts after the installation of kueue complete
 commonAnnotations:
   argocd.argoproj.io/sync-wave: "10"
   argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 images:
-- name: konflux-ci/tekton-kueue
-  newName: quay.io/konflux-ci/tekton-kueue
-  newTag: e50da9e13c5e2a330f0ddc8b1a8ab7ab1465e0f2
+- name: ghcr.io/tektoncd/tekton-kueue
+  newName: quay.io/openshift-pipeline/pipelines-scheduler-rhel9
+  newTag: v1.24.2
 patches:
 - target:
     kind: Namespace
