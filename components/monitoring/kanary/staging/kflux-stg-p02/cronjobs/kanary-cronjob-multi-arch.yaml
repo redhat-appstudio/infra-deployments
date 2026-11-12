@@ -1,0 +1,58 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: kanary-trigger-multi-arch
+spec:
+  schedule: "20,50 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 3000
+      template:
+        spec:
+          serviceAccountName: kanary-cronjob
+          restartPolicy: Never
+          containers:
+            - name: trigger
+              image: quay.io/openshift-pipeline/openshift-pipelines-cli-tkn:1.15
+              securityContext:
+                readOnlyRootFilesystem: true
+                runAsNonRoot: true
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 10Mi
+                limits:
+                  cpu: 100m
+                  memory: 100Mi
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  tkn pipeline start kanary-run-probe --use-param-defaults --workspace name=artifacts,volumeClaimTemplateFile=/etc/kanary/vct.yaml \
+                    --param tested-cluster=kflux-stg-p02 \
+                    --param tenant-namespace=konflux-perfscale-4-tenant \
+                    --param test-type=container-multi-arch \
+                    --param component-repo=https://gitlab.cee.redhat.com/jhutar/nodejs-devfile-sample15 \
+                    --param user-prefix=stgp02cm \
+                    --param quay-repo=redhat-user-workloads-stage \
+                    --param pipeline-repo-templating-source=https://github.com/rhtap-perf-test/konflux-probe-test-templates \
+                    --param pipeline-repo-templating-source-dir=nodejs-devfile-sample-MultiArch-only-ARM-and-AMD/ \
+                    --param oci-storage=quay.io/rhtap-perf-test/perf-release-service-trusted-artifacts-stage \
+                    --param release-pipeline-service-account=managed-konflux-perfscale-sa \
+                    --param fork-target=jhutar \
+                    --param gitlab-api-url=https://gitlab.cee.redhat.com/api/v4 \
+                    --param member-cluster=https://dadgb8nw06g868q4631g.vpe.private.us-east.containers.cloud.ibm.com:30486 \
+                    --param s3-bucket=konflux-perfscale-artifacts \
+                    --prefix-name kanary-kflux-stg-p02-multi-arch- \
+                    --showlog
+              volumeMounts:
+                - name: workspace-vct
+                  mountPath: /etc/kanary
+                  readOnly: true
+          volumes:
+            - name: workspace-vct
+              configMap:
+                name: kanary-workspace-vct

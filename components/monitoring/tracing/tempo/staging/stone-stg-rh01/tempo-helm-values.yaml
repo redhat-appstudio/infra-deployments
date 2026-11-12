@@ -1,0 +1,148 @@
+---
+# 2.9.0 is the last chart with separate ingester/compactor and bundled MinIO.
+
+fullnameOverride: tempo
+
+global:
+  extraArgs:
+    - "-config.expand-env=true"
+  extraEnvFrom:
+    - secretRef:
+        name: tempo-minio-credentials
+
+tempo:
+  # restricted-v2 rejects the chart's fixed UID 1000.
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: null
+    runAsGroup: null
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: true
+  podSecurityContext:
+    fsGroup: null
+
+# The image sets WorkingDir to /tmp and the root filesystem is read-only.
+distributor:
+  extraVolumes:
+    - name: tmp
+      emptyDir: {}
+  extraVolumeMounts:
+    - name: tmp
+      mountPath: /tmp
+
+ingester:
+  extraVolumes:
+    - name: tmp
+      emptyDir: {}
+  extraVolumeMounts:
+    - name: tmp
+      mountPath: /tmp
+
+querier:
+  extraVolumes:
+    - name: tmp
+      emptyDir: {}
+  extraVolumeMounts:
+    - name: tmp
+      mountPath: /tmp
+
+queryFrontend:
+  extraVolumes:
+    - name: tmp
+      emptyDir: {}
+  extraVolumeMounts:
+    - name: tmp
+      mountPath: /tmp
+
+compactor:
+  extraVolumes:
+    - name: tmp
+      emptyDir: {}
+  extraVolumeMounts:
+    - name: tmp
+      mountPath: /tmp
+
+# OTLP is the only protocol the Konflux collector emits.
+traces:
+  otlp:
+    grpc:
+      enabled: true
+    http:
+      enabled: true
+  jaeger:
+    grpc:
+      enabled: false
+    thriftBinary:
+      enabled: false
+    thriftCompact:
+      enabled: false
+    thriftHttp:
+      enabled: false
+  zipkin:
+    enabled: false
+  opencensus:
+    enabled: false
+
+storage:
+  trace:
+    backend: s3
+    s3:
+      bucket: tempo-traces
+      endpoint: tempo-minio.konflux-tempo.svc.cluster.local:9000
+      access_key: ${rootUser}
+      secret_key: ${rootPassword}
+      insecure: true
+      forcepathstyle: true
+
+minio:
+  enabled: true
+  fullnameOverride: tempo-minio
+  mode: standalone
+  existingSecret: tempo-minio-credentials
+  # One replica on an RWO volume; a rolling update deadlocks.
+  DeploymentUpdate:
+    type: Recreate
+  # Same reason as tempo.securityContext above.
+  securityContext:
+    enabled: false
+  # Drops the subchart's hardcoded console/console123 account.
+  users: []
+  buckets:
+    - name: tempo-traces
+      policy: none
+      purge: false
+  # Writable paths under a read-only root filesystem.
+  extraVolumes:
+    - name: minio-config
+      emptyDir: {}
+    - name: tmp
+      emptyDir: {}
+  extraVolumeMounts:
+    - name: minio-config
+      mountPath: /etc/minio
+    - name: tmp
+      mountPath: /tmp
+  makeBucketJob:
+    # mc writes its alias config to /etc/minio/mc.
+    extraVolumes:
+      - name: mc-config
+        emptyDir: {}
+    extraVolumeMounts:
+      - name: mc-config
+        mountPath: /etc/minio/mc
+
+# Single read/write endpoint for the collector and for Grafana.
+gateway:
+  enabled: true
+  image:
+    repository: nginx/nginx-unprivileged
+    tag: 1.31-alpine
+  nginxConfig:
+    resolver: dns-default.openshift-dns.svc.cluster.local.
+
+# Span metrics are produced by the collector's spanmetrics connector, not here.
+metricsGenerator:
+  enabled: false
