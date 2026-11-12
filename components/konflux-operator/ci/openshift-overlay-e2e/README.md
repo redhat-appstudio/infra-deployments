@@ -1,10 +1,10 @@
-# OpenShift CI: `development-operator` overlay E2E
+# OpenShift CI: `rd-dev` (operator) overlay E2E
 
-Scripts for the optional, on-demand Prow job
-`appstudio-operator-overlay-e2e-tests` (openshift/release).
+Scripts for the Prow job
+`konflux-ring-deployments-conformance-tests` (openshift/release).
 
-Legacy `appstudio-e2e-tests` (`development` overlay) is unchanged and uses separate
-step refs (`konflux-ci-install-konflux`, `redhat-appstudio-conformance-tests`).
+Preview is operator-only (`rd-dev`). Legacy bare `development` preview is no longer
+a supported CI path.
 
 ## Layout
 
@@ -12,7 +12,7 @@ step refs (`konflux-ci-install-konflux`, `redhat-appstudio-conformance-tests`).
 |------|------|
 | `Dockerfile` | Unified CI image (`konflux-overlay-install`): task-runner + Go 1.26.10 from ubi10/go-toolset |
 | `ci-common.sh` | Shared cluster login (temp kubeconfig copy) and ephemeral git credentials |
-| `install.sh` | `hack/bootstrap-cluster.sh preview --operator-overlay`, QE secrets, SprayProxy, `e2e-secrets` quay pull secret |
+| `install.sh` | `hack/bootstrap-cluster.sh preview` (rd-dev; `--operator-overlay` is a compat no-op), QE secrets, SprayProxy, `e2e-secrets` quay pull secret |
 | `run-e2e.sh` | Clone konflux-ci @ ref from `rings/ring-0/base/invariant/kustomization.yaml`; `prepare-conformance-env` + `test/e2e/run-e2e.sh` (OpenShift UWM metrics when applicable, proxy integration tests, conformance in `default-tenant`) |
 
 ## CI flow (both steps use the same pattern)
@@ -47,12 +47,3 @@ original kubeconfig file is not modified. While the step runs, `KUBECONFIG` poin
 a temp credential store file so your `~/.gitconfig` is not modified and the PAT is removed on
 `EXIT`. For interactive testing, run via a wrapper script or subshell so env vars from the step do
 not linger mid-session.
-
-OpenShift UWM metrics tests run inside `test/e2e/run-e2e.sh` when the cluster has user-workload
-monitoring. Preview already enables UWM via the `monitoring-workload-prometheus` Argo app; the
-`dummy-service` canary namespace triggers the default canary wait in metricsopenshift `BeforeSuite`.
-
-```bash
-./components/konflux-operator/ci/openshift-overlay-e2e/install.sh
-./components/konflux-operator/ci/openshift-overlay-e2e/run-e2e.sh
-```

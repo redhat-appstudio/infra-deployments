@@ -6,21 +6,17 @@ resources:
   - ../../base/all-clusters
   - ../../base/ca-bundle
   - ../../base/backup
-  - ../rd-dev/kueue # TODO: Remove this once e2e tests use solely the rd-dev overlay
-  - ../rd-dev/kyverno # TODO: Remove this once e2e tests use solely the rd-dev overlay
-  - ../rd-dev/pipeline-service # TODO: Remove this once e2e tests use solely the rd-dev overlay
-  - ../rd-dev/policies # TODO: Remove this once e2e tests use solely the rd-dev overlay
-  - ../rd-dev/kubearchive # TODO: Remove this once e2e tests use solely the rd-dev overlay
+  # Preview/e2e is already rd-dev-only; TODO: finish ownership split (stop inheriting these via development).
+  - ../rd-dev/kueue
+  - ../rd-dev/kyverno
+  - ../rd-dev/pipeline-service
+  - ../rd-dev/policies
+  - ../rd-dev/kubearchive
 
 patchesStrategicMerge:
   - delete-applications.yaml
 namespace: openshift-gitops
 patches:
-  - path: development-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: build-service
   - path: development-overlay-patch.yaml
     target:
       kind: ApplicationSet
@@ -35,22 +31,7 @@ patches:
     target:
       kind: ApplicationSet
       version: v1alpha1
-      name: image-controller
-  - path: development-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
       name: monitoring-workload-prometheus
-  - path: development-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: release
-  - path: development-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: integration
   - path: development-overlay-patch.yaml
     target:
       kind: ApplicationSet
@@ -100,17 +81,7 @@ patches:
     target:
       kind: ApplicationSet
       version: v1alpha1
-      name: konflux-rbac
-  - path: development-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
       name: image-rbac-proxy
-  - path: development-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: konflux-info
   - path: development-overlay-patch.yaml
     target:
       kind: ApplicationSet
@@ -120,17 +91,7 @@ patches:
     target:
       kind: ApplicationSet
       version: v1alpha1
-      name: application-api
-  - path: development-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
       name: internal-services
-  - path: development-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: enterprise-contract
   # ensure installation order of ApplicationSets during all-application-sets sync
   - path: delete-preserve-resources-flag-patch.yaml
     target:
