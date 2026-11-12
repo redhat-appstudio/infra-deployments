@@ -15,9 +15,9 @@ Note: The steps below should be handled by Argo CD
     $ kustomize build components/monitoring/grafana/development | oc apply -f -   
     ```
 
-## Staging S3 artifacts
+## S3 artifacts
 
-Staging archive filenames start with `passed-`, `failed-`, or `unknown-`,
+Archive filenames start with `passed-`, `failed-`, or `unknown-`,
 using the probe's `test-outcome` result. Invalid outcome values become `unknown`.
 The S3 directories remain `run-{probe|simple}/<cluster>/<test-type>/`.
 Filter filenames from an S3 listing before downloading failure artifacts;
