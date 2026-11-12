@@ -1,11 +1,14 @@
 codecov:
   require_ci_to_pass: true
 
-coverage:
-  status:
-    patch:
-      default:
-        target: 80%
+flag_management:
+  individual_flags:
+    - name: infra-tools
+      paths:
+        - infra-tools/
+      statuses:
+        - type: patch
+          target: 80%
 
 comment:
   layout: "reach,diff,flags,components"
