@@ -33,7 +33,7 @@ spec:
                   CUTOFF_DATE=$(date -u -d '48 hours ago' +"%Y-%m-%dT%H:%M:%SZ")
                   CRS=$(oc get DependencyUpdateCheck -n $NAMESPACE \
                     --sort-by=.metadata.creationTimestamp \
-                    -o custom-columns=NAME:.metadata.name,CREATION_TIMESTAMP:.metadata.creationTimestamp,PROCESSED:.metadata.annotations.mintmaker\\.appstudio\\.redhat\\.com/processed \
+                    -o custom-columns=NAME:.metadata.name,CREATION_TIMESTAMP:.metadata.creationTimestamp,PROCESSED:.metadata.annotations.mintmaker\\.konflux-ci\\.dev/processed \
                     --no-headers=true)
 
                   # Loop through each CR and check the criteria
