@@ -8,11 +8,14 @@ codecov:
     # stalling every PR. Post status once any build (e.g. go) uploads.
     after_n_builds: 1
 
-coverage:
-  status:
-    patch:
-      default:
-        target: 80%
+flag_management:
+  individual_flags:
+    - name: infra-tools
+      paths:
+        - infra-tools/
+      statuses:
+        - type: patch
+          target: 80%
 
 comment:
   layout: "reach,diff,flags,components"
