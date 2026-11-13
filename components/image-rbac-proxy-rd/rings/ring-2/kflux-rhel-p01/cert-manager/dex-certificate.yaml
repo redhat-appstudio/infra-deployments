@@ -1,0 +1,14 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: dex
+  namespace: image-rbac-proxy
+spec:
+  dnsNames:
+    - dex
+    - dex.image-rbac-proxy.svc
+    - dex.image-rbac-proxy.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: image-rbac-proxy-ca-issuer
+  secretName: dex-tls
