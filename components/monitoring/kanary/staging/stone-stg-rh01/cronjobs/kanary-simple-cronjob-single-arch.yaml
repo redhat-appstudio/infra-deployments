@@ -31,18 +31,38 @@ spec:
                 - /bin/bash
                 - -c
                 - |
-                  tkn pipeline start kanary-run-simple --use-param-defaults --workspace name=artifacts,volumeClaimTemplateFile=/etc/kanary/vct.yaml \
-                    --param tested-cluster=stone-stg-rh01 \
-                    --param test-type=container-single-arch \
-                    --param member-cluster=https://api.stone-stg-rh01.l2vh.p1.openshiftapps.com:6443 \
-                    --param tenant-namespace=konflux-perfscale-3-tenant \
-                    --param application-name=myapp \
-                    --param component-name=mycomp \
-                    --param integration-test-scenario=myits \
-                    --param gitlab-api-url="" \
-                    --param s3-bucket=konflux-perfscale-artifacts \
-                    --prefix-name kanary-simple-stone-stg-rh01-single-arch- \
-                    --showlog
+                  set -e
+
+                  PREFIX='kanary-simple-stone-stg-rh01-single-arch-'
+
+                  echo "Looking for running PipelineRuns with prefix '${PREFIX}'..."
+
+                  # List PipelineRuns and pick the first one that matches the prefix and is Running
+                  RUNNING_PR="$(
+                    tkn pipelinerun list \
+                      -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.status.conditions[?(@.type=="Succeeded")].reason}{"\n"}{end}' \
+                    | awk -F'\t' -v prefix="$PREFIX" \
+                        '$1 ~ "^"prefix && $2 == "Running" { print $1; exit }'
+                  )"
+
+                  if [ -n "$RUNNING_PR" ]; then
+                    echo "Found running PipelineRun: ${RUNNING_PR} — following existing run..."
+                    tkn pipelinerun logs "$RUNNING_PR" --all --follow --timestamps
+                  else
+                    echo "No running PipelineRun with prefix found — starting a new one..."
+                    tkn pipeline start kanary-run-simple --use-param-defaults --workspace name=artifacts,volumeClaimTemplateFile=/etc/kanary/vct.yaml \
+                      --param tested-cluster=stone-stg-rh01 \
+                      --param test-type=container-single-arch \
+                      --param member-cluster=https://api.stone-stg-rh01.l2vh.p1.openshiftapps.com:6443 \
+                      --param tenant-namespace=konflux-perfscale-3-tenant \
+                      --param application-name=myapp \
+                      --param component-name=mycomp \
+                      --param integration-test-scenario=myits \
+                      --param gitlab-api-url="" \
+                      --param s3-bucket=konflux-perfscale-artifacts \
+                      --prefix-name "$PREFIX" \
+                      --showlog
+                  fi
               volumeMounts:
                 - name: workspace-vct
                   mountPath: /etc/kanary
