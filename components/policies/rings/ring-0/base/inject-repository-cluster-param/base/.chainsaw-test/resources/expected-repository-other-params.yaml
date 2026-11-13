@@ -1,0 +1,12 @@
+---
+apiVersion: pipelinesascode.tekton.dev/v1alpha1
+kind: Repository
+metadata:
+  name: repo-other-params
+spec:
+  url: "https://github.com/example/repo-other-params"
+  params:
+    - name: foo
+      value: bar
+    - name: konflux_cluster
+      value: development
