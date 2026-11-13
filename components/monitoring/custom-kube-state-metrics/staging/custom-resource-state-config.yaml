@@ -54,24 +54,40 @@ data:
                   nilIsZero: true
 
         ###############################################################################
-        # Hanging PipelineRun detection — tracks PipelineRuns stuck on finalizers
-        # after the Tekton pruner requested deletion.
+        # PipelineRuns — hanging-PR detection plus application/component info.
+        # Resource-level labels are shared; pipelinerun name and finalizers stay on
+        # the hanging-PR metric only so the info gauge keys by app/component, not
+        # unique PipelineRun names.
         ###############################################################################
         - groupVersionKind:
             group: "tekton.dev"
             version: "v1"
             kind: "PipelineRun"
           labelsFromPath:
-            pipelinerun: [metadata, name]
             namespace: [metadata, namespace]
-            pipeline: [metadata, labels, tekton.dev/pipeline]
-            finalizers: [metadata, finalizers]
           metrics:
             - name: "konflux_pipelinerun_deletion_timestamp_seconds"
               help: "Unix timestamp when deletion was requested (0 = not deleted). Use > 0 to find stuck PipelineRuns."
+              labelsFromPath:
+                pipelinerun: [metadata, name]
+                pipeline: [metadata, labels, tekton.dev/pipeline]
+                finalizers: [metadata, finalizers]
               each:
                 type: Gauge
                 gauge:
                   path: [metadata, deletionTimestamp]
+                  nilIsZero: true
+            - name: "konflux_pipelinerun_info"
+              help: "Info-style gauge (~1) per live Konflux PipelineRun grouped by application/component/type. Duplicate label sets collapse to distinct components."
+              labelsFromPath:
+                application: [metadata, labels, appstudio.openshift.io/application]
+                component: [metadata, labels, appstudio.openshift.io/component]
+                pipeline_type: [metadata, labels, pipelines.appstudio.openshift.io/type]
+                event_type: [metadata, labels, pipelinesascode.tekton.dev/event-type]
+                pac_test_event_type: [metadata, labels, pac.test.appstudio.openshift.io/event-type]
+              each:
+                type: Gauge
+                gauge:
+                  path: [metadata, generation]
                   nilIsZero: true
 
