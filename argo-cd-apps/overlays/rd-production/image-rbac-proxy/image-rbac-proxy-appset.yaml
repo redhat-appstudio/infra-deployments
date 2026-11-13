@@ -18,7 +18,7 @@ spec:
                   - key: appstudio.redhat.com/select-none
                     operator: DoesNotExist
               values:
-                sourceRoot: components/image-rbac-proxy-rd
+                sourceRoot: components/image-rbac-proxy
                 ring: "empty-base"
                 clusterDir: "empty-base"
           - list:
@@ -44,9 +44,9 @@ spec:
         namespace: image-rbac-proxy
         server: '{{server}}'
       syncPolicy:
-        # automated:
-        #   prune: true
-        #   selfHeal: true
+        automated:
+          prune: true
+          selfHeal: true
         syncOptions:
           - CreateNamespace=true
         retry:
