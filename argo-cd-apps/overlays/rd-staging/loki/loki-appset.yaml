@@ -1,0 +1,40 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: loki
+spec:
+  generators:
+    - list:
+        elements:
+          # NOTE: Current deployment only is done for a subset of ring-1 clusters
+          - name: stone-stage-p01
+            values.sourceRoot: components/monitoring/loki
+            values.ring: ring-1
+            values.clusterDir: stone-stage-p01
+          - name: stone-stg-rh01
+            values.sourceRoot: components/monitoring/loki
+            values.ring: ring-1
+            values.clusterDir: stone-stg-rh01
+
+  template:
+    metadata:
+      name: loki-{{name}}
+    spec:
+      project: default
+      source:
+        path: '{{values.sourceRoot}}/rings/{{values.ring}}/{{values.clusterDir}}'
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+        targetRevision: main
+      destination:
+        namespace: appstudio-workload-monitoring
+        name: '{{name}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+        - CreateNamespace=true
+        retry:
+          limit: 50
+          backoff:
+            duration: 15s
