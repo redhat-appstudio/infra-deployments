@@ -292,7 +292,7 @@ spec:
 }
 
 configure_operator_overlay_health_customizations() {
-    log_substep "Configuring Konflux CR health check for development-operator overlay"
+    log_substep "Configuring Konflux CR health check for preview (rd-dev / operator overlay)"
 
     local patch_file="$ROOT/hack/argocd-operator-overlay-health-checks.yaml"
     if [ ! -f "$patch_file" ]; then
