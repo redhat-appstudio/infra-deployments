@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
 - ../base
 - kueue-config
+- inject-repository-cluster-param
 
 patches:
   - patch: |-
@@ -12,3 +13,4 @@ patches:
       metadata:
         name: deny-unallowed-annotations
         namespace: tekton-kueue
+

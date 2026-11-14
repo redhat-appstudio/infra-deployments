@@ -1,0 +1,11 @@
+---
+apiVersion: pipelinesascode.tekton.dev/v1alpha1
+kind: Repository
+metadata:
+  name: repo-other-namespace
+  namespace: other-tenant
+spec:
+  url: "https://github.com/example/repo-other-namespace"
+  params:
+    - name: foo
+      value: bar
