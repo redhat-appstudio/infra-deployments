@@ -1337,6 +1337,105 @@ PIPELINERUN_DEFINITIONS: Dict[str, PipelineRunTestData] = {
             }
         }
     },
+
+    "lightwell_remediation": {
+        "name": "Lightwell remediation (backport/novel) with orchestrated label",
+        "pipelinerun": {
+            "apiVersion": "tekton.dev/v1",
+            "kind": "PipelineRun",
+            "metadata": {
+                "name": "lightwell-remediation",
+                "namespace": "lightwell-python-tenant",
+                "labels": {
+                    "lightwell.redhat.com/orchestrated": "true",
+                    "lightwell.redhat.com/ecosystem": "python",
+                    "lightwell.redhat.com/build-type": "backport"
+                }
+            },
+            "spec": {
+                "pipelineRef": {"name": "python-build"},
+                "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
+            }
+        },
+        "expected": {
+            "annotations": {
+                "kueue.konflux-ci.dev/requests-konflux-ci-dev-token": "1",
+            },
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "lightwell-remediation",
+                "lightwell.redhat.com/orchestrated": "true",
+                "lightwell.redhat.com/ecosystem": "python",
+                "lightwell.redhat.com/build-type": "backport"
+            }
+        }
+    },
+
+    "lightwell_stage": {
+        "name": "Lightwell stage with orchestrated label",
+        "pipelinerun": {
+            "apiVersion": "tekton.dev/v1",
+            "kind": "PipelineRun",
+            "metadata": {
+                "name": "lightwell-stage",
+                "namespace": "lightwell-python-tenant",
+                "labels": {
+                    "lightwell.redhat.com/orchestrated": "true",
+                    "lightwell.redhat.com/ecosystem": "python",
+                    "lightwell.redhat.com/build-type": "stage"
+                }
+            },
+            "spec": {
+                "pipelineRef": {"name": "python-build"},
+                "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
+            }
+        },
+        "expected": {
+            "annotations": {
+                "kueue.konflux-ci.dev/requests-konflux-ci-dev-token": "1",
+            },
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-post-merge-build",
+                "lightwell.redhat.com/orchestrated": "true",
+                "lightwell.redhat.com/ecosystem": "python",
+                "lightwell.redhat.com/build-type": "stage"
+            }
+        }
+    },
+
+    "lightwell_dev": {
+        "name": "Lightwell dev with orchestrated label",
+        "pipelinerun": {
+            "apiVersion": "tekton.dev/v1",
+            "kind": "PipelineRun",
+            "metadata": {
+                "name": "lightwell-dev",
+                "namespace": "lightwell-python-tenant",
+                "labels": {
+                    "lightwell.redhat.com/orchestrated": "true",
+                    "lightwell.redhat.com/ecosystem": "javascript",
+                    "lightwell.redhat.com/build-type": "dev"
+                }
+            },
+            "spec": {
+                "pipelineRef": {"name": "javascript-validated-build"},
+                "workspaces": [{"name": "shared-workspace", "emptyDir": {}}]
+            }
+        },
+        "expected": {
+            "annotations": {
+                "kueue.konflux-ci.dev/requests-konflux-ci-dev-token": "1",
+            },
+            "labels": {
+                "kueue.x-k8s.io/queue-name": "pipelines-queue",
+                "kueue.x-k8s.io/priority-class": "konflux-pre-merge-build",
+                "lightwell.redhat.com/orchestrated": "true",
+                "lightwell.redhat.com/ecosystem": "javascript",
+                "lightwell.redhat.com/build-type": "dev"
+            }
+        }
+    },
 }
 
 # Configuration combinations that can be applied to any PipelineRun
@@ -2243,6 +2342,31 @@ TEST_COMBINATIONS: Dict[str, TestCombination] = {
         "pipelinerun_key": "tenant_pipelinerun_without_mintmaker_label",
         "config_key": "production-stone-prod-p01"
     },
+
+    "lightwell_remediation_stone-p01": {
+        "pipelinerun_key": "lightwell_remediation",
+        "config_key": "production-stone-prod-p01"
+    },
+    "lightwell_stage_stone-p01": {
+        "pipelinerun_key": "lightwell_stage",
+        "config_key": "production-stone-prod-p01"
+    },
+    "lightwell_dev_stone-p01": {
+        "pipelinerun_key": "lightwell_dev",
+        "config_key": "production-stone-prod-p01"
+    },
+    "lightwell_remediation_kflux-lw-p01": {
+        "pipelinerun_key": "lightwell_remediation",
+        "config_key": "production-kflux-lw-p01"
+    },
+    "lightwell_stage_kflux-lw-p01": {
+        "pipelinerun_key": "lightwell_stage",
+        "config_key": "production-kflux-lw-p01"
+    },
+    "lightwell_dev_kflux-lw-p01": {
+        "pipelinerun_key": "lightwell_dev",
+        "config_key": "production-kflux-lw-p01"
+    }
 }
 
 class TektonKueueMutationTest(unittest.TestCase):
