@@ -30,11 +30,6 @@ spec:
       labels:
         app.kubernetes.io/part-of: image-rbac-proxy
     spec:
-      ignoreDifferences:
-        - group: route.openshift.io
-          kind: Route
-          jsonPointers:
-            - /spec/tls/destinationCACertificate
       project: default
       source:
         path: '{{values.sourceRoot}}/rings/{{values.ring}}/{{values.clusterDir}}'
