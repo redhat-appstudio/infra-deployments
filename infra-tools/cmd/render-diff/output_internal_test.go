@@ -35,7 +35,7 @@ func (f fakeBuilder) BuildKustomization(rel string) ([]byte, error) {
 func TestRunLocal_EmptyEngine(t *testing.T) {
 	g := NewWithT(t)
 
-	engine := renderdiff.NewEngine(nil, nil, 0)
+	engine := renderdiff.NewEngine(nil, nil)
 	affected := map[detector.Environment][]appset.ComponentPath{}
 
 	g.Expect(runLocal(t.Context(), engine, affected, "never", false, t.TempDir())).To(Succeed())
@@ -69,7 +69,7 @@ data:
   key: base
 `)},
 	}
-	engine := renderdiff.NewEngine(head, base, 1)
+	engine := renderdiff.NewEngine(head, base)
 	affected := map[detector.Environment][]appset.ComponentPath{
 		detector.Development: {{Path: path}},
 	}

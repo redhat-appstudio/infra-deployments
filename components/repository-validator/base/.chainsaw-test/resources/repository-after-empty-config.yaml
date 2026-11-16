@@ -1,0 +1,8 @@
+apiVersion: pipelinesascode.tekton.dev/v1alpha1
+kind: Repository
+metadata:
+  name: test-after-empty-config
+spec:
+  # Previously-allowed prefix match; must now be denied once the allowlist
+  # ConfigMap is emptied (fail closed, not fail open).
+  url: "https://gitlab.cee.redhat.com/some-group/another-repo"

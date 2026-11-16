@@ -979,6 +979,9 @@ data:
 {{ include "multi-platform-controller.cloud-init-userdata" (.Files.Get "files/linux-root-arm64-init.sh") | indent 4 }}
   {{- end }}
   {{- end }}
+  {{- if (index $config "provisioning-user") }}
+  dynamic.linux-root-arm64.provisioning-user: {{ index $config "provisioning-user" | quote }}
+  {{- end }}
   {{ end }}
 
   {{- if hasKey .Values.dynamicConfigs "linux-root-amd64" }}
@@ -1010,6 +1013,9 @@ data:
   {{- else if (.Files.Get "files/linux-root-amd64-init.sh") }}
 {{ include "multi-platform-controller.cloud-init-userdata" (.Files.Get "files/linux-root-amd64-init.sh") | indent 4 }}
   {{- end }}
+  {{- end }}
+  {{- if (index $config "provisioning-user") }}
+  dynamic.linux-root-amd64.provisioning-user: {{ index $config "provisioning-user" | quote }}
   {{- end }}
   {{ end }}
 

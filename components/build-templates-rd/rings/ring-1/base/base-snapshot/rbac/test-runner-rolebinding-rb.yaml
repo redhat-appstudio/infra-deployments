@@ -1,0 +1,13 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: test-runner-rolebinding
+  namespace: build-templates-e2e
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: test-runner
+subjects:
+- kind: ServiceAccount
+  name: konflux-ci-sa
+  namespace: konflux-ci

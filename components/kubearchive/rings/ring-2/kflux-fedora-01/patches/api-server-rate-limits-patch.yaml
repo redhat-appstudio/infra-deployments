@@ -1,0 +1,16 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kubearchive-api-server
+  namespace: kubearchive
+spec:
+  template:
+    spec:
+      containers:
+        - name: kubearchive-api-server
+          env:
+            - name: API_RATE_LIMIT_OVERALL_RPS
+              value: "1600"
+            - name: API_RATE_LIMIT_OVERALL_BURST
+              value: "4800"

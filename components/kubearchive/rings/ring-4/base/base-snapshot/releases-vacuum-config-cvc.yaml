@@ -1,0 +1,11 @@
+---
+apiVersion: kubearchive.org/v1
+kind: ClusterVacuumConfig
+metadata:
+  name: releases-vacuum-config
+spec:
+  namespaces:
+    ___all-namespaces___:
+      resources:
+        - apiVersion: appstudio.redhat.com/v1alpha1
+          kind: Release

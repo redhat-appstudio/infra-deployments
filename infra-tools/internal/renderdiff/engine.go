@@ -23,14 +23,23 @@ type RepoBuilder interface {
 type Engine struct {
 	head        RepoBuilder
 	base        RepoBuilder
-	affected    int
 	concurrency int
 }
 
 // NewEngine creates an Engine with the given head and base repo references.
-// Concurrency defaults to runtime.NumCPU() if zero.
-func NewEngine(head, base RepoBuilder, affected int) *Engine {
-	return &Engine{head: head, base: base, affected: affected, concurrency: runtime.NumCPU()}
+// Concurrency defaults to runtime.NumCPU().
+func NewEngine(head, base RepoBuilder) *Engine {
+	return &Engine{head: head, base: base, concurrency: runtime.NumCPU()}
+}
+
+// CountComponents returns the number of (component, environment) jobs in an
+// affected map.
+func CountComponents(affected map[detector.Environment][]appset.ComponentPath) int {
+	total := 0
+	for _, paths := range affected {
+		total += len(paths)
+	}
+	return total
 }
 
 // DiffResult holds the complete output of a render-diff run.
@@ -50,7 +59,7 @@ func (e *Engine) Run(ctx context.Context, affected map[detector.Environment][]ap
 	// RunProgressive sends each diff to the channel; without a reader (Run
 	// doesn't need progressive output), an unbuffered or undersized channel
 	// would deadlock the errgroup goroutines.
-	ch := make(chan ComponentDiff, e.affected)
+	ch := make(chan ComponentDiff, CountComponents(affected))
 	return e.RunProgressive(ctx, affected, ch)
 }
 
@@ -60,13 +69,14 @@ func (e *Engine) Run(ctx context.Context, affected map[detector.Environment][]ap
 func (e *Engine) RunProgressive(ctx context.Context, affected map[detector.Environment][]appset.ComponentPath, out chan<- ComponentDiff) (*DiffResult, error) {
 	defer close(out)
 
+	total := CountComponents(affected)
 	// Check if there's anything to process.
-	if e.affected == 0 {
+	if total == 0 {
 		return &DiffResult{}, nil
 	}
 
 	// Internal channel for collecting results from workers.
-	results := make(chan ComponentDiff, e.affected)
+	results := make(chan ComponentDiff, total)
 
 	// Collector goroutine: forwards diffs to the progressive output channel
 	// and aggregates stats. No mutex needed — only this goroutine writes
@@ -141,8 +151,10 @@ func (e *Engine) RunProgressive(ctx context.Context, affected map[detector.Envir
 // When a directory doesn't exist, kustomize build would fail, so we skip that side
 // and let computeDiff treat the missing YAML as empty (showing a full add or remove).
 func (e *Engine) buildPair(cd *ComponentDiff) error {
-	// Build HEAD — may not exist for removed components.
-	if e.head.DirExists(cd.Path) {
+	// Build HEAD — may not exist for removed components, and a path the
+	// ApplicationSet stops deploying is treated as absent on HEAD even when its
+	// directory still exists there, so the removal renders as a full delete.
+	if !cd.RemovedDeployment && e.head.DirExists(cd.Path) {
 		headYAML, err := e.head.BuildKustomization(cd.Path)
 		if err != nil {
 			return fmt.Errorf("building %s on HEAD: %w", cd.Path, err)
@@ -150,8 +162,11 @@ func (e *Engine) buildPair(cd *ComponentDiff) error {
 		cd.HeadYAML = headYAML
 	}
 
-	// Build base — may not exist for new components.
-	if e.base.DirExists(cd.Path) {
+	// Build base — may not exist for new components. A path that the
+	// ApplicationSet newly deploys is treated as absent on base even when its
+	// directory already exists there, otherwise an unchanged directory would
+	// render an empty diff and hide the new deployment.
+	if !cd.NewDeployment && e.base.DirExists(cd.Path) {
 		baseYAML, err := e.base.BuildKustomization(cd.Path)
 		if err != nil {
 			return fmt.Errorf("building %s on base: %w", cd.Path, err)
@@ -163,6 +178,9 @@ func (e *Engine) buildPair(cd *ComponentDiff) error {
 	// Empty-base overlays (resources: []) intentionally produce no output;
 	// treat them as a no-op instead of an error.
 	if cd.HeadYAML == nil && cd.BaseYAML == nil {
+		if cd.RemovedDeployment && !e.base.DirExists(cd.Path) {
+			return fmt.Errorf("component %s is marked removed but does not exist on base", cd.Path)
+		}
 		if e.head.DirExists(cd.Path) || e.base.DirExists(cd.Path) {
 			return nil
 		}

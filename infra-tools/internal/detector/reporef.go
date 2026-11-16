@@ -21,6 +21,8 @@ type RepoQuerier interface {
 	// its ancestors) are resolved.
 	ContainedDirExists(rel string) bool
 	BuildKustomization(rel string) ([]byte, error)
+	// ResolveDeps returns the dependency tree of rel. The returned map is
+	// shared with a cache and must not be modified.
 	ResolveDeps(rel string) (map[string]bool, error)
 }
 
@@ -30,11 +32,14 @@ type RepoQuerier interface {
 // work against either ref without manual filepath.Join / os.Stat boilerplate.
 type RepoRef struct {
 	root string
+	// resolver caches kustomize dependency trees: the same base directory is
+	// resolved once per cluster path that includes it.
+	resolver *deptree.Resolver
 }
 
 // NewRepoRef creates a RepoRef rooted at the given absolute path.
 func NewRepoRef(root string) *RepoRef {
-	return &RepoRef{root: root}
+	return &RepoRef{root: root, resolver: deptree.NewResolver(root)}
 }
 
 // Root returns the absolute root path of this ref.
@@ -107,7 +112,8 @@ func (r *RepoRef) BuildKustomization(rel string) ([]byte, error) {
 }
 
 // ResolveDeps walks the kustomization dependency tree starting at rel and
-// returns the set of all files (repo-root-relative) it depends on.
+// returns the set of all files (repo-root-relative) it depends on. The returned
+// map is shared with the resolver cache and must not be modified.
 func (r *RepoRef) ResolveDeps(rel string) (map[string]bool, error) {
-	return deptree.Resolve(r.root, rel)
+	return r.resolver.Resolve(rel)
 }

@@ -1,0 +1,18 @@
+# Contributes secret get on the IBM public keys to release-pipeline-resource-role.
+# Pipeline service accounts bound to that aggregated ClusterRole receive it.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: release-pipeline-ibm-public-key
+  labels:
+    rbac.konflux-ci.dev/aggregate-to-release-pipeline: "true"
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    resourceNames:
+      - ibm-public-key
+      - ibm-public-key-stage
+    verbs:
+      - get

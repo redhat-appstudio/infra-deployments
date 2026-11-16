@@ -101,7 +101,7 @@ def get_tekton_kueue_image(kustomization_file: Path) -> str:
         # Look for the tekton-kueue image in the images section
         images = kustomization.get('images', [])
         for image in images:
-            if image.get('name') == 'konflux-ci/tekton-kueue':
+            if image.get('name') in ('konflux-ci/tekton-kueue', 'ghcr.io/tektoncd/tekton-kueue'):
                 new_name = image.get('newName', '')
                 new_tag = image.get('newTag', '')
                 if new_name and new_tag:

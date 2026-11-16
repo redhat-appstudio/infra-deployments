@@ -1,0 +1,106 @@
+# Restore batch, pulp, and maintainer projctl write permissions dropped when
+# user-action roles moved to the konflux-operator. Admin already has batch via
+# konflux-admin-user-actions-batch; this restores non-admin batch and pulp, plus
+# maintainer create/update/patch on projctl resources.
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: konflux-admin-user-actions-pulp
+  labels:
+    rbac.konflux-ci.dev/aggregate-to-admin: "true"
+rules:
+  - apiGroups:
+      - pulp.konflux-ci.dev
+    resources:
+      - pulpaccessrequests
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: konflux-maintainer-user-actions-batch-pulp-projctl
+  labels:
+    rbac.konflux-ci.dev/aggregate-to-maintainer: "true"
+rules:
+  - apiGroups:
+      - batch
+    resources:
+      - cronjobs
+      - jobs
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+  - apiGroups:
+      - pulp.konflux-ci.dev
+    resources:
+      - pulpaccessrequests
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+  - apiGroups:
+      - projctl.konflux.dev
+    resources:
+      - projects
+      - projectdevelopmentstreams
+      - projectdevelopmentstreamtemplates
+    verbs:
+      - create
+      - update
+      - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: konflux-contributor-user-actions-batch-pulp
+  labels:
+    rbac.konflux-ci.dev/aggregate-to-contributor: "true"
+rules:
+  - apiGroups:
+      - batch
+    resources:
+      - cronjobs
+      - jobs
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - pulp.konflux-ci.dev
+    resources:
+      - pulpaccessrequests
+    verbs:
+      - get
+      - list
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: konflux-viewer-user-actions-batch
+  labels:
+    rbac.konflux-ci.dev/aggregate-to-viewer: "true"
+rules:
+  - apiGroups:
+      - batch
+    resources:
+      - cronjobs
+      - jobs
+    verbs:
+      - get
+      - list
+      - watch

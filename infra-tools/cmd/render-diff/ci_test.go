@@ -315,8 +315,9 @@ func TestTruncateAtLine(t *testing.T) {
 
 	g.Expect(truncateAtLine("short", 100)).To(Equal("short"))
 	g.Expect(truncateAtLine("one\ntwo\nthree\n", 9)).To(Equal("one\ntwo"))
-	// No newline in range: cut on a rune boundary.
-	g.Expect(utf8.ValidString(truncateAtLine("ääääää", 5))).To(BeTrue())
+	// A budget that cuts inside the first line returns no partial line.
+	g.Expect(truncateAtLine("ääääää", 5)).To(BeEmpty())
+	g.Expect(truncateAtLine(strings.Repeat("x", perDiffSizeBudget+10), perDiffSizeBudget)).To(BeEmpty())
 }
 
 // A PR comment body above GitHub's 65,536 character limit is rejected, which
@@ -330,4 +331,35 @@ func TestBuildCommentBody_RespectsSizeBudget(t *testing.T) {
 
 	g.Expect(len(body)).To(BeNumerically("<=", commentSizeBudget+1024))
 	g.Expect(body).To(ContainSubstring("more components"))
+}
+
+// Build errors are PR-controlled output and must not break out of the summary's
+// HTML or inject markdown.
+func TestRenderSummaryBlock_EscapesBuildError(t *testing.T) {
+	g := NewWithT(t)
+
+	block := renderSummaryBlock(renderdiff.ComponentDiff{
+		Path:  "components/<script>",
+		Env:   "staging",
+		Error: "failed: ```\n# heading\n[link](https://example.com)\n</pre>",
+	})
+
+	g.Expect(block).To(ContainSubstring("<pre>"))
+	g.Expect(block).To(ContainSubstring("&lt;script&gt;"))
+	g.Expect(block).To(ContainSubstring("&lt;/pre&gt;"))
+	g.Expect(block).NotTo(ContainSubstring("</pre>\n# heading"))
+}
+
+func TestDiffFenceAvoidsContentFence(t *testing.T) {
+	g := NewWithT(t)
+
+	g.Expect(diffFence("plain")).To(Equal("```"))
+	g.Expect(diffFence("a\n```\nb")).To(Equal("````"))
+}
+
+func TestMarkdownTableCellEscapes(t *testing.T) {
+	g := NewWithT(t)
+
+	g.Expect(markdownTableCell("a|b")).To(Equal(`a\|b`))
+	g.Expect(markdownTableCell("a`b")).To(Equal("a'b"))
 }

@@ -136,6 +136,8 @@ spec:
         kind: Task
         name: kanary-upload-s3
       params:
+        - name: test-outcome
+          value: $(tasks.run-kanary-tests.results.test-outcome)
         - name: tested-cluster
           value: $(params.tested-cluster)
         - name: test-type

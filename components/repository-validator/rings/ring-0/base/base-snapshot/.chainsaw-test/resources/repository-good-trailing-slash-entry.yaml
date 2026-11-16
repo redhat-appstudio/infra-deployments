@@ -1,0 +1,8 @@
+apiVersion: pipelinesascode.tekton.dev/v1alpha1
+kind: Repository
+metadata:
+  name: test-good-trailing-slash-entry
+spec:
+  # Allowlist entry "https://github.com/trailing-slash-org/" already ends in
+  # "/". Matching must not require a double slash here.
+  url: "https://github.com/trailing-slash-org/somerepo"

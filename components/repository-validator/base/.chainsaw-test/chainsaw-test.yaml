@@ -1,0 +1,305 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: repository-url-validator
+spec:
+  description: |
+    Tests that the repository-url-validator ValidatingAdmissionPolicy enforces an
+    org/path boundary when matching Repository spec.url against the allowlist
+    ConfigMap, instead of a raw character-prefix match. Covers: lookalike
+    host/org URLs that merely share leading characters with an allowed entry
+    (must be denied), legitimate prefix and exact-entry matches including a
+    trailing-slash allowlist entry and real-world ".git"-suffixed URLs (must be
+    allowed), a ".git"-boundary bypass attempt (must be denied), and enforcement
+    on UPDATE as well as CREATE. Every denial asserts on the specific CEL denial
+    message, not just that some error occurred, so a transient
+    "no params found" or other unrelated admission error can't masquerade as
+    a passing test.
+  concurrent: false
+  steps:
+  # skipDelete: the param ConfigMap lives in a fixed namespace referenced by the
+  # production binding. Deleting and recreating that namespace between Tests in
+  # this file leaves the apiserver's VAP param informer permanently stuck on
+  # "no params found" for the rest of the kind cluster lifetime. Later Tests
+  # in this file reuse these cluster-scoped resources and only replace the
+  # ConfigMap contents. The kind cluster itself is discarded after the job.
+  - name: given-crd-namespace-configmap-and-policy-are-ready
+    skipDelete: true
+    try:
+    - apply:
+        file: resources/repository-crd.yaml
+    - apply:
+        file: ../namespace.yaml
+    - apply:
+        file: resources/config-cm.yaml
+    - apply:
+        file: ../validating-admission-policy.yaml
+    - apply:
+        file: ../validating-admission-policy-binding.yaml
+    - assert:
+        file: chainsaw-assert-validatingadmissionpolicy.yaml
+    # The policy status is reported before the api server actually starts enforcing the policy,
+    # and the param ConfigMap informer cache can briefly lag too (surfacing a transient
+    # "no params found" denial that must not be mistaken for real enforcement). Poll with a
+    # known bad object until it is denied specifically by the CEL expression's own message.
+    - script:
+        skipLogOutput: true
+        env:
+        - name: NAMESPACE
+          value: ($namespace)
+        content: |
+          for _ in $(seq 60); do
+            out=$(kubectl create --dry-run=server -n "${NAMESPACE}" -f resources/repository-bad-unrelated.yaml 2>&1) && rc=0 || rc=$?
+            if [ "${rc:-0}" -ne 0 ] && echo "${out}" | grep -q "is not allowed on this cluster"; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "the ValidatingAdmissionPolicy is still not enforced" >&2
+          exit 1
+        check:
+          ($error): ~
+
+  - name: then-host-level-prefix-match-is-allowed
+    try:
+    - create:
+        file: resources/repository-good-prefix-host.yaml
+
+  - name: then-host-level-prefix-match-with-git-suffix-is-allowed
+    try:
+    - create:
+        file: resources/repository-good-prefix-host-with-git.yaml
+
+  - name: then-org-level-prefix-match-is-allowed
+    try:
+    - create:
+        file: resources/repository-good-prefix-org.yaml
+
+  - name: then-exact-full-repo-allowlist-entry-is-allowed
+    try:
+    - create:
+        file: resources/repository-good-exact-entry.yaml
+
+  - name: then-exact-full-repo-allowlist-entry-with-git-suffix-is-allowed
+    try:
+    - create:
+        file: resources/repository-good-exact-entry-with-git.yaml
+
+  - name: then-trailing-slash-allowlist-entry-is-allowed
+    try:
+    - create:
+        file: resources/repository-good-trailing-slash-entry.yaml
+
+  - name: then-lookalike-host-is-denied
+    try:
+    - create:
+        file: resources/repository-bad-lookalike-host.yaml
+        expect:
+        - check:
+            ($error != null): true
+            (contains($error, 'is not allowed on this cluster')): true
+
+  - name: then-lookalike-host-with-git-suffix-is-denied
+    try:
+    - create:
+        file: resources/repository-bad-lookalike-host-with-git.yaml
+        expect:
+        - check:
+            ($error != null): true
+            (contains($error, 'is not allowed on this cluster')): true
+
+  - name: then-lookalike-org-with-underscore-is-denied
+    try:
+    - create:
+        file: resources/repository-bad-lookalike-org-underscore.yaml
+        expect:
+        - check:
+            ($error != null): true
+            (contains($error, 'is not allowed on this cluster')): true
+
+  - name: then-lookalike-org-with-suffix-is-denied
+    try:
+    - create:
+        file: resources/repository-bad-lookalike-org-suffix.yaml
+        expect:
+        - check:
+            ($error != null): true
+            (contains($error, 'is not allowed on this cluster')): true
+
+  - name: then-lookalike-trailing-slash-org-is-denied
+    try:
+    - create:
+        file: resources/repository-bad-trailing-slash-lookalike.yaml
+        expect:
+        - check:
+            ($error != null): true
+            (contains($error, 'is not allowed on this cluster')): true
+
+  - name: then-git-boundary-bypass-is-denied
+    try:
+    - create:
+        file: resources/repository-bad-git-boundary-bypass.yaml
+        expect:
+        - check:
+            ($error != null): true
+            (contains($error, 'is not allowed on this cluster')): true
+
+  - name: then-unrelated-host-is-denied
+    try:
+    - create:
+        file: resources/repository-bad-unrelated.yaml
+        expect:
+        - check:
+            ($error != null): true
+            (contains($error, 'is not allowed on this cluster')): true
+
+  - name: then-update-to-bad-url-is-denied
+    try:
+    - create:
+        file: resources/repository-update-initial.yaml
+    - update:
+        file: resources/repository-update-bad.yaml
+        expect:
+        - check:
+            ($error != null): true
+            (contains($error, 'is not allowed on this cluster')): true
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: repository-url-validator-wildcard-allowlist
+spec:
+  description: |
+    Tests that switching the ConfigMap allowlist to "*" admits any Repository
+    URL. Starts from an empty (deny-all) allowlist so we first prove the VAP is
+    enforcing, then replace the ConfigMap and wait until the same URL is
+    admitted — a success-only poll from a cold start would also pass if the
+    policy were not yet enforcing at all.
+  concurrent: false
+  steps:
+  # skipDelete: see repository-url-validator Test. Shared param namespace is
+  # reused; later steps only replace ConfigMap contents.
+  - name: given-crd-namespace-empty-configmap-and-policy-are-ready
+    skipDelete: true
+    try:
+    - apply:
+        file: resources/repository-crd.yaml
+    - apply:
+        file: ../namespace.yaml
+    - apply:
+        file: resources/config-cm-empty.yaml
+    - apply:
+        file: ../validating-admission-policy.yaml
+    - apply:
+        file: ../validating-admission-policy-binding.yaml
+    - assert:
+        file: chainsaw-assert-validatingadmissionpolicy.yaml
+    # Empty allowlist is deny-all. Wait for the CEL denial specifically so a
+    # transient "no params found" (or no enforcement yet) can't count as ready.
+    - script:
+        skipLogOutput: true
+        env:
+        - name: NAMESPACE
+          value: ($namespace)
+        content: |
+          for _ in $(seq 60); do
+            out=$(kubectl create --dry-run=server -n "${NAMESPACE}" -f resources/repository-wildcard-allowed.yaml 2>&1) && rc=0 || rc=$?
+            if [ "${rc:-0}" -ne 0 ] && echo "${out}" | grep -q "is not allowed on this cluster"; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "the deny-all (empty) allowlist is still not enforced" >&2
+          exit 1
+        check:
+          ($error): ~
+
+  - name: when-allowlist-is-replaced-with-wildcard
+    skipDelete: true
+    try:
+    - apply:
+        file: resources/config-cm-wildcard.yaml
+    # Policy is already known to be enforcing (previous step). Poll until the
+    # same URL flips from deny to allow under "*".
+    - script:
+        skipLogOutput: true
+        env:
+        - name: NAMESPACE
+          value: ($namespace)
+        content: |
+          for _ in $(seq 60); do
+            if kubectl create --dry-run=server -n "${NAMESPACE}" -f resources/repository-wildcard-allowed.yaml >/dev/null 2>&1; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "the wildcard allowlist is still not enforced" >&2
+          exit 1
+        check:
+          ($error): ~
+
+  - name: then-wildcard-allows-any-url
+    try:
+    - create:
+        file: resources/repository-wildcard-allowed.yaml
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: repository-url-validator-empty-allowlist
+spec:
+  description: |
+    Tests that an empty ConfigMap allowlist fails closed and denies every
+    Repository URL, including ones that would match a non-empty allowlist.
+    Every denial asserts on the specific CEL denial message.
+  concurrent: false
+  steps:
+  # skipDelete: see repository-url-validator Test. Reuses the shared param
+  # namespace; this step only needs to replace the ConfigMap with "".
+  - name: given-crd-namespace-empty-configmap-and-policy-are-ready
+    skipDelete: true
+    try:
+    - apply:
+        file: resources/repository-crd.yaml
+    - apply:
+        file: ../namespace.yaml
+    - apply:
+        file: resources/config-cm-empty.yaml
+    - apply:
+        file: ../validating-admission-policy.yaml
+    - apply:
+        file: ../validating-admission-policy-binding.yaml
+    - assert:
+        file: chainsaw-assert-validatingadmissionpolicy.yaml
+    # Empty allowlist must fail closed (deny everything), not fail open.
+    # Poll until a previously-allowed-looking URL is denied by the CEL
+    # expression's own message (not a transient param-cache error).
+    - script:
+        skipLogOutput: true
+        env:
+        - name: NAMESPACE
+          value: ($namespace)
+        content: |
+          for _ in $(seq 60); do
+            out=$(kubectl create --dry-run=server -n "${NAMESPACE}" -f resources/repository-after-empty-config.yaml 2>&1) && rc=0 || rc=$?
+            if [ "${rc:-0}" -ne 0 ] && echo "${out}" | grep -q "is not allowed on this cluster"; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "the empty allowlist is still not enforced" >&2
+          exit 1
+        check:
+          ($error): ~
+
+  - name: then-empty-allowlist-denies-previously-allowed-url
+    try:
+    - create:
+        file: resources/repository-after-empty-config.yaml
+        expect:
+        - check:
+            ($error != null): true
+            (contains($error, 'is not allowed on this cluster')): true

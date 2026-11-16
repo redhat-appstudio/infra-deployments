@@ -8,8 +8,8 @@ systemctl stop sshd.service
 configure_nvidia_cdi() {
   # generate Nvidia CDI with retry
   for i in {1..10}; do
-    su - ec2-user -c 'nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml'
-    su - ec2-user -c 'nvidia-ctk cdi generate --output=/var/run/cdi/nvidia.yaml'
+    { su - ec2-user -c 'nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml'; } || true
+    { su - ec2-user -c 'nvidia-ctk cdi generate --output=/var/run/cdi/nvidia.yaml'; } || true
 
     # expect nvidia.com/gpu=all device to be in the generated list
     if nvidia-ctk cdi list 2>/dev/null | grep -q 'nvidia.com/gpu=all'; then

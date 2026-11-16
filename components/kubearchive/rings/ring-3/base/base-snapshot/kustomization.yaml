@@ -1,0 +1,33 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - rbac
+  - monitoring
+  - kubearchive.yaml
+  - releases-vacuum-config-cvc.yaml
+
+# ROSA does not support namespaces starting with `kube`
+namespace: product-kubearchive
+
+configMapGenerator:
+  - name: otel-collector-conf
+    namespace: product-kubearchive
+    files:
+      - monitoring/otel/otel-collector-config.yaml
+
+# Since `kubearchive.yaml` is an upstream release artifact,
+# we need to patch these resources instead of modifying them directly.
+patches:
+  - path: patches/api-server-deployment-security-context-patch.yaml
+    target:
+      kind: Deployment
+      name: kubearchive-api-server
+  - path: patches/sink-deployment-security-context-patch.yaml
+    target:
+      kind: Deployment
+      name: kubearchive-sink
+  - path: patches/operator-deployment-security-context-patch.yaml
+    target:
+      kind: Deployment
+      name: kubearchive-operator

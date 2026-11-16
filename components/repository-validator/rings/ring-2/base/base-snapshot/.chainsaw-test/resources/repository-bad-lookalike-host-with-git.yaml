@@ -1,0 +1,7 @@
+apiVersion: pipelinesascode.tekton.dev/v1alpha1
+kind: Repository
+metadata:
+  name: test-bad-lookalike-host-with-git
+spec:
+  # Stripping a trailing ".git" must not reopen the host-boundary bypass.
+  url: "https://gitlab.cee.redhat.com.attacker.com/some/repo.git"

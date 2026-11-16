@@ -1,0 +1,59 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../base
+
+namespace: product-kubearchive
+
+configMapGenerator:
+  - name: kubearchive-api-url
+    options:
+      disableNameSuffixHash: true
+    literals:
+      - URL=https://kubearchive-api-server-product-kubearchive.apps.kflux-rhel-p01.fc38.p1.openshiftapps.com
+  # Preserve legacy LOG_PROVIDERS configuration (timeout: 10m, limit: 100)
+  - name: kubearchive-logging-reader
+    behavior: replace
+    literals:
+      - |
+        LOG_PROVIDERS=
+        http://loki-gateway.product-kubearchive-logging.svc.cluster.local:80:
+          tail:
+            reverse: true
+            path: /loki/api/v1/query_range
+            method: GET
+            params:
+              query: ${QUERY}
+              start: ${START}
+              end: ${END}
+              limit: ${TAIL_LINES}
+              direction: backward
+            json-path: "$.data.result[*].values[*][1]"
+          full:
+            reverse: false
+            path: /loki/api/v1/query_range
+            method: GET
+            timeout: 10m
+            params:
+              query: ${QUERY}
+              start: ${START}
+              end: ${END}
+              limit: 100
+              direction: forward
+            json-path: "$.data.result[*].values[*][1]"
+            pagination:
+              next-cursor: "$.data.result[*].values[*][0]"
+              param: start
+              cursor-increment: 1
+
+patches:
+  - path: patches/database-secret-key-patch.yaml
+    target:
+      kind: ExternalSecret
+      name: database-secret
+  - path: patches/database-secret-store-patch.yaml
+    target:
+      kind: ExternalSecret
+      name: database-secret
+  - path: patches/api-server-rate-limits-patch.yaml

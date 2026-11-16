@@ -1,0 +1,34 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kubearchive-api-server
+  namespace: kubearchive
+spec:
+  template:
+    spec:
+      containers:
+        - name: kubearchive-api-server
+          env:
+          - name: MIGRATION_VERSION
+            valueFrom:
+              configMapKeyRef:
+                name: kubearchive-schema-version
+                key: MIGRATION_VERSION
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kubearchive-sink
+  namespace: kubearchive
+spec:
+  template:
+    spec:
+      containers:
+        - name: kubearchive-sink
+          env:
+          - name: MIGRATION_VERSION
+            valueFrom:
+              configMapKeyRef:
+                name: kubearchive-schema-version
+                key: MIGRATION_VERSION

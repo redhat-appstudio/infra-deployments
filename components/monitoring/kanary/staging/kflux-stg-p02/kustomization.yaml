@@ -1,0 +1,29 @@
+resources:
+  - ../base
+  - cronjobs
+
+patches:
+  - path: external-secrets/patches/kanary-probe-prometheus-credentials-path.yaml
+    target:
+      name: kanary-probe-prometheus-credentials
+      kind: ExternalSecret
+      group: external-secrets.io
+      version: v1
+  - path: external-secrets/patches/kanary-probe-users-credentials-path.yaml
+    target:
+      name: kanary-probe-users-credentials-tenant4
+      kind: ExternalSecret
+      group: external-secrets.io
+      version: v1
+  # Only run-probe with tenant-4 is configured on this cluster.
+  - target:
+      group: external-secrets.io
+      version: v1
+      kind: ExternalSecret
+      name: kanary-probe-users-credentials-tenant3
+    patch: |-
+      apiVersion: external-secrets.io/v1
+      kind: ExternalSecret
+      metadata:
+        name: kanary-probe-users-credentials-tenant3
+      $patch: delete

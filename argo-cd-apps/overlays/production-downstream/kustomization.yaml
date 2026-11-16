@@ -6,7 +6,6 @@ resources:
   - ../../base/backup
   - ../../base/monitoring-blackbox
   - ../../base/ca-bundle
-  - ../../base/cert-manager-trusted-ca
 patchesStrategicMerge:
   - delete-applications.yaml
 namespace: argocd
@@ -65,11 +64,6 @@ patches:
     target:
       kind: ApplicationSet
       version: v1alpha1
-      name: mintmaker
-  - path: production-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
       name: backup
   - path: production-overlay-patch.yaml
     target:
@@ -105,11 +99,6 @@ patches:
     target:
       kind: ApplicationSet
       version: v1alpha1
-      name: vector-tekton-logs-collector
-  - path: production-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
       name: cost-management
   - path: production-overlay-patch.yaml
     target:
@@ -135,11 +124,6 @@ patches:
     target:
       kind: ApplicationSet
       version: v1alpha1
-      name: kubearchive
-  - path: production-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
       name: monitoring-workload-kanary
   - path: production-overlay-patch.yaml
     target:
@@ -156,16 +140,6 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: monitoring-registry
-  - path: production-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: image-rbac-proxy
-  - path: production-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: konflux-kite
   - path: production-overlay-patch.yaml
     target:
       kind: ApplicationSet
@@ -298,11 +272,6 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: release
-  - path: production-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: cert-manager-trusted-ca
   # ROKS (hypershift) clusters — kubelet is managed by the platform
   - path: exclude-kubelet-config-roks-clusters.yaml
     target:

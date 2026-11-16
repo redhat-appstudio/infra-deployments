@@ -33,3 +33,10 @@ spec:
           limit: 50
           backoff:
             duration: 15s
+      ignoreDifferences:
+        - group: ""
+          kind: ConfigMap
+          name: trusted-ca-bundle
+          namespace: ibm-finops-agent
+          jsonPointers:
+            - /data

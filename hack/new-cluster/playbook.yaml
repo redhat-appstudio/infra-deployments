@@ -69,6 +69,7 @@
       production:
         - ring-2
         - ring-3
+        - ring-4
     allowed_networks:
       - public
       - private
@@ -77,19 +78,19 @@
       - backup
       - cert-manager
       - cost-management
-      - image-rbac-proxy
       - knative-eventing
-      - konflux-kite
       - kubearchive
-      - mintmaker
       - monitoring/prometheus
 
     templated_rd_components:
       - authentication
       - etcd-shield
+      - image-rbac-proxy
+      - konflux-kite
       - konflux-operator
       - kueue
       - kyverno
+      - mintmaker
       - multi-platform-controller
       - pipeline-service
       - policies
@@ -105,10 +106,7 @@
     argo_cd_app_files:
       - "{{ dst }}/argo-cd-apps/base/all-clusters/infra-deployments/monitoring-workload-prometheus/monitoring-workload-prometheus.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/cert-manager/cert-manager.yaml"
-      - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/image-rbac-proxy/image-rbac-proxy.yaml"
-      - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/konflux-kite/konflux-kite.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/kubearchive/kubearchive.yaml"
-      - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/mintmaker/mintmaker.yaml"
       - "{{ dst }}/argo-cd-apps/base/member/infra-deployments/proactive-scaler/proactive-scaler.yaml"
 
     expected_vault_secrets:

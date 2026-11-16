@@ -7,7 +7,6 @@ resources:
   - ../../base/backup
   - ../../base/monitoring-blackbox
   - ../../base/ca-bundle
-  - ../../base/cert-manager-trusted-ca
 
 patchesStrategicMerge:
   - delete-applications.yaml
@@ -127,10 +126,3 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: release
-  # Remove automated sync from konflux-kite for staging migration; this AppSet is
-  # shared with production, so the base syncPolicy is left untouched
-  - path: konflux-kite-remove-auto-sync-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: konflux-kite

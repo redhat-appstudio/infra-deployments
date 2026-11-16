@@ -1,0 +1,8 @@
+apiVersion: pipelinesascode.tekton.dev/v1alpha1
+kind: Repository
+metadata:
+  name: test-wildcard-allowed
+spec:
+  # Not related to any allowlist entry; only admitted because the allowlist
+  # ConfigMap is replaced with the "*" allow-all sentinel in this step.
+  url: "https://totally-untrusted.example.org/anything"

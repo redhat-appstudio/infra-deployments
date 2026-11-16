@@ -1,0 +1,31 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../base
+
+namespace: product-kubearchive
+
+configMapGenerator:
+  - name: kubearchive-api-url
+    options:
+      disableNameSuffixHash: true
+    literals:
+      - URL=https://kubearchive-api-server-product-kubearchive.apps.stone-prod-p01.wcfb.p1.openshiftapps.com
+
+patches:
+  - path: patches/database-secret-key-patch.yaml
+    target:
+      kind: ExternalSecret
+      name: database-secret
+  - path: patches/api-server-rate-limits-patch.yaml
+  # Preserve legacy configuration for stone-prod-p01
+  - path: patches/remove-batch-size-patch.yaml
+    target:
+      kind: Job
+      name: kubearchive-schema-migration
+  - path: patches/restore-old-configmap-refs-patch.yaml
+  - path: patches/remove-deployment-schema-version-configmap-patch.yaml
+    target:
+      kind: ConfigMap
+      name: kubearchive-deployment-schema-version

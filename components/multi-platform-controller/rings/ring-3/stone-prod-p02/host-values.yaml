@@ -124,6 +124,7 @@ dynamicConfigs:
     throughput: "1000"
     sudo-commands: "/usr/bin/podman, /usr/bin/rm /usr/share/containers/mounts.conf"
     disk: "200"
+    # user-data loaded from base/host-config-chart/files/linux-root-arm64-init.sh
 
   macos-mac2metal-arm64:
     ami: "ami-000ce2c23b96216d3"
@@ -146,7 +147,7 @@ dynamicConfigs:
     sudo-commands: "/usr/bin/podman, /usr/bin/rm /usr/share/containers/mounts.conf"
     disk: "200"
     instance-type: "m5.4xlarge"
-    # user-data loaded from base/host-config-chart/files/linux-root-amd64-init.sh
+    user-data-file: files/linux-root-amd64-nvme-init.sh
 
 # Static hosts configuration
 staticHosts:
@@ -298,12 +299,13 @@ staticHosts:
     secret: ibm-s390x-ssh-key
     user: cloud-user  # Changed from root per IBM Cloud Jan 2026 announcement
 
-  s390x-static-x13:
-    address: 10.130.103.40
-    concurrency: '4'
-    platform: linux/s390x
-    secret: ibm-s390x-ssh-key
-    user: cloud-user  # Changed from root per IBM Cloud Jan 2026 announcement
+  # Crashed in IBM Cloud — temporarily disabled
+  # s390x-static-x13:
+  #   address: 10.130.103.40
+  #   concurrency: '4'
+  #   platform: linux/s390x
+  #   secret: ibm-s390x-ssh-key
+  #   user: cloud-user  # Changed from root per IBM Cloud Jan 2026 announcement
 
   s390x-static-x14:
     address: 10.130.103.72
@@ -319,12 +321,13 @@ staticHosts:
     secret: ibm-s390x-ssh-key
     user: cloud-user  # Changed from root per IBM Cloud Jan 2026 announcement
 
-  s390x-static-x16:
-    address: 10.130.103.41
-    concurrency: '4'
-    platform: linux/s390x
-    secret: ibm-s390x-ssh-key
-    user: cloud-user  # Changed from root per IBM Cloud Jan 2026 announcement
+  # Crashed in IBM Cloud — temporarily disabled
+  # s390x-static-x16:
+  #   address: 10.130.103.41
+  #   concurrency: '4'
+  #   platform: linux/s390x
+  #   secret: ibm-s390x-ssh-key
+  #   user: cloud-user  # Changed from root per IBM Cloud Jan 2026 announcement
 
   s390x-static-x17:
     address: 10.130.103.73
@@ -333,19 +336,21 @@ staticHosts:
     secret: ibm-s390x-ssh-key
     user: cloud-user  # Changed from root per IBM Cloud Jan 2026 announcement
 
-  s390x-static-x18:
-    address: 10.130.103.42
-    concurrency: '4'
-    platform: linux/s390x
-    secret: ibm-s390x-ssh-key
-    user: cloud-user  # Changed from root per IBM Cloud Jan 2026 announcement
+  # Crashed in IBM Cloud — temporarily disabled
+  # s390x-static-x18:
+  #   address: 10.130.103.42
+  #   concurrency: '4'
+  #   platform: linux/s390x
+  #   secret: ibm-s390x-ssh-key
+  #   user: cloud-user  # Changed from root per IBM Cloud Jan 2026 announcement
 
-  s390x-static-x19:
-    address: 10.130.103.43
-    concurrency: '4'
-    platform: linux/s390x
-    secret: ibm-s390x-ssh-key
-    user: cloud-user  # Changed from root per IBM Cloud Jan 2026 announcement
+  # Crashed in IBM Cloud — temporarily disabled
+  # s390x-static-x19:
+  #   address: 10.130.103.43
+  #   concurrency: '4'
+  #   platform: linux/s390x
+  #   secret: ibm-s390x-ssh-key
+  #   user: cloud-user  # Changed from root per IBM Cloud Jan 2026 announcement
 
   s390x-static-x20:
     address: 10.130.103.74
@@ -356,6 +361,77 @@ staticHosts:
 
   s390x-static-x21:
     address: 10.130.103.75
+    concurrency: '4'
+    platform: linux/s390x
+    secret: ibm-s390x-ssh-key
+    user: cloud-user  # Changed from root per IBM Cloud Jan 2026 announcement
+
+  # Crashed in IBM Cloud — temporarily disabled
+  # s390x-static-x22:
+  #   address: 10.130.103.47
+  #   concurrency: '4'
+  #   platform: linux/s390x
+  #   secret: ibm-s390x-ssh-key
+  #   user: cloud-user  # Changed from root per IBM Cloud Jan 2026 announcement
+
+  s390x-static-x23:
+    address: 10.130.103.48
+    concurrency: '4'
+    platform: linux/s390x
+    secret: ibm-s390x-ssh-key
+    user: cloud-user  # Changed from root per IBM Cloud Jan 2026 announcement
+
+  s390x-static-x24:
+    address: 10.130.103.91
+    concurrency: '4'
+    platform: linux/s390x
+    secret: ibm-s390x-ssh-key
+    user: cloud-user  # Changed from root per IBM Cloud Jan 2026 announcement
+
+  s390x-static-x25:
+    address: 10.130.103.88
+    concurrency: '4'
+    platform: linux/s390x
+    secret: ibm-s390x-ssh-key
+    user: cloud-user  # Changed from root per IBM Cloud Jan 2026 announcement
+
+  s390x-static-x26:
+    address: 10.130.103.90
+    concurrency: '4'
+    platform: linux/s390x
+    secret: ibm-s390x-ssh-key
+    user: cloud-user  # Changed from root per IBM Cloud Jan 2026 announcement
+
+  s390x-static-x27:
+    address: 10.130.103.87
+    concurrency: '4'
+    platform: linux/s390x
+    secret: ibm-s390x-ssh-key
+    user: cloud-user  # Changed from root per IBM Cloud Jan 2026 announcement
+
+  s390x-static-x28:
+    address: 10.130.103.92
+    concurrency: '4'
+    platform: linux/s390x
+    secret: ibm-s390x-ssh-key
+    user: cloud-user  # Changed from root per IBM Cloud Jan 2026 announcement
+
+  s390x-static-x29:
+    address: 10.130.103.86
+    concurrency: '4'
+    platform: linux/s390x
+    secret: ibm-s390x-ssh-key
+    user: cloud-user  # Changed from root per IBM Cloud Jan 2026 announcement
+
+  s390x-static-x30:
+    address: 10.130.103.85
+    concurrency: '4'
+    platform: linux/s390x
+    secret: ibm-s390x-ssh-key
+    user: cloud-user  # Changed from root per IBM Cloud Jan 2026 announcement
+
+  s390x-static-x31:
+    address: 10.130.103.89
     concurrency: '4'
     platform: linux/s390x
     secret: ibm-s390x-ssh-key

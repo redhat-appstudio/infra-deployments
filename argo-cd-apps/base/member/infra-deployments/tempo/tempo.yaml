@@ -11,10 +11,14 @@ spec:
         - clusters:
             values:
               sourceRoot: components/monitoring/tracing/tempo
-              environment: development
-              clusterDir: ""
+              environment: staging
+              clusterDir: empty-base
+              namespace: tempo-operator
         - list:
-            elements: []
+            elements:
+              - nameNormalized: stone-stg-rh01
+                values.clusterDir: stone-stg-rh01
+                values.namespace: konflux-tempo
   template:
     metadata:
       name: tempo-{{nameNormalized}}
@@ -25,7 +29,7 @@ spec:
         targetRevision: main
         path: '{{values.sourceRoot}}/{{values.environment}}/{{values.clusterDir}}'
       destination:
-        namespace: tempo-operator
+        namespace: '{{values.namespace}}'
         server: '{{server}}'
       syncPolicy:
         automated:

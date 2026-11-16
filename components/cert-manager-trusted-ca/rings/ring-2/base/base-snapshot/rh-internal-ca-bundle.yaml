@@ -1,0 +1,48 @@
+# Workaround for ROKS HCP where the Proxy CR trustedCA cannot be set.
+#
+# On ROSA clusters, OpenShift's inject-trusted-cabundle mechanism distributes
+# the RH internal CA via the Proxy CR. On ROKS HCP this is blocked, so we use
+# trust-manager to distribute the CA bundle to all namespaces instead.
+#
+# The Bundle creates a ConfigMap named "trusted-ca" with key "ca-bundle.crt"
+# in every namespace — matching the default caTrustConfigMapName parameter
+# in build tasks. No workload changes needed.
+#
+# Sources are concatenated into ca-bundle.crt:
+# - useDefaultCAs: public CA bundle from trust-manager's default package
+#   (Debian ca-certificates; enabled via the trust-manager Helm chart)
+# - rh-internal-ca ConfigMap: RH internal CA certificates
+#
+# The source ConfigMap (rh-internal-ca) containing the CA certificates is
+# deployed from internal-infra-deployments (private repo) via the ca-bundle
+# component's matching cluster overlay.
+#
+# The corresponding Kyverno rule (create-trusted-ca-configmap in
+# bootstrap-tenant-namespace-rbcm) is disabled on this cluster via a Kustomize
+# patch in the policies overlay to avoid conflict.
+#
+# Can be removed once IBM supports setting trustedCA on HostedCluster or the
+# ibmcloud CLI supports trusted CA bundles (IDEA-I-4688).
+apiVersion: trust.cert-manager.io/v1alpha1
+kind: Bundle
+metadata:
+  name: trusted-ca
+spec:
+  sources:
+    - useDefaultCAs: true
+    - configMap:
+        name: rh-internal-ca
+        key: ca-bundle.crt
+  target:
+    configMap:
+      key: ca-bundle.crt
+      metadata:
+        labels:
+          # Disable OpenShift's inject-trusted-cabundle on ROKS. The existing
+          # Kyverno-generated ConfigMaps have this label set to "true", which
+          # causes OpenShift to overwrite ca-bundle.crt with system CAs only
+          # (Proxy CR trustedCA is not set on HCP). Setting it to "false"
+          # stops the injection and lets trust-manager manage the content.
+          config.openshift.io/inject-trusted-cabundle: "false"
+    # Empty selector: sync the target ConfigMap to every namespace.
+    namespaceSelector: {}

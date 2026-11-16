@@ -1,0 +1,31 @@
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: manage-integrationtestscenarios
+rules:
+  - apiGroups:
+    - "appstudio.redhat.com"
+    resources:
+      - "integrationtestscenarios"
+    verbs:
+      - "create"
+      - "get"
+      - "list"
+      - "patch"
+      - "update"
+      - "watch"
+      - "delete"
+      - "deletecollection"
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: manage-integrationtestscenarios
+subjects:
+  - kind: Group
+    apiGroup: rbac.authorization.k8s.io
+    name: konflux-integration
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: manage-integrationtestscenarios

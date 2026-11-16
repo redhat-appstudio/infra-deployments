@@ -4,6 +4,10 @@ metadata:
   name: kanary-upload-s3
 spec:
   params:
+    - name: test-outcome
+      type: string
+      default: "unknown"
+      description: "Probe outcome used as the archive filename prefix."
     - name: tested-cluster
       type: string
     - name: test-type
@@ -26,6 +30,8 @@ spec:
     - name: upload
       image: quay.io/redhat-user-workloads/konflux-perfscale-tenant/loadtest
       env:
+        - name: TEST_OUTCOME
+          value: $(params.test-outcome)
         - name: TESTED_CLUSTER
           value: $(params.tested-cluster)
         - name: TEST_TYPE
@@ -72,8 +78,13 @@ spec:
         fi
 
         timestamp=$(date -u +%Y%m%dT%H%M%SZ)
-        tarball="/tmp/${LOADTEST_TYPE}-${TESTED_CLUSTER}-${TEST_TYPE}-${timestamp}.tar.gz"
-        s3_key="${LOADTEST_TYPE}/${TESTED_CLUSTER}/${TEST_TYPE}/${LOADTEST_TYPE}-${TESTED_CLUSTER}-${TEST_TYPE}-${timestamp}.tar.gz"
+        case "${TEST_OUTCOME}" in
+          passed|failed|unknown) outcome="${TEST_OUTCOME}" ;;
+          *) outcome="unknown" ;;
+        esac
+        filename="${outcome}-${LOADTEST_TYPE}-${TESTED_CLUSTER}-${TEST_TYPE}-${timestamp}.tar.gz"
+        tarball="/tmp/${filename}"
+        s3_key="${LOADTEST_TYPE}/${TESTED_CLUSTER}/${TEST_TYPE}/${filename}"
 
         # Remove the tarball on exit regardless of outcome.
         trap 'rm -f "${tarball}"' EXIT

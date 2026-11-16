@@ -1,0 +1,155 @@
+# Restore tenant API permissions dropped when user-action roles moved to the
+# konflux-operator (componentgroups, nudgeconfigs, kueue Workloads).
+# Aggregates into operator-managed konflux-*-user-actions parents.
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: konflux-admin-user-actions-tenant-apis
+  labels:
+    rbac.konflux-ci.dev/aggregate-to-admin: "true"
+rules:
+  - apiGroups:
+      - appstudio.redhat.com
+    resources:
+      - componentgroups
+      - nudgeconfigs
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+      - deletecollection
+  - apiGroups:
+      - konflux-ci.dev
+    resources:
+      - componentgroups
+      - nudgeconfigs
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+      - deletecollection
+  - apiGroups:
+      - kueue.x-k8s.io
+    resources:
+      - workloads
+    verbs:
+      - get
+      - list
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: konflux-maintainer-user-actions-tenant-apis
+  labels:
+    rbac.konflux-ci.dev/aggregate-to-maintainer: "true"
+rules:
+  - apiGroups:
+      - appstudio.redhat.com
+    resources:
+      - componentgroups
+      - nudgeconfigs
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+  - apiGroups:
+      - konflux-ci.dev
+    resources:
+      - componentgroups
+      - nudgeconfigs
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+  - apiGroups:
+      - kueue.x-k8s.io
+    resources:
+      - workloads
+    verbs:
+      - get
+      - list
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: konflux-contributor-user-actions-tenant-apis
+  labels:
+    rbac.konflux-ci.dev/aggregate-to-contributor: "true"
+rules:
+  - apiGroups:
+      - appstudio.redhat.com
+    resources:
+      - componentgroups
+      - nudgeconfigs
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - konflux-ci.dev
+    resources:
+      - componentgroups
+      - nudgeconfigs
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - kueue.x-k8s.io
+    resources:
+      - workloads
+    verbs:
+      - get
+      - list
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: konflux-viewer-user-actions-tenant-apis
+  labels:
+    rbac.konflux-ci.dev/aggregate-to-viewer: "true"
+rules:
+  - apiGroups:
+      - appstudio.redhat.com
+    resources:
+      - componentgroups
+      - nudgeconfigs
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - konflux-ci.dev
+    resources:
+      - componentgroups
+      - nudgeconfigs
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - kueue.x-k8s.io
+    resources:
+      - workloads
+    verbs:
+      - get
+      - list
+      - watch
