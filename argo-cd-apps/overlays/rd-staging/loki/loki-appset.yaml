@@ -2,23 +2,32 @@ apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
   name: loki
+  labels:
+    appstudio.redhat.com/deployment-clusters: all
+    app.kubernetes.io/part-of: loki
 spec:
   generators:
-    - list:
-        elements:
-          # NOTE: Current deployment only is done for a subset of ring-1 clusters
-          - name: stone-stage-p01
-            values.sourceRoot: components/monitoring/loki
-            values.ring: ring-1
-            values.clusterDir: stone-stage-p01
-          - name: stone-stg-rh01
-            values.sourceRoot: components/monitoring/loki
-            values.ring: ring-1
-            values.clusterDir: stone-stg-rh01
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              selector:
+                  matchExpressions: # Ensures that no clusters are selected; a k-component will replace this with the correct selector
+                    - key: appstudio.redhat.com/select-none
+                      operator: Exists
+                    - key: appstudio.redhat.com/select-none
+                      operator: DoesNotExist
+              values:
+                sourceRoot: components/monitoring/loki
+                ring: "empty-base"
+                clusterDir: "empty-base"
+          - list:
+              elements: [] # Populated via a k-component (or manually if the cluster list is unusual)
 
   template:
     metadata:
-      name: loki-{{name}}
+      name: loki-{{nameNormalized}}
     spec:
       project: default
       source:
@@ -26,8 +35,8 @@ spec:
         repoURL: https://github.com/redhat-appstudio/infra-deployments.git
         targetRevision: main
       destination:
-        namespace: appstudio-workload-monitoring
-        name: '{{name}}'
+        namespace: appstudio-workload-monitoring # (optional) IF the component is deployed to a single namespace
+        server: '{{server}}'
       syncPolicy:
         automated:
           prune: true
