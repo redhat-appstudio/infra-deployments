@@ -1,0 +1,48 @@
+# The legacy konflux-ci AppSet only ever rendered in konflux-public-production,
+# scoped via a bespoke appstudio.redhat.com/konflux-ci cluster label with no
+# k-components equivalent. stone-stage-p01 is the only staging cluster onboarded
+# so far, so this uses a plain static list generator rather than a
+# clusters generator + k-component.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: konflux-ci
+spec:
+  generators:
+    - list:
+        elements:
+          - name: stone-stage-p01
+            values.sourceRoot: components/konflux-ci-rd
+            values.ring: ring-1
+            values.clusterDir: stone-stage-p01
+
+  template:
+    metadata:
+      name: konflux-ci-{{name}}
+    spec:
+      project: default
+      source:
+        path: '{{values.sourceRoot}}/rings/{{values.ring}}/{{values.clusterDir}}'
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+        targetRevision: main
+      destination:
+        name: '{{name}}'
+        namespace: konflux-ci
+      ignoreDifferences:
+        - group: ""
+          kind: "ServiceAccount"
+          name: konflux-ci-sa
+          jqPathExpressions:
+            - .imagePullSecrets[] | select(.name | startswith("konflux-ci-sa-dockercfg"))
+      syncPolicy:
+        # automated:
+        #   prune: true
+        #   selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+        retry:
+          limit: -1
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 3m
