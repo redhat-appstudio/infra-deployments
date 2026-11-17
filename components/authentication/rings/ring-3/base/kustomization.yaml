@@ -3,9 +3,9 @@ kind: Kustomization
 resources:
   - base-snapshot
 patches:
-  - path: patches/rhtap-infra-secrets-patch.yaml
+  - path: patches/konflux-clusters-admins-workflow-patch.yaml
     target:
-      name: rhtap-infra-secrets
+      name: konflux-clusters-admins-workflow
       kind: ExternalSecret
       group: external-secrets.io
       version: v1
