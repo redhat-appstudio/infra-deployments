@@ -1,0 +1,10 @@
+---
+- op: replace
+  path: /spec/generators/0/merge/generators/0/clusters/selector
+  value:
+    matchLabels:
+      appstudio.redhat.com/cluster-type: "tenant"
+    matchExpressions:
+      - key: appstudio.redhat.com/hub-spoke-model
+        operator: NotIn
+        values: ["spoke"]

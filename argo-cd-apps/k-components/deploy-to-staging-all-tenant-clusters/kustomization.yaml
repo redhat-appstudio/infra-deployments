@@ -1,0 +1,17 @@
+# This k-component should include ALL tenant clusters
+---
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  - path: all-tenant-clusters-label-selector-patch.yaml
+    target:
+      group: argoproj.io
+      version: v1alpha1
+      kind: ApplicationSet
+      labelSelector: "appstudio.redhat.com/deployment-clusters=tenant, !appstudio.redhat.com/internal-only, !appstudio.redhat.com/hub-only"
+  - path: all-tenant-clusters-list-patch.yaml
+    target:
+      group: argoproj.io
+      version: v1alpha1
+      kind: ApplicationSet
+      labelSelector: "appstudio.redhat.com/deployment-clusters=tenant, !appstudio.redhat.com/internal-only, !appstudio.redhat.com/hub-only"
