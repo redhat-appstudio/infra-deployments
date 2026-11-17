@@ -1,0 +1,49 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: internal-services
+  labels: # Helps k-components detect this appset to apply the correct patches
+    appstudio.redhat.com/deployment-clusters: "tenant"
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - nameNormalized
+        generators:
+          - clusters:
+              selector:
+                matchExpressions: # Ensures that no clusters are selected; k-components will replace this
+                  - key: appstudio.redhat.com/select-none
+                    operator: Exists
+                  - key: appstudio.redhat.com/select-none
+                    operator: DoesNotExist
+              values:
+                sourceRoot: components/internal-services-rd
+                ring: "empty-base"
+                clusterDir: "empty-base"
+          - list:
+              elements: [] # Populated via k-components
+  template:
+    metadata:
+      name: internal-services-{{nameNormalized}}
+      labels:
+        app.kubernetes.io/part-of: internal-services
+    spec:
+      project: default
+      source:
+        path: '{{values.sourceRoot}}/rings/{{values.ring}}/{{values.clusterDir}}'
+        repoURL: https://github.com/redhat-appstudio/infra-deployments.git
+        targetRevision: main
+      destination:
+        namespace: internal-services
+        server: '{{server}}'
+      syncPolicy:
+        # automated:
+        #   prune: true
+        #   selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+        retry:
+          limit: 50
+          backoff:
+            duration: 15s
