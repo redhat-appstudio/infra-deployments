@@ -23,7 +23,7 @@ The Authentication component contains GitOps manifests for Konflux cluster **aut
 Runs in namespace `admin-checker` as CronJob `check-cluster-admins` (Mondays 11:30 UTC). It:
 
 1. Reads OpenShift `Group` objects `cluster-admins` and `dedicated-admins`.
-2. POSTs membership to the workflow URL in secret `rhtap-infra-secrets` (`admin-checker-workflow-url`).
+2. POSTs membership to the workflow URL in secret `konflux-clusters-admins-workflow` (`web-request-url`), synced from Vault path `*/infrastructure/slack/workflows/konflux-clusters-admins`.
 
 The service account has read-only access to `user.openshift.io/groups`. Credentials are synced from Vault via External Secrets (`appsre-stonesoup-vault` ClusterSecretStore).
 
