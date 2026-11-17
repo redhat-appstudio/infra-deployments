@@ -1,0 +1,25 @@
+resources:
+- konflux-ci-ns.yaml
+- konflux-ci-sa.yaml
+- sprayproxy-repository.yaml
+- build-definitions-repository.yaml
+- cachi2-repository.yaml
+- pipeline-service-exporter-repository.yaml
+- pipeline-service-repository.yaml
+- tekton-results-repository.yaml
+- clair-in-ci-db-repository.yaml
+- infra-deployments-repository.yaml
+- konflux-ci-maintainers-rb.yaml
+- appstudio-pipelines-runner-rb.yaml
+- pod-logs-reader-role.yaml
+- pod-logs-reader-rb.yaml
+- test-runner-cr.yaml
+
+# Skip applying the Tekton/PaC operands while the Tekton/PaC operator is being installed.
+# See more information about this option, here:
+# https://argo-cd.readthedocs.io/en/stable/user-guide/sync-options/#skip-dry-run-for-new-custom-resources-types
+commonAnnotations:
+  argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
