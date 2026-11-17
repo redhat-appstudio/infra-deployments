@@ -5,6 +5,16 @@ resources:
 - ../base
 - external-secrets
 
+# Temporarily stop deploying ring-2/base/logcollector (otelcol-config ExternalSecret).
+patches:
+- patch: |-
+    $patch: delete
+    apiVersion: external-secrets.io/v1
+    kind: ExternalSecret
+    metadata:
+      name: otelcol-config
+      namespace: multi-platform-controller
+
 helmGlobals:
   chartHome: ../base
 
