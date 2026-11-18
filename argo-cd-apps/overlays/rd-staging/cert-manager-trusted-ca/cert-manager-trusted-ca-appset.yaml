@@ -21,6 +21,8 @@ spec:
   template:
     metadata:
       name: cert-manager-trusted-ca-{{name}}
+      labels:
+        app.kubernetes.io/part-of: cert-manager-trusted-ca
     spec:
       project: default
       source:
