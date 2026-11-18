@@ -31,19 +31,47 @@ spec:
                 - /bin/bash
                 - -c
                 - |
-                  tkn pipeline start kanary-otel-poc --use-param-defaults \
-                    --param tested-cluster=kflux-prd-rh03 \
-                    --param test-type=container-multi-arch \
-                    --param component-repo=https://github.com/rhtap-perf-test/nodejs-devfile-sample2 \
-                    --param user-prefix=prdrh03cm \
-                    --param quay-repo=redhat-user-workloads \
-                    --param pipeline-repo-templating-source=https://github.com/rhtap-perf-test/konflux-probe-test-templates \
-                    --param pipeline-repo-templating-source-dir=nodejs-devfile-sample-MultiArch/ \
-                    --param oci-storage=quay.io/rhtap-perf-test/perf-release-service-trusted-artifacts \
-                    --param release-pipeline-service-account=managed-konflux-perfscale-sa \
-                    --param fork-target="" \
-                    --param gitlab-api-url="" \
-                    --param member-cluster=https://api.kflux-prd-rh03.nnv1.p1.openshiftapps.com:6443 \
-                    --param s3-bucket=konflux-perfscale-artifacts \
-                    --prefix-name kanary-kflux-prd-rh03-multi-arch- \
-                    --showlog
+                  set -e
+
+                  # Name prefix used when starting (and when looking up) this probe's PipelineRun.
+                  PREFIX='kanary-kflux-prd-rh03-multi-arch-'
+
+                  # Avoid duplicate probes after watcher-pod eviction: if an in-progress
+                  # PipelineRun already exists for this prefix (Succeeded condition status
+                  # Unknown = Pending or Running), follow its logs instead of starting another.
+                  echo "Looking for in-progress PipelineRuns with prefix '${PREFIX}'..."
+                  RUNNING_PR="$(/etc/kanary/bin/find-running-pipelinerun.sh "$PREFIX")"
+
+                  if [ -n "$RUNNING_PR" ]; then
+                    echo "Found in-progress PipelineRun: ${RUNNING_PR} — following existing run..."
+                    tkn pipelinerun logs "$RUNNING_PR" --all --follow --timestamps
+                  else
+                    echo "No in-progress PipelineRun with prefix found — starting a new one..."
+                    tkn pipeline start kanary-otel-poc --use-param-defaults \
+                      --param tested-cluster=kflux-prd-rh03 \
+                      --param test-type=container-multi-arch \
+                      --param component-repo=https://github.com/rhtap-perf-test/nodejs-devfile-sample2 \
+                      --param user-prefix=prdrh03cm \
+                      --param quay-repo=redhat-user-workloads \
+                      --param pipeline-repo-templating-source=https://github.com/rhtap-perf-test/konflux-probe-test-templates \
+                      --param pipeline-repo-templating-source-dir=nodejs-devfile-sample-MultiArch/ \
+                      --param oci-storage=quay.io/rhtap-perf-test/perf-release-service-trusted-artifacts \
+                      --param release-pipeline-service-account=managed-konflux-perfscale-sa \
+                      --param fork-target="" \
+                      --param gitlab-api-url="" \
+                      --param member-cluster=https://api.kflux-prd-rh03.nnv1.p1.openshiftapps.com:6443 \
+                      --param s3-bucket=konflux-perfscale-artifacts \
+                      --prefix-name "$PREFIX" \
+                      --showlog
+                  fi
+
+              volumeMounts:
+                # Shared helper: find in-progress PipelineRun by prefix
+                - name: find-running-plr
+                  mountPath: /etc/kanary/bin
+                  readOnly: true
+          volumes:
+            - name: find-running-plr
+              configMap:
+                name: kanary-find-running-pipelinerun
+                defaultMode: 0555

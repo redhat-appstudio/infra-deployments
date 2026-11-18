@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kanary-find-running-pipelinerun
+data:
+  find-running-pipelinerun.sh: |
+    #!/usr/bin/env bash
+    # Usage: find-running-pipelinerun.sh <prefix>
+    # Prints the name of an in-progress PipelineRun matching the prefix, or empty if none.
+    #
+    # Tekton PipelineRuns report lifecycle via the metav1 Succeeded condition:
+    #   Unknown — still in progress (reason typically Pending or Running)
+    #   True    — all tasks completed successfully (reason Succeeded)
+    #   False   — terminal failure (reason Failed, Cancelled, or TimedOut)
+    # Matching on status=Unknown therefore includes queued, pending, and actively
+    # running PipelineRuns, not only those whose reason is Running.
+    set -euo pipefail
+
+    PREFIX="${1:?prefix required}"
+
+    tkn pipelinerun list \
+      -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.status.conditions[?(@.type=="Succeeded")].status}{"\n"}{end}' \
+    | awk -F'\t' -v prefix="$PREFIX" \
+        '$1 ~ "^"prefix && $2 == "Unknown" { print $1; exit }'
