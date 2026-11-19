@@ -2,7 +2,6 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ../../base/argocd-roles
-  - ../../base/external-secrets
   - ../../base/rbac
   - https://github.com/redhat-appstudio/application-service/config/default?ref=ad51acd4301639c1e35399f2218671cf17a6e68e
   - https://github.com/redhat-appstudio/application-service/config/prometheus/?ref=ad51acd4301639c1e35399f2218671cf17a6e68e
@@ -26,11 +25,4 @@ configMapGenerator:
     name: feature-flag-config
     behavior: replace
 
-patches:
-  - path: has-github-token-patch.yaml
-    target:
-      name: has-github-token
-      kind: ExternalSecret
-      group: external-secrets.io
-      version: v1
 namespace: application-service
