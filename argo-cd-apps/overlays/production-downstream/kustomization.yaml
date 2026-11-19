@@ -59,11 +59,6 @@ patches:
     target:
       kind: ApplicationSet
       version: v1alpha1
-      name: release
-  - path: production-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
       name: backup
   - path: production-overlay-patch.yaml
     target:
@@ -262,16 +257,6 @@ patches:
       kind: ApplicationSet
       version: v1alpha1
       name: konflux-rbac
-  - path: exclude-operator-owned-clusters.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: release
-  - path: preserve-resources-on-deletion.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: release
   # ROKS (hypershift) clusters — kubelet is managed by the platform
   - path: exclude-kubelet-config-roks-clusters.yaml
     target:
