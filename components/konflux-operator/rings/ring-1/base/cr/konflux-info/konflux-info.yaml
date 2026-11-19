@@ -7,8 +7,10 @@ spec:
     spec:
       clusterConfig:
         data:
+          additionalCBOMGenerationRulesImage: image-registry.openshift-image-registry.svc:5000/crypto-scanner/crypto-rules-image:latest
           allowCacheProxy: true
           allowPackageRegistryProxy: true
+          enableCBOMGenerationTask: true
           httpProxy: squid.container-image-proxy.svc.cluster.local:3128
           noProxy: ""
           packageRegistryProxyGomodUrl: https://artifact-registry-proxy.artifact-registry-proxy.svc.cluster.local/repository/go-proxy
