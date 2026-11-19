@@ -7,7 +7,9 @@ spec:
     spec:
       clusterConfig:
         data:
+          additionalCBOMGenerationRulesImage: image-registry.openshift-image-registry.svc:5000/crypto-scanner/crypto-rules-image:latest
           allowCacheProxy: false
+          enableCBOMGenerationTask: true
       publicInfo:
         environment: development
         visibility: public
