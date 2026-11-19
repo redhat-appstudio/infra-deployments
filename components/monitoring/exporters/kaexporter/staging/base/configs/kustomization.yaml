@@ -10,3 +10,8 @@ configMapGenerator:
     namespace: konflux-o11y-exporters
     files:
       - slo-tiers.yaml
+  - name: kaexporter-endpoint
+    namespace: konflux-o11y-exporters
+    literals:
+      # Required: each cluster overlay supplies its own endpoint.
+      - ka-host=
