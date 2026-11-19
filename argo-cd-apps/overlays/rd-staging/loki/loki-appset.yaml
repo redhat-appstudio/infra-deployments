@@ -4,7 +4,6 @@ metadata:
   name: loki
   labels:
     appstudio.redhat.com/deployment-clusters: all
-    app.kubernetes.io/part-of: loki
 spec:
   generators:
     - merge:
@@ -28,6 +27,8 @@ spec:
   template:
     metadata:
       name: loki-{{nameNormalized}}
+      labels:
+        app.kubernetes.io/part-of: loki
     spec:
       project: default
       source:
