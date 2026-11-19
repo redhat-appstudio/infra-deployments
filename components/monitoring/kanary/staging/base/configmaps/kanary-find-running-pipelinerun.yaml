@@ -21,4 +21,4 @@ data:
     tkn pipelinerun list \
       -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.status.conditions[?(@.type=="Succeeded")].status}{"\n"}{end}' \
     | awk -F'\t' -v prefix="$PREFIX" \
-        '$1 ~ "^"prefix && $2 == "Unknown" { print $1; exit }'
+        '!found && index($1, prefix) == 1 && $2 == "Unknown" { print $1;found = 1 }'
