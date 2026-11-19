@@ -29,6 +29,14 @@ no longer uses `internal-only`). Existing operator clusters stay listed there;
 other tenants do not get the operator until a playbook run (or a manual add)
 includes them.
 
+Trust-manager gets a cluster overlay that inherits its selected ring's base.
+Staging (`ring-1`) renders the cert-manager Operator's `TrustManager/cluster`;
+production (`ring-2` through `ring-4`) retains Helm until each ring is promoted.
+The tenant cluster list selects the new overlay in the trust-manager ApplicationSet.
+For staging bootstrap, first install and enable the cert-manager Operator's
+TrustManager add-on, then sync trust-manager and verify its default CA source
+and readiness before syncing Bundles.
+
 ## Prerequisite
 
 1. The cluster-layer terraform automation has been run, and the new cluster is up. This entails that the AWS, IBM, and database secrets have been provisioned and injected into vault in the correct paths. This automation will verify that before proceeding.

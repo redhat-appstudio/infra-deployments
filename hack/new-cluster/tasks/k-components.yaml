@@ -6,10 +6,16 @@
   command: |
     yq -i eval '(.[0].value) += [{"values.ring": "{{ ring }}", "nameNormalized": "{{ shortname }}", "values.clusterDir": "{{ shortname }}"}]' {{ dst }}/argo-cd-apps/k-components/deploy-to-all-{{ env }}-clusters/all-clusters-list-patch.yaml
 
-- name: Add cluster to `deploy-to-{{ env }}-tenant-clusters` k-component
+- name: Select the environment's tenant cluster list
+  tags: [applicationsets]
+  set_fact:
+    tenant_cluster_group: "{{ (env == 'staging') | ternary('staging-all-tenant', 'production-tenant') }}"
+    tenant_cluster_list: "{{ (env == 'staging') | ternary('all-tenant', 'tenant') }}"
+
+- name: Add cluster to `deploy-to-{{ tenant_cluster_group }}-clusters` k-component
   tags: [applicationsets]
   command: |
-    yq -i eval '(.[0].value) += [{"values.ring": "{{ ring }}", "nameNormalized": "{{ shortname }}", "values.clusterDir": "{{ shortname }}"}]' {{ dst }}/argo-cd-apps/k-components/deploy-to-{{ env }}-tenant-clusters/tenant-clusters-list-patch.yaml
+    yq -i eval '(.[0].value) += [{"values.ring": "{{ ring }}", "nameNormalized": "{{ shortname }}", "values.clusterDir": "{{ shortname }}"}]' {{ dst }}/argo-cd-apps/k-components/deploy-to-{{ tenant_cluster_group }}-clusters/{{ tenant_cluster_list }}-clusters-list-patch.yaml
 
 - name: Add cluster to `deploy-to-{{ env }}-internal-tenant-clusters` k-component
   tags: [applicationsets]
