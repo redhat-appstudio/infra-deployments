@@ -1,0 +1,11 @@
+---
+# Spokes do not run application-service (has); prevent fallthrough to staging/base.
+- op: add
+  path: /spec/generators/0/selector
+  value:
+    matchExpressions:
+      - key: nameNormalized
+        operator: NotIn
+        values:
+          - kflux-spoke-stg-01a
+          - kflux-spoke-stg-01b

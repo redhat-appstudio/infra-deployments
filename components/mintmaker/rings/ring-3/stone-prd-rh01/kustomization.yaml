@@ -3,6 +3,12 @@ kind: Kustomization
 resources:
 - ../base
 patches:
+  - path: patches/pipelines-as-code-secret-path-patch.yaml
+    target:
+      name: pipelines-as-code-secret
+      group: external-secrets.io
+      version: v1
+      kind: ExternalSecret
   - path: patches/create-dependencyupdatecheck-cron-patch.yaml
     target:
       group: batch
