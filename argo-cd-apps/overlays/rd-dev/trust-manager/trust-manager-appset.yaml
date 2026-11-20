@@ -3,6 +3,8 @@ kind: ApplicationSet
 metadata:
   name: trust-manager
 spec:
+  syncPolicy:
+    preserveResourcesOnDeletion: true
   generators:
     - merge:
         mergeKeys:
@@ -35,7 +37,7 @@ spec:
         server: '{{server}}'
       syncPolicy:
         automated:
-          prune: true
+          prune: false
           selfHeal: true
         syncOptions:
         - CreateNamespace=true
