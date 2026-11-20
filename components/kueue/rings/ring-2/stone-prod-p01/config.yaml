@@ -108,8 +108,17 @@ cel:
     - |
         resource('konflux-ci-dev-token', 1)
 
-    # Set the pipeline priority
+    # Lightwell: validated > stage (~push 700) > dev (~PR 500), remediations (backport/novel 850) > push < release
     - |
+        has(pipelineRun.metadata.labels) &&
+        'lightwell.redhat.com/orchestrated' in pipelineRun.metadata.labels ?
+          (
+            pipelineRun.metadata.labels['lightwell.redhat.com/build-type'] == 'dev' ? priority('konflux-pre-merge-build') :
+            pipelineRun.metadata.labels['lightwell.redhat.com/build-type'] == 'stage' ? priority('konflux-post-merge-build') :
+            pipelineRun.metadata.labels['lightwell.redhat.com/build-type'] in ['backport', 'novel'] ? priority('lightwell-remediation') :
+            priority('lightwell-remediation')
+          ) :
+
         has(pipelineRun.metadata.labels) &&
         (('build.appstudio.redhat.com/type' in pipelineRun.metadata.labels &&
           pipelineRun.metadata.labels['build.appstudio.redhat.com/type'] == 'nudge') ||
