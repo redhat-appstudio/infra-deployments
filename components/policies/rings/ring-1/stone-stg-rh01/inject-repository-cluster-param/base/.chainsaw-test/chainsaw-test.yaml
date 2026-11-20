@@ -1,0 +1,298 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+---
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: add-cluster-param-when-params-missing
+  labels:
+    test: add-cluster-param-when-params-missing
+spec:
+  concurrent: false
+  description: |
+    Creating a Repository without spec.params in the policy namespace adds
+    konflux_cluster=stone-stg-rh01.
+  steps:
+    - name: given-crd-rbac-and-policy
+      try:
+        - apply:
+            file: resources/repository-crd.yaml
+        - apply:
+            file: ../../clusterrole.yaml
+        - apply:
+            file: ../rolebinding.yaml
+        - apply:
+            file: ../inject-repository-cluster-param-nmp.yaml
+        - assert:
+            file: chainsaw-assert-namespacedmutatingpolicy.yaml
+    - name: when-repository-without-params-is-created
+      try:
+        - create:
+            file: resources/repository-no-params.yaml
+        - assert:
+            file: resources/expected-repository-no-params.yaml
+---
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: add-cluster-param-when-params-null
+  labels:
+    test: add-cluster-param-when-params-null
+spec:
+  concurrent: false
+  description: |
+    Creating a Repository with spec.params set to null in the policy namespace adds
+    konflux_cluster=stone-stg-rh01.
+  steps:
+    - name: given-crd-rbac-and-policy
+      try:
+        - apply:
+            file: resources/repository-crd.yaml
+        - apply:
+            file: ../../clusterrole.yaml
+        - apply:
+            file: ../rolebinding.yaml
+        - apply:
+            file: ../inject-repository-cluster-param-nmp.yaml
+        - assert:
+            file: chainsaw-assert-namespacedmutatingpolicy.yaml
+    - name: when-repository-with-null-params-is-created
+      try:
+        - create:
+            file: resources/repository-params-null.yaml
+        - assert:
+            file: resources/expected-repository-params-null.yaml
+---
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: add-cluster-param-when-params-empty
+  labels:
+    test: add-cluster-param-when-params-empty
+spec:
+  concurrent: false
+  description: |
+    Creating a Repository with an empty spec.params list in the policy namespace adds
+    konflux_cluster=stone-stg-rh01.
+  steps:
+    - name: given-crd-rbac-and-policy
+      try:
+        - apply:
+            file: resources/repository-crd.yaml
+        - apply:
+            file: ../../clusterrole.yaml
+        - apply:
+            file: ../rolebinding.yaml
+        - apply:
+            file: ../inject-repository-cluster-param-nmp.yaml
+        - assert:
+            file: chainsaw-assert-namespacedmutatingpolicy.yaml
+    - name: when-repository-with-empty-params-is-created
+      try:
+        - create:
+            file: resources/repository-params-empty.yaml
+        - assert:
+            file: resources/expected-repository-params-empty.yaml
+---
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: append-cluster-param-preserving-others
+  labels:
+    test: append-cluster-param-preserving-others
+spec:
+  concurrent: false
+  description: |
+    Creating a Repository with other params appends konflux_cluster=stone-stg-rh01 and
+    preserves existing params.
+  steps:
+    - name: given-crd-rbac-and-policy
+      try:
+        - apply:
+            file: resources/repository-crd.yaml
+        - apply:
+            file: ../../clusterrole.yaml
+        - apply:
+            file: ../rolebinding.yaml
+        - apply:
+            file: ../inject-repository-cluster-param-nmp.yaml
+        - assert:
+            file: chainsaw-assert-namespacedmutatingpolicy.yaml
+    - name: when-repository-with-other-params-is-created
+      try:
+        - create:
+            file: resources/repository-other-params.yaml
+        - assert:
+            file: resources/expected-repository-other-params.yaml
+---
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: noop-when-cluster-param-already-present
+  labels:
+    test: noop-when-cluster-param-already-present
+spec:
+  concurrent: false
+  description: |
+    Creating a Repository that already has konflux_cluster=stone-stg-rh01 leaves params
+    unchanged.
+  steps:
+    - name: given-crd-rbac-and-policy
+      try:
+        - apply:
+            file: resources/repository-crd.yaml
+        - apply:
+            file: ../../clusterrole.yaml
+        - apply:
+            file: ../rolebinding.yaml
+        - apply:
+            file: ../inject-repository-cluster-param-nmp.yaml
+        - assert:
+            file: chainsaw-assert-namespacedmutatingpolicy.yaml
+    - name: when-repository-with-correct-cluster-param-is-created
+      try:
+        - create:
+            file: resources/repository-cluster-correct.yaml
+        - assert:
+            file: resources/expected-repository-cluster-correct.yaml
+---
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: update-cluster-param-when-value-wrong
+  labels:
+    test: update-cluster-param-when-value-wrong
+spec:
+  concurrent: false
+  description: |
+    Creating a Repository whose konflux_cluster param has the wrong value updates it to
+    stone-stg-rh01 and preserves other params.
+  steps:
+    - name: given-crd-rbac-and-policy
+      try:
+        - apply:
+            file: resources/repository-crd.yaml
+        - apply:
+            file: ../../clusterrole.yaml
+        - apply:
+            file: ../rolebinding.yaml
+        - apply:
+            file: ../inject-repository-cluster-param-nmp.yaml
+        - assert:
+            file: chainsaw-assert-namespacedmutatingpolicy.yaml
+    - name: when-repository-with-wrong-cluster-param-is-created
+      try:
+        - create:
+            file: resources/repository-cluster-wrong.yaml
+        - assert:
+            file: resources/expected-repository-cluster-wrong.yaml
+---
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: noop-outside-policy-namespace
+  labels:
+    test: noop-outside-policy-namespace
+spec:
+  concurrent: false
+  description: |
+    Creating a Repository outside the policy namespace does not add a konflux_cluster
+    param.
+  steps:
+    - name: given-crd-rbac-policy-and-other-namespace
+      try:
+        - apply:
+            file: resources/repository-crd.yaml
+        - apply:
+            file: resources/namespace-other-tenant.yaml
+        - apply:
+            file: ../../clusterrole.yaml
+        - apply:
+            file: ../rolebinding.yaml
+        - apply:
+            file: ../inject-repository-cluster-param-nmp.yaml
+        - assert:
+            file: chainsaw-assert-namespacedmutatingpolicy.yaml
+    - name: when-repository-is-created-in-other-namespace
+      try:
+        - create:
+            file: resources/repository-other-namespace.yaml
+        - assert:
+            file: resources/expected-repository-other-namespace.yaml
+---
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: mutate-existing-repository
+  labels:
+    test: mutate-existing-repository
+spec:
+  concurrent: false
+  description: |
+    An existing Repository in the policy namespace without a konflux_cluster param is
+    mutated after the NamespacedMutatingPolicy is applied.
+  steps:
+    - name: given-crd
+      try:
+        - apply:
+            file: resources/repository-crd.yaml
+        - assert:
+            file: resources/repository-crd.yaml
+    - name: given-repository-exists-without-cluster-param
+      try:
+        - create:
+            file: resources/repository-no-params.yaml
+    - name: when-rbac-and-policy-are-applied
+      try:
+        - apply:
+            file: ../../clusterrole.yaml
+        - apply:
+            file: ../rolebinding.yaml
+        - apply:
+            file: ../inject-repository-cluster-param-nmp.yaml
+        - assert:
+            file: chainsaw-assert-namespacedmutatingpolicy.yaml
+    - name: then-existing-repository-is-mutated
+      try:
+        - assert:
+            file: resources/expected-repository-no-params.yaml
+---
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: noop-existing-outside-policy-namespace
+  labels:
+    test: noop-existing-outside-policy-namespace
+spec:
+  concurrent: false
+  description: |
+    An existing Repository outside the policy namespace is not changed after the
+    NamespacedMutatingPolicy is applied.
+  steps:
+    - name: given-crd-and-other-namespace
+      try:
+        - apply:
+            file: resources/repository-crd.yaml
+        - apply:
+            file: resources/namespace-other-tenant.yaml
+    - name: given-repository-exists-in-other-namespace
+      try:
+        - create:
+            file: resources/repository-other-namespace.yaml
+    - name: when-rbac-and-policy-are-applied
+      try:
+        - apply:
+            file: ../../clusterrole.yaml
+        - apply:
+            file: ../rolebinding.yaml
+        - apply:
+            file: ../inject-repository-cluster-param-nmp.yaml
+        - assert:
+            file: chainsaw-assert-namespacedmutatingpolicy.yaml
+    - name: then-existing-repository-is-unchanged
+      try:
+        - assert:
+            file: resources/expected-repository-other-namespace.yaml
+        - sleep:
+            duration: 5s
+        - assert:
+            file: resources/expected-repository-other-namespace.yaml
