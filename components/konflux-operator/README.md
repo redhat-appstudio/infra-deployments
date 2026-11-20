@@ -76,10 +76,11 @@ the invariant from the ring you trust, and copy or adapt `cr/` patches and `rele
 
 ## Preview script and `Konflux` readiness
 
-`hack/preview.sh` supports **`--operator-overlay`** (OpenShift preview using the
-`development-operator` Argo overlay). **By default it does not wait** for the cluster
-`Konflux` object `konflux` to become ready, so preview can finish after Argo CD sync
-while the operator and instance are still converging.
+`hack/preview.sh` always uses the **rd-dev** (operator) Argo overlay. The
+`--operator-overlay` flag remains accepted as a deprecated compat alias with the
+same behavior. **By default preview does not wait** for the cluster `Konflux`
+object `konflux` to become ready, so preview can finish after Argo CD sync while
+the operator and instance are still converging.
 
 To **gate** preview on a healthy instance (same checks as
 `konflux-ci/scripts/deploy-local.sh`), set **`PREVIEW_WAIT_KONFLUX_CR_READY=true`**
@@ -107,7 +108,7 @@ The CI overlay for operator-based E2E tests lives in
 [`ci/openshift-overlay-e2e/`](ci/openshift-overlay-e2e/README.md). See its README
 for how the overlay is wired into Prow presubmit jobs and what it validates.
 
-`hack/preview.sh --operator-overlay` patches
+`hack/preview.sh` patches
 `rings/ring-0/base/cr/image-controller/image-controller.yaml` to enable or
 disable image-controller (`.spec.imageController.enabled`) based on whether
 `IMAGE_CONTROLLER_QUAY_ORG` and `IMAGE_CONTROLLER_QUAY_TOKEN` are set in
