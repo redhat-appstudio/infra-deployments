@@ -1,0 +1,12 @@
+---
+# kube-shard is deployed to ROKS (Hypershift) clusters to provide
+# etcd-compatible API sharding for Tekton resources, since ROKS clusters
+# have a managed control plane where etcd is not visible to tenants.
+- op: add
+  path: /spec/generators/0/selector
+  value:
+    matchExpressions:
+      - key: nameNormalized
+        operator: In
+        values:
+          - kflux-stg-p02
