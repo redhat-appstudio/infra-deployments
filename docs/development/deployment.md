@@ -225,34 +225,39 @@ If your cluster is hidden behind a VPN, this won't work.
 
 #### Deploying your versions of operators
 
-First, you will need to build the container image (typically with `make docker-build` in the operator
-repository) and push the image to a publicly accessible container repository. Then, set the image
-reference for the corresponding service in `preview.env`. For example, to override the build-service
-image, set:
+Preview deploys build-service, integration-service, release-service, and image-controller through the
+Konflux operator (`rd-dev`). The legacy `BUILD_SERVICE_IMAGE_*` / `INTEGRATION_SERVICE_IMAGE_*` /
+`RELEASE_SERVICE_IMAGE_*` / `IMAGE_CONTROLLER_IMAGE_*` (and matching `*_PR_*`) env vars are **rejected**
+by `hack/preview.sh` — they used to patch `components/*/development` AppSets that preview no longer
+deploys.
+
+For AppSet-managed components that still honor image overrides (for example HAS, mintmaker,
+multi-platform-controller), build and push your image, set the matching vars in `preview.env`
+(see `hack/preview-template.env`), and re-run preview:
 
 ```shell
-export BUILD_SERVICE_IMAGE_REPO=quay.io/<quay_username>/build-service
-export BUILD_SERVICE_IMAGE_TAG=my-test-v1
+export HAS_IMAGE_REPO=quay.io/<quay_username>/application-service
+export HAS_IMAGE_TAG=my-test-v1
 ```
 
-Then, run the `hack/preview.sh` script, which will deploy the overriden image.
+```shell
+./hack/bootstrap-cluster.sh preview
+# or, if Argo CD is already installed: ./hack/preview.sh
+```
 
-To update the operator after you've made some more changes, build a new image and push it to the same
-repository with a new tag. Set the new tag in `preview.env` and run `hack/preview.sh` again.
+To test a custom build of an operator-managed service, change the image fields on the Konflux CR
+under `components/konflux-operator/rings/ring-0/base/cr/` (or an equivalent supported operator
+override), commit, and re-run preview. `BUILD_SERVICE_IMAGE_TAG_EXPIRATION` and `SMEE_CHANNEL` remain
+supported via that CR path.
 
 #### Deploying your versions of CRDs
 
-Find the reference to the upstream repository where your CRDs are located. For example, for build-service,
-it's in [components/build-service/base/kustomization.yaml][build-service-kustomization]:
+For AppSet-managed components, find the upstream CRD reference in that component's kustomization
+(for example HAS under `components/has/`). Replace it with your fork and commit, then commit and
+re-run preview.
 
-```yaml
-resources:
-- allow-argocd-to-manage.yaml
-- https://github.com/konflux-ci/build-service/config/default?ref=99cebd0a67a6b25b8ccffb76522861f526c762de
-```
-
-Replace this reference with a reference to your fork and the commit you would like to test. Create
-a new branch, commit the changes and run `hack/preview.sh`.
+Operator-managed CRDs are owned by the Konflux operator bundle/chart; override them through the
+operator/CR path rather than `components/*/development`.
 
 ## Optional: OpenShift Local Post-Bootstrap Configuration
 
@@ -263,4 +268,3 @@ Even with 6 CPU cores, you will need to reduce the CPU resource requests for eac
 [github-get-access-token]: https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-personal-access-token-classic
 [github-install-app]: https://docs.github.com/en/apps/using-github-apps/installing-your-own-github-app
 [pac-setup-manual]: https://pipelinesascode.com/docs/install/github_apps/#setup-manually
-[build-service-kustomization]: https://github.com/redhat-appstudio/infra-deployments/blob/main/components/build-service/base/kustomization.yaml

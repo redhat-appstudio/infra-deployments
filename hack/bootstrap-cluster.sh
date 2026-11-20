@@ -57,6 +57,11 @@ main() {
             operator_overlay="--operator-overlay"
             shift
             ;;
+        --development | development)
+            log_error "Bare development preview is no longer supported."
+            log_error "Preview is operator-only (rd-dev). Use: preview or preview --operator-overlay (same behavior)."
+            exit 1
+            ;;
         preview | upstream)
             mode=$1
             shift
@@ -73,7 +78,7 @@ main() {
 
     log_step "Starting Konflux Cluster Bootstrap"
     log_info "Mode: ${mode:-upstream}"
-    log_info "Options: OBO=${obo:-disabled}, EAAS=${eaas:-disabled}, OPERATOR_OVERLAY=${operator_overlay:-disabled}"
+    log_info "Options: OBO=${obo:-disabled}, EAAS=${eaas:-disabled}, OPERATOR_OVERLAY=${operator_overlay:-default}"
     log_info "Start time: $(date '+%Y-%m-%d %H:%M:%S %Z')"
 
     # Deploy ArgoCD
@@ -121,12 +126,11 @@ main() {
         ;;
     "preview")
         if [ -n "$operator_overlay" ]; then
-            log_step "Configuring operator-overlay Argo CD health checks"
-            # shellcheck source=/dev/null
-            source "${ROOT}/hack/deploy-argocd.sh"
-            configure_operator_overlay_health_customizations
+            log_info "--operator-overlay is now the default preview mode; the flag is optional (compat only)."
         fi
-        log_info "Deploying preview configuration"
+        # Konflux CR Argo health customization is applied inside preview.sh so
+        # direct ./hack/preview.sh and bootstrap-cluster.sh preview stay aligned.
+        log_info "Deploying preview configuration (rd-dev / operator overlay)"
         $ROOT/hack/preview.sh $obo $eaas $operator_overlay
         ;;
     esac
@@ -155,21 +159,22 @@ print_help() {
     echo ""
     echo "Arguments:"
     echo "  MODE             Deployment mode: 'upstream' or 'preview' (default: upstream)"
+    echo "                   preview always uses the rd-dev (operator) overlay"
     echo ""
     echo "Options:"
     echo "  -o, --obo        Install Observability operator and Prometheus for federation"
     echo "                   (only applicable in preview mode)"
     echo "  -e, --eaas       Install Environment-as-a-Service components"
     echo "                   (only applicable in preview mode)"
-    echo "  --operator-overlay  Preview using rd-dev (development minus legacy member appsets)"
-    echo "                      (only applicable in preview mode)"
+    echo "  --operator-overlay  Deprecated compat alias; preview is already operator-only"
+    echo "                      (rd-dev). Same behavior with or without the flag."
     echo "  -h, --help       Show this help message and exit"
     echo ""
     echo "Examples:"
     echo "  $0                      # Bootstrap in upstream mode"
-    echo "  $0 preview              # Bootstrap in preview mode"
-    echo "  $0 preview --obo --eaas             # Preview mode with OBO and EaaS"
-    echo "  $0 preview --operator-overlay       # Preview mode with rd-dev overlay"
+    echo "  $0 preview              # Bootstrap preview (rd-dev / operator overlay)"
+    echo "  $0 preview --obo --eaas # Preview with OBO and EaaS"
+    echo "  $0 preview --operator-overlay  # Same as preview (compat alias)"
     echo ""
     echo "Environment variables:"
     echo "  MY_GIT_FORK_REMOTE      Git remote name for your fork (required for preview)"
