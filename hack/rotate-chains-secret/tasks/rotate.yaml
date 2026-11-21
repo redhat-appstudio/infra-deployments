@@ -1,0 +1,30 @@
+---
+- name: Rotate one cluster and update any legacy Vault paths
+  block:
+    - name: Generate and upload the key with the shared bootstrap credential tasks
+      ansible.builtin.include_tasks: "{{ playbook_dir }}/../new-cluster/tasks/vault/chains-key.yaml"
+      vars:
+        chains_secret_path: "{{ target.path }}"
+        chains_expected_version: "{{ target.previous_version }}"
+        chains_journal_path: "{{ journal_path }}"
+        chains_journal_metadata: "{{ dict(target, ring=ring) }}"
+
+    - name: Update both local ExternalSecret path patches after a migration
+      ansible.builtin.replace:
+        path: "{{ rings_root }}/{{ ring }}/{{ target.cluster }}/{{ item }}"
+        regexp: "{{ target.source_path | regex_escape }}"
+        replace: "{{ target.path }}"
+      loop: "{{ target.patches }}"
+      when: target.source_path != target.path
+
+    - name: Report the completed cluster
+      ansible.builtin.debug:
+        msg: "{{ target.cluster }}: stonesoup/{{ target.path }} version {{ target.previous_version | int + 1 }}"
+
+  rescue:
+    - name: Stop this ring on failure
+      ansible.builtin.fail:
+        msg: >-
+          Rotation stopped at {{ target.cluster }}. A Vault write may already have succeeded.
+          Inspect {{ journal_path }} and Vault metadata before retrying.
+          Earlier clusters are not automatically rolled back. Review any local manifest changes.

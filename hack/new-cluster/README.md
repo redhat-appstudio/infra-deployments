@@ -2,6 +2,14 @@
 
 This is step 2 of 3 in automating the rollout of a new cluster.
 
+To rotate existing Tekton Chains keys and align their Vault paths one ring at
+a time, use the [Chains rotation playbook](../rotate-chains-secret/README.md).
+The new-cluster playbook only creates a Chains key when its Vault path is absent.
+Both workflows use [shared key tasks](tasks/vault/chains-key.yaml) for password
+and key generation, guarded Vault upload, verification, and cleanup. Bootstrap
+verifies metadata without requiring permission to read secret data; rotation
+also reads back the new public key.
+
 This automation creates yaml files in the infra-deployments repo locally.
 
 New clusters are bootstrapped with the **konflux-operator** overlay under
