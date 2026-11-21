@@ -41,6 +41,19 @@ valuesInline:
       limits:
         cpu: 100m
         memory: 128Mi
+  perSiteExporter:
+    # Preserve observed host breakdowns when the bounded-label exporter is promoted.
+    # Unlisted destinations remain available and aggregate under hostname="other".
+    allowedHostnames:
+      - 2209d6dda25891dee55b086a469130de.r2.cloudflarestorage.com
+      - brew.registry.redhat.io
+      - cdn01.quay.io
+      - quay.io
+      - registry.access.redhat.com
+      - registry.ci.openshift.org
+      - registry.redhat.io
+      - registry.stage.redhat.io
+      - s3.us-east-1.amazonaws.com
   squidExporter:
     resources:
       requests:
