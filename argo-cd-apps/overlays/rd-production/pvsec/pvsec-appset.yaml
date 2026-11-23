@@ -23,20 +23,6 @@ spec:
                 clusterDir: "empty-base"
           - list:
               elements: [] # Populated via a k-component (or manually if the cluster list is unusual)
-      selector:
-        matchExpressions:
-          - key: nameNormalized
-            operator: In
-            values:
-              - kflux-prd-rh03
-              - stone-prod-p01
-              - kflux-lw-p01
-              - kflux-ocp-p01
-              - kflux-osp-p01
-              - kflux-rhel-p01
-              - kflux-fedora-01
-              - stone-prod-p02
-              - stone-prd-rh01
   template:
     metadata:
       name: pvsec-{{nameNormalized}}
