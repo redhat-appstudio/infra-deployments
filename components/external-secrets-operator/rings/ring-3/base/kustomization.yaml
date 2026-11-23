@@ -1,16 +1,16 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-
 namespace: external-secrets-operator
-
 resources:
 - base-snapshot
-
 helmGlobals:
   chartHome: base-snapshot
-
 helmCharts:
 - name: external-secrets
   releaseName: external-secrets-operator
   namespace: external-secrets-operator
   valuesFile: values.yaml
+images:
+- name: ghcr.io/external-secrets/external-secrets
+  newName: quay.io/konflux-ci/external-secrets-operator
+  newTag: 7733fe08951962479daaad98b2604df5e8f904cb
