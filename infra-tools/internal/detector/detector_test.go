@@ -1077,8 +1077,8 @@ spec:
                 clusterDir: ""
           - list:
               elements:
-                - nameNormalized: lightwell-dev
-                  values.clusterDir: lightwell-dev
+                - nameNormalized: stone-stg-rh01
+                  values.clusterDir: stone-stg-rh01
   template:
     metadata:
       name: kanary-{{nameNormalized}}
