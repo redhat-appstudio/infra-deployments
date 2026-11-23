@@ -4,6 +4,10 @@ kind: Kustomization
 resources:
   - ../base
 
+components:
+  - ../base/tekton-kueue-common
+  - ../base/tekton-kueue-hub
+
 patches:
   # ExternalSecret patches
   - target:

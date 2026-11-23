@@ -1,0 +1,11 @@
+apiVersion: kueue.x-k8s.io/v1beta2
+kind: MultiKueueConfig
+metadata:
+  name: multikueue-spokes
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: '10'
+spec:
+  clusters:
+  - kflux-spoke-stg-01a
+  - kflux-spoke-stg-01b

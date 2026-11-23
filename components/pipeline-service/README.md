@@ -57,6 +57,14 @@ Until the Konflux Operator is deployed to all clusters, some clusters' (those wi
 
 ## Promotion Tactics
 
+The ring-1 staging Hub uses the `tekton-kueue-common` and `tekton-kueue-hub`
+components under `rings/ring-1/base/`. The spokes use `base/spoke`, which combines
+the lite installation with their Tekton Kueue configuration. Hub and spokes use
+the CatalogSource and Subscription from the ring's promoted snapshot and require
+[the Pipelines upgrade in PR #15775](https://github.com/redhat-appstudio/infra-deployments/pull/15775)
+to reach ring-1 before these topology changes are merged. LocalQueues and tenant
+namespace provisioning remain deferred.
+
 This component is a special case in terms of using the automatic ring deployments workflow. Unlike most other components, there are no images listed in the ring or cluster Kustomize files. Image-based changes can still be automatically detected and promoted when a new image is available from the associated Quay repository, but this configuration allows image-based changes to be paired with manifest-based changes in the same [Freight](https://docs.kargo.io/user-guide/core-concepts#freight) by making changes to each resource's image reference in the `components/pipeline-service/base/` directory.
 
 Both image-based and manifest-based changes must follow the [Manifest-based Promotion Workflows](https://gitlab.cee.redhat.com/konflux/docs/sop/-/blob/main/infra/ring-deployments/component-promotions.md?ref_type=heads#manifest-based-promotion), with the exception that Kargo can automatically create the first PR in the `components/pipeline-service/base/` directory if it detects a new image.

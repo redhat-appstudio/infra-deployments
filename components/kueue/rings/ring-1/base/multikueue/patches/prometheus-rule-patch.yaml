@@ -1,0 +1,38 @@
+- op: replace
+  path: /spec/groups/0/rules/1/expr
+  value: |
+    (
+      kube_deployment_status_replicas_available{namespace=~"openshift-kueue-operator|openshift-pipelines",deployment=~".*kueue.*"}
+    )
+    /
+    clamp_min(
+      kube_deployment_spec_replicas{namespace=~"openshift-kueue-operator|openshift-pipelines",deployment=~".*kueue.*"},
+      1
+    ) * 100 < 100
+- op: replace
+  path: /spec/groups/0/rules/2/expr
+  value: |
+    (
+      container_memory_working_set_bytes{namespace=~"openshift-kueue-operator|openshift-pipelines",pod=~".*kueue.*",image!=""}
+      * on(container, pod)
+      group_left
+      kube_pod_container_status_ready{namespace=~"openshift-kueue-operator|openshift-pipelines",pod=~".*kueue.*"}
+    )
+    / on (pod)
+    kube_pod_resource_limit{resource="memory",namespace=~"openshift-kueue-operator|openshift-pipelines",pod=~".*kueue.*"} * 100 > 70
+- op: replace
+  path: /spec/groups/0/rules/3/expr
+  value: |
+    (
+      pod:container_cpu_usage:sum{namespace=~"openshift-kueue-operator|openshift-pipelines",pod=~".*kueue.*"}
+      * on(pod)
+      kube_pod_container_status_ready{namespace=~"openshift-kueue-operator|openshift-pipelines",pod=~".*kueue.*"}
+    ) / on (pod) group_right max by (pod) (
+      kube_pod_resource_limit{resource="cpu",namespace=~"openshift-kueue-operator|openshift-pipelines",pod=~".*kueue.*"}
+    ) * 100 > 85
+- op: replace
+  path: /spec/groups/0/rules/5/expr
+  value: |
+    increase(kube_pod_container_status_restarts_total{namespace=~"openshift-kueue-operator|openshift-pipelines",pod=~".*kueue.*"}[1h])
+    * on(container, pod)
+    kube_pod_container_status_ready{namespace=~"openshift-kueue-operator|openshift-pipelines",pod=~".*kueue.*"} >= 3
