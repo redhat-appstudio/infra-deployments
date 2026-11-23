@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- ../base
+- ./logs-writer-rbac.yaml
+
+patches:
+# Applying these patches by cluster as Loki will not be deployed on some staging
+# clusters yet
+- path: ./patches/configure-logforwarder-output-loki-patch.yaml
+  target:
+    group: observability.openshift.io
+    version: v1
+    kind: ClusterLogForwarder
+    name: instance

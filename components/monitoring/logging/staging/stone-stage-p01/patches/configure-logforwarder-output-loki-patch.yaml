@@ -1,0 +1,37 @@
+# Patch for also forwarding logs to in-cluster Loki using the existing pipeline
+# Patching this so it only applies to stage only but once this is ready in
+# production, base ClusterLogForwarder will be updated to include Loki output
+---
+# Define output to Loki
+- op: add
+  path: /spec/outputs/-
+  value:
+    name: loki-output
+    type: lokiStack
+    lokiStack:
+      target:
+        name: logging-loki
+        namespace: openshift-logging
+      authentication:
+        token:
+          from: serviceAccount
+    tls:
+      ca:
+        configMapName: logging-loki-gateway-ca-bundle
+        key: service-ca.crt
+
+# Validate pipeline ordering before applying filters (fail fast if base changes)
+- op: test
+  path: /spec/pipelines/0/name
+  value: fluentd-forward-logs-to-splunk-rhtap-app-index
+- op: test
+  path: /spec/pipelines/1/name
+  value: fluentd-forward-logs-to-splunk-rhtap-audit-index
+
+# Add Loki outputRef to each pipeline
+- op: add
+  path: /spec/pipelines/0/outputRefs/-
+  value: loki-output
+- op: add
+  path: /spec/pipelines/1/outputRefs/-
+  value: loki-output
