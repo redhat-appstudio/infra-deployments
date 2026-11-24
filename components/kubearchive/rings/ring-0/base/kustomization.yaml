@@ -98,7 +98,6 @@ patches:
       kind: Job
       name: kubearchive-schema-migration
 
-  - path: patches/api-server-service-cert-patch.yaml
   - path: patches/operator-webhooks-service-cert-patch.yaml
   - path: patches/mutating-webhook-inject-cabundle-patch.yaml
   - path: patches/validating-webhook-inject-cabundle-patch.yaml
@@ -108,19 +107,7 @@ patches:
       version: v1
       kind: Certificate
       name: kubearchive-api-server-certificate
-  - path: patches/api-server-certificate-secretname-patch.yaml
-    target:
-      group: cert-manager.io
-      version: v1
-      kind: Certificate
-      name: kubearchive-api-server-certificate
   - path: patches/operator-certificate-dnsnames-patch.yaml
-    target:
-      group: cert-manager.io
-      version: v1
-      kind: Certificate
-      name: kubearchive-operator-certificate
-  - path: patches/operator-certificate-secretname-patch.yaml
     target:
       group: cert-manager.io
       version: v1
