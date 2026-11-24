@@ -39,6 +39,7 @@ admissionController:
     enabled: true
     # kyverno doesn't seem to support HTTPS on metrics
     secure: false
+  tlsKeyAlgorithm: Ed25519
 backgroundController:
   replicas: 1
   extraArgs:
@@ -71,6 +72,7 @@ cleanupController:
     capabilities:
       drop:
       - "ALL"
+  tlsKeyAlgorithm: Ed25519
 reportsController:
   enabled: false
 policyReportsCleanup:
