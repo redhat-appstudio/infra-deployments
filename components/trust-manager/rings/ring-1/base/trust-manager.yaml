@@ -1,0 +1,22 @@
+apiVersion: operator.openshift.io/v1alpha1
+kind: TrustManager
+metadata:
+  name: cluster
+  annotations:
+    # The Operator installs the CRD through a separate Application.
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true,Prune=false,Delete=false
+spec:
+  trustManagerConfig:
+    trustNamespace: cert-manager
+    # Supply useDefaultCAs from OpenShift's injected CA bundle.
+    defaultCAPackage:
+      policy: Enabled
+    secretTargets:
+      policy: Disabled
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 100m
+        memory: 256Mi
