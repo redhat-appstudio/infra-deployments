@@ -1,0 +1,50 @@
+---
+apiVersion: policies.kyverno.io/v1
+kind: NamespacedMutatingPolicy
+metadata:
+  name: inject-repository-cluster-param
+spec:
+  failurePolicy: Ignore
+  evaluation:
+    admission:
+      enabled: true
+    mutateExisting:
+      enabled: true
+  matchConstraints:
+    resourceRules:
+      - apiGroups: ["pipelinesascode.tekton.dev"]
+        apiVersions: ["v1alpha1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["repositories"]
+  variables:
+    - name: clusterName
+      expression: '"development"'
+  mutations:
+    - patchType: JSONPatch
+      jsonPatch:
+        expression: |
+          !has(object.spec.params) || object.spec.params == null ?
+          [
+            JSONPatch{
+              op: "add",
+              path: "/spec/params",
+              value: [{"name": "konflux_cluster", "value": variables.clusterName}]
+            }
+          ] :
+          !object.spec.params.exists(p, p.name == "konflux_cluster") ?
+          [
+            JSONPatch{
+              op: "add",
+              path: "/spec/params/-",
+              value: {"name": "konflux_cluster", "value": variables.clusterName}
+            }
+          ] :
+          object.spec.params.filter(p, p.name == "konflux_cluster")[0].value != variables.clusterName ?
+          [
+            JSONPatch{
+              op: "replace",
+              path: "/spec/params/" + string(object.spec.params.map(p, p.name).indexOf("konflux_cluster")) + "/value",
+              value: variables.clusterName
+            }
+          ] :
+          []
