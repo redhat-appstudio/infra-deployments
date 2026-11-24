@@ -45,10 +45,10 @@ in the namespace name does not give it a different namespace type. This
 reorganization preserves all existing names, annotations, permissions and targets.
 Conformance keeps its legacy RBAC; new suites use the smaller runner profile.
 
-The staging ApplicationSet selects `stone-stage-p01`, `stone-stg-rh01` and
-`lightwell-dev`. Other selected staging clusters use the empty fallback. The
-production ApplicationSet is deliberately scoped to the representative Ring 2
-cluster `stone-prod-p01`, where only the Vanguard proxy suite is selected. See the
+The staging ApplicationSet selects `stone-stage-p01` and `stone-stg-rh01`.
+Other selected staging clusters use the empty fallback. The production
+ApplicationSet is deliberately scoped to the representative Ring 2 cluster
+`stone-prod-p01`, where only the Vanguard proxy suite is selected. See the
 [ApplicationSet](../../argo-cd-apps/overlays/rd-staging/konflux-verifications-rd/konflux-verifications-rd-appset.yaml)
 and [production ApplicationSet](../../argo-cd-apps/overlays/rd-production/konflux-verifications-rd/konflux-verifications-rd-appset.yaml).
 
@@ -136,7 +136,6 @@ kustomize build components/konflux-verifications-rd/base
 kustomize build components/konflux-verifications-rd/examples/team-suite
 kustomize build components/konflux-verifications-rd/rings/ring-1/stone-stage-p01
 kustomize build components/konflux-verifications-rd/rings/ring-1/stone-stg-rh01
-kustomize build components/konflux-verifications-rd/rings/ring-1/lightwell-dev
 kustomize build components/konflux-verifications-rd/rings/ring-2/stone-prod-p01
 ```
 

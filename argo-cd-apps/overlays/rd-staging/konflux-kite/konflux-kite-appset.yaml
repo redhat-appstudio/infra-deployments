@@ -7,15 +7,7 @@ metadata:
     appstudio.redhat.com/hub-only: 'true'
 spec:
   generators:
-    # konflux-kite is not deployed to lightwell-dev; drop it from the
-    # tenant cluster list populated by deploy-to-staging-tenant-clusters.
-    - selector:
-        matchExpressions:
-          - key: nameNormalized
-            operator: NotIn
-            values:
-              - lightwell-dev
-      merge:
+    - merge:
         mergeKeys:
           - nameNormalized
         generators:

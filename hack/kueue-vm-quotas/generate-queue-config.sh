@@ -115,7 +115,6 @@ main() {
     # components/multi-platform-controller/rings/ and components/kueue/rings/.
     local -A queue_configs=(
         # Ring 1 — staging
-        ["components/multi-platform-controller/rings/ring-1/lightwell-dev/host-config.yaml"]="components/kueue/rings/ring-1/lightwell-dev/cluster-queue.yaml"
         ["components/multi-platform-controller/rings/ring-1/stone-stg-rh01/host-config.yaml"]="components/kueue/rings/ring-1/stone-stg-rh01/cluster-queue.yaml"
         ["components/multi-platform-controller/rings/ring-1/stone-stage-p01/host-config.yaml"]="components/kueue/rings/ring-1/stone-stage-p01/cluster-queue.yaml"
 
