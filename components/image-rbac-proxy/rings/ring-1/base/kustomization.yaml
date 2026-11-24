@@ -5,6 +5,14 @@ resources:
 - base-snapshot
 - external-secrets
 - https://github.com/konflux-ci/image-rbac-proxy/deploy/base?ref=821672f592f3ca5d3f408f2db964dd60821d207c
+vars:
+- name: DEX_DEPLOYMENT_NAME
+  objref:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: dex
+  fieldref:
+    fieldpath: metadata.name
 images:
 - name: quay.io/konflux-ci/image-rbac-proxy
   newName: quay.io/konflux-ci/image-rbac-proxy
