@@ -59,18 +59,7 @@ backgroundController:
     # kyverno doesn't seem to support HTTPS on metrics
     secure: false
 cleanupController:
-  enabled: true
-  extraArgs:
-    leaderElectionRetryPeriod: 26s
-  securityContext:
-    allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: true
-    runAsNonRoot: true
-    runAsUser: null
-    runAsGroup: null
-    capabilities:
-      drop:
-      - "ALL"
+  enabled: false
 reportsController:
   enabled: false
 policyReportsCleanup:
