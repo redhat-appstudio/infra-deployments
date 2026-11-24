@@ -93,6 +93,7 @@ spec:
                   effect: "NoSchedule"
             default-timeout-minutes: "120"
             default-imagepullbackoff-timeout: "15m"
+            default-maximum-resolution-timeout: "5m"
         config-leader-election-resolvers:
           data:
             buckets: "4"
@@ -105,7 +106,7 @@ spec:
             fetch-timeout: "2m"
         git-resolver-config:
           data:
-            fetch-timeout: 2m
+            fetch-timeout: 5m
       deployments:
         tekton-operator-proxy-webhook:
           spec:
