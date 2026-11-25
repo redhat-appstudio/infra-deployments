@@ -5,6 +5,28 @@ metadata:
 spec:
   ui:
     spec:
+      dex:
+        dex:
+          env:
+            - name: RH_SSO_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: sso-client
+                  key: client_id
+            - name: RH_SSO_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: sso-client
+                  key: client_secret
+        config:
+          connectors:
+            - type: oidc
+              id: rh-sso
+              name: Red Hat SSO
+              config:
+                clientID: $RH_SSO_CLIENT_ID
+                clientSecret: $RH_SSO_CLIENT_SECRET
+                issuer: https://auth.redhat.com/auth/realms/EmployeeIDP
       runtimeConfig:
         chatBot:
           enabled: false
