@@ -88,7 +88,32 @@ commonLabels: {}
 
 # -- If true, external-secrets will perform leader election between instances to ensure no more
 # than one instance of external-secrets operates at a time.
+# Should be enabled when replicaCount or certController.replicaCount is greater than 1.
 leaderElect: false
+
+# -- ID of the lease object used for leader election.
+# Leave empty to use the default ('external-secrets-controller').
+# Set to a unique value when running multiple independent ESO deployments in the same namespace.
+# @default -- "external-secrets-controller"
+leaderElectionID: ""
+
+# -- Duration that non-leader candidates will wait to force acquire leadership.
+# Increase this along with renewDeadline to tolerate a busy or briefly unavailable API server
+# (for example during control plane maintenance) without churning leadership.
+# Leave empty to use the controller default ('15s').
+# @default -- "15s"
+leaderElectionLeaseDuration: ""
+
+# -- Duration that the acting leader will retry refreshing leadership before giving up.
+# Must be less than leaderElectionLeaseDuration.
+# Leave empty to use the controller default ('10s').
+# @default -- "10s"
+leaderElectionRenewDeadline: ""
+
+# -- Duration the leader election client waits between tries of actions.
+# Leave empty to use the controller default ('2s').
+# @default -- "2s"
+leaderElectionRetryPeriod: ""
 
 # -- If set external secrets will filter matching
 # Secret Stores with the appropriate controller values.
@@ -102,8 +127,8 @@ extendedMetricLabels: false
 # provided namespace
 scopedNamespace: ""
 
-# -- Must be used with scopedNamespace. If true, create scoped RBAC roles under the scoped namespace
-# and implicitly disable cluster stores and cluster external secrets
+# -- If true, create scoped RBAC roles and implicitly disable cluster-scoped
+# controllers. Scoped to scopedNamespace if set, otherwise to .Release.Namespace.
 scopedRBAC: false
 
 # -- If true the OpenShift finalizer permissions will be added to RBAC
@@ -125,6 +150,9 @@ processClusterStore: true
 
 # -- if true, the operator will process secret store. Else, it will ignore them.
 processSecretStore: true
+
+# -- Default time duration between reconciling (Cluster)SecretStores.
+storeRequeueInterval: ""
 
 # -- if true, the operator will process cluster generator. Else, it will ignore them.
 processClusterGenerator: true
@@ -153,6 +181,30 @@ createOperator: true
 
 # -- if true, HTTP2 will be enabled for the services created by all controllers, curently metrics and webhook.
 enableHTTP2: false
+
+# -- TLS security profile settings applied to all controller, webhook, and certController deployments.
+# These can be overridden per-component via webhook.tls and certController.tls.
+tls:
+  # -- Minimum TLS version supported (e.g. "1.2" or "1.3"). If empty, the Go CLI default applies.
+  # +docs:property
+  minVersion: ""
+
+  # -- Comma-separated list of TLS cipher suites (TLS_CIPHER_SUITE names).
+  # Does not apply to TLS 1.3. If empty, Go defaults apply.
+  # +docs:property
+  ciphers: ""
+
+  # -- Ordered list of TLS key exchange curves (e.g. X25519, CurveP256, or decimal CurveID).
+  # If empty, Go defaults apply.
+  # +docs:property
+  curvePreferences: []
+
+# -- Vault token cache configuration
+vault:
+  # -- Enable Vault token cache. External secrets will reuse the Vault token without creating a new one on each request.
+  enableTokenCache: false
+  # -- Maximum size of Vault token cache. Only used if enableTokenCache is true.
+  tokenCacheSize: 262144
 
 # -- Specifies the number of concurrent ExternalSecret Reconciles external-secret executes at
 # a time.
@@ -184,6 +236,17 @@ rbac:
   # -- Specifies whether role and rolebinding resources should be created.
   create: true
 
+  # -- Specifies whether the namespaced leader election Role and RoleBinding are created.
+  # These are only used when leaderElect is true; set to false to omit them when running
+  # without leader election. Only takes effect when rbac.create is true.
+  leaderElection:
+    create: true
+
+  # -- Specifies whether the serviceaccounts/token create permission is included in the controller RBAC.
+  # When set to false, users must create per-ServiceAccount Role/RoleBinding with resourceNames constraint
+  # to grant ESO token creation for specific ServiceAccounts referenced in SecretStore specs.
+  serviceAccountTokenCreate: true
+
   servicebindings:
     # -- Specifies whether a clusterrole to give servicebindings read access should be created.
     create: true
@@ -193,6 +256,9 @@ rbac:
 
   # -- Specifies whether permissions are aggregated to the edit ClusterRole
   aggregateToEdit: true
+
+  # -- Specifies whether permissions are aggregated to the admin ClusterRole
+  aggregateToAdmin: true
 
 ## -- Extra environment variables to add to container.
 extraEnv: []
@@ -303,6 +369,9 @@ metrics:
 
   listen:
     port: 8080
+    auth:
+      # -- Enable Kubernetes RBAC-based authentication for metrics endpoint. Requires metrics.listen.secure to be true. Default value is false.
+      enabled: false
     secure:
       enabled: false
       # -- if those are not set or invalid, self-signed certs will be generated
@@ -327,6 +396,10 @@ grafanaDashboard:
   # -- If true creates a Grafana dashboard.
   enabled: false
 
+  # -- Namespace where the dashboard ConfigMap should be created.
+  # Resolution order: grafanaDashboard.namespace, then namespaceOverride, then the release namespace.
+  namespace: ""
+
   # -- Label that ConfigMaps should have to be loaded as dashboards.
   sidecarLabel: "grafana_dashboard"
 
@@ -346,9 +419,9 @@ livenessProbe:
   enabled: false
   # -- The body of the liveness probe settings.
   spec:
-    # -- Address for liveness probe.
+    # -- Bind address for the health server used by both liveness and readiness probes (--live-addr flag).
     address: ""
-    # -- Named port for liveness probe.
+    # -- Port for the health server used by both liveness and readiness probes (--live-addr flag).
     port: 8082
     # -- Specify the maximum amount of time to wait for a probe to respond before considering it fails.
     timeoutSeconds: 5
@@ -368,6 +441,29 @@ livenessProbe:
       # -- Path for liveness probe.
       path: /healthz
 
+readinessProbe:
+  # -- Determines whether the readiness probe is enabled. Disabled by default. Enabling this will auto-start the health server (--live-addr) even if livenessProbe is disabled. Health server address/port are configured via livenessProbe.spec.address and livenessProbe.spec.port.
+  enabled: false
+  # -- The body of the readiness probe settings (standard Kubernetes probe spec).
+  spec:
+    # -- Specify the maximum amount of time to wait for a probe to respond before considering it fails.
+    timeoutSeconds: 5
+    # -- Number of consecutive probe failures that should occur before considering the probe as failed.
+    failureThreshold: 3
+    # -- Period in seconds for K8s to start performing probes.
+    periodSeconds: 10
+    # -- Number of successful probes to mark probe successful.
+    successThreshold: 1
+    # -- Delay in seconds for the container to start before performing the initial probe.
+    initialDelaySeconds: 10
+    # -- Handler for readiness probe.
+    httpGet:
+      # -- Set this value to 'live' (for named port) or an integer for readiness probes.
+      # @schema type: [string, integer]
+      port: live
+      # -- Path for readiness probe.
+      path: /readyz
+
 nodeSelector: {}
 
 tolerations: []
@@ -378,6 +474,12 @@ affinity: {}
 
 # -- Pod priority class name.
 priorityClassName: ""
+
+# -- Pod scheduler name.
+schedulerName: ""
+
+# -- Pod runtime class name.
+runtimeClassName: ""
 
 # -- Pod disruption budget - for more details see https://kubernetes.io/docs/concepts/workloads/pods/disruptions/
 podDisruptionBudget:
@@ -392,6 +494,27 @@ hostNetwork: false
 # -- (bool) Specifies if controller pod should use hostUsers or not. If hostNetwork is true, hostUsers should be too. Only available in Kubernetes ≥ 1.33.
 # @schema type: [boolean, null]
 hostUsers:
+
+# -- Setup a networkPolicy for external-secrets
+networkPolicy:
+  # -- Specifies whether the networkPolicy should be created.
+  enabled: false
+  # -- The ingress traffic
+  # Should match the health and (optionally) metrics port
+  ingress:
+  - ports:
+    - protocol: TCP
+      # @schema type: [string, integer]
+      port: 8080  # metrics port
+    - protocol: TCP
+      # @schema type: [string, integer]
+      port: 8082  # health port
+  # -- The egress traffic
+  # The minimum egress ports required to function are:
+  #   DNS (53/udp, 53/tcp)
+  #   API server (80/tcp, 443/tcp, or 6443/tcp)
+  # You will need to customize this value to meet your needs
+  egress: []
 
 webhook:
   # -- Annotations to place on validating webhook configuration.
@@ -411,6 +534,22 @@ webhook:
   revisionHistoryLimit: 10
 
   certDir: /tmp/certs
+
+  # -- Webhook-specific TLS security profile overrides.
+  # When set, these override the global tls.* values for the webhook deployment.
+  tls:
+    # -- Minimum TLS version supported (e.g. "1.2" or "1.3"). If empty, the global tls.minVersion is used.
+    # +docs:property
+    minVersion: ""
+
+    # -- Comma-separated list of TLS cipher suites. If empty, the global tls.ciphers is used.
+    # +docs:property
+    ciphers: ""
+
+    # -- Ordered list of TLS key exchange curves. If empty, the global tls.curvePreferences is used.
+    # +docs:property
+    curvePreferences: []
+
   # -- Specifies whether validating webhooks should be created with failurePolicy: Fail or Ignore
   failurePolicy: Fail
   # -- Specifies if webhook pod should use hostNetwork or not.
@@ -418,6 +557,31 @@ webhook:
   # -- (bool) Specifies if webhook pod should use hostUsers or not. If hostNetwork is true, hostUsers should be too. Only available in Kubernetes ≥ 1.33.
   # @schema type: [boolean, null]
   hostUsers:
+
+  # -- Setup a networkPolicy for external-secrets webhook
+  networkPolicy:
+    # -- Specifies whether the networkPolicy should be created.
+    enabled: false
+    # -- The ingress traffic
+    # Should match the webhook, health, and (optionally) metrics port
+    ingress:
+    - ports:
+      - protocol: TCP
+        # @schema type: [string, integer]
+        port: 8080  # metrics port
+      - protocol: TCP
+        # @schema type: [string, integer]
+        port: 8081  # health port
+      - protocol: TCP
+        # @schema type: [string, integer]
+        port: 10250  # webhook port
+    # -- The egress traffic
+    # The minimum egress ports required to function are:
+    #   DNS (53/udp, 53/tcp)
+    #   API server (80/tcp, 443/tcp, or 6443/tcp)
+    # You will need to customize this value to meet your needs
+    egress: []
+
   image:
     repository: ghcr.io/external-secrets/external-secrets
     pullPolicy: IfNotPresent
@@ -504,6 +668,12 @@ webhook:
     # -- Pod priority class name.
   priorityClassName: ""
 
+    # -- Pod scheduler name.
+  schedulerName: ""
+
+    # -- Pod runtime class name.
+  runtimeClassName: ""
+
   # -- Pod disruption budget - for more details see https://kubernetes.io/docs/concepts/workloads/pods/disruptions/
   podDisruptionBudget:
     enabled: false
@@ -515,6 +685,18 @@ webhook:
 
     listen:
       port: 8080
+      auth:
+        # -- Enable Kubernetes RBAC-based authentication for webhook's metrics endpoint. Requires webhook.metrics.listen.secure to be true. Default value is false.
+        enabled: false
+      secure:
+        enabled: false
+        # -- if those are not set or invalid, self-signed certs will be generated
+        # -- TLS cert directory path
+        certDir: /etc/tls
+        # -- TLS cert file path
+        certFile: /etc/tls/tls.crt
+        # -- TLS key file path
+        keyFile: /etc/tls/tls.key
 
     service:
       # -- Enable if you use another monitoring tool than Prometheus to scrape the metrics
@@ -526,11 +708,40 @@ webhook:
       # -- Additional service annotations
       annotations: {}
 
-  readinessProbe:
-    # -- Address for readiness probe
-    address: ""
-    # -- ReadinessProbe port for kubelet
+
+  livenessProbe:
+    enabled: false
+    # -- Set this value to 'live' (for named port) or an integer for liveness probes.
+    # @schema type: [string, integer]
     port: 8081
+    timeoutSeconds: 5
+    failureThreshold: 5
+    periodSeconds: 10
+    successThreshold: 1
+    initialDelaySeconds: 10
+
+  readinessProbe:
+    enabled: true
+    address: ""
+    # -- Set this value to 'ready' (for named port) or an integer for readiness probes.
+    # @schema type: [string, integer]
+    port: 8081
+    timeoutSeconds: 5
+    failureThreshold: 3
+    periodSeconds: 5
+    successThreshold: 1
+    initialDelaySeconds: 20
+
+  startupProbe:
+    # -- Enabled determines if the startup probe should be used or not. By default it's disabled.
+    enabled: false
+    # -- Number of seconds after the container has started before the startup probe is initiated.
+    initialDelaySeconds: 10
+    # -- How often (in seconds) to perform the startup probe.
+    periodSeconds: 10
+    # -- Number of consecutive failures before the container is restarted. The startup window is initialDelaySeconds + failureThreshold * periodSeconds.
+    failureThreshold: 30
+
 
     ## -- Extra environment variables to add to container.
   extraEnv: []
@@ -598,12 +809,31 @@ certController:
   create: true
   requeueInterval: "5m"
   replicaCount: 1
+  # -- Restrict the cert controller's informer cache to CustomResourceDefinitions and
+  # ValidatingWebhookConfigurations carrying the `external-secrets.io/component` label.
+  # Disable this only if the CRDs it manages were installed without that label.
+  enablePartialCache: true
   # -- Specifies Log Params to the Certificate Controller
   log:
     level: info
     timeEncoding: epoch
   # -- Specifies the amount of historic ReplicaSets k8s should keep (see https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#clean-up-policy)
   revisionHistoryLimit: 10
+
+  # -- CertController-specific TLS security profile overrides.
+  # When set, these override the global tls.* values for the cert-controller deployment.
+  tls:
+    # -- Minimum TLS version supported (e.g. "1.2" or "1.3"). If empty, the global tls.minVersion is used.
+    # +docs:property
+    minVersion: ""
+
+    # -- Comma-separated list of TLS cipher suites. If empty, the global tls.ciphers is used.
+    # +docs:property
+    ciphers: ""
+
+    # -- Ordered list of TLS key exchange curves. If empty, the global tls.curvePreferences is used.
+    # +docs:property
+    curvePreferences: []
 
   image:
     repository: ghcr.io/external-secrets/external-secrets
@@ -646,8 +876,35 @@ certController:
   # @schema type: [boolean, null]
   hostUsers:
 
+  # -- Setup a networkPolicy for external-secrets certController
+  networkPolicy:
+    # -- Specifies whether the networkPolicy should be created.
+    enabled: false
+    # -- The ingress traffic
+    # Should match the health and (optionally) metrics port
+    ingress:
+    - ports:
+      - protocol: TCP
+        # @schema type: [string, integer]
+        port: 8080  # metrics port
+      - protocol: TCP
+        # @schema type: [string, integer]
+        port: 8081  # health port
+    # -- The egress traffic
+    # The minimum egress ports required to function are:
+    #   DNS (53/udp, 53/tcp)
+    #   API server (80/tcp, 443/tcp, or 6443/tcp)
+    # You will need to customize this value to meet your needs
+    egress: []
+
     # -- Pod priority class name.
   priorityClassName: ""
+
+    # -- Pod scheduler name.
+  schedulerName: ""
+
+    # -- Pod runtime class name.
+  runtimeClassName: ""
 
   # -- Pod disruption budget - for more details see https://kubernetes.io/docs/concepts/workloads/pods/disruptions/
   podDisruptionBudget:
@@ -660,6 +917,18 @@ certController:
 
     listen:
       port: 8080
+      auth:
+        # -- Enable Kubernetes RBAC-based authentication for certController's metrics endpoint. Requires certController.metrics.listen.secure to be true. Default value is false.
+        enabled: false
+      secure:
+        enabled: false
+        # -- if those are not set or invalid, self-signed certs will be generated
+        # -- TLS cert directory path
+        certDir: /etc/tls
+        # -- TLS cert file path
+        certFile: /etc/tls/tls.crt
+        # -- TLS key file path
+        keyFile: /etc/tls/tls.key
 
     service:
       # -- Enable if you use another monitoring tool than Prometheus to scrape the metrics
@@ -671,19 +940,38 @@ certController:
       # -- Additional service annotations
       annotations: {}
 
-  readinessProbe:
-    # -- Address for readiness probe
-    address: ""
-    # -- ReadinessProbe port for kubelet
+  livenessProbe:
+    enabled: false
+    # -- Set this value to 'live' (for named port) or an integer for liveness probes.
+    # @schema type: [string, integer]
     port: 8081
+    timeoutSeconds: 5
+    failureThreshold: 5
+    periodSeconds: 10
+    successThreshold: 1
+    initialDelaySeconds: 10
+
+  readinessProbe:
+    enabled: true
+    address: ""
+    # -- Set this value to 'ready' (for named port) or an integer for readiness probes.
+    # @schema type: [string, integer]
+    port: 8081
+    timeoutSeconds: 5
+    failureThreshold: 3
+    periodSeconds: 5
+    successThreshold: 1
+    initialDelaySeconds: 20
 
   startupProbe:
-    # -- Enabled determines if the startup probe should be used or not. By default it's enabled
+    # -- Enabled determines if the startup probe should be used or not. By default it's disabled.
     enabled: false
-    # -- whether to use the readiness probe port for startup probe.
-    useReadinessProbePort: true
-    # -- Port for startup probe.
-    port: ""
+    # -- Number of seconds after the container has started before the startup probe is initiated.
+    initialDelaySeconds: 10
+    # -- How often (in seconds) to perform the startup probe.
+    periodSeconds: 10
+    # -- Number of consecutive failures before the container is restarted. The startup window is initialDelaySeconds + failureThreshold * periodSeconds.
+    failureThreshold: 30
 
     ## -- Extra environment variables to add to container.
   extraEnv: []
