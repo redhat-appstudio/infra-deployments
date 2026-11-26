@@ -1,0 +1,12 @@
+---
+apiVersion: pipelinesascode.tekton.dev/v1alpha1
+kind: Repository
+metadata:
+  name: repo-cluster-wrong
+spec:
+  url: "https://github.com/example/repo-cluster-wrong"
+  params:
+    - name: foo
+      value: bar
+    - name: konflux_cluster
+      value: wrong-cluster
