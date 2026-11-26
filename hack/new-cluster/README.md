@@ -5,12 +5,11 @@ This is step 2 of 3 in automating the rollout of a new cluster.
 This automation creates yaml files in the infra-deployments repo locally.
 
 New clusters are bootstrapped with the **konflux-operator** overlay under
-`components/konflux-operator/rings/<ring>/<cluster>/`. Operator-owned legacy
-services (`application-api`, `build-service`, `enterprise-contract`,
-`image-controller`, `integration`, `konflux-info`, `konflux-rbac`,
-`konflux-ui`, `namespace-lister`, `release`) are **not** templated. The cluster
-is appended to `exclude-operator-owned-clusters.yaml` so those ApplicationSets
-do not generate for it.
+`components/konflux-operator/rings/<ring>/<cluster>/`. The legacy member
+ApplicationSets for operator-owned services (`application-api`, `build-service`,
+`enterprise-contract`, `image-controller`, `integration`, `konflux-info`,
+`konflux-rbac`, `konflux-ui`, `namespace-lister`, `release`) are not in the
+member base, so they are not templated and there is no per-cluster exclude list.
 
 Public and private clusters both get the operator. Smee-client and webhook URL
 patches are generated only when `network` is `private`.

@@ -1,15 +1,9 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - application-api
   - has
-  - release
-  - integration
-  - enterprise-contract
-  - build-service
   - build-templates
   - internal-services
-  - image-controller
   - perf-team-prometheus-reader
   - monitoring-cardinality
   - monitoring-registry
@@ -17,10 +11,6 @@ resources:
   - tempo
   - proactive-scaler
   - knative-eventing
-  - konflux-ui
-  - konflux-rbac
-  - konflux-info
-  - namespace-lister
   - cert-manager
   - konflux-verifications-rd
   - monitoring-workload-kanary
