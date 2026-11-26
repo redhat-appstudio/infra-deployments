@@ -1236,7 +1236,6 @@ var nonDeployableFiles = map[string]bool{
 // tooling (CI checks, schema validation) rather than by kustomize. Prefer a
 // basename or path-segment rule when one applies.
 var nonDeployablePaths = map[string]bool{
-	"components/konflux-info/banner-schema.json": true,
 	"components/kubearchive/upgrade.sh":          true,
 }
 
