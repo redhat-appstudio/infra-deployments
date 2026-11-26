@@ -147,11 +147,6 @@ patches:
     target:
       kind: ApplicationSet
       version: v1alpha1
-      name: application-api
-  - path: production-overlay-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
       name: internal-services
   - path: production-overlay-patch.yaml
     target:
@@ -170,16 +165,6 @@ patches:
       name: monitoring-cardinality
   # Exclude operator-managed clusters from Argo generation for services owned
   # by the konflux-operator (ring-2). Orphan (do not prune) when Applications go away.
-  - path: exclude-operator-owned-clusters.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: application-api
-  - path: preserve-resources-on-deletion.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: application-api
   - path: exclude-operator-owned-clusters.yaml
     target:
       kind: ApplicationSet
