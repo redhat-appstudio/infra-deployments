@@ -83,36 +83,7 @@ backgroundController:
     # kyverno doesn't seem to support HTTPS on metrics
     secure: false
 cleanupController:
-  replicas: 3
-  extraArgs:
-    leaderElectionRetryPeriod: 26s
-  resources:
-    requests:
-      cpu: 500m
-      memory: 256Mi
-    limits:
-      cpu: 500m
-      memory: 256Mi
-  securityContext:
-    allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: true
-    runAsNonRoot: true
-    runAsUser: null
-    runAsGroup: null
-    capabilities:
-      drop:
-      - "ALL"
-  metering:
-    disabled: false
-  podDisruptionBudget:
-    enabled: true
-    maxUnavailable: 2
-    minAvailable: null
-    unhealthyPodEvictionPolicy: AlwaysAllow
-  serviceMonitor:
-    enabled: true
-    # kyverno doesn't seem to support HTTPS on metrics
-    secure: false
+  enabled: false
 reportsController:
   enabled: false
 policyReportsCleanup:

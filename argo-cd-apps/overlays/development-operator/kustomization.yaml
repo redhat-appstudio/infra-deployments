@@ -11,12 +11,3 @@ resources:
 patchesStrategicMerge:
   - delete-legacy-konflux-member-appsets.yaml
 namespace: openshift-gitops
-# pipeline-service uses `components/pipeline-service/rings/ring-0/base/`
-# (no `appstudio-pipelines-scc`) because the operator build-service component
-# owns that SCC.
-patches:
-  - path: pipeline-service-operator-patch.yaml
-    target:
-      kind: ApplicationSet
-      version: v1alpha1
-      name: pipeline-service

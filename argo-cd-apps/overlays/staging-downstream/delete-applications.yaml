@@ -28,3 +28,63 @@ kind: ApplicationSet
 metadata:
   name: internal-services
 $patch: delete
+---
+# Staging check before the shared ApplicationSet is removed. The live
+# ApplicationSet already has preserveResourcesOnDeletion, so generated
+# Applications are orphaned instead of pruned.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: application-api
+$patch: delete
+---
+# Operator-owned on all staging-downstream members (exclude list covered every
+# cluster). Live ApplicationSets already have preserveResourcesOnDeletion, so
+# any leftover Applications are orphaned instead of pruned.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: build-service
+$patch: delete
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: integration
+$patch: delete
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: namespace-lister
+$patch: delete
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: konflux-info
+$patch: delete
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: konflux-ui
+$patch: delete
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: enterprise-contract
+$patch: delete
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: konflux-rbac
+$patch: delete
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: release
+$patch: delete
