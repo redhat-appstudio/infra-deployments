@@ -10,3 +10,12 @@ kind: ApplicationSet
 metadata:
   name: konflux-verifications-rd
 $patch: delete
+---
+# Production check before the shared ApplicationSet is removed. The live
+# ApplicationSet already has preserveResourcesOnDeletion, so generated
+# Applications are orphaned instead of pruned.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: application-api
+$patch: delete
