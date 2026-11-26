@@ -264,15 +264,16 @@ print_help() {
     echo "  --grafana    Enable Grafana dashboard (removed by default in preview)"
     echo "  --eaas       Install environment as a service components"
     echo
-    echo "  Preview always waits for the Konflux operator controller Deployment to finish"
-    echo "  rolling out (namespace konflux-operator). That is independent of the Konflux CR Ready status."
-    echo "  By default the Argo sync wait also treats a Synced konflux-operator app as done even if"
-    echo "  the Konflux CR is still Progressing (custom health check). Set the env var below to also"
-    echo "  require Konflux Ready=True before preview exits."
+    echo "  Readiness contract:"
+    echo "  - Default: Konflux operator controller Deployment must be available. The Konflux CR"
+    echo "    may still be Progressing; Argo treats Synced+Progressing konflux-operator as done."
+    echo "  - PREVIEW_WAIT_KONFLUX_CR_READY=true: Konflux CR Ready=True (via Argo custom health)."
+    echo "    The controller Deployment is still gated early so a broken operator fails as the"
+    echo "    operator Deployment, not as a timeout on dependent apps."
     echo
     echo "Environment (optional):"
-    echo "  PREVIEW_WAIT_KONFLUX_CR_READY=true  Additionally wait for the Konflux custom resource"
-    echo "                       konflux to exist and report Ready=True (off by default)."
+    echo "  PREVIEW_WAIT_KONFLUX_CR_READY=true  Gate preview on Konflux CR Ready=True through"
+    echo "                       Argo health (requires the Konflux CR health customization)."
     echo "  IMAGE_CONTROLLER_QUAY_ORG, IMAGE_CONTROLLER_QUAY_TOKEN  Both must be set in"
     echo "                       hack/preview.env to enable image-controller on the Konflux CR (off by default)."
     echo "  TARGET_PREVIEW_OVERLAY  Must be unset or rd-dev. Setting development fails; preview is operator-only."
@@ -589,6 +590,11 @@ deploy_and_wait_for_argocd() {
     done
     log_success "All $total_apps applications refreshed"
 
+    # Gate the operator controller before waiting on every Application. If the
+    # Deployment is missing or stuck, fail as KONFLUX_OPERATOR_DEPLOYMENT_* instead
+    # of timing out on dependents while konflux-operator is filtered as Progressing.
+    wait_for_konflux_operator_controller_ready
+
     # Wait for all applications to sync and become healthy
     log_step "Waiting for all ArgoCD applications to sync and become healthy"
     log_info "Timeout: $MAX_SYNC_TIMEOUT seconds ($((MAX_SYNC_TIMEOUT / 60)) minutes)"
@@ -634,8 +640,8 @@ deploy_and_wait_for_argocd() {
         # Documented contract: without PREVIEW_WAIT_KONFLUX_CR_READY=true, do not gate on
         # Konflux CR Ready. The custom health check reports Progressing until Ready — so
         # treat only Synced+Progressing konflux-operator as done here. Synced+Degraded /
-        # Missing / Unknown stay pending. Controller rollout is still gated later; CR
-        # Ready is gated only when the flag is set.
+        # Missing / Unknown stay pending. Controller rollout was already gated above; CR
+        # Ready is gated only when the flag is set (Argo Healthy via the health patch).
         local skipped_operator_progressing=false
         if [ "${PREVIEW_WAIT_KONFLUX_CR_READY:-}" != "true" ]; then
             if echo "$not_done" | awk '$1 ~ /^konflux-operator/ && $2 == "Synced" && $3 == "Progressing" { found=1 } END { exit !found }'; then
@@ -885,8 +891,9 @@ wait_for_konflux_cr_ready() {
 }
 
 # Wait for the Konflux operator controller manager Deployment to exist and finish
-# rolling out. This validates the operator install without tying preview success
-# to Konflux CR reconciliation (see PREVIEW_WAIT_KONFLUX_CR_READY for that).
+# rolling out. Called after Argo refresh and before waiting on every Application
+# so a broken operator fails here. Does not require Konflux CR Ready (see
+# PREVIEW_WAIT_KONFLUX_CR_READY for that).
 wait_for_konflux_operator_controller_ready() {
     log_step "Waiting for Konflux operator controller Deployment to become available"
     log_info "This checks the operator controller only, not Konflux CR Ready status"
@@ -1202,22 +1209,42 @@ fi
 # =============================================================================
 # Apply before deploying apps so both bootstrap-cluster.sh preview and direct
 # hack/preview.sh evaluate Konflux readiness the same way. Idempotent merge patch.
+#
+# Contract:
+# - Default: controller Deployment available; Konflux CR may still be Progressing.
+# - PREVIEW_WAIT_KONFLUX_CR_READY=true: Argo reports konflux-operator Healthy only
+#   when the Konflux CR is Ready. That requires this health customization; fail
+#   closed if the patch cannot be applied. The kubectl CR wait is then redundant.
 log_step "Configuring operator-overlay Argo CD health checks"
 # shellcheck source=/dev/null
 source "${ROOT}/hack/deploy-argocd.sh"
-configure_operator_overlay_health_customizations || log_warn "Continuing without Konflux CR health customization"
+OPERATOR_HEALTH_CUSTOMIZATION_APPLIED=false
+if configure_operator_overlay_health_customizations; then
+    OPERATOR_HEALTH_CUSTOMIZATION_APPLIED=true
+else
+    if [ "${PREVIEW_WAIT_KONFLUX_CR_READY:-}" = "true" ]; then
+        log_error "Konflux CR health customization is required when PREVIEW_WAIT_KONFLUX_CR_READY=true"
+        print_execution_summary "failed" "KONFLUX_OPERATOR_HEALTH_CUSTOMIZATION_FAILED"
+        exit 1
+    fi
+    log_warn "Continuing without Konflux CR health customization (default path still gates on the controller Deployment)"
+fi
 
 # =============================================================================
 # Deploy Applications
 # =============================================================================
+# Applies the root Application, refreshes apps, waits for the operator controller
+# Deployment, then waits for remaining Applications (see deploy_and_wait_for_argocd).
 deploy_and_wait_for_argocd
 
-# =============================================================================
-# Wait for Konflux operator controller (and optionally the Konflux CR)
-# =============================================================================
-wait_for_konflux_operator_controller_ready
 if [ "${PREVIEW_WAIT_KONFLUX_CR_READY:-}" = "true" ]; then
-    wait_for_konflux_cr_ready
+    # Argo Healthy already means Konflux CR Ready when the health patch applied.
+    if [ "$OPERATOR_HEALTH_CUSTOMIZATION_APPLIED" = "true" ]; then
+        log_info "Konflux CR Ready gated via Argo health (skipping redundant kubectl wait)"
+    else
+        # Unreachable with fail-closed above; keep as a safe fallback.
+        wait_for_konflux_cr_ready
+    fi
 else
     log_info "Skipping wait for Konflux CR Ready=True (set PREVIEW_WAIT_KONFLUX_CR_READY=true to gate preview on the instance)"
 fi
