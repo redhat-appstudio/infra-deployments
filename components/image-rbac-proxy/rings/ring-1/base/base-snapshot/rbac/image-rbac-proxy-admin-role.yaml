@@ -27,6 +27,17 @@ rules:
       - delete
 
   - apiGroups:
+      - apps
+    resources:
+      - deployments
+    resourceNames:
+      - image-rbac-proxy
+      - "$(DEX_DEPLOYMENT_NAME)"
+    verbs:
+      - get
+      - patch
+
+  - apiGroups:
       - route.openshift.io
     resources:
       - routes
