@@ -397,7 +397,7 @@ func RunE2ETests() error {
             <div class="rule-box">
                 <div class="rule-title">Rule 4: Release Service Component Changed</div>
                 <div class="rule-condition">
-                    <strong>IF:</strong> Files changed in <code>components/release/**/*</code>
+                    <strong>IF:</strong> Files changed in <code>components/konflux-operator/rings/*/base/cr/release/**/*</code>
                 </div>
                 <div class="rule-action">
                     THEN run tests with label: <span class="code-highlight">release-service</span> + <span class="code-highlight">konflux</span>
@@ -646,7 +646,7 @@ func ExecuteInfraDeploymentsDefaultTestAction(rctx *rulesengine.RuleCtx) error {
 <span class="code-comment"># Files changed:</span>
 - components/build-service/base/deployment.yaml
 - components/integration/base/deployment.yaml
-- components/release/base/release-plan.yaml
+- components/konflux-operator/rings/ring-1/base/cr/release/release-service.yaml
 
 <span class="code-comment"># Rules engine detects:</span>
 ✓ InfraDeploymentsBuildServiceComponentChangeRule matches!
