@@ -1,0 +1,10 @@
+---
+apiVersion: kueue.x-k8s.io/v1beta2
+kind: WorkloadPriorityClass
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "10"
+  name: lightwell-remediation
+value: 850
+description: "Lightwell remediations (backport/novel) between push and release"
