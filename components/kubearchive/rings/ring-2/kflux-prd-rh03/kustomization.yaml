@@ -24,3 +24,19 @@ patches:
       name: database-secret
   - path: patches/api-server-rate-limits-patch.yaml
   - path: patches/operator-monitor-all-namespaces-patch.yaml
+  - path: patches/api-server-service-cert-patch.yaml
+  - path: patches/api-server-certificate-secretname-patch.yaml
+    target:
+      group: cert-manager.io
+      version: v1
+      kind: Certificate
+      name: kubearchive-api-server-certificate
+  - path: patches/operator-certificate-secretname-patch.yaml
+    target:
+      group: cert-manager.io
+      version: v1
+      kind: Certificate
+      name: kubearchive-operator-certificate
+  - path: patches/operator-webhooks-service-cert-patch.yaml
+  - path: patches/mutating-webhook-inject-cabundle-patch.yaml
+  - path: patches/validating-webhook-inject-cabundle-patch.yaml
