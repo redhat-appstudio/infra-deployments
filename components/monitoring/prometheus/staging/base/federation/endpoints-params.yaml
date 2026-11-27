@@ -158,6 +158,7 @@
     - '{__name__="kube_pod_container_status_waiting_reason", namespace!~".*-tenant|openshift-.*|kube-.*|mintmaker"}'
     - '{__name__="kube_pod_container_status_waiting_reason", namespace="mintmaker", pod!~"renovate.*"}'
     - '{__name__="kube_pod_container_status_waiting_reason", namespace=~"rhtap-releng-tenant"}'
+    - '{__name__="kube_pod_container_status_waiting_reason", namespace="openshift-pipelines", reason=~"ImagePullBackOff|ErrImagePull"}'
     - '{__name__="kube_pod_container_resource_requests", namespace="appstudio-grafana", resource=~"cpu|memory"}'
     - '{__name__="kube_pod_container_resource_limits", namespace=~"release-service|rhtap-releng-tenant|konflux-operator"}'
     - '{__name__="kube_pod_container_status_terminated_reason", namespace=~"release-service|openshift-etcd|openshift-kube-apiserver|build-service|image-controller|integration-service|konflux-ui|konflux-kite|product-kubearchive|product-kubearchive-logging|openshift-kueue-operator|tekton-kueue|multi-platform-controller|namespace-lister|openshift-pipelines|tekton-results|project-controller|smee|smee-client"}'

@@ -145,6 +145,7 @@
 
     ## Container Metrics
     - '{__name__="kube_pod_container_status_waiting_reason", namespace!~".*-tenant|openshift-.*|kube-.*"}'
+    - '{__name__="kube_pod_container_status_waiting_reason", namespace="openshift-pipelines", reason=~"ImagePullBackOff|ErrImagePull"}'
     - '{__name__="kube_pod_container_resource_requests", namespace="appstudio-grafana", resource=~"cpu|memory"}'
     - '{__name__="kube_pod_container_resource_limits", namespace=~"release-service|rhtap-releng-tenant|konflux-operator"}'
     - '{__name__="kube_pod_container_status_terminated_reason", namespace=~"release-service|openshift-etcd|openshift-kube-apiserver|build-service|image-controller|integration-service|konflux-ui|product-kubearchive|product-kubearchive-logging|openshift-kueue-operator|tekton-kueue|mintmaker|multi-platform-controller|namespace-lister|openshift-pipelines|tekton-results|project-controller|smee|smee-client"}'
