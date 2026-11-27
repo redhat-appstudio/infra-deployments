@@ -12,6 +12,11 @@ source "${SCRIPT_DIR}/ci-common.sh"
 
 cd "${INFRA_DEPLOYMENTS_ROOT}"
 
+# The Prow launcher clones upstream/main and merges the PR into the local branch.
+if [[ "${REPO_NAME:-}" == "infra-deployments" && -n "${PULL_NUMBER:-}" ]]; then
+  ci_refresh_ring_zero_snapshots refs/remotes/upstream/main
+fi
+
 echo "[INFO] Configuring preview install environment from QE secrets..."
 ci_export_preview_install_env "${SECRETS_DIR}"
 
