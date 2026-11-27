@@ -42,7 +42,6 @@ var knownGaps = map[string]knownFinding{}
 // prefix (PrefixOnly). The detail is the sorted, comma-separated list of
 // prefixes extracted for the ApplicationSet.
 var knownPrefixOnly = map[string]knownFinding{
-	"development-operator/backup":      backupPrefixOnly("development"),
 	"development/backup":               backupPrefixOnly("development"),
 	"konflux-public-production/backup": backupPrefixOnly("production"),
 	"konflux-public-staging/backup":    backupPrefixOnly("staging"),
