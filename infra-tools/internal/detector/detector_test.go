@@ -2176,7 +2176,7 @@ func TestDetect_UnreferencedIgnoresNonDeployableFiles(t *testing.T) {
 		"components/foo/diagram.png",
 		"components/policies/base/foo/.chainsaw-test/chainsaw-test.yaml",
 		"components/konflux-operator/ci/openshift-overlay-e2e/install.sh",
-		"components/konflux-info/banner-schema.json",
+		"components/kubearchive/upgrade.sh",
 	}
 	d := unreferencedDetector(t, files...)
 
@@ -2196,7 +2196,6 @@ func TestIsDeployableFile(t *testing.T) {
 		"components/foo/diagram.png":                                      false,
 		"components/policies/base/foo/.chainsaw-test/chainsaw-test.yaml":  false,
 		"components/konflux-operator/ci/openshift-overlay-e2e/install.sh": false,
-		"components/konflux-info/banner-schema.json":                      false,
 		"components/kubearchive/upgrade.sh":                               false,
 		"components/openshift-gitops/base/deploy.yaml":                    false,
 	}
