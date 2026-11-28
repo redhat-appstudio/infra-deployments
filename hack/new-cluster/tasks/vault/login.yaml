@@ -5,9 +5,13 @@
   register: vault_login
   environment:
     VAULT_ADDR: "{{ vault_addr }}"
+    VAULT_TOKEN: ""
   changed_when: false
+  check_mode: false
+  no_log: true
 
 - name: Extract Vault token from login response
   tags: [vault]
   ansible.builtin.set_fact:
     vault_token: "{{ vault_login.stdout | from_json | dict2items | selectattr('key', 'equalto', 'auth') | map(attribute='value.client_token') | first }}"
+  no_log: true

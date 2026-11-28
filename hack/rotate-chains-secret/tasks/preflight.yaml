@@ -1,0 +1,163 @@
+---
+- name: Render the cluster's actual pipeline-service configuration
+  ansible.builtin.command:
+    argv:
+      - kustomize
+      - build
+      - --enable-helm
+      - "{{ rings_root }}/{{ ring }}/{{ cluster }}"
+  register: rendered
+  changed_when: false
+  check_mode: false
+
+- name: Find both Chains ExternalSecrets
+  ansible.builtin.set_fact:
+    signing_secrets: >-
+      {{ rendered.stdout | from_yaml_all | select('mapping') | selectattr('kind', 'defined')
+         | selectattr('kind', 'equalto', 'ExternalSecret')
+         | selectattr('metadata.namespace', 'equalto', 'openshift-pipelines')
+         | selectattr('metadata.name', 'equalto', 'tekton-chains-signing-secret') | list }}
+    public_secrets: >-
+      {{ rendered.stdout | from_yaml_all | select('mapping') | selectattr('kind', 'defined')
+         | selectattr('kind', 'equalto', 'ExternalSecret')
+         | selectattr('metadata.namespace', 'equalto', 'openshift-pipelines')
+         | selectattr('metadata.name', 'equalto', 'tekton-chains-public-key') | list }}
+
+- name: Require exactly one signing secret and one public key
+  ansible.builtin.assert:
+    that:
+      - signing_secrets | length == 1
+      - public_secrets | length == 1
+    fail_msg: "{{ cluster }} must have both Chains ExternalSecrets in openshift-pipelines."
+
+- name: Read the existing Vault source and canonical destination
+  ansible.builtin.set_fact:
+    signing: "{{ signing_secrets[0].spec }}"
+    public: "{{ public_secrets[0].spec }}"
+    canonical_path: "{{ rotation_env }}/platform/ansible/generated/{{ cluster }}/chains-signing-secret"
+
+- name: Require matching unpinned sources in the stonesoup store
+  ansible.builtin.assert:
+    that:
+      - signing.secretStoreRef == {'kind':'ClusterSecretStore', 'name':'appsre-stonesoup-vault'}
+      - public.secretStoreRef == signing.secretStoreRef
+      - signing.dataFrom | length == 1
+      - public.data | length == 1
+      - public.data[0].secretKey == 'cosign.pub'
+      - public.data[0].remoteRef.property == 'cosign.pub'
+      - signing.dataFrom[0].extract.key == public.data[0].remoteRef.key
+      - signing.dataFrom[0].extract.version | default('') | string == ''
+      - public.data[0].remoteRef.version | default('') | string == ''
+      - signing.dataFrom[0].extract.key is match('^' ~ rotation_env ~ '/[A-Za-z0-9._/-]+/chains-signing-secret$')
+      - "'..' not in signing.dataFrom[0].extract.key.split('/')"
+    fail_msg: "{{ cluster }} has mismatched, pinned, or unsupported Chains Vault sources."
+
+- name: Read the cluster's Kustomize patch inventory
+  ansible.builtin.set_fact:
+    overlay_config: "{{ lookup('file', rings_root ~ '/' ~ ring ~ '/' ~ cluster ~ '/kustomization.yaml') | from_yaml }}"
+
+- name: Locate the two source patches for a path migration
+  ansible.builtin.set_fact:
+    chains_patches: >-
+      {{ overlay_config.patches | selectattr('target', 'defined')
+         | selectattr('target.name', 'defined')
+         | selectattr('target.name', 'in', ['tekton-chains-signing-secret', 'tekton-chains-public-key']) | list }}
+
+- name: Require file-based cluster patches before changing paths
+  ansible.builtin.assert:
+    that:
+      - chains_patches | length == 2
+      - chains_patches | selectattr('path', 'defined') | list | length == 2
+      - chains_patches | map(attribute='path') | unique | length == 2
+      - chains_patches | map(attribute='target.name') | unique | length == 2
+    fail_msg: "{{ cluster }} needs two separate file-based Chains path patches."
+  when: signing.dataFrom[0].extract.key != canonical_path
+
+- name: Validate path migration patches before any Vault writes
+  ansible.builtin.assert:
+    that:
+      - not item.path.startswith('/')
+      - "'..' not in item.path.split('/')"
+      - patch_operations is sequence and patch_operations is not string and patch_operations is not mapping
+      - patch_operations | length == 1
+      - patch_operations[0].op in ['add', 'replace']
+      - patch_operations[0].path == expected_pointer
+      - patch_operations[0].value == signing.dataFrom[0].extract.key
+    fail_msg: "{{ cluster }} has an unsupported Chains patch: {{ item.path }}"
+  vars:
+    patch_operations: "{{ lookup('file', rings_root ~ '/' ~ ring ~ '/' ~ cluster ~ '/' ~ item.path) | from_yaml }}"
+    expected_pointer: "{{ '/spec/dataFrom/0/extract/key' if item.target.name == 'tekton-chains-signing-secret' else '/spec/data/0/remoteRef/key' }}"
+  loop: "{{ chains_patches }}"
+  loop_control:
+    label: "{{ item.path | default('inline patch') }}"
+  when: signing.dataFrom[0].extract.key != canonical_path
+
+- name: Read the current source version without reading private material
+  ansible.builtin.command:
+    argv:
+      - vault
+      - kv
+      - metadata
+      - get
+      - -format=json
+      - -mount=stonesoup
+      - "{{ signing.dataFrom[0].extract.key }}"
+  register: source_metadata
+  changed_when: false
+  check_mode: false
+
+- name: Parse the current source version
+  ansible.builtin.set_fact:
+    source_info: "{{ (source_metadata.stdout | from_json).data }}"
+
+- name: Require an existing active source version for rollback
+  ansible.builtin.assert:
+    that:
+      - source_info.current_version | int > 0
+      - not source_info.versions[source_info.current_version | string].destroyed
+      - source_info.versions[source_info.current_version | string].deletion_time == ''
+    fail_msg: "{{ cluster }} has no active current Chains secret version."
+
+- name: Reject an explicit one-version retention limit for an in-place rotation
+  ansible.builtin.assert:
+    that:
+      - source_info.max_versions | default(0) | int != 1
+    fail_msg: "{{ cluster }} explicitly retains only one Vault version. Increase retention before rotating so rollback remains possible."
+  when: signing.dataFrom[0].extract.key == canonical_path
+
+- name: Check whether a migration destination already exists
+  ansible.builtin.command:
+    argv:
+      - vault
+      - kv
+      - metadata
+      - get
+      - -format=json
+      - -mount=stonesoup
+      - "{{ canonical_path }}"
+  register: destination_metadata
+  changed_when: false
+  check_mode: false
+  failed_when: >-
+    destination_metadata.rc != 0 and
+    not (destination_metadata.rc == 2 and
+         ('No value found at stonesoup/metadata/' ~ canonical_path) in
+         (destination_metadata.stdout ~ destination_metadata.stderr))
+  when: signing.dataFrom[0].extract.key != canonical_path
+
+- name: Resolve the inspected destination version for the CAS check
+  ansible.builtin.set_fact:
+    destination_version: >-
+      {{ source_info.current_version | int if signing.dataFrom[0].extract.key == canonical_path
+         else ((destination_metadata.stdout | from_json).data.current_version | int
+               if destination_metadata.rc == 0 else 0) }}
+
+- name: Add the preflighted cluster to the rotation plan
+  ansible.builtin.set_fact:
+    rotation_targets: >-
+      {{ rotation_targets + [{'cluster': cluster,
+         'source_path': signing.dataFrom[0].extract.key,
+         'source_version': source_info.current_version | int,
+         'path': canonical_path,
+         'previous_version': destination_version | int,
+         'patches': chains_patches | map(attribute='path') | list}] }}

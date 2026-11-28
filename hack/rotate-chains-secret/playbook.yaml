@@ -1,0 +1,130 @@
+---
+- name: Rotate Tekton Chains keys for one ring
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  environment: >-
+    {{ {'VAULT_ADDR': vault_addr} |
+       combine({'VAULT_TOKEN': vault_token} if vault_token is defined else {}) }}
+  vars:
+    repo_root: "{{ playbook_dir }}/../.."
+    vault_addr: "{{ lookup('env', 'VAULT_ADDR') | default('https://vault.devshift.net', true) }}"
+    clusters: []
+    rotation_targets: []
+    rings_root: "{{ repo_root }}/components/pipeline-service/rings"
+    rotation_env: "{{ 'staging' if ring == 'ring-1' else 'production' }}"
+  tasks:
+    - name: Require exactly one supported ring and an optional cluster list
+      ansible.builtin.assert:
+        that:
+          - ring is defined
+          - ring in ['ring-1', 'ring-2', 'ring-3', 'ring-4']
+          - clusters is sequence and clusters is not string and clusters is not mapping
+          - clusters | unique | length == clusters | length
+        fail_msg: "Set ring=ring-1, ring-2, ring-3, or ring-4. Ring 0 generates keys in-cluster. clusters must be a JSON list."
+
+    - name: Find cluster overlays in the selected ring
+      ansible.builtin.find:
+        paths: "{{ rings_root }}/{{ ring }}"
+        file_type: directory
+        recurse: false
+      register: ring_directories
+
+    - name: Select cluster overlays
+      ansible.builtin.set_fact:
+        ring_clusters: "{{ ring_directories.files | map(attribute='path') | map('basename') | reject('equalto', 'base') | sort }}"
+
+    - name: Validate the cluster selection
+      ansible.builtin.assert:
+        that:
+          - ring_clusters | length > 0
+          - clusters | difference(ring_clusters) | length == 0
+        fail_msg: "The ring is empty, or clusters contains a name outside the selected ring."
+
+    - name: Check the current Vault session without printing its token
+      ansible.builtin.command:
+        argv: [vault, token, lookup, -field=ttl]
+      register: vault_session
+      changed_when: false
+      failed_when: false
+      check_mode: false
+      no_log: true
+
+    - name: Authenticate with Vault if the session is missing or invalid
+      when: vault_session.rc != 0
+      block:
+        - name: Explain the browser authentication step
+          ansible.builtin.debug:
+            msg: "No valid Vault session. Opening your browser for SSO; complete login to continue."
+
+        - name: Log in with the shared bootstrap OIDC tasks
+          ansible.builtin.import_tasks: ../new-cluster/tasks/vault/login.yaml
+
+        - name: Use the refreshed token helper instead of an expired environment token
+          ansible.builtin.set_fact:
+            vault_token: ""
+          no_log: true
+
+      rescue:
+        - name: Stop before generating keys if browser authentication fails
+          ansible.builtin.fail:
+            msg: "Vault OIDC login failed. Check VPN access and complete browser SSO before retrying. No Chains keys were generated or uploaded."
+
+    - name: Preflight every selected cluster before generating any keys
+      ansible.builtin.include_tasks: tasks/preflight.yaml
+      loop: "{{ (clusters if clusters | length > 0 else ring_clusters) | sort }}"
+      loop_control:
+        loop_var: cluster
+
+    - name: Reject shared Vault paths
+      ansible.builtin.assert:
+        that:
+          - rotation_targets | map(attribute='source_path') | unique | length == rotation_targets | length
+          - rotation_targets | map(attribute='path') | unique | length == rotation_targets | length
+        fail_msg: "Multiple clusters reference the same Chains key. Resolve this before rotating."
+
+    - name: Reject destinations used by another selected cluster
+      ansible.builtin.assert:
+        that:
+          - item.path not in (rotation_targets | rejectattr('cluster', 'equalto', item.cluster) | map(attribute='source_path') | list)
+        fail_msg: "{{ item.cluster }} would overwrite another selected cluster's active source at {{ item.path }}. Resolve this path conflict before rotating."
+      loop: "{{ rotation_targets }}"
+      loop_control:
+        label: "{{ item.cluster }}"
+
+    - name: Show planned Vault versions and path migrations
+      ansible.builtin.debug:
+        var: rotation_targets
+
+    - name: Rotate the selected ring
+      when: not ansible_check_mode
+      block:
+        - name: Allocate a recovery journal unless a path was supplied
+          ansible.builtin.tempfile:
+            state: file
+            prefix: "chains-rotation-{{ ring }}-"
+            suffix: .jsonl
+          register: journal_file
+          when: rotation_log is not defined
+
+        - name: Set the recovery journal path
+          ansible.builtin.set_fact:
+            journal_path: "{{ rotation_log | default(journal_file.path) }}"
+
+        - name: Display the recovery journal location
+          ansible.builtin.debug:
+            msg: "Recovery journal: {{ journal_path }}. Keep this file until rollout validation is complete."
+
+        - name: Rotate clusters sequentially and stop on the first failure
+          ansible.builtin.include_tasks: tasks/rotate.yaml
+          loop: "{{ rotation_targets }}"
+          loop_control:
+            loop_var: target
+            label: "{{ target.cluster }}"
+
+        - name: Describe the next rollout step
+          ansible.builtin.debug:
+            msg: >-
+              Vault writes and local path updates completed for {{ ring }}.
+              Review git diff and submit path changes in a PR for this ring only.
+              Validate secret reconciliation and signed builds before running the next ring.

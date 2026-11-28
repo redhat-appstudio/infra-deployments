@@ -1,0 +1,135 @@
+---
+# Shared by bootstrap and rotation. Callers supply chains_secret_path and
+# chains_expected_version (0 for create-only), after their own preflight.
+# Rotation can also supply chains_journal_path and chains_journal_metadata.
+# Bootstrap sets chains_verify_public_key=false to retain metadata-only access.
+- name: Generate and store a Chains key pair
+  environment: >-
+    {{ {'VAULT_ADDR': vault_addr} |
+       combine({'VAULT_TOKEN': vault_token} if vault_token is defined else {}) }}
+  block:
+    - name: Create a private temporary directory
+      ansible.builtin.tempfile:
+        state: directory
+        prefix: chains-key-
+      register: chains_key_directory
+
+    - name: Generate a fresh key password
+      ansible.builtin.command:
+        argv: [openssl, rand, -base64, '30']
+      register: chains_key_password
+      no_log: true
+      changed_when: true
+
+    - name: Store the password in a private upload file
+      ansible.builtin.copy:
+        content: "{{ chains_key_password.stdout }}"
+        dest: "{{ chains_key_directory.path }}/password"
+        mode: '0600'
+      no_log: true
+
+    - name: Generate a separate Cosign key pair for this cluster
+      ansible.builtin.command:
+        argv:
+          - cosign
+          - generate-key-pair
+          - --output-key-prefix
+          - "{{ chains_key_directory.path }}/cosign"
+      environment:
+        COSIGN_PASSWORD: "{{ chains_key_password.stdout }}"
+      no_log: true
+      changed_when: true
+
+    - name: Prepare the optional recovery record with a public key fingerprint
+      ansible.builtin.set_fact:
+        chains_recovery_record: >-
+          {{ dict(chains_journal_metadata | default({}),
+             new_version=(chains_expected_version | int + 1),
+             public_key_sha256=(lookup('file', chains_key_directory.path ~ '/cosign.pub') | trim | hash('sha256'))) }}
+      when: chains_journal_path is defined
+
+    - name: Journal the version needed for recovery before attempting the write
+      ansible.builtin.lineinfile:
+        path: "{{ chains_journal_path }}"
+        create: true
+        mode: '0600'
+        line: "{{ dict(chains_recovery_record, status='attempting') | to_json }}"
+      when: chains_journal_path is defined
+
+    - name: Upload a new Vault version guarded against concurrent changes
+      ansible.builtin.command:
+        argv:
+          - vault
+          - kv
+          - put
+          - -format=json
+          - -mount=stonesoup
+          - "-cas={{ chains_expected_version }}"
+          - "{{ chains_secret_path }}"
+          - "cosign.password=@{{ chains_key_directory.path }}/password"
+          - "cosign.key=@{{ chains_key_directory.path }}/cosign.key"
+          - "cosign.pub=@{{ chains_key_directory.path }}/cosign.pub"
+      register: chains_uploaded
+      no_log: true
+      changed_when: true
+
+    - name: Check the uploaded version number
+      ansible.builtin.assert:
+        that:
+          - (chains_uploaded.stdout | from_json).data.version | int == chains_expected_version | int + 1
+      no_log: true
+
+    - name: Record the successful Vault write immediately
+      ansible.builtin.lineinfile:
+        path: "{{ chains_journal_path }}"
+        mode: '0600'
+        line: "{{ dict(chains_recovery_record, status='written') | to_json }}"
+      when: chains_journal_path is defined
+
+    - name: Read back only the new public key
+      ansible.builtin.command:
+        argv:
+          - vault
+          - kv
+          - get
+          - -field=cosign.pub
+          - -mount=stonesoup
+          - "-version={{ chains_expected_version | int + 1 }}"
+          - "{{ chains_secret_path }}"
+      register: chains_uploaded_public
+      changed_when: false
+      when: chains_verify_public_key | default(true) | bool
+
+    - name: Verify the uploaded public key matches the generated key
+      ansible.builtin.assert:
+        that:
+          - chains_uploaded_public.stdout | trim == lookup('file', chains_key_directory.path ~ '/cosign.pub') | trim
+      when: chains_verify_public_key | default(true) | bool
+
+    - name: Verify bootstrap storage without requiring secret data read access
+      when: not (chains_verify_public_key | default(true) | bool)
+      block:
+        - name: Read metadata for the newly created Chains secret
+          ansible.builtin.command:
+            argv:
+              - vault
+              - kv
+              - metadata
+              - get
+              - -format=json
+              - -mount=stonesoup
+              - "{{ chains_secret_path }}"
+          register: chains_stored_metadata
+          changed_when: false
+
+        - name: Verify that the uploaded version is present in Vault metadata
+          ansible.builtin.assert:
+            that:
+              - (chains_stored_metadata.stdout | from_json).data.current_version | int >= chains_expected_version | int + 1
+
+  always:
+    - name: Remove all local private key material even after failure
+      ansible.builtin.file:
+        path: "{{ chains_key_directory.path }}"
+        state: absent
+      when: chains_key_directory.path is defined
