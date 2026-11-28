@@ -157,6 +157,35 @@ ci_parse_konflux_ci_ref() {
   printf '%s\n' "${ref}"
 }
 
+# Refresh changed component bases in the CI checkout before preview publishes its branch.
+ci_refresh_ring_zero_snapshots() {
+  local base_ref="${1:?pre-merge ref required}"
+  local snapshot component_base diff_status
+
+  for snapshot in components/*/rings/ring-0/base/base-snapshot; do
+    [[ -d "${snapshot}" ]] || continue
+    component_base="${snapshot%/rings/ring-0/base/base-snapshot}/base"
+
+    git diff --quiet "${base_ref}" HEAD -- "${component_base}/" && continue
+    diff_status=$?
+    [[ "${diff_status}" -eq 1 ]] || return "${diff_status}"
+
+    if [[ ! -d "${component_base}" ]]; then
+      echo "ERROR: ${component_base} was removed but ${snapshot} still exists" >&2
+      return 1
+    fi
+
+    echo "[INFO] Testing ${component_base} through ${snapshot}"
+    rm -rf -- "${snapshot}"
+    cp -R -- "${component_base}" "${snapshot}"
+    git add -A -- "${snapshot}"
+  done
+
+  if ! git diff --cached --quiet; then
+    git commit -m "Refresh ring-0 base snapshots for conformance"
+  fi
+}
+
 # Choose a GitHub user:token pair from konflux-ci-secrets github_accounts by highest API rate limit.
 # Exports GITHUB_USER and GITHUB_TOKEN for subsequent git and preview bootstrap operations.
 ci_select_github_account() {
