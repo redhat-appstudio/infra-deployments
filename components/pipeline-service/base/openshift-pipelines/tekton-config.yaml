@@ -42,6 +42,8 @@ spec:
     enable-step-actions: true
     metrics.pipelinerun.level: namespace
     metrics.taskrun.level: namespace
+    # Keep the current behaviour. Pipeline v1.18 turns this on by default.
+    set-security-context: false
     options:
       configMaps:
         feature-flags:
@@ -371,6 +373,12 @@ spec:
                         requests:
                           cpu: 400m
                           memory: 256Mi
+      # Konflux does not use OpenShift Builds. The operator turns these on by
+      # default when the blocks are missing, so keep them off explicitly.
+      shipwrightBuild:
+        enabled: false
+      sharedResource:
+        enabled: false
   profile: all
   pruner:
     disabled: false
