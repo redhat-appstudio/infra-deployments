@@ -1,0 +1,21 @@
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: multikueue-kflux-spoke-stg-01b
+  namespace: openshift-kueue-operator
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: '-1'
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: appsre-stonesoup-vault
+  target:
+    name: multikueue-kflux-spoke-stg-01b
+    creationPolicy: Owner
+  data:
+  - secretKey: kubeconfig
+    remoteRef:
+      key: staging/platform/terraform/generated/kflux-hub-stg-01/kflux-spoke-stg-01b/multikueue-kubeconfig
+      property: kubeconfig

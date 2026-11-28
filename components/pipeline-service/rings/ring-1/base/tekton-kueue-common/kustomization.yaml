@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  - target:
+      kind: Namespace
+      name: openshift-pipelines
+    patch: |-
+      - op: add
+        path: /metadata/labels/openshift.io~1cluster-monitoring
+        value: "true"
+  - path: enable-tekton-kueue.yaml
+    target:
+      kind: TektonConfig
+      name: config

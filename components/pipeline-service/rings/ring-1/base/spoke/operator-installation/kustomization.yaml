@@ -1,0 +1,9 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Read release inputs from the same snapshot Kargo promotes for the hub.
+# Select only OLM installation resources before adding the lite spoke config.
+resources:
+  - ../../base-snapshot
+transformers:
+  - select-operator-installation.yaml

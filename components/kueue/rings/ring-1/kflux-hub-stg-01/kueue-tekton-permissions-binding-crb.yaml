@@ -1,0 +1,12 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kueue-tekton-permissions-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kueue-tekton-permissions
+subjects:
+- kind: ServiceAccount
+  name: kueue-controller-manager
+  namespace: openshift-kueue-operator

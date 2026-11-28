@@ -1,0 +1,26 @@
+apiVersion: builtin
+kind: LabelTransformer
+metadata:
+  name: select-operator-installation
+labels:
+  pipeline-service.konflux-ci.dev/operator-installation: "true"
+fieldSpecs:
+  - kind: CatalogSource
+    path: metadata/labels
+    create: true
+  - kind: Subscription
+    path: metadata/labels
+    create: true
+---
+apiVersion: builtin
+kind: PatchTransformer
+metadata:
+  name: omit-konflux-services
+target:
+  labelSelector: '!pipeline-service.konflux-ci.dev/operator-installation'
+patch: |-
+  $patch: delete
+  apiVersion: v1
+  kind: List
+  metadata:
+    name: omitted

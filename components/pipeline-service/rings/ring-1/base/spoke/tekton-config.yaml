@@ -1,0 +1,23 @@
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  profile: lite
+  # Match the upgrade settings in PR #15775: lite spokes do not inherit the
+  # full TektonConfig from base-snapshot.
+  pipeline:
+    # Match the hub's PipelineRun API features for dispatched builds.
+    enable-api-fields: alpha
+    enable-param-enum: true
+    enable-step-actions: true
+    set-security-context: false
+  platforms:
+    openshift:
+      shipwrightBuild:
+        enabled: false
+      sharedResource:
+        enabled: false
